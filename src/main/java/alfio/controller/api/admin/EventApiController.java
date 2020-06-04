@@ -20,8 +20,11 @@ import alfio.controller.api.support.EventListItem;
 import alfio.controller.api.support.PageAndContent;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.support.TemplateProcessor;
+import alfio.extension.SimpleHttpClient;
+import alfio.extension.SimpleHttpClientResponse;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -29,6 +32,7 @@ import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -50,6 +54,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StreamUtils;
@@ -62,6 +67,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.net.http.HttpClient;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -107,7 +113,6 @@ public class EventApiController {
     private final FileUploadManager fileUploadManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
-
 
     @ExceptionHandler(DataAccessException.class)
     public String exception(DataAccessException e) {
@@ -715,22 +720,66 @@ public class EventApiController {
 
     @PostMapping("/events/{eventName}/createRoom")
     public ResponseEntity<String> createRoom(@PathVariable("eventName") String eventName,
-                                                  @RequestBody Object callLink,
+                                                  @RequestBody Map<String,Object> callLink,
                                                   Principal principal) {
-//        if(!callLink.isValid()) {
-//            return ResponseEntity.badRequest().build();
-//        }
-        return ResponseEntity.of(Optional.of("Stanza create ok"));
+
+        var event = eventManager.getSingleEvent(eventName, principal.getName());
+        var baseUrl = configurationManager.getFor(ConfigurationKeys.LOCAL_URL_FOR_JITSI_JWT, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(null);
+        if (baseUrl == null || baseUrl.equals("")){
+            return ResponseEntity.of(Optional.of("NO_DATA"));
+        }
+
+        var user = userManager.findUserByUsername(principal.getName());
+        var body = new HashMap<String,Object>();
+        body.put("user", user.getUsername() + "-" + user.getId());
+        body.put("email", user.getEmailAddress());
+        body.put("identifier", user.getId());
+        body.put("start", callLink.get("validFrom"));
+        body.put("end", callLink.get("validTo"));
+        body.put("room", event.getShortName() + "_" + event.getId());
+        body.put("base_url", callLink.get("link"));
+        body.put("moderator", true);
+        var simpleHttpClient = new SimpleHttpClient(HttpClient.newBuilder().build());
+        SimpleHttpClientResponse result = null;
+        try {
+            result = simpleHttpClient.postJSON(baseUrl,new HashMap<String,String>(),body);
+            return ResponseEntity.of(Optional.of(result.getBody()));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ResponseEntity<String>(e.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
     }
 
     @PostMapping("/events/{eventName}/createGuestAccess")
     public ResponseEntity<String> createGuestAccess(@PathVariable("eventName") String eventName,
-                                             @RequestBody Object callLink,
+                                             @RequestBody Map<String,Object> callLink,
                                              Principal principal) {
-//        if(!callLink.isValid()) {
-//            return ResponseEntity.badRequest().build();
-//        }
-        return ResponseEntity.of(Optional.of("Guest access create ok"));
+        var event = eventManager.getSingleEvent(eventName, principal.getName());
+        var baseUrl = configurationManager.getFor(ConfigurationKeys.LOCAL_URL_FOR_JITSI_JWT, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(null);
+        if (baseUrl == null || baseUrl.equals("")){
+            return ResponseEntity.of(Optional.of("NO_DATA"));
+        }
+
+        var user = userManager.findUserByUsername(principal.getName());
+        var body = new HashMap<String,Object>();
+        body.put("user", "GuestFor-"+ user.getUsername() + "-" + user.getId());
+        body.put("email", user.getEmailAddress());
+        body.put("identifier", UUID.randomUUID());
+        body.put("start", callLink.get("validFrom"));
+        body.put("end", callLink.get("validTo"));
+        body.put("room", event.getShortName() + "_" + event.getId());
+        body.put("base_url", callLink.get("link"));
+        body.put("moderator", false);
+        var simpleHttpClient = new SimpleHttpClient(HttpClient.newBuilder().build());
+        SimpleHttpClientResponse result = null;
+        try {
+            result = simpleHttpClient.postJSON(baseUrl,new HashMap<String,String>(),body);
+            return ResponseEntity.of(Optional.of(result.getBody()));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ResponseEntity<String>(e.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping("/events/{eventName}/metadata")
