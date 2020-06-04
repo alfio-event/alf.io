@@ -42,8 +42,12 @@ import alfio.repository.EventDescriptionRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.util.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+import com.paypal.http.serializer.Json;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -53,6 +57,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.json.JSONObject;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -67,7 +72,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -739,11 +747,20 @@ public class EventApiController {
         body.put("room", event.getShortName() + "_" + event.getId());
         body.put("base_url", callLink.get("link"));
         body.put("moderator", true);
+        var headers = new HashMap<String,String>();
+        headers.put("Content-Type", "application/json");
+        headers.put("Accept", "application/json");
         var simpleHttpClient = new SimpleHttpClient(HttpClient.newBuilder().build());
         SimpleHttpClientResponse result = null;
         try {
-            result = simpleHttpClient.postJSON(baseUrl,new HashMap<String,String>(),body);
-            return ResponseEntity.of(Optional.of(result.getBody()));
+            result = simpleHttpClient.post(baseUrl,headers,body);
+            if (result.isSuccessful()) {
+                return ResponseEntity.of(Optional.of(result.getBody()));
+            } else {
+                var msg = "Unable to invoke local proxy. StatusCode:" + result.getCode();
+                log.error(msg);
+                return new ResponseEntity<String>(msg, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity<String>(e.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -771,11 +788,20 @@ public class EventApiController {
         body.put("room", event.getShortName() + "_" + event.getId());
         body.put("base_url", callLink.get("link"));
         body.put("moderator", false);
+        var headers = new HashMap<String,String>();
+        headers.put("Content-Type", "application/json");
+        headers.put("Accept", "application/json");
         var simpleHttpClient = new SimpleHttpClient(HttpClient.newBuilder().build());
         SimpleHttpClientResponse result = null;
         try {
-            result = simpleHttpClient.postJSON(baseUrl,new HashMap<String,String>(),body);
-            return ResponseEntity.of(Optional.of(result.getBody()));
+            result = simpleHttpClient.post(baseUrl,headers,body);
+            if (result.isSuccessful()) {
+                return ResponseEntity.of(Optional.of(result.getBody()));
+            } else {
+                var msg = "Unable to invoke local proxy. StatusCode:" + result.getCode();
+                log.error(msg);
+                return new ResponseEntity<String>(msg, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity<String>(e.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
