@@ -32,6 +32,7 @@
               level: '<',
               ok: '<',
               cancel: '<',
+              copy: '<',
               guest: '<'
           },
           controller: MetadataEditorCtrl,
@@ -86,19 +87,35 @@
                 console.log('createRoom result', result);
                 $uibModal.open({
                         size:'lg',
-                        template:'<showlink title="$ctrl.title" link="$ctrl.link" available-languages="$ctrl.availableLanguages" cancel="$ctrl.cancel" ok="$ctrl.ok"></showlink>',
+                        template:'<showlink title="$ctrl.title" link="$ctrl.link" available-languages="$ctrl.availableLanguages" cancel="$ctrl.cancel" ok="$ctrl.ok" copy="$ctrl.copy"></showlink>',
                         backdrop: 'static',
                         controllerAs: '$ctrl',
                         controller: function($scope) {
                             this.title = 'Room creation'
                             this.link = result.data;
                             this.availableLanguages = ctrl.availableLanguages;
+                            this.copied = ctrl.copied;
                             this.ok = function() {
                                 $scope.$close('OK');
                             };
                             this.cancel = function() {
                                 $scope.$dismiss();
                             };
+                            this.copy = function(copied) {
+                                /* Get the text field */
+                                  var copyText = document.getElementById("linkText");
+                                  copyText.type = 'text';
+                                  /* Select the text field */
+                                  copyText.select();
+                                  copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+
+                                  /* Copy the text inside the text field */
+                                  document.execCommand("copy");
+                                  copyText.type = 'hidden';
+                                  /* Alert the copied text */
+                                  //alert("Copied the text: " + copyText.value);
+                                  document.getElementById("spancopied").textContent="Copied to clipboard";
+                            }
                         }
                     }).result.then(function() {
                         console.log('Game over');
@@ -111,7 +128,7 @@
                 console.log('guestLink', result);
                 $uibModal.open({
                         size:'lg',
-                        template:'<showlink title="$ctrl.title" link="$ctrl.link" available-languages="$ctrl.availableLanguages" cancel="$ctrl.cancel" ok="$ctrl.ok"></showlink>',
+                        template:'<showlink title="$ctrl.title" link="$ctrl.link" available-languages="$ctrl.availableLanguages" cancel="$ctrl.cancel" ok="$ctrl.ok" copy="$ctrl.copy"></showlink>',
                         backdrop: 'static',
                         controllerAs: '$ctrl',
                         controller: function($scope) {
@@ -124,6 +141,22 @@
                             this.cancel = function() {
                                 $scope.$dismiss();
                             };
+                            this.copy = function(copied)
+                            {
+                                /* Get the text field */
+                                  var copyText = document.getElementById("linkText");
+                                  copyText.type = 'text';
+                                  /* Select the text field */
+                                  copyText.select();
+                                  copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+
+                                  /* Copy the text inside the text field */
+                                  document.execCommand("copy");
+                                  copyText.type = 'hidden';
+                                  /* Alert the copied text */
+                                  //alert("Copied the text: " + copyText.value);
+                                  document.getElementById("spancopied").textContent="Copied to clipboard";
+                            }
                         }
                     }).result.then(function() {
                         console.log('Game over guest access');

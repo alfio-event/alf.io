@@ -731,35 +731,30 @@ public class EventApiController {
                                                   @RequestBody Map<String,Object> callLink,
                                                   Principal principal) {
 
+
+//        return ResponseEntity.of(Optional.of("http://localsticazzi?jwt=hajdfbgauhbvui_9e7y87wy8w89g8wgw"));
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         var baseUrl = configurationManager.getFor(ConfigurationKeys.LOCAL_URL_FOR_JITSI_JWT, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(null);
         if (baseUrl == null || baseUrl.equals("")){
             return ResponseEntity.of(Optional.of("NO_DATA"));
         }
 
-        var user = userManager.findUserByUsername(principal.getName());
-        var body = new HashMap<String,Object>();
-        body.put("user", user.getUsername() + "-" + user.getId());
-        body.put("email", user.getEmailAddress());
-        body.put("identifier", user.getId());
-        body.put("start", callLink.get("validFrom"));
-        body.put("end", callLink.get("validTo"));
-        body.put("room", event.getShortName() + "_" + event.getId());
-        body.put("base_url", callLink.get("link"));
-        body.put("moderator", true);
-        var headers = new HashMap<String,String>();
-        headers.put("Content-Type", "application/json");
-        headers.put("Accept", "application/json");
         var simpleHttpClient = new SimpleHttpClient(HttpClient.newBuilder().build());
         SimpleHttpClientResponse result = null;
         try {
-            result = simpleHttpClient.post(baseUrl,headers,body);
+            var headerAndBody = GetBodyForProxy(true,principal,event,callLink);
+            result = simpleHttpClient.post(baseUrl,headerAndBody.getLeft(),"Pippo");
+            result = simpleHttpClient.post(baseUrl,headerAndBody.getLeft(),headerAndBody.getRight());
             if (result.isSuccessful()) {
-                return ResponseEntity.of(Optional.of(result.getBody()));
+                var res = result.getJsonBody(Map.class);
+                if (res.containsKey("url"))
+                    return ResponseEntity.of(Optional.of(res.get("url").toString()));
+                else
+                    throw new IOException("Unable to parse Proxy result!");
             } else {
                 var msg = "Unable to invoke local proxy. StatusCode:" + result.getCode();
                 log.error(msg);
-                return new ResponseEntity<String>(msg, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new IOException(msg);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -778,34 +773,47 @@ public class EventApiController {
             return ResponseEntity.of(Optional.of("NO_DATA"));
         }
 
-        var user = userManager.findUserByUsername(principal.getName());
-        var body = new HashMap<String,Object>();
-        body.put("user", "GuestFor-"+ user.getUsername() + "-" + user.getId());
-        body.put("email", user.getEmailAddress());
-        body.put("identifier", UUID.randomUUID());
-        body.put("start", callLink.get("validFrom"));
-        body.put("end", callLink.get("validTo"));
-        body.put("room", event.getShortName() + "_" + event.getId());
-        body.put("base_url", callLink.get("link"));
-        body.put("moderator", false);
-        var headers = new HashMap<String,String>();
-        headers.put("Content-Type", "application/json");
-        headers.put("Accept", "application/json");
         var simpleHttpClient = new SimpleHttpClient(HttpClient.newBuilder().build());
         SimpleHttpClientResponse result = null;
         try {
-            result = simpleHttpClient.post(baseUrl,headers,body);
+            var headerAndBody = GetBodyForProxy(false,principal,event,callLink);
+            result = simpleHttpClient.post(baseUrl,headerAndBody.getLeft(),headerAndBody.getRight());
             if (result.isSuccessful()) {
-                return ResponseEntity.of(Optional.of(result.getBody()));
+                var res = result.getJsonBody(Map.class);
+                if (res.containsKey("url"))
+                    return ResponseEntity.of(Optional.of(res.get("url").toString()));
+                else
+                    throw new IOException("Unable to parse Proxy result!");
             } else {
                 var msg = "Unable to invoke local proxy. StatusCode:" + result.getCode();
                 log.error(msg);
-                return new ResponseEntity<String>(msg, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new IOException(msg);
             }
         } catch (IOException e) {
             e.printStackTrace();
             return new ResponseEntity<String>(e.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private Pair<Map<String,String>,Map<String,Object>> GetBodyForProxy(boolean isModerator, Principal principal, Event event, Map<String,Object> callLink){
+
+        var user = userManager.findUserByUsername(principal.getName());
+
+        var headers = new HashMap<String,String>();
+        headers.put("Content-Type", "application/json; charset=UTF-8");
+        headers.put("Accept", "application/json");
+
+        var body = new HashMap<String,Object>();
+        body.put("user", isModerator ? user.getUsername() + "-" + user.getId() : "GuestFor-"+ user.getUsername() + "-" + user.getId());
+        body.put("email", user.getEmailAddress());
+        body.put("identifier", isModerator ? user.getId() : UUID.randomUUID());
+        body.put("start", callLink.get("validFrom"));
+        body.put("end", callLink.get("validTo"));
+        body.put("room", event.getShortName() + "_" + event.getId());
+        body.put("base_url", callLink.get("link"));
+        body.put("moderator", isModerator);
+
+        return Pair.of(headers,body);
     }
 
     @GetMapping("/events/{eventName}/metadata")
