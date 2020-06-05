@@ -913,8 +913,12 @@ public class TicketReservationManager {
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
         model.put("euBusiness", euBusiness);
         model.put("publicId", configurationManager.getPublicReservationID(event, reservation));
-        model.put("invoicingAdditionalInfo", ticketReservationRepository.getAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
+        model.put("invoicingAdditionalInfo", loadAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
         return model;
+    }
+
+    public TicketReservationAdditionalInfo loadAdditionalInfo(String reservationId) {
+        return ticketReservationRepository.getAdditionalInfo(reservationId);
     }
 
     @Transactional(readOnly = true)
