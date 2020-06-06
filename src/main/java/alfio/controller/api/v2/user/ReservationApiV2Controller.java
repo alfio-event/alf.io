@@ -370,7 +370,7 @@ public class ReservationApiV2Controller {
             boolean italyEInvoicing = configurationManager.getFor(ENABLE_ITALY_E_INVOICING, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
 
             if(italyEInvoicing) {
-                ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
+                ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId, event,
                     new TicketReservationInvoicingAdditionalInfo(getItalianInvoicingInfo(contactAndTicketsForm))
                 );
             }
