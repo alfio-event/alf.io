@@ -1,6 +1,6 @@
 {{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}
 {{custom-header-text}}
-{{#i18n}}email.ticket.promocode.maintitle{{/i18n}}
+{{#i18n}}email.ticket.promocode.maintitle [{{organization.name}}]{{/i18n}}
 
 ********************************
 {{#i18n}}email.event.online.important-information{{/i18n}}

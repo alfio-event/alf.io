@@ -252,7 +252,7 @@
                   </tr>
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.ticket.promocode.maintitle{{/i18n}}</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.ticket.promocode.maintitle [{{organization.name}}]{{/i18n}}</div>
                     </td>
                   </tr>
                 </table>
