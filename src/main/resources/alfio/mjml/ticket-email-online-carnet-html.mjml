@@ -49,7 +49,7 @@
               		{{custom-header-text}}
 		        </mj-text>
 	        
-	        	<mj-text align="center" font-size="20px">{{#i18n}}email.ticket.promocode.maintitle{{/i18n}}</mj-text>
+	        	<mj-text align="center" font-size="20px">{{#i18n}}email.ticket.promocode.maintitle [{{organization.name}}]{{/i18n}}</mj-text>
 
 			</mj-column>
 		</mj-section>
