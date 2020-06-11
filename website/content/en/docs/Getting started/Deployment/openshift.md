@@ -1,9 +1,9 @@
 ---
-title: "Openshift"
-linkTitle: "Openshift"
+title: "OpenShift"
+linkTitle: "OpenShift"
 weight: 5
 description: >
-  How to deploy alf.io on Openshift
+  How to deploy alf.io on OpenShift
 ---
 
 {{% pageinfo %}}
