@@ -230,10 +230,12 @@
                 return;
             }
             delete ctrl.error;
-            var metadata = {
-                callLinks: ctrl.callLinks,
-                requirementsDescriptions: ctrl.prerequisites
-            };
+            console.log('Controller Metadata', ctrl.metadata);
+            // FIX Don't override event tags and others metadata infos, please
+            var metadata = ctrl.metadata;
+            metadata.callLinks = ctrl.callLinks;
+            metadata.requirementsDescriptions = ctrl.prerequisites;
+
             saveMetadata(ctrl.event, ctrl.parentId, ctrl.categoryLevel, EventService, metadata).then(function() {
                 ctrl.ok();
             });

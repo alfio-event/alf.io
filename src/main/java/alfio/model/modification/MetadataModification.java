@@ -30,12 +30,18 @@ import java.util.stream.Collectors;
 @Getter
 public class MetadataModification {
 
+    private final List<String> tags;
+    private final Map<String, Object> attributes; //for supporting nested attribute? bah..
     private final List<CallLinkModification> callLinks;
     private final Map<String, String> requirementsDescriptions;
 
     @JsonCreator
-    public MetadataModification(@JsonProperty("callLinks") List<CallLinkModification> callLinks,
+    public MetadataModification(@JsonProperty("tags") List<String> tags,
+                                @JsonProperty("attributes") Map<String, Object> attributes,
+                                @JsonProperty("callLinks") List<CallLinkModification> callLinks,
                                 @JsonProperty("requirementDescriptions") Map<String, String> requirementsDescriptions) {
+        this.tags = tags;
+        this.attributes = attributes;
         this.callLinks = callLinks;
         this.requirementsDescriptions = requirementsDescriptions;
     }
@@ -46,11 +52,11 @@ public class MetadataModification {
 
     public AlfioMetadata toMetadataObj() {
         return new AlfioMetadata(
-            List.of(),
+            this.tags,
             new OnlineConfiguration(callLinks.stream().map(CallLinkModification::toCallLink).collect(Collectors.toList())),
             requirementsDescriptions,
             List.of(),
-            Map.of()
+            this.attributes
         );
     }
 
