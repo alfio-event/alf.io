@@ -113,6 +113,10 @@ public interface PromoCodeDiscountRepository {
         "where promo_code = :promoCode ")
     Optional<PromoCodeDiscount> getPromoCodeRaw(@Bind("promoCode") String promoCode);
 
+    @Query("select * from promo_code " +
+        "where id = :id ")
+    Optional<PromoCodeDiscount> getPromoCode(@Bind("id") int promoCodeId);
+
     @Query("select promo_code from promo_code " +
         "where metadata->'attributes'->>'idTicket' = :idTicket ")
     String getPromoCodeByIdTicket(@Bind("idTicket") String idTicket );

@@ -209,6 +209,7 @@ public class PromoCodeRequestManager {
 
     public boolean sendEMail(int promoCodeId) {
         var pCode = promoCodeRepository.findOptionalById(promoCodeId);
+        var countUsage = promoCodeRepository.countConfirmedPromoCode(promoCodeId,categoriesOrNull(pCode.get()), null, categoriesOrNull(pCode.get()) != null ? "X" : null);
         var locale = Locale.ITALY;
         if (pCode.isEmpty() || pCode.get().getEmailReference().isEmpty()){
             return false;
@@ -216,7 +217,7 @@ public class PromoCodeRequestManager {
 
         var model = new HashMap<String, Object>();
         model.put("promoCode", pCode.get().getPromoCode());
-        model.put("promoCodeAmount", pCode.get().getMaxUsage());
+        model.put("promoCodeAmount", pCode.get().getMaxUsage() - countUsage);
         model.put("refEmail",pCode.get().getEmailReference());
         model.put("promoCodeDetails",pCode.get().getDescription());
 

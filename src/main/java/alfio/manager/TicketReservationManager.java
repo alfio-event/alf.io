@@ -1266,6 +1266,14 @@ public class TicketReservationManager {
                     initialOptions.put("promoCodeAmount", allMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString()));
                 } else {
                     //single event
+                    if (ticketReservation.getPromoCodeDiscountId()!=null) {
+                        var pCode = promoCodeRepository.getPromoCode(ticketReservation.getPromoCodeDiscountId());
+                        if (!pCode.isEmpty() && pCode.get().getEmailReference().equalsIgnoreCase(ticketReservation.getEmail())){
+                            //we should notify remaining promocodes
+                            initialOptions.put("promoCodeAmount", pCode.get().getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(pCode.get().getId(), categoriesOrNull(pCode.get()), null, categoriesOrNull(pCode.get()) != null ? "X" : null));
+                        }
+                    }
+
                     initialOptions.put("onlineCheckInUrl", ticketOnlineCheckIn(event, ticket.getUuid()));
                     initialOptions.put("prerequisites", categoryMetadata.or(() -> eventMetadata).orElse(""));
                 }

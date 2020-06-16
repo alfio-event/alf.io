@@ -114,6 +114,11 @@
 			    </mj-button>
                 <mj-text align="center" font-size="14px">{{#i18n}}email-ticket.look-forward{{/i18n}}</mj-text>
 	    	</mj-column>
+
+            <mj-column width="350px">
+                <mj-text align="center" font-size="14px">{{#i18n}}email.ticket.promocode.amount [{{promoCodeAmount}}]{{/i18n}}</mj-text>
+            </mj-column>
+
 	   	</mj-section>
 	   	
 	   	<mj-raw>{{#custom-footer-text?}}</mj-raw>
