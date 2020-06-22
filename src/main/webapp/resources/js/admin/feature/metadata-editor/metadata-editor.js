@@ -20,7 +20,11 @@
             level: '<',
             ok: '<',
             cancel: '<',
-            parentId: '<'
+            parentId: '<',
+            enableVideoStream: '<',
+            videoList: '<',
+            showVideoList: '<',
+            videoListLoading: '<'
         },
         controller: MetadataEditorCtrl,
         templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
@@ -68,6 +72,7 @@
                     this.availableLanguages = ctrl.availableLanguages;
                     this.level = ctrl.level;
                     this.parentId = ctrl.parentId;
+                    this.enableVideoStream = ctrl.enableVideoStream;
                     this.ok = function() {
                         $scope.$close('OK');
                     };
@@ -76,8 +81,10 @@
                     };
                 }
             }).result.then(function() {
+                console.log('EditMetadata');
                 retrieveMetadata(ctrl.event, ctrl.parentId, ctrl.categoryLevel, EventService).then(function (result) {
                     ctrl.metadata = result.data;
+
                 })
             });
         };
@@ -175,6 +182,9 @@
             });
         };
         ctrl.$onInit = function() {
+            getEnableVideoStream(ctrl.event, EventService).then(function (result) {
+                ctrl.enableVideoStream = result.data;
+            })
             var callLinks;
             if(!ctrl.metadata?.onlineConfiguration) {
                 callLinks = [{
@@ -197,6 +207,9 @@
             syncSelectedLanguages();
             ctrl.languageDescription = languageDescription(ctrl.availableLanguages);
             ctrl.categoryLevel = ctrl.level === 'category';
+            ctrl.showVideoList = false;
+            ctrl.videoList = [];
+            ctrl.videoListLoading = false;
         };
 
         ctrl.buttonClick = function(index) {
@@ -224,6 +237,23 @@
             ctrl.prerequisites[language] = '';
             syncSelectedLanguages();
         };
+
+         ctrl.chooseVideo = function(){
+            console.log('chooseVideo');
+            ctrl.showVideoList = true;
+            ctrl.videoListLoading = true;
+
+            getAvailableVideoList(ctrl.event, EventService).then(function (result) {
+                ctrl.videoList = result.data;
+                ctrl.videoListLoading = false;
+            })
+         };
+
+         ctrl.selectVideo = function(video, callLink){
+            callLink.link = video.link;
+            ctrl.showVideoList = false;
+            ctrl.videoList = [];
+         }
 
         ctrl.save = function(form) {
             if(form.$invalid) {
@@ -266,12 +296,25 @@
     }
 
     function retrieveMetadata(event, parentId, categoryLevel, EventService) {
+    console.log('retrieveMetadata');
         var getter;
         if(categoryLevel) {
             getter = EventService.retrieveCategoryMetadata(event.shortName, parentId);
         } else {
             getter = EventService.retrieveMetadata(event.shortName);
         }
+        return getter;
+    }
+
+    function getEnableVideoStream(event, EventService) {
+        console.log('getEnableVideoStream');
+        var getter = EventService.getEnableVideoStream(event.shortName);
+        return getter;
+    }
+
+    function getAvailableVideoList(event, EventService) {
+        console.log('getAvailableVideoList');
+        var getter = EventService.getAvailableVideoList(event.shortName);
         return getter;
     }
 

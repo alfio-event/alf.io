@@ -9,9 +9,27 @@
         </div>
         <div class="row" data-ng-repeat="callLink in $ctrl.callLinks">
             <div class="col-xs-12 col-md-5">
-                <div class="form-group">
-                    <label>Meeting Link</label>
-                    <input type="url" data-ng-model="callLink.link" required autocomplete="off" class="form-control" url-text-field="">
+                <div data-ng-if="!$ctrl.showVideoList" class="form-group">
+                    <label>Meeting Link </label>
+                    <input data-ng-if="!$ctrl.enableVideoStream" type="url" data-ng-model="callLink.link" required autocomplete="off" class="form-control" url-text-field="">
+                    <div data-ng-if="$ctrl.enableVideoStream" class="input-group">
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-success" data-ng-click="$ctrl.chooseVideo()" title="Choose recorded video"><i class="fa fa-tv"></i></button>
+                        </span>
+                        <input type="url" data-ng-model="callLink.link" required autocomplete="off" class="form-control" url-text-field="">
+                    </div><!-- /input-group -->
+                </div>
+                <div data-ng-if="$ctrl.showVideoList">
+                    <label>Select a video </label>
+                    <div data-ng-if="$ctrl.videoListLoading"><i class="fa fa-refresh"></i></div>
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr style="cursor: pointer;" data-ng-click="$ctrl.selectVideo(video, callLink)" data-ng-repeat="video in $ctrl.videoList">
+                                <td>{{video.name}}</td>
+                                <td>{{video.date}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="col-xs-12 col-md-3">

@@ -30,6 +30,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.metadata.VideoFile;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
@@ -78,6 +79,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -821,6 +823,20 @@ public class EventApiController {
                                                       Principal principal) {
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(eventManager::getMetadataForEvent));
+    }
+
+    @GetMapping("/events/{eventName}/enableVideoStream")
+    public ResponseEntity<Boolean> enableVideoStream(@PathVariable("eventName") String eventName,
+                                                      Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(eventManager::getEnableVideoStream));
+    }
+
+    @GetMapping("/events/{eventName}/getAvailableVideoList")
+    public ResponseEntity<List<VideoFile>> getAvailableVideoList(@PathVariable("eventName") String eventName,
+                                                       Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(eventManager::getAvailableVideoList));
     }
 
     @PutMapping("/events/{eventName}/category/{categoryId}/metadata")

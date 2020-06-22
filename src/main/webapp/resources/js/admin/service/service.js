@@ -452,6 +452,12 @@
             retrieveMetadata: function(eventName) {
                 return $http.get('/admin/api/events/'+eventName+'/metadata').error(HttpErrorHandler.handle);
             },
+            getEnableVideoStream: function(eventName) {
+                return $http.get('/admin/api/events/'+eventName+'/enableVideoStream').error(HttpErrorHandler.handle);
+            },
+            getAvailableVideoList: function(eventName) {
+                return $http.get('/admin/api/events/'+eventName+'/getAvailableVideoList').error(HttpErrorHandler.handle);
+            },
             createRoom: function(eventName, callLink) {
                 return $http.post('/admin/api/events/'+eventName+'/createRoom', callLink).error(HttpErrorHandler.handle);
             },

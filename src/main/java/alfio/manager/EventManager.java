@@ -27,6 +27,7 @@ import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketFieldConfiguration.Context;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.metadata.VideoFile;
 import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.result.ErrorCode;
@@ -53,6 +54,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -61,6 +63,7 @@ import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -1128,6 +1131,21 @@ public class EventManager {
 
     public AlfioMetadata getMetadataForEvent(EventAndOrganizationId event) {
         return eventRepository.getMetadataForEvent(event.getId());
+    }
+
+    public Boolean getEnableVideoStream(EventAndOrganizationId event){
+        return !configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault("").isBlank();
+    }
+
+    public List<VideoFile> getAvailableVideoList(EventAndOrganizationId event){
+        var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(""),'|');
+        var testData = new VideoFile();
+        testData.setName("prova");
+        testData.setDate(LocalDateTime.now());
+        testData.setLink(localRes[1].trim());
+        List<VideoFile>res = new ArrayList();
+        res.add(testData);
+        return res;
     }
 
     public AlfioMetadata getMetadataForCategory(EventAndOrganizationId event, int categoryId) {
