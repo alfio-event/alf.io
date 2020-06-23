@@ -28,15 +28,19 @@ import java.time.LocalDateTime;
 public class VideoFile implements Comparable<VideoFile> {
     private String link;
     private String name;
+    private String previewUrl;
     private LocalDateTime date;
+
 
     @JsonCreator
     public VideoFile(@JsonProperty("link") String link,
                      @JsonProperty("name") String name,
+                     @JsonProperty("previewUrl") String previewUrl,
                      @JsonProperty("date") LocalDateTime date) {
         this.link = link;
         this.name = name;
         this.date = date;
+        this.previewUrl = previewUrl;
     }
 
     public int compareTo(VideoFile o) {

@@ -24,7 +24,8 @@
             enableVideoStream: '<',
             videoList: '<',
             showVideoList: '<',
-            videoListLoading: '<'
+            videoListLoading: '<',
+            selectedVideo: '<'
         },
         controller: MetadataEditorCtrl,
         templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
@@ -210,6 +211,7 @@
             ctrl.showVideoList = false;
             ctrl.videoList = [];
             ctrl.videoListLoading = false;
+            ctrl.selectedVideo = null;
         };
 
         ctrl.buttonClick = function(index) {
@@ -249,11 +251,16 @@
             })
          };
 
-         ctrl.selectVideo = function(video, callLink){
-            callLink.link = video.link;
-            ctrl.showVideoList = false;
-            ctrl.videoList = [];
+         ctrl.previewVideo = function(video, callLink){
+            ctrl.selectedVideo = null;
+            setTimeout(function(){ ctrl.selectedVideo = video; }, 0);
          }
+
+         ctrl.selectVideo = function(callLink){
+             callLink.link = ctrl.selectedVideo.link;
+             ctrl.showVideoList = false;
+             ctrl.videoList = [];
+          }
 
         ctrl.save = function(form) {
             if(form.$invalid) {

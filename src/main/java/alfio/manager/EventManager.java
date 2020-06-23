@@ -55,6 +55,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -62,7 +63,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -1157,7 +1161,7 @@ public class EventManager {
     }
 
     @SneakyThrows
-    public List<VideoFile> getAvailableVideoList(EventAndOrganizationId event) {
+    public List<VideoFile> getAvailableVideoList(EventAndOrganizationId event, String eventName) {
         var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(""),'|');
         List<VideoFile> res = new ArrayList<>();
         try {
@@ -1168,11 +1172,9 @@ public class EventManager {
                     var item = new VideoFile(
                         localRes[1].trim() + "/" + path.getFileName().toString(),
                         path.getFileName().toString(),
+                        "/admin/api/events/"+eventName+"/getVideoStream/"+path.getFileName().toString(),
                         convertToNewFormat(StringUtils.split(path.getFileName().toString().replace(".mp4",""),'_')[1])
-//                        LocalDateTime.parse(
-//                            StringUtils.split(
-//                                path.getFileName().toString().replace(".mp4",""),'_')[1],
-//                            DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).plusHours(OffsetDateTime.now().getOffset())
+
                     );
                     res.add(item); });
              }
@@ -1192,6 +1194,11 @@ public class EventManager {
         Collections.sort(res);
         Collections.reverse(res);
         return res;
+    }
+
+    public String getVideoStreamPath(EventAndOrganizationId event,String fileName){
+        var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(""),'|');
+        return localRes[0] + "/" + fileName;
     }
 
     public AlfioMetadata getMetadataForCategory(EventAndOrganizationId event, int categoryId) {

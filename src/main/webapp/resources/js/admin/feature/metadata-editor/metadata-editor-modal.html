@@ -47,7 +47,8 @@
                 <div class="small" style="max-height: 200px; overflow-y: auto">
                     <table class="table table-sm">
                         <tbody>
-                        <tr style="cursor: pointer;" data-ng-click="$ctrl.selectVideo(video, callLink)" data-ng-repeat="video in $ctrl.videoList">
+                        <tr ng-style="{'background-color': video == $ctrl.selectedVideo ? 'lightgreen' : 'none' }" style="cursor: pointer;"
+                            data-ng-click="$ctrl.previewVideo(video, callLink)" data-ng-repeat="video in $ctrl.videoList">
                             <td>{{video.name}}</td>
                             <td>{{video.date | date:"MM/dd/yyyy HH:mm:ss"}}</td>
                         </tr>
@@ -55,8 +56,15 @@
                     </table>
                 </div>
             </div>
-            <div class="col-md-6" data-ng-if="$ctrl.showVideoList">
-                Video preview
+            <div style="border-left: 1px dashed gray;" class="col-md-6 text-center" data-ng-if="$ctrl.showVideoList">
+                <label data-ng-if="$ctrl.selectedVideo"> {{$ctrl.selectedVideo.name}}</label>
+                <div ng-if="$ctrl && $ctrl.selectedVideo">
+                    <video controls preload="auto" height="200px" >
+<!--                        <source src="{{$ctrl.getVStream($ctrl.selectedVideo.name)}}" type="video/mp4" />-->
+                        <source src="{{$ctrl.selectedVideo.previewUrl}}" type="video/mp4" />
+                    </video>
+                    <button data-ng-click="$ctrl.selectVideo(callLink)" type="button" class="btn btn-sm btn-success"><i class="fa fa-check"></i> Select this video</button>
+                </div>
             </div>
         </div>
         <div class="page-header">

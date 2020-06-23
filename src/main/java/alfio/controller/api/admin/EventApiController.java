@@ -63,15 +63,14 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -836,7 +835,26 @@ public class EventApiController {
     public ResponseEntity<List<VideoFile>> getAvailableVideoList(@PathVariable("eventName") String eventName,
                                                        Principal principal) {
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .map(eventManager::getAvailableVideoList));
+            .map( x -> eventManager.getAvailableVideoList(x,eventName)));
+    }
+
+    @GetMapping("/events/{eventName}/getVideoStream/{fileName}")
+    public void getVideoStream(HttpServletResponse response,HttpServletRequest request,
+                                                            @PathVariable("eventName") String eventName,
+                                                            @PathVariable("fileName") String fileName,
+                                                            Principal principal) {
+        var event = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName());
+        var filePath = eventManager.getVideoStreamPath(event.get(), fileName + ".mp4");
+        try {
+            MultipartFileSender.fromFile(new File(filePath))
+                .with(request)
+                .with(response)
+                .serveResource();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 
     @PutMapping("/events/{eventName}/category/{categoryId}/metadata")
