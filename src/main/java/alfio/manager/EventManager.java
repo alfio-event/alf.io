@@ -69,7 +69,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1145,6 +1147,16 @@ public class EventManager {
     }
 
     @SneakyThrows
+    private LocalDateTime convertToNewFormat(String dateStr) {
+        TimeZone utc = TimeZone.getTimeZone("UTC");
+        SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+        sourceFormat.setTimeZone(utc);
+        Date convertedDate = sourceFormat.parse(dateStr);
+        return LocalDateTime.ofInstant(convertedDate.toInstant(),
+            ZoneId.systemDefault());
+    }
+
+    @SneakyThrows
     public List<VideoFile> getAvailableVideoList(EventAndOrganizationId event) {
         var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(""),'|');
         List<VideoFile> res = new ArrayList<>();
@@ -1156,10 +1168,11 @@ public class EventManager {
                     var item = new VideoFile(
                         localRes[1].trim() + "/" + path.getFileName().toString(),
                         path.getFileName().toString(),
-                        LocalDateTime.parse(
-                            StringUtils.split(
-                                path.getFileName().toString().replace(".mp4",""),'_')[1],
-                            DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss"))
+                        convertToNewFormat(StringUtils.split(path.getFileName().toString().replace(".mp4",""),'_')[1])
+//                        LocalDateTime.parse(
+//                            StringUtils.split(
+//                                path.getFileName().toString().replace(".mp4",""),'_')[1],
+//                            DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")).plusHours(OffsetDateTime.now().getOffset())
                     );
                     res.add(item); });
              }
