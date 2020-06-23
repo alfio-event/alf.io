@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import java.util.logging.Logger;
 
 @RestController
 @Log4j2
@@ -40,13 +41,14 @@ public class StripePaymentWebhookController {
 
     @PostMapping("/api/payment/webhook/stripe/payment")
     public ResponseEntity<String> receivePaymentConfirmation(@RequestHeader(value = "Stripe-Signature") String stripeSignature,
-                                                           HttpServletRequest request) {
+                                                            HttpServletRequest request) {
         return RequestUtils.readRequest(request)
             .map(content -> {
                 var result = ticketReservationManager.processTransactionWebhook(content, stripeSignature, PaymentProxy.STRIPE, Map.of());
                 if(result.isSuccessful()) {
                     return ResponseEntity.ok("OK");
                 } else if(result.isError()) {
+                    log.error("StripeWebhook error: " + result.getReason());
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.getReason());
                 }
                 return ResponseEntity.ok(result.getReason());

@@ -41,9 +41,16 @@ public class RequestUtils {
         try (ServletInputStream is = request.getInputStream()){
             return Optional.ofNullable(is.readAllBytes()).map(b -> new String(b, StandardCharsets.UTF_8));
         } catch (Exception e) {
-            log.error("exception during request conversion", e);
+            log.error("exception during request conversion in UTF8", e);
+        }
+        try (ServletInputStream is = request.getInputStream()){
+            log.info("Trying ISO-8859-1 charset");
+            return Optional.ofNullable(is.readAllBytes()).map(b -> new String(b, StandardCharsets.ISO_8859_1));
+        } catch (Exception e) {
+            log.error("exception during request conversion in ISO-8859-1", e);
             return Optional.empty();
         }
+
     }
 
     private static final Pattern SOCIAL_MEDIA_UA = Pattern.compile("facebookexternalhit/|XING-contenttabreceiver/|LinkedInBot/|Twitterbot/");
