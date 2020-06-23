@@ -44,6 +44,7 @@ import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
@@ -61,11 +62,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Consumer;
@@ -1137,14 +1144,40 @@ public class EventManager {
         return !configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault("").isBlank();
     }
 
-    public List<VideoFile> getAvailableVideoList(EventAndOrganizationId event){
+    @SneakyThrows
+    public List<VideoFile> getAvailableVideoList(EventAndOrganizationId event) {
         var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(""),'|');
-        var testData = new VideoFile();
-        testData.setName("prova");
-        testData.setDate(LocalDateTime.now());
-        testData.setLink(localRes[1].trim());
-        List<VideoFile>res = new ArrayList();
-        res.add(testData);
+        List<VideoFile> res = new ArrayList<>();
+        try {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(localRes[0].trim()),
+                    path -> path.toFile().isFile() && path.toString().toLowerCase().endsWith(".mp4"))
+                ){
+                stream.forEach(path -> {
+                    var item = new VideoFile(
+                        localRes[1].trim() + "/" + path.getFileName().toString(),
+                        path.getFileName().toString(),
+                        LocalDateTime.parse(
+                            StringUtils.split(
+                                path.getFileName().toString().replace(".mp4",""),'_')[1],
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss"))
+                    );
+                    res.add(item); });
+             }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+//        provaccia_2020-06-22-07-44-21.mp4
+//        var testData = new VideoFile(Path.of(localRes[1].trim(),));
+//        testData.setName("prova");
+//        testData.setDate(LocalDateTime.now());
+//        testData.setLink(localRes[1].trim());
+//        List<VideoFile>res = new ArrayList();
+//        res.add(testData);
+//        res.sort(VideoFile::compareTo);
+        Collections.sort(res);
+        Collections.reverse(res);
         return res;
     }
 

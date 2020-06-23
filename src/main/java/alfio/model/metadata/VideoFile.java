@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class VideoFile {
+public class VideoFile implements Comparable<VideoFile> {
     private String link;
     private String name;
     private LocalDateTime date;
@@ -39,6 +39,8 @@ public class VideoFile {
         this.date = date;
     }
 
-    public VideoFile() {
+    public int compareTo(VideoFile o) {
+        LocalDateTime u = o.getDate();
+        return date.isBefore(u) ? -1 : date.isEqual(u) ? 0 : 1;
     }
 }
