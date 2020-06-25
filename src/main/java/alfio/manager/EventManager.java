@@ -1151,7 +1151,9 @@ public class EventManager {
     }
 
     @SneakyThrows
-    private LocalDateTime convertToNewFormat(String dateStr) {
+    private LocalDateTime convertToNewFormat(Path path) {
+        var splitted = StringUtils.split(path.getFileName().toString().replace(".mp4",""),'_');
+        var dateStr = splitted[splitted.length - 1];
         TimeZone utc = TimeZone.getTimeZone("UTC");
         SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
         sourceFormat.setTimeZone(utc);
@@ -1173,7 +1175,7 @@ public class EventManager {
                         localRes[1].trim() + "/" + path.getFileName().toString(),
                         path.getFileName().toString(),
                         "/admin/api/events/"+eventName+"/getVideoStream/"+path.getFileName().toString(),
-                        convertToNewFormat(StringUtils.split(path.getFileName().toString().replace(".mp4",""),'_')[1])
+                        convertToNewFormat(path)
 
                     );
                     res.add(item); });
