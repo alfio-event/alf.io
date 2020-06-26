@@ -7,8 +7,8 @@
             <h3>Meeting Links</h3>
             <span>Please insert one or more target links where the attendees must be redirected to attend the event</span>
         </div>
-        <div class="row" data-ng-repeat="callLink in $ctrl.callLinks">
-            <div class="col-xs-12 col-md-5" data-ng-if="!$ctrl.showVideoList">
+        <div data-ng-if="!$ctrl.showVideoList" class="row" data-ng-repeat="callLink in $ctrl.callLinks">
+            <div class="col-xs-12 col-md-5" >
                 <div class="form-group">
                     <label>Meeting Link </label>
                     <input data-ng-if="!$ctrl.enableVideoStream" type="url" data-ng-model="callLink.link" required autocomplete="off" class="form-control" url-text-field="">
@@ -21,19 +21,19 @@
                 </div>
 
             </div>
-            <div class="col-xs-12 col-md-3" data-ng-if="!$ctrl.showVideoList">
+            <div class="col-xs-12 col-md-3" >
                 <div class="form-group">
                     <label for="{{'start-'+$index}}">Active from</label>
                     <input type="text" required single-date data-start-model="callLink.validFrom" max-date="$ctrl.event.formattedEnd" data-ng-model="callLink.validFromString" class="form-control" id="{{'start-'+$index}}">
                 </div>
             </div>
-            <div class="col-xs-12 col-md-3" data-ng-if="!$ctrl.showVideoList">
+            <div class="col-xs-12 col-md-3" >
                 <div class="form-group">
                     <label for="{{'end-'+$index}}">To</label>
                     <input type="text" required single-date data-start-model="callLink.validTo" max-date="$ctrl.event.formattedEnd" data-ng-model="callLink.validToString" class="form-control" id="{{'end-'+$index}}">
                 </div>
             </div>
-            <div class="col-xs-12 col-md-1" data-ng-if="!$ctrl.showVideoList">
+            <div class="col-xs-12 col-md-1" >
                 <div class="form-group">
                     <label></label>
                     <div class="form-control-static">
@@ -41,7 +41,10 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6" data-ng-if="$ctrl.showVideoList">
+
+        </div>
+        <div class="row"  data-ng-if="$ctrl.showVideoList">
+            <div class="col-md-6" >
                 <label>Select a video </label>
                 <div data-ng-if="$ctrl.videoListLoading"><i class="fa fa-refresh"></i></div>
                 <div class="small" style="max-height: 200px; overflow-y: auto">
@@ -56,11 +59,11 @@
                     </table>
                 </div>
             </div>
-            <div style="border-left: 1px dashed gray;" class="col-md-6 text-center" data-ng-if="$ctrl.showVideoList">
-                <label data-ng-if="$ctrl.selectedVideo"> {{$ctrl.selectedVideo.name}}</label>
+            <div style="border-left: 1px dashed gray;" class="col-md-6 text-center" >
+                <label > {{$ctrl.selectedVideo.name}}</label>
                 <div ng-if="$ctrl && $ctrl.selectedVideo">
                     <video controls preload="auto" height="200px" >
-<!--                        <source src="{{$ctrl.getVStream($ctrl.selectedVideo.name)}}" type="video/mp4" />-->
+                        <!--                        <source src="{{$ctrl.getVStream($ctrl.selectedVideo.name)}}" type="video/mp4" />-->
                         <source src="{{$ctrl.selectedVideo.previewUrl}}" type="video/mp4" />
                     </video>
                     <button data-ng-click="$ctrl.selectVideo(callLink)" type="button" class="btn btn-sm btn-success"><i class="fa fa-check"></i> Select this video</button>

@@ -72,6 +72,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -1152,14 +1153,20 @@ public class EventManager {
 
     @SneakyThrows
     private LocalDateTime convertToNewFormat(Path path) {
-        var splitted = StringUtils.split(path.getFileName().toString().replace(".mp4",""),'_');
-        var dateStr = splitted[splitted.length - 1];
-        TimeZone utc = TimeZone.getTimeZone("UTC");
-        SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-        sourceFormat.setTimeZone(utc);
-        Date convertedDate = sourceFormat.parse(dateStr);
-        return LocalDateTime.ofInstant(convertedDate.toInstant(),
-            ZoneId.systemDefault());
+        BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
+        var res = attr.lastModifiedTime();
+        if (res == null) {
+            res = attr.creationTime();
+        }
+        return LocalDateTime.ofInstant( res.toInstant(), ZoneId.systemDefault());
+//        var splitted = StringUtils.split(path.getFileName().toString().replace(".mp4",""),'_');
+//        var dateStr = splitted[splitted.length - 1];
+//        TimeZone utc = TimeZone.getTimeZone("UTC");
+//        SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+//        sourceFormat.setTimeZone(utc);
+//        Date convertedDate = sourceFormat.parse(dateStr);
+//        return LocalDateTime.ofInstant(convertedDate.toInstant(),
+//            ZoneId.systemDefault());
     }
 
     @SneakyThrows
