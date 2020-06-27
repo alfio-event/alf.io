@@ -25,7 +25,8 @@
             videoList: '<',
             showVideoList: '<',
             videoListLoading: '<',
-            selectedVideo: '<'
+            selectedVideo: '<',
+            selectedCallLink: '<'
         },
         controller: MetadataEditorCtrl,
         templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
@@ -212,6 +213,7 @@
             ctrl.videoList = [];
             ctrl.videoListLoading = false;
             ctrl.selectedVideo = null;
+            ctrl.selectedCallLink = null;
         };
 
         ctrl.buttonClick = function(index) {
@@ -240,10 +242,11 @@
             syncSelectedLanguages();
         };
 
-         ctrl.chooseVideo = function(){
+         ctrl.chooseVideo = function(callLink){
             console.log('chooseVideo');
             ctrl.showVideoList = true;
             ctrl.videoListLoading = true;
+            ctrl.selectedCallLink = callLink;
 
             getAvailableVideoList(ctrl.event, EventService).then(function (result) {
                 ctrl.videoList = result.data;
@@ -259,6 +262,7 @@
          ctrl.selectVideo = function(callLink){
              callLink.link = ctrl.selectedVideo.link;
              ctrl.showVideoList = false;
+             ctrl.selectedCallLink = null;
              ctrl.videoList = [];
           }
 
