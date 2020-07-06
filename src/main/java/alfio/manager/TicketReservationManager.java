@@ -1973,7 +1973,7 @@ public class TicketReservationManager {
 
 
     public void updateReservationInvoicingAdditionalInformation(String reservationId, EventAndOrganizationId event, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
-        auditingRepository.insert(reservationId, null, event.getId(), BILLING_DATA_UPDATED, new Date(), RESERVATION, reservationId, json.asJsonString(ticketReservationInvoicingAdditionalInfo));
+        auditingRepository.insert(reservationId, null, event.getId(), BILLING_DATA_UPDATED, new Date(), RESERVATION, reservationId, json.asJsonString(List.of(ticketReservationInvoicingAdditionalInfo)));
         ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, json.asJsonString(ticketReservationInvoicingAdditionalInfo));
     }
 
