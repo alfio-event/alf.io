@@ -53,7 +53,7 @@
 		            {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.displayName}}] [<a href="{{reservationUrl}}" rel="notrack">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
 					</mj-text>
 			    <mj-button background-color="#28a745" href="{{reservationUrl}}">
-			        View reservation
+                    {{#i18n}}email-confirmation.reservation-view{{/i18n}}
 			    </mj-button>
 			</mj-column>
 		</mj-section>
