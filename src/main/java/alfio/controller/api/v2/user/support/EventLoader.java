@@ -162,7 +162,7 @@ public class EventLoader {
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
-                    i18nOverride, availableTicketsCount, customCss);
+                    MessageSourceManager.convertPlaceholdersForEachLanguage(i18nOverride), availableTicketsCount, customCss);
             });
     }
 

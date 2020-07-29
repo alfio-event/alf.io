@@ -412,11 +412,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
         assertTrue(selectedEvent.getI18nOverride().isEmpty());
 
+        configurationRepository.insert("TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("show-event.tickets.left", "{0} left!"))), "");
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
         eventRes = eventApiV2Controller.getEvent(event.getShortName(), new MockHttpSession());
         selectedEvent = eventRes.getBody();
         assertFalse(selectedEvent.getI18nOverride().isEmpty());
         assertEquals("EVENT.vat", selectedEvent.getI18nOverride().get("en").get("common.vat"));
+        assertEquals("{{0}} left!", selectedEvent.getI18nOverride().get("en").get("show-event.tickets.left"));
 
         checkCalendar(event.getShortName());
 
