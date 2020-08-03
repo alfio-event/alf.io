@@ -24,12 +24,12 @@ buildscript {
 
     dependencies {
         classpath 'com.opentable.components:otj-pg-embedded:0.13.3'
-        classpath 'org.postgresql:postgresql:42.2.12'
+        classpath 'org.postgresql:postgresql:42.2.14'
         classpath "org.springframework:spring-jdbc:$springVersion"
 
         //this is for processing the index.html at compile time
         classpath "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.7.1"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.8.1"
         //
     }
 
@@ -46,7 +46,7 @@ buildscript {
 }
 
 plugins {
-    id 'io.freefair.lombok' version '4.1.6'
+    id 'io.freefair.lombok' version '5.1.0'
     id 'java'
     id 'idea'
     id 'org.kordamp.gradle.jacoco' version '0.39.0'
@@ -56,7 +56,7 @@ plugins {
     id 'net.researchgate.release' version '2.8.1'
     id 'org.springframework.boot' version '2.2.6.RELEASE'
     id 'org.sonarqube' version '2.8'
-    id 'net.ltgt.errorprone' version '1.1.1'
+    id 'net.ltgt.errorprone' version '1.2.1'
 	id 'com.github.node-gradle.node' version '2.2.4'
 }
 
@@ -154,7 +154,7 @@ dependencies {
     }
     compile "org.apache.commons:commons-lang3:3.10"
     compile "org.apache.commons:commons-text:1.8"
-    compile "com.opencsv:opencsv:5.1"
+    compile "com.opencsv:opencsv:5.2"
     compile 'commons-codec:commons-codec:1.14'
     compile 'net.sf.biweekly:biweekly:0.6.3'
     compile 'com.atlassian.commonmark:commonmark:0.15.2'
@@ -220,7 +220,7 @@ dependencies {
 
     implementation "org.joda:joda-money:1.0.1"
 
-    testCompile 'org.mock-server:mockserver-netty:5.10.0'
+    testCompile 'org.mock-server:mockserver-netty:5.11.1'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     errorprone('com.google.errorprone:error_prone_core:2.3.4')
