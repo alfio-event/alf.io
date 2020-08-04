@@ -1,0 +1,37 @@
+
+<div class="input-group">
+    <span class="input-group-btn">
+        <button class="btn btn-success disabled" title="Add new replay" type="button"><i class="fa fa-plus"></i></button>
+    </span>
+    <input placeholder="Find replay video.." ng-model="searchText" name="searchText" id="searchText" class="form-control"/>
+</div><!-- /input-group -->
+<!--<div>TYPE {{$ctrl.promoCodeType}}</div>-->
+<h4 data-ng-if="!$ctrl.replays || $ctrl.replays.length == 0">
+    No replays available!
+</h4>
+<div class="table-responsive">
+    <table class="table" data-ng-if="$ctrl.replays.length > 0">
+        <thead>
+        <tr>
+            <th width="50%">Name</th>
+            <th width="40%">Record/Upload date</th>
+            <th>&nbsp;</th>
+        </tr>
+        </thead>
+        <tbody data-ng-repeat="replay in $ctrl.replays | filter:searchText">
+            <tr style="cursor: pointer;" data-ng-click="$ctrl.showReplay(replay.name, replay.previewUrl)">
+                <td>{{replay.name}}
+
+                </td>
+                <td>{{replay.date}}</td>
+    <!--            <td>{{::replay.formattedEnd | formatDate}}</td>-->
+                <td>
+    <!--                <button title="Edit" class="btn btn-xs btn-default" ng-click="$ctrl.changeDate(replay)"><i class="fa fa-edit"></i></button>-->
+    <!--                <button title="Send replay by email" data-ng-hide="!replay.emailReference || replay.expired" class="btn btn-xs btn-success" data-ng-click="$ctrl.sendEmail(replay)"><i class="fa fa-envelope"></i></button>-->
+    <!--                <button title="Disable" data-ng-hide="replay.expired" class="btn btn-xs btn-warning" data-ng-click="$ctrl.disablePromocode(replay)"><i class="fa fa-ban"></i></button>-->
+                    <button title="Remove" class="btn btn-xs btn-danger" data-ng-click="$ctrl.deleteReplay(replay); $event.stopPropagation();"><i class="fa fa-trash"></i></button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

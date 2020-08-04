@@ -62,6 +62,7 @@
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.js"></script>
 
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/promo-codes/promo-codes.js"></script>
+    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/replay/replays.js"></script>
 
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/tickets-remove/tickets-remove.js"></script>
 

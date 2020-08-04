@@ -21,6 +21,9 @@
         <uib-tab index="3" heading="Templates">
             <resources-show for-organization="true" organization-id="organizationConf.organization.id"></resources-show>
         </uib-tab>
+        <uib-tab index="4" heading="Replay" data-ng-if="organizationConf.enableVideoManagement">
+            <replays for-organization="true" organization-id="organizationConf.organization.id"></replays>
+        </uib-tab>
         <uib-tab index="0" heading="Settings">
         <form name="settingsForm" novalidate data-ng-submit="organizationConf.saveSettings(settingsForm)" class="wMarginTop30px">
             <div class="page-header" id="GENERAL">

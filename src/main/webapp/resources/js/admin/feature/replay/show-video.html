@@ -1,0 +1,16 @@
+<div class="modal-header">
+    <h3 >Video preview for {{fileName}}</h3>
+</div>
+<div class="modal-body" style="text-align: center;">
+    <video controls preload="auto" height="400px" >
+        <source src="{{previewUrl}}" type="video/mp4" />
+    </video>
+</div>
+
+<div class="modal-footer">
+    <div class="col-md-4 col-md-push-8 col-xs-12">
+    </div>
+    <div class="col-md-4 col-md-pull-4 col-xs-12 pull-right">
+        <button type="button" class="btn btn-lg btn-default btn-block" data-ng-click="cancel()" style="margin-bottom: 10px"><i class="fa fa-times"></i> Close</button>
+    </div>
+</div>

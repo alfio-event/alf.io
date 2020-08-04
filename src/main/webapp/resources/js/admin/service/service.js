@@ -869,6 +869,17 @@
         };
     }]);
 
+    baseServices.service('ReplayService', ['$http', 'HttpErrorHandler', '$q', function($http, HttpErrorHandler) {
+        return {
+            getList : function(organizationId) {
+                return $http.get('/admin/api/organization/' + organizationId + '/getAvailableVideoListByOrganizationId').error(HttpErrorHandler.handle);
+            },
+            remove : function(organizationId, fileName) {
+                return $http['delete']('/admin/api/organization/'+organizationId+'/deleteVideo/'+ fileName.replace(/\..+$/, '') + "/" + fileName.split('.').pop());
+            }
+        };
+    }]);
+
     baseServices.service('MenuButtonService', ['EventService', '$window', '$uibModal', 'NotificationHandler', function(EventService, $window, $uibModal, NotificationHandler) {
         return {
             configureMenu: function(ctrl) {

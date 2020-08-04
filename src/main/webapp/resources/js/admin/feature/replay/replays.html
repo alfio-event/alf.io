@@ -1,0 +1,14 @@
+<div>
+    <div class="wMarginBottom30px">
+        <div class="page-header">
+            <h3><i class="fa fa-tv"></i> {{$ctrl.replayDescription}}</h3>
+            <h5 class="text-muted">Manage/Handle {{$ctrl.replayDescription}}.</h5>
+        </div>
+        <replay-list organization-id="$ctrl.organizationId"
+                     delete-replay="$ctrl.deleteReplay"
+                     add-replay="$ctrl.addReplay"
+                     show-replay="$ctrl.showReplay"
+                     replays="$ctrl.replays"></replay-list>
+    </div>
+
+</div>

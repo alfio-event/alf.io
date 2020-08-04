@@ -1206,7 +1206,62 @@ public class EventManager {
     }
 
     public String getVideoStreamPath(EventAndOrganizationId event,String fileName){
-        var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(""),'|');
+        return getVideoStreamPathByOrganizationId(event.getOrganizationId(),fileName);
+//        var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(""),'|');
+//        return localRes[0] + "/" + fileName;
+    }
+
+    @SneakyThrows
+    public List<VideoFile> getAvailableVideoListByOrganizationId(int organizationId) {
+        var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(organizationId)).getValueOrDefault(""),'|');
+        List<VideoFile> res = new ArrayList<>();
+        try {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(localRes[0].trim()),
+                path -> path.toFile().isFile() && path.toString().toLowerCase().endsWith(".mp4"))
+            ){
+                stream.forEach(path -> {
+                    var item = new VideoFile(
+                        localRes[1].trim() + "/" + path.getFileName().toString(),
+                        path.getFileName().toString(),
+                        "/admin/api/organization/"+organizationId+"/getVideoStreamByOrganizationId/"+path.getFileName().toString(),
+                        convertToNewFormat(path)
+
+                    );
+                    res.add(item); });
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
+        }
+
+//        provaccia_2020-06-22-07-44-21.mp4
+//        var testData = new VideoFile(Path.of(localRes[1].trim(),));
+//        testData.setName("prova");
+//        testData.setDate(LocalDateTime.now());
+//        testData.setLink(localRes[1].trim());
+//        List<VideoFile>res = new ArrayList();
+//        res.add(testData);
+//        res.sort(VideoFile::compareTo);
+        Collections.sort(res);
+        Collections.reverse(res);
+        return res;
+    }
+
+    @SneakyThrows
+    public Boolean deleteVideo(int organizationId, String fileName) {
+        var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(organizationId)).getValueOrDefault(""),'|');
+        var filePath = localRes[0].trim().endsWith("/") ? localRes[0].trim() + fileName : localRes[0].trim() + "/" + fileName;
+        Path fileToDeletePath = Paths.get(filePath);
+        try {
+          return Files.deleteIfExists(fileToDeletePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    public String getVideoStreamPathByOrganizationId(int organizationId,String fileName){
+        var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(organizationId)).getValueOrDefault(""),'|');
         return localRes[0] + "/" + fileName;
     }
 

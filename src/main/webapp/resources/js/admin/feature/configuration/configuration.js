@@ -347,11 +347,13 @@
                     organizationConf.cancel = function() {
                         load();
                     };
+                    organizationConf.enableVideoManagement = organizationConf.settings.GENERAL.findIndex(x => x.key == 'LOCAL_RES_FOR_VIDEOSTREAM' && x.value ) != -1;
                 }, function() {
                     organizationConf.loading = false;
                 });
         };
         load();
+
         organizationConf.saveSettings = function(frm) {
             if(!frm.$valid) {
                 return;

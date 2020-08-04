@@ -857,6 +857,39 @@ public class EventApiController {
 
     }
 
+    @GetMapping("/organization/{organizationId}/getAvailableVideoListByOrganizationId")
+    public ResponseEntity<List<VideoFile>> getAvailableVideoListByOrganizationId(@PathVariable("organizationId") int organizationId,
+                                                                 Principal principal) {
+        var res = eventManager.getAvailableVideoListByOrganizationId(organizationId);
+        return ResponseEntity.of(Optional.of(res));
+    }
+
+    @GetMapping("/organization/{organizationId}/getVideoStreamByOrganizationId/{fileName}")
+    public void getVideoStreamByOrganizationId(HttpServletResponse response, HttpServletRequest request,
+                               @PathVariable("organizationId") int organizationId,
+                               @PathVariable("fileName") String fileName,
+                               Principal principal) {
+//        var event = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName());
+        var filePath = eventManager.getVideoStreamPathByOrganizationId(organizationId, fileName + ".mp4");
+        try {
+            MultipartFileSender.fromFile(new File(filePath))
+                .with(request)
+                .with(response)
+                .serveResource();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+
+    @DeleteMapping("/organization/{organizationId}/deleteVideo/{fileName}/{fileExt}")
+    public ResponseEntity<Boolean> deleteVideo(@PathVariable("organizationId") int organizationId,
+                                                @PathVariable("fileName") String fileName,
+                                                @PathVariable("fileExt") String fileExt
+                                                ) {
+        return ResponseEntity.of(Optional.of(eventManager.deleteVideo(organizationId, fileName+"."+fileExt)));
+    }
     @PutMapping("/events/{eventName}/category/{categoryId}/metadata")
     public ResponseEntity<Boolean> updateCategoryMetadata(@PathVariable("eventName") String eventName,
                                                   @PathVariable("categoryId") int categoryId,
