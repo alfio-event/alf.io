@@ -82,42 +82,43 @@ class RoleAndOrganizationsTransactionPreparer {
         "(select organization.id from organization where 'ROLE_ADMIN' in (select role from ba_user inner join authority on ba_user.username = authority.username where ba_user.username = ?))";
 
     public static void prepareTransactionalConnection(Connection connection) throws SQLException {
-        if (isInAHttpRequest()) {
+        if (!isInAHttpRequest()) {
+            return;
+        }
+        boolean mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
+        if (!mustCheck) {
+            return;
+        }
 
-            boolean mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
-            if (mustCheck) {
+        try (var s = connection.createStatement()) {
+            s.execute("reset alfio.checkRowAccess");
+        }
+        try (var s = connection.createStatement()) {
+            s.execute("reset alfio.currentUserOrgs");
+        }
 
-                try (var s = connection.createStatement()) {
-                    s.execute("reset alfio.checkRowAccess");
+        Set<Integer> orgIds = new TreeSet<>();
+        try (var s = connection.prepareStatement(QUERY_ORG_FOR_USER)) {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            s.setString(1, username);
+            s.setString(2, username);
+            try (var rs = s.executeQuery()) {
+                while (rs.next()) {
+                    orgIds.add(rs.getInt(1));
                 }
-                try (var s = connection.createStatement()) {
-                    s.execute("reset alfio.currentUserOrgs");
-                }
+            }
+        }
 
-                Set<Integer> orgIds = new TreeSet<>();
-                try (var s = connection.prepareStatement(QUERY_ORG_FOR_USER)) {
-                    String username = SecurityContextHolder.getContext().getAuthentication().getName();
-                    s.setString(1, username);
-                    s.setString(2, username);
-                    try (var rs = s.executeQuery()) {
-                        while (rs.next()) {
-                            orgIds.add(rs.getInt(1));
-                        }
-                    }
-                }
-
-                if (orgIds.isEmpty()) {
-                    log.warn("orgIds is empty, was not able to apply currentUserOrgs");
-                } else {
-                    try (var s = connection.createStatement()) {
-                        s.execute("set local alfio.checkRowAccess = true");
-                    }
-                    try (var s = connection.createStatement()) {
-                        String formattedOrgIds = orgIds.stream().map(orgId -> Integer.toString(orgId)).collect(Collectors.joining(","));
-                        //can't use placeholder in a prepared statement when using 'set ...', but cannot be sql injected as the source is a set of integers
-                        s.execute("set local alfio.currentUserOrgs = '" + formattedOrgIds + "'");
-                    }
-                }
+        if (orgIds.isEmpty()) {
+            log.warn("orgIds is empty, was not able to apply currentUserOrgs");
+        } else {
+            try (var s = connection.createStatement()) {
+                s.execute("set local alfio.checkRowAccess = true");
+            }
+            try (var s = connection.createStatement()) {
+                String formattedOrgIds = orgIds.stream().map(orgId -> Integer.toString(orgId)).collect(Collectors.joining(","));
+                //can't use placeholder in a prepared statement when using 'set ...', but cannot be sql injected as the source is a set of integers
+                s.execute("set local alfio.currentUserOrgs = '" + formattedOrgIds + "'");
             }
         }
     }
