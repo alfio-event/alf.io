@@ -91,7 +91,7 @@
         }
 
         function errorHandler(error) {
-            $log.error(error.data);
+            console.error(error.data);
             alert(error.data);
         }
 
@@ -267,7 +267,6 @@
                             return;
                         }
                         $scope.$close(true);
-
 
                         if(forEvent) {
                             promocode.categories = _.filter(promocode.categories, function(i) {return i != null;});

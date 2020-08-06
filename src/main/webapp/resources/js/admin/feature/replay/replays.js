@@ -3,7 +3,7 @@
 
     angular.module('adminApplication')
         .component('replays', {
-            controller: ['$window', '$uibModal', '$q', 'ReplayService', 'ConfigurationService', ReplayCtrl],
+            controller: ['$window', '$uibModal', '$q', 'ReplayService', 'ConfigurationService','Upload', ReplayCtrl],
             templateUrl: '../resources/js/admin/feature/replay/replays.html',
             bindings: {
                 forOrganization: '<',
@@ -18,18 +18,25 @@
                 replays: '<',
                 deleteReplay: '<',
                 addReplay: '<',
-                showReplay: '<'
+                showReplay: '<',
+                uploadVideo: '<',
+                fileArray: '<',
+                currentProgress: '<',
+                isUploading: '<'
             }
         });
 
     function ReplayListCtrl() {}
 
-    function ReplayCtrl($window, $uibModal, $q, ReplayService, ConfigurationService) {
+    function ReplayCtrl($window, $uibModal, $q, ReplayService, ConfigurationService, Upload) {
         var ctrl = this;
         ctrl.isInternal = isInternal;
         ctrl.deleteReplay = deleteReplay;
         ctrl.addReplay = addReplay;
         ctrl.showReplay = showReplay;
+        ctrl.uploadVideo = uploadVideo;
+        ctrl.isUploading = false;
+        ctrl.currentProgress = '0%';
 
         ctrl.$onInit = function() {
             loadData();
@@ -40,6 +47,8 @@
                 return ReplayService.getList(ctrl.organizationId)
             };
             ctrl.replayDescription = 'Replay video management';
+            ctrl.currentProgress = '0%';
+            ctrl.isUploading = false;
 
             loader().then(function(res) {
                 console.log('Replay loaded', res);
@@ -53,7 +62,7 @@
         }
 
         function errorHandler(error) {
-            $log.error(error.data);
+            console.error(error.data);
             alert(error.data);
         }
 
@@ -82,38 +91,48 @@
             });
         }
 
-
         function addReplay() {
             var organizationId = ctrl.organizationId;
-            //TODO: transform component style
-            $uibModal.open({
-                size:'lg',
-                templateUrl: '../resources/js/admin/feature/replay/edit-promo-code-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-                    $scope.replayDescription = ctrl.replayDescription;
+            angular.element(document.querySelector('#file')).click();
 
-                    var now = moment();
-                    var eventBegin = moment().add(1,'d').endOf('d');
-
-                    $scope.cancel = function() {
-                        $scope.$dismiss('canceled');
-                    };
-                    $scope.update = function(form, promocode) {
-                        if(!form.$valid) {
-                            return;
-                        }
-                        $scope.$close(true);
-
-//                        ReplayService.add(promocode).then(function(result) {
-//                            validationErrorHandler(result, form, form.promocode).then(function() {
-//                                $scope.$close(true);
-//                            });
-//                        }, errorHandler).then(loadData);
-                    };
-
-                }
-            });
         };
+
+        function uploadVideo(file){
+            console.log('UploadVideo', file);
+            ctrl.isUploading = true;
+            Upload.upload({
+                        url: '/admin/api/organization/uploadReplayVideo',
+                        fields: {'organizationId': ctrl.organizationId }, // additional data to send
+                        file: file
+                    }).then(function (resp) {
+                        console.log('Success ' + resp.config.data + 'uploaded. Response: ' + resp.data);
+//                        ctrl.isUploading = false;
+//                        ctrl.progress = '0%';
+                        loadData();
+                    }, function (resp) {
+                        console.log('Error status: ' + resp.status);
+                        ctrl.isUploading = false;
+                        ctrl.currentProgress = 0;
+                    }, function (evt) {
+                        var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+                        console.log('progress: ' + progressPercentage + '% ' + evt.config.data);
+                        ctrl.currentProgress = progressPercentage+'%';
+                    });
+//            var reader = new FileReader();
+//                reader.onload = function(e) {
+//                    $scope.$applyAsync(function() {
+//                        var imageBase64 = e.target.result;
+//                        $scope.imageBase64 = imageBase64;
+//                        FileUploadService.uploadImageWithResize({file : imageBase64.substring(imageBase64.indexOf('base64,') + 7), type : files[0].type, name : files[0].name}).success(function(imageId) {
+//                            $scope.obj.fileBlobId = imageId;
+//                        })
+//                    })
+//
+//                };
+//            ReplayService.uploadVideo({file : files[0], type : files[0].type, name : files[0].name}, ctrl.organizationId)
+//                .then(function(){
+//                    console.log('Upload completed');
+//                } , errorHandler);
+        }
     }
 })();

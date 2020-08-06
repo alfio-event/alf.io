@@ -90,6 +90,10 @@ public class FileUploadManager {
         return digest;
     }
 
+    public String uploadVideo(UploadBase64FileModification file) {
+        return "Uploaded";
+    }
+
     public void cleanupUnreferencedBlobFiles(Date date) {
         int deleted = repository.cleanupUnreferencedBlobFiles(date);
         log.debug("removed {} unused file_blob", deleted);

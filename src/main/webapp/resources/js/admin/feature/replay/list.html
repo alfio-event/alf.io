@@ -1,10 +1,16 @@
 
 <div class="input-group">
     <span class="input-group-btn">
-        <button class="btn btn-success disabled" title="Add new replay" type="button"><i class="fa fa-plus"></i></button>
+        <button ngf-select="$ctrl.uploadVideo($file)" ngf-pattern="'.mp4'" accept=".mp4"  class="btn btn-success" title="Add new replay" type="button"><i class="fa fa-plus"></i></button>
     </span>
     <input placeholder="Find replay video.." ng-model="searchText" name="searchText" id="searchText" class="form-control"/>
 </div><!-- /input-group -->
+<div style="width: 100%" ng-if="$ctrl.isUploading">
+    <label>Loading file.. {{$ctrl.currentProgress}}</label>
+    <div class="progress">
+        <div class="progress-bar" role="progressbar" ng-style="{ 'width' : $ctrl.currentProgress }" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+</div>
 <!--<div>TYPE {{$ctrl.promoCodeType}}</div>-->
 <h4 data-ng-if="!$ctrl.replays || $ctrl.replays.length == 0">
     No replays available!

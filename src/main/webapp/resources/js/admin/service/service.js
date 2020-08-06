@@ -876,6 +876,9 @@
             },
             remove : function(organizationId, fileName) {
                 return $http['delete']('/admin/api/organization/'+organizationId+'/deleteVideo/'+ fileName.replace(/\..+$/, '') + "/" + fileName.split('.').pop());
+            },
+            uploadVideo : function(file, organizationId) {
+                return $http['post']('/admin/api/organization/uploadReplayVideo?organizationId='+organizationId, file).error(HttpErrorHandler.handle);
             }
         };
     }]);

@@ -64,9 +64,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -890,6 +892,25 @@ public class EventApiController {
                                                 ) {
         return ResponseEntity.of(Optional.of(eventManager.deleteVideo(organizationId, fileName+"."+fileExt)));
     }
+
+    @PostMapping("/organization/uploadReplayVideo")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("organizationId") int organizationId) {
+
+        if (file.isEmpty()) {
+            return new ResponseEntity<String>("No file selected", new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        try {
+            // Get the file and save it to FS
+            byte[] bytes = file.getBytes();
+            return ResponseEntity.of(Optional.of(eventManager.saveVideo(organizationId,bytes,file.getOriginalFilename())));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ResponseEntity<String>(e.getMessage(), new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @PutMapping("/events/{eventName}/category/{categoryId}/metadata")
     public ResponseEntity<Boolean> updateCategoryMetadata(@PathVariable("eventName") String eventName,
                                                   @PathVariable("categoryId") int categoryId,
