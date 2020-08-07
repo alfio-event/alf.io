@@ -3,7 +3,7 @@
     <span class="input-group-btn">
         <button ngf-select="$ctrl.uploadVideo($file)" ngf-pattern="'.mp4'" accept=".mp4"  class="btn btn-success" title="Add new replay" type="button"><i class="fa fa-plus"></i></button>
     </span>
-    <input placeholder="Find replay video.." ng-model="searchText" name="searchText" id="searchText" class="form-control"/>
+    <input placeholder="Find replay video.." ng-model="searchText.name" name="searchText" id="searchText" class="form-control"/>
 </div><!-- /input-group -->
 <div style="width: 100%" ng-if="$ctrl.isUploading">
     <label>Loading file.. {{$ctrl.currentProgress}}</label>
@@ -19,17 +19,25 @@
     <table class="table" data-ng-if="$ctrl.replays.length > 0">
         <thead>
         <tr>
-            <th width="50%">Name</th>
-            <th width="40%">Record/Upload date</th>
+            <th width="50%">
+                <span title="Order by name" style="cursor: pointer" ng-click="$ctrl.myOrderBy = $ctrl.myOrderBy == 'name' ? '-name' : 'name'">Name</span>
+                <i ng-if="$ctrl.myOrderBy == 'name'" class="pull-right fa fa-sort-up"></i>
+                <i ng-if="$ctrl.myOrderBy == '-name'" class="pull-right fa fa-sort-down"></i>
+            </th>
+            <th width="40%">
+                <span title="Order by upload date" style="cursor: pointer" ng-click="$ctrl.myOrderBy = $ctrl.myOrderBy == 'date' ? '-date' : 'date'">Record/Upload date</span>
+                <i ng-if="$ctrl.myOrderBy == 'date'" class="pull-right fa fa-sort-up"></i>
+                <i ng-if="$ctrl.myOrderBy == '-date'" class="pull-right fa fa-sort-down"></i>
+            </th>
             <th>&nbsp;</th>
         </tr>
         </thead>
-        <tbody data-ng-repeat="replay in $ctrl.replays | filter:searchText">
+        <tbody data-ng-repeat="replay in $ctrl.replays | orderBy:$ctrl.myOrderBy | filter:searchText">
             <tr style="cursor: pointer;" data-ng-click="$ctrl.showReplay(replay.name, replay.previewUrl)">
                 <td>{{replay.name}}
 
                 </td>
-                <td>{{replay.date}}</td>
+                <td>{{replay.date | date :  "dd/MM/yyyy HH:mm"}}</td>
     <!--            <td>{{::replay.formattedEnd | formatDate}}</td>-->
                 <td>
     <!--                <button title="Edit" class="btn btn-xs btn-default" ng-click="$ctrl.changeDate(replay)"><i class="fa fa-edit"></i></button>-->
