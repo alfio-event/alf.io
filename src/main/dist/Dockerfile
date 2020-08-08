@@ -31,10 +31,13 @@ USER 1001
 RUN mkdir /home/alfio/app
 RUN mkdir /home/alfio/users
 RUN mkdir /home/alfio/video
+RUN mkdir /home/alfio/ondemand
 VOLUME /home/alfio/users
 RUN chown -R alfio:alfio /home/alfio/users
 VOLUME /home/alfio/video
 RUN chown -R alfio:alfio /home/alfio/video
+VOLUME /home/alfio/ondemand
+RUN chown -R alfio:alfio /home/alfio/ondemand
 WORKDIR /home/alfio/app
 
 RUN mkdir logs
