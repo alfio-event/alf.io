@@ -225,13 +225,16 @@ public class AdminReservationApiController {
             .map(entry -> SerializablePair.of(eventManager.getTicketCategoryById(entry.getKey(), triple.getRight().getId()), entry.getValue()))
             .collect(Collectors.toList());
         TicketReservation reservation = triple.getLeft();
-        return new TicketReservationDescriptor(reservation, ticketReservationManager.orderSummaryForReservationId(reservationId, triple.getRight()), tickets);
+        return new TicketReservationDescriptor(reservation,
+            ticketReservationManager.loadAdditionalInfo(reservationId),
+            ticketReservationManager.orderSummaryForReservationId(reservationId, triple.getRight()), tickets);
     }
 
     @RequiredArgsConstructor
     @Getter
     public static class TicketReservationDescriptor {
         private final TicketReservation reservation;
+        private final TicketReservationAdditionalInfo additionalInfo;
         private final OrderSummary orderSummary;
         private final List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory;
     }

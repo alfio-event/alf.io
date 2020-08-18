@@ -16,6 +16,7 @@
  */
 package alfio.manager.system;
 
+import alfio.config.Initializer;
 import alfio.model.ExtensionSupport;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
@@ -25,6 +26,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Component
+@Profile("!"+ Initializer.PROFILE_INTEGRATION_TEST)
 @ConfigurationProperties("alfio.override.system")
 @Getter
 @Setter

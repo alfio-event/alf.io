@@ -34,6 +34,7 @@ import alfio.controller.form.*;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
+import alfio.manager.ExtensionManager.ExtensionEvent;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
@@ -102,6 +103,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.manager.ExtensionManager.ExtensionEvent.*;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.Assert.*;
@@ -309,7 +311,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         // as soon as the test starts, insert the extension in the database (prepare the environment)
         try (var extensionInputStream = getClass().getResourceAsStream("/extension.js")) {
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
-            String concatenation = String.join("\n", extensionStream);
+            String concatenation = String.join("\n", extensionStream).replace("EVENTS", Arrays.stream(ExtensionEvent.values()).map(ee -> "'"+ee.name()+"'").collect(Collectors.joining(",")));
             extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
             extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
 //            System.out.println(extensionRepository.getScript("-", "asyncName"));
@@ -321,8 +323,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         // check if EVENT_CREATED was logged
         List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-        assertEventLogged(extLogs, "EVENT_CREATED", 4, 1);
-        assertEventLogged(extLogs, "EVENT_CREATED", 4, 3);
+        assertEventLogged(extLogs, ExtensionEvent.EVENT_METADATA_UPDATE.name(), 6, 1);
+        assertEventLogged(extLogs, "EVENT_CREATED", 6, 3);
+        assertEventLogged(extLogs, "EVENT_CREATED", 6, 5);
 
 
         {
@@ -409,11 +412,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
         assertTrue(selectedEvent.getI18nOverride().isEmpty());
 
+        configurationRepository.insert("TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("show-event.tickets.left", "{0} left!"))), "");
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
         eventRes = eventApiV2Controller.getEvent(event.getShortName(), new MockHttpSession());
         selectedEvent = eventRes.getBody();
         assertFalse(selectedEvent.getI18nOverride().isEmpty());
         assertEquals("EVENT.vat", selectedEvent.getI18nOverride().get("en").get("common.vat"));
+        assertEquals("{{0}} left!", selectedEvent.getI18nOverride().get("en").get("show-event.tickets.left"));
 
         checkCalendar(event.getShortName());
 
@@ -931,8 +936,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             validatePayment(event.getShortName(), reservationId);
 
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-            assertEventLogged(extLogs, "RESERVATION_CONFIRMED", 4, 1);
-            assertEventLogged(extLogs, "TICKET_ASSIGNED", 4, 3);
+            assertEventLogged(extLogs, RESERVATION_CONFIRMED.name(), 8, 1);
+            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT.name(), 8, 3);
+            assertEventLogged(extLogs, TICKET_ASSIGNED.name(), 8, 5);
+            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT.name(), 8, 7);
 
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE);

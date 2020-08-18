@@ -69,6 +69,8 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     private final Integer availableTicketsCount;
 
+    private final String customCss;
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -218,6 +220,9 @@ public class EventWithAdditionalInfo implements DateValidity {
         return event.getFormat();
     }
 
+    public String getCustomCss() {
+        return customCss;
+    }
 
     @AllArgsConstructor
     @Getter

@@ -17,10 +17,19 @@
 package alfio.extension;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.stream.Collectors;
 
 public class ExtensionUtils {
 
@@ -34,5 +43,22 @@ public class ExtensionUtils {
         } catch (NoSuchAlgorithmException nae) {
             throw new IllegalStateException(nae);
         }
+    }
+
+    public static String computeHMAC(String secret, String... parts) {
+        if(parts == null || parts.length == 0) {
+            return "";
+        }
+        var text = Arrays.stream(parts).map(StringUtils::trimToEmpty).collect(Collectors.joining(""));
+        return new HmacUtils(HmacAlgorithms.HMAC_SHA_256, secret).hmacHex(text);
+    }
+
+    public static String formatDateTime(ZonedDateTime dateTime, String formatPattern, boolean utc) {
+        var dateTimeToFormat = utc ? dateTime.withZoneSameInstant(ZoneId.of("UTC")) : dateTime;
+        return dateTimeToFormat.format(DateTimeFormatter.ofPattern(formatPattern));
+    }
+
+    public static String base64UrlSafe(String input) {
+        return Base64.getUrlEncoder().encodeToString(input.getBytes(StandardCharsets.UTF_8));
     }
 }

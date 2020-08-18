@@ -16,11 +16,34 @@
  */
 package alfio.manager;
 
-import static alfio.model.EmailMessage.Status.ERROR;
-import static alfio.model.EmailMessage.Status.IN_PROCESS;
-import static alfio.model.EmailMessage.Status.RETRY;
-import static alfio.model.EmailMessage.Status.WAITING;
-import static alfio.model.system.ConfigurationKeys.BASE_URL;
+import alfio.controller.support.TemplateProcessor;
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.*;
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.Mailer;
+import alfio.model.*;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Organization;
+import alfio.repository.*;
+import alfio.repository.user.OrganizationRepository;
+import alfio.util.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.gson.*;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.security.crypto.codec.Hex;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,82 +53,15 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.codec.Hex;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-
-import alfio.controller.support.TemplateProcessor;
-import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.support.CustomMessageManager;
-import alfio.manager.support.MultipartTemplateGenerator;
-import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.manager.support.TemplateGenerator;
-import alfio.manager.support.TextTemplateGenerator;
-import alfio.manager.system.ConfigurationLevel;
-import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.Mailer;
-import alfio.model.EmailMessage;
-import alfio.model.Event;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.EventDescription;
-import alfio.model.LightweightMailMessage;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketFieldConfigurationDescriptionAndValue;
-import alfio.model.TicketReservation;
-import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.Organization;
-import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.EmailMessageRepository;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketFieldRepository;
-import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
-import alfio.repository.user.OrganizationRepository;
-import alfio.util.EventUtil;
-import alfio.util.Json;
-import alfio.util.LocaleUtil;
-import alfio.util.MustacheCustomTag;
-import alfio.util.TemplateManager;
-import lombok.extern.log4j.Log4j2;
+import static alfio.model.EmailMessage.Status.*;
+import static alfio.model.system.ConfigurationKeys.BASE_URL;
 
 @Component
 @Log4j2
@@ -216,16 +172,23 @@ public class NotificationManager {
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
             if(model.containsKey("onlineCheckInUrl")) { // special case: online event
                 var messageSource = messageSourceManager.getMessageSourceForEvent(event);
-                description = description + "\n\n" +
-                    "******************************************\n" +
-                    messageSource.getMessage("email.event.online.important-information", null, locale) + "\n\n" +
-                    messageSource.getMessage("event.location.online", null, locale) + "\n" +
-                    messageSource.getMessage("email.event.online.check-in", null, locale) + "\n" +
-                    model.get("onlineCheckInUrl") + "\n\n" +
-                    MustacheCustomTag.renderToTextCommonmark(model.get("prerequisites"));
+                description = description + buildOnlineCheckInInformation(messageSource).apply(model, locale);
             }
             return EventUtil.getIcalForEvent(event, category, description, organization).orElse(null);
         };
+    }
+
+    private static BiFunction<Map<String,String>, Locale, String> buildOnlineCheckInInformation(MessageSource messageSource) {
+        return (model, locale) -> "\n\n******************************************\n" +
+            messageSource.getMessage("email.event.online.important-information", null, locale) + "\n\n" +
+            messageSource.getMessage("event.location.online", null, locale) + "\n" +
+            messageSource.getMessage("email.event.online.check-in", null, locale) + "\n" +
+            model.get("onlineCheckInUrl") + "\n\n" +
+            MustacheCustomTag.renderToTextCommonmark(model.getOrDefault("prerequisites", ""));
+    }
+
+    public String buildOnlineCheckInText(Map<String, String> model, Locale locale, MessageSource messageSource) {
+        return buildOnlineCheckInInformation(messageSource).apply(model, locale);
     }
 
     private static Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(EventRepository eventRepository, Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {

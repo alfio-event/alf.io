@@ -241,8 +241,8 @@ public class EventApiController {
     }
 
     @PostMapping("/events/new")
-    public String insertEvent(@RequestBody EventModification eventModification) {
-        eventManager.createEvent(eventModification);
+    public String insertEvent(@RequestBody EventModification eventModification, Principal principal) {
+        eventManager.createEvent(eventModification, principal.getName());
         return OK;
     }
 
@@ -716,7 +716,7 @@ public class EventApiController {
         if(!metadataModification.isValid()) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+        return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> eventManager.updateMetadata(event, metadataModification.toMetadataObj())));
     }
 

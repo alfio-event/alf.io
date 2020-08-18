@@ -19,6 +19,8 @@ package alfio;
 import alfio.config.Initializer;
 import alfio.config.support.PlatformProvider;
 import alfio.manager.FileDownloadManager;
+import alfio.manager.system.ExternalConfiguration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
@@ -28,7 +30,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ByteArrayResource;
-
 
 import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
@@ -41,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -120,6 +122,14 @@ public class TestConfiguration {
     @Bean
     @Profile(Initializer.PROFILE_INTEGRATION_TEST)
     public Supplier<Executor> getCurrentThreadExecutorSupplier() {
-        return () -> (job) -> job.run();
+        return () -> Runnable::run;
+    }
+
+    @Bean
+    @Profile(Initializer.PROFILE_INTEGRATION_TEST)
+    public ExternalConfiguration externalConfiguration() {
+        ExternalConfiguration externalConfiguration = new ExternalConfiguration();
+        externalConfiguration.setSettings(Map.of(ConfigurationKeys.BASE_URL.name(), "http://localhost:8080"));
+        return externalConfiguration;
     }
 }

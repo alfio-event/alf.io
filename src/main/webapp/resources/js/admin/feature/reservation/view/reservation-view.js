@@ -93,7 +93,7 @@
                     vatNr: src.vatNr,
                     vatCountryCode: src.vatCountryCode,
                     invoiceRequested: src.invoiceRequested,
-                    invoicingAdditionalInfo: angular.copy(src.invoicingAdditionalInfo)
+                    invoicingAdditionalInfo: angular.copy(ctrl.reservationDescriptor.additionalInfo.invoicingAdditionalInfo)
                 },
                 advancedBillingOptions: {
                     vatApplied: vatApplied

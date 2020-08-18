@@ -132,17 +132,12 @@ to make a couple of changes:
 
  * Build application and Dockerfile:
  ```
- ./gradlew distribution
- ```
-
- * Enter the directory:
- ```
- cd build/dockerize
+ docker run --rm -u gradle -v "$PWD":/home/gradle/project -w /home/gradle/project gradle:jdk11 gradle distribution
  ```
 
  * Create docker image:
  ```
- docker build -t alfio/alf.io .
+ docker build -t alfio/alf.io ./build/dockerize
  ```
 
 ### About the included AppleWWDRCA.cer

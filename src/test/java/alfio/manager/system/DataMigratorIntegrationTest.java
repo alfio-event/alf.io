@@ -124,7 +124,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now().plusHours(1)),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, List.of(PaymentProxy.ON_SITE), categories, false, new LocationDescriptor("","","",""), 7, null, null, AlfioMetadata.empty());
-        eventManager.createEvent(em);
+        eventManager.createEvent(em, username);
         return Pair.of(eventManager.getSingleEvent(eventName, username), username);
     }
 
