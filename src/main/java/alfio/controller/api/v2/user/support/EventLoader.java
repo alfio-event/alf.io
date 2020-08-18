@@ -102,7 +102,7 @@ public class EventLoader {
                 boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
                 String recaptchaApiKey = null;
                 if (captchaForTicketSelection) {
-                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null);
+                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrNull();
                 }
                 //
                 boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurationsValues);
@@ -155,7 +155,7 @@ public class EventLoader {
                     availableTicketsCount = ticketRepository.countFreeTicketsForPublicStatistics(event.getId());
                 }
 
-                var customCss = configurationsValues.get(EVENT_CUSTOM_CSS).getValueOrDefault(null);
+                var customCss = configurationsValues.get(EVENT_CUSTOM_CSS).getValueOrNull();
 
                 return new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
@@ -169,6 +169,6 @@ public class EventLoader {
     public boolean isRecaptchaForTicketSelectionEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
         Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_TICKET_SELECTION) && configurationValues.containsKey(RECAPTCHA_API_KEY));
         return configurationValues.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault(false) &&
-            configurationValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
+            configurationValues.get(RECAPTCHA_API_KEY).getValueOrNull() != null;
     }
 }

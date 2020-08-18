@@ -170,7 +170,7 @@ public class IndexController {
             }
         } else {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
-                var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrDefault(null);
+                var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrNull();
                 var idx = INDEX_PAGE.cloneNode(true);
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
                 var head = idx.getElementsByTagName("head").get(0);

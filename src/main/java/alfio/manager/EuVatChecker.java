@@ -141,7 +141,7 @@ public class EuVatChecker {
     }
 
     static String organizerCountry(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(ConfigurationKeys.COUNTRY_OF_BUSINESS, ConfigurationLevel.event(eventAndOrganizationId)).getValueOrDefault(null);
+        return configurationManager.getFor(ConfigurationKeys.COUNTRY_OF_BUSINESS, ConfigurationLevel.event(eventAndOrganizationId)).getValueOrNull();
     }
 
     private static boolean reverseChargeEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {

@@ -458,7 +458,7 @@ public class ConfigurationManager {
     public boolean isRecaptchaForOfflinePaymentAndFreeEnabled(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
         Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS) && configurationValues.containsKey(RECAPTCHA_API_KEY));
         return configurationValues.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
-            configurationValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
+            configurationValues.get(RECAPTCHA_API_KEY).getValueOrNull() != null;
     }
 
     public boolean isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel configurationLevel) {
@@ -601,6 +601,10 @@ public class ConfigurationManager {
 
         public Optional<String> getValue() {
             return configuration.map(ConfigurationKeyValuePathLevel::getValue);
+        }
+
+        public String getValueOrNull() {
+            return getValue().orElse(null);
         }
 
         public String getValueOrDefault(String defaultValue) {
