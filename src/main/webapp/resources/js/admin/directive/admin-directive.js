@@ -325,7 +325,13 @@
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
             controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService) {
 
-                $scope.baseUrl = ConfigurationService.getBaseUrl();
+                ConfigurationService.loadInstanceSettings().then(function(result) {
+                    var data = result.data;
+                    console.log(data);
+                    $scope.baseUrl = data.baseUrl;
+                    $scope.descriptionLimit = data.descriptionMaxLength;
+                });
+
 
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
@@ -648,7 +654,10 @@
                     return angular.isDefined(index) ? index + "-" + name : name;
                 };
 
-                $scope.baseUrl = ConfigurationService.getBaseUrl();
+                ConfigurationService.loadInstanceSettings().then(function(result) {
+                    $scope.baseUrl = result.baseUrl;
+                    $scope.descriptionLimit = result.descriptionMaxLength;
+                });
 
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;

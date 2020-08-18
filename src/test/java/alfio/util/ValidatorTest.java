@@ -30,12 +30,15 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ValidatorTest {
 
@@ -51,6 +54,20 @@ public class ValidatorTest {
     public void init() {
         eventModification = mock(EventModification.class);
         errors = new MapBindingResult(new HashMap<>(), "test");
+    }
+
+    @Test
+    void successfulDescriptionValidation() {
+        when(eventModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
+        Validator.validateEventHeader(Optional.empty(), eventModification, 5, errors);
+        assertFalse(errors.hasFieldErrors("description"));
+    }
+
+    @Test
+    void failedDescriptionValidation() {
+        when(eventModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
+        Validator.validateEventHeader(Optional.empty(), eventModification, 4, errors);
+        assertTrue(errors.hasFieldErrors("description"));
     }
 
     @Test

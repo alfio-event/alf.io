@@ -22,6 +22,7 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -29,6 +30,7 @@ import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -190,11 +192,12 @@ public class EventApiController {
 
     @PostMapping("/events/check")
     public ValidationResult validateEventRequest(@RequestBody EventModification eventModification, Errors errors) {
-        return validateEvent(eventModification,errors);
+        int descriptionMaxLength = configurationManager.getFor(ConfigurationKeys.DESCRIPTION_MAXLENGTH, ConfigurationLevel.system()).getValueAsIntOrDefault(4096);
+        return validateEvent(eventModification, errors, descriptionMaxLength);
     }
 
-    public static ValidationResult validateEvent(EventModification eventModification, Errors errors) {
-        ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
+    public static ValidationResult validateEvent(EventModification eventModification, Errors errors, int descriptionMaxLength) {
+        ValidationResult base = validateEventHeader(Optional.empty(), eventModification, descriptionMaxLength, errors)
             .or(validateEventDates(eventModification, errors))
             .or(validateTicketCategories(eventModification, errors))
             .or(validateEventPrices(eventModification, errors))
@@ -248,7 +251,8 @@ public class EventApiController {
     @PostMapping("/events/{id}/header/update")
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         Event event = eventManager.getSingleEventById(id, principal.getName());
-        return validateEventHeader(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
+        int descriptionMaxLength = configurationManager.getFor(ConfigurationKeys.DESCRIPTION_MAXLENGTH, ConfigurationLevel.system()).getValueAsIntOrDefault(4096);
+        return validateEventHeader(Optional.of(event), eventModification, descriptionMaxLength, errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{id}/prices/update")

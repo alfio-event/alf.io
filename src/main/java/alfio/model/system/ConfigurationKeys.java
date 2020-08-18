@@ -230,7 +230,10 @@ public enum ConfigurationKeys {
     SECURITY_CSP_REPORT_URI("Define Content-Security-Policy reporting URI (default: /report-csp-violation)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
     //
-    TRANSLATION_OVERRIDE("Translation override (json)", false, SettingCategory.TRANSLATIONS, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT));
+    TRANSLATION_OVERRIDE("Translation override (json)", false, SettingCategory.TRANSLATIONS, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+
+    DESCRIPTION_MAXLENGTH("Max characters in descriptions (default 4000)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM))
+    ;
 
     @Getter
     public enum SettingCategory {

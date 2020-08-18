@@ -55,7 +55,9 @@ public final class Validator {
     private Validator() {
     }
 
-    public static ValidationResult validateEventHeader(Optional<Event> event, EventModification ev, Errors errors) {
+    public static ValidationResult validateEventHeader(Optional<Event> event, EventModification ev,
+                                                       int descriptionMaxLength,
+                                                       Errors errors) {
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "shortName", "error.shortname");
         if(ev.getOrganizationId() < 0) {
@@ -72,7 +74,12 @@ public final class Validator {
             errors.rejectValue("locationDescriptor", "error.coordinates");
         }
 
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
+        var descriptions = ev.getDescription();
+
+        if(descriptions == null || descriptions.values().stream().anyMatch(v -> v == null || v.isBlank() || v.length() > descriptionMaxLength)) {
+            errors.rejectValue("description", "error.description");
+        }
+
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
 
 

@@ -153,6 +153,12 @@ public class ConfigurationApiController {
         return TicketHelper.getLocalizedEUCountriesForVat(Locale.ENGLISH, configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
     }
 
+    @GetMapping(value = "/instance-settings")
+    public InstanceSettings loadInstanceSettings() {
+        var settings = configurationManager.getFor(EnumSet.of(DESCRIPTION_MAXLENGTH, BASE_URL), ConfigurationLevel.system());
+        return new InstanceSettings(settings.get(DESCRIPTION_MAXLENGTH).getValueAsIntOrDefault(4096), settings.get(BASE_URL).getRequiredValue());
+    }
+
     @GetMapping(value = "/platform-mode/status/{organizationId}")
     public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
         Map<String, Boolean> result = new HashMap<>();
@@ -214,5 +220,11 @@ public class ConfigurationApiController {
     static class OrganizationConfig {
         private final Organization organization;
         private final Map<ConfigurationKeys.SettingCategory, List<Configuration>> config;
+    }
+
+    @Data
+    static class InstanceSettings {
+        private final int descriptionMaxLength;
+        private final String baseUrl;
     }
 }
