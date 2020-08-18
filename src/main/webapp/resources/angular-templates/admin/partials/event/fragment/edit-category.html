@@ -14,7 +14,7 @@
 
 <div class="form-group" data-ng-repeat="(lang, language) in definedLanguages">
     <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>
-    <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
+    <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category" data-ng-maxlength="descriptionLimit"></textarea>
 </div>
 <div class="row">
     <div class="col-xs-6">

@@ -102,8 +102,8 @@
             loadSingleConfigForEvent: function(eventId, key) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/single/'+key).error(HttpErrorHandler.handle)
             },
-            getBaseUrl: function() {
-                return $window.location.origin;
+            loadInstanceSettings: function() {
+                return $http.get('/admin/api/configuration/instance-settings').error(HttpErrorHandler.handle)
             },
             loadCategory: function(eventId, categoryId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/categories/'+categoryId+'/load').error(HttpErrorHandler.handle);

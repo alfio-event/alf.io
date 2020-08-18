@@ -55,7 +55,9 @@ public final class Validator {
     private Validator() {
     }
 
-    public static ValidationResult validateEventHeader(Optional<Event> event, EventModification ev, Errors errors) {
+    public static ValidationResult validateEventHeader(Optional<Event> event, EventModification ev,
+                                                       int descriptionMaxLength,
+                                                       Errors errors) {
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "shortName", "error.shortname");
         if(ev.getOrganizationId() < 0) {
@@ -72,7 +74,12 @@ public final class Validator {
             errors.rejectValue("locationDescriptor", "error.coordinates");
         }
 
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
+        var descriptions = ev.getDescription();
+
+        if(descriptions == null || descriptions.values().stream().anyMatch(v -> v == null || v.isBlank() || v.length() > descriptionMaxLength)) {
+            errors.rejectValue("description", "error.description");
+        }
+
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
 
 
@@ -132,7 +139,11 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors, String prefix, EventModification eventModification) {
+    public static ValidationResult validateCategory(TicketCategoryModification category,
+                                                    Errors errors,
+                                                    String prefix,
+                                                    EventModification eventModification,
+                                                    int descriptionMaxLength) {
         if(StringUtils.isBlank(category.getName())) {
             errors.rejectValue(prefix + "name", "error.category.name");
         }
@@ -145,7 +156,18 @@ public final class Validator {
         if(eventModification != null && isCategoryExpirationAfterEventEnd(category, eventModification)) {
             errors.rejectValue(prefix + "expiration", "error.date.overflow");
         }
+        if(isCategoryDescriptionTooLong(category, descriptionMaxLength)) {
+            errors.rejectValue(prefix + "description", "error.description");
+        }
         return evaluateValidationResult(errors);
+    }
+
+    private static boolean isCategoryDescriptionTooLong(TicketCategoryModification category, int descriptionMaxLength) {
+        return category.getDescription() != null
+            && !category.getDescription().isEmpty()
+            && category.getDescription().values().stream()
+                .filter(Objects::nonNull)
+                .anyMatch(v -> v.length() > descriptionMaxLength);
     }
 
     private static boolean isCategoryExpirationAfterEventEnd(TicketCategoryModification category, EventModification eventModification) {
@@ -154,8 +176,8 @@ public final class Validator {
             || category.getExpiration().isAfter(eventModification.getEnd());
     }
 
-    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
-        return validateCategory(category, errors, "", null);
+    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors, int descriptionMaxLength) {
+        return validateCategory(category, errors, "", null, descriptionMaxLength);
     }
 
     private static boolean isCollectionEmpty(Collection<?> collection) {

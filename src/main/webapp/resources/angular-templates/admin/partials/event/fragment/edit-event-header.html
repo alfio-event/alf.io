@@ -54,8 +54,8 @@
         <div class="col-xs-12 col-sm-6" data-ng-repeat="langValue in selectedLanguages.langs">
             <div class="form-group" bs-form-error="editEventHeader['description-'+allLanguagesMapping[langValue].locale]">
                 <label for="description">{{allLanguagesMapping[langValue].displayLanguage}}</label><a class="pull-right text-muted" ng-if="selectedLanguages.langs.length > 1" title="remove {{allLanguagesMapping[langValue].displayLanguage}}" ng-click="removeDescription(allLanguagesMapping[langValue])"><i class="fa fa-trash"></i></a><display-commonmark-preview class="pull-right" style="margin-right: 20px" text="obj.description[allLanguagesMapping[langValue].locale]"></display-commonmark-preview>
-                <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
-                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
+                <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="{{descriptionLimit}}"></textarea>
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-max-char="descriptionLimit" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
     </div>
