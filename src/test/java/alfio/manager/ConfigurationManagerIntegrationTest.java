@@ -163,15 +163,15 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testBooleanValue() {
         //missing value
-        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(false));
+        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault());
 
         //false value
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "false");
-        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(true));
+        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault());
 
         //true value
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "true");
-        assertTrue(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(false));
+        assertTrue(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault());
     }
 
     @Test
@@ -344,8 +344,8 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
         assertEquals(ConfigurationPathLevel.ORGANIZATION, res.get(ENABLE_WAITING_QUEUE).getConfigurationPathLevelOrDefault(null));
         assertEquals(ConfigurationPathLevel.ORGANIZATION, res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getConfigurationPathLevelOrDefault(null));
-        assertTrue(res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false));
-        assertFalse(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getValueAsBooleanOrDefault(true));
+        assertTrue(res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault());
+        assertFalse(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getValueAsBooleanOrDefault());
 
 
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "20", "");

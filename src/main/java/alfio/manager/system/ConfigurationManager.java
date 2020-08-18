@@ -312,12 +312,12 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
-        boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(true, ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
+        boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
         return removeAlfioPISettingsIfNeeded(offlineCheckInEnabled, groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing));
     }
 
-    public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(boolean defaultValue, ConfigurationKeys... keys) {
-        return event -> getFor(Set.of(keys), ConfigurationLevel.event(event)).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault(defaultValue));
+    public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
+        return event -> getFor(Set.of(keys), ConfigurationLevel.event(event)).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault());
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
@@ -428,14 +428,14 @@ public class ConfigurationManager {
 
     public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
         var conf = getFor(Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH), ConfigurationLevel.event(event));
-        if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
+        if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault() && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return StringUtils.substring(reservation.getId(), 0, conf.get(PARTIAL_RESERVATION_ID_LENGTH).getValueAsIntOrDefault(8)).toUpperCase();
     }
 
     public String getPublicReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getFor(USE_INVOICE_NUMBER_AS_ID, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
+        if(getFor(USE_INVOICE_NUMBER_AS_ID, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault() && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return reservation.getId();
@@ -457,7 +457,7 @@ public class ConfigurationManager {
 
     public boolean isRecaptchaForOfflinePaymentAndFreeEnabled(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
         Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS) && configurationValues.containsKey(RECAPTCHA_API_KEY));
-        return configurationValues.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
+        return configurationValues.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault() &&
             configurationValues.get(RECAPTCHA_API_KEY).getValueOrNull() != null;
     }
 
@@ -486,7 +486,7 @@ public class ConfigurationManager {
      */
     public boolean isInvoiceOnly(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
         Validate.isTrue(configurationValues.containsKey(GENERATE_ONLY_INVOICE) && configurationValues.containsKey(ENABLE_ITALY_E_INVOICING));
-        return configurationValues.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault(false) || configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
+        return configurationValues.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault() || configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault();
     }
 
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
@@ -496,7 +496,7 @@ public class ConfigurationManager {
 
     public boolean isItalianEInvoicingEnabled(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
         Validate.isTrue(configurationValues.containsKey(ENABLE_ITALY_E_INVOICING));
-        return configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
+        return configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault();
     }
 
     //
@@ -611,8 +611,9 @@ public class ConfigurationManager {
             return getValue().orElse(defaultValue);
         }
 
-        public boolean getValueAsBooleanOrDefault(boolean defaultValue) {
-            return getValue().map(Boolean::parseBoolean).orElse(defaultValue);
+        public boolean getValueAsBooleanOrDefault() {
+            return getValue().map(Boolean::parseBoolean)
+                .orElseGet(() -> Boolean.parseBoolean(Objects.requireNonNull(key.getDefaultValue())));
         }
 
         public int getValueAsIntOrDefault(int defaultValue) {

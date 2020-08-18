@@ -107,7 +107,7 @@ class RevolutBankTransferManagerTest {
     private void internalMatchSingleTransaction(boolean automaticConfirmation) {
         var paymentContext = new PaymentContext(event);
         var automaticConfirmationMock = mock(ConfigurationManager.MaybeConfiguration.class);
-        when(automaticConfirmationMock.getValueAsBooleanOrDefault(anyBoolean())).thenReturn(!automaticConfirmation);
+        when(automaticConfirmationMock.getValueAsBooleanOrDefault()).thenReturn(!automaticConfirmation);
         when(configurationManager.getFor(eq(REVOLUT_MANUAL_REVIEW), any())).thenReturn(automaticConfirmationMock);
         when(transactionRepository.lockLatestForUpdate(eq(FIRST_UUID))).thenReturn(Optional.of(transaction));
         var pendingReservations = List.of(first, second, third);

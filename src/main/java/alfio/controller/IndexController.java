@@ -329,7 +329,7 @@ public class IndexController {
         var configuration = configurationManager.getFor(EnumSet.of(RECAPTCHA_API_KEY, ENABLE_CAPTCHA_FOR_LOGIN), ConfigurationLevel.system());
 
         configuration.get(RECAPTCHA_API_KEY).getValue()
-            .filter(key -> configuration.get(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true))
+            .filter(key -> configuration.get(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault())
             .ifPresent(key -> {
                 model.addAttribute("hasRecaptchaApiKey", true);
                 model.addAttribute("recaptchaApiKey", key);
@@ -404,7 +404,7 @@ public class IndexController {
 
         var conf = configurationManager.getFor(List.of(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED, ConfigurationKeys.SECURITY_CSP_REPORT_URI), ConfigurationLevel.system());
 
-        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault(false);
+        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault();
         if (enabledReport) {
             reportUri = " report-uri " + conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
         }

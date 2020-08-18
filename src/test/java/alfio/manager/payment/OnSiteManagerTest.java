@@ -40,7 +40,7 @@ class OnSiteManagerTest {
         var event = mock(Event.class);
         var configuration = mock(MaybeConfiguration.class);
         when(configurationManager.getFor(eq(ON_SITE_ENABLED), any(ConfigurationLevel.class))).thenReturn(configuration);
-        when(configuration.getValueAsBooleanOrDefault(eq(false))).thenReturn(true);
+        when(configuration.getValueAsBooleanOrDefault()).thenReturn(true);
         var onSiteManager = new OnSiteManager(configurationManager, null);
         when(event.isOnline()).thenReturn(true);
         assertFalse(onSiteManager.accept(PaymentMethod.ON_SITE, new PaymentContext(event), null));

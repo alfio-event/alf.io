@@ -162,7 +162,7 @@ public class ConfigurationApiController {
     @GetMapping(value = "/platform-mode/status/{organizationId}")
     public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
         Map<String, Boolean> result = new HashMap<>();
-        boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
+        boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault();
         result.put("enabled", platformModeEnabled);
         if(platformModeEnabled) {
             var options = configurationManager.getFor(List.of(STRIPE_CONNECTED_ID, MOLLIE_CONNECT_REFRESH_TOKEN), ConfigurationLevel.organization(organizationId));

@@ -120,7 +120,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     }
 
     private boolean checkConfiguration(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> config) {
-        return !config.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false)
+        return !config.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault()
             && config.get(STRIPE_SECRET_KEY).isPresent() && config.get(STRIPE_PUBLIC_KEY).isPresent();
     }
 

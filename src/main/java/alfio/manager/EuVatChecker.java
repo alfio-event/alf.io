@@ -98,7 +98,7 @@ public class EuVatChecker {
                 return Optional.empty();
             }
 
-            BooleanSupplier applyVatToForeignBusiness = () -> configurationManager.getFor(APPLY_VAT_FOREIGN_BUSINESS, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault(true);
+            BooleanSupplier applyVatToForeignBusiness = () -> configurationManager.getFor(APPLY_VAT_FOREIGN_BUSINESS, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault();
             boolean vatExempt = !organizerCountry.equals(countryCode) && (euCountryCode || !applyVatToForeignBusiness.getAsBoolean());
             return Optional.of(new VatDetail(vatNr, countryCode, true, "", "", euCountryCode ? VatDetail.Type.SKIPPED : VatDetail.Type.EXTRA_EU, vatExempt));
 
@@ -155,12 +155,12 @@ public class EuVatChecker {
      */
     public static boolean reverseChargeEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> res) {
         Validate.isTrue(res.containsKey(ENABLE_EU_VAT_DIRECTIVE) && res.containsKey(COUNTRY_OF_BUSINESS));
-        return res.get(ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault(false) &&
+        return res.get(ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault() &&
             res.get(ConfigurationKeys.COUNTRY_OF_BUSINESS).isPresent();
     }
 
     static boolean validationEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(ConfigurationKeys.ENABLE_VIES_VALIDATION, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault(true);
+        return configurationManager.getFor(ConfigurationKeys.ENABLE_VIES_VALIDATION, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault();
     }
 
 

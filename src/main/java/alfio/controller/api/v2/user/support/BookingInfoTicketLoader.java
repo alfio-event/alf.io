@@ -95,7 +95,7 @@ public class BookingInfoTicketLoader {
                                                                  boolean onlineEventStarted) {
         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
-            (!hasPaidSupplement && configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, t.getCategoryId())).getValueAsBooleanOrDefault(false)) && // freeCancellationEnabled
+            (!hasPaidSupplement && configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, t.getCategoryId())).getValueAsBooleanOrDefault()) && // freeCancellationEnabled
             eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
         //
         return toBookingInfoTicket(t,

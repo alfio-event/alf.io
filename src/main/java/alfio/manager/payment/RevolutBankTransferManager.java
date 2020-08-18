@@ -91,7 +91,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     public boolean isActive(PaymentContext paymentContext) {
         var options = bankTransferManager.options(paymentContext);
         return bankTransferManager.bankTransferActive(paymentContext, options)
-            && options.get(REVOLUT_ENABLED).getValueAsBooleanOrDefault(false)
+            && options.get(REVOLUT_ENABLED).getValueAsBooleanOrDefault()
             && options.get(REVOLUT_API_KEY).isPresent();
     }
 
@@ -113,7 +113,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             return Result.success(List.of());
         }
         var options = bankTransferManager.options(context);
-        var host = options.get(REVOLUT_LIVE_MODE).getValueAsBooleanOrDefault(false) ? "https://b2b.revolut.com" : "https://sandbox-b2b.revolut.com";
+        var host = options.get(REVOLUT_LIVE_MODE).getValueAsBooleanOrDefault() ? "https://b2b.revolut.com" : "https://sandbox-b2b.revolut.com";
         var revolutKeyOptional = options.get(REVOLUT_API_KEY).getValue();
         if(revolutKeyOptional.isEmpty()) {
             return Result.error(ErrorCode.custom("unavailable", "cannot retrieve Revolut API KEY. Please fix configuration"));
@@ -122,7 +122,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
         return loadAccounts(revolutKey, host)
             .flatMap(accounts -> loadTransactions(lastCheck, revolutKey, host, accounts))
-            .flatMap(revolutTransactions -> matchTransactions(reservations, revolutTransactions, context, options.get(REVOLUT_MANUAL_REVIEW).getValueAsBooleanOrDefault(true)));
+            .flatMap(revolutTransactions -> matchTransactions(reservations, revolutTransactions, context, options.get(REVOLUT_MANUAL_REVIEW).getValueAsBooleanOrDefault()));
     }
 
     Result<List<String>> matchTransactions(Collection<TicketReservationWithTransaction> pendingReservations,

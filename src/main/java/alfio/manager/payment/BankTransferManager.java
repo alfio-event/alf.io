@@ -38,7 +38,6 @@ import java.util.*;
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.model.system.ConfigurationKeys.BANK_TRANSFER_ENABLED;
 import static java.time.ZoneOffset.UTC;
 
 @Component
@@ -67,7 +66,7 @@ public class BankTransferManager implements PaymentProvider {
     public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext, TransactionRequest transactionRequest) {
         var options = options(paymentContext);
         return bankTransferEnabledForMethod(paymentMethod, paymentContext, options)
-            && !options.get(REVOLUT_ENABLED).getValueAsBooleanOrDefault(false);
+            && !options.get(REVOLUT_ENABLED).getValueAsBooleanOrDefault();
     }
 
     boolean bankTransferEnabledForMethod(PaymentMethod paymentMethod, PaymentContext paymentContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
@@ -78,7 +77,7 @@ public class BankTransferManager implements PaymentProvider {
     }
 
     boolean bankTransferActive(PaymentContext paymentContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
-        return options.get(BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault(false)
+        return options.get(BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault()
             && (paymentContext.getEvent() == null || getOfflinePaymentWaitingPeriod(paymentContext.getEvent(), options.get(OFFLINE_PAYMENT_DAYS).getValueAsIntOrDefault(5)).orElse(0) > 0);
     }
 
@@ -87,7 +86,7 @@ public class BankTransferManager implements PaymentProvider {
     }
 
     boolean isPaymentDeferredEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
-        return options.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault(false);
+        return options.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault();
     }
 
     @Override

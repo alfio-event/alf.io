@@ -114,7 +114,7 @@ public class PassKitManager {
             PASSBOOK_TYPE_IDENTIFIER, PASSBOOK_KEYSTORE, PASSBOOK_KEYSTORE_PASSWORD,
             PASSBOOK_TEAM_IDENTIFIER, PASSBOOK_PRIVATE_KEY_ALIAS), ConfigurationLevel.event(event));
 
-        if(!conf.get(ENABLE_PASS).getValueAsBooleanOrDefault(false)) {
+        if(!conf.get(ENABLE_PASS).getValueAsBooleanOrDefault()) {
             return Map.of();
         }
         var configValues = Map.of(

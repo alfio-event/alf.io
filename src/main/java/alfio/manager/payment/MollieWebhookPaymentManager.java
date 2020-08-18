@@ -122,7 +122,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
     private HttpRequest.Builder requestFor(String url, Map<ConfigurationKeys, MaybeConfiguration> configuration, ConfigurationLevel configurationLevel) {
         // check if platform mode is active
-        boolean platformMode = configurationLevel.getOrganizationId().isPresent() && configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
+        boolean platformMode = configurationLevel.getOrganizationId().isPresent() && configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault();
         var requestBuilder = HttpRequest.newBuilder().uri(URI.create(url));
         if(platformMode) {
             return requestBuilder.header("Authorization", "Bearer " + accessTokenCache.get(configurationLevel.getOrganizationId().orElseThrow(), org -> {
@@ -164,7 +164,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     }
 
     private boolean isPlatformConfigurationPresent(Map<ConfigurationKeys, MaybeConfiguration> configuration) {
-        return !configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false) || (configuration.get(MOLLIE_CONNECT_REFRESH_TOKEN).isPresent() && configuration.get(MOLLIE_CONNECT_PROFILE_ID).isPresent());
+        return !configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault() || (configuration.get(MOLLIE_CONNECT_REFRESH_TOKEN).isPresent() && configuration.get(MOLLIE_CONNECT_PROFILE_ID).isPresent());
     }
 
     private Map<ConfigurationKeys, MaybeConfiguration> getConfiguration(ConfigurationLevel configurationLevel) {
@@ -193,7 +193,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             params.add("billingCountry="+key.billingCountry);
         }
 
-        if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false)) {
+        if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault()) {
             params.add("testmode="+ key.testMode);
             params.add("profileId="+configuration.get(MOLLIE_CONNECT_PROFILE_ID).getRequiredValue());
         }
@@ -308,9 +308,9 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         payload.put("webhookUrl", baseUrl + UriComponentsBuilder.fromPath(WEBHOOK_URL_TEMPLATE).buildAndExpand(eventName, reservationId).toUriString());
         payload.put("metadata", MetadataBuilder.buildMetadata(spec, Map.of()));
 
-        if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false)) {
+        if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault()) {
             payload.put("profileId", configuration.get(MOLLIE_CONNECT_PROFILE_ID).getRequiredValue());
-            payload.put("testmode", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false));
+            payload.put("testmode", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault());
             String currencyCode = spec.getCurrencyCode();
             FeeCalculator.getCalculator(spec.getEvent(), configurationManager, currencyCode).apply(tickets, (long) spec.getPriceWithVAT())
                 .filter(fee -> fee > 1L) //minimum fee for Mollie is 0.01
@@ -360,14 +360,14 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     }
 
     private boolean checkIfActive(Map<ConfigurationKeys, MaybeConfiguration> configuration) {
-        return configuration.get(MOLLIE_CC_ENABLED).getValueAsBooleanOrDefault(false)
+        return configuration.get(MOLLIE_CC_ENABLED).getValueAsBooleanOrDefault()
             && configuration.get(BASE_URL).isPresent()
             && configuration.get(MOLLIE_API_KEY).isPresent()
             && connectOptionsPresent(configuration);
     }
 
     private boolean connectOptionsPresent(Map<ConfigurationKeys, MaybeConfiguration> configuration) {
-        if(!configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false)) {
+        if(!configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault()) {
             return true;
         }
         return configuration.get(MOLLIE_CONNECT_CLIENT_ID).isPresent() && configuration.get(MOLLIE_CONNECT_CLIENT_SECRET).isPresent();
@@ -419,8 +419,8 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             if(HttpUtils.callSuccessful(response)) {
                 try (var reader = new InputStreamReader(response.body(), UTF_8)) {
                     var body = new MolliePaymentDetails(JsonParser.parseReader(reader).getAsJsonObject());
-                    if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false)
-                        && configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false) != body.isLiveMode()) {
+                    if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault()
+                        && configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault() != body.isLiveMode()) {
                         return PaymentWebhookResult.notRelevant("liveMode");
                     }
                     Validate.isTrue(body.getPaymentId().equals(paymentId));
@@ -480,8 +480,8 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
     private HttpResponse<InputStream> callGetPayment(String paymentId, Map<ConfigurationKeys, MaybeConfiguration> configuration, ConfigurationLevel configurationLevel) throws IOException, InterruptedException {
         var paymentResourceUrl = PAYMENTS_ENDPOINT+"/"+paymentId;
-        if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false)) {
-            paymentResourceUrl += ("?testmode=" + !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false));
+        if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault()) {
+            paymentResourceUrl += ("?testmode=" + !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault());
         }
         HttpRequest request = requestFor(paymentResourceUrl, configuration, configurationLevel).GET().build();
         return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
@@ -500,9 +500,9 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         var parameters = new HashMap<String, Object>();
         parameters.put("amount[currency]", currencyCode);
         parameters.put("amount[value]", amountToRefund);
-        if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false)) {
-            log.trace("Platform mode is active. Setting testmode to {}", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false));
-            parameters.put("testmode", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false));
+        if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault()) {
+            log.trace("Platform mode is active. Setting testmode to {}", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault());
+            parameters.put("testmode", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault());
         }
 
         var request = requestFor(PAYMENTS_ENDPOINT+"/"+ paymentId +"/refunds", configuration, configurationLevel)
@@ -566,7 +566,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                 String currencyCode = transactionRequest.getPrice().getCurrencyCode();
                 amount = new PaymentAmount(formatCents(transactionRequest.getPrice().getPriceWithVAT(), currencyCode), currencyCode);
             }
-            boolean testMode = !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false);
+            boolean testMode = !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault();
             return new MethodCacheKey(amount, billingCountry, testMode);
         }
     }

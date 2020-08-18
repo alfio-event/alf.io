@@ -375,11 +375,11 @@ public class CheckInManager {
     }
 
     public Predicate<EventAndOrganizationId> isOfflineCheckInEnabled() {
-        return configurationManager.areBooleanSettingsEnabledForEvent(true, ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED);
+        return configurationManager.areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED);
     }
 
     public Predicate<EventAndOrganizationId> isOfflineCheckInAndLabelPrintingEnabled() {
-        return isOfflineCheckInEnabled().and(configurationManager.areBooleanSettingsEnabledForEvent(true, LABEL_PRINTING_ENABLED));
+        return isOfflineCheckInEnabled().and(configurationManager.areBooleanSettingsEnabledForEvent(LABEL_PRINTING_ENABLED));
     }
 
     public Map<String,String> getEncryptedAttendeesInformation(Event ev, Set<String> additionalFields, List<Integer> ids) {
@@ -514,7 +514,7 @@ public class CheckInManager {
     }
 
     private boolean areStatsEnabled(EventAndOrganizationId event) {
-        return configurationManager.getFor(CHECK_IN_STATS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
+        return configurationManager.getFor(CHECK_IN_STATS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
     }
 
 }

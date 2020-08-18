@@ -82,7 +82,7 @@ public final class EventUtil {
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
         var confVal = configurationManager.getFor(List.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), ConfigurationLevel.event(event));
-        return !confVal.get(STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false)
+        return !confVal.get(STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault()
             && checkWaitingQueuePreconditions(event, categories, noTicketsAvailable, confVal);
     }
 
@@ -90,8 +90,8 @@ public final class EventUtil {
         return findLastCategory(categories).map(lastCategory -> {
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             if(isPreSales(event, categories)) {
-                return confVal.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
-            } else if(confVal.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false)) {
+                return confVal.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault();
+            } else if(confVal.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault()) {
                 return now.isBefore(lastCategory.getZonedExpiration()) && noTicketsAvailable.test(event);
             }
             return false;

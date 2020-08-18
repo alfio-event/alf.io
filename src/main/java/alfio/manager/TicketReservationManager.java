@@ -731,7 +731,7 @@ public class TicketReservationManager {
         final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
         billingDocumentManager.createBillingDocument(event, finalReservation, username, orderSummaryForReservation(finalReservation, event));
         var configuration = configurationManager.getFor(EnumSet.of(DEFERRED_BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL), ConfigurationLevel.event(event));
-        if(!configuration.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault(false) || configuration.get(DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL).getValueAsBooleanOrDefault(true)) {
+        if(!configuration.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault() || configuration.get(DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL).getValueAsBooleanOrDefault()) {
             sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language, username);
         }
         extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event.getId());
@@ -1032,7 +1032,7 @@ public class TicketReservationManager {
         if(ticketReservation.getSrcPriceCts() > 0
             || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
             || !tickets.get(0).getEmail().equals(ticketReservation.getEmail())
-            || !configurationManager.getFor(SEND_RESERVATION_EMAIL_IF_NECESSARY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true)
+            || !configurationManager.getFor(SEND_RESERVATION_EMAIL_IF_NECESSARY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()
             ) {
             sendConfirmationEmail(event, ticketReservation, locale, username);
         }
@@ -1053,7 +1053,7 @@ public class TicketReservationManager {
         Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
         int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
 
-        if(!configurationManager.getFor(ENABLE_TICKET_TRANSFER, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true)) {
+        if(!configurationManager.getFor(ENABLE_TICKET_TRANSFER, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
             //automatically lock assignment
             int locked = ticketRepository.forbidReassignment(preUpdateTicket.keySet());
             Validate.isTrue(updatedTickets == locked, "Expected to lock "+updatedTickets+" tickets, locked "+ locked);
@@ -1083,7 +1083,7 @@ public class TicketReservationManager {
             .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
             .forEach(ticket -> {
                 Locale locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
-                if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true)) {
+                if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
                     sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                 }
                 Map<String, List<String>> additionalInfo = ticketFieldRepository.findNameAndValue(ticket.getId())
@@ -1159,7 +1159,7 @@ public class TicketReservationManager {
         try {
             nestedTransactionTemplate.execute(tc -> {
                 Event event = eventRepository.findByReservationId(reservationId);
-                boolean enabled = configurationManager.getFor(AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
+                boolean enabled = configurationManager.getFor(AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
                 if (enabled) {
                     deleteOfflinePayment(event, reservationId, true, false, null);
                 } else {
@@ -1562,7 +1562,7 @@ public class TicketReservationManager {
         ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId());
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
-        boolean sendTicketAllowed = configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
+        boolean sendTicketAllowed = configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
         if (sendTicketAllowed && (newTicket.getStatus() == TicketStatus.ACQUIRED || newTicket.getStatus() == TicketStatus.TO_BE_PAID)
             && (!equalsIgnoreCase(newEmail, ticket.getEmail()) || !equalsIgnoreCase(customerName.getFullName(), ticket.getFullName()))) {
             sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
@@ -1723,7 +1723,7 @@ public class TicketReservationManager {
 
     public void sendReminderForOptionalData() {
         getNotifiableEventsStream()
-                .filter(e -> configurationManager.getFor(OPTIONAL_DATA_REMINDER_ENABLED, ConfigurationLevel.event(e)).getValueAsBooleanOrDefault(true))
+                .filter(e -> configurationManager.getFor(OPTIONAL_DATA_REMINDER_ENABLED, ConfigurationLevel.event(e)).getValueAsBooleanOrDefault())
                 .filter(e -> ticketFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
                 .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
@@ -1815,7 +1815,7 @@ public class TicketReservationManager {
         var isFree = ticket.getFinalPriceCts() == 0;
 
         var configurationLevel = ticket.getCategoryId() != null ? ConfigurationLevel.ticketCategory(event, ticket.getCategoryId()) : ConfigurationLevel.event(event);
-        var enableFreeCancellation = configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, configurationLevel).getValueAsBooleanOrDefault(false);
+        var enableFreeCancellation = configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, configurationLevel).getValueAsBooleanOrDefault();
         var conditionsMet = CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket);
 
         // reported the conditions of TicketDecorator.getCancellationEnabled
@@ -2167,7 +2167,7 @@ public class TicketReservationManager {
         "reservationUrl", reservationUrl(reservation, event));
 
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
-        if(cancelReservation || configurationManager.getFor(NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)) {
+        if(cancelReservation || configurationManager.getFor(NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
             notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
                 new Object[]{shortReservationID, event.getDisplayName()}, locale),
             	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER, model, locale),
