@@ -20,6 +20,7 @@ import alfio.model.AdditionalService;
 import alfio.model.AdditionalServiceText;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ValidationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,7 @@ public class ValidatorTest {
 
     private EventModification eventModification;
     private Errors errors;
+    private TicketCategoryModification ticketCategoryModification;
     private EventModification.AdditionalServiceText title = new EventModification.AdditionalServiceText(0, "it", "titolo", AdditionalServiceText.TextType.TITLE);
     private EventModification.AdditionalServiceText description = new EventModification.AdditionalServiceText(0, "it", "descrizione", AdditionalServiceText.TextType.DESCRIPTION);
 
@@ -54,6 +56,10 @@ public class ValidatorTest {
     public void init() {
         eventModification = mock(EventModification.class);
         errors = new MapBindingResult(new HashMap<>(), "test");
+        ticketCategoryModification = mock(TicketCategoryModification.class);
+        when(ticketCategoryModification.getInception()).thenReturn(VALID_INCEPTION);
+        when(ticketCategoryModification.getExpiration()).thenReturn(VALID_EXPIRATION);
+        when(ticketCategoryModification.getName()).thenReturn("name");
     }
 
     @Test
@@ -67,6 +73,27 @@ public class ValidatorTest {
     void failedDescriptionValidation() {
         when(eventModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
         Validator.validateEventHeader(Optional.empty(), eventModification, 4, errors);
+        assertTrue(errors.hasFieldErrors("description"));
+    }
+
+    @Test
+    void successfulCategoryDescriptionValidation() {
+        when(ticketCategoryModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
+        Validator.validateCategory(ticketCategoryModification, errors, 5);
+        assertFalse(errors.hasFieldErrors("description"));
+    }
+
+    @Test
+    void successfulCategoryDescriptionValidationWhenEmpty() {
+        when(ticketCategoryModification.getDescription()).thenReturn(Map.of());
+        Validator.validateCategory(ticketCategoryModification, errors, 5);
+        assertFalse(errors.hasFieldErrors("description"));
+    }
+
+    @Test
+    void failedCategoryDescriptionValidation() {
+        when(ticketCategoryModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
+        Validator.validateCategory(ticketCategoryModification, errors, 4);
         assertTrue(errors.hasFieldErrors("description"));
     }
 

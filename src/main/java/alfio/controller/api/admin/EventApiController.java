@@ -192,8 +192,12 @@ public class EventApiController {
 
     @PostMapping("/events/check")
     public ValidationResult validateEventRequest(@RequestBody EventModification eventModification, Errors errors) {
-        int descriptionMaxLength = configurationManager.getFor(ConfigurationKeys.DESCRIPTION_MAXLENGTH, ConfigurationLevel.system()).getValueAsIntOrDefault(4096);
+        int descriptionMaxLength = getDescriptionLength();
         return validateEvent(eventModification, errors, descriptionMaxLength);
+    }
+
+    private int getDescriptionLength() {
+        return configurationManager.getFor(ConfigurationKeys.DESCRIPTION_MAXLENGTH, ConfigurationLevel.system()).getValueAsIntOrDefault(4096);
     }
 
     public static ValidationResult validateEvent(EventModification eventModification, Errors errors, int descriptionMaxLength) {
@@ -204,7 +208,7 @@ public class EventApiController {
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
-                .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "].", eventModification))
+                .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "].", eventModification, descriptionMaxLength))
                 .reduce(ValidationResult::or)
                 .orElse(ValidationResult.success()))
             .or(validateAdditionalTicketFields(eventModification.getTicketFields(), errors));
@@ -251,8 +255,7 @@ public class EventApiController {
     @PostMapping("/events/{id}/header/update")
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         Event event = eventManager.getSingleEventById(id, principal.getName());
-        int descriptionMaxLength = configurationManager.getFor(ConfigurationKeys.DESCRIPTION_MAXLENGTH, ConfigurationLevel.system()).getValueAsIntOrDefault(4096);
-        return validateEventHeader(Optional.of(event), eventModification, descriptionMaxLength, errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
+        return validateEventHeader(Optional.of(event), eventModification, getDescriptionLength(), errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{id}/prices/update")
@@ -263,12 +266,12 @@ public class EventApiController {
 
     @PostMapping("/events/{eventId}/categories/{categoryId}/update")
     public ValidationResult updateExistingCategory(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
-        return validateCategory(category, errors).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
+        return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/new")
     public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
-        return validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
+        return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
     
     @PutMapping("/events/reallocate")
