@@ -327,7 +327,6 @@
 
                 ConfigurationService.loadInstanceSettings().then(function(result) {
                     var data = result.data;
-                    console.log(data);
                     $scope.baseUrl = data.baseUrl;
                     $scope.descriptionLimit = data.descriptionMaxLength;
                 });
