@@ -201,7 +201,7 @@ class TicketReservationManagerTest {
 
         MaybeConfiguration configuration = mock(MaybeConfiguration.class);
         when(configurationManager.getFor(eq(SEND_TICKETS_AUTOMATICALLY), any())).thenReturn(configuration);
-        when(configuration.getValueAsBooleanOrDefault(eq(true))).thenReturn(true);
+        when(configuration.getValueAsBooleanOrDefault()).thenReturn(true);
 
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -674,7 +674,7 @@ class TicketReservationManagerTest {
         when(ticket.getCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticket.getFinalPriceCts()).thenReturn(0);
         var mockExistingConfig = mock(MaybeConfiguration.class);
-        when(mockExistingConfig.getValueAsBooleanOrDefault(anyBoolean())).thenReturn(true);
+        when(mockExistingConfig.getValueAsBooleanOrDefault()).thenReturn(true);
         when(configurationManager.getFor(eq(ALLOW_FREE_TICKETS_CANCELLATION), any())).thenReturn(mockExistingConfig);
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
@@ -1334,7 +1334,7 @@ class TicketReservationManagerTest {
         @Test
         void emailSentBecauseFlagIsSetToFalse() {
             when(configurationManager.getFor(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY), any())).thenReturn(maybeConfiguration);
-            when(maybeConfiguration.getValueAsBooleanOrDefault(true)).thenReturn(false);
+            when(maybeConfiguration.getValueAsBooleanOrDefault()).thenReturn(false);
             trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
         }
@@ -1342,7 +1342,7 @@ class TicketReservationManagerTest {
         @Test
         void emailNOTSentBecauseFlagIsSetToTrue() {
             when(configurationManager.getFor(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY), any())).thenReturn(maybeConfiguration);
-            when(maybeConfiguration.getValueAsBooleanOrDefault(true)).thenReturn(true);
+            when(maybeConfiguration.getValueAsBooleanOrDefault()).thenReturn(true);
             trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
         }

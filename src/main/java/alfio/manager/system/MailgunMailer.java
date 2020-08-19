@@ -68,7 +68,7 @@ class MailgunMailer implements Mailer {
 
         String apiKey = conf.get(MAILGUN_KEY).getRequiredValue();
         String domain = conf.get(MAILGUN_DOMAIN).getRequiredValue();
-        boolean useEU = conf.get(MAILGUN_EU).getValueAsBooleanOrDefault(false);
+        boolean useEU = conf.get(MAILGUN_EU).getValueAsBooleanOrDefault();
 
         String baseUrl = useEU ? "https://api.eu.mailgun.net/v3/" : "https://api.mailgun.net/v3/";
         try {

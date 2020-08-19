@@ -96,7 +96,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     private PayPalEnvironment getApiContext(EventAndOrganizationId event) {
         var paypalConf = configurationManager.getFor(Set.of(ConfigurationKeys.PAYPAL_LIVE_MODE, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
             ConfigurationLevel.event(event));
-        boolean isLive = paypalConf.get(ConfigurationKeys.PAYPAL_LIVE_MODE).getValueAsBooleanOrDefault(false);
+        boolean isLive = paypalConf.get(ConfigurationKeys.PAYPAL_LIVE_MODE).getValueAsBooleanOrDefault();
         String clientId = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).getRequiredValue();
         String clientSecret = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_SECRET).getRequiredValue();
         return isLive ? new PayPalEnvironment.Live(clientId, clientSecret) : new PayPalEnvironment.Sandbox(clientId, clientSecret);
@@ -329,7 +329,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     public boolean isActive(PaymentContext paymentContext) {
         var paypalConf = configurationManager.getFor(Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
             paymentContext.getConfigurationLevel());
-        return paypalConf.get(PAYPAL_ENABLED).getValueAsBooleanOrDefault(false)
+        return paypalConf.get(PAYPAL_ENABLED).getValueAsBooleanOrDefault()
             && paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).isPresent()
             && paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_SECRET).isPresent();
     }

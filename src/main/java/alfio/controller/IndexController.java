@@ -170,7 +170,7 @@ public class IndexController {
             }
         } else {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
-                var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrDefault(null);
+                var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrNull();
                 var idx = INDEX_PAGE.cloneNode(true);
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
                 var head = idx.getElementsByTagName("head").get(0);
@@ -329,7 +329,7 @@ public class IndexController {
         var configuration = configurationManager.getFor(EnumSet.of(RECAPTCHA_API_KEY, ENABLE_CAPTCHA_FOR_LOGIN), ConfigurationLevel.system());
 
         configuration.get(RECAPTCHA_API_KEY).getValue()
-            .filter(key -> configuration.get(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true))
+            .filter(key -> configuration.get(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault())
             .ifPresent(key -> {
                 model.addAttribute("hasRecaptchaApiKey", true);
                 model.addAttribute("recaptchaApiKey", key);
@@ -404,7 +404,7 @@ public class IndexController {
 
         var conf = configurationManager.getFor(List.of(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED, ConfigurationKeys.SECURITY_CSP_REPORT_URI), ConfigurationLevel.system());
 
-        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault(false);
+        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault();
         if (enabledReport) {
             reportUri = " report-uri " + conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
         }

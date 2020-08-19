@@ -95,10 +95,10 @@ class SmtpMailer implements Mailer {
         r.setHost(conf.get(SMTP_HOST).getRequiredValue());
         r.setPort(Integer.parseInt(conf.get(SMTP_PORT).getRequiredValue()));
         r.setProtocol(conf.get(SMTP_PROTOCOL).getRequiredValue());
-        r.setUsername(conf.get(SMTP_USERNAME).getValueOrDefault(null));
-        r.setPassword(conf.get(SMTP_PASSWORD).getValueOrDefault(null));
+        r.setUsername(conf.get(SMTP_USERNAME).getValueOrNull());
+        r.setPassword(conf.get(SMTP_PASSWORD).getValueOrNull());
 
-        String properties = conf.get(SMTP_PROPERTIES).getValueOrDefault(null);
+        String properties = conf.get(SMTP_PROPERTIES).getValueOrNull();
 
         if (properties != null) {
             try {

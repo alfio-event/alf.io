@@ -38,8 +38,8 @@ public class AnalyticsConfiguration {
 
 
     public static AnalyticsConfiguration build(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf, HttpSession session) {
-        var googAnalyticsKey = StringUtils.trimToNull(conf.get(GOOGLE_ANALYTICS_KEY).getValueOrDefault(null));
-        var googAnalyticsScrambled = conf.get(GOOGLE_ANALYTICS_ANONYMOUS_MODE).getValueAsBooleanOrDefault(true);
+        var googAnalyticsKey = StringUtils.trimToNull(conf.get(GOOGLE_ANALYTICS_KEY).getValueOrNull());
+        var googAnalyticsScrambled = conf.get(GOOGLE_ANALYTICS_ANONYMOUS_MODE).getValueAsBooleanOrDefault();
 
         var sessionId = session.getId();
         var clientId = googAnalyticsKey != null && googAnalyticsScrambled && sessionId != null ? DigestUtils.sha256Hex(sessionId) : null;

@@ -334,7 +334,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     private boolean isConfigurationValid(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) {
         return configuration.get(BASE_URL).isPresent()
             && configuration.get(STRIPE_WEBHOOK_PAYMENT_KEY).isPresent()
-            && configuration.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false);
+            && configuration.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault();
     }
 
     @Override
