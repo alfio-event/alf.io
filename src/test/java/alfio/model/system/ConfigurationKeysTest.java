@@ -27,7 +27,7 @@ class ConfigurationKeysTest {
 
     @Test
     void validateAllBooleansHaveDefaultValue() {
-        var pattern = Pattern.compile(".*?\\(.*?default (true|false).*?\\).*?");
+        var pattern = Pattern.compile(".*?\\(.*?default.*? (true|false).*?\\).*?");
         Arrays.stream(ConfigurationKeys.values())
             .filter(ConfigurationKeys::isBooleanComponentType)
             .forEach(confKey -> {
@@ -35,7 +35,7 @@ class ConfigurationKeysTest {
                 assertTrue(confKey.getDefaultValue().equals("true") || confKey.getDefaultValue().equals("false"), confKey.name() + " default value must be either 'true' or 'false'");
                 var matcher = pattern.matcher(confKey.getDescription());
                 if(matcher.matches()) {
-                    assertEquals(matcher.group(1), confKey.getDefaultValue(), "Expected "+matcher.group(1)+", get "+ confKey.getDefaultValue());
+                    assertEquals(matcher.group(1), confKey.getDefaultValue(), confKey.name() + ": description says \"default "+matcher.group(1)+"\", but default value is "+ confKey.getDefaultValue());
                 }
             });
     }
