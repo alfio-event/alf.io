@@ -77,7 +77,6 @@ task validate {
 }
 
 def profile = project.hasProperty('profile') ? project.profile : 'dev'
-
 ext {
     // default settings
     jettyPort = 8080
@@ -489,5 +488,6 @@ node {
 task mjmlToHtml( type: NodeTask, dependsOn: 'npmInstall' ) {
     script = file( 'src/main/node/mjmlToHtml.js' )
 }
-
-build.dependsOn mjmlToHtml
+//
+processResources.dependsOn(mjmlToHtml)
+sourceSets.main.output.dir file("$buildDir/generated/resources"), builtBy: mjmlToHtml
