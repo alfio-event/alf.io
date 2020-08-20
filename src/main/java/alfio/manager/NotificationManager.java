@@ -18,7 +18,9 @@ package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.support.*;
+import alfio.manager.support.CustomMessageManager;
+import alfio.manager.support.PartialTicketTextGenerator;
+import alfio.manager.support.TemplateGenerator;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
@@ -236,15 +238,13 @@ public class NotificationManager {
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
         var renderedTemplate = textBuilder.generate(ticket);
-        String textRender = renderedTemplate.getLeft();
-        String htmlRender = renderedTemplate.getRight(); 
-        String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, textRender, htmlRender);
+        String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, renderedTemplate);
         String recipient = ticket.getEmail();
         
         tx.execute(status -> {
             emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
                 id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
-                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, textRender, htmlRender, encodedAttachments, checksum, ZonedDateTime.now(UTC))
+                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(UTC))
             );
             return null;
         });
@@ -276,25 +276,13 @@ public class NotificationManager {
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String encodedCC = Json.toJson(cc);
 
-        
-        final String textRender;
-        final String htmlRender;
-        
-        if(textBuilder instanceof MultipartTemplateGenerator) {
-        	var renderedTemplate = ((MultipartTemplateGenerator) textBuilder).generate();
-            textRender = renderedTemplate.getLeft();
-            htmlRender = renderedTemplate.getRight();
-    	} else {
-    		textRender = ((TextTemplateGenerator) textBuilder).generate();
-    		htmlRender = null;
-    	}
-        
-        String checksum = calculateChecksum(recipient, encodedAttachments, subject, textRender, htmlRender);
+        var renderedTemplate = textBuilder.generate();
+        String checksum = calculateChecksum(recipient, encodedAttachments, subject, renderedTemplate);
         //in order to minimize the database size, it is worth checking if there is already another message in the table
         Optional<Integer> existing = emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum);
 
         existing.ifPresentOrElse(id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
-            () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, textRender, htmlRender, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+            () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(UTC)));
     }
 
     public Pair<Integer, List<LightweightMailMessage>> loadAllMessagesForEvent(int eventId, Integer page, String search) {
@@ -404,14 +392,16 @@ public class NotificationManager {
         }
     }
 
-    private static String calculateChecksum(String recipient, String attachments, String subject, String text, String htmlRender)  {
+    private static String calculateChecksum(String recipient, String attachments, String subject, RenderedTemplate renderedTemplate)  {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             digest.update(recipient.getBytes(StandardCharsets.UTF_8));
             digest.update(subject.getBytes(StandardCharsets.UTF_8));
             Optional.ofNullable(attachments).ifPresent(v -> digest.update(v.getBytes(StandardCharsets.UTF_8)));
-            digest.update(text.getBytes(StandardCharsets.UTF_8));
-            if(htmlRender != null) digest.update(htmlRender.getBytes(StandardCharsets.UTF_8));
+            digest.update(renderedTemplate.getTextPart().getBytes(StandardCharsets.UTF_8));
+            if(renderedTemplate.isMultipart()) {
+                digest.update(renderedTemplate.getHtmlPart().getBytes(StandardCharsets.UTF_8));
+            }
             return new String(Hex.encode(digest.digest()));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);

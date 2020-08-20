@@ -97,7 +97,7 @@ public class TemplateManager {
     }
 
     
-    private Pair<String, String> renderMultipartTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+    private RenderedTemplate renderMultipartTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
     	var enrichedModel = modelEnricher(model, Optional.of(event), locale);
     	var isMultipart = templateResource.isMultipart();
     	
@@ -109,13 +109,13 @@ public class TemplateManager {
         		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, event, TemplateOutput.HTML) :
         		null;
         		
-    	return Pair.of(textRender, htmlRender);
+    	return RenderedTemplate.multipart(textRender, htmlRender);
     }
 
-    public Pair<String, String> renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+    public RenderedTemplate renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
         Map<String, Object> updatedModel = modelEnricher(model, Optional.of(event), locale);
         return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
-            .map(resource -> Pair.of(render(new ByteArrayResource(resource), updatedModel, locale, event, templateResource.getTemplateOutput()), (String) null))
+            .map(resource -> RenderedTemplate.plaintext(render(new ByteArrayResource(resource), updatedModel, locale, event, templateResource.getTemplateOutput())))
             .orElseGet(() -> renderMultipartTemplate(event, templateResource, updatedModel, locale));
     }
 
@@ -373,4 +373,5 @@ public class TemplateManager {
 
         return sb.toString();
     }
+
 }

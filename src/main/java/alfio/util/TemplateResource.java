@@ -125,7 +125,7 @@ public enum TemplateResource {
     },
 
 
-    TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    TICKET_EMAIL("/alfio/templates/ticket-email", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             var now = ZonedDateTime.now(event.getZoneId());

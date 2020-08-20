@@ -14,9 +14,29 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.support;
+package alfio.util;
 
-@FunctionalInterface
-public interface TextTemplateGenerator extends TemplateGenerator {
-    String generate();
+import lombok.Getter;
+
+@Getter
+public class RenderedTemplate {
+    private final String textPart;
+    private final String htmlPart;
+
+    private RenderedTemplate(String textPart, String htmlPart) {
+        this.textPart = textPart;
+        this.htmlPart = htmlPart;
+    }
+
+    public boolean isMultipart() {
+        return htmlPart != null;
+    }
+
+    public static RenderedTemplate plaintext(String textPart) {
+        return new RenderedTemplate(textPart, null);
+    }
+
+    public static RenderedTemplate multipart(String textPart, String htmlPart) {
+        return new RenderedTemplate(textPart, htmlPart);
+    }
 }

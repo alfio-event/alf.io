@@ -20,7 +20,6 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.DuplicateReferenceException;
-import alfio.manager.support.MultipartTemplateGenerator;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
@@ -773,7 +772,7 @@ public class AdminReservationManager {
         notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(),
             messageSourceManager.getMessageSourceForEvent(event).getMessage("email-ticket-released.subject",
             new Object[]{event.getDisplayName()}, locale),
-            (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
+            () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
     }
 
     private void markAsCancelled(TicketReservation ticketReservation, String username, int eventId) {
