@@ -777,7 +777,7 @@ public class TicketReservationManager {
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getId(), ticketReservation.getEmail(), messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation-email-subject",
                 new Object[]{getShortReservationID(event, ticketReservation), event.getDisplayName()}, language),
-           (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
+           () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
             attachments);
     }
 
@@ -811,7 +811,7 @@ public class TicketReservationManager {
 
         String shortReservationID = configurationManager.getShortReservationID(event, ticketReservation);
         notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, "Reservation complete " + shortReservationID,
-        	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
+        	() -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
             attachments);
     }
 
@@ -856,7 +856,7 @@ public class TicketReservationManager {
             Locale reservationLanguage = findReservationLanguage(reservationId);
             String subject = getReservationEmailSubject(event, reservationLanguage, "reservation-email-expired-subject", reservation.getId());
             notificationManager.sendSimpleEmail(event, reservationId, reservation.getEmail(), subject,
-            	(MultipartTemplateGenerator)() ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
+            	() ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
             );
             cancelReservation(reservation, expired, username);
         }
@@ -877,7 +877,7 @@ public class TicketReservationManager {
             reservationId,
             reservation.getEmail(),
             getReservationEmailSubject(event, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
-            (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
+            () -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
             generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), billingDocument.getModel(), CREDIT_NOTE)
         );
     }
@@ -1192,7 +1192,7 @@ public class TicketReservationManager {
             reservationsGroupedByEvent.forEach((event, reservations) -> {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(),
-                    STUCK_TICKETS_SUBJECT,  (TextTemplateGenerator)() -> String.format(STUCK_TICKETS_MSG, event.getDisplayName()));
+                    STUCK_TICKETS_SUBJECT,  () -> RenderedTemplate.plaintext(String.format(STUCK_TICKETS_MSG, event.getDisplayName())));
 
                 extensionManager.handleStuckReservations(event, reservations.stream().map(p -> p.getLeft().getId()).collect(toList()));
             });
@@ -1573,10 +1573,10 @@ public class TicketReservationManager {
         if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
             Locale oldUserLocale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
             String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
-            notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), subject, (MultipartTemplateGenerator)() -> ownerChangeTextBuilder.generate(newTicket));
+            notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
             if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
-                notificationManager.sendSimpleEmail(event, null, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", (MultipartTemplateGenerator)() -> ownerChangeTextBuilder.generate(newTicket));
+                notificationManager.sendSimpleEmail(event, null, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
             }
         }
 
@@ -1688,7 +1688,7 @@ public class TicketReservationManager {
                     Locale locale = p.getRight();
                     ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
                     notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation.reminder.mail.subject", 
-                    		new Object[]{getShortReservationID(event, reservation)}, locale), (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
+                    		new Object[]{getShortReservationID(event, reservation)}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
                 });
     }
 
@@ -1707,7 +1707,7 @@ public class TicketReservationManager {
                 String subject = String.format("There are %d pending offline payments that will expire in event: %s", reservations.size(), event.getDisplayName());
                 String baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
                 Map<String, Object> model = TemplateResource.prepareModelForOfflineReservationExpiringEmailForOrganizer(event, reservations, baseUrl);
-                notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject, (MultipartTemplateGenerator)() ->
+                notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject, () ->
                     templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER, model, Locale.ENGLISH));
                 extensionManager.handleOfflineReservationsWillExpire(event, reservations);
             }
@@ -1745,7 +1745,7 @@ public class TicketReservationManager {
                         Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(LocaleUtil::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
                         notificationManager.sendSimpleEmail(event, t.getTicketsReservationId(), t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", 
-                        		new Object[]{event.getDisplayName()}, locale), (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
+                        		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });
             return null;
         });
@@ -1776,7 +1776,7 @@ public class TicketReservationManager {
                         ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
                         Locale locale = findReservationLanguage(reservation.getId());
                         notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", 
-                        		new Object[]{event.getDisplayName()}, locale), (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
+                        		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
                     });
                 return null;
             });
@@ -1836,7 +1836,7 @@ public class TicketReservationManager {
         Locale locale = LocaleUtil.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
         notificationManager.sendSimpleEmail(event, reservationId, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
                 new Object[]{event.getDisplayName()}, locale),
-        		(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
+        		() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
 
         String ticketCategoryDescription = ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
 
@@ -1844,7 +1844,7 @@ public class TicketReservationManager {
         Map<String, Object> adminModel = TemplateResource.buildModelForTicketHasBeenCancelledAdmin(organization, event, ticket,
             ticketCategoryDescription, additionalServiceItems, asi -> additionalServiceTextRepository.findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE));
         notificationManager.sendSimpleEmail(event, null, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
-        		(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
+        		() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
 
         int deletedValues = ticketFieldRepository.deleteAllValuesForTicket(ticket.getId());
         log.debug("deleting {} field values for ticket {}", deletedValues, ticket.getId());
@@ -2170,13 +2170,13 @@ public class TicketReservationManager {
         if(cancelReservation || configurationManager.getFor(NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
             notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
                 new Object[]{shortReservationID, event.getDisplayName()}, locale),
-            	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER, model, locale),
+            	() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER, model, locale),
                 List.of());
         }
 
         notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
             new Object[]{shortReservationID, event.getDisplayName()}, locale),
-        	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL, model, locale),
+        	() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL, model, locale),
             List.of());
 
     }
@@ -2332,7 +2332,7 @@ public class TicketReservationManager {
                 "approvalErrors", errors
             );
             notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject,
-            	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.OFFLINE_PAYMENT_MATCHES_FOUND, model, Locale.ENGLISH));
+            	() -> templateManager.renderTemplate(event, TemplateResource.OFFLINE_PAYMENT_MATCHES_FOUND, model, Locale.ENGLISH));
         }
 
 

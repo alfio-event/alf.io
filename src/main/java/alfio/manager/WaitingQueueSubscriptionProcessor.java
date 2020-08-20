@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.support.MultipartTemplateGenerator;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
@@ -127,7 +126,7 @@ public class WaitingQueueSubscriptionProcessor {
                     reservationId,
                     subscription.getEmailAddress(),
                     subject,
-                    (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_RESERVATION_EMAIL, model, locale));
+                    () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_RESERVATION_EMAIL, model, locale));
             waitingQueueRepository.flagAsPending(reservationId, subscription.getId());
         });
     }

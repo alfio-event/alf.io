@@ -77,7 +77,6 @@ task validate {
 }
 
 def profile = project.hasProperty('profile') ? project.profile : 'dev'
-
 ext {
     // default settings
     jettyPort = 8080
@@ -489,5 +488,8 @@ node {
 task mjmlToHtml( type: NodeTask, dependsOn: 'npmInstall' ) {
     script = file( 'src/main/node/mjmlToHtml.js' )
 }
-
-build.dependsOn mjmlToHtml
+// We build HTML templates from MJML source files and then save them under "build/generated/resources" in order to be
+// included in the final artifact.
+// TODO should we do the same for plaintext templates? See https://gist.github.com/brasilikum/3cd515bad5541ca6c76873faf10445c2
+processResources.dependsOn(mjmlToHtml)
+sourceSets.main.output.dir file("$buildDir/generated/resources"), builtBy: mjmlToHtml

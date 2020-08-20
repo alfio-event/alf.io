@@ -29,6 +29,7 @@ import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.util.Json;
+import alfio.util.RenderedTemplate;
 import alfio.util.TemplateManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -124,7 +125,7 @@ public class CustomMessageManager {
                             attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
                         }
                     }
-                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, (TextTemplateGenerator)text::toString, attachments);
+                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, () -> RenderedTemplate.plaintext(text.toString()), attachments);
                 });
         });
 

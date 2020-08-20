@@ -22,6 +22,7 @@ import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -99,7 +100,8 @@ public class OpenIdAuthenticationManagerTest {
         String body = authenticationManager.buildRetrieveClaimsUrlBody(code);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, String> expectedBody = mapper.readValue(
-                "{\"code\":\"code\",\"redirect_uri\":\"callback\",\"grant_type\":\"authorization_code\",\"client_secret\":\"1234\",\"client_id\":\"123\"}", Map.class);
+            "{\"code\":\"code\",\"redirect_uri\":\"callback\",\"grant_type\":\"authorization_code\",\"client_secret\":\"1234\",\"client_id\":\"123\"}", new TypeReference<>() {
+            });
         Assert.assertEquals(expectedBody, mapper.readValue(body, Map.class));
     }
 
