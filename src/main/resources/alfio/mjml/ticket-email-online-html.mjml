@@ -91,7 +91,7 @@
                     {{#i18n}}email.event.online.important-information{{/i18n}}
                 </mj-text>
                 <mj-text align="center" font-size="14px">{{#i18n}}email.event.online.check-in{{/i18n}}</mj-text>
-                <mj-button background-color="#28a745" href="{{onlineCheckInUrl}}">
+                <mj-button background-color="#28a745" href="{{onlineCheckInUrl}}" rel="notrack">
                     {{#i18n}}email-ticket.online.join-event{{/i18n}}
                 </mj-button>
                 <mj-text align="center" font-size="14px">{{#i18n}}email-ticket.look-forward{{/i18n}}</mj-text>
@@ -136,7 +136,7 @@
     
 	    <mj-section>
             <mj-column width="100%">
-                <mj-button align="center" background-color="#7C8B95" href="{{ticketUrl}}"> {{#i18n}}email-ticket.view-modify{{/i18n}}</mj-button>
+                <mj-button rel="notrack" align="center" background-color="#7C8B95" href="{{ticketUrl}}"> {{#i18n}}email-ticket.view-modify{{/i18n}}</mj-button>
             </mj-column>
 	    </mj-section>
 	   	
