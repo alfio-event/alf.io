@@ -19,11 +19,13 @@ package alfio.manager;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.support.response.ValidatedResponse;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.result.ValidationResult;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.*;
@@ -60,6 +62,7 @@ public class PromoCodeRequestManager {
     private NotificationManager notificationManager;
     private final TemplateManager templateManager;
     private final EmailMessageRepository emailMessageRepository;
+    private final ConfigurationManager configurationManager;
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -220,6 +223,8 @@ public class PromoCodeRequestManager {
         model.put("promoCodeAmount", pCode.get().getMaxUsage() - countUsage);
         model.put("refEmail",pCode.get().getEmailReference());
         model.put("promoCodeDetails",pCode.get().getDescription());
+        String baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
+        model.put("baseUrl",baseUrl);
 
         //get associated event, if any
         var eventId = pCode.get().getEventId();
