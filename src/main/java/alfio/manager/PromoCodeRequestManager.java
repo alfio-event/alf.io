@@ -28,6 +28,7 @@ import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -63,6 +64,7 @@ public class PromoCodeRequestManager {
     private final TemplateManager templateManager;
     private final EmailMessageRepository emailMessageRepository;
     private final ConfigurationManager configurationManager;
+    private final OrganizationRepository organizationRepository;
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -225,6 +227,7 @@ public class PromoCodeRequestManager {
         model.put("promoCodeDetails",pCode.get().getDescription());
         String baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
         model.put("baseUrl",baseUrl);
+        model.put("organization", organizationRepository.getById(pCode.get().getOrganizationId()));
 
         //get associated event, if any
         var eventId = pCode.get().getEventId();
