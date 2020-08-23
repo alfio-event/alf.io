@@ -700,6 +700,10 @@
         };
 
         $scope.save = function(form, event) {
+            $scope.submitting = true;
+            var deactivateLoading = function() {
+                $scope.submitting = false;
+            };
             validationPerformer($q, EventService.checkEvent, event, form, $scope, NotificationHandler).then(function() {
                 EventService.createEvent(event).success(function() {
                     $scope.additionalFieldsToBeCreated = $scope.additionalFieldsToBeCreated || [];
@@ -741,11 +745,11 @@
                                 delete window.sessionStorage.new_event;
                             }
                             $state.go('events.single.detail', {eventName: event.shortName});
-                        });
+                        }, deactivateLoading);
                     });
 
-                });
-            }, angular.noop);
+                }).error(deactivateLoading);
+            }, deactivateLoading);
         };
 
         //persist model
