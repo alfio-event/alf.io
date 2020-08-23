@@ -242,7 +242,9 @@
         return {
             restrict: 'A',
             link: function(scope, element, attrs) {
-                element.focus();
+                setTimeout(function() {
+                    element.focus();
+                }, 10);
             }
         };
     });

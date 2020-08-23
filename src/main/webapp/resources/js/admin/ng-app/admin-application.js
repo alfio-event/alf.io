@@ -970,6 +970,7 @@
                     $rootScope.$emit('EventUpdated');
                 }
                 $scope.event = result.event;
+                $scope.loading = false;
                 var href = $window.location.href;
                 $scope.eventPublicURL = href.substring(0, href.indexOf('/admin/')) + '/event/' + result.event.shortName;
                 $scope.organization = result.organization;
@@ -985,7 +986,6 @@
                 });
                 //
 
-                $scope.loading = false;
                 $scope.loadingMap = true;
                 LocationService.getMapUrl(result.event.latitude, result.event.longitude).then(function(mapUrl) {
                     $scope.event.geolocation = {
