@@ -27,7 +27,8 @@
                 deletePromocode: '<',
                 addPromoCode: '<',
                 promoCodeType: '<',
-                isAccess: '<'
+                isAccess: '<',
+                sendPromotionalEmail: '<'
             }
         });
 
@@ -39,6 +40,7 @@
         ctrl.deletePromocode = deletePromocode;
         ctrl.disablePromocode = disablePromocode;
         ctrl.addPromoCode = addPromoCode;
+        ctrl.sendPromotionalEmail = sendPromotionalEmail;
         ctrl.sendEmail = sendEmail;
         ctrl.changeDate = changeDate;
 
@@ -198,6 +200,35 @@
                         }
                     });
                     reject('validation error');
+                }
+            });
+        }
+
+        function sendPromotionalEmail(pCodes){
+            var uList = pCodes.map(x => ({description: x.description, emailReference: x.emailReference, selected: false }));
+            console.log('sendPromotionalEmail', uList);
+            $uibModal.open({
+                size: 'lg',
+                templateUrl: '../resources/js/admin/feature/promo-codes/send-promotional-email-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.cancel = function() {$scope.$dismiss('canceled');};
+                    $scope.recipients = uList;
+                    $scope.subject = '';
+                    $scope.message = '';
+                    $scope.searchText = '';
+
+                    $scope.sendEmail = function() {
+                        console.log('Service invocation');
+//                        toUpdate.categories = _.chain($scope.validCategories)
+//                            .filter(function(c) { return c.selected; })
+//                            .map('id')
+//                            .value();
+//                        PromoCodeService.update(promocode.id, toUpdate).then(function() {
+//                            $scope.$close(true);
+//                        }).then(loadData);
+                    };
+
                 }
             });
         }

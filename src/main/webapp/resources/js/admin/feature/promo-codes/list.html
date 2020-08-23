@@ -1,12 +1,19 @@
 <!--<div class="form-group">-->
 <!--    <input placeholder="Find promo codes.." ng-model="searchText" name="searchText" id="searchText" class="form-control"/>-->
 <!--</div>-->
-<div class="input-group">
-    <span class="input-group-btn">
-        <button class="btn btn-success" title="Add new promo code" type="button" ng-click="$ctrl.addPromoCode($ctrl.promoCodeType)"><i class="fa fa-plus"></i></button>
-    </span>
-    <input placeholder="Find promo codes.." ng-model="searchText" name="searchText" id="searchText" class="form-control"/>
-</div><!-- /input-group -->
+<div class="row">
+    <div class="col-sm-6">
+        <div class="input-group">
+            <span class="input-group-btn">
+                <button class="btn btn-success" title="Add new promo code" type="button" ng-click="$ctrl.addPromoCode($ctrl.promoCodeType)"><i class="fa fa-plus"></i></button>
+            </span>
+            <input placeholder="Find promo codes.." ng-model="searchText" name="searchText" id="searchText" class="form-control"/>
+        </div><!-- /input-group -->
+    </div>
+    <div class="col-sm-6">
+        <button title="Send promo email" class="btn btn-success" data-ng-click="$ctrl.sendPromotionalEmail($ctrl.promocodes)"><i class="fa fa-envelope"></i> Promotional email</button>
+    </div>
+</div>
 <!--<div>TYPE {{$ctrl.promoCodeType}}</div>-->
 <div class="table-responsive">
     <table class="table" data-ng-if="$ctrl.promocodes.length > 0">
