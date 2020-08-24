@@ -20,6 +20,7 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
     $templateCache.put('copy-event-typeahead-event.html', '<a>{{match.label.displayName}} - {{match.label.formattedBegin | formatDate}} / {{match.label.formattedEnd | formatDate}}</a>');
 
     var ctrl = this;
+    ctrl.loading = false;
 
     ctrl.newEvent = {
         begin: ctrl.event.begin,
@@ -27,6 +28,7 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
     };
 
     ctrl.$onInit = function() {
+        ctrl.loading = true;
         $q.all([EventService.getAllActiveEvents(), EventService.getAllExpiredEvents()]).then(function(res) {
             ctrl.events = res[0].data.concat(res[1].data);
             if(ctrl.eventNameToPreselect) {
@@ -37,6 +39,7 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
                     }
                 }
             }
+            ctrl.loading = false;
         });
     }
 
@@ -65,6 +68,10 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
             }
             return false;
         }
+    }
+
+    ctrl.clearSelection = function() {
+        ctrl.selectedEvent = undefined;
     }
 
     ctrl.onSelect = function($item) {

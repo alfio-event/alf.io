@@ -1,5 +1,5 @@
 <div class="page-header">
-    <h1>{{event.displayName}} <button class="btn btn-default btn-sm ml-1" data-ng-click="editHeader()" uib-tooltip="Edit"><i class="fa fa-edit"></i></button></h1>
+    <h1>{{event.displayName}} <button type="button" class="btn btn-default btn-sm ml-1" data-ng-click="editHeader()" uib-tooltip="Edit"><i class="fa fa-edit"></i></button></h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
 </div>
 <div class="alert alert-warning" data-ng-if="event.status !== 'PUBLIC'">
