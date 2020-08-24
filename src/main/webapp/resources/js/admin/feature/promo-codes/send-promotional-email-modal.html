@@ -6,12 +6,16 @@
         <div class="row">
             <div class="col-sm-4">
                 <div class="input-group">
-                    <span class="input-group-addon" id="search-len">
-                        <i class="fa fa-search"></i>
+                    <span class="input-group-addon" title="Select all">
+                        <input type="checkbox" ng-model="selectAll" ng-click="doSelectAll(selectAll)" >
                     </span>
                     <input placeholder="Find recipients" ng-model="searchText" name="searchText" id="searchText" class="form-control"/>
                 </div><!-- /input-group -->
+<!--                <div class="checkbox text-left">-->
+<!--                    <label><input type="checkbox" ng-model="selectAll" ng-click="doSelectAll(selectAll)" >Select all</label>-->
+<!--                </div>-->
                 <div style="max-height: 300px; overflow-y: auto">
+
                     <ul class="list-group">
                         <li style="text-align:left;" class="list-group-item small" data-ng-repeat="recipient in recipients | filter:searchText">
                             <input type="checkbox" ng-model="recipient.selected">
@@ -28,26 +32,26 @@
                 </div>
             </div>
             <div class="col-sm-8">
-                <div class="form-group" bs-form-error="subject">
+                <div class="form-group">
                     <label for="subject">Email subject</label>
-                    <input type="text" data-ng-model="subject" name="subject" id="subject" class="form-control">
-                    <field-error  data-field-obj="subject" data-show-existing-errors="showExistingErrors"></field-error>
+                    <input type="text" ng-model="subject" name="subject" id="subject" class="form-control">
                 </div>
-                <div class="form-group" bs-form-error="mailbody">
+                <div class="form-group">
                     <label for="mailbody">Email content</label>
-                    <textarea rows="8" data-ng-model="message" name="mailbody" id="mailbody" class="form-control">
-                    <field-error data-field-obj="message" data-show-existing-errors="showExistingErrors"></field-error>
+                    <textarea rows="8" ng-model="message" name="mailbody" id="mailbody" class="form-control"></textarea>
+                </div>
+                <div class="clearfix"></div>
+                <div class="row">
+                    <div class="col-md-4 col-md-push-8 col-xs-12">
+                        <button type="submit" class="btn btn-warning btn-block" style="margin-bottom: 10px">Send</button>
+                    </div>
+                    <div class="col-md-4 col-xs-12">
+                        <button type="button" class="btn btn-default btn-block" ng-click="cancel()" style="margin-bottom: 10px">Cancel</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal-footer">
-        <div class="col-md-4 col-md-push-8 col-xs-12">
-            <button type="submit" class="btn btn-warning btn-block" data-ng-disabled="mailForm.$waiting || mailForm.$invalid" style="margin-bottom: 10px">Send</button>
-        </div>
-        <div class="col-md-4 col-md-pull-4 col-xs-12">
-            <button type="button" class="btn btn-default btn-block" data-ng-click="cancel()" style="margin-bottom: 10px">Cancel</button>
-        </div>
-    </div>
+
 </form>

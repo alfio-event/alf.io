@@ -205,6 +205,7 @@
         }
 
         function sendPromotionalEmail(pCodes){
+            var organizationId = ctrl.organizationId;
             var uList = pCodes.map(x => ({description: x.description, emailReference: x.emailReference, selected: false }));
             console.log('sendPromotionalEmail', uList);
             $uibModal.open({
@@ -217,18 +218,46 @@
                     $scope.subject = '';
                     $scope.message = '';
                     $scope.searchText = '';
+                    $scope.selectAll = '';
+                    $scope.searchText = '';
+                    $scope.organizationId = organizationId;
 
                     $scope.sendEmail = function() {
-                        console.log('Service invocation');
-//                        toUpdate.categories = _.chain($scope.validCategories)
-//                            .filter(function(c) { return c.selected; })
-//                            .map('id')
-//                            .value();
-//                        PromoCodeService.update(promocode.id, toUpdate).then(function() {
-//                            $scope.$close(true);
-//                        }).then(loadData);
-                    };
+                        console.log('Service invocation sendPromotionalEmail', $scope.recipients, $scope.subject, $scope.message, $scope.organizationId);
 
+                        var selRecipients = $scope.recipients.filter(x => x.selected);
+                        if (!selRecipients || selRecipients.length == 0) {
+                            $window.alert('Please select at least one recipient');
+                            return;
+                        }
+                        if (!$scope.subject || $scope.subject == ''){
+                            $window.alert('Please type a subject');
+                            return;
+                        }
+                        if (!$scope.message || $scope.message == ''){
+                            $window.alert('Please type a message');
+                            return;
+                        }
+                        var body = {
+                            recipients: selRecipients.map(x => x.emailReference),
+                            subject: $scope.subject,
+                            message: $scope.message
+                        }
+
+                        if($window.confirm('Send the promotional email to selected recipients?')) {
+                            PromoCodeService.sendPromotionalEmail($scope.organizationId, body).then(function() {
+                                $scope.$close(true);
+                            });
+                        }
+                    };
+                    $scope.doSelectAll = function() {
+                        console.log('doSelectAll', $scope.selectAll, $scope.searchText);
+                        $scope.recipients
+                            .filter(x => $scope.searchText == '' || x.description.toLowerCase().indexOf($scope.searchText.toLowerCase()) != -1 || x.emailReference.toLowerCase().indexOf($scope.searchText.toLowerCase()) != -1)
+                            .forEach(x => {
+                                x.selected = $scope.selectAll;
+                            });
+                    }
                 }
             });
         }

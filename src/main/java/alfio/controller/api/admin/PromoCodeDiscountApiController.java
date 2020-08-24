@@ -22,6 +22,7 @@ import alfio.model.PromoCodeDiscount;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
+import alfio.model.modification.PromotionalEmailModification;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import lombok.RequiredArgsConstructor;
@@ -118,6 +119,11 @@ public class PromoCodeDiscountApiController {
     @PostMapping("/promo-code/{promoCodeId}/send-email")
     public boolean sendEmailPromoCode(@PathVariable("promoCodeId") int promoCodeId) {
         return promoCodeRequestManager.sendEMail(promoCodeId);
+    }
+
+    @PostMapping("/promo-code/{organizationId}/send-promotional-email")
+    public boolean sendPromotionalEmail(@PathVariable("organizationId") int organizationId, @RequestBody PromotionalEmailModification promotionalEmail) {
+        return promoCodeRequestManager.sendPromotionalEmail(promotionalEmail.getRecipients(), promotionalEmail.getSubject(), promotionalEmail.getMessage(), organizationId);
     }
     
     @GetMapping("/promo-code/{promoCodeId}/count-use")

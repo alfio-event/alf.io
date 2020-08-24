@@ -748,6 +748,9 @@
                 sendEmail: function(promoCodeId) {
                     return $http['post']('/admin/api/promo-code/' + promoCodeId + '/send-email');
                 },
+                sendPromotionalEmail: function(organizationId, body) {
+                    return $http['post']('/admin/api/promo-code/'+organizationId+'/send-promotional-email',body).error(HttpErrorHandler.handle);
+                },
         };
     });
 
