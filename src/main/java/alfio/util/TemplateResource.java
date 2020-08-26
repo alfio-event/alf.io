@@ -166,6 +166,13 @@ public enum TemplateResource {
         }
     },
 
+    PROMOTIONAL_EMAIL("/alfio/templates/promotional-email", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return Map.of();
+        }
+    },
+
     ONLINE_CHECK_IN_DETAILS("/alfio/templates/online-check-in-instructions-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {

@@ -263,6 +263,7 @@ public class PromoCodeRequestManager {
         String baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
         model.put("baseUrl",baseUrl);
         model.put("organization", organizationRepository.getById(organizationId));
+        model.put("refEmail","");
 
         int eventId = -1;
         //no event, no mail (event_id is a FK on email table) :( attaching fake event
@@ -274,10 +275,11 @@ public class PromoCodeRequestManager {
         }
 
         EventAndOrganizationId eventAndOrganizationId = new EventAndOrganizationId(eventId,organizationId);
-        var temp = TemplateProcessor.buildGenericEmail(templateManager, TemplateResource.EMAIL_FOR_PROMO_CODE, locale, model, eventAndOrganizationId );
+        var temp = TemplateProcessor.buildGenericEmail(templateManager, TemplateResource.PROMOTIONAL_EMAIL, locale, model, eventAndOrganizationId );
         var textRender = temp.getLeft();
         var htmlRender = temp.getRight();
         for (var recipient : recipients) {
+            model.put("refEmail",recipient);
             emailMessageRepository.insertWithPromoCode(eventId, "", recipient, null, subject, textRender, htmlRender, "", "", ZonedDateTime.now(UTC), organizationId);
         }
         return true;
