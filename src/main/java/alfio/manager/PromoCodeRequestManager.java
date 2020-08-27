@@ -255,7 +255,7 @@ public class PromoCodeRequestManager {
         return true;
     }
 
-    public boolean sendPromotionalEmail(List<String> recipients, String subject, String message, int organizationId) {
+    public boolean sendPromotionalEmail(String recipient, String subject, String message, int organizationId) {
         var locale = Locale.ITALY;
 
         var model = new HashMap<String, Object>();
@@ -263,8 +263,7 @@ public class PromoCodeRequestManager {
         String baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
         model.put("baseUrl",baseUrl);
         model.put("organization", organizationRepository.getById(organizationId));
-        model.put("refEmail","");
-
+        model.put("refEmail",recipient);
         int eventId = -1;
         //no event, no mail (event_id is a FK on email table) :( attaching fake event
         var eventList = eventRepository.findByOrganizationIds(Collections.singleton(organizationId));
@@ -273,15 +272,11 @@ public class PromoCodeRequestManager {
         } else {
             eventId = eventList.get(0).getId(); //I don't care what event is binded to promocode
         }
-
         EventAndOrganizationId eventAndOrganizationId = new EventAndOrganizationId(eventId,organizationId);
         var temp = TemplateProcessor.buildGenericEmail(templateManager, TemplateResource.PROMOTIONAL_EMAIL, locale, model, eventAndOrganizationId );
         var textRender = temp.getLeft();
         var htmlRender = temp.getRight();
-        for (var recipient : recipients) {
-            model.put("refEmail",recipient);
-            emailMessageRepository.insertWithPromoCode(eventId, "", recipient, null, subject, textRender, htmlRender, "", "", ZonedDateTime.now(UTC), organizationId);
-        }
+        emailMessageRepository.insertWithPromoCode(eventId, "", recipient, null, subject, textRender, htmlRender, "", "", ZonedDateTime.now(UTC), organizationId);
         return true;
     }
 

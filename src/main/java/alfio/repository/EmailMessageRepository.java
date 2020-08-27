@@ -77,8 +77,8 @@ public interface EmailMessageRepository {
                @Bind("timestamp") ZonedDateTime requestTimestamp,
                @Bind("organization_id") int organization_id);
 
-    @Query("update email_message set status = :status where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
-    int updateStatus(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("status") String status, @Bind("expectedStatuses") List<String> expectedStatuses);
+    @Query("update email_message set status = :status where id = :messageId and event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
+    int updateStatus(@Bind("messageId") int messageId, @Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("status") String status, @Bind("expectedStatuses") List<String> expectedStatuses);
 
     @Query("update email_message set status = :status where id = :messageId and event_id = :eventId")
     int updateStatus(@Bind("eventId") int eventId, @Bind("status") String status, @Bind("messageId") int messageId);

@@ -123,7 +123,10 @@ public class PromoCodeDiscountApiController {
 
     @PostMapping("/promo-code/{organizationId}/send-promotional-email")
     public boolean sendPromotionalEmail(@PathVariable("organizationId") int organizationId, @RequestBody PromotionalEmailModification promotionalEmail) {
-        return promoCodeRequestManager.sendPromotionalEmail(promotionalEmail.getRecipients(), promotionalEmail.getSubject(), promotionalEmail.getMessage(), organizationId);
+        for (var recipient: promotionalEmail.getRecipients()) {
+            promoCodeRequestManager.sendPromotionalEmail(recipient, promotionalEmail.getSubject(), promotionalEmail.getMessage(), organizationId);
+        }
+        return true;
     }
     
     @GetMapping("/promo-code/{promoCodeId}/count-use")

@@ -351,7 +351,7 @@ public class NotificationManager {
 
 
         try {
-            int result = Optional.ofNullable(tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name(), PROMO_CODE.name())))).orElse(0);
+            int result = Optional.ofNullable(tx.execute(status -> emailMessageRepository.updateStatus(messageId, message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name(), PROMO_CODE.name())))).orElse(0);
             if(result > 0) {
                 return Optional.ofNullable(tx.execute(status -> {
                     sendMessage(event, message);

@@ -183,7 +183,7 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.hello [{{refEmail}}]{{/i18n}}<br />
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:24px;line-height:1;text-align:left;color:#000000;">{{#i18n}}email.hello [{{refEmail}}]{{/i18n}}<br />
                         {{custom-header-text}}</div>
                     </td>
                   </tr>
@@ -231,7 +231,7 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:12px;line-height:1;text-align:center;color:#000000;">{{message}}</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:justify;text-justify:inter-word;color:#000000;">{{message}}</div>
                     </td>
                   </tr>
                 </table>
