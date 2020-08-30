@@ -110,8 +110,7 @@
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
                                     <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">
-                                        <span data-ng-if="$ctrl.paymentInfo.paymentMethod != 'SAFERPAY'">{{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</span>
-                                        <span data-ng-if="$ctrl.paymentInfo.paymentMethod == 'SAFERPAY'">Not Available, check Saferpay Backoffice</span>
+                                        {{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}
                                     </dd>
                                 </dl>
                             </div>

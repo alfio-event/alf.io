@@ -11,7 +11,6 @@ import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.PaymentInfo;
-import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.model.transaction.capabilities.WebhookHandler;
 import alfio.model.transaction.token.SaferpayToken;
 import alfio.model.transaction.webhook.EmptyWebhookPayload;
@@ -45,7 +44,7 @@ import static java.util.Base64.getEncoder;
 @Component
 @Transactional
 @AllArgsConstructor
-public class SaferpayManager implements PaymentProvider, RefundRequest, PaymentInfo, WebhookHandler {
+public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ PaymentInfo, WebhookHandler {
 
     private static final String LIVE_ENDPOINT = "https://www.saferpay.com/api";
     private static final String TEST_ENDPOINT = "https://test.saferpay.com/api";
@@ -207,7 +206,7 @@ public class SaferpayManager implements PaymentProvider, RefundRequest, PaymentI
         return Optional.empty();
     }
 
-    @Override
+    //@Override
     public boolean refund(Transaction transaction, Event event, Integer amount) {
         var configuration = loadConfiguration(event);
         var requestBody = new TransactionRefundBuilder(transaction.getPaymentId(), 0)
