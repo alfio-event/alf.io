@@ -360,7 +360,7 @@
         };
 
         ctrl.confirmRefund = function() {
-            if(ctrl.amountToRefund != null && ctrl.amountToRefund.length > 0) {
+            if(ctrl.amountToRefund != null && ctrl.amountToRefund > 0) {
                 if ($window.confirm('Are you sure to refund ' + ctrl.amountToRefund + ctrl.paymentInfo.transaction.currency + ' ?')) {
                     ctrl.refundInProgress = true;
                     AdminReservationService.refund(ctrl.event.shortName, ctrl.reservation.id, ctrl.amountToRefund).then(function () {

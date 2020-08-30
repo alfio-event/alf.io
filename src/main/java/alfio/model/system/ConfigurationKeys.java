@@ -76,6 +76,15 @@ public enum ConfigurationKeys {
     STRIPE_CONNECTED_ID("Connected ID", true, SettingCategory.PAYMENT_STRIPE, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
     STRIPE_ENABLE_SCA("Enable Strong Customer Authentication", false, SettingCategory.PAYMENT_STRIPE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
 
+    // Saferpay by SIX
+    SAFERPAY_ENABLED("Saferpay enabled", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    SAFERPAY_LIVE_MODE("Live Mode (default false)", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    SAFERPAY_API_USERNAME("API Username", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
+    SAFERPAY_API_PASSWORD("API Password", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
+    SAFERPAY_CUSTOMER_ID("Customer ID", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
+    SAFERPAY_TERMINAL_ID("Terminal ID", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
+
+
     SPECIAL_PRICE_CODE_LENGTH("Length of special price code", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MAX_AMOUNT_OF_TICKETS_BY_RESERVATION("How many tickets can be purchased in a single reservation (default 5)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT, TICKET_CATEGORY)),
     ASSIGNMENT_REMINDER_START("How many days before the event should be sent a reminder to the users about Tickets assignment? (default: 10 days)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
@@ -245,6 +254,7 @@ public enum ConfigurationKeys {
         RESERVATION_UI("Reservation Process UI"),
         PAYMENT("Payment"),
         PAYMENT_STRIPE("Stripe.com settings"),
+        PAYMENT_SAFERPAY("Saferpay settings"),
         PAYMENT_PAYPAL("PayPal settings"),
         PAYMENT_OFFLINE("Offline payment settings"),
         PAYMENT_MOLLIE("Mollie settings"),

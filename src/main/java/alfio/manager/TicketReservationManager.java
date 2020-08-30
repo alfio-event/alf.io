@@ -2122,6 +2122,7 @@ public class TicketReservationManager {
                 switch(paymentWebhookResult.getType()) {
                     case FAILED:
                     case REJECTED:
+                    case CANCELLED:
                         return PaymentResult.failed(paymentWebhookResult.getReason());
                     case NOT_RELEVANT:
                     case ERROR:

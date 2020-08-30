@@ -33,7 +33,8 @@ public enum PaymentProxy {
     NONE("no payment required", false, false, Collections.emptySet(), false, Collections.emptySet(), PaymentMethod.NONE),
     ADMIN("manual", false, false, Collections.emptySet(), false, Collections.emptySet(), PaymentMethod.NONE),
     PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true, Collections.emptySet(), PaymentMethod.PAYPAL),
-    MOLLIE("mollie", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.emptySet(), PaymentMethod.IDEAL);
+    MOLLIE("mollie", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.emptySet(), PaymentMethod.IDEAL),
+    SAFERPAY("saferpay", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_SAFERPAY), true, Collections.emptySet(), PaymentMethod.CREDIT_CARD);
 
     private final String description;
     private final boolean deskPayment;

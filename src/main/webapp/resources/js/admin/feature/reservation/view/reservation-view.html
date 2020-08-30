@@ -62,7 +62,7 @@
                             <dl class="dl">
                                 <dt>Payment id</dt>
                                 <dd ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
-                                <dt>Transaction timestamp</dt>
+                                <dt>Timestamp</dt>
                                 <dd ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
                                 <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
                                 <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
@@ -102,14 +102,17 @@
                                     <dt ng-if="$ctrl.paymentInfo.transaction">Payment id</dt>
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
 
-                                    <dt ng-if="$ctrl.paymentInfo.transaction">Transaction timestamp</dt>
+                                    <dt ng-if="$ctrl.paymentInfo.transaction">Timestamp</dt>
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
                                     <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
-                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">{{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</dd>
+                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">
+                                        <span data-ng-if="$ctrl.paymentInfo.paymentMethod != 'SAFERPAY'">{{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</span>
+                                        <span data-ng-if="$ctrl.paymentInfo.paymentMethod == 'SAFERPAY'">Not Available, check Saferpay Backoffice</span>
+                                    </dd>
                                 </dl>
                             </div>
                             <div class="col-xs-12 col-sm-6" ng-if="$ctrl.reservation.status !== 'STUCK' && $ctrl.paymentInfo.supportRefund">
