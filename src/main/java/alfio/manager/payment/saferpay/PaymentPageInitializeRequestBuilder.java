@@ -1,16 +1,37 @@
 package alfio.manager.payment.saferpay;
 
 import alfio.manager.payment.PaymentSpecification;
+import alfio.model.transaction.PaymentMethod;
 import com.google.gson.stream.JsonWriter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.StringWriter;
+import java.util.Set;
 
 public class PaymentPageInitializeRequestBuilder {
     public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/saferpay/event/{eventShortName}/reservation/{reservationId}/success";
     private static final String SUCCESS_URL_TEMPLATE = "/event/{eventShortName}/reservation/{reservationId}";
+
+    private static final Set<String> SUPPORTED_METHODS = Set.of(
+        PaymentMethod.ALIPAY.name(),
+
+        //CREDIT_CARD
+        "AMEX",
+        "VISA",
+        "VPAY",
+        "DINERS",
+        "BONUS",
+        "JCB",
+        "MAESTRO",
+        "MASTERCARD",
+        "POSTCARD",
+
+        PaymentMethod.POSTFINANCE.name(),
+        PaymentMethod.TWINT.name()
+    );
+
     private String customerId;
     private String requestId;
     private int retryIndicator;
@@ -58,8 +79,10 @@ public class PaymentPageInitializeRequestBuilder {
     @SneakyThrows
     public String build() {
         var out = new StringWriter();
+        var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
         try (var writer = new JsonWriter(out)) {
-            new RequestHeaderBuilder(customerId, requestId, retryIndicator).appendTo(writer.beginObject()) //
+            // @formatter:off
+            addPaymentMethods(requestHeaderBuilder.appendTo(writer.beginObject()) //
                 .name("TerminalId").value(terminalId) //
                 .name("Payment").beginObject() //
                     .name("Amount").beginObject() //
@@ -72,13 +95,23 @@ public class PaymentPageInitializeRequestBuilder {
                 .name("ReturnUrls").beginObject() //
                     .name("Success").value(successURL) //
                     .name("Fail").value(failureURL) //
-                .endObject()
-                .name("Notification").beginObject()
-                    .name("NotifyUrl").value(notifyURL)
-                .endObject()
+                .endObject() //
+                .name("Notification").beginObject() //
+                    .name("NotifyUrl").value(notifyURL) //
+                .endObject()) //
             .endObject();
+            // @formatter:on
         }
         return out.toString();
+    }
+
+    @SneakyThrows
+    private JsonWriter addPaymentMethods(JsonWriter writer) {
+        var array = writer.name("PaymentMethods").beginArray();
+        for (String method : SUPPORTED_METHODS) {
+            array.value(method);
+        }
+        return array.endArray();
     }
 
     private String expandUriTemplate(String template, String eventName, String reservationId) {
