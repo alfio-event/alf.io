@@ -23,6 +23,7 @@ import com.google.gson.JsonParser;
 import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -156,6 +157,9 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
         int retryCount = Integer.parseInt(transaction.getMetadata().getOrDefault("retryCount", "0"));
         var paymentStatus = retrievePaymentStatus(loadConfiguration(paymentContext.getEvent()), transaction.getPaymentId(), transaction.getReservationId(), retryCount);
         if(paymentStatus.isEmpty()) {
+            LOGGER.debug("Invalidating transaction with ID {}", transaction.getId());
+            transactionRepository.invalidateById(transaction.getId());
+            ticketReservationRepository.updateValidity(transaction.getReservationId(), DateUtils.addMinutes(new Date(), configurationManager.getFor(RESERVATION_TIMEOUT, ConfigurationLevel.event(paymentContext.getEvent())).getValueAsIntOrDefault(25)));
             return PaymentWebhookResult.cancelled();
         }
 

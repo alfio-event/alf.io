@@ -12,7 +12,8 @@ import java.util.Set;
 
 public class PaymentPageInitializeRequestBuilder {
     public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/saferpay/event/{eventShortName}/reservation/{reservationId}/success";
-    private static final String SUCCESS_URL_TEMPLATE = "/event/{eventShortName}/reservation/{reservationId}";
+    public static final String SUCCESS_URL_TEMPLATE = "/event/{eventShortName}/reservation/{reservationId}";
+    public static final String CANCEL_URL_TEMPLATE = "/event/{eventName}/reservation/{reservationId}/payment/saferpay/cancel";
 
     private static final Set<String> SUPPORTED_METHODS = Set.of(
         PaymentMethod.ALIPAY.name(),
@@ -52,7 +53,7 @@ public class PaymentPageInitializeRequestBuilder {
         var reservationId = paymentSpecification.getReservationId();
         var eventUrl = cleanBaseUrl + expandUriTemplate(SUCCESS_URL_TEMPLATE, eventName, reservationId);
         this.successURL = eventUrl + "/book";
-        this.failureURL = eventUrl + "/book";
+        this.failureURL = cleanBaseUrl + expandUriTemplate(CANCEL_URL_TEMPLATE, eventName, reservationId);
         this.notifyURL  = cleanBaseUrl + expandUriTemplate(WEBHOOK_URL_TEMPLATE, eventName, reservationId);
     }
 

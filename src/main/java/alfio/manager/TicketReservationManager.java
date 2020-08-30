@@ -1443,6 +1443,10 @@ public class TicketReservationManager {
         }
         return configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(eventAndOrganizationId, ticketCategoryId)).getValueAsIntOrDefault(5);
     }
+
+    public Optional<TicketReservation> findByIdForEvent(String reservationId, int eventId) {
+        return ticketReservationRepository.findOptionalReservationByIdAndEventId(reservationId, eventId);
+    }
     
     public Optional<TicketReservation> findById(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId);
