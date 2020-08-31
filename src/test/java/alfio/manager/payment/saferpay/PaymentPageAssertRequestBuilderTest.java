@@ -14,32 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction.token;
+package alfio.manager.payment.saferpay;
 
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.PaymentToken;
+import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Test;
 
-public class SaferpayToken implements PaymentToken {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    private final String token;
+class PaymentPageAssertRequestBuilderTest {
 
-    public SaferpayToken(String token) {
-        this.token = token;
-    }
+    @Test
+    void buildRequest() {
+        String json = new PaymentPageAssertRequestBuilder("token", 1)
+            .addAuthentication("customerId", "requestId")
+            .build();
 
-    @Override
-    public String getToken() {
-        return token;
-    }
-
-    @Override
-    public PaymentMethod getPaymentMethod() {
-        return PaymentMethod.CREDIT_CARD;
-    }
-
-    @Override
-    public PaymentProxy getPaymentProvider() {
-        return PaymentProxy.SAFERPAY;
+        var parsedJson = JsonParser.parseString(json).getAsJsonObject();
+        assertEquals("token", parsedJson.get("Token").getAsString());
     }
 }

@@ -1,3 +1,19 @@
+/**
+ * This file is part of alf.io.
+ *
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package alfio.manager.payment;
 
 import alfio.manager.payment.saferpay.*;
@@ -153,13 +169,14 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
         return internalProcessWebhook(transaction, paymentContext);
     }
 
-    private PaymentWebhookResult internalProcessWebhook(Transaction transaction, PaymentContext paymentContext) {
+    PaymentWebhookResult internalProcessWebhook(Transaction transaction, PaymentContext paymentContext) {
         int retryCount = Integer.parseInt(transaction.getMetadata().getOrDefault("retryCount", "0"));
-        var paymentStatus = retrievePaymentStatus(loadConfiguration(paymentContext.getEvent()), transaction.getPaymentId(), transaction.getReservationId(), retryCount);
+        var configuration = loadConfiguration(paymentContext.getEvent());
+        var paymentStatus = retrievePaymentStatus(configuration, transaction.getPaymentId(), transaction.getReservationId(), retryCount);
         if(paymentStatus.isEmpty()) {
             LOGGER.debug("Invalidating transaction with ID {}", transaction.getId());
             transactionRepository.invalidateById(transaction.getId());
-            ticketReservationRepository.updateValidity(transaction.getReservationId(), DateUtils.addMinutes(new Date(), configurationManager.getFor(RESERVATION_TIMEOUT, ConfigurationLevel.event(paymentContext.getEvent())).getValueAsIntOrDefault(25)));
+            ticketReservationRepository.updateValidity(transaction.getReservationId(), DateUtils.addMinutes(new Date(), configuration.get(RESERVATION_TIMEOUT).getValueAsIntOrDefault(25)));
             return PaymentWebhookResult.cancelled();
         }
 
@@ -264,6 +281,11 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
                         return PaymentStatus.EMPTY;
                 }
             }
+            int statusCode = response.statusCode();
+            if(statusCode > 499) {
+                // temporary error
+                throw new IllegalStateException("Internal server error");
+            }
             return PaymentStatus.EMPTY;
         } catch(IllegalStateException e) {
             throw e;
@@ -314,7 +336,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     }
 
     private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> loadConfiguration(Event event) {
-        return configurationManager.getFor(EnumSet.of(SAFERPAY_ENABLED, SAFERPAY_API_USERNAME, SAFERPAY_API_PASSWORD, SAFERPAY_CUSTOMER_ID, SAFERPAY_TERMINAL_ID, SAFERPAY_LIVE_MODE, BASE_URL), ConfigurationLevel.event(event));
+        return configurationManager.getFor(EnumSet.of(SAFERPAY_ENABLED, SAFERPAY_API_USERNAME, SAFERPAY_API_PASSWORD, SAFERPAY_CUSTOMER_ID, SAFERPAY_TERMINAL_ID, SAFERPAY_LIVE_MODE, BASE_URL, RESERVATION_TIMEOUT), ConfigurationLevel.event(event));
     }
 
     private String processPaymentInitializationResponse(HttpResponse<String> response, PaymentSpecification spec, int retryCount) {
