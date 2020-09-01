@@ -9,12 +9,12 @@
             onClose: '<',
             onConfirm: '<'
         },
-        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', ReservationViewCtrl],
+        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', 'ConfigurationService', ReservationViewCtrl],
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal) {
+    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal, ConfigurationService) {
         var ctrl = this;
         ctrl.displayPotentialMatch = false;
 
@@ -67,8 +67,13 @@
                ctrl.allLanguages = allLangs.data;
             });
             var src = ctrl.reservationDescriptor.reservation;
-            var currentURL = $window.location.href;
-            ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage);
+            ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'BASE_URL').then(function(baseUrl) {
+                var cleanUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+                ctrl.reservationUrl = cleanUrl + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage;
+            }, function() {
+                var currentURL = $window.location.href;
+                ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage);
+            })
             var vatApplied = null;
             if(['INCLUDED', 'NOT_INCLUDED'].indexOf(src.vatStatus) > -1) {
                 vatApplied = 'Y';

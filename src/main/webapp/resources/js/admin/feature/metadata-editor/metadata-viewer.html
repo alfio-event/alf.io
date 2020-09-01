@@ -11,7 +11,7 @@
         </thead>
         <tbody>
         <tr data-ng-repeat="callLink in $ctrl.metadata.onlineConfiguration.callLinks">
-            <td><a ng-href="{{callLink.link}}" target="_blank">{{callLink.link}}</a></td>
+            <td><a ng-href="{{callLink.link}}" rel="noopener" target="_blank">{{callLink.link}}</a></td>
             <td data-ng-bind="callLink.validFrom | formatDate"></td>
             <td data-ng-bind="callLink.validTo | formatDate"></td>
         </tr>

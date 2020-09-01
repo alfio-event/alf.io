@@ -6,7 +6,7 @@
     <h4>
         <i class="fa fa-eye-slash"></i>
         this event has not yet been published. Therefore only people who know the direct URL
-        (<a ng-href="{{eventPublicURL}}" target="_blank">{{eventPublicURL}}</a>) can see it.</h4>
+        (<a ng-href="{{eventPublicURL}}" target="_blank" rel="noopener">{{eventPublicURL}}</a>) can see it.</h4>
 
         <a class="btn btn-warning" ng-click="activateEvent(event.id)">Publish now</a>
 </div>
@@ -36,22 +36,22 @@
         <div class="row">
             <div class="col-md-1 hide-overflowing-text hidden-xs hidden-sm">
                 <img data-ng-if="event.fileBlobIdIsPresent" data-ng-src="/file/{{event.fileBlobId}}" class="img-responsive event-logo">
-                <a href="{{event.imageUrl}}" data-ng-if="!event.fileBlobIdIsPresent" target="_blank">{{event.imageUrl}}</a>
+                <a href="{{event.imageUrl}}" data-ng-if="!event.fileBlobIdIsPresent" target="_blank" rel="noopener">{{event.imageUrl}}</a>
             </div>
             <div class="col-md-6 col-xs-12">
                 <dl class="dl-horizontal">
                     <dt>Public URL</dt>
-                    <dd><a ng-href="{{eventPublicURL}}" target="_blank">{{eventPublicURL}}</a></dd>
+                    <dd><a ng-href="{{eventPublicURL}}" target="_blank" rel="noopener">{{eventPublicURL}}</a></dd>
                     <dt>Organized by</dt>
                     <dd>{{organization.name}} &lt;{{organization.email}}&gt;</dd>
                     <dt>Website URL</dt>
-                    <dd><a href="{{event.websiteUrl}}" target="_blank">{{event.websiteUrl}}</a></dd>
+                    <dd><a href="{{event.websiteUrl}}" target="_blank" rel="noopener">{{event.websiteUrl}}</a></dd>
                     <dt>T&C URL</dt>
-                    <dd><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></dd>
+                    <dd><a href="{{event.termsAndConditionsUrl}}" target="_blank" rel="noopener">{{event.termsAndConditionsUrl}}</a></dd>
                     <dt data-ng-if="event.privacyPolicyUrl">Privacy Policy URL</dt>
-                    <dd data-ng-if="event.privacyPolicyUrl"><a href="{{event.privacyPolicyUrl}}" target="_blank">{{event.privacyPolicyUrl}}</a></dd>
+                    <dd data-ng-if="event.privacyPolicyUrl"><a href="{{event.privacyPolicyUrl}}" target="_blank" rel="noopener">{{event.privacyPolicyUrl}}</a></dd>
                     <dt data-ng-if="event.format === 'IN_PERSON'">Location</dt>
-                    <dd data-ng-if="event.format === 'IN_PERSON'"><a ng-href="{{event.geolocation.mapUrl}}" target="_blank">{{event.location}}</a></dd>
+                    <dd data-ng-if="event.format === 'IN_PERSON'"><a ng-href="{{event.geolocation.mapUrl}}" target="_blank" rel="noopener">{{event.location}}</a></dd>
                     <dt>Languages</dt>
                     <dd>
                         <ol class="breadcrumb language-breadcrumb"><li data-ng-repeat="cl in event.contentLanguages">{{cl.displayLanguage}}</li></ol>
