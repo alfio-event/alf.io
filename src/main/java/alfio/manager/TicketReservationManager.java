@@ -1443,6 +1443,10 @@ public class TicketReservationManager {
         }
         return configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(eventAndOrganizationId, ticketCategoryId)).getValueAsIntOrDefault(5);
     }
+
+    public Optional<TicketReservation> findByIdForEvent(String reservationId, int eventId) {
+        return ticketReservationRepository.findOptionalReservationByIdAndEventId(reservationId, eventId);
+    }
     
     public Optional<TicketReservation> findById(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId);
@@ -2122,6 +2126,7 @@ public class TicketReservationManager {
                 switch(paymentWebhookResult.getType()) {
                     case FAILED:
                     case REJECTED:
+                    case CANCELLED:
                         return PaymentResult.failed(paymentWebhookResult.getReason());
                     case NOT_RELEVANT:
                     case ERROR:

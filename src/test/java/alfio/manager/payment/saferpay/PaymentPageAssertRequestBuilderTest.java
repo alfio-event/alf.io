@@ -14,29 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction;
+package alfio.manager.payment.saferpay;
 
-import java.util.Arrays;
+import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Test;
 
-public enum PaymentMethod {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    CREDIT_CARD,
-    PAYPAL,
-    IDEAL,
-    BANK_TRANSFER,
-    ON_SITE,
-    NONE,
-    APPLE_PAY,
-    BANCONTACT,
-    ING_HOME_PAY,
-    BELFIUS,
-    KBC,
-    PRZELEWY_24,
-    ALIPAY,
-    POSTFINANCE,
-    TWINT;
+class PaymentPageAssertRequestBuilderTest {
 
-    public static PaymentMethod safeParse(String asString) {
-        return Arrays.stream(PaymentMethod.values()).filter(v -> v.name().equals(asString)).findFirst().orElse(null);
+    @Test
+    void buildRequest() {
+        String json = new PaymentPageAssertRequestBuilder("token", 1)
+            .addAuthentication("customerId", "requestId")
+            .build();
+
+        var parsedJson = JsonParser.parseString(json).getAsJsonObject();
+        assertEquals("token", parsedJson.get("Token").getAsString());
     }
 }
