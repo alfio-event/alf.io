@@ -30,19 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 @DisplayName("Request Header")
 class RequestHeaderBuilderTest {
-    @Test
-    void buildComplete() {
-        var requestBuilder = new RequestHeaderBuilder("customerId", "requestId", 1);
-        var json = JsonParser.parseString("{" + requestBuilder.build() + "}").getAsJsonObject();
-        checkJson(json, true);
-    }
-
-    @Test
-    void buildNoRetry() {
-        var requestBuilder = new RequestHeaderBuilder("customerId", "requestId", null);
-        var json = JsonParser.parseString("{" + requestBuilder.build() + "}").getAsJsonObject();
-        checkJson(json, false);
-    }
 
     @Test
     void appendToComplete() throws IOException {

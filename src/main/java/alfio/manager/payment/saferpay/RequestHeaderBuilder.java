@@ -27,16 +27,6 @@ class RequestHeaderBuilder {
     private final String requestId;
     private final Integer retryIndicator;
 
-    String build() {
-        return
-            "  \"RequestHeader\": {\n" + //
-            "    \"SpecVersion\": \""+SPEC_VERSION+"\",\n" + //
-            "    \"CustomerId\": \""+customerId+"\",\n" + //
-            "    \"RequestId\": \""+requestId+ (retryIndicator != null ? "\",\n" : "\"\n") + //
-            (retryIndicator != null ? "    \"RetryIndicator\": "+retryIndicator+"\n" : "") + //
-            "  }";
-    }
-
     @SneakyThrows
     JsonWriter appendTo(JsonWriter writer) {
         writer.name("RequestHeader").beginObject() //
@@ -47,10 +37,5 @@ class RequestHeaderBuilder {
             writer.name("RetryIndicator").value(retryIndicator);
         }
         return writer.endObject();
-    }
-
-    @Override
-    public String toString() {
-        return build();
     }
 }

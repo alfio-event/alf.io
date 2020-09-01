@@ -17,6 +17,7 @@
 package alfio.manager.payment.saferpay;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 
 @RequiredArgsConstructor
 public class TransactionInquireRequestBuilder {
@@ -31,12 +32,9 @@ public class TransactionInquireRequestBuilder {
         return this;
     }
 
+    // @formatter:off
+    @SneakyThrows
     public String build() {
-        return "{\n" +
-            new RequestHeaderBuilder(customerId, requestId, retryIndicator).build() + ",\n"+
-            "\"TransactionReference\": {" +
-            "  \"TransactionId\": \""+transactionId+"\"\n" +
-            "}" +
-        "}";
+        return TransactionCaptureRequestBuilder.buildRequest(customerId, requestId, retryIndicator, transactionId);
     }
 }

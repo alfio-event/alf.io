@@ -16,7 +16,11 @@
  */
 package alfio.manager.payment.saferpay;
 
+import com.google.gson.stream.JsonWriter;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+
+import java.io.StringWriter;
 
 @RequiredArgsConstructor
 public class TransactionRefundBuilder {
@@ -31,18 +35,25 @@ public class TransactionRefundBuilder {
         return this;
     }
 
+    // @formatter:off
+    @SneakyThrows
     public String build(String amountToRefund, String currencyCode) {
-        return "{\n" +
-            new RequestHeaderBuilder(customerId, requestId, retryIndicator).build() + ",\n"+
-            "\"Refund\": {\n" +
-            "  \"Amount\": {\n" +
-            "    \"Value\": \""+amountToRefund+"\",\n" +
-            "    \"CurrencyCode\": \""+currencyCode+"\"\n" +
-            "  }\n" +
-            "},\n" +
-            "\"CaptureReference\": {\n" +
-            "  \"CaptureId\": \""+captureId+"\"\n" +
-            " }"+
-        "}";
+        var out = new StringWriter();
+        var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
+        try (var writer = new JsonWriter(out)) {
+            requestHeaderBuilder.appendTo(writer.beginObject())
+                .name("Refund").beginObject()
+                    .name("Amount").beginObject()
+                        .name("Value").value(amountToRefund)
+                        .name("CurrencyCode").value(currencyCode)
+                    .endObject()
+                .endObject()
+                .name("CaptureReference").beginObject()
+                    .name("CaptureId").value(captureId)
+                .endObject()
+            .endObject().flush();
+        }
+        return out.toString();
     }
+    // @formatter:on
 }

@@ -16,7 +16,11 @@
  */
 package alfio.manager.payment.saferpay;
 
+import com.google.gson.stream.JsonWriter;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+
+import java.io.StringWriter;
 
 @RequiredArgsConstructor
 public class PaymentPageAssertRequestBuilder {
@@ -32,11 +36,17 @@ public class PaymentPageAssertRequestBuilder {
         return this;
     }
 
+    // @formatter:off
+    @SneakyThrows
     public String build() {
-        return "{\n" +
-            new RequestHeaderBuilder(customerId, requestId, retryIndicator).build() + ",\n"+
-            "  \"Token\": \""+token+"\"\n" +
-        "}";
+        var out = new StringWriter();
+        var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
+        try (var writer = new JsonWriter(out)) {
+            requestHeaderBuilder.appendTo(writer.beginObject())
+                .name("Token").value(token)
+            .endObject().flush();
+        }
+        return out.toString();
     }
 
 }

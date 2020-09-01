@@ -16,7 +16,12 @@
  */
 package alfio.manager.payment.saferpay;
 
+import com.google.gson.stream.JsonWriter;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+
+import java.io.IOException;
+import java.io.StringWriter;
 
 @RequiredArgsConstructor
 public class TransactionCaptureRequestBuilder {
@@ -31,13 +36,23 @@ public class TransactionCaptureRequestBuilder {
         this.requestId = requestId;
         return this;
     }
-
+    // @formatter:off
+    @SneakyThrows
     public String build() {
-        return "{\n" +
-            new RequestHeaderBuilder(customerId, requestId, retryIndicator).build() + ",\n"+
-            "  \"TransactionReference\": {\n" +
-            "    \"TransactionId\": \""+token+"\"\n" +
-            "  }\n" +
-            "}";
+        return buildRequest(customerId, requestId, retryIndicator, token);
     }
+
+    static String buildRequest(String customerId, String requestId, int retryIndicator, String token)throws IOException {
+        var out = new StringWriter();
+        var requestHeaderBuilder = new RequestHeaderBuilder(customerId, requestId, retryIndicator);
+        try (var writer = new JsonWriter(out)) {
+            requestHeaderBuilder.appendTo(writer.beginObject())
+                .name("TransactionReference").beginObject()
+                    .name("TransactionId").value(token)
+                .endObject()
+            .endObject().flush();
+        }
+        return out.toString();
+    }
+    // @formatter:on
 }
