@@ -196,7 +196,6 @@
                         };
                     }
                 });
-                console.log(transformed);
                 return transformed;
             },
             findSingleConfig: function(configs, key) {
