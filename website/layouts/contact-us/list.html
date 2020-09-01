@@ -1,0 +1,20 @@
+{{ define "main" }}
+
+<a class="td-offset-anchor"></a>
+<section class="row td-box td-box--1 position-relative td-box--gradient td-box--height-auto">
+	<div class="container text-center td-arrow-down">
+		<span class="h4 mb-0">
+            <h1>Thank you for using {{ .Site.Title }}!</h1>
+
+            <p class="lead mt-5">And thank you for telling us where and how you are using it!</p>
+        </span>
+	</div>
+</section>
+
+<div class="row mt-5">
+    <div class="col-12 col-lg-6 offset-lg-3">
+        {{ .Content }}
+    </div>
+</div>
+
+{{ end }}

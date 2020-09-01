@@ -1,0 +1,61 @@
+---
+title: "Tell us about you!"
+description: >
+  Alf.io usage form.
+weight: 5
+type: contact-us
+menu:
+  main:
+    weight: 50
+---
+
+<p class="lead text-center">
+    We don't track usage in any way, because we respect your privacy. Therefore we ask you to tell us a bit about your story. We'd love to hear from you!
+</p>
+
+<form name="contact" method="POST" data-netlify="true" action="/usage-form/thank-you">
+    <div class="form-group">
+        <label class="font-weight-bold" for="country" required="true">Your Country <sup>*</sup></label>
+        <input class="form-control" name="country" id="country">
+    </div>
+    <div class="form-group mt-3">
+        <label class="font-weight-bold" for="story">Please share your story with us. What do you do? How is alf.io helping you? <sup>*</sup></label>
+        <textarea class="form-control" name="story" id="story" required="true"></textarea>
+    </div>
+
+    <hr class="mt-5 mb-3">
+
+    <h3>Optional data</h3>
+
+    <div class="form-group mt-3">
+        <label for="events">How many events do you organize per year?</label>
+        <select class="form-control" name="eventsPerYear" id="events">
+            <option value="" selected>I prefer not to share this information</option>
+            <option value="1-5">1 to 5</option>
+            <option value="5-10">5 to 10</option>
+            <option value="10+">more than 10</option>
+        </select>
+    </div>
+    <div class="form-group mt-3">
+        <label for="fullName">Your Name</label>
+        <input class="form-control" name="fullName" id="fullName">
+    </div>
+    <div class="form-group mt-3">
+        <label for="twitterHandle">Your Twitter Handle</label>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon1">@</span>
+            </div>
+            <input type="text" name="twitterHandle" id="twitterHandle" class="form-control" placeholder="twitterHandle" aria-label="Twitter Handle" aria-describedby="basic-addon1">
+        </div>
+        <small id="passwordHelpBlock" class="form-text text-muted">
+            If we like your story, we might want to contact you and ask you a couple of questions for a social media post.
+            If you don't want to hear from us, please leave this field empty
+        </small>
+    </div>
+    <div class="row mt-5 mb-5">
+        <div class="col-12 col-lg-4 offset-lg-4">
+            <button class="btn btn-success btn-lg btn-block">Send</button>
+        </div>
+    </div>
+</form>
