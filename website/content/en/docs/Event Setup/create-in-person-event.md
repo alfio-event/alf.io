@@ -71,6 +71,9 @@ Add description for your event in one or more languages. To add another language
 
 This field supports [Markdown](https://commonmark.org/help/).
 
+*please note that the default max length for description is 4000 characters.
+ If this does not fit your needs, you can set a new limit using the "Max characters in descriptions" configuration* 
+
 ## URLs Configuration
 
 In this section you'll configure the various links that Alf.io will display/use during the reservation process.
