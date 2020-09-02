@@ -34,6 +34,7 @@ public enum ConfigurationKeys {
     NOT_RECOGNIZED("option not recognized", true, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
 
     INIT_COMPLETED("init succeeded", true, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class), "false"),
+    SHOW_PROJECT_BANNER("project banner dismissed", true, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class), "true"),
     @Deprecated
     SUPPORTED_LANGUAGES("supported languages", true, SettingCategory.GENERAL, ComponentType.LIST, false, EnumSet.of(SYSTEM)),
 
