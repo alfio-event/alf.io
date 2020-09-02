@@ -300,6 +300,7 @@ public class ConfigurationManager {
             .stream()
             .findFirst()
             .map(Configuration::getValue)
+            .or(() -> externalConfiguration.getSingle(keyAsString).map(Configuration::getValue))
             .orElse(null);
     }
 
