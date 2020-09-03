@@ -414,7 +414,7 @@ public class IndexController {
         // with base-uri set to 'self'
 
         response.addHeader("Content-Security-Policy", "object-src 'none'; "+
-            "script-src 'nonce-" + nonce + "' 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:; " +
+            "script-src 'nonce-" + nonce + "' 'strict-dynamic' https: http:; " +
             "base-uri 'self'; "
             + reportUri);
 
