@@ -70,7 +70,7 @@ public class ScriptingExecutionService {
             Context.exit();
         }
     }
-
+    
     private final Cache<String, Executor> asyncExecutors = Caffeine.newBuilder()
         .expireAfterAccess(12, TimeUnit.HOURS)
         .removalListener((String key, Executor value, RemovalCause cause) -> {
