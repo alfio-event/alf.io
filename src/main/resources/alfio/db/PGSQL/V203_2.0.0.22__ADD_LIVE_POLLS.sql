@@ -15,11 +15,6 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
--- add pin to a ticket in order to access the polls. The pin has to be unique per event and must be generated
--- as soon as the ticket is confirmed (status ACQUIRED)
-alter table ticket add column pin text;
-alter table ticket add constraint "unique_pin_for_event" unique(pin, event_id);
-
 create type POLL_STATUS as enum ('DRAFT', 'OPEN', 'CLOSED');
 
 create table poll (
