@@ -28,10 +28,11 @@ public class PinGenerator {
 
     private static final String ALLOWED_CHARS = "ACDEFGHJKLMNPQRTUVWXY34679";
     private static final Pattern VALIDATION_PATTERN = Pattern.compile("^["+ALLOWED_CHARS+"]+$");
-    private static final int UUID_PORTION_LENGTH = 7;
+    static final int UUID_PORTION_LENGTH = 7;
+    private static final int PIN_LENGTH = 6;
 
     public static String uuidToPin(String uuid) {
-        long src = Long.parseLong(uuid.replaceAll("-", "").substring(0, UUID_PORTION_LENGTH), 16);
+        long src = Long.parseLong(uuid.replace("-", "").substring(0, UUID_PORTION_LENGTH), 16);
         long chars = ALLOWED_CHARS.length();
         var pin = new StringBuilder();
         do {
@@ -40,7 +41,7 @@ public class PinGenerator {
             src /= chars;
         } while (src != 0);
 
-        while(pin.length() < 6) {
+        while(pin.length() < PIN_LENGTH) {
             pin.append(ALLOWED_CHARS.charAt(0));
         }
 
@@ -61,7 +62,7 @@ public class PinGenerator {
 
     public static boolean isPinValid(String pin) {
         return pin != null
-            && pin.strip().length() == 6
+            && pin.strip().length() == PIN_LENGTH
             && VALIDATION_PATTERN.matcher(pin.toUpperCase()).matches();
     }
 
