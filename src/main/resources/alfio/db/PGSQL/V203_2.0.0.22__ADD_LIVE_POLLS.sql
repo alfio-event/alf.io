@@ -15,6 +15,9 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
+-- add tags on ticket, in order to check who can participate to the poll
+alter table ticket add column tags text array not null default array[]::text[];
+
 create type POLL_STATUS as enum ('DRAFT', 'OPEN', 'CLOSED');
 
 create table poll (
@@ -22,7 +25,7 @@ create table poll (
     status POLL_STATUS not null default 'DRAFT',
     title jsonb not null,
     description jsonb,
-    allowed_tags text array,
+    allowed_tags text array not null default array[]::text[],
     poll_order integer not null default 0,
 
     event_id_fk integer not null constraint "poll_event_id_fk" references event(id),
@@ -37,7 +40,7 @@ create policy poll_access_policy on poll to public
 
 create table poll_option (
     id bigserial primary key not null,
-    poll_id_fk bigint not null constraint "poll_option_poll_id" references poll(id),
+    poll_id_fk bigint not null constraint "poll_option_poll_id" references poll(id) on delete cascade,
     title jsonb not null,
     description jsonb,
     organization_id_fk integer not null constraint "poll_option_org_id_fk" references organization(id)
@@ -51,7 +54,7 @@ create policy poll_option_access_policy on poll_option to public
 
 create table poll_answer (
     id bigserial primary key not null,
-    poll_option_id_fk bigint not null constraint "poll_answer_option_id_fk" references poll_option(id),
+    poll_option_id_fk bigint not null constraint "poll_answer_option_id_fk" references poll_option(id) on delete cascade,
     ticket_id_fk integer constraint "poll_answer_ticket_id_fk" references ticket(id),
     organization_id_fk integer not null constraint "poll_answer_org_id_fk" references organization(id)
 );

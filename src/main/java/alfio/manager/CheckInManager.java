@@ -30,11 +30,13 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import alfio.util.PinGenerator;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -86,6 +88,7 @@ public class CheckInManager {
     private final TicketReservationManager ticketReservationManager;
     private final ExtensionManager extensionManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final PollRepository pollRepository;
 
 
     private void checkIn(String uuid) {
@@ -392,6 +395,11 @@ public class CheckInManager {
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
             var outputColorConfiguration = getOutputColorConfiguration(event, configurationManager);
 
+            // fetch polls for event, in order to determine if we have to print PIN or not
+            var polls = pollRepository.findAllInEvent(event.getId());
+            boolean hasPolls = !polls.isEmpty();
+            var allowedTags = hasPolls ? polls.stream().flatMap(p -> p.getAllowedTags().stream()).collect(Collectors.toList()) : List.<String>of();
+
             Function<FullTicketInfo, String> encryptedBody = ticket -> {
                 Map<String, String> info = new HashMap<>();
                 info.put("firstName", ticket.getFirstName());
@@ -400,6 +408,9 @@ public class CheckInManager {
                 info.put("email", ticket.getEmail());
                 info.put("status", ticket.getStatus().toString());
                 info.put("uuid", ticket.getUuid());
+                if(hasPolls && (allowedTags.isEmpty() || CollectionUtils.containsAny(allowedTags, ticket.getTags()))) {
+                    info.put("pin", PinGenerator.uuidToPin(ticket.getUuid()));
+                }
                 info.put("category", ticket.getTicketCategory().getName());
                 if(outputColorConfiguration != null) {
                     info.put("boxColor", detectBoxColor(outputColorConfiguration, ticket.getCategoryId()));

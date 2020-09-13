@@ -24,14 +24,17 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ArrayColumnMapper extends ColumnMapper {
 
-    private static final int ORDER = Integer.MAX_VALUE - 30;
+    private static final int ORDER = Integer.MAX_VALUE - 31;
 
     private ArrayColumnMapper(String name, Class<?> paramType) {
         super(name, paramType);
@@ -87,8 +90,17 @@ public class ArrayColumnMapper extends ColumnMapper {
 
         @Override
         public void processParameter(String parameterName, Object arg, Class<?> parameterType, MapSqlParameterSource ps) {
-            Object array = arg != null ? ((List<?>) arg).toArray() : null;
-            ps.addValue(parameterName, array);
+            if(arg == null) {
+                ps.addValue(parameterName, null, Types.ARRAY);
+            } else {
+                // we handle lists of integers/numbers and strings
+                var argumentType = ((ParameterizedType) arg.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+                boolean isNumber = Number.class.isAssignableFrom(argumentType.getClass());
+                String argToString = ((List<?>) arg).stream()
+                    .map(v -> isNumber ? String.valueOf(v) : "\"" + v + "\"")
+                    .collect(Collectors.joining(",", "{", "}"));
+                ps.addValue(parameterName, argToString);
+            }
         }
 
         @Override
