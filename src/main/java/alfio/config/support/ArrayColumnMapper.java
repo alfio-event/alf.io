@@ -20,21 +20,21 @@ import alfio.model.support.Array;
 import ch.digitalfondue.npjt.mapper.ColumnMapper;
 import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
 import ch.digitalfondue.npjt.mapper.ParameterConverter;
+import lombok.SneakyThrows;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 public class ArrayColumnMapper extends ColumnMapper {
 
     private static final int ORDER = Integer.MAX_VALUE - 31;
+    private static final Predicate<Annotation> ANNOTATION_FINDER = annotation -> annotation.annotationType() == Array.class;
 
     private ArrayColumnMapper(String name, Class<?> paramType) {
         super(name, paramType);
@@ -51,7 +51,7 @@ public class ArrayColumnMapper extends ColumnMapper {
 
     private static boolean hasAnnotation(Annotation[] annotations) {
         return annotations != null
-            && Arrays.stream(annotations).anyMatch(annotation -> annotation.annotationType() == Array.class);
+            && Arrays.stream(annotations).anyMatch(ANNOTATION_FINDER);
     }
 
     public static class Factory implements ColumnMapperFactory {
@@ -82,24 +82,23 @@ public class ArrayColumnMapper extends ColumnMapper {
         }
     }
 
-    public static class Converter implements ParameterConverter {
+    public static class Converter implements ParameterConverter.AdvancedParameterConverter {
         @Override
         public boolean accept(Class<?> parameterType, Annotation[] annotations) {
             return hasAnnotation(annotations) && List.class.isAssignableFrom(parameterType);
         }
 
+        @SneakyThrows
         @Override
-        public void processParameter(String parameterName, Object arg, Class<?> parameterType, MapSqlParameterSource ps) {
+        public void processParameter(ProcessParameterContext processParameterContext) {
+            var arg = processParameterContext.getArg();
+            var ps = processParameterContext.getParameterSource();
             if(arg == null) {
-                ps.addValue(parameterName, null, Types.ARRAY);
+                ps.addValue(processParameterContext.getParameterName(), null, Types.ARRAY);
             } else {
-                // we handle lists of integers/numbers and strings
-                var argumentType = ((ParameterizedType) arg.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-                boolean isNumber = Number.class.isAssignableFrom(argumentType.getClass());
-                String argToString = ((List<?>) arg).stream()
-                    .map(v -> isNumber ? String.valueOf(v) : "\"" + v + "\"")
-                    .collect(Collectors.joining(",", "{", "}"));
-                ps.addValue(parameterName, argToString);
+                Array def = (Array) Arrays.stream(processParameterContext.getParameterAnnotations()).filter(ANNOTATION_FINDER).findFirst().orElseThrow();
+                var array = processParameterContext.getConnection().createArrayOf(def.type(), ((List<?>) arg).toArray());
+                ps.addValue(processParameterContext.getParameterName(), array);
             }
         }
 
