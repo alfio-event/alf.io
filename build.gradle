@@ -140,6 +140,8 @@ dependencies {
     compile "guru.nidi.com.kitfox:svgSalamander:1.1.3"
     /**/
     compile "io.nayuki:qrcodegen:1.6.0"
+    compile "com.google.zxing:core:3.4.0"
+    compile "com.google.zxing:javase:3.4.0"
     compile "org.flywaydb:flyway-core:6.0.8"
     compile "org.postgresql:postgresql:42.2.14"
     compile "com.zaxxer:HikariCP:3.4.2"
