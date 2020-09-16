@@ -65,9 +65,9 @@
                                 </div>
                                 <div class="hidden-xs hidden-sm col-md-4">
                                     <uib-progress max="getActualCapacity(ticketCategory, event)" uib-tooltip-template="'categoryStats.html'" tooltip-popup-close-delay="500">
-                                        <uib-bar value="ticketCategory.checkedInTickets" type="success"><span>{{ticketCategory.checkedInTickets}}</span></uib-bar>
-                                        <uib-bar value="ticketCategory.soldTickets" type="warning"><span>{{ticketCategory.soldTickets}}</span></uib-bar>
-                                        <uib-bar value="ticketCategory.pendingTickets" type="info" class="slice-pending">{{ticketCategory.pendingTickets}}</uib-bar>
+                                        <uib-bar value="ticketCategory.checkedInTickets" type="info"><span>{{ticketCategory.checkedInTickets}}</span></uib-bar>
+                                        <uib-bar value="ticketCategory.soldTickets" type="success"><span>{{ticketCategory.soldTickets}}</span></uib-bar>
+                                        <uib-bar value="ticketCategory.pendingTickets" type="warning" class="slice-pending">{{ticketCategory.pendingTickets}}</uib-bar>
                                         <uib-bar value="ticketCategory.notSoldTickets" type="info">{{ticketCategory.notSoldTickets}}</uib-bar>
                                         <uib-bar ng-if="!ticketCategory.bounded" value="event.dynamicAllocation" type="default">{{event.dynamicAllocation}}</uib-bar>
                                     </uib-progress>

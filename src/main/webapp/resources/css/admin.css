@@ -371,7 +371,7 @@ a.emulate-nav-pills-link {
 }
 .slice-pending {
     fill: #7670b7;
-    background-color: #7670b7;
+    /** background-color: #7670b7; **/
     stroke:white;
 }
 .slice-danger {
