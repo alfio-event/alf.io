@@ -16,13 +16,7 @@
  */
 package alfio.util;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import io.nayuki.qrcodegen.QrCode;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.imageio.ImageIO;
@@ -31,8 +25,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.EnumMap;
-import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.center;
 import static org.apache.commons.lang3.StringUtils.truncate;
@@ -44,29 +36,30 @@ public final class ImageUtil {
     public static byte[] createQRCode(String text) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            BitMatrix matrix = drawQRCode(text);
-            MatrixToImageWriter.writeToStream(matrix, "png", baos);
+            BufferedImage bufferedImage = drawQRCode(text);
+            ImageIO.write(bufferedImage, "png", baos);
             return baos.toByteArray();
-        } catch (WriterException | IOException e) {
+        } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private static BitMatrix drawQRCode(String text) throws WriterException {
-        Map<EncodeHintType, Object> hintMap = new EnumMap<>(EncodeHintType.class);
-        hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
-        return new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 200, 200, hintMap);
+    private static BufferedImage drawQRCode(String text) {
+        QrCode qr = QrCode.encodeText(text, QrCode.Ecc.MEDIUM);
+        int border = 1;
+        int paddedSize = qr.size + border * 2;
+        int scale = Math.min(200, 230) / paddedSize;
+        return qr.toImage(scale, border);
     }
 
     public static byte[] createQRCodeWithDescription(String text, String description) {
         try (InputStream fi = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
              ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            BitMatrix matrix = drawQRCode(text);
-            BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(matrix);
+            BufferedImage bufferedImage = drawQRCode(text);
             BufferedImage scaled = new BufferedImage(200, 230, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D graphics = (Graphics2D)scaled.getGraphics();
+            Graphics2D graphics = (Graphics2D) scaled.getGraphics();
             graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            graphics.drawImage(bufferedImage, 0,0, null);
+            graphics.drawImage(bufferedImage, 0, 0, null);
             graphics.setColor(Color.WHITE);
             graphics.fillRect(0, 200, 200, 30);
             graphics.setColor(Color.BLACK);
@@ -74,9 +67,8 @@ public final class ImageUtil {
             graphics.drawString(center(truncate(description, 23), 25), 0, 215);
             ImageIO.write(scaled, "png", baos);
             return baos.toByteArray();
-        } catch (WriterException | IOException | FontFormatException e) {
+        } catch (IOException | FontFormatException e) {
             throw new IllegalStateException(e);
         }
     }
-
 }
