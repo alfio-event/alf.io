@@ -221,6 +221,8 @@ dependencies {
     testCompile 'org.mock-server:mockserver-netty:5.11.1'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
+    testCompile 'org.seleniumhq.selenium:selenium-java:4.0.0-alpha-6'
+
     errorprone('com.google.errorprone:error_prone_core:2.3.4')
 }
 
