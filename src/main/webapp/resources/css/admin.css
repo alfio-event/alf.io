@@ -826,3 +826,19 @@ div.preformatted {
     background-color: white !important;
     margin-bottom: 0 !important;
 }
+
+@media screen and (max-width: 1180px) {
+    .navbar-right-custom {
+        float: left !important;
+        margin-left: 95px !important;
+    }
+
+ }
+
+ @media only screen and (max-width: 1170px) and (min-width: 992px)  {
+    #separator{
+    margin-bottom:70px;
+    }
+ }
+
+

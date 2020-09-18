@@ -191,7 +191,7 @@
                             </ul>
                         </div>
                     </div>
-                    <div class="navbar-right hidden-sm hidden-xs">
+                    <div class="navbar-right-custom navbar-right hidden-sm hidden-xs">
                         <ul class="nav navbar-nav">
                             <li role="presentation" class="navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
                             {{#isDBAuthentication}}
@@ -204,6 +204,7 @@
             </div>
         </div>
     </div>
+    <div id="separator"></div>
     <div growl></div>
     <div data-ng-controller="LayoutController as ctrl">
         <div class="container-fluid menu-spacer">
