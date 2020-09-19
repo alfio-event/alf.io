@@ -16,12 +16,9 @@
  */
 package alfio.model.poll;
 
-import lombok.experimental.Delegate;
-
 import java.util.List;
 
 public class PollWithOptions {
-    @Delegate
     private final Poll poll;
     private final List<PollOption> options;
 
@@ -32,5 +29,9 @@ public class PollWithOptions {
 
     public List<PollOption> getOptions() {
         return options;
+    }
+
+    public Poll getPoll() {
+        return poll;
     }
 }
