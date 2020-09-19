@@ -54,10 +54,13 @@ create policy poll_option_access_policy on poll_option to public
 
 create table poll_answer (
     id bigserial primary key not null,
+    poll_id_fk bigint not null constraint "poll_answer_poll_id" references poll(id) on delete cascade,
     poll_option_id_fk bigint not null constraint "poll_answer_option_id_fk" references poll_option(id) on delete cascade,
     ticket_id_fk integer constraint "poll_answer_ticket_id_fk" references ticket(id),
     organization_id_fk integer not null constraint "poll_answer_org_id_fk" references organization(id)
 );
+
+alter table poll_answer add constraint "unique_answer_poll_ticket" unique(poll_id_fk, ticket_id_fk);
 
 alter table poll_answer enable row level security;
 alter table poll_answer force row level security;
