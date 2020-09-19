@@ -29,12 +29,10 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Predicate;
 
 public class ArrayColumnMapper extends ColumnMapper {
 
     private static final int ORDER = Integer.MAX_VALUE - 31;
-    private static final Predicate<Annotation> ANNOTATION_FINDER = annotation -> annotation.annotationType() == Array.class;
 
     private ArrayColumnMapper(String name, Class<?> paramType) {
         super(name, paramType);
@@ -51,7 +49,11 @@ public class ArrayColumnMapper extends ColumnMapper {
 
     private static boolean hasAnnotation(Annotation[] annotations) {
         return annotations != null
-            && Arrays.stream(annotations).anyMatch(ANNOTATION_FINDER);
+            && Arrays.stream(annotations).anyMatch(ArrayColumnMapper::annotationFinder);
+    }
+
+    private static boolean annotationFinder(Annotation annotation){
+        return annotation.annotationType() == Array.class;
     }
 
     public static class Factory implements ColumnMapperFactory {
@@ -96,7 +98,7 @@ public class ArrayColumnMapper extends ColumnMapper {
             if(arg == null) {
                 ps.addValue(processParameterContext.getParameterName(), null, Types.ARRAY);
             } else {
-                Array def = (Array) Arrays.stream(processParameterContext.getParameterAnnotations()).filter(ANNOTATION_FINDER).findFirst().orElseThrow();
+                Array def = (Array) Arrays.stream(processParameterContext.getParameterAnnotations()).filter(ArrayColumnMapper::annotationFinder).findFirst().orElseThrow();
                 var array = processParameterContext.getConnection().createArrayOf(def.type(), ((List<?>) arg).toArray());
                 ps.addValue(processParameterContext.getParameterName(), array);
             }
