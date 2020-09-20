@@ -62,6 +62,16 @@ public class PollAdminApiController {
         return ResponseEntity.of(pollManager.createNewPoll(eventName, form));
     }
 
+    @PostMapping("/{pollId}")
+    ResponseEntity<PollModification> updatePoll(@PathVariable("eventName") String eventName,
+                                                @PathVariable("pollId") Long pollId,
+                                                @RequestBody PollModification form) {
+        if(form == null || !form.isValid(true) || !pollId.equals(form.getId())) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.of(pollManager.updatePoll(eventName, form).map(PollModification::from));
+    }
+
     @PutMapping("/{pollId}")
     ResponseEntity<PollModification> updateStatus(@PathVariable("eventName") String eventName,
                                                   @PathVariable("pollId") Long pollId,

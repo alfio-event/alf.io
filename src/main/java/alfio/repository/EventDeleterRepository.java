@@ -108,6 +108,7 @@ public interface EventDeleterRepository {
     int deletePolls(@Bind("eventId") int eventId);
 
     default void deleteAllForEvent(int eventId) {
+        deletePolls(eventId);
         deleteWaitingQueue(eventId);
         deleteWhitelistedTickets(eventId);
         deleteGroupLinks(eventId);
@@ -134,7 +135,6 @@ public interface EventDeleterRepository {
         deleteEventDescription(eventId);
         deleteResources(eventId);
         deleteScanAudit(eventId);
-        deletePolls(eventId);
         deleteEvent(eventId);
     }
 

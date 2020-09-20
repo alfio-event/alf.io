@@ -20,6 +20,7 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.IndexController;
+import alfio.controller.api.ControllerConfiguration;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
@@ -70,8 +71,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -107,16 +106,10 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
-
-    @Configuration
-    @ComponentScan(basePackages = {"alfio.controller"})
-    public static class ControllerConfiguration {
-
-    }
 
     @Autowired
     private ConfigurationRepository configurationRepository;

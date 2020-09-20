@@ -19,6 +19,7 @@ package alfio.controller.api.v2.user;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.api.ControllerConfiguration;
 import alfio.controller.form.PollVoteForm;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
@@ -32,25 +33,20 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.poll.Poll;
-import alfio.repository.EventRepository;
-import alfio.repository.PollRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
+import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.PinGenerator;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -61,17 +57,11 @@ import java.util.*;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, PollApiControllerIntegrationTest.ControllerConfiguration.class})
+@SpringBootTest
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 class PollApiControllerIntegrationTest {
-
-    @Configuration
-    @ComponentScan(basePackages = {"alfio.controller"})
-    public static class ControllerConfiguration {
-
-    }
 
     @Autowired
     private PollApiController pollApiController;
@@ -93,6 +83,8 @@ class PollApiControllerIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private TicketRepository ticketRepository;
+    @Autowired
+    private EventDeleterRepository eventDeleterRepository;
 
     private Event event;
     private Long pollId;
@@ -126,6 +118,11 @@ class PollApiControllerIntegrationTest {
         firstOptionId = pollRepository.insertOption(pollId, Map.of("en", "first"), null, event.getOrganizationId()).getKey();
         secondOptionId = pollRepository.insertOption(pollId, Map.of("en", "second"), null, event.getOrganizationId()).getKey();
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow();
+    }
+
+    @AfterEach
+    void deleteAll() {
+        eventDeleterRepository.deleteAllForEvent(event.getId());
     }
 
     @Test

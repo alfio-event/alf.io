@@ -84,7 +84,10 @@ public interface PollRepository {
     @Query(type = QueryType.TEMPLATE, value = INSERT_OPTION)
     String bulkInsertOptions();
 
-    @Query("select * from poll_option where poll_id_fk = :pollId")
+    @Query(type = QueryType.TEMPLATE, value = "update poll_option set title = :title::jsonb, description = :description::jsonb where id = :id and poll_id_fk = :pollId")
+    String bulkUpdateOptions();
+
+    @Query("select * from poll_option where poll_id_fk = :pollId order by id")
     List<PollOption> getOptionsForPoll(@Bind("pollId") long pollId);
 
     @Query("select count(*) from poll_option " +

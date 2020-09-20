@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
 import alfio.model.modification.PollModification;
+import alfio.model.modification.PollOptionModification;
 import alfio.model.poll.Poll;
 import alfio.model.poll.PollWithOptions;
 import alfio.model.result.ErrorCode;
@@ -37,6 +38,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.Objects.requireNonNullElse;
@@ -116,23 +118,36 @@ public class PollManager {
                     event.getOrganizationId()
                 );
                 Validate.isTrue(pollKey.getAffectedRowCount() == 1);
-                if(form.getOptions().size() == 1) {
-                    var option = form.getOptions().get(0);
-                    pollRepository.insertOption(pollKey.getKey(),
-                        option.getTitle(),
-                        requireNonNullElse(option.getDescription(), Map.of()),
-                        event.getOrganizationId());
-                } else {
-                    var parameterSources = form.getOptions().stream()
-                        .map(option -> new MapSqlParameterSource("pollId", pollKey.getKey())
-                            .addValue("title", Json.toJson(requireNonNullElse(option.getTitle(), Map.of())))
-                            .addValue("description", Json.toJson(requireNonNullElse(option.getDescription(), Map.of())))
-                            .addValue("organizationId", event.getOrganizationId()))
-                        .toArray(MapSqlParameterSource[]::new);
-                    int[] results = jdbcTemplate.batchUpdate(pollRepository.bulkInsertOptions(), parameterSources);
-                    Validate.isTrue(IntStream.of(results).sum() == form.getOptions().size(), "Unexpected result from update.");
-                }
+                insertOptions(form.getOptions(), event, pollKey.getKey());
                 return pollKey.getKey();
+            });
+    }
+
+    public Optional<PollWithOptions> updatePoll(String eventName, PollModification form) {
+        Validate.isTrue(form.isValid(true));
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .flatMap(event -> {
+                var pollId = form.getId();
+                var existingPollWithOptions = getSingleForEvent(pollId, event).orElseThrow();
+                var existingPoll = existingPollWithOptions.getPoll();
+                var tags = existingPoll.getAllowedTags();
+                if(form.isAccessRestricted() == existingPoll.getAllowedTags().isEmpty()) {
+                    tags = form.isAccessRestricted() ? List.of(UUID.randomUUID().toString()) : List.of();
+                }
+                Validate.isTrue(pollRepository.update(form.getTitle(), form.getDescription(), tags, form.getOrder(), pollId, event.getId()) == 1);
+                // options
+                // find if there is any new option
+                var newOptions = form.getOptions().stream().filter(pm -> pm.getId() == null).collect(Collectors.toList());
+                if(!newOptions.isEmpty()) {
+                    insertOptions(newOptions, event, pollId);
+                }
+                // update existing options
+                var existingOptions = form.getOptions().stream().filter(pm -> pm.getId() != null).collect(Collectors.toList());
+                if(!existingOptions.isEmpty()) {
+                    updateOptions(existingOptions, event, pollId);
+                }
+
+                return getSingleForEvent(pollId, event);
             });
     }
 
@@ -143,6 +158,36 @@ public class PollManager {
                 Validate.isTrue(pollRepository.updateStatus(newStatus, pollId, event.getId()) == 1, "Error while updating status");
                 return getSingleForEvent(pollId, event);
             });
+    }
+
+    private void insertOptions(List<PollOptionModification> options, EventAndOrganizationId event, Long pollId) {
+        if(options.size() == 1) {
+            var option = options.get(0);
+            pollRepository.insertOption(pollId,
+                option.getTitle(),
+                requireNonNullElse(option.getDescription(), Map.of()),
+                event.getOrganizationId());
+        } else {
+            var parameterSources = options.stream()
+                .map(option -> new MapSqlParameterSource("pollId", pollId)
+                    .addValue("title", Json.toJson(requireNonNullElse(option.getTitle(), Map.of())))
+                    .addValue("description", Json.toJson(requireNonNullElse(option.getDescription(), Map.of())))
+                    .addValue("organizationId", event.getOrganizationId()))
+                .toArray(MapSqlParameterSource[]::new);
+            int[] results = jdbcTemplate.batchUpdate(pollRepository.bulkInsertOptions(), parameterSources);
+            Validate.isTrue(IntStream.of(results).sum() == options.size(), "Unexpected result from update.");
+        }
+    }
+
+    private void updateOptions(List<PollOptionModification> existingOptions, EventAndOrganizationId event, Long pollId) {
+        var parameterSources = existingOptions.stream()
+            .map(option -> new MapSqlParameterSource("pollId", pollId)
+                .addValue("title", Json.toJson(requireNonNullElse(option.getTitle(), Map.of())))
+                .addValue("description", Json.toJson(requireNonNullElse(option.getDescription(), Map.of())))
+                .addValue("id", option.getId()))
+            .toArray(MapSqlParameterSource[]::new);
+        int[] results = jdbcTemplate.batchUpdate(pollRepository.bulkUpdateOptions(), parameterSources);
+        Validate.isTrue(IntStream.of(results).sum() == existingOptions.size(), "Unexpected result from update.");
     }
 
     private Result<Pair<EventAndOrganizationId, Ticket>> validatePinAndEvent(String pin, String eventName) {

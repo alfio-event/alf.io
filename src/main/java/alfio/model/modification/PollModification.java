@@ -62,7 +62,7 @@ public class PollModification {
         return (!update || id != null)
             && MapUtils.isNotEmpty(title)
             && CollectionUtils.isNotEmpty(options)
-            && options.stream().allMatch(p -> p.isValid(update));
+            && options.stream().allMatch(p -> p.isValid(update && p.getId() != null));
     }
 
     public static PollModification from(Poll poll) {
