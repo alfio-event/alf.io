@@ -34,7 +34,7 @@ public class PollApiController {
 
     private final PollManager pollManager;
 
-    @GetMapping("/")
+    @GetMapping("")
     ResponseEntity<ValidatedResponse<List<Poll>>> getAll(@PathVariable("eventName") String eventName, @RequestParam("pin") String pin) {
         var result = pollManager.getActiveForEvent(eventName, pin);
         if(result.isSuccess()) {
