@@ -822,6 +822,7 @@
         return {
             restrict: 'AE',
             scope: {
+                event: '=',
                 eventName: '=',
                 styleClass: '@'
             },
@@ -832,7 +833,8 @@
                 var ctrl = this;
                 ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
                 var getPendingPayments = function() {
-                    if(ctrl.eventName != null && ctrl.eventName.length > 0) {
+                    var eventPresent = ctrl.event && _.includes(ctrl.event.allowedPaymentProxies, 'OFFLINE');
+                    if(eventPresent || (!ctrl.event && ctrl.eventName != null && ctrl.eventName.length > 0)) {
                         EventService.getPendingPaymentsCount(ctrl.eventName).then(function(count) {
                             $rootScope.$broadcast('PendingReservationsFound', count);
                         });

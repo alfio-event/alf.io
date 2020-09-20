@@ -396,7 +396,7 @@ public class CheckInManager {
             var outputColorConfiguration = getOutputColorConfiguration(event, configurationManager);
 
             // fetch polls for event, in order to determine if we have to print PIN or not
-            var polls = pollRepository.findAllInEvent(event.getId());
+            var polls = pollRepository.findAllForEvent(event.getId());
             boolean hasPolls = !polls.isEmpty();
             var allowedTags = hasPolls ? polls.stream().flatMap(p -> p.getAllowedTags().stream()).collect(Collectors.toList()) : List.<String>of();
 

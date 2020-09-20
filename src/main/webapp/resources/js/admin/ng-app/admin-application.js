@@ -315,7 +315,49 @@
                         return AdminReservationService.load($stateParams.eventName, $stateParams.reservationId);
                     }
                 }
-            }).state('extension', {
+            }).state('events.single.polls-list', {
+                url:'/polls/list',
+                template: '<polls-list event="ctrl.event"></polls-list>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'POLL_LIST'
+                }
+            }).state('events.single.polls-detail', {
+                url:'/polls/view/:pollId',
+                template: '<poll-detail event="ctrl.event"></poll-detail>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'POLL_DETAIL'
+                }
+            }).state('events.single.polls-create', {
+                url:'/polls/new',
+                template: '<poll-edit event="ctrl.event"></poll-edit>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'POLL_CREATE'
+                }
+            }).state('events.single.polls-edit', {
+                url:'/polls/edit/:pollId',
+                template: '<poll-edit event="ctrl.event"></poll-edit>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'POLL_EDIT'
+                }
+            })
+
+            .state('extension', {
                 url: '/extension',
                 abstract: true,
                 template: '<div><div data-ui-view></div></div>'
