@@ -30,6 +30,12 @@
             },
             controller: ['PollService', 'EventService', '$q', '$stateParams', PollDetailCtrl],
             templateUrl: '../resources/js/admin/feature/polls/poll-detail.html'
+        }).component('pollParticipants', {
+            bindings: {
+                event:'<'
+            },
+            controller: ['PollService', 'EventService', '$q', '$stateParams', PollParticipantsCtrl],
+            templateUrl: '../resources/js/admin/feature/polls/poll-participants.html'
         });
 
 
@@ -151,9 +157,32 @@
 
     }
 
+    function PollParticipantsCtrl(PollService, EventService, $q, $stateParams) {
+        var ctrl = this;
+        ctrl.$onInit = function() {
+            $q.all([PollService.loadForEvent(ctrl.event.shortName, $stateParams.pollId), PollService.loadParticipants(ctrl.event.shortName, $stateParams.pollId)]).then(function(res) {
+                ctrl.poll = res[0].data;
+                ctrl.participants = res[1].data;
+                var keys = Object.keys(ctrl.event.description)
+                ctrl.getFirstLang = function(option) {
+                    if(!option) {
+                        return "";
+                    }
+                    return option[keys[0]];
+                };
+            });
+            ctrl.addParticipants = function() {
+                PollService.selectParticipants(ctrl.event.shortName).then(function(participants) {
+                    PollService.addParticipants(ctrl.event.shortName, ctrl.poll.id, participants.map(function(p) { return p.id; })).then(function(res) {
+                        ctrl.participants = res.data;
+                    })
+                });
+            }
+        }
+    }
+
     function PollService($http, HttpErrorHandler, $uibModal) {
-        var self = this;
-        return {
+        var service = {
             loadListForEvent: function(eventName) {
                 return $http.get('/admin/api/'+eventName+'/poll').error(HttpErrorHandler.handle);
             },
@@ -166,6 +195,57 @@
             updateStatus: function(eventName, pollId, newStatus) {
                 return $http['put']('/admin/api/'+eventName+'/poll/'+pollId, { status: newStatus })
                     .error(HttpErrorHandler.handle);
+            },
+            loadParticipants: function(eventName, pollId) {
+                return $http.get('/admin/api/'+eventName+'/poll/'+pollId+"/allowed").error(HttpErrorHandler.handle);
+            },
+            addParticipants: function(eventName, pollId, ids) {
+                return $http.post('/admin/api/'+eventName+'/poll/'+pollId+'/allow', {
+                    ticketIds: ids
+                }).error(HttpErrorHandler.handle);
+            },
+            searchParticipant: function(eventName, term) {
+                return $http.get('/admin/api/'+eventName+'/poll/filter-tickets?filter='+term).error(HttpErrorHandler.handle);
+            },
+            selectParticipants: function(eventName) {
+                var modal = $uibModal.open({
+                    size: 'lg',
+                    templateUrl: '../resources/js/admin/feature/polls/select-participants-modal.html',
+                    backdrop: 'static',
+                    controllerAs: '$ctrl',
+                    controller: function ($scope) {
+                        var ctrl = this;
+                        ctrl.participants = [];
+                        ctrl.results = [];
+                        ctrl.select = function(participant) {
+                            ctrl.participants.push(participant);
+                        };
+                        ctrl.search = function() {
+                            console.log(ctrl.searchTerm);
+                            if(ctrl.searchTerm) {
+                                service.searchParticipant(eventName, ctrl.searchTerm).then(function(result) {
+                                    ctrl.results = result.data;
+                                });
+                            }
+                        };
+                        ctrl.remove = function(participant) {
+                            ctrl.participants = _.remove(ctrl.participants, function(p) {
+                                return p === participant;
+                            });
+                        }
+                        ctrl.save = function() {
+                            if(ctrl.participants.length > 0) {
+                                $scope.$close(ctrl.participants);
+                            } else {
+                                $scope.$dismiss();
+                            }
+                        };
+                        ctrl.cancel = function() {
+                            $scope.$dismiss();
+                        };
+                    }
+                });
+                return modal.result;
             },
             editOption: function(option, languages) {
                 var modal = $uibModal.open({
@@ -192,7 +272,8 @@
                 });
                 return modal.result;
             }
-        }
+        };
+        return service;
     }
 
 })();

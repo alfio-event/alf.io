@@ -170,7 +170,8 @@ class PollAdminApiControllerTest {
 
         // allow tickets to vote
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-        var allowRes = controller.allowAttendees(event.getShortName(), pollId, List.of(ticketId));
+        var participantForm = new PollAdminApiController.AllowParticipantForm(List.of(ticketId));
+        var allowRes = controller.allowAttendees(event.getShortName(), pollId, participantForm);
         assertTrue(allowRes.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(allowRes.getBody()));
         assertEquals(1, allowRes.getBody().size());

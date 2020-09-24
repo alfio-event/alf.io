@@ -1,0 +1,55 @@
+<div class="modal-header">
+    <h2>Add Participants</h2>
+</div>
+<div class="modal-body">
+    <div class="form-inline">
+        <div class="form-group">
+            <label class="sr-only" for="search">Search by name or email address</label>
+            <div class="input-group">
+                <div class="input-group-addon"><i class="fa fa-search"></i></div>
+                <input type="text" class="form-control" id="search" placeholder="Enter name or email address" data-ng-model="$ctrl.searchTerm">
+            </div>
+        </div>
+        <button type="button" class="btn btn-default" data-ng-click="$ctrl.search()">Search</button>
+    </div>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>E-Mail</th>
+            <th>Ticket Category</th>
+            <th>&nbsp;</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="participant in $ctrl.results">
+            <td>
+                <div class="form-control-static">{{participant.firstName}}</div>
+            </td>
+            <td>
+                <div class="form-control-static">{{participant.lastName}}</div>
+            </td>
+            <td>
+                <div class="form-control-static">{{participant.emailAddress}}</div>
+            </td>
+            <td>
+                <div class="form-control-static">{{participant.categoryName}}</div>
+            </td>
+            <td>
+                <button type="button" data-ng-click="$ctrl.select(participant)">Select</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div class="modal-footer">
+    <div class="row">
+        <div class="col-md-4 col-md-push-8 col-xs-12">
+            <button type="button" class="btn btn-lg btn-warning btn-block" data-ng-click="$ctrl.save()" style="margin-bottom: 10px">Save</button>
+        </div>
+        <div class="col-md-4 col-md-pull-4 col-xs-12">
+            <button type="button" class="btn btn-lg btn-default btn-block" data-ng-click="$ctrl.cancel()" style="margin-bottom: 10px">Cancel</button>
+        </div>
+    </div>
+</div>

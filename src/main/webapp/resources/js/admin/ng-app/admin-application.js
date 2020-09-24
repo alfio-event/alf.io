@@ -355,6 +355,16 @@
                 data: {
                     view: 'POLL_EDIT'
                 }
+            }).state('events.single.polls-edit-participants', {
+                url:'/polls/:pollId/participants',
+                template: '<poll-participants event="ctrl.event"></poll-participants>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'POLL_EDIT_PARTICIPANTS'
+                }
             })
 
             .state('extension', {

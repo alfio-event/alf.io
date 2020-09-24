@@ -168,7 +168,7 @@ public class PollManager {
     public Optional<List<PollParticipant>> searchTicketsToAllow(String eventName, String filter) {
         Validate.isTrue(StringUtils.isNotBlank(filter));
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .map(event -> ticketSearchRepository.filterConfirmedTicketsInEvent(event.getId(), 20, filter));
+            .map(event -> ticketSearchRepository.filterConfirmedTicketsInEvent(event.getId(), 20, "%"+filter+"%"));
     }
 
     public Optional<List<PollParticipant>> allowTicketsToVote(String eventName, List<Integer> ids, long pollId) {

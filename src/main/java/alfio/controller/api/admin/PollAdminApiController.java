@@ -23,6 +23,7 @@ import alfio.model.poll.PollParticipant;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -95,9 +96,12 @@ public class PollAdminApiController {
     @PostMapping("/{pollId}/allow")
     ResponseEntity<List<PollParticipant>> allowAttendees(@PathVariable("eventName") String eventName,
                                                          @PathVariable("pollId") Long pollId,
-                                                         @RequestParam("ids") List<Integer> ticketIds) {
+                                                         @RequestBody AllowParticipantForm form) {
 
-        return ResponseEntity.of(pollManager.allowTicketsToVote(eventName, ticketIds, pollId));
+        if(CollectionUtils.isEmpty(form.ticketIds)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.of(pollManager.allowTicketsToVote(eventName, form.ticketIds, pollId));
     }
 
     @GetMapping("/{pollId}/allowed")
@@ -113,6 +117,15 @@ public class PollAdminApiController {
         @JsonCreator
         UpdatePollStatusForm(@JsonProperty("status") Poll.PollStatus status) {
             this.status = status;
+        }
+    }
+
+    static class AllowParticipantForm {
+        private final List<Integer> ticketIds;
+
+        @JsonCreator
+        AllowParticipantForm(@JsonProperty("ticketIds") List<Integer> ticketIds) {
+            this.ticketIds = ticketIds;
         }
     }
 

@@ -19,6 +19,12 @@
         </div>
     </div>
 
+    <div class="page-header" data-ng-if="$ctrl.poll.accessRestricted">
+        <h3>Manage Participants</h3>
+        <p>Access to this poll is restricted to allowed Attendees.</p>
+        <a class="btn btn-success" data-ui-sref="events.single.polls-edit-participants({eventName: $ctrl.event.shortName, pollId: $ctrl.poll.id})" type="button">Manage</a>
+    </div>
+
     <div class="page-header">
         <h3>Question</h3>
         <p>The question you'd like to ask to your attendees</p>
