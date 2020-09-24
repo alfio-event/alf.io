@@ -21,15 +21,19 @@ import alfio.model.Ticket;
 import alfio.model.modification.PollModification;
 import alfio.model.modification.PollOptionModification;
 import alfio.model.poll.Poll;
+import alfio.model.poll.PollParticipant;
 import alfio.model.poll.PollWithOptions;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.EventRepository;
 import alfio.repository.PollRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.TicketSearchRepository;
 import alfio.util.Json;
 import alfio.util.PinGenerator;
 import lombok.AllArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -51,10 +55,11 @@ public class PollManager {
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final TicketSearchRepository ticketSearchRepository;
 
     public Result<List<Poll>> getActiveForEvent(String eventName, String pin) {
         return validatePinAndEvent(pin, eventName)
-            .flatMap(event -> Result.success(pollRepository.findActiveForEvent(event.getRight().getId())));
+            .flatMap(eventAndTicket -> Result.success(pollRepository.findActiveForEvent(eventAndTicket.getLeft().getId())));
     }
 
     public Result<PollWithOptions> getSingleActiveForEvent(String eventName, Long id, String pin) {
@@ -157,6 +162,32 @@ public class PollManager {
             .flatMap(event -> {
                 Validate.isTrue(pollRepository.updateStatus(newStatus, pollId, event.getId()) == 1, "Error while updating status");
                 return getSingleForEvent(pollId, event);
+            });
+    }
+
+    public Optional<List<PollParticipant>> searchTicketsToAllow(String eventName, String filter) {
+        Validate.isTrue(StringUtils.isNotBlank(filter));
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .map(event -> ticketSearchRepository.filterConfirmedTicketsInEvent(event.getId(), 20, filter));
+    }
+
+    public Optional<List<PollParticipant>> allowTicketsToVote(String eventName, List<Integer> ids, long pollId) {
+        Validate.isTrue(CollectionUtils.isNotEmpty(ids));
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .map(event -> {
+                var poll = pollRepository.findOptional(pollId, event.getId()).orElseThrow();
+                Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
+                var result = ticketRepository.tagTickets(ids, event.getId(), poll.getAllowedTags().get(0));
+                Validate.isTrue(ids.size() == result, "Unable to tag tickets");
+                return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
+            });
+    }
+
+    public Optional<List<PollParticipant>> fetchAllowedTickets(String eventName, long pollId) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .map(event -> {
+                var poll = pollRepository.findOptional(pollId, event.getId()).orElseThrow();
+                return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
             });
     }
 

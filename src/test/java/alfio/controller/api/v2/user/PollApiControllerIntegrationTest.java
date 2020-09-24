@@ -43,6 +43,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -62,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 class PollApiControllerIntegrationTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PollApiControllerIntegrationTest.class);
 
     @Autowired
     private PollApiController pollApiController;
@@ -95,6 +98,7 @@ class PollApiControllerIntegrationTest {
 
     @BeforeEach
     void init() {
+        LOGGER.info("init");
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
@@ -107,6 +111,7 @@ class PollApiControllerIntegrationTest {
         event = eventAndUser.getKey();
         var rowCountAndKey = pollRepository.insert(Map.of("en", "test poll"), null, List.of(), 0, event.getId(), event.getOrganizationId());
         pollId = rowCountAndKey.getKey();
+        LOGGER.info("pollId {}", pollId);
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(1);
         TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
@@ -163,6 +168,8 @@ class PollApiControllerIntegrationTest {
 
         // update status of the poll
         updateVisibility(Poll.PollStatus.OPEN);
+        LOGGER.info("updated visibility {}", pollRepository.findAllForEvent(event.getId()));
+        LOGGER.info("active {}", pollRepository.findActiveForEvent(event.getId()));
 
         var response = pollApiController.getAll(event.getShortName(), PinGenerator.uuidToPin(ticket.getUuid()));
         assertTrue(response.getStatusCode().is2xxSuccessful());

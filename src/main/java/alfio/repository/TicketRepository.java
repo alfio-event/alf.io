@@ -18,6 +18,7 @@ package alfio.repository;
 
 import alfio.model.*;
 import alfio.model.checkin.OnlineCheckInFullInfo;
+import alfio.model.poll.PollParticipant;
 import alfio.model.support.Array;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
@@ -344,5 +345,15 @@ public interface TicketRepository {
 
     @Query("update ticket set status = 'CHECKED_IN', locked_assignment = true where uuid = :uuid and event_id = :eventId and status = 'ACQUIRED'")
     int performCheckIn(@Bind("uuid") String ticketUUID, @Bind("eventId") int eventId);
+
+    @Query("select t.id as t_id, t.first_name as t_first_name, t.last_name as t_last_name, t.email_address as t_email_address, tc.name as tc_name from ticket t " +
+        " join ticket_category tc on t.category_id = tc.id where t.event_id = :eventId and t.status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t.tags @> ARRAY[ :tags ]::text[]")
+    List<PollParticipant> getTicketsForEventByTags(@Bind("eventId") int eventId, @Bind("tags") List<String> tags);
+
+    @Query("update ticket set tags = array_append(tags, :tag::text) where id in (:ticketIds) and event_id = :eventId")
+    int tagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
+
+    @Query("update ticket set tags = array_remove(tags, :tag) where id in (:ticketIds) and event_id = :eventId")
+    int untagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
 
 }

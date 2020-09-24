@@ -20,11 +20,13 @@ import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.Map;
 
 @Getter
+@ToString
 public class Poll {
 
 

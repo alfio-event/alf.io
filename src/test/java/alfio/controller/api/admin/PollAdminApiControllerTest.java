@@ -24,17 +24,19 @@ import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.TicketReservation;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.PollModification;
 import alfio.model.modification.PollOptionModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.poll.Poll;
-import alfio.repository.EventDeleterRepository;
-import alfio.repository.EventRepository;
+import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,9 +50,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.ZonedDateTime;
+import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,12 +76,16 @@ class PollAdminApiControllerTest {
     private EventRepository eventRepository;
     @Autowired
     private EventDeleterRepository eventDeleterRepository;
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
+    @Autowired
+    private TicketRepository ticketRepository;
+    @Autowired
+    private TicketCategoryRepository ticketCategoryRepository;
+    @Autowired
+    private PollRepository pollRepository;
 
     private Event event;
-    private Long pollId;
-    private Ticket ticket;
-    private Long firstOptionId;
-    private Long secondOptionId;
 
     @BeforeEach
     void init() {
@@ -133,6 +138,44 @@ class PollAdminApiControllerTest {
         assertEquals(Poll.PollStatus.OPEN, updatePollResponse.getBody().getStatus());
         assertEquals(4, updatePollResponse.getBody().getOptions().size());
         assertEquals("Homer J. Simpson", updatePollResponse.getBody().getOptions().get(0).getTitle().get("en"));
+    }
+
+    @Test
+    void allowPeopleToVote() {
+        var options = List.of(new PollOptionModification(null, Map.of("en", "Homer J. Simpson"), null), new PollOptionModification(null, Map.of("en", "Bender B. Rodriguez"), Map.of()));
+        var form = new PollModification(null, Map.of("en", "Best Employee of the Year"), null, null, options, true, Poll.PollStatus.OPEN); // this must not have an impact
+        var eventName = event.getShortName();
+        var createResponse = controller.createNewPoll(eventName, form);
+        assertTrue(createResponse.getStatusCode().is2xxSuccessful());
+        assertNotNull(createResponse.getBody());
+        var pollId = createResponse.getBody();
+
+        var reservationId = UUID.randomUUID().toString();
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(event.getZoneId()), DateUtils.addMinutes(new Date(), 1), null, "en", event.getId(), null, null, null);
+        int categoryId = CollectionUtils.get(ticketCategoryRepository.findByEventIdAsMap(event.getId()), 0).getKey();
+        var tickets = ticketRepository.findFreeByEventId(event.getId());
+        var firstTicket = tickets.get(0);
+        int ticketId = firstTicket.getId();
+        ticketRepository.reserveTickets(reservationId, List.of(ticketId), categoryId, "en", 0, null);
+        ticketReservationRepository.updateReservationStatus(reservationId, TicketReservation.TicketReservationStatus.COMPLETE.name());
+        ticketRepository.updateTicketOwner(firstTicket.getUuid(), "test@test.ch", "First Last", "First", "Last");
+        ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
+
+        // find compatible tickets
+        var res = controller.findAdditionalAttendees(event.getShortName(), "First");
+        assertTrue(res.getStatusCode().is2xxSuccessful());
+        assertTrue(CollectionUtils.isNotEmpty(res.getBody()));
+        assertEquals(1, res.getBody().size());
+        assertEquals(firstTicket.getId(), res.getBody().get(0).getId());
+
+        // allow tickets to vote
+        var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
+        var allowRes = controller.allowAttendees(event.getShortName(), pollId, List.of(ticketId));
+        assertTrue(allowRes.getStatusCode().is2xxSuccessful());
+        assertTrue(CollectionUtils.isNotEmpty(allowRes.getBody()));
+        assertEquals(1, allowRes.getBody().size());
+        assertEquals(firstTicket.getId(), allowRes.getBody().get(0).getId());
+
     }
 
     @AfterEach

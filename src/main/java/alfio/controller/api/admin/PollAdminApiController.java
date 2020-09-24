@@ -19,6 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.PollManager;
 import alfio.model.modification.PollModification;
 import alfio.model.poll.Poll;
+import alfio.model.poll.PollParticipant;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.RequiredArgsConstructor;
@@ -80,6 +81,30 @@ public class PollAdminApiController {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.of(pollManager.updateStatus(pollId, eventName, form.status).map(PollModification::from));
+    }
+
+    @GetMapping("/filter-tickets")
+    ResponseEntity<List<PollParticipant>> findAdditionalAttendees(@PathVariable("eventName") String eventName,
+                                                                  @RequestParam("filter") String filter) {
+        if(StringUtils.isBlank(filter)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.of(pollManager.searchTicketsToAllow(eventName, filter));
+    }
+
+    @PostMapping("/{pollId}/allow")
+    ResponseEntity<List<PollParticipant>> allowAttendees(@PathVariable("eventName") String eventName,
+                                                         @PathVariable("pollId") Long pollId,
+                                                         @RequestParam("ids") List<Integer> ticketIds) {
+
+        return ResponseEntity.of(pollManager.allowTicketsToVote(eventName, ticketIds, pollId));
+    }
+
+    @GetMapping("/{pollId}/allowed")
+    ResponseEntity<List<PollParticipant>> getAllowedAttendees(@PathVariable("eventName") String eventName,
+                                                              @PathVariable("pollId") Long pollId) {
+
+        return ResponseEntity.of(pollManager.fetchAllowedTickets(eventName, pollId));
     }
 
     static class UpdatePollStatusForm {
