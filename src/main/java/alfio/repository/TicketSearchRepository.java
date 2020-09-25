@@ -20,6 +20,7 @@ import alfio.model.TicketReservation;
 import alfio.model.TicketReservationWithTransaction;
 import alfio.model.TicketWithReservationAndTransaction;
 import alfio.model.poll.PollParticipant;
+import alfio.model.support.Array;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -63,11 +64,12 @@ public interface TicketSearchRepository {
                                                                                                   @Bind("pageSize") int pageSize,
                                                                                                   @Bind("search") String search);
 
-    @Query("select d_tbl.t_id as t_id, d_tbl.t_first_name as t_first_name, d_tbl.t_last_name as t_last_name, d_tbl.t_email_address as t_email_address, tc.name as tc_name from (" + FIND_ALL_CONFIRMED_TICKETS_FOR_EVENT + " limit :maxResults) as d_tbl " +
+    @Query("select d_tbl.t_id as t_id, d_tbl.t_first_name as t_first_name, d_tbl.t_last_name as t_last_name, d_tbl.t_email_address as t_email_address, tc.name as tc_name from (" + FIND_ALL_CONFIRMED_TICKETS_FOR_EVENT + " and not (:tags::text[] && t_tags)  limit :maxResults) as d_tbl " +
         " join ticket_category tc on d_tbl.t_category_id = tc.id order by tr_confirmation_ts asc, tr_id, t_uuid")
-    List<PollParticipant> filterConfirmedTicketsInEvent(@Bind("eventId") int eventId,
-                                                        @Bind("maxResults") int maxResults,
-                                                        @Bind("search") String search);
+    List<PollParticipant> filterConfirmedTicketsInEventForPoll(@Bind("eventId") int eventId,
+                                                               @Bind("maxResults") int maxResults,
+                                                               @Bind("search") String search,
+                                                               @Bind("tags") @Array List<String> tagsToFilter);
 
     @Query("select count(*) from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION +" ) as d_tbl")
     Integer countAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId,

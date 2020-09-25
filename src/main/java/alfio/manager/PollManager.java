@@ -165,10 +165,11 @@ public class PollManager {
             });
     }
 
-    public Optional<List<PollParticipant>> searchTicketsToAllow(String eventName, String filter) {
+    public Optional<List<PollParticipant>> searchTicketsToAllow(String eventName, Long pollId, String filter) {
         Validate.isTrue(StringUtils.isNotBlank(filter));
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .map(event -> ticketSearchRepository.filterConfirmedTicketsInEvent(event.getId(), 20, "%"+filter+"%"));
+            .flatMap(event -> pollRepository.findSingleForEvent(event.getId(), pollId)
+                    .map(p -> ticketSearchRepository.filterConfirmedTicketsInEventForPoll(event.getId(), 20, "%"+filter+"%", p.getAllowedTags())));
     }
 
     public Optional<List<PollParticipant>> allowTicketsToVote(String eventName, List<Integer> ids, long pollId) {

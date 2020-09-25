@@ -2,15 +2,14 @@
     <h2>Add Participants</h2>
 </div>
 <div class="modal-body">
-    <div class="form-inline">
-        <div class="form-group">
-            <label class="sr-only" for="search">Search by name or email address</label>
-            <div class="input-group">
-                <div class="input-group-addon"><i class="fa fa-search"></i></div>
-                <input type="text" class="form-control" id="search" placeholder="Enter name or email address" data-ng-model="$ctrl.searchTerm">
-            </div>
+
+    <div class="form-group wMarginBottom">
+        <label class="sr-only" for="search">Search by name or email address</label>
+        <div class="input-group">
+            <div class="input-group-addon"><i class="fa fa-search"></i></div>
+            <input type="text" class="form-control" id="search" placeholder="Enter name or email address" data-ng-model="$ctrl.searchTerm" ng-change="$ctrl.search()" ng-model-options='{ debounce: 1000 }'>
+            <div class="input-group-addon" data-ng-if="$ctrl.loading"><i class="fa fa-refresh fa-spin"></i></div>
         </div>
-        <button type="button" class="btn btn-default" data-ng-click="$ctrl.search()">Search</button>
     </div>
     <table class="table table-striped">
         <thead>
@@ -19,7 +18,7 @@
             <th>Last name</th>
             <th>E-Mail</th>
             <th>Ticket Category</th>
-            <th>&nbsp;</th>
+            <th><input type="checkbox" ng-model="selAll" data-ng-change="$ctrl.toggleSelection(selAll)"></th>
         </tr>
         </thead>
         <tbody>
@@ -37,7 +36,7 @@
                 <div class="form-control-static">{{participant.categoryName}}</div>
             </td>
             <td>
-                <button type="button" data-ng-click="$ctrl.select(participant)">Select</button>
+                <input type="checkbox" ng-model="participant.selected" data-ng-change="$ctrl.updateSelection(participant)">
             </td>
         </tr>
         </tbody>

@@ -6,7 +6,15 @@
     <div data-ng-if="$ctrl.participants.length == 0">
         <h4>No participant added yet.</h4>
     </div>
-    <div class="panel panel-default" data-ng-if="$ctrl.participants.length > 0">
+    <div class="form-group" data-ng-if="$ctrl.participants.length > 0">
+        <div class="input-group">
+            <div class="input-group-addon"><i class="fa fa-search"></i></div>
+            <label class="sr-only" for="filter">Filter</label>
+            <input type="text" id="filter" class="form-control" placeholder="Filter table" data-ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()" ng-model-options='{ debounce: 1000 }'>
+        </div>
+    </div>
+    <p data-ng-if="$ctrl.filteredParticipants.length === 0" class="text-center">No results found.</p>
+    <div class="panel panel-default" data-ng-if="$ctrl.filteredParticipants.length > 0">
         <div class="table-responsive wMarginTop10px">
             <table class="table table-striped">
                 <thead>
@@ -20,21 +28,21 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr ng-repeat="participant in $ctrl.participants">
+                    <tr ng-repeat="participant in $ctrl.filteredParticipants">
                         <td>
                             <div class="form-control-static">{{$index + 1}}</div>
                         </td>
                         <td>
-                            <div class="form-control-static">{{participant.firstName}}</div>
+                            <div class="form-control-static">{{::participant.firstName}}</div>
                         </td>
                         <td>
-                            <div class="form-control-static">{{participant.lastName}}</div>
+                            <div class="form-control-static">{{::participant.lastName}}</div>
                         </td>
                         <td>
-                            <div class="form-control-static">{{participant.emailAddress}}</div>
+                            <div class="form-control-static">{{::participant.emailAddress}}</div>
                         </td>
                         <td>
-                            <div class="form-control-static">{{participant.categoryName}}</div>
+                            <div class="form-control-static">{{::participant.categoryName}}</div>
                         </td>
                         <td>
                             <button type="button" class="btn btn-sm btn-danger" ng-click="$ctrl.removeParticipant(participant)"><i class="fa fa-trash"></i> <span class="hidden-xs hidden-sm">Remove</span></button>

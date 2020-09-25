@@ -84,13 +84,14 @@ public class PollAdminApiController {
         return ResponseEntity.of(pollManager.updateStatus(pollId, eventName, form.status).map(PollModification::from));
     }
 
-    @GetMapping("/filter-tickets")
+    @GetMapping("/{pollId}/filter-tickets")
     ResponseEntity<List<PollParticipant>> findAdditionalAttendees(@PathVariable("eventName") String eventName,
+                                                                  @PathVariable("pollId") Long pollId,
                                                                   @RequestParam("filter") String filter) {
         if(StringUtils.isBlank(filter)) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.of(pollManager.searchTicketsToAllow(eventName, filter));
+        return ResponseEntity.of(pollManager.searchTicketsToAllow(eventName, pollId, filter));
     }
 
     @PostMapping("/{pollId}/allow")

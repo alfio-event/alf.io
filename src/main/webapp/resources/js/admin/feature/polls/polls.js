@@ -163,6 +163,7 @@
             $q.all([PollService.loadForEvent(ctrl.event.shortName, $stateParams.pollId), PollService.loadParticipants(ctrl.event.shortName, $stateParams.pollId)]).then(function(res) {
                 ctrl.poll = res[0].data;
                 ctrl.participants = res[1].data;
+                ctrl.filteredParticipants = res[1].data;
                 var keys = Object.keys(ctrl.event.description)
                 ctrl.getFirstLang = function(option) {
                     if(!option) {
@@ -172,10 +173,19 @@
                 };
             });
             ctrl.addParticipants = function() {
-                PollService.selectParticipants(ctrl.event.shortName).then(function(participants) {
+                PollService.selectParticipants(ctrl.event.shortName, ctrl.poll.id).then(function(participants) {
                     PollService.addParticipants(ctrl.event.shortName, ctrl.poll.id, participants.map(function(p) { return p.id; })).then(function(res) {
                         ctrl.participants = res.data;
                     })
+                });
+            };
+            ctrl.updateFilteredData = function() {
+                ctrl.filteredParticipants = ctrl.participants.filter(function(p) {
+                    return !ctrl.toSearch || ctrl.toSearch === ''
+                        || _.include(p.firstName.toLowerCase(), ctrl.toSearch.toLowerCase())
+                        || _.include(p.lastName.toLowerCase(), ctrl.toSearch.toLowerCase())
+                        || _.include(p.emailAddress.toLowerCase(), ctrl.toSearch.toLowerCase())
+                        || _.include(p.categoryName.toLowerCase(), ctrl.toSearch.toLowerCase());
                 });
             }
         }
@@ -204,10 +214,10 @@
                     ticketIds: ids
                 }).error(HttpErrorHandler.handle);
             },
-            searchParticipant: function(eventName, term) {
-                return $http.get('/admin/api/'+eventName+'/poll/filter-tickets?filter='+term).error(HttpErrorHandler.handle);
+            searchParticipant: function(eventName, pollId, term) {
+                return $http.get('/admin/api/'+eventName+'/poll/'+pollId+'/filter-tickets?filter='+term).error(HttpErrorHandler.handle);
             },
-            selectParticipants: function(eventName) {
+            selectParticipants: function(eventName, pollId) {
                 var modal = $uibModal.open({
                     size: 'lg',
                     templateUrl: '../resources/js/admin/feature/polls/select-participants-modal.html',
@@ -217,14 +227,32 @@
                         var ctrl = this;
                         ctrl.participants = [];
                         ctrl.results = [];
+                        ctrl.updateSelection = function(participant) {
+                            if(participant.selected) {
+                                ctrl.remove(participant);
+                            } else {
+                                ctrl.add(participant);
+                            }
+                        };
+                        ctrl.toggleSelection = function(all) {
+                            ctrl.results.forEach(function(p) { p.selected = all; });
+                            if(all) {
+                                ctrl.participants = ctrl.results.slice();
+                            } else {
+                                ctrl.participants = [];
+                            }
+                        }
                         ctrl.select = function(participant) {
                             ctrl.participants.push(participant);
                         };
                         ctrl.search = function() {
-                            console.log(ctrl.searchTerm);
                             if(ctrl.searchTerm) {
-                                service.searchParticipant(eventName, ctrl.searchTerm).then(function(result) {
+                                ctrl.loading = true;
+                                service.searchParticipant(eventName, pollId, ctrl.searchTerm).then(function(result) {
                                     ctrl.results = result.data;
+                                    ctrl.loading = false;
+                                }, function() {
+                                    ctrl.loading = false;
                                 });
                             }
                         };

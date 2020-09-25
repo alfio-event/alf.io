@@ -162,7 +162,7 @@ class PollAdminApiControllerTest {
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
 
         // find compatible tickets
-        var res = controller.findAdditionalAttendees(event.getShortName(), "First");
+        var res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First");
         assertTrue(res.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(res.getBody()));
         assertEquals(1, res.getBody().size());
@@ -176,6 +176,11 @@ class PollAdminApiControllerTest {
         assertTrue(CollectionUtils.isNotEmpty(allowRes.getBody()));
         assertEquals(1, allowRes.getBody().size());
         assertEquals(firstTicket.getId(), allowRes.getBody().get(0).getId());
+
+        // now ticket should not be returned anymore
+        res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First");
+        assertTrue(res.getStatusCode().is2xxSuccessful());
+        assertTrue(CollectionUtils.isEmpty(res.getBody()));
 
     }
 
