@@ -22,6 +22,7 @@ import alfio.manager.support.response.ValidatedResponse;
 import alfio.model.poll.Poll;
 import alfio.model.poll.PollWithOptions;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,7 +41,7 @@ public class PollApiController {
         if(result.isSuccess()) {
             return ResponseEntity.ok(ValidatedResponse.fromResult(result, "pin"));
         }
-        return ResponseEntity.badRequest().body(ValidatedResponse.fromResult(result, "pin"));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ValidatedResponse.fromResult(result, "pin"));
     }
 
     @GetMapping("/{pollId}")
@@ -49,7 +50,7 @@ public class PollApiController {
         if(result.isSuccess()) {
             return ResponseEntity.ok(ValidatedResponse.fromResult(result, "pin"));
         }
-        return ResponseEntity.badRequest().body(ValidatedResponse.fromResult(result, "pin"));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ValidatedResponse.fromResult(result, "pin"));
     }
 
     @PostMapping("/{pollId}/answer")
@@ -61,7 +62,7 @@ public class PollApiController {
         if(result.isSuccess()) {
             return ResponseEntity.ok(ValidatedResponse.fromResult(result, "pin"));
         }
-        return ResponseEntity.badRequest().body(ValidatedResponse.fromResult(result, "pin"));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ValidatedResponse.fromResult(result, "pin"));
     }
 
 }
