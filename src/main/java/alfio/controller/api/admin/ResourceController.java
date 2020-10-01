@@ -151,7 +151,7 @@ public class ResourceController {
             Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(event, fileUploadManager);
             Map<String, Object> model = name.prepareSampleModel(organization, event, image);
             String renderedTemplate = templateManager.renderString(event, template.getFileAsString(), model, loc, name.getTemplateOutput());
-            if(MediaType.TEXT_PLAIN_VALUE.equals(name.getRenderedContentType())) {
+            if(MediaType.TEXT_PLAIN_VALUE.equals(name.getRenderedContentType()) || TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE.equals(name.getRenderedContentType())) {
                 response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".txt");
                 response.setContentType(MediaType.TEXT_PLAIN_VALUE);
                 response.setCharacterEncoding("UTF-8");
