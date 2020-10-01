@@ -28,7 +28,7 @@
             bindings: {
                 event:'<'
             },
-            controller: ['PollService', 'EventService', '$q', '$stateParams', PollDetailCtrl],
+            controller: ['PollService', 'EventService', '$q', '$stateParams', '$interval', '$uibModal', '$scope', PollDetailCtrl],
             templateUrl: '../resources/js/admin/feature/polls/poll-detail.html'
         }).component('pollParticipants', {
             bindings: {
@@ -112,14 +112,23 @@
             if(!form.$valid || poll.options.length === 0) {
                 return;
             }
-            PollService.createNew(ctrl.event.shortName, poll).then(function(resp) {
-                $state.go('events.single.polls-detail', { eventName: ctrl.event.shortName, pollId: resp.data })
-            });
+            if(poll.id) {
+                console.log(poll)
+                PollService.update(ctrl.event.shortName, poll).then(function(resp) {
+                    $state.go('events.single.polls-detail', { eventName: ctrl.event.shortName, pollId: poll.id })
+                });
+            } else {
+                PollService.createNew(ctrl.event.shortName, poll).then(function(resp) {
+                    $state.go('events.single.polls-detail', { eventName: ctrl.event.shortName, pollId: resp.data })
+                });
+            }
         };
     }
 
-    function PollDetailCtrl(PollService, EventService, $q, $stateParams) {
+    function PollDetailCtrl(PollService, EventService, $q, $stateParams, $interval, $uibModal, $scope) {
         var ctrl = this;
+        var timer = null;
+
         ctrl.$onInit = function() {
             $q.all([PollService.loadForEvent(ctrl.event.shortName, $stateParams.pollId), EventService.getSupportedLanguages()]).then(function(res) {
                 var keys = Object.keys(ctrl.event.description)
@@ -145,6 +154,36 @@
                 ctrl.draft = poll.status === 'DRAFT';
                 ctrl.closed = poll.status === 'CLOSED';
                 ctrl.open = poll.status === 'OPEN';
+
+                function initTimer() {
+                    timer = $interval(function () {
+                        loadPollStatistics();
+                    }, 2000);
+                }
+
+                function loadPollStatistics() {
+                    PollService.getStatistics(ctrl.event.shortName, poll.id).then(function (result) {
+                        var data = result.data;
+                        var options = result.data.optionStatistics.map(function (d) {
+                            return {
+                                id: d.optionId,
+                                option: _.first(ctrl.poll.options, function (o) {
+                                    return o.id === d.optionId
+                                }),
+                                numVotes: d.votes,
+                                percentage: (d.votes / data.totalVotes) * 100.0
+                            }
+                        });
+                        ctrl.statistics = angular.extend({}, data, {optionStatistics: options});
+                    });
+                }
+
+                if(ctrl.open) {
+                    initTimer();
+                }
+                if(!ctrl.draft) {
+                    loadPollStatistics();
+                }
             };
 
             ctrl.changePollStatus = function() {
@@ -153,7 +192,71 @@
                     initPollObj(res.data);
                 });
             };
+
+            ctrl.openPresentationView = function() {
+                var parentScope = $scope;
+                var parent = ctrl;
+                $uibModal.open({
+                    size: 'lg',
+                    templateUrl: '../resources/js/admin/feature/polls/poll-result-modal.html',
+                    backdrop: 'static',
+                    controllerAs: '$ctrl',
+                    controller: function ($scope) {
+                        var ctrl = this;
+                        ctrl.statistics = parent.statistics;
+                        var chart;
+                        var data = {
+                            labels: ctrl.statistics.optionStatistics.map(function(s) { return parent.getFirstLang(s.option.title); }),
+                            series: [
+                                ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; })
+                            ]
+                        };
+                        parentScope.$watch('$ctrl.statistics', function(newVal, oldVal) {
+                            ctrl.statistics = newVal;
+                            if(chart) {
+                                chart.update({series: [ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; })], labels: data.labels})
+                            }
+                        });
+
+                        ctrl.dismiss = function() {
+                            $scope.$dismiss();
+                        };
+
+                        setTimeout(function() {
+                            chart = new Chartist.Bar('.ct-chart', data, {
+                                fullWidth: true,
+                                axisY: {
+                                    showGrid: false,
+                                    showLabel: false
+                                },
+                                axisX: {
+                                    showGrid: false,
+                                    showLabel: true
+                                },
+                                height: '200px'
+                            }).on('draw', function(data) {
+                                if(data.type === 'bar') {
+                                    data.element.attr({
+                                        style: 'stroke-width: 40px'
+                                    });
+                                }
+                            });
+                        }, 100);
+
+                    }
+                });
+            };
         }
+
+        function destroyTimer() {
+            if (timer) {
+                $interval.clear(timer);
+            }
+        }
+
+        ctrl.$onDestroy = function() {
+            destroyTimer();
+        };
 
     }
 
@@ -202,6 +305,9 @@
             createNew: function(eventName, poll) {
                 return $http.post('/admin/api/'+eventName+'/poll', poll).error(HttpErrorHandler.handle);
             },
+            update: function(eventName, poll) {
+                return $http.post('/admin/api/'+eventName+'/poll/'+poll.id, poll).error(HttpErrorHandler.handle);
+            },
             updateStatus: function(eventName, pollId, newStatus) {
                 return $http['put']('/admin/api/'+eventName+'/poll/'+pollId, { status: newStatus })
                     .error(HttpErrorHandler.handle);
@@ -216,6 +322,9 @@
             },
             searchParticipant: function(eventName, pollId, term) {
                 return $http.get('/admin/api/'+eventName+'/poll/'+pollId+'/filter-tickets?filter='+term).error(HttpErrorHandler.handle);
+            },
+            getStatistics: function(eventName, pollId) {
+                return $http.get('/admin/api/'+eventName+'/poll/'+pollId+'/stats').error(HttpErrorHandler.handle);
             },
             selectParticipants: function(eventName, pollId) {
                 var modal = $uibModal.open({
@@ -287,7 +396,6 @@
                         this.addNew = !option.id || option.title.length === 0;
                         this.editOption = function(form, obj) {
                             if(form.$valid && option.id) {
-                                console.log('TODO update');
                                 $scope.$close(obj);
                             } else if(form.$valid) {
                                 $scope.$close(obj);

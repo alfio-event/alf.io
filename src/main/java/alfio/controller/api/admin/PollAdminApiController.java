@@ -20,6 +20,7 @@ import alfio.manager.PollManager;
 import alfio.model.modification.PollModification;
 import alfio.model.poll.Poll;
 import alfio.model.poll.PollParticipant;
+import alfio.model.poll.PollStatistics;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.RequiredArgsConstructor;
@@ -110,6 +111,12 @@ public class PollAdminApiController {
                                                               @PathVariable("pollId") Long pollId) {
 
         return ResponseEntity.of(pollManager.fetchAllowedTickets(eventName, pollId));
+    }
+
+    @GetMapping("/{pollId}/stats")
+    ResponseEntity<PollStatistics> getStatisticsForEvent(@PathVariable("eventName") String eventName,
+                                                               @PathVariable("pollId") Long pollId) {
+        return ResponseEntity.of(pollManager.getStatisticsFor(eventName, pollId));
     }
 
     static class UpdatePollStatusForm {

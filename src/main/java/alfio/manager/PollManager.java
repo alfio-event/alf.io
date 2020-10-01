@@ -20,9 +20,7 @@ import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
 import alfio.model.modification.PollModification;
 import alfio.model.modification.PollOptionModification;
-import alfio.model.poll.Poll;
-import alfio.model.poll.PollParticipant;
-import alfio.model.poll.PollWithOptions;
+import alfio.model.poll.*;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.EventRepository;
@@ -176,7 +174,7 @@ public class PollManager {
         Validate.isTrue(CollectionUtils.isNotEmpty(ids));
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
             .map(event -> {
-                var poll = pollRepository.findOptional(pollId, event.getId()).orElseThrow();
+                var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
                 Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
                 var result = ticketRepository.tagTickets(ids, event.getId(), poll.getAllowedTags().get(0));
                 Validate.isTrue(ids.size() == result, "Unable to tag tickets");
@@ -187,9 +185,24 @@ public class PollManager {
     public Optional<List<PollParticipant>> fetchAllowedTickets(String eventName, long pollId) {
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
             .map(event -> {
-                var poll = pollRepository.findOptional(pollId, event.getId()).orElseThrow();
+                var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
                 return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
             });
+    }
+
+    public Optional<PollStatistics> getStatisticsFor(String eventName, long pollId) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .flatMap(event -> pollRepository.findSingleForEvent(event.getId(), pollId)
+                .map(p -> {
+                    int allowedParticipants;
+                    if(p.getAllowedTags().isEmpty()) {
+                        allowedParticipants = eventRepository.findStatisticsFor(event.getId()).getCheckedInTickets();
+                    } else {
+                        allowedParticipants = ticketRepository.countTicketsMatchingTagsAndStatus(event.getId(), p.getAllowedTags(), List.of(Ticket.TicketStatus.CHECKED_IN.name()));
+                    }
+                    var statistics = pollRepository.getStatisticsFor(p.getId(), event.getId());
+                    return new PollStatistics(statistics.stream().mapToInt(PollOptionStatistics::getVotes).sum(), allowedParticipants, statistics);
+                }));
     }
 
     private void insertOptions(List<PollOptionModification> options, EventAndOrganizationId event, Long pollId) {

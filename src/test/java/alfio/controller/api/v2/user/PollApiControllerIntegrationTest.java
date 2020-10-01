@@ -202,7 +202,7 @@ class PollApiControllerIntegrationTest {
         form.setOptionId(firstOptionId);
         var response = pollApiController.registerAnswer(event.getShortName(), pollId, form);
         assertFalse(response.getStatusCode().is2xxSuccessful());
-        var statistics = pollRepository.getStatisticsFor(pollId);
+        var statistics = pollRepository.getStatisticsFor(pollId, event.getId());
         assertTrue(statistics.isEmpty());
     }
 
@@ -215,7 +215,7 @@ class PollApiControllerIntegrationTest {
         var response = pollApiController.registerAnswer(event.getShortName(), pollId, form);
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        var statistics = pollRepository.getStatisticsFor(pollId);
+        var statistics = pollRepository.getStatisticsFor(pollId, event.getId());
         assertEquals(1, statistics.size());
         assertEquals(firstOptionId, statistics.get(0).getOptionId());
         assertEquals(1, statistics.get(0).getVotes());
@@ -224,7 +224,7 @@ class PollApiControllerIntegrationTest {
         form.setOptionId(secondOptionId);
         response = pollApiController.registerAnswer(event.getShortName(), pollId, form);
         assertTrue(response.getStatusCode().is2xxSuccessful());
-        statistics = pollRepository.getStatisticsFor(pollId);
+        statistics = pollRepository.getStatisticsFor(pollId, event.getId());
         assertEquals(1, statistics.size());
         assertEquals(secondOptionId, statistics.get(0).getOptionId());
         assertEquals(1, statistics.get(0).getVotes());

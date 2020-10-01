@@ -350,6 +350,9 @@ public interface TicketRepository {
         " join ticket_category tc on t.category_id = tc.id where t.event_id = :eventId and t.status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t.tags @> ARRAY[ :tags ]::text[]")
     List<PollParticipant> getTicketsForEventByTags(@Bind("eventId") int eventId, @Bind("tags") List<String> tags);
 
+    @Query("select count(*) from ticket t where t.event_id = :eventId and t.status in (:statuses) and t.tags @> ARRAY[ :tags ]::text[]")
+    Integer countTicketsMatchingTagsAndStatus(@Bind("eventId") int eventId, @Bind("tags") List<String> tags, @Bind("statuses") Collection<String> statuses);
+
     @Query("update ticket set tags = array_append(tags, :tag::text) where id in (:ticketIds) and event_id = :eventId")
     int tagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
 

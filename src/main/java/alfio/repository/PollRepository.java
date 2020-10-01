@@ -69,9 +69,6 @@ public interface PollRepository {
     @Query("select * from poll where event_id_fk = :eventId and id = :id")
     Optional<Poll> findSingleForEvent(@Bind("eventId") int eventId, @Bind("id") Long pollId);
 
-    @Query("select * from poll where event_id_fk = :eventId and id = :pollId")
-    Optional<Poll> findOptional(@Bind("pollId") long pollId, @Bind("eventId") int eventId);
-
     // options
 
     @Query(INSERT_OPTION)
@@ -105,7 +102,9 @@ public interface PollRepository {
                        @Bind("ticketId") int ticketId,
                        @Bind("orgId") int organizationId);
 
-    @Query("select poll_option_id_fk, count(*) as votes from poll_answer where poll_id_fk = :pollId group by 1")
-    List<PollOptionStatistics> getStatisticsFor(@Bind("pollId") Long pollId);
+    @Query("select pa.poll_option_id_fk, count(*) as votes from poll_answer pa" +
+        "    join poll p on p.id = pa.poll_id_fk " +
+        " where p.id = :pollId and p.event_id_fk = :eventId group by 1")
+    List<PollOptionStatistics> getStatisticsFor(@Bind("pollId") Long pollId, @Bind("eventId") int eventId);
 
 }
