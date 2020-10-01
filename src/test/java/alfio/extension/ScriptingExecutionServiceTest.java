@@ -19,7 +19,7 @@ package alfio.extension;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.controller.api.v2.user.ReservationFlowIntegrationTest;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -29,21 +29,33 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.eq;
+
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-class ScriptingExecutionServiceTest {
+public class ScriptingExecutionServiceTest {
 
     @Autowired
     private ScriptingExecutionService scriptingExecutionService;
     private ExtensionLogger extensionLogger = Mockito.mock(ExtensionLogger.class);
 
     @Test
-    void testEngine() {
-        scriptingExecutionService.executeScript("name", "script", Map.of(), Void.class, extensionLogger);
+    public void testBaseScriptExecution() throws IOException {
+        String concatenation;
+        try(var input = getClass().getResourceAsStream("/rhino-scripts/base.js")) {
+            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(input, StandardCharsets.UTF_8));
+            concatenation = String.join("\n", extensionStream)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);";
+        }
+        scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+        Mockito.verify(extensionLogger).logInfo(eq("test"));
     }
 
 }
