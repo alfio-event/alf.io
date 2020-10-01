@@ -28,7 +28,7 @@
             .state('index', {
                 url: "/",
                 template: ['<div class="container" container-fluid-responsive="">',
-                               '<h1>Dashboard</h1>',
+                               '<h1>Events</h1>',
                                '<hr />',
                                '<active-events-list></active-events-list>',
                                '<expired-events-list></expired-events-list>',
