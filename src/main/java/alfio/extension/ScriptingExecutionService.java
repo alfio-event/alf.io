@@ -22,10 +22,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.extern.log4j.Log4j2;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.NativeJavaClass;
-import org.mozilla.javascript.NativeJavaObject;
-import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.*;
+import org.springframework.cache.*;
 import org.springframework.stereotype.Service;
 
 import java.net.http.HttpClient;
@@ -52,7 +50,7 @@ public class ScriptingExecutionService {
 
     private final SimpleHttpClient simpleHttpClient;
     private final Supplier<Executor> executorSupplier;
-    private final Scriptable sealedScope;
+    private final ScriptableObject sealedScope;
 
     private final Cache<String, Executor> asyncExecutors = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofHours(12))
@@ -97,10 +95,10 @@ public class ScriptingExecutionService {
 
     public static class JavaClassInterop {
 
-        private final Map<String, Class> mapping;
+        private final Map<String, Class<?>> mapping;
         private final Scriptable scope;
 
-        JavaClassInterop(Map<String, Class> mapping, Scriptable scope) {
+        JavaClassInterop(Map<String, Class<?>> mapping, Scriptable scope) {
             this.mapping = mapping;
             this.scope = scope;
         }
