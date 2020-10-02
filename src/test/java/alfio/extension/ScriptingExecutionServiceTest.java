@@ -19,6 +19,8 @@ package alfio.extension;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.extension.exception.ExecutionTimeoutException;
+import alfio.extension.exception.OutOfBoundariesException;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,15 +49,38 @@ public class ScriptingExecutionServiceTest {
     private ScriptingExecutionService scriptingExecutionService;
     private ExtensionLogger extensionLogger = Mockito.mock(ExtensionLogger.class);
 
-    @Test
-    public void testBaseScriptExecution() throws IOException {
+    /**
+     *
+     * @param file
+     * @return String content of the script
+     * @throws IOException
+     */
+    private String getScriptContent(String file) throws IOException {
         String concatenation;
-        try(var input = getClass().getResourceAsStream("/rhino-scripts/base.js")) {
+        try(var input = getClass().getResourceAsStream("/rhino-scripts/" + file)) {
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(input, StandardCharsets.UTF_8));
             concatenation = String.join("\n", extensionStream)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);";
         }
+        return concatenation;
+    }
+
+    @Test
+    public void testBaseScriptExecution() throws IOException {
+        String concatenation = getScriptContent("base.js");
         scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
         Mockito.verify(extensionLogger).logInfo(eq("test"));
     }
 
+    @Test(expected = ExecutionTimeoutException.class, timeout = 11000L)
+    public void testExecutionTimeout() throws IOException {
+        String concatenation = getScriptContent("timeout.js");
+        scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+    }
+
+    @Test(expected = OutOfBoundariesException.class)
+    public void testOutOfBoundaries() throws IOException {
+        String concatenation = getScriptContent("boundaries.js");
+        scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+        Mockito.verify(extensionLogger).logInfo(eq("test"));
+    }
 }
