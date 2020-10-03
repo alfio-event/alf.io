@@ -182,9 +182,9 @@
                         var options = result.data.optionStatistics.map(function (d) {
                             return {
                                 id: d.optionId,
-                                option: _.first(ctrl.poll.options, function (o) {
+                                option: ctrl.poll.options.filter(function (o) {
                                     return o.id === d.optionId
-                                }),
+                                })[0],
                                 numVotes: d.votes,
                                 percentage: (d.votes / data.totalVotes) * 100.0
                             }
@@ -225,7 +225,9 @@
                         var chart;
                         ctrl.votesSeries = ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; });
                         var data = {
-                            labels: ctrl.statistics.optionStatistics.map(function(s) { return parent.getFirstLang(s.option.title); }),
+                            labels: ctrl.statistics.optionStatistics.map(function(s) {
+                                return parent.getFirstLang(s.option.title);
+                            }),
                             series: [
                                 ctrl.votesSeries
                             ]
@@ -256,6 +258,7 @@
                                         return lstr+ " ("+ctrl.votesSeries[index]+")";
                                     }
                                 },
+                                //width: '400px',
                                 height: '200px'
                             }).on('draw', function(data) {
                                 if(data.type === 'bar') {
