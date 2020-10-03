@@ -26,16 +26,28 @@
                     <h3 class="panel-title text-center">Results</h3>
                 </div>
                 <table class="table">
-                    <tr>
-                        <th width="80%">Option</th>
-                        <th class="text-center">Votes</th>
-                        <th class="text-center">%</th>
-                    </tr>
-                    <tr data-ng-repeat="s in $ctrl.statistics.optionStatistics">
-                        <td width="80%">{{$ctrl.getFirstLang(s.option.title)}}</td>
-                        <td class="text-right">{{s.numVotes}}</td>
-                        <td class="text-right">{{s.percentage}}%</td>
-                    </tr>
+                    <thead>
+                        <tr>
+                            <th width="70%">Option</th>
+                            <th class="text-center">Votes</th>
+                            <th class="text-center">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr data-ng-repeat="s in $ctrl.statistics.optionStatistics">
+                            <td width="70%">{{$ctrl.getFirstLang(s.option.title)}}</td>
+                            <td class="text-right">{{s.numVotes}}</td>
+                            <td class="text-right">{{s.percentage}}%</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Total</th>
+                            <th class="text-right">{{$ctrl.statistics.totalVotes}}</th>
+                            <th class="text-right">100%</th>
+                        </tr>
+                    </tfoot>
+
                 </table>
                 <div class="panel-body text-center">
                     <button type="button" class="btn btn-default" data-ng-click="$ctrl.openPresentationView()"><i class="fa fa-desktop"></i> &nbsp; Presentation View</button>
