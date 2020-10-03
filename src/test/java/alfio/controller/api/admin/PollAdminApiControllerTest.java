@@ -185,7 +185,8 @@ class PollAdminApiControllerTest {
         // get statistics
         var statsRes = controller.getStatisticsForEvent(event.getShortName(), pollId);
         assertTrue(statsRes.getStatusCode().is2xxSuccessful());
-        assertTrue(CollectionUtils.isEmpty(statsRes.getBody()));
+        assertNotNull(statsRes.getBody());
+        assertTrue(CollectionUtils.isEmpty(statsRes.getBody().getOptionStatistics()));
 
     }
 
