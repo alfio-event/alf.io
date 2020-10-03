@@ -273,7 +273,7 @@
 
         function destroyTimer() {
             if (timer) {
-                $interval.clear(timer);
+                $interval.cancel(timer);
             }
         }
 
