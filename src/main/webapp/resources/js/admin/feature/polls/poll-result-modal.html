@@ -5,15 +5,9 @@
     <h2 class="modal-title">{{$ctrl.getFirstLang($ctrl.poll.title)}}</h2>
 </div>
 <div class="modal-body">
-    <div class="ct-chart poll-chart"></div>
-    <div class="stats-container row">
-        <div class="col-xs-12">
-            <ul class="list-unstyled">
-                <li ng-repeat="s in $ctrl.series">
-                    <div class="tickets-pie-legend" ng-class="s.className"></div>
-                    <div class="tickets-pie-legend tickets-pie-legend-text">{{s.meta}}</div>
-                </li>
-            </ul>
+    <div class="row">
+        <div class="col-xs-12" data-ng-class="{'col-lg-6 col-lg-offset-3': $ctrl.statistics.optionStatistics.length <= 3, 'col-lg-8 col-lg-offset-2': $ctrl.statistics.optionStatistics.length == 4}">
+            <div class="ct-chart poll-chart"></div>
         </div>
     </div>
     <div class="row">

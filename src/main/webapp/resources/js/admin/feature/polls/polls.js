@@ -182,13 +182,26 @@
                         var options = result.data.optionStatistics.map(function (d) {
                             return {
                                 id: d.optionId,
-                                option: ctrl.poll.options.filter(function (o) {
-                                    return o.id === d.optionId
-                                })[0],
+                                option: _.find(ctrl.poll.options, function (o) {
+                                    return o.id === d.optionId;
+                                }),
                                 numVotes: d.votes,
                                 percentage: (d.votes / data.totalVotes) * 100.0
                             }
                         });
+                        poll.options.forEach(function(o) {
+                            var existing = _.find(options, function(opt) {
+                                return opt.id === o.id
+                            });
+                            if(!existing) {
+                                options.push({
+                                    id: o.id,
+                                    option: o,
+                                    numVotes: 0,
+                                    percentage: 0
+                                })
+                            }
+                        })
                         ctrl.statistics = angular.extend({}, data, {optionStatistics: options});
                     });
                 }
@@ -228,15 +241,13 @@
                             labels: ctrl.statistics.optionStatistics.map(function(s) {
                                 return parent.getFirstLang(s.option.title);
                             }),
-                            series: [
-                                ctrl.votesSeries
-                            ]
+                            series: ctrl.votesSeries
                         };
                         parentScope.$watch('$ctrl.statistics', function(newVal, oldVal) {
                             ctrl.statistics = newVal;
                             if(chart) {
                                 ctrl.votesSeries = ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; });
-                                chart.update({series: [ctrl.votesSeries], labels: data.labels})
+                                chart.update({series: ctrl.votesSeries, labels: data.labels})
                             }
                         });
 
@@ -255,11 +266,14 @@
                                     showGrid: false,
                                     showLabel: true,
                                     labelInterpolationFnc: function (lstr, index) {
-                                        return lstr+ " ("+ctrl.votesSeries[index]+")";
+                                        return lstr+ "<br>("+ctrl.votesSeries[index]+")";
                                     }
                                 },
-                                //width: '400px',
-                                height: '200px'
+                                distributeSeries: true,
+                                chartPadding: {
+                                    bottom: 40
+                                },
+                                height: '250px'
                             }).on('draw', function(data) {
                                 if(data.type === 'bar') {
                                     data.element.attr({
