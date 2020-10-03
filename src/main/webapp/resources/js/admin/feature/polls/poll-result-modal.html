@@ -1,5 +1,8 @@
 <div class="modal-header">
-    blabla
+    <button type="button" class="close" aria-label="Close" data-ng-click="$ctrl.dismiss()">
+        <i class="fa fa-1_5x fa-times"></i>
+    </button>
+    <h2 class="modal-title">{{$ctrl.getFirstLang($ctrl.poll.title)}}</h2>
 </div>
 <div class="modal-body">
     <div class="ct-chart poll-chart"></div>
@@ -11,6 +14,19 @@
                     <div class="tickets-pie-legend tickets-pie-legend-text">{{s.meta}}</div>
                 </li>
             </ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-lg-5">
+            <h3>Total votes: <strong>{{$ctrl.statistics.totalVotes}}</strong></h3>
+        </div>
+        <div class="col-xs-12 col-lg-7">
+            <div class="panel panel-default wMarginTop30px">
+                <div class="panel-heading">
+                    <h4 class="panel-title text-center">Details</h4>
+                </div>
+                <poll-votes-table votes="$ctrl.statistics" event="$ctrl.event"></poll-votes-table>
+            </div>
         </div>
     </div>
 </div>

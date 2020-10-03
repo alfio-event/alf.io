@@ -835,3 +835,7 @@ div.preformatted {
 .poll-chart .ct-series-a .ct-bar {
     stroke: #428bca;
 }
+
+.bg-white {
+    background-color: white;
+}

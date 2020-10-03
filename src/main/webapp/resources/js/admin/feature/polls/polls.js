@@ -36,6 +36,21 @@
             },
             controller: ['PollService', 'EventService', '$q', '$stateParams', PollParticipantsCtrl],
             templateUrl: '../resources/js/admin/feature/polls/poll-participants.html'
+        }).component('pollVotesTable', {
+            bindings: {
+                votes: '<',
+                event: '<'
+            },
+            controller: function() {
+                var keys = Object.keys(this.event.description);
+                this.getFirstLang = function(option) {
+                    if(!option) {
+                        return "";
+                    }
+                    return option[keys[0]];
+                };
+            },
+            templateUrl: '../resources/js/admin/feature/polls/poll-votes-table.html'
         });
 
 
@@ -203,18 +218,23 @@
                     controllerAs: '$ctrl',
                     controller: function ($scope) {
                         var ctrl = this;
+                        ctrl.poll = parent.poll;
+                        ctrl.event = parent.event;
+                        ctrl.getFirstLang = parent.getFirstLang;
                         ctrl.statistics = parent.statistics;
                         var chart;
+                        ctrl.votesSeries = ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; });
                         var data = {
                             labels: ctrl.statistics.optionStatistics.map(function(s) { return parent.getFirstLang(s.option.title); }),
                             series: [
-                                ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; })
+                                ctrl.votesSeries
                             ]
                         };
                         parentScope.$watch('$ctrl.statistics', function(newVal, oldVal) {
                             ctrl.statistics = newVal;
                             if(chart) {
-                                chart.update({series: [ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; })], labels: data.labels})
+                                ctrl.votesSeries = ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; });
+                                chart.update({series: [ctrl.votesSeries], labels: data.labels})
                             }
                         });
 
@@ -231,7 +251,10 @@
                                 },
                                 axisX: {
                                     showGrid: false,
-                                    showLabel: true
+                                    showLabel: true,
+                                    labelInterpolationFnc: function (lstr, index) {
+                                        return lstr+ " ("+ctrl.votesSeries[index]+")";
+                                    }
                                 },
                                 height: '200px'
                             }).on('draw', function(data) {
