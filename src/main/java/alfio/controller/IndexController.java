@@ -123,17 +123,29 @@ public class IndexController {
      <pre>
      { path: '', component: EventListComponent, canActivate: [LanguageGuard] },
      { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [EventGuard, LanguageGuard] },
+     { path: 'event/:eventShortName/poll', loadChildren: () => import('./poll/poll.module').then(m => m.PollModule), canActivate: [EventGuard, LanguageGuard] },
      { path: 'event/:eventShortName/reservation/:reservationId', children: [
      { path: 'book', component: BookingComponent, canActivate: reservationsGuard },
      { path: 'overview', component: OverviewComponent, canActivate: reservationsGuard },
      { path: 'waitingPayment', redirectTo: 'waiting-payment'},
      { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: reservationsGuard },
+     { path: 'deferred-payment', component: DeferredOfflinePaymentComponent, canActivate: reservationsGuard },
      { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: reservationsGuard },
      { path: 'success', component: SuccessComponent, canActivate: reservationsGuard },
      { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard },
-     { path: 'error', component: ErrorComponent, canActivate: reservationsGuard }
+     { path: 'error', component: ErrorComponent, canActivate: reservationsGuard },
      ]},
-     { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] }
+     { path: 'event/:eventShortName/ticket/:ticketId', children: [
+     { path: 'view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] },
+     { path: 'update', component: UpdateTicketComponent, canActivate: [EventGuard, LanguageGuard] }
+     ]}
+     </pre>
+     Poll routing:
+     <pre>
+     { path: '', component: PollComponent, children: [
+     {path: '', component: PollSelectionComponent },
+     {path: ':pollId', component: DisplayPollComponent }
+     ]}
      </pre>
 
      */
@@ -150,7 +162,11 @@ public class IndexController {
         "/event/{eventShortName}/reservation/{reservationId}/not-found",
         "/event/{eventShortName}/reservation/{reservationId}/error",
         "/event/{eventShortName}/ticket/{ticketId}/view",
-        "/event/{eventShortName}/ticket/{ticketId}/update"
+        "/event/{eventShortName}/ticket/{ticketId}/update",
+        //
+        // poll
+        "/event/{eventShortName}/poll",
+        "/event/{eventShortName}/poll/{pollId}"
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,

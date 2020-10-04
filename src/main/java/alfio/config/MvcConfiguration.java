@@ -75,6 +75,9 @@ public class MvcConfiguration implements WebMvcConfigurer {
         registry.addResourceHandler("/assets/**")
             .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/assets/");
 
+        registry.addResourceHandler("/*.js")
+            .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/");
+
     }
 
     @Override

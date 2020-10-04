@@ -38,6 +38,7 @@ create view checkin_ticket_event_and_category_info as (
              t.user_language t_user_language,
              t.ext_reference t_ext_reference,
              t.currency_code t_currency_code,
+             t.tags t_tags,
 
              -- ticket reservation
 

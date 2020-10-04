@@ -18,6 +18,8 @@ package alfio.repository;
 
 import alfio.model.*;
 import alfio.model.checkin.OnlineCheckInFullInfo;
+import alfio.model.poll.PollParticipant;
+import alfio.model.support.Array;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -122,6 +124,9 @@ public interface TicketRepository {
     @Query("update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode where event_id = :eventId and category_id = :categoryId and id in(:ids)")
     int updateTicketPrice(@Bind("ids") List<Integer> ids, @Bind("categoryId") int categoryId, @Bind("eventId") int eventId, @Bind("srcPriceCts") int srcPriceCts, @Bind("finalPriceCts") int finalPriceCts, @Bind("vatCts") int vatCts, @Bind("discountCts") int discountCts, @Bind("currencyCode") String currencyCode);
 
+    @Query("update ticket set tags = :tags::text[] where id in(:ids)")
+    int updateTicketTags(@Bind("ids") List<Integer> ticketIds, @Bind("tags") @Array List<String> tags);
+
     @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, special_price_id_fk = null, first_name = null, last_name = null, full_name = null, email_address = null where status in ('PENDING', 'OFFLINE_PAYMENT') "
             + " and tickets_reservation_id in (:reservationIds)")
     int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
@@ -161,6 +166,12 @@ public interface TicketRepository {
 
     @Query("select * from ticket where uuid = :uuid for update")
     Optional<Ticket> findByUUIDForUpdate(@Bind("uuid") String uuid);
+
+    @Query("select count(id) from ticket where event_id = :eventId and status = :status and uuid like ':uuid%'")
+    Integer countByEventIdPartialUUIDAndStatus(@Bind("eventId") int eventId, @Bind("uuid") String partialUUID, @Bind("status") Ticket.TicketStatus status);
+
+    @Query("select * from ticket where event_id = :eventId and status = :status and uuid like :uuid for update")
+    List<Ticket> findByEventIdAndPartialUUIDForUpdate(@Bind("eventId") int eventId, @Bind("uuid") String partialUUID, @Bind("status") Ticket.TicketStatus status);
 
     @Query("update ticket set email_address = :email, full_name = :fullName, first_name = :firstName, last_name = :lastName where uuid = :ticketIdentifier")
     int updateTicketOwner(@Bind("ticketIdentifier") String ticketIdentifier, @Bind("email") String email, @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName);
@@ -205,7 +216,7 @@ public interface TicketRepository {
         " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
         " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
         " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
-        " t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, " +
+        " t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, t.tags t_tags, " +
         " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
         " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, " +
         " tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, " +
@@ -334,5 +345,18 @@ public interface TicketRepository {
 
     @Query("update ticket set status = 'CHECKED_IN', locked_assignment = true where uuid = :uuid and event_id = :eventId and status = 'ACQUIRED'")
     int performCheckIn(@Bind("uuid") String ticketUUID, @Bind("eventId") int eventId);
+
+    @Query("select t.id as t_id, t.first_name as t_first_name, t.last_name as t_last_name, t.email_address as t_email_address, tc.name as tc_name from ticket t " +
+        " join ticket_category tc on t.category_id = tc.id where t.event_id = :eventId and t.status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t.tags @> ARRAY[ :tags ]::text[]")
+    List<PollParticipant> getTicketsForEventByTags(@Bind("eventId") int eventId, @Bind("tags") List<String> tags);
+
+    @Query("select count(*) from ticket t where t.event_id = :eventId and t.status in (:statuses) and t.tags @> ARRAY[ :tags ]::text[]")
+    Integer countTicketsMatchingTagsAndStatus(@Bind("eventId") int eventId, @Bind("tags") List<String> tags, @Bind("statuses") Collection<String> statuses);
+
+    @Query("update ticket set tags = array_append(tags, :tag::text) where id in (:ticketIds) and event_id = :eventId")
+    int tagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
+
+    @Query("update ticket set tags = array_remove(tags, :tag::text) where id in (:ticketIds) and event_id = :eventId")
+    int untagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
 
 }

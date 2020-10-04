@@ -14,15 +14,24 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.support;
+package alfio.model.poll;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.List;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER, ElementType.METHOD})
-public @interface Array {
-    String type() default "TEXT";
+public class PollWithOptions {
+    private final Poll poll;
+    private final List<PollOption> options;
+
+    public PollWithOptions(Poll poll, List<PollOption> options) {
+        this.poll = poll;
+        this.options = options;
+    }
+
+    public List<PollOption> getOptions() {
+        return options;
+    }
+
+    public Poll getPoll() {
+        return poll;
+    }
 }
