@@ -15,7 +15,7 @@
     <ul class="list-group" ng-if="!$ctrl.loading">
         <li class="list-group-item" data-ng-repeat="event in $ctrl.events">
             <div class="row">
-                <div class="col-md-1 hidden-xs hidden-sm">
+                <div class="col-md-1 hidden-xs hidden-sm" data-ng-if="$ctrl.displayImage">
                     <h4>
                         <a ui-sref="events.single.detail({eventName: event.shortName})">
                             <img class="img-responsive" ng-src="/file/{{event.fileBlobId}}" ng-if="event.fileBlobId">
@@ -23,7 +23,7 @@
                         </a>
                     </h4>
                 </div>
-                <div class="col-md-6 col-xs-12">
+                <div class="col-xs-12" data-ng-class="{'col-md-6': $ctrl.displayImage, 'col-md-7': !$ctrl.displayImage}">
                     <div class="list-group-item-heading">
                         <h4>
                             <span class="label label-danger" data-ng-if="event.warningNeeded"><i class="fa fa-warning" data-uib-tooltip="something wrong is happening..."></i></span>
