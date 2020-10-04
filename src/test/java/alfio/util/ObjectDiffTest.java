@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ObjectDiffTest {
@@ -31,12 +32,12 @@ public class ObjectDiffTest {
     Ticket preUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.ACQUIRED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",
         false, "en",
-        0,  0, 0, 0, null, null);
+        0,  0, 0, 0, null, null, List.of());
 
     Ticket postUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.CANCELLED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",
         false, "en",
-        0,  0, 0, 0, null, null);
+        0,  0, 0, 0, null, null, List.of());
 
     @Test
     public void diffMapTest() {

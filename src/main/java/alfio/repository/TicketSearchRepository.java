@@ -19,6 +19,8 @@ package alfio.repository;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservationWithTransaction;
 import alfio.model.TicketWithReservationAndTransaction;
+import alfio.model.poll.PollParticipant;
+import alfio.model.support.Array;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -32,6 +34,8 @@ public interface TicketSearchRepository {
         "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search) or lower(promo_code) like lower(:search) or lower(special_price_token) like lower(:search))) ";
 
     String FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION = "select * from reservation_and_ticket_and_tx where t_id is not null and t_status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and t_category_id = :categoryId and t_event_id = :eventId and " + APPLY_FILTER;
+
+    String FIND_ALL_CONFIRMED_TICKETS_FOR_EVENT = "select * from reservation_and_ticket_and_tx where t_id is not null and t_status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t_event_id = :eventId and " + APPLY_FILTER;
 
     String FIND_ALL_TICKETS_INCLUDING_NEW = "select * from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status in (:status) and " + APPLY_FILTER;
 
@@ -59,6 +63,13 @@ public interface TicketSearchRepository {
                                                                                                   @Bind("page") int page,
                                                                                                   @Bind("pageSize") int pageSize,
                                                                                                   @Bind("search") String search);
+
+    @Query("select d_tbl.t_id as t_id, d_tbl.t_first_name as t_first_name, d_tbl.t_last_name as t_last_name, d_tbl.t_email_address as t_email_address, tc.name as tc_name from (" + FIND_ALL_CONFIRMED_TICKETS_FOR_EVENT + " and not (:tags::text[] && t_tags)  limit :maxResults) as d_tbl " +
+        " join ticket_category tc on d_tbl.t_category_id = tc.id order by tr_confirmation_ts asc, tr_id, t_uuid")
+    List<PollParticipant> filterConfirmedTicketsInEventForPoll(@Bind("eventId") int eventId,
+                                                               @Bind("maxResults") int maxResults,
+                                                               @Bind("search") String search,
+                                                               @Bind("tags") @Array List<String> tagsToFilter);
 
     @Query("select count(*) from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION +" ) as d_tbl")
     Integer countAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId,
@@ -88,6 +99,5 @@ public interface TicketSearchRepository {
 
     @Query("select * from reservation_and_ticket_and_tx where tr_event_id = :eventId and tickets_count > 0 and tr_id in (:reservationIds)")
     List<TicketWithReservationAndTransaction> loadAllReservationsWithTickets(@Bind("eventId") int eventId, @Bind("reservationIds") Collection<String> reservationIds);
-
 
 }
