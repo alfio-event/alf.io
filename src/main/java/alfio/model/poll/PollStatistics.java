@@ -38,19 +38,27 @@ public class PollStatistics {
         return allowedParticipants;
     }
 
+    public String getParticipationPercentage() {
+        return getVotesPercentage(new BigDecimal(this.allowedParticipants), totalVotes);
+    }
+
     public List<StatisticDetail> getOptionStatistics() {
         BigDecimal totalVotes = new BigDecimal(this.totalVotes);
         return countByOption.stream()
             .map(o -> {
-                var percentage = new BigDecimal(o.getVotes())
-                    .setScale(3, RoundingMode.HALF_UP)
-                    .divide(totalVotes, RoundingMode.HALF_UP)
-                    .multiply(MonetaryUtil.HUNDRED)
-                    .setScale(2, RoundingMode.HALF_UP)
-                    .toPlainString();
+                var percentage = getVotesPercentage(totalVotes, o.getVotes());
                 return new StatisticDetail(o.getVotes(), o.getOptionId(), percentage);
             })
             .collect(Collectors.toList());
+    }
+
+    private static String getVotesPercentage(BigDecimal totalVotes, int votes) {
+        return new BigDecimal(votes)
+            .setScale(3, RoundingMode.HALF_UP)
+            .divide(totalVotes, RoundingMode.HALF_UP)
+            .multiply(MonetaryUtil.HUNDRED)
+            .setScale(2, RoundingMode.HALF_UP)
+            .toPlainString();
     }
 
 

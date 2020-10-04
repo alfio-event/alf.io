@@ -12,7 +12,9 @@
     </div>
     <div class="row">
         <div class="col-xs-12 col-lg-5">
-            <h3>Total votes: <strong>{{$ctrl.statistics.totalVotes}}</strong></h3>
+            <h3 class="text-center">Total votes:</h3>
+            <div class="h1 text-center">{{$ctrl.statistics.totalVotes}} <span class="text-muted">/ {{$ctrl.statistics.allowedParticipants}}</span></div>
+            <div class="h2 text-center text-muted">{{$ctrl.participationPercentage}}%</div>
         </div>
         <div class="col-xs-12 col-lg-7">
             <div class="panel panel-default wMarginTop30px">

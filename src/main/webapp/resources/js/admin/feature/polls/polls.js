@@ -182,7 +182,7 @@
                         var options = result.data.optionStatistics.map(function (d) {
                             var percentage = d.percentage;
                             if(percentage.endsWith(".00")) {
-                                percentage = percentage.substring(0, percentage.indexOf('.'));
+                                percentage = percentage.substring(0, percentage.length - 3);
                             }
                             return {
                                 id: d.optionId,
@@ -258,6 +258,11 @@
                         ctrl.dismiss = function() {
                             $scope.$dismiss();
                         };
+
+                        ctrl.participationPercentage = ctrl.statistics.participationPercentage;
+                        if(ctrl.participationPercentage.endsWith(".00")) {
+                            ctrl.participationPercentage = ctrl.participationPercentage.substring(0, ctrl.participationPercentage.length - 3)
+                        }
 
                         setTimeout(function() {
                             chart = new Chartist.Bar('.ct-chart', data, {
