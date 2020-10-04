@@ -177,7 +177,7 @@ public class PollManager {
                     .map(p -> ticketSearchRepository.filterConfirmedTicketsInEventForPoll(event.getId(), 20, "%"+filter+"%", p.getAllowedTags())));
     }
 
-    public Optional<List<PollParticipant>> allowTicketsToVote(String eventName, List<Integer> ids, long pollId) {
+    public Optional<Boolean> allowTicketsToVote(String eventName, List<Integer> ids, long pollId) {
         Validate.isTrue(CollectionUtils.isNotEmpty(ids));
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
             .map(event -> {
@@ -188,7 +188,7 @@ public class PollManager {
                 Validate.isTrue(ids.size() == result, "Unable to tag tickets");
                 var auditingResults = auditingRepository.registerTicketTag(ids, List.of(Map.of("tag", tag)));
                 Validate.isTrue(auditingResults == ids.size(), "Error while writing auditing");
-                return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
+                return true;
             });
     }
 

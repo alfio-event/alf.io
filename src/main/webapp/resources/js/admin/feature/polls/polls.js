@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('adminApplication')
-        .service('PollService', ['$http', 'HttpErrorHandler', '$uibModal', PollService])
+        .service('PollService', ['$http', 'HttpErrorHandler', '$uibModal', 'NotificationHandler', PollService])
         .component('polls', {
             bindings: {
                 event:'<'
@@ -341,12 +341,13 @@
                 };
             });
             ctrl.addParticipants = function() {
-                PollService.selectParticipants(ctrl.event.shortName, ctrl.poll.id).then(function(participants) {
-                    PollService.addParticipants(ctrl.event.shortName, ctrl.poll.id, participants.map(function(p) { return p.id; })).then(function(res) {
+                var load = function() {
+                    PollService.loadParticipants(ctrl.event.shortName, ctrl.poll.id).then(function(res) {
                         ctrl.participants = res.data;
                         ctrl.filteredParticipants = res.data;
-                    })
-                });
+                    });
+                };
+                PollService.selectParticipants(ctrl.event.shortName, ctrl.poll.id).then(load, load);
             };
             ctrl.removeParticipant = function(participant) {
                 PollService.removeParticipant(ctrl.event.shortName, ctrl.poll.id, participant.id).then(function(res) {
@@ -367,7 +368,7 @@
         }
     }
 
-    function PollService($http, HttpErrorHandler, $uibModal) {
+    function PollService($http, HttpErrorHandler, $uibModal, NotificationHandler) {
         var service = {
             loadListForEvent: function(eventName) {
                 return $http.get('/admin/api/'+eventName+'/poll').error(HttpErrorHandler.handle);
@@ -422,9 +423,9 @@
                         ctrl.results = [];
                         ctrl.updateSelection = function(participant) {
                             if(participant.selected) {
-                                ctrl.remove(participant);
+                                ctrl.select(participant);
                             } else {
-                                ctrl.add(participant);
+                                ctrl.remove(participant);
                             }
                         };
                         ctrl.toggleSelection = function(all) {
@@ -450,19 +451,29 @@
                             }
                         };
                         ctrl.remove = function(participant) {
-                            ctrl.participants = _.remove(ctrl.participants, function(p) {
-                                return p === participant;
+                            ctrl.participants = ctrl.participants.filter(function(p) {
+                                return p.id !== participant.id
                             });
                         }
                         ctrl.save = function() {
                             if(ctrl.participants.length > 0) {
-                                $scope.$close(ctrl.participants);
+                                service.addParticipants(eventName, pollId, ctrl.participants.map(function(p) { return p.id; }))
+                                    .then(function() {
+                                        NotificationHandler.showSuccess(ctrl.participants.length + " participants added.");
+                                        ctrl.participants = [];
+                                        ctrl.results = [];
+                                        ctrl.searchTerm = '';
+                                        setTimeout(function() {
+                                            document.getElementById('searchParticipants').focus();
+                                        }, 10);
+
+                                    })
                             } else {
-                                $scope.$dismiss();
+                                $scope.$close();
                             }
                         };
                         ctrl.cancel = function() {
-                            $scope.$dismiss();
+                            $scope.$close();
                         };
                     }
                 });

@@ -109,7 +109,7 @@ public class PollAdminApiController {
     }
 
     @PostMapping("/{pollId}/allow")
-    ResponseEntity<List<PollParticipant>> allowAttendees(@PathVariable("eventName") String eventName,
+    ResponseEntity<Boolean> allowAttendees(@PathVariable("eventName") String eventName,
                                                          @PathVariable("pollId") Long pollId,
                                                          @RequestBody UpdateParticipantsForm form) {
 

@@ -176,11 +176,14 @@ class PollAdminApiControllerTest {
         var participantForm = new PollAdminApiController.UpdateParticipantsForm(List.of(ticketId));
         var allowRes = controller.allowAttendees(event.getShortName(), pollId, participantForm);
         assertTrue(allowRes.getStatusCode().is2xxSuccessful());
-        assertTrue(CollectionUtils.isNotEmpty(allowRes.getBody()));
-        assertEquals(1, allowRes.getBody().size());
-        assertEquals(firstTicket.getId(), allowRes.getBody().get(0).getId());
         assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.TAG_TICKET));
         assertEquals(0, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.UNTAG_TICKET));
+
+        var participantRes = controller.getAllowedAttendees(eventName, pollId);
+        assertTrue(participantRes.getStatusCode().is2xxSuccessful());
+        assertTrue(CollectionUtils.isNotEmpty(participantRes.getBody()));
+        assertEquals(1, participantRes.getBody().size());
+        assertEquals(firstTicket.getId(), participantRes.getBody().get(0).getId());
 
         // now ticket should not be returned anymore
         res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First");
