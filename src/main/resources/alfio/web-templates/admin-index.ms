@@ -98,6 +98,7 @@
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/copy-event/copy-event.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/metadata-editor/metadata-editor.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/project-banner/project-banner.js"></script>
+    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/polls/polls.js"></script>
 
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />

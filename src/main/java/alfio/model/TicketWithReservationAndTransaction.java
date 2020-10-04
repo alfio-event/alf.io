@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
@@ -25,6 +26,7 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -59,6 +61,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("t_discount_cts") Integer discountCts,
                                                @Column("t_ext_reference") String extReference,
                                                @Column("t_currency_code") String currencyCode,
+                                               @Column("t_tags") @Array List<String> ticketTags,
                                                //
                                                @Column("tr_id") String trId,
                                                @Column("tr_event_id") int eventId,
@@ -123,7 +126,7 @@ public class TicketWithReservationAndTransaction {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
             fullName, firstName, lastName, email, lockedAssignment, userLanguage,
-            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode) : null;
+            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode, ticketTags) : null;
 
 
         this.ticketReservation = new TicketReservation(trId, validity, trStatus,
