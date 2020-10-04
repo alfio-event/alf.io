@@ -124,6 +124,15 @@ public class PollManager {
             });
     }
 
+    public Optional<Boolean> deletePoll(String eventName, Long pollId) {
+        Validate.isTrue(pollId != null);
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .map(event -> {
+                Validate.isTrue(pollRepository.deletePoll(pollId, event.getId(), event.getOrganizationId()) == 1);
+                return true;
+            });
+    }
+
     public Optional<PollWithOptions> updatePoll(String eventName, PollModification form) {
         Validate.isTrue(form.isValid(true));
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
@@ -194,6 +203,15 @@ public class PollManager {
                 var auditingResults = auditingRepository.registerTicketUntag(ticketIds, List.of(Map.of("tag", tag)));
                 Validate.isTrue(auditingResults == ticketIds.size(), "Error while writing auditing");
                 return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
+            });
+    }
+
+    public Optional<PollWithOptions> removeOption(String eventName, Long pollId, Long optionId) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .flatMap(event -> {
+                var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
+                Validate.isTrue(pollRepository.deleteOption(pollId, optionId) == 1, "Error while deleting option");
+                return getSingleForEvent(poll.getId(), event);
             });
     }
 

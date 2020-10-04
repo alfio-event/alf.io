@@ -107,4 +107,10 @@ public interface PollRepository {
         " where p.id = :pollId and p.event_id_fk = :eventId group by 1")
     List<PollOptionStatistics> getStatisticsFor(@Bind("pollId") Long pollId, @Bind("eventId") int eventId);
 
+    @Query("delete from poll where id = :pollId and event_id_fk = :eventId and organization_id_fk = :orgId")
+    int deletePoll(@Bind("pollId") long pollId, @Bind("eventId") int eventId, @Bind("orgId") int organizationId);
+
+    @Query("delete from poll_option where id = :optionId and poll_id_fk = :pollId")
+    int deleteOption(@Bind("pollId") long pollId, @Bind("optionId") long optionId);
+
 }

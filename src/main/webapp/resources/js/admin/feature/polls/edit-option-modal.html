@@ -1,11 +1,11 @@
 <div class="modal-header">
-    <h2><span ng-if="!$ctrl.addNew">Edit</span><span ng-if="$ctrl.addNew">Add new</span> Answer</h2>
+    <h2><span ng-if="!$ctrl.addNew">Edit</span><span ng-if="$ctrl.addNew">Add new</span> Option</h2>
 </div>
 <form name="editOptionForm" ng-submit="$ctrl.editOption(editOptionForm, $ctrl.option)">
     <div class="modal-body">
         <div class="page-header">
-            <h3>Answer</h3>
-            <p>The answer to the poll. Translations are all mandatory.</p>
+            <h3>Options</h3>
+            <p>The options to choose from. Translations are all mandatory.</p>
         </div>
         <div class="form-horizontal wMarginTop30px">
             <div data-ng-repeat="lang in $ctrl.languages" class="form-group">
@@ -17,7 +17,7 @@
         </div>
         <div class="page-header">
             <h3 class="wMarginTop30px">Description</h3>
-            <p>Optional. If you need to describe the answer in more details.</p>
+            <p>Optional. If you need to describe the option in more details.</p>
         </div>
         <div class="form-horizontal wMarginTop30px">
             <div data-ng-repeat="lang in $ctrl.languages" class="form-group">

@@ -75,6 +75,19 @@ public class PollAdminApiController {
         return ResponseEntity.of(pollManager.updatePoll(eventName, form).map(PollModification::from));
     }
 
+    @DeleteMapping("/{pollId}")
+    ResponseEntity<Boolean> deletePoll(@PathVariable("eventName") String eventName,
+                                       @PathVariable("pollId") Long pollId) {
+        return ResponseEntity.of(pollManager.deletePoll(eventName, pollId));
+    }
+
+    @DeleteMapping("/{pollId}/option/{optionId}")
+    ResponseEntity<PollModification> removeOption(@PathVariable("eventName") String eventName,
+                                                 @PathVariable("pollId") Long pollId,
+                                                 @PathVariable("optionId") Long optionId) {
+        return ResponseEntity.of(pollManager.removeOption(eventName, pollId, optionId).map(PollModification::from));
+    }
+
     @PutMapping("/{pollId}")
     ResponseEntity<PollModification> updateStatus(@PathVariable("eventName") String eventName,
                                                   @PathVariable("pollId") Long pollId,

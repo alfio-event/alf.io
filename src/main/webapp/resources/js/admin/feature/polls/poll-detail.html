@@ -10,11 +10,12 @@
             </div>
         </div>
         <div class="row wMarginTop10px">
-            <div class="col-xs-12 col-lg-2 col-lg-offset-5">
-                <button type="button" class="btn btn-block" data-ng-class="{'btn-success': $ctrl.draft || $ctrl.closed, 'btn-default': $ctrl.open}" data-ng-click="$ctrl.changePollStatus()">
+            <div class="col-xs-12 col-lg-2 col-lg-offset-5 text-center">
+                <button type="button" class="btn btn-lg mr-10" data-ng-class="{'btn-success': $ctrl.draft || $ctrl.closed, 'btn-default': $ctrl.open}" data-ng-click="$ctrl.changePollStatus()">
                     <span data-ng-if="$ctrl.draft || $ctrl.closed">Open</span>
                     <span data-ng-if="$ctrl.open">Close</span>
                 </button>
+                <button type="button" class="btn btn-lg btn-danger" data-ng-click="$ctrl.deletePoll()" data-ng-if="!$ctrl.open">Delete</button>
             </div>
         </div>
     </div>
@@ -63,15 +64,15 @@
                 </div>
             </div>
             <div class="page-header">
-                <h3 class="wMarginTop30px">Answers</h3>
-                <p>The answers to choose from. The attendee can choose one of the provided answers.</p>
+                <h3 class="wMarginTop30px">Options</h3>
+                <p>The options to choose from. The attendee can choose one of the provided options.</p>
             </div>
             <div class="row" data-ng-if="$ctrl.poll.options.length > 0">
                 <div class="col-xs-12 col-lg-5">
                     <div class="list-group">
                         <div class="list-group-item" data-ng-repeat="option in $ctrl.poll.options">
                             <div class="row">
-                                <div class="col-xs-10">
+                                <div class="col-xs-9">
                                     <h4 class="list-group-item-heading">
                                         {{$ctrl.getFirstLang(option.title)}} <i class="text-muted" data-ng-if="$ctrl.getAdditionalTranslations() > 0">+{{$ctrl.getAdditionalTranslations()}}</i>
                                     </h4>
@@ -79,8 +80,8 @@
                                         {{$ctrl.getFirstLang(option.description)}} <i class="text-muted" data-ng-if="$ctrl.getAdditionalTranslations() > 0">{{$ctrl.getAdditionalTranslations()}}</i>
                                     </p>
                                 </div>
-                                <div class="col-xs-2 text-center">
-                                    &nbsp;
+                                <div class="col-xs-3 text-center">
+                                    <button class="btn btn-danger" data-ng-click="$ctrl.removeOption(option)">Remove</button>
                                 </div>
                             </div>
                         </div>

@@ -200,6 +200,20 @@ class PollAdminApiControllerTest {
         assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.TAG_TICKET));
         assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.UNTAG_TICKET));
 
+        // remove option
+        var pollWithOptions = controller.getPollDetail(event.getShortName(), pollId).getBody();
+        assertNotNull(pollWithOptions);
+        var firstOptionId = pollWithOptions.getOptions().get(0).getId();
+        var removeOptionResponse = controller.removeOption(event.getShortName(), pollId, firstOptionId);
+        assertTrue(removeOptionResponse.getStatusCode().is2xxSuccessful());
+        assertTrue(Objects.requireNonNull(removeOptionResponse.getBody()).getOptions().stream().noneMatch(po -> firstOptionId.equals(po.getId())));
+
+        // delete poll
+        var deletePollResponse = controller.deletePoll(eventName, pollId);
+        assertTrue(deletePollResponse.getStatusCode().is2xxSuccessful());
+        assertNotNull(deletePollResponse.getBody());
+        assertTrue(deletePollResponse.getBody());
+
     }
 
     @AfterEach

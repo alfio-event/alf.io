@@ -28,7 +28,7 @@
             bindings: {
                 event:'<'
             },
-            controller: ['PollService', 'EventService', '$q', '$stateParams', '$interval', '$uibModal', '$scope', PollDetailCtrl],
+            controller: ['PollService', 'EventService', '$q', '$stateParams', '$interval', '$uibModal', '$scope', '$window', '$state', PollDetailCtrl],
             templateUrl: '../resources/js/admin/feature/polls/poll-detail.html'
         }).component('pollParticipants', {
             bindings: {
@@ -140,7 +140,7 @@
         };
     }
 
-    function PollDetailCtrl(PollService, EventService, $q, $stateParams, $interval, $uibModal, $scope) {
+    function PollDetailCtrl(PollService, EventService, $q, $stateParams, $interval, $uibModal, $scope, $window, $state) {
         var ctrl = this;
         var timer = null;
 
@@ -223,6 +223,22 @@
                 PollService.updateStatus(ctrl.event.shortName, ctrl.poll.id, newStatus).then(function(res) {
                     initPollObj(res.data);
                 });
+            };
+
+            ctrl.removeOption = function(option) {
+                if($window.confirm('Are you sure you want to remove '+ctrl.getFirstLang(option.title)+'?\nThis operation cannot be undone.')) {
+                    PollService.removeOption(ctrl.event.shortName, ctrl.poll.id, option.id).then(function(res) {
+                        initPollObj(res.data);
+                    });
+                }
+            };
+
+            ctrl.deletePoll = function() {
+                if($window.confirm('Are you sure you want to delete this Poll? This operation cannot be undone.')) {
+                    PollService.deletePoll(ctrl.event.shortName, ctrl.poll.id).then(function(res) {
+                        $state.go('events.single.detail', {eventName: ctrl.event.shortName});
+                    });
+                }
             };
 
             ctrl.openPresentationView = function() {
@@ -381,6 +397,12 @@
                 return $http['delete']('/admin/api/'+eventName+'/poll/'+pollId+'/allowed', { data: {
                     ticketIds: [id]
                 }}).error(HttpErrorHandler.handle);
+            },
+            removeOption: function(eventName, pollId, optionId) {
+                return $http['delete']('/admin/api/'+eventName+'/poll/'+pollId+'/option/'+optionId).error(HttpErrorHandler.handle);
+            },
+            deletePoll: function(eventName, pollId) {
+                return $http['delete']('/admin/api/'+eventName+'/poll/'+pollId).error(HttpErrorHandler.handle);
             },
             searchParticipant: function(eventName, pollId, term) {
                 return $http.get('/admin/api/'+eventName+'/poll/'+pollId+'/filter-tickets?filter='+term).error(HttpErrorHandler.handle);

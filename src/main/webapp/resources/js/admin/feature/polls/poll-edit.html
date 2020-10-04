@@ -39,11 +39,11 @@
         </div>
     </div>
     <div class="page-header">
-        <h3 class="wMarginTop30px">Answers</h3>
-        <p>The answers to choose from. The attendee can choose one of the provided answers.</p>
+        <h3 class="wMarginTop30px">Options</h3>
+        <p>The options to choose from. The attendee can choose one of the provided options.</p>
     </div>
     <div class="alert alert-danger" data-ng-if="$ctrl.poll.options.length === 0">
-        <h4 class="text-danger"><i class="fa fa-warning"></i> Please add at least one answer</h4>
+        <h4 class="text-danger"><i class="fa fa-warning"></i> Please add at least one option</h4>
     </div>
     <div class="wMarginBottom" data-ng-if="$ctrl.poll.options.length === 0 || $ctrl.poll.options.length > 5">
         <button type="button" class="btn btn-success" data-ng-click="$ctrl.addOption()"><i class="fa fa-plus"></i> add new</button>
