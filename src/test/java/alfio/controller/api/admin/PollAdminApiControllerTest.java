@@ -22,6 +22,7 @@ import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
+import alfio.model.Audit;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
@@ -84,6 +85,8 @@ class PollAdminApiControllerTest {
     private TicketCategoryRepository ticketCategoryRepository;
     @Autowired
     private PollRepository pollRepository;
+    @Autowired
+    private AuditingRepository auditingRepository;
 
     private Event event;
 
@@ -170,12 +173,14 @@ class PollAdminApiControllerTest {
 
         // allow tickets to vote
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-        var participantForm = new PollAdminApiController.AllowParticipantForm(List.of(ticketId));
+        var participantForm = new PollAdminApiController.UpdateParticipantsForm(List.of(ticketId));
         var allowRes = controller.allowAttendees(event.getShortName(), pollId, participantForm);
         assertTrue(allowRes.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(allowRes.getBody()));
         assertEquals(1, allowRes.getBody().size());
         assertEquals(firstTicket.getId(), allowRes.getBody().get(0).getId());
+        assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.TAG_TICKET));
+        assertEquals(0, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.UNTAG_TICKET));
 
         // now ticket should not be returned anymore
         res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First");
@@ -187,6 +192,13 @@ class PollAdminApiControllerTest {
         assertTrue(statsRes.getStatusCode().is2xxSuccessful());
         assertNotNull(statsRes.getBody());
         assertTrue(CollectionUtils.isEmpty(statsRes.getBody().getOptionStatistics()));
+
+        // forbid access to attendee
+        var forbidRes = controller.forbidAttendees(event.getShortName(), pollId, participantForm);
+        assertTrue(forbidRes.getStatusCode().is2xxSuccessful());
+        assertTrue(CollectionUtils.isEmpty(forbidRes.getBody()));
+        assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.TAG_TICKET));
+        assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.UNTAG_TICKET));
 
     }
 

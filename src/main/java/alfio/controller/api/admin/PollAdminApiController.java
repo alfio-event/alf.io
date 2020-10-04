@@ -98,7 +98,7 @@ public class PollAdminApiController {
     @PostMapping("/{pollId}/allow")
     ResponseEntity<List<PollParticipant>> allowAttendees(@PathVariable("eventName") String eventName,
                                                          @PathVariable("pollId") Long pollId,
-                                                         @RequestBody AllowParticipantForm form) {
+                                                         @RequestBody UpdateParticipantsForm form) {
 
         if(CollectionUtils.isEmpty(form.ticketIds)) {
             return ResponseEntity.badRequest().build();
@@ -111,6 +111,13 @@ public class PollAdminApiController {
                                                               @PathVariable("pollId") Long pollId) {
 
         return ResponseEntity.of(pollManager.fetchAllowedTickets(eventName, pollId));
+    }
+
+    @DeleteMapping("/{pollId}/allowed")
+    ResponseEntity<List<PollParticipant>> forbidAttendees(@PathVariable("eventName") String eventName,
+                                                          @PathVariable("pollId") Long pollId,
+                                                          @RequestBody UpdateParticipantsForm form) {
+        return ResponseEntity.of(pollManager.removeParticipants(eventName, form.ticketIds, pollId));
     }
 
     @GetMapping("/{pollId}/stats")
@@ -128,11 +135,11 @@ public class PollAdminApiController {
         }
     }
 
-    static class AllowParticipantForm {
+    static class UpdateParticipantsForm {
         private final List<Integer> ticketIds;
 
         @JsonCreator
-        AllowParticipantForm(@JsonProperty("ticketIds") List<Integer> ticketIds) {
+        UpdateParticipantsForm(@JsonProperty("ticketIds") List<Integer> ticketIds) {
             this.ticketIds = ticketIds;
         }
     }

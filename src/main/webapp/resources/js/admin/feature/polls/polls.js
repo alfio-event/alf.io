@@ -34,7 +34,7 @@
             bindings: {
                 event:'<'
             },
-            controller: ['PollService', 'EventService', '$q', '$stateParams', PollParticipantsCtrl],
+            controller: ['PollService', 'EventService', '$q', '$stateParams', 'NotificationHandler', PollParticipantsCtrl],
             templateUrl: '../resources/js/admin/feature/polls/poll-participants.html'
         }).component('pollVotesTable', {
             bindings: {
@@ -309,7 +309,7 @@
 
     }
 
-    function PollParticipantsCtrl(PollService, EventService, $q, $stateParams) {
+    function PollParticipantsCtrl(PollService, EventService, $q, $stateParams, NotificationHandler) {
         var ctrl = this;
         ctrl.$onInit = function() {
             $q.all([PollService.loadForEvent(ctrl.event.shortName, $stateParams.pollId), PollService.loadParticipants(ctrl.event.shortName, $stateParams.pollId)]).then(function(res) {
@@ -328,7 +328,15 @@
                 PollService.selectParticipants(ctrl.event.shortName, ctrl.poll.id).then(function(participants) {
                     PollService.addParticipants(ctrl.event.shortName, ctrl.poll.id, participants.map(function(p) { return p.id; })).then(function(res) {
                         ctrl.participants = res.data;
+                        ctrl.filteredParticipants = res.data;
                     })
+                });
+            };
+            ctrl.removeParticipant = function(participant) {
+                PollService.removeParticipant(ctrl.event.shortName, ctrl.poll.id, participant.id).then(function(res) {
+                    ctrl.participants = res.data;
+                    ctrl.filteredParticipants = res.data;
+                    NotificationHandler.showSuccess(participant.firstName + ' ' + participant.lastName + ' removed.');
                 });
             };
             ctrl.updateFilteredData = function() {
@@ -368,6 +376,11 @@
                 return $http.post('/admin/api/'+eventName+'/poll/'+pollId+'/allow', {
                     ticketIds: ids
                 }).error(HttpErrorHandler.handle);
+            },
+            removeParticipant: function(eventName, pollId, id) {
+                return $http['delete']('/admin/api/'+eventName+'/poll/'+pollId+'/allowed', { data: {
+                    ticketIds: [id]
+                }}).error(HttpErrorHandler.handle);
             },
             searchParticipant: function(eventName, pollId, term) {
                 return $http.get('/admin/api/'+eventName+'/poll/'+pollId+'/filter-tickets?filter='+term).error(HttpErrorHandler.handle);

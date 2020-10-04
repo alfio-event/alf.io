@@ -18,6 +18,7 @@ package alfio.repository;
 
 
 import alfio.model.Audit;
+import alfio.model.support.JSONData;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
@@ -65,4 +66,12 @@ public interface AuditingRepository {
     @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
         " select tickets_reservation_id, null, event_id, 'UPDATE_TICKET_CATEGORY', current_timestamp, 'TICKET', concat('', id), null from ticket where category_id = :ticketCategoryId and tickets_reservation_id is not null")
     int insertUpdateTicketInCategoryId(@Bind("ticketCategoryId") int id);
+
+    @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
+        " select tickets_reservation_id, null, event_id, 'TAG_TICKET', current_timestamp, 'TICKET', concat('', id), :modifications from ticket where id in (:ticketIds)")
+    int registerTicketTag(@Bind("ticketIds") List<Integer> ids, @Bind("modifications")  @JSONData List<Map<String, Object>> modifications);
+
+    @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
+        " select tickets_reservation_id, null, event_id, 'UNTAG_TICKET', current_timestamp, 'TICKET', concat('', id), :modifications from ticket where id in (:ticketIds)")
+    int registerTicketUntag(@Bind("ticketIds") List<Integer> ids, @Bind("modifications") @JSONData List<Map<String, Object>> modifications);
 }

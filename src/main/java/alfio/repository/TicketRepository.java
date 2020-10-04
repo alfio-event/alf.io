@@ -356,7 +356,7 @@ public interface TicketRepository {
     @Query("update ticket set tags = array_append(tags, :tag::text) where id in (:ticketIds) and event_id = :eventId")
     int tagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
 
-    @Query("update ticket set tags = array_remove(tags, :tag) where id in (:ticketIds) and event_id = :eventId")
+    @Query("update ticket set tags = array_remove(tags, :tag::text) where id in (:ticketIds) and event_id = :eventId")
     int untagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
 
 }

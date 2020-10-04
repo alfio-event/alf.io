@@ -23,10 +23,7 @@ import alfio.model.modification.PollOptionModification;
 import alfio.model.poll.*;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import alfio.repository.EventRepository;
-import alfio.repository.PollRepository;
-import alfio.repository.TicketRepository;
-import alfio.repository.TicketSearchRepository;
+import alfio.repository.*;
 import alfio.util.Json;
 import alfio.util.PinGenerator;
 import lombok.AllArgsConstructor;
@@ -54,6 +51,7 @@ public class PollManager {
     private final TicketRepository ticketRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final TicketSearchRepository ticketSearchRepository;
+    private final AuditingRepository auditingRepository;
 
     public Result<List<Poll>> getActiveForEvent(String eventName, String pin) {
         return validatePinAndEvent(pin, eventName)
@@ -176,8 +174,25 @@ public class PollManager {
             .map(event -> {
                 var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
                 Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
-                var result = ticketRepository.tagTickets(ids, event.getId(), poll.getAllowedTags().get(0));
+                var tag = poll.getAllowedTags().get(0);
+                var result = ticketRepository.tagTickets(ids, event.getId(), tag);
                 Validate.isTrue(ids.size() == result, "Unable to tag tickets");
+                var auditingResults = auditingRepository.registerTicketTag(ids, List.of(Map.of("tag", tag)));
+                Validate.isTrue(auditingResults == ids.size(), "Error while writing auditing");
+                return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
+            });
+    }
+
+    public Optional<List<PollParticipant>> removeParticipants(String eventName, List<Integer> ticketIds, long pollId) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .map(event -> {
+                var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
+                Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
+                var tag = poll.getAllowedTags().get(0);
+                var result = ticketRepository.untagTickets(ticketIds, event.getId(), tag);
+                Validate.isTrue(result == 1, "Error while removing tag");
+                var auditingResults = auditingRepository.registerTicketUntag(ticketIds, List.of(Map.of("tag", tag)));
+                Validate.isTrue(auditingResults == ticketIds.size(), "Error while writing auditing");
                 return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
             });
     }
