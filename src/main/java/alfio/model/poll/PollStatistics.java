@@ -16,15 +16,67 @@
  */
 package alfio.model.poll;
 
+import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
-@Getter
 public class PollStatistics {
     private final int totalVotes;
     private final int allowedParticipants;
-    private final List<PollOptionStatistics> optionStatistics;
+    private final List<PollOptionStatistics> countByOption;
+
+    public int getTotalVotes() {
+        return totalVotes;
+    }
+
+    public int getAllowedParticipants() {
+        return allowedParticipants;
+    }
+
+    public List<StatisticDetail> getOptionStatistics() {
+        BigDecimal totalVotes = new BigDecimal(this.totalVotes);
+        return countByOption.stream()
+            .map(o -> {
+                var percentage = new BigDecimal(o.getVotes())
+                    .setScale(3, RoundingMode.HALF_UP)
+                    .divide(totalVotes, RoundingMode.HALF_UP)
+                    .multiply(MonetaryUtil.HUNDRED)
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .toPlainString();
+                return new StatisticDetail(o.getVotes(), o.getOptionId(), percentage);
+            })
+            .collect(Collectors.toList());
+    }
+
+
+    public static class StatisticDetail {
+        private final int votes;
+        private final long optionId;
+        private final String percentage;
+
+
+        public StatisticDetail(int votes, long optionId, String percentage) {
+            this.votes = votes;
+            this.optionId = optionId;
+            this.percentage = percentage;
+        }
+
+        public int getVotes() {
+            return votes;
+        }
+
+        public long getOptionId() {
+            return optionId;
+        }
+
+        public String getPercentage() {
+            return percentage;
+        }
+    }
+
 }

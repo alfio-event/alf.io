@@ -180,13 +180,17 @@
                     PollService.getStatistics(ctrl.event.shortName, poll.id).then(function (result) {
                         var data = result.data;
                         var options = result.data.optionStatistics.map(function (d) {
+                            var percentage = d.percentage;
+                            if(percentage.endsWith(".00")) {
+                                percentage = percentage.substring(0, percentage.indexOf('.'));
+                            }
                             return {
                                 id: d.optionId,
                                 option: _.find(ctrl.poll.options, function (o) {
                                     return o.id === d.optionId;
                                 }),
                                 numVotes: d.votes,
-                                percentage: (d.votes / data.totalVotes) * 100.0
+                                percentage: percentage//(d.votes / data.totalVotes) * 100.0
                             }
                         });
                         poll.options.forEach(function(o) {
