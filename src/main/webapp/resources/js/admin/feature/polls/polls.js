@@ -128,7 +128,6 @@
                 return;
             }
             if(poll.id) {
-                console.log(poll)
                 PollService.update(ctrl.event.shortName, poll).then(function(resp) {
                     $state.go('events.single.polls-detail', { eventName: ctrl.event.shortName, pollId: poll.id })
                 });
@@ -138,6 +137,14 @@
                 });
             }
         };
+
+        ctrl.cancel = function() {
+            if(ctrl.poll.id) {
+                $state.go('events.single.polls-detail', { eventName: ctrl.event.shortName, pollId: ctrl.poll.id })
+            } else {
+                $state.go('events.single.polls-list', { eventName: ctrl.event.shortName })
+            }
+        }
     }
 
     function PollDetailCtrl(PollService, EventService, $q, $stateParams, $interval, $uibModal, $scope, $window, $state) {
