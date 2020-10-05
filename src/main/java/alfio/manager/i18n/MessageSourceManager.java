@@ -77,7 +77,7 @@ public class MessageSourceManager {
     private static final Pattern PLACEHOLDER_TO_REPLACE = Pattern.compile("\\{(\\d+)\\}");
 
     private static String convertPlaceholder(String value) {
-        return PLACEHOLDER_TO_REPLACE.matcher(value).replaceAll("{{$1}}");
+        return PLACEHOLDER_TO_REPLACE.matcher(value).replaceAll("{{$1}}").replace("\'\'", "\'");
     }
 
     public static Map<String, Map<String, String>> convertPlaceholdersForEachLanguage(Map<String, Map<String, String>> bundles) {
@@ -86,7 +86,7 @@ public class MessageSourceManager {
         return res;
     }
 
-    public static Map<String, String> convertPlaceholders(Map<String, String> bundle) {
+    private static Map<String, String> convertPlaceholders(Map<String, String> bundle) {
         Map<String, String> res = new HashMap<>(bundle.size());
         bundle.forEach((k, v) -> res.put(k, convertPlaceholder(v)));
         return res;
@@ -125,7 +125,7 @@ public class MessageSourceManager {
         return ARGUMENT_FINDER.matcher(translation).replaceAll(replacement);
     }
 
-    public static Map<String, String> cleanTranslationsForFrontend(Map<String, String> translations) {
+    static Map<String, String> cleanTranslationsForFrontend(Map<String, String> translations) {
         return translations.entrySet().stream()
             .map(entry -> Pair.of(entry.getKey(), cleanArguments(entry.getValue(), "{{$1}}").replaceAll("''", "'")))
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
