@@ -53,6 +53,9 @@ public class PollStatistics {
     }
 
     private static String getVotesPercentage(BigDecimal totalVotes, int votes) {
+        if(votes == 0) {
+            return "0";
+        }
         return new BigDecimal(votes)
             .setScale(3, RoundingMode.HALF_UP)
             .divide(totalVotes, RoundingMode.HALF_UP)
