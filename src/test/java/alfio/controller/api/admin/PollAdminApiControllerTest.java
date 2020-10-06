@@ -195,6 +195,7 @@ class PollAdminApiControllerTest {
         assertTrue(statsRes.getStatusCode().is2xxSuccessful());
         assertNotNull(statsRes.getBody());
         assertTrue(CollectionUtils.isEmpty(statsRes.getBody().getOptionStatistics()));
+        assertEquals("0", statsRes.getBody().getParticipationPercentage());
 
         // forbid access to attendee
         var forbidRes = controller.forbidAttendees(event.getShortName(), pollId, participantForm);
