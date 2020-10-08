@@ -71,19 +71,19 @@ public class ScriptingExecutionService {
             sealedScope.put("log", sealedScope, log);
             sealedScope.put("GSON", sealedScope, Json.GSON);
             sealedScope.put("simpleHttpClient", sealedScope, simpleHttpClient);
-//            sealedScope.put("HashMap", sealedScope, new NativeJavaClass(sealedScope, HashMap.class));
-//            sealedScope.put("ExtensionUtils", sealedScope, new NativeJavaClass(sealedScope, ExtensionUtils.class));
+            sealedScope.put("HashMap", sealedScope, new NativeJavaClass(sealedScope, HashMap.class));
+            sealedScope.put("ExtensionUtils", sealedScope, new NativeJavaClass(sealedScope, ExtensionUtils.class));
 
             // source: https://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
-            cx.setClassShutter(fullClassName -> {
-                if(fullClassName.startsWith("adapter") || fullClassName.equals(HashMap.class.getName()) || fullClassName.equals(ExtensionUtils.class.getName())) {
-                    return true;
-                } else {
-//                    return false;
-                    // if some forbidden function is found immediately throw an exception?
-                    throw new OutOfBoundariesException("Out of boundaries class use.");
-                }
-            });
+//            cx.setClassShutter(fullClassName -> {
+//                if(fullClassName.startsWith("adapter") || fullClassName.startsWith("HashMap") || fullClassName.equals(ExtensionUtils.class.getName())) {
+//                    return true;
+//                } else {
+////                    return false;
+//                    // if some forbidden function is found immediately throw an exception?
+//                    throw new OutOfBoundariesException("Out of boundaries class use.");
+//                }
+//            });
 
         } finally {
             Context.exit();
@@ -158,9 +158,9 @@ public class ScriptingExecutionService {
             log.warn("Error while executing script " + name + ":", ex);
             extensionLogger.logError("Error while executing script: " + ex.getMessage());
 //            if (ex.getCause().getClass().equals(OutOfBoundariesException.class)){
-                throw new OutOfBoundariesException("Out of boundaries class use.");
+//                throw new OutOfBoundariesException("Out of boundaries class use.");
 //            } else {
-//                throw new IllegalStateException(ex);
+                throw new IllegalStateException(ex);
 //            }
         } finally {
             Context.exit();

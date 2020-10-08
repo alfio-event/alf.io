@@ -16,37 +16,30 @@
  */
 package alfio.extension;
 
-import alfio.TestConfiguration;
-import alfio.config.DataSourceConfiguration;
-import alfio.config.Initializer;
 import alfio.extension.exception.ExecutionTimeoutException;
 import alfio.extension.exception.OutOfBoundariesException;
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.mockito.ArgumentMatchers.eq;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
-@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 public class ScriptingExecutionServiceTest {
+    private Supplier<Executor> executorSupplier = () -> Runnable::run;
+    private ScriptingExecutionService scriptingExecutionService = new ScriptingExecutionService(Mockito.mock(HttpClient.class), executorSupplier);
 
-    @Autowired
-    private ScriptingExecutionService scriptingExecutionService;
     private ExtensionLogger extensionLogger = Mockito.mock(ExtensionLogger.class);
 
     /**
@@ -59,28 +52,33 @@ public class ScriptingExecutionServiceTest {
         String concatenation;
         try(var input = getClass().getResourceAsStream("/rhino-scripts/" + file)) {
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(input, StandardCharsets.UTF_8));
-            concatenation = String.join("\n", extensionStream)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);";
+            concatenation = String.join("\n", extensionStream)+"\n;executeScript(extensionEvent)";
         }
         return concatenation;
     }
 
     @Test
-    public void testBaseScriptExecution() throws IOException {
+     void testBaseScriptExecution() throws IOException {
         String concatenation = getScriptContent("base.js");
         scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
         Mockito.verify(extensionLogger).logInfo(eq("test"));
     }
 
-    @Test(expected = ExecutionTimeoutException.class, timeout = 11000L)
-    public void testExecutionTimeout() throws IOException {
-        String concatenation = getScriptContent("timeout.js");
-        scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+    @Test
+     void testExecutionTimeout()  {
+        assertTimeout(Duration.ofSeconds(11L), () -> assertThrows(ExecutionTimeoutException.class, () -> {
+                String concatenation = getScriptContent("timeout.js");
+                scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+            }
+        ));
     }
 
-    @Test(expected = OutOfBoundariesException.class)
-    public void testOutOfBoundaries() throws IOException {
-        String concatenation = getScriptContent("boundaries.js");
-        scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
-        Mockito.verify(extensionLogger).logInfo(eq("test"));
+    @Test
+     void testOutOfBoundaries()  {
+        assertThrows(OutOfBoundariesException.class, () -> {
+            String concatenation = getScriptContent("boundaries.js");
+            scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+            Mockito.verify(extensionLogger).logInfo(eq("test"));
+        });
     }
 }
