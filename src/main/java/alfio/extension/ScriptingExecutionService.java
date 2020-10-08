@@ -18,6 +18,7 @@
 package alfio.extension;
 
 import alfio.extension.exception.OutOfBoundariesException;
+import alfio.extension.support.SandboxContextFactory;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -65,7 +66,8 @@ public class ScriptingExecutionService {
     public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
         this.simpleHttpClient = new SimpleHttpClient(httpClient);
         this.executorSupplier = executorSupplier;
-        Context cx = Context.enter();
+        ContextFactory.initGlobal(new SandboxContextFactory());
+        Context cx = ContextFactory.getGlobal().enterContext();
         try {
             sealedScope = cx.initSafeStandardObjects();
             sealedScope.put("log", sealedScope, log);
@@ -73,18 +75,6 @@ public class ScriptingExecutionService {
             sealedScope.put("simpleHttpClient", sealedScope, simpleHttpClient);
             sealedScope.put("HashMap", sealedScope, new NativeJavaClass(sealedScope, HashMap.class));
             sealedScope.put("ExtensionUtils", sealedScope, new NativeJavaClass(sealedScope, ExtensionUtils.class));
-
-            // source: https://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
-//            cx.setClassShutter(fullClassName -> {
-//                if(fullClassName.startsWith("adapter") || fullClassName.startsWith("HashMap") || fullClassName.equals(ExtensionUtils.class.getName())) {
-//                    return true;
-//                } else {
-////                    return false;
-//                    // if some forbidden function is found immediately throw an exception?
-//                    throw new OutOfBoundariesException("Out of boundaries class use.");
-//                }
-//            });
-
         } finally {
             Context.exit();
         }
@@ -154,14 +144,18 @@ public class ScriptingExecutionService {
             } else {
                 return null;
             }
+        } catch (OutOfBoundariesException ex) {
+            throw ex;
+        } catch(EcmaError ex) {
+            if (ex.getName().equals("ReferenceError")) {
+                throw new OutOfBoundariesException("Out of boundaries class use.");
+            } else {
+                throw new IllegalStateException(ex);
+            }
         } catch (Throwable ex) { //
             log.warn("Error while executing script " + name + ":", ex);
             extensionLogger.logError("Error while executing script: " + ex.getMessage());
-//            if (ex.getCause().getClass().equals(OutOfBoundariesException.class)){
-//                throw new OutOfBoundariesException("Out of boundaries class use.");
-//            } else {
-                throw new IllegalStateException(ex);
-//            }
+            throw new IllegalStateException(ex);
         } finally {
             Context.exit();
         }
