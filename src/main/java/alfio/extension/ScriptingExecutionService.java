@@ -66,7 +66,6 @@ public class ScriptingExecutionService {
     public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
         this.simpleHttpClient = new SimpleHttpClient(httpClient);
         this.executorSupplier = executorSupplier;
-        ContextFactory.initGlobal(new SandboxContextFactory());
         Context cx = ContextFactory.getGlobal().enterContext();
         try {
             sealedScope = cx.initSafeStandardObjects();
@@ -80,8 +79,6 @@ public class ScriptingExecutionService {
         }
     }
 
-
-
     public <T> T executeScript(String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz, ExtensionLogger extensionLogger) {
         return executeScriptFinally(name, scriptFetcher.get(), params, clazz, extensionLogger);
     }
@@ -90,7 +87,6 @@ public class ScriptingExecutionService {
         Optional.ofNullable(asyncExecutors.get(path, key -> executorSupplier.get()))
             .ifPresent(it -> it.execute(() -> executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger)));
     }
-
 
     public <T> T executeScript(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
         return executeScriptFinally(name, script, params, clazz, extensionLogger);
@@ -146,6 +142,8 @@ public class ScriptingExecutionService {
             }
         } catch (OutOfBoundariesException ex) {
             throw ex;
+        } catch(WrappedException ex) {
+            throw new OutOfBoundariesException("Out of boundaries class use.");
         } catch(EcmaError ex) {
             if (ex.getName().equals("ReferenceError")) {
                 throw new OutOfBoundariesException("Out of boundaries class use.");

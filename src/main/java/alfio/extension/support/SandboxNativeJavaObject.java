@@ -30,7 +30,6 @@ public class SandboxNativeJavaObject extends NativeJavaObject {
     public Object get(String name, Scriptable start) {
         if (name.equals("getClass")) {
             throw new OutOfBoundariesException("Out of boundaries class use.");
-//            return NOT_FOUND;
         }
 
         return super.get(name, start);

@@ -34,8 +34,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 
 public class ScriptingExecutionServiceTest {
@@ -73,8 +72,7 @@ public class ScriptingExecutionServiceTest {
     @Test
     @Disabled
     void testExecutionTimeout()  {
-        // check if correct
-        assertTimeout(Duration.ofSeconds(11L), () -> assertThrows(ExecutionTimeoutException.class, () -> {
+        assertTimeoutPreemptively(Duration.ofSeconds(11L), () -> assertThrows(ExecutionTimeoutException.class, () -> {
                 String concatenation = getScriptContent("timeout.js");
                 scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
             }
