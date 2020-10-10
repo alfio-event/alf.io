@@ -47,8 +47,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
-import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
-import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static alfio.test.util.IntegrationTestUtil.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -88,8 +87,8 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).minusDays(1), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 

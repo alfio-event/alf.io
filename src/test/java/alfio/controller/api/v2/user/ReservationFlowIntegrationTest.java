@@ -174,10 +174,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private TicketReservationManager ticketReservationManager;
 
-    @Autowired
-    private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
-    //
-
     //
     @Autowired
     private InfoApiController infoApiController;
@@ -199,9 +195,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     //
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
-
-    @Autowired
-    private ExtensionRepository extensionRepository;
 
     @Autowired
     private ExtensionLogRepository extensionLogRepository;

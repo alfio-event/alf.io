@@ -52,8 +52,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
-import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -114,14 +113,14 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
     public void testCheckInStatistics() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", 0,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
-            new DateTimeModification(LocalDate.now(), LocalTime.now()),
-            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+            new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
             DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
         Result<Integer> result = eventManager.insertCategory(event, tcm, pair.getValue());
         assertTrue(result.isSuccess());
@@ -135,7 +134,7 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
         TicketCategoryWithAdditionalInfo firstCategory = eventWithAdditionalInfo.getTicketCategories().get(0);
         List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), 5, Collections.singletonList(TicketRepository.FREE));
         String reservationId = "12345678";
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(TEST_CLOCK), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
         int reserved = ticketRepository.reserveTickets(reservationId, ids, firstCategory.getId(), "it", 100, "CHF");
         assertEquals(5, reserved);
 

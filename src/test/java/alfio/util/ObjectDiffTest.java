@@ -25,9 +25,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static alfio.test.util.IntegrationTestUtil.TEST_CLOCK;
+
 public class ObjectDiffTest {
 
-    ZonedDateTime now = ZonedDateTime.now();
+    ZonedDateTime now = ZonedDateTime.now(TEST_CLOCK);
 
     Ticket preUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.ACQUIRED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",

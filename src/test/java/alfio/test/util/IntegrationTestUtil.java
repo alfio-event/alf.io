@@ -101,7 +101,7 @@ public class IntegrationTestUtil {
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL);
         userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);
 
-        LocalDateTime expiration = LocalDateTime.now().plusDays(5).plusHours(1);
+        LocalDateTime expiration = LocalDateTime.now(TEST_CLOCK).plusDays(5).plusHours(1);
 
         Map<String, String> desc = new HashMap<>();
         desc.put("en", "muh description");
@@ -111,7 +111,7 @@ public class IntegrationTestUtil {
         EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", "privacy","url", null,
                 eventName, "event display name", organization.getId(),
                 "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
-                new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(5), LocalTime.now(TEST_CLOCK)),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty());
         eventManager.createEvent(em, username);

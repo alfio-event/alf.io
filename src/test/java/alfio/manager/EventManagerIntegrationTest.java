@@ -532,7 +532,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         List<Integer> tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), category.getId(), 1, Collections.singletonList(Ticket.TicketStatus.FREE.name()));
         String reservationId = "12345678";
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(TEST_CLOCK), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
         ticketRepository.reserveTickets(reservationId, tickets, category.getId(), "en", 100, "CHF");
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 10,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
@@ -687,8 +687,8 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         ticketReservationManager.createTicketReservation(event, Collections.singletonList(reservation), Collections.emptyList(),
             DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
         TicketCategoryModification tcm = new TicketCategoryModification(null, "new", 1,
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now()),
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).plusDays(1)),
             Collections.emptyMap(), BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
         Result<Integer> insertResult = eventManager.insertCategory(event, tcm, username);
         assertTrue(insertResult.isSuccess());
@@ -730,7 +730,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(1, categories.size());
         int categoryId = categories.get(0).getId();
         String reservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(TEST_CLOCK), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
         int result = ticketRepository.reserveTickets(reservationId, tickets, categoryId, "en", 0, "CHF");
         assertEquals(1, result);
         assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
@@ -768,7 +768,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         int categoryId = categories.get(0).getId();
         var tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), categoryId, 1, List.of(Ticket.TicketStatus.FREE.name()));
         String reservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(TEST_CLOCK), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
         int result = ticketRepository.reserveTickets(reservationId, tickets, categoryId, "en", 0, "CHF");
         assertEquals(1, result);
         assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));

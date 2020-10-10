@@ -28,7 +28,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,7 +45,6 @@ public class EventManagerUnbindTicketsTest {
     private final String username = "username";
     private final int categoryId = 1;
     private final int organizationId = 2;
-    private final Map<String, String> desc = Collections.singletonMap("en", "desc");
 
     private TicketCategoryRepository ticketCategoryRepository;
     private TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;

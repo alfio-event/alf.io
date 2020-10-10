@@ -138,7 +138,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testMissingConfigValue() {
-        var config = configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getRequiredValue();
+        configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getRequiredValue();
         fail("something wrong happened...");
     }
 

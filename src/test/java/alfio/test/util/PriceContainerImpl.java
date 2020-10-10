@@ -62,6 +62,7 @@ public class PriceContainerImpl implements PriceContainer {
         return Optional.ofNullable(vat);
     }
 
+    @Override
     public VatStatus getVatStatus() {
         return vatStatus;
     }
