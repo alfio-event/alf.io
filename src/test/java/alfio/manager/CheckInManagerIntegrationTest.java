@@ -86,8 +86,8 @@ public class CheckInManagerIntegrationTest {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).minusDays(1), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false,
                 "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
@@ -100,8 +100,8 @@ public class CheckInManagerIntegrationTest {
             1,
             100,
             2,
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now().minusDays(1)),
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).minusDays(1)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).plusDays(1)),
             BigDecimal.ZERO,
             AdditionalService.VatType.INHERITED,
             List.of(),

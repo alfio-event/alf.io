@@ -16,33 +16,6 @@
  */
 package alfio.manager;
 
-import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
-import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
-
-import org.apache.commons.lang3.tuple.Triple;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.context.MessageSource;
-import org.springframework.transaction.PlatformTransactionManager;
-
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.TemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
@@ -53,6 +26,22 @@ import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
+import org.apache.commons.lang3.tuple.Triple;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.MessageSource;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Stream;
+
+import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
+import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
+import static alfio.test.util.IntegrationTestUtil.TEST_CLOCK;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 public class WaitingQueueSubscriptionProcessorTest {
 
@@ -131,7 +120,7 @@ public class WaitingQueueSubscriptionProcessorTest {
         when(messageSource.getMessage(anyString(), any(), eq(Locale.ENGLISH))).thenReturn("subject");
         when(subscription.getLocale()).thenReturn(Locale.ENGLISH);
         when(subscription.getEmailAddress()).thenReturn("me");
-        ZonedDateTime expiration = ZonedDateTime.now().plusDays(1);
+        ZonedDateTime expiration = ZonedDateTime.now(TEST_CLOCK).plusDays(1);
         when(waitingQueueManager.distributeSeats(eq(event))).thenReturn(Stream.of(Triple.of(subscription, reservation, expiration)));
         String reservationId = "reservation-id";
         when(ticketReservationManager.createTicketReservation(eq(event), anyList(), anyList(), any(Date.class), eq(Optional.empty()), any(Locale.class), eq(true))).thenReturn(reservationId);

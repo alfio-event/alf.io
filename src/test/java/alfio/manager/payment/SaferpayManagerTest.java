@@ -71,6 +71,7 @@ class SaferpayManagerTest {
     private SaferpayManager manager;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     public void init() {
         var configurationManager = mock(ConfigurationManager.class);
         var configuration = mock(Map.class);

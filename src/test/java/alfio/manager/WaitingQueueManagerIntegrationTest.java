@@ -78,8 +78,6 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ConfigurationManager configurationManager;
     @Autowired
-    private EventStatisticsManager eventStatisticsManager;
-    @Autowired
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
@@ -134,7 +132,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(firstCategory.getId()), reservation.getTicketCategoryId());
         assertEquals(Integer.valueOf(1), reservation.getAmount());
-        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now()));
+        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(TEST_CLOCK)));
 
     }
 
@@ -156,7 +154,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(firstCategory.getId()), reservation.getTicketCategoryId());
         assertEquals(Integer.valueOf(1), reservation.getAmount());
-        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now()));
+        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(TEST_CLOCK)));
 
     }
 
@@ -164,8 +162,8 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
     public void testWaitingQueueForUnboundedCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
@@ -189,8 +187,8 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testAssignTicketToWaitingQueueUnboundedCategory() {
-        LocalDateTime start = LocalDateTime.now().minusMinutes(1);
-        LocalDateTime end = LocalDateTime.now().plusMinutes(20);
+        LocalDateTime start = LocalDateTime.now(TEST_CLOCK).minusMinutes(1);
+        LocalDateTime end = LocalDateTime.now(TEST_CLOCK).plusMinutes(20);
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
@@ -248,13 +246,13 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(unbounded.getId()), reservation.getTicketCategoryId());
         assertEquals(Integer.valueOf(1), reservation.getAmount());
-        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now()));
+        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(TEST_CLOCK)));
     }
 
     @Test
     public void testAssignTicketToWaitingQueueBoundedCategory() {
-        LocalDateTime start = LocalDateTime.now().minusMinutes(2);
-        LocalDateTime end = LocalDateTime.now().plusMinutes(20);
+        LocalDateTime start = LocalDateTime.now(TEST_CLOCK).minusMinutes(2);
+        LocalDateTime end = LocalDateTime.now(TEST_CLOCK).plusMinutes(20);
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
@@ -310,13 +308,13 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(bounded.getId()), reservation.getTicketCategoryId());
         assertEquals(Integer.valueOf(1), reservation.getAmount());
-        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now()));
+        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(TEST_CLOCK)));
     }
 
     @Test
     public void testAssignTicketToWaitingQueueUnboundedCategorySelected() {
-        LocalDateTime start = LocalDateTime.now().minusHours(1);
-        LocalDateTime end = LocalDateTime.now().plusHours(1);
+        LocalDateTime start = LocalDateTime.now(TEST_CLOCK).minusHours(1);
+        LocalDateTime end = LocalDateTime.now(TEST_CLOCK).plusHours(1);
 
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
@@ -364,14 +362,14 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(first.getId()), reservation.getTicketCategoryId());
         assertEquals(Integer.valueOf(1), reservation.getAmount());
-        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now()));
+        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(TEST_CLOCK)));
 
         subscriptionDetail = subscriptions.get(1);
         assertEquals("john@doe2.com", subscriptionDetail.getLeft().getEmailAddress());
         reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(second.getId()), reservation.getTicketCategoryId());
         assertEquals(Integer.valueOf(1), reservation.getAmount());
-        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now()));
+        assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(TEST_CLOCK)));
     }
 
     private String reserveTickets(Event event, TicketCategory category, int num) {
@@ -393,8 +391,8 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testNoPublicCategoryAvailable() {
-        LocalDateTime start = LocalDateTime.now().minusHours(1);
-        LocalDateTime end = LocalDateTime.now().plusHours(1);
+        LocalDateTime start = LocalDateTime.now(TEST_CLOCK).minusHours(1);
+        LocalDateTime end = LocalDateTime.now(TEST_CLOCK).plusHours(1);
 
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", 2,
@@ -428,8 +426,8 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testTicketBelongsToExpiredCategory() {
-        LocalDateTime start = LocalDateTime.now().minusHours(1);
-        LocalDateTime end = LocalDateTime.now().plusHours(1);
+        LocalDateTime start = LocalDateTime.now(TEST_CLOCK).minusHours(1);
+        LocalDateTime end = LocalDateTime.now(TEST_CLOCK).plusHours(1);
 
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", 2,
@@ -471,15 +469,15 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     private List<TicketCategoryModification> getPreSalesTicketCategoryModifications(boolean firstBounded, int firstSeats, boolean lastBounded, int lastSeats) {
-        LocalDateTime start = LocalDateTime.now().plusMinutes(4);
+        LocalDateTime start = LocalDateTime.now(TEST_CLOCK).plusMinutes(4);
         return Arrays.asList(
             new TicketCategoryModification(null, "defaultFirst", firstSeats,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
-                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", firstBounded, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
             new TicketCategoryModification(null, "defaultLast", lastSeats,
-                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(2), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", lastBounded, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
     }
 }

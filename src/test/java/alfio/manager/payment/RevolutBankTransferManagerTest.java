@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static alfio.model.system.ConfigurationKeys.REVOLUT_MANUAL_REVIEW;
+import static alfio.test.util.IntegrationTestUtil.TEST_CLOCK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
@@ -68,7 +69,7 @@ class RevolutBankTransferManagerTest {
         when(transaction.getId()).thenReturn(TRANSACTION_ID);
         when(transaction.getCurrency()).thenReturn("CHF");
         when(transaction.getStatus()).thenReturn(Transaction.Status.PENDING);
-        when(transaction.getTimestamp()).thenReturn(ZonedDateTime.now());
+        when(transaction.getTimestamp()).thenReturn(ZonedDateTime.now(TEST_CLOCK));
         when(first.getTransaction()).thenReturn(transaction);
 
         second = mock(TicketReservationWithTransaction.class);

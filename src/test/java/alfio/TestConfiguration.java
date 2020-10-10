@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.http.HttpClient;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -101,7 +102,7 @@ public class TestConfiguration {
         properties.put("alfio.version", "2.0-SNAPSHOT");
         properties.put("alfio.build-ts", ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1).toString());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintWriter pw = new PrintWriter(out);
+        PrintWriter pw = new PrintWriter(out, true, Charset.defaultCharset());
         properties.list(pw);
         pw.flush();
         var configurer =  new PropertySourcesPlaceholderConfigurer();
