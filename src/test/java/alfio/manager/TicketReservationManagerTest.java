@@ -1285,20 +1285,23 @@ class TicketReservationManagerTest {
     @Nested
     class SendReservationEmailIfNecessary {
 
-        private MaybeConfiguration maybeConfiguration;
+        private MaybeConfiguration sendReservationEmailIfNecessary;
+        private MaybeConfiguration sendTickets;
         private final String reservationEmail = "blabla@example.org";
-
 
         @BeforeEach
         @SuppressWarnings("unchecked")
         void setUp() {
-            maybeConfiguration = mock(MaybeConfiguration.class);
-            Map<ConfigurationKeys, MaybeConfiguration> configurations = mock(Map.class);
-            when(configurations.get(any(ConfigurationKeys.class))).thenReturn(maybeConfiguration);
-            when(configurationManager.getFor(anyCollection(), any())).thenReturn(configurations);
+            sendReservationEmailIfNecessary = mock(MaybeConfiguration.class);
+            sendTickets = mock(MaybeConfiguration.class);
             when(ticketReservation.getSrcPriceCts()).thenReturn(0);
             when(ticketReservation.getEmail()).thenReturn(reservationEmail);
             when(ticket.getEmail()).thenReturn(reservationEmail);
+            Map<ConfigurationKeys, MaybeConfiguration> configurations = mock(Map.class);
+            when(configurations.get(any(ConfigurationKeys.class))).thenReturn(mock(MaybeConfiguration.class));
+            when(configurations.get(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY))).thenReturn(sendReservationEmailIfNecessary);
+            when(configurations.get(eq(SEND_TICKETS_AUTOMATICALLY))).thenReturn(sendTickets);
+            when(configurationManager.getFor(anyCollection(), any())).thenReturn(configurations);
         }
 
         @Test
@@ -1335,16 +1338,23 @@ class TicketReservationManagerTest {
 
         @Test
         void emailSentBecauseFlagIsSetToFalse() {
-            when(configurationManager.getFor(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY), any())).thenReturn(maybeConfiguration);
-            when(maybeConfiguration.getValueAsBooleanOrDefault()).thenReturn(false);
+            when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(false);
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+        }
+
+        @Test
+        void emailSentBecauseTicketIsNotSent() {
+            when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
+            when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(false);
             trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
         }
 
         @Test
         void emailNOTSentBecauseFlagIsSetToTrue() {
-            when(configurationManager.getFor(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY), any())).thenReturn(maybeConfiguration);
-            when(maybeConfiguration.getValueAsBooleanOrDefault()).thenReturn(true);
+            when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
+            when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(true);
             trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
         }
