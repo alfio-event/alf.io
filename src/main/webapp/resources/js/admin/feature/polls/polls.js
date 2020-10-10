@@ -263,7 +263,14 @@
                         ctrl.getFirstLang = parent.getFirstLang;
                         ctrl.statistics = parent.statistics;
                         var chart;
-                        ctrl.votesSeries = ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; });
+                        var refreshStatistics = function() {
+                            ctrl.participationPercentage = ctrl.statistics.participationPercentage;
+                            if(ctrl.participationPercentage.endsWith(".00")) {
+                                ctrl.participationPercentage = ctrl.participationPercentage.substring(0, ctrl.participationPercentage.length - 3)
+                            }
+                            ctrl.votesSeries = ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; });
+                        };
+                        refreshStatistics();
                         var data = {
                             labels: ctrl.statistics.optionStatistics.map(function(s) {
                                 return parent.getFirstLang(s.option.title);
@@ -272,8 +279,8 @@
                         };
                         parentScope.$watch('$ctrl.statistics', function(newVal, oldVal) {
                             ctrl.statistics = newVal;
+                            refreshStatistics();
                             if(chart) {
-                                ctrl.votesSeries = ctrl.statistics.optionStatistics.map(function(s) { return s.numVotes; });
                                 chart.update({series: ctrl.votesSeries, labels: data.labels})
                             }
                         });
@@ -281,11 +288,6 @@
                         ctrl.dismiss = function() {
                             $scope.$dismiss();
                         };
-
-                        ctrl.participationPercentage = ctrl.statistics.participationPercentage;
-                        if(ctrl.participationPercentage.endsWith(".00")) {
-                            ctrl.participationPercentage = ctrl.participationPercentage.substring(0, ctrl.participationPercentage.length - 3)
-                        }
 
                         setTimeout(function() {
                             chart = new Chartist.Bar('.ct-chart', data, {
