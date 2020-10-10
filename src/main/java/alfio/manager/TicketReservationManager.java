@@ -1029,10 +1029,12 @@ public class TicketReservationManager {
                                           Event event,
                                           Locale locale,
                                           String username) {
+        var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), ConfigurationLevel.event(event));
         if(ticketReservation.getSrcPriceCts() > 0
             || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
             || !tickets.get(0).getEmail().equals(ticketReservation.getEmail())
-            || !configurationManager.getFor(SEND_RESERVATION_EMAIL_IF_NECESSARY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()
+            || !config.get(SEND_RESERVATION_EMAIL_IF_NECESSARY).getValueAsBooleanOrDefault()
+            || !config.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault()
             ) {
             sendConfirmationEmail(event, ticketReservation, locale, username);
         }
