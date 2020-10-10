@@ -255,7 +255,7 @@ class TicketReservationManagerTest {
         when(ticket.getSrcPriceCts()).thenReturn(10);
         when(ticketCategory.getId()).thenReturn(TICKET_CATEGORY_ID);
         when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(organization);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getZoneId()).thenReturn(TEST_CLOCK.getZone());
         when(event.getBegin()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
@@ -417,7 +417,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
 
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getZoneId()).thenReturn(TEST_CLOCK.getZone());
         when(event.getBegin()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
@@ -488,7 +488,7 @@ class TicketReservationManagerTest {
     private void initOfflinePaymentTest() {
         when(configurationManager.getFor(eq(OFFLINE_PAYMENT_DAYS), any()))
             .thenReturn(new MaybeConfiguration(OFFLINE_PAYMENT_DAYS, new ConfigurationKeyValuePathLevel(OFFLINE_PAYMENT_DAYS.getValue(), "2", null)));
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getZoneId()).thenReturn(TEST_CLOCK.getZone());
     }
 
     @Test
@@ -747,7 +747,7 @@ class TicketReservationManagerTest {
     //performPayment reservation
 
     private void initConfirmReservation() {
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getZoneId()).thenReturn(TEST_CLOCK.getZone());
         when(event.getBegin()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(5));
     }
 
@@ -1124,7 +1124,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getZoneId()).thenReturn(TEST_CLOCK.getZone());
         when(event.getBegin()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton(RESERVATION_ID));
@@ -1157,7 +1157,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationByIdForUpdate(eq(RESERVATION_ID))).thenReturn(ticketReservation);
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getZoneId()).thenReturn(TEST_CLOCK.getZone());
         when(event.getBegin()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(1);
@@ -1184,7 +1184,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationByIdForUpdate(eq(RESERVATION_ID))).thenReturn(ticketReservation);
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getZoneId()).thenReturn(TEST_CLOCK.getZone());
         when(event.getBegin()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(0);

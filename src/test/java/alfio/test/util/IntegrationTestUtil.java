@@ -97,7 +97,7 @@ public class IntegrationTestUtil {
         String eventName = UUID.randomUUID().toString();
 
         userManager.createOrganization(organizationName, "org", "email@example.com");
-        Organization organization = organizationRepository.findByName(organizationName).get();
+        Organization organization = organizationRepository.findByName(organizationName).orElseThrow();
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL);
         userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);
 
@@ -110,7 +110,7 @@ public class IntegrationTestUtil {
 
         EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", "privacy","url", null,
                 eventName, "event display name", organization.getId(),
-                "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
+                "muh location", "0.0", "0.0", TEST_CLOCK.getZone().getId(), desc,
                 new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(5), LocalTime.now(TEST_CLOCK)),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty());
