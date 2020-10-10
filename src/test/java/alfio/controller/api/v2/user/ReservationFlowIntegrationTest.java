@@ -100,8 +100,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.manager.ExtensionManager.ExtensionEvent.*;
-import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
-import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
@@ -234,12 +233,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).minusDays(1), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
             new TicketCategoryModification(null, "hidden", 2,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).minusDays(1), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
             );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
@@ -247,11 +246,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         event = eventAndUser.getKey();
         user = eventAndUser.getValue() + "_owner";
         //promo code at event level
-        eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
+        eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now(TEST_CLOCK).minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
 
         hiddenCategoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isAccessRestricted).collect(Collectors.toList()).get(0).getId();
 
-        eventManager.addPromoCode(HIDDEN_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId);
+        eventManager.addPromoCode(HIDDEN_CODE, event.getId(), null, ZonedDateTime.now(TEST_CLOCK).minusDays(2), event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId);
 
 
         // add additional fields before and after, with one mandatory
@@ -272,7 +271,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         // add additional service
         var addServ = new EventModification.AdditionalService(null, new BigDecimal("40.00"), true, 0, 1, 1,
 
-            new DateTimeModification(ZonedDateTime.now().minusDays(2).toLocalDate(), ZonedDateTime.now().minusDays(2).toLocalTime()),
+            new DateTimeModification(ZonedDateTime.now(TEST_CLOCK).minusDays(2).toLocalDate(), ZonedDateTime.now(TEST_CLOCK).minusDays(2).toLocalTime()),
             new DateTimeModification(event.getEnd().plusDays(2).toLocalDate(), event.getEnd().plusDays(2).toLocalTime()),
             event.getVat(), AdditionalService.VatType.INHERITED,
             null,
@@ -519,7 +518,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         // dynamic promo codes can be applied only automatically
         {
-            eventManager.addPromoCode("DYNAMIC_CODE", event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DYNAMIC, null);
+            eventManager.addPromoCode("DYNAMIC_CODE", event.getId(), null, ZonedDateTime.now(TEST_CLOCK).minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DYNAMIC, null);
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, eventApiV2Controller.validateCode(event.getShortName(), "DYNAMIC_CODE").getStatusCode());
 
             // try to enter it anyway

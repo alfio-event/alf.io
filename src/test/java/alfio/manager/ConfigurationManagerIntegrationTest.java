@@ -57,6 +57,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.test.util.IntegrationTestUtil.TEST_CLOCK;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -103,15 +104,15 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
         List<TicketCategoryModification> ticketsCategory = Collections.singletonList(
             new TicketCategoryModification(null, "default", 20,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false, null, null,
                 null, null, null, 0, null, null, AlfioMetadata.empty()));
         EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", null, null, null,
             "eventShortName", "displayName", organization.getId(),
             "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
-            new DateTimeModification(LocalDate.now(), LocalTime.now()),
-            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+            new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
             BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null, null, AlfioMetadata.empty());
         eventManager.createEvent(em, USERNAME);
 

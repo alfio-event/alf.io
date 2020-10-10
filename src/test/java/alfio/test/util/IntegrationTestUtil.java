@@ -38,15 +38,13 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.*;
 
 public class IntegrationTestUtil {
 
     public static final int AVAILABLE_SEATS = 20;
+    public static final Clock TEST_CLOCK = Clock.fixed(Instant.now(), ZoneId.of("Europe/Zurich"));
 
 
     public static final Map<String, Map<String, String>> DB_CONF = new HashMap<>();
