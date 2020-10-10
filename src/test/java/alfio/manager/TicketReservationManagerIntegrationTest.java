@@ -58,8 +58,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.DEFERRED_BANK_TRANSFER_ENABLED;
-import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
-import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -114,8 +113,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testPriceIsOverridden() {
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                        new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null,
                     null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
@@ -138,12 +137,12 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testTicketSelection() {
         List<TicketCategoryModification> categories = List.of(
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                        new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
                 new TicketCategoryModification(null, "default", 10,
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                        new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                        new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                         DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
@@ -204,7 +203,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         var soldStatisticsList = ticketReservationRepository.getSoldStatistic(event.getId(), from, to, "day");
         assertEquals(3, soldStatisticsList.size());
-        assertEquals(LocalDate.now().toString(), soldStatisticsList.get(1).getDate());
+        assertEquals(LocalDate.now(TEST_CLOCK).toString(), soldStatisticsList.get(1).getDate());
         assertEquals(19L, soldStatisticsList.get(1).getCount()); // -> 19 tickets reserved
         assertEquals(19L, soldStatisticsList.stream().mapToLong(TicketsByDateStatistic::getCount).sum());
 
@@ -243,8 +242,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
@@ -299,8 +298,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testTicketWithDiscount() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
@@ -378,13 +377,13 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testAdditionalServiceWithDiscount() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, 100, 1, ZonedDateTime.now().minusHours(1), ZonedDateTime.now().plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
-        var secondAsKey = additionalServiceRepository.insert(event.getId(), 500, true, 2, 100, 1, ZonedDateTime.now().minusHours(1), ZonedDateTime.now().plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.DONATION, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
+        var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, 100, 1, ZonedDateTime.now(TEST_CLOCK).minusHours(1), ZonedDateTime.now(TEST_CLOCK).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
+        var secondAsKey = additionalServiceRepository.insert(event.getId(), 500, true, 2, 100, 1, ZonedDateTime.now(TEST_CLOCK).minusHours(1), ZonedDateTime.now(TEST_CLOCK).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.DONATION, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
@@ -427,8 +426,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     private Triple<Event, TicketCategory, String> testTicketsWithAccessCode() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
@@ -501,12 +500,12 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testWithAdditionalServices() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
 
         List<EventModification.AdditionalService> additionalServices = Collections.singletonList(new EventModification.AdditionalService(null, BigDecimal.TEN, true, 1, 100, 5,
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now().minusDays(1L)), DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1L)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).minusDays(1L)), DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).plusDays(1L)),
             BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, additionalServices).getKey();
 
@@ -549,8 +548,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testTicketSelectionNotEnoughTicketsAvailable() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
@@ -568,8 +567,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testDeletePendingPaymentUnboundedCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
@@ -609,8 +608,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testCleanupExpiredReservations() {
         List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", 10,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
@@ -647,8 +646,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     public void testCleanupOfflineExpiredReservations() {
         List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", 10,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();

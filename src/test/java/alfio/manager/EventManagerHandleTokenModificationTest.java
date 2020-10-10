@@ -23,8 +23,6 @@ import alfio.repository.TicketRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -96,7 +94,6 @@ class EventManagerHandleTokenModificationTest {
     @Test
     @DisplayName("handle the ticket addition")
     void handleTicketAddition() {
-        ArgumentCaptor<SqlParameterSource[]> captor = ArgumentCaptor.forClass(SqlParameterSource[].class);
         when(original.isAccessRestricted()).thenReturn(true);
         when(updated.isAccessRestricted()).thenReturn(true);
         eventManager.handleTokenModification(original, updated, 50);

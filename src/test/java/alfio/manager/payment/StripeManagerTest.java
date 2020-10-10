@@ -55,7 +55,6 @@ public class StripeManagerTest {
     private CustomerName customerName;
 
     private final String paymentId = "customer#1";
-    private final String error = "errorCode";
 
     @BeforeEach
     public void setUp() {
