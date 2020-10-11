@@ -39,6 +39,9 @@ public interface TicketRepository {
     String REVERT_TO_FREE = "update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId";
     String SORT_TICKETS = "order by category_id asc, uuid asc";
 
+    String RESET_TICKET = " TICKETS_RESERVATION_ID = null, FULL_NAME = null, EMAIL_ADDRESS = null, SPECIAL_PRICE_ID_FK = null, LOCKED_ASSIGNMENT = false, USER_LANGUAGE = null, REMINDER_SENT = false, SRC_PRICE_CTS = 0, FINAL_PRICE_CTS = 0, VAT_CTS = 0, DISCOUNT_CTS = 0, FIRST_NAME = null, LAST_NAME = null, EXT_REFERENCE = null, TAGS = array[]::text[] ";
+    String RELEASE_TICKET_QUERY = "update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status in('ACQUIRED', 'PENDING', 'TO_BE_PAID') and tickets_reservation_id = :reservationId and event_id = :eventId";
+
 
     //TODO: refactor, try to move the MapSqlParameterSource inside the default method!
     default void bulkTicketInitialization(MapSqlParameterSource[] args) {
@@ -127,7 +130,7 @@ public interface TicketRepository {
     @Query("update ticket set tags = :tags::text[] where id in(:ids)")
     int updateTicketTags(@Bind("ids") List<Integer> ticketIds, @Bind("tags") @Array List<String> tags);
 
-    @Query("update ticket set status = 'RELEASED', tickets_reservation_id = null, special_price_id_fk = null, first_name = null, last_name = null, full_name = null, email_address = null where status in ('PENDING', 'OFFLINE_PAYMENT') "
+    @Query("update ticket set status = 'RELEASED', "+RESET_TICKET+" where status in ('PENDING', 'OFFLINE_PAYMENT') "
             + " and tickets_reservation_id in (:reservationIds)")
     int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
 
@@ -266,9 +269,6 @@ public interface TicketRepository {
 
     @Query("update ticket set reminder_sent = true where id = :id and reminder_sent = false")
     int flagTicketAsReminderSent(@Bind("id") int ticketId);
-
-    String RESET_TICKET = " TICKETS_RESERVATION_ID = null, FULL_NAME = null, EMAIL_ADDRESS = null, SPECIAL_PRICE_ID_FK = null, LOCKED_ASSIGNMENT = false, USER_LANGUAGE = null, REMINDER_SENT = false, SRC_PRICE_CTS = 0, FINAL_PRICE_CTS = 0, VAT_CTS = 0, DISCOUNT_CTS = 0, FIRST_NAME = null, LAST_NAME = null, EXT_REFERENCE = null ";
-    String RELEASE_TICKET_QUERY = "update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status in('ACQUIRED', 'PENDING', 'TO_BE_PAID') and tickets_reservation_id = :reservationId and event_id = :eventId";
 
     @Query(RELEASE_TICKET_QUERY)
     int releaseTicket(@Bind("reservationId") String reservationId, @Bind("newUuid") String newUuid, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
