@@ -70,7 +70,6 @@ public class ScriptingExecutionServiceTest {
     }
 
     @Test
-    @Disabled
     void testExecutionTimeout()  {
         assertTimeoutPreemptively(Duration.ofSeconds(11L), () -> assertThrows(ExecutionTimeoutException.class, () -> {
                 String concatenation = getScriptContent("timeout.js");

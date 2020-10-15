@@ -17,6 +17,7 @@
 
 package alfio.extension;
 
+import alfio.extension.exception.ExecutionTimeoutException;
 import alfio.extension.exception.OutOfBoundariesException;
 import alfio.extension.support.SandboxContextFactory;
 import alfio.util.Json;
@@ -66,6 +67,7 @@ public class ScriptingExecutionService {
     public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
         this.simpleHttpClient = new SimpleHttpClient(httpClient);
         this.executorSupplier = executorSupplier;
+        ContextFactory.initGlobal(new SandboxContextFactory());
         Context cx = ContextFactory.getGlobal().enterContext();
         try {
             sealedScope = cx.initSafeStandardObjects();
@@ -141,6 +143,8 @@ public class ScriptingExecutionService {
                 return null;
             }
         } catch (OutOfBoundariesException ex) {
+            throw ex;
+        } catch (ExecutionTimeoutException ex) {
             throw ex;
         } catch(WrappedException ex) {
             throw new OutOfBoundariesException("Out of boundaries class use.");
