@@ -64,10 +64,13 @@ public class ScriptingExecutionService {
         })
         .build();
 
+    static {
+        ContextFactory.initGlobal(new SandboxContextFactory());
+    }
+
     public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
         this.simpleHttpClient = new SimpleHttpClient(httpClient);
         this.executorSupplier = executorSupplier;
-        ContextFactory.initGlobal(new SandboxContextFactory());
         Context cx = ContextFactory.getGlobal().enterContext();
         try {
             sealedScope = cx.initSafeStandardObjects();
