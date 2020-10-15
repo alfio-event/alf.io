@@ -145,21 +145,12 @@ public class ScriptingExecutionService {
             } else {
                 return null;
             }
-        } catch (OutOfBoundariesException ex) {
-            throw ex;
-        } catch (ExecutionTimeoutException ex) {
-            throw ex;
-        } catch(WrappedException ex) {
-            throw new OutOfBoundariesException("Out of boundaries class use.");
-        } catch(EcmaError ex) {
-            if (ex.getName().equals("ReferenceError")) {
-                throw new OutOfBoundariesException("Out of boundaries class use.");
-            } else {
-                throw new IllegalStateException(ex);
-            }
         } catch (Throwable ex) { //
             log.warn("Error while executing script " + name + ":", ex);
             extensionLogger.logError("Error while executing script: " + ex.getMessage());
+            if (ex instanceof EcmaError || ex instanceof OutOfBoundariesException) {
+                throw new OutOfBoundariesException("Out of boundaries class use.");
+            }
             throw new IllegalStateException(ex);
         } finally {
             Context.exit();

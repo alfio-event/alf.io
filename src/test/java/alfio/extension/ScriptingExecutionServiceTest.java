@@ -21,7 +21,9 @@ import alfio.extension.exception.OutOfBoundariesException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
+import org.springframework.security.core.parameters.P;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -70,28 +72,35 @@ public class ScriptingExecutionServiceTest {
 
     @Test
     void testExecutionTimeout()  {
-        assertTimeoutPreemptively(Duration.ofSeconds(11L), () -> assertThrows(ExecutionTimeoutException.class, () -> {
+        assertTimeoutPreemptively(Duration.ofSeconds(11L), () -> {
+            try {
                 String concatenation = getScriptContent("timeout.js");
                 scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+            } catch (Exception e) {
+                assertTrue(e.getCause() instanceof ExecutionTimeoutException);
             }
-        ));
+        });
     }
 
     @Test
-    void testOutOfBoundariesReflection()  {
-        assertThrows(OutOfBoundariesException.class, () -> {
+    void testOutOfBoundariesReflection() throws IOException {
+        try {
             String concatenation = getScriptContent("boundariesReflection.js");
             scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
             Mockito.verify(extensionLogger).logInfo(eq("test"));
-        });
+        } catch (Exception ex) {
+            assertTrue(ex instanceof OutOfBoundariesException);
+        }
     }
 
     @Test
     void testOutOfBoundariesExit()  {
-        assertThrows(OutOfBoundariesException.class, () -> {
+        try {
             String concatenation = getScriptContent("boundariesExit.js");
             scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
             Mockito.verify(extensionLogger).logInfo(eq("test"));
-        });
+        } catch (Exception ex) {
+            assertTrue(ex instanceof OutOfBoundariesException);
+        }
     }
 }
