@@ -21,9 +21,7 @@ import alfio.extension.exception.OutOfBoundariesException;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
-import org.springframework.security.core.parameters.P;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -76,6 +74,7 @@ public class ScriptingExecutionServiceTest {
             try {
                 String concatenation = getScriptContent("timeout.js");
                 scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
+                fail();
             } catch (Exception e) {
                 assertTrue(e.getCause() instanceof ExecutionTimeoutException);
             }

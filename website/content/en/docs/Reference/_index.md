@@ -3,7 +3,7 @@ title: "Dev Reference"
 linkTitle: "Dev Reference"
 weight: 9
 description: >
-  APIs and extensions.
+  How to integrate Alf.io with your existing tools
 ---
 
-{{% wip %}}
+

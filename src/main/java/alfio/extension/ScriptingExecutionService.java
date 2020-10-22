@@ -17,7 +17,6 @@
 
 package alfio.extension;
 
-import alfio.extension.exception.ExecutionTimeoutException;
 import alfio.extension.exception.OutOfBoundariesException;
 import alfio.extension.support.SandboxContextFactory;
 import alfio.util.Json;
@@ -26,7 +25,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.extern.log4j.Log4j2;
 import org.mozilla.javascript.*;
-import org.springframework.cache.*;
 import org.springframework.stereotype.Service;
 
 import java.net.http.HttpClient;

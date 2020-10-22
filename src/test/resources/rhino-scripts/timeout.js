@@ -6,7 +6,11 @@
 function executeScript(scriptEvent) {
     var i = 0;
     // the following loop should cause an exception after a timeout of 5 seconds
-    while (true) {
-        i++;
+    try {
+        while (true) {
+            i++;
+        }
+    } catch (e) {
+
     }
 }
