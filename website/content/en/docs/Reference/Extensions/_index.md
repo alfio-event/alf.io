@@ -10,23 +10,23 @@ description: >
 
 # Alf.io extensions
 
-this repository contains all the *official* alf.io extensions
+This repository contains all the *official* Alf.io extensions
 
 # How to write an extension
 
-Extensions allows you to link alf.io with your existing tools, such as:
+Extensions allows you to link Alf.io with your existing tools, such as:
 
 * Billing/Accounting systems
 * CRMs
 * Additional Email marketing services (Mailjet, ...)
 * Custom notifications (Slack, Telegram, etc.)
 
-## how it works
+## How it works
 
 Extensions can be added and modified only by the Administrator. 
 For security and stability reasons, it is not possible to do that with less privileged users.
 
-Each extension consists of a JavaScript script, you can find a sample below:
+Each extension consists of a JavaScript script. You can find a sample below:
 
 ```javascript
 /**
@@ -78,25 +78,28 @@ function executeScript(scriptEvent) {
 }
 ```
 
-each extension is registered to one or more Application Events, and is fired as soon as the Application Event occurs.
+Each extension is registered to one or more Application Events, and is fired as soon as the Application Event occurs.
 
 ## Scope Variables
 
-alf.io provides some objects and properties to the script in the script scope:
+Alf.io provides some objects and properties to the script in the script scope:
 
-* **log** Log4j logger
-* **extensionLogger** a logger that write in the extension_log table. It implement the [ExtensionLogger](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionLogger.java) interface.
-* **httpClient** instance of a [OkHttpClient](http://square.github.io/okhttp/)
-* **simpleHttpClient** instance of a [SimpleHttpClient](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java)
-* **GSON** Google's [JSON parser/generator](http://static.javadoc.io/com.google.code.gson/gson/2.8.2/com/google/gson/Gson.html)
-* **returnClass** `java.lang.Class<?>` the expected result type
-* **extensionParameters** a map containing the parameters of an extension
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
-* **eventId**: event id
-* **organizationId**: organization id
-* **Utils**: various utilities, see [ExtensionUtils](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionUtils.java)
+|        Variable       |                                                             Type                                                            |                                                                                                 Explanation                                                                                                |   |   |
+|:---------------------:|:---------------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|---|---|
+|         `log`         |                                                           `Log4j`                                                           |                                                                                                  A logger                                                                                                  |   |   |
+|   `extensionLogger`   |                                                      `ExtentionLogger`                                                      | A logger that writes in the extension_log table. It implements the [`ExtensionLogger`] ( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionLogger.java) interface.. |   |   |
+|      `httpClient`     |                                     [`OkHttpClient`] ( http://square.github.io/okhttp/)                                     |                                                                                                                                                                                                            |   |   |
+|   `simpleHttpClient`  | [`SimpleHttpClient`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java) |                                                                                                                                                                                                            |   |   |
+|         `GSON`        |         [JSON parser/generator](http://static.javadoc.io/com.google.code.gson/gson/2.8.2/com/google/gson/Gson.html)         |                                                                                                                                                                                                            |   |   |
+|     `returnClass`     |                                                     `java.lang.Class<?>`                                                    |                                                                                                                                                                                                            |   |   |
+| `extensionParameters` |                                                    `Map<String, Object>`                                                    |                                                                                                                                                                                                            |   |   |
+|        `event`        |             [`Event`] ( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)             |                                                                                                                                                                                                            |   |   |
+|       `eventId`       |                                                            `int`                                                            |                                                                                                                                                                                                            |   |   |
+|    `organizationId`   |                                                            `int`                                                            |                                                                                                                                                                                                            |   |   |
+|        `Utils`        |  [`ExtensionUtils`] ( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionUtils.java)  |                                                                                                                                                                                                            |   |   |
+  
 
-other event-related variables are also injected in the scope
+Other event-related variables are also injected in the scope.
 
 ## Supported Application Events
 
@@ -195,7 +198,7 @@ extensions will be invoked **synchronously** while generating an invoice.
 #### TAX_ID_NUMBER_VALIDATION
 
 extensions will be invoked **synchronously** when a Tax ID (VAT/GST) number has to be validated. 
-Please note that alf.io already supports EU VAT validation (by calling the EU VIES web service).
+Please note that Alf.io already supports EU VAT validation (by calling the EU VIES web service).
 In these cases, the TAX_ID validation will be called only as fallback.   
 
 ##### Important
