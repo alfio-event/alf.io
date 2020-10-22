@@ -17,6 +17,7 @@
 package alfio.model;
 
 import alfio.model.transaction.PaymentProxy;
+import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -256,7 +257,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     }
 
     public boolean expiredSince(int days) {
-        return ZonedDateTime.now(getZoneId()).truncatedTo(ChronoUnit.DAYS).minusDays(days).isAfter(getEnd().truncatedTo(ChronoUnit.DAYS));
+        return ZonedDateTime.now(ClockProvider.clock().withZone(getZoneId())).truncatedTo(ChronoUnit.DAYS).minusDays(days).isAfter(getEnd().truncatedTo(ChronoUnit.DAYS));
     }
 
     public String getPrivacyPolicyLinkOrNull() {

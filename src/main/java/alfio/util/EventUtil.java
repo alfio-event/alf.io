@@ -88,7 +88,7 @@ public final class EventUtil {
 
     private static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, Predicate<EventAndOrganizationId> noTicketsAvailable, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> confVal) {
         return findLastCategory(categories).map(lastCategory -> {
-            ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+            ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId()));
             if(isPreSales(event, categories)) {
                 return confVal.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault();
             } else if(confVal.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault()) {
@@ -116,7 +116,7 @@ public final class EventUtil {
     }
 
     public static boolean isPreSales(Event event, List<SaleableTicketCategory> categories) {
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId()));
         return findFirstCategory(categories).map(c -> now.isBefore(c.getZonedInception())).orElse(false);
     }
 
@@ -240,7 +240,7 @@ public final class EventUtil {
     }
 
     public static Optional<CallLink> firstMatchingCallLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
-        var now = ZonedDateTime.now(eventZoneId);
+        var now = ZonedDateTime.now(ClockProvider.clock().withZone(eventZoneId));
         return firstMatchingCallLink(categoryConfiguration, eventZoneId, now)
             .or(() -> firstMatchingCallLink(eventConfiguration, eventZoneId, now));
     }

@@ -33,10 +33,7 @@ import alfio.model.transaction.token.PayPalToken;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
-import alfio.util.ErrorsCode;
-import alfio.util.HttpUtils;
-import alfio.util.Json;
-import alfio.util.MonetaryUtil;
+import alfio.util.*;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.paypal.core.PayPalEnvironment;
@@ -83,6 +80,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     private final TicketRepository ticketRepository;
     private final TransactionRepository transactionRepository;
     private final Json json;
+    private final ClockProvider clockProvider;
 
     private PayPalHttpClient getClient(EventAndOrganizationId event) {
         PayPalEnvironment apiContext = getApiContext(event);
@@ -367,7 +365,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             } else {
                 PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
                 transactionRepository.insert(chargeDetails.captureId, chargeDetails.orderId, spec.getReservationId(),
-                    ZonedDateTime.now(spec.getEvent().getZoneId()), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
+                    ZonedDateTime.now(clockProvider.withZone(spec.getEvent().getZoneId())), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
                     applicationFee, chargeDetails.payPalFee, alfio.model.transaction.Transaction.Status.COMPLETE, Map.of());
             }
             return PaymentResult.successful(chargeDetails.captureId);
@@ -385,7 +383,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     public void saveToken(String reservationId, Event event, PayPalToken token) {
         PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository);
         transactionRepository.insert(reservationId, token.getPaymentId(), reservationId,
-            ZonedDateTime.now(event.getZoneId()), 0, event.getCurrency(), "Paypal token", PaymentProxy.PAYPAL.name(), 0, 0,
+            ZonedDateTime.now(clockProvider.withZone(event.getZoneId())), 0, event.getCurrency(), "Paypal token", PaymentProxy.PAYPAL.name(), 0, 0,
             alfio.model.transaction.Transaction.Status.PENDING, Map.of(PaymentManager.PAYMENT_TOKEN, json.asJsonString(token)));
     }
 

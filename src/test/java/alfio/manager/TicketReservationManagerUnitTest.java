@@ -23,6 +23,7 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.test.util.TestUtil;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.tuple.Pair;
@@ -148,8 +149,8 @@ public class TicketReservationManagerUnitTest {
             billingDocumentRepository,
             mock(NamedParameterJdbcTemplate.class),
             json,
-            promoCodeDiscountRepository,
-            mock(BillingDocumentManager.class));
+            mock(BillingDocumentManager.class),
+            TestUtil.clockProvider());
 
     }
 

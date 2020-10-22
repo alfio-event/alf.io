@@ -27,6 +27,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketFieldRepository;
+import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.Validator;
 import lombok.AllArgsConstructor;
@@ -50,6 +51,7 @@ public class BookingInfoTicketLoader {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final TicketReservationManager ticketReservationManager;
     private final MessageSourceManager messageSourceManager;
+    private final ClockProvider clockProvider;
 
 
     public ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event) {
@@ -72,7 +74,7 @@ public class BookingInfoTicketLoader {
                 .orElse(event.getBegin());
             formattedDates = Formatters.getFormattedDate(event, checkInDate, "common.ticket-category.date-format",
                 messageSourceManager.getMessageSourceForEvent(event));
-            onlineEventStarted = ZonedDateTime.now(event.getZoneId()).isAfter(checkInDate);
+            onlineEventStarted = ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).isAfter(checkInDate);
         }
 
         return toBookingInfoTicket(ticket,

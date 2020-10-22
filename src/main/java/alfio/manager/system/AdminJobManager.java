@@ -21,6 +21,7 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.system.AdminJobSchedule;
 import alfio.repository.system.AdminJobQueueRepository;
+import alfio.util.ClockProvider;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -31,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -49,10 +49,12 @@ public class AdminJobManager {
     private final TransactionTemplate nestedTransactionTemplate;
     private final Set<String> executedStatuses;
     private final Set<String> notExecutedStatuses;
+    private final ClockProvider clockProvider;
 
     public AdminJobManager(List<AdminJobExecutor> jobExecutors,
                            AdminJobQueueRepository adminJobQueueRepository,
-                           PlatformTransactionManager transactionManager) {
+                           PlatformTransactionManager transactionManager,
+                           ClockProvider clockProvider) {
 
         this.executorsByJobId = jobExecutors.stream()
             .flatMap(je -> je.getJobNames().stream().map(n -> Pair.of(n, je)))
@@ -62,6 +64,7 @@ public class AdminJobManager {
         var executed = EnumSet.of(EXECUTED);
         this.executedStatuses = executed.stream().map(Enum::name).collect(toSet());
         this.notExecutedStatuses = EnumSet.complementOf(executed).stream().map(Enum::name).collect(toSet());
+        this.clockProvider = clockProvider;
     }
 
     @Scheduled(fixedDelay = 60 * 1000)
@@ -76,14 +79,14 @@ public class AdminJobManager {
                 var partitionedResults = scheduleWithResults.getRight().stream().collect(Collectors.partitioningBy(Result::isSuccess));
                 if(!partitionedResults.get(false).isEmpty()) {
                     partitionedResults.get(false).forEach(r -> log.warn("Processing failed for {}: {}", schedule.getJobName(), r.getErrors()));
-                    adminJobQueueRepository.updateSchedule(schedule.getId(), AdminJobSchedule.Status.FAILED, ZonedDateTime.now(Clock.systemUTC()), Map.of());
+                    adminJobQueueRepository.updateSchedule(schedule.getId(), AdminJobSchedule.Status.FAILED, ZonedDateTime.now(clockProvider.getClock()), Map.of());
                 } else {
                     partitionedResults.get(true).forEach(result -> {
                         if(result.getData() != null) {
                             log.trace("Message from {}: {}", schedule.getJobName(), result.getData());
                         }
                     });
-                    adminJobQueueRepository.updateSchedule(schedule.getId(), EXECUTED, ZonedDateTime.now(Clock.systemUTC()), Map.of());
+                    adminJobQueueRepository.updateSchedule(schedule.getId(), EXECUTED, ZonedDateTime.now(clockProvider.getClock()), Map.of());
                 }
             });
         log.trace("done processing pending requests");
@@ -92,7 +95,7 @@ public class AdminJobManager {
     @Scheduled(cron = "#{environment.acceptsProfiles('dev') ? '0 * * * * *' : '0 0 0 * * *'}")
     void cleanupExpiredRequests() {
         log.trace("Cleanup expired requests");
-        ZonedDateTime now = ZonedDateTime.now(Clock.systemUTC());
+        ZonedDateTime now = ZonedDateTime.now(clockProvider.getClock());
         int deleted = adminJobQueueRepository.removePastSchedules(now.minusDays(1), executedStatuses);
         if(deleted > 0) {
             log.trace("Deleted {} executed jobs", deleted);
@@ -105,7 +108,7 @@ public class AdminJobManager {
 
     public boolean scheduleExecution(JobName jobName, Map<String, Object> metadata) {
         try {
-            adminJobQueueRepository.schedule(jobName, ZonedDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MINUTES), metadata);
+            adminJobQueueRepository.schedule(jobName, ZonedDateTime.now(clockProvider.getClock()).truncatedTo(ChronoUnit.MINUTES), metadata);
             return true;
         } catch (DataIntegrityViolationException ex) {
             log.trace("Integrity violation", ex);

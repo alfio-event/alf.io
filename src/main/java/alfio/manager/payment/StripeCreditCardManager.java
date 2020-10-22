@@ -30,6 +30,7 @@ import alfio.model.transaction.token.StripeCreditCardToken;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.util.ClockProvider;
 import com.stripe.exception.StripeException;
 import com.stripe.model.BalanceTransaction;
 import com.stripe.model.Charge;
@@ -53,27 +54,28 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     private static final String STRIPE_MANAGER = StripeCreditCardManager.class.getName();
     public static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY);
 
-    private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
     private final BaseStripeManager baseStripeManager;
+    private final ClockProvider clockProvider;
 
     @Autowired
     public StripeCreditCardManager(ConfigurationManager configurationManager,
                                    TicketRepository ticketRepository,
                                    TransactionRepository transactionRepository,
                                    ConfigurationRepository configurationRepository,
-                                   Environment environment) {
-        this(configurationManager,
-            transactionRepository,
-            new BaseStripeManager(configurationManager, configurationRepository, ticketRepository, environment));
+                                   Environment environment,
+                                   ClockProvider clockProvider) {
+        this(transactionRepository,
+            new BaseStripeManager(configurationManager, configurationRepository, ticketRepository, environment),
+            clockProvider);
     }
 
-    StripeCreditCardManager( ConfigurationManager configurationManager,
-                             TransactionRepository transactionRepository,
-                             BaseStripeManager baseStripeManager) {
-        this.configurationManager = configurationManager;
+    StripeCreditCardManager(TransactionRepository transactionRepository,
+                            BaseStripeManager baseStripeManager,
+                            ClockProvider clockProvider) {
         this.transactionRepository = transactionRepository;
         this.baseStripeManager = baseStripeManager;
+        this.clockProvider = clockProvider;
     }
 
     public Optional<Boolean> processWebhookEvent(String body, String signature) {
@@ -156,7 +158,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
                 PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
                 transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
-                    ZonedDateTime.now(spec.getEvent().getZoneId()), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
+                    ZonedDateTime.now(clockProvider.withZone(spec.getEvent().getZoneId())), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
                     fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of(STRIPE_MANAGER_TYPE_KEY, STRIPE_MANAGER));
                 return PaymentResult.successful(charge.getId());
             }).orElseGet(() -> PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION"));

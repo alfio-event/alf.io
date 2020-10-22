@@ -22,6 +22,8 @@ import alfio.model.TicketCategory;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.test.util.TestUtil;
+import alfio.util.ClockProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,7 +36,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static alfio.manager.testSupport.TicketCategoryGenerator.generateCategoryStream;
-import static alfio.test.util.IntegrationTestUtil.TEST_CLOCK;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -57,7 +58,7 @@ public class EventManagerCategoriesTest {
         EventRepository eventRepository = mock(EventRepository.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(eventId);
-        eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, TestUtil.clockProvider());
         when(eventRepository.countExistingTickets(0)).thenReturn(availableSeats);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
     }
@@ -68,7 +69,7 @@ public class EventManagerCategoriesTest {
     void createTicketsForUnboundedCategory() {
         List<TicketCategory> categories = generateCategoryStream().limit(3).collect(Collectors.toList());
         when(ticketCategoryRepository.findAllTicketCategories(eq(eventId))).thenReturn(categories);
-        MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(TEST_CLOCK), event, availableSeats, Ticket.TicketStatus.FREE);
+        MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(ClockProvider.clock()), event, availableSeats, Ticket.TicketStatus.FREE);
         assertNotNull(parameterSources);
         assertEquals(availableSeats, parameterSources.length);
         assertTrue(Arrays.stream(parameterSources).allMatch(ps -> Ticket.TicketStatus.FREE.name().equals(ps.getValue("status"))));
@@ -79,7 +80,7 @@ public class EventManagerCategoriesTest {
     void createTicketsForUnboundedCategories() {
         List<TicketCategory> categories = generateCategoryStream().limit(6).collect(Collectors.toList());
         when(ticketCategoryRepository.findAllTicketCategories(eq(eventId))).thenReturn(categories);
-        MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(TEST_CLOCK), event, availableSeats, Ticket.TicketStatus.FREE);
+        MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(ClockProvider.clock()), event, availableSeats, Ticket.TicketStatus.FREE);
         assertNotNull(parameterSources);
         assertEquals(availableSeats, parameterSources.length);
         assertTrue(Arrays.stream(parameterSources).allMatch(ps -> Ticket.TicketStatus.FREE.name().equals(ps.getValue("status"))));
@@ -90,7 +91,7 @@ public class EventManagerCategoriesTest {
     void createTicketsOnlyForBounded() {
         List<TicketCategory> categories = generateCategoryStream().limit(2).collect(Collectors.toList());
         when(ticketCategoryRepository.findAllTicketCategories(eq(eventId))).thenReturn(categories);
-        MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(TEST_CLOCK), event, availableSeats, Ticket.TicketStatus.FREE);
+        MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(ClockProvider.clock()), event, availableSeats, Ticket.TicketStatus.FREE);
         assertNotNull(parameterSources);
         assertEquals(availableSeats, parameterSources.length);
         assertEquals(4L, Arrays.stream(parameterSources).filter(p -> p.getValue("categoryId") != null).count());

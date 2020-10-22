@@ -25,6 +25,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
+import alfio.util.ClockProvider;
 import alfio.util.WorkingDaysAdjusters;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -38,7 +39,6 @@ import java.util.*;
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.*;
-import static java.time.ZoneOffset.UTC;
 
 @Component
 @Log4j2
@@ -51,6 +51,7 @@ public class BankTransferManager implements PaymentProvider {
     private final ConfigurationManager configurationManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final TransactionRepository transactionRepository;
+    private final ClockProvider clockProvider;
 
     @Override
     public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
@@ -99,7 +100,7 @@ public class BankTransferManager implements PaymentProvider {
     void overrideExistingTransactions(PaymentSpecification spec) {
         PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
         transactionRepository.insert(UUID.randomUUID().toString(), null,
-            spec.getReservationId(), ZonedDateTime.now(UTC), spec.getPriceWithVAT(), spec.getCurrencyCode(),
+            spec.getReservationId(), ZonedDateTime.now(clockProvider.getClock()), spec.getPriceWithVAT(), spec.getCurrencyCode(),
             "", PaymentProxy.OFFLINE.name(), 0L, 0L, Transaction.Status.PENDING, Map.of());
     }
 
@@ -133,7 +134,7 @@ public class BankTransferManager implements PaymentProvider {
 
     public static ZonedDateTime getOfflinePaymentDeadline(PaymentContext context, ConfigurationManager configurationManager) {
         Event event = context.getEvent();
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId()));
         int waitingPeriod = getOfflinePaymentWaitingPeriod(context, configurationManager).orElse( 0 );
         if(waitingPeriod == 0) {
             log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");
@@ -150,7 +151,7 @@ public class BankTransferManager implements PaymentProvider {
     }
 
     private static OptionalInt getOfflinePaymentWaitingPeriod(Event event, int configuredValue) {
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId()));
         ZonedDateTime eventBegin = event.getBegin();
         int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
         if (daysToBegin < 0) {

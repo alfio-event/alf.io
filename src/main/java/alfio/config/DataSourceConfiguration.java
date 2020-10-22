@@ -33,6 +33,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
+import alfio.util.ClockProvider;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
@@ -231,12 +232,13 @@ public class DataSourceConfiguration {
                      PlatformTransactionManager platformTransactionManager,
                      BillingDocumentManager billingDocumentManager,
                      EventRepository eventRepository,
-                     OrganizationRepository organizationRepository
+                     OrganizationRepository organizationRepository,
+                     ClockProvider clockProvider
                      ) {
         return new Jobs(adminReservationRequestManager, fileUploadManager,
             notificationManager, specialPriceTokenGenerator, ticketReservationManager,
             waitingQueueSubscriptionProcessor,
-            adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager, billingDocumentManager, eventRepository, notificationManager, organizationRepository));
+            adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager, billingDocumentManager, eventRepository, notificationManager, organizationRepository, clockProvider));
     }
 
     @Bean
@@ -246,11 +248,13 @@ public class DataSourceConfiguration {
                                     BillingDocumentManager billingDocumentManager,
                                     EventRepository eventRepository,
                                     NotificationManager notificationManager,
-                                    OrganizationRepository organizationRepository) {
+                                    OrganizationRepository organizationRepository,
+                                    ClockProvider clockProvider) {
         return new AdminJobManager(
             List.of(reservationJobExecutor(ticketReservationManager), billingDocumentJobExecutor(billingDocumentManager, ticketReservationManager, eventRepository, notificationManager, organizationRepository)),
             adminJobQueueRepository,
-            transactionManager);
+            transactionManager,
+            clockProvider);
     }
 
     @Bean

@@ -91,6 +91,7 @@ public class EventApiV2Controller {
     private final PromoCodeRequestManager promoCodeRequestManager;
     private final EventLoader eventLoader;
     private final ExtensionManager extensionManager;
+    private final ClockProvider clockProvider;
 
 
     @GetMapping("events")
@@ -150,7 +151,7 @@ public class EventApiV2Controller {
             Optional<SpecialPrice> specialCode = appliedPromoCode.getValue().getLeft();
             Optional<PromoCodeDiscount> promoCodeDiscount = appliedPromoCode.getValue().getRight();
 
-            final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+            final ZonedDateTime now = ZonedDateTime.now(clockProvider.withZone(event.getZoneId()));
             //hide access restricted ticket categories
             var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
 

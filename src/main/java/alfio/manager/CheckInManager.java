@@ -28,6 +28,7 @@ import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.PinGenerator;
@@ -51,7 +52,6 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -89,6 +89,7 @@ public class CheckInManager {
     private final ExtensionManager extensionManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final PollRepository pollRepository;
+    private final ClockProvider clockProvider;
 
 
     private void checkIn(String uuid) {
@@ -115,7 +116,7 @@ public class CheckInManager {
      */
     public CheckInStatus performCheckinForOnlineEvent(Ticket ticket, EventCheckInInfo event, TicketCategory tc) {
         Validate.isTrue(event.getFormat() == Event.EventFormat.ONLINE);
-        if(!tc.hasValidCheckIn(ZonedDateTime.now(event.getZoneId()), event.getZoneId())) {
+        if(!tc.hasValidCheckIn(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())), event.getZoneId())) {
             return INVALID_TICKET_CATEGORY_CHECK_IN_DATE;
         }
         if(ticket.isCheckedIn()) {
@@ -173,13 +174,13 @@ public class CheckInManager {
         if(checkInStatus == OK_READY_TO_BE_CHECKED_IN) {
             checkIn(ticketIdentifier);
             TicketWithCategory ticket = descriptor.getTicket();
-            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(Clock.systemUTC()), user, SUCCESS, ScanAudit.Operation.SCAN);
+            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, SUCCESS, ScanAudit.Operation.SCAN);
             auditingRepository.insert(ticket.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
             // return also additional items, if any
             return new SuccessfulCheckIn(ticket, getAdditionalServicesForTicket(ticket), loadBoxColor(ticket));
         } else if(checkInStatus == BADGE_SCAN_ALREADY_DONE || checkInStatus == OK_READY_FOR_BADGE_SCAN) {
             var auditingStatus = checkInStatus == OK_READY_FOR_BADGE_SCAN ? BADGE_SCAN_SUCCESS : checkInStatus;
-            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(Clock.systemUTC()), user, auditingStatus, ScanAudit.Operation.SCAN);
+            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, auditingStatus, ScanAudit.Operation.SCAN);
             auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, BADGE_SCAN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(auditingStatus, checkInStatus == OK_READY_FOR_BADGE_SCAN ? "scan successful" : "already scanned"));
         }
@@ -195,7 +196,7 @@ public class CheckInManager {
             }
 
             checkIn(ticketIdentifier);
-            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(Clock.systemUTC()), user, SUCCESS, ScanAudit.Operation.SCAN);
+            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, SUCCESS, ScanAudit.Operation.SCAN);
             auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.MANUAL_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
             return true;
         }).orElse(false);
@@ -207,7 +208,7 @@ public class CheckInManager {
                 TicketReservation reservation = ticketReservationRepository.findReservationById(t.getTicketsReservationId());
                 TicketStatus revertedStatus = reservation.getPaymentMethod() == PaymentProxy.ON_SITE ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
                 ticketRepository.updateTicketStatusWithUUID(ticketIdentifier, revertedStatus.toString());
-                scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(Clock.systemUTC()), user, OK_READY_TO_BE_CHECKED_IN, ScanAudit.Operation.REVERT);
+                scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, OK_READY_TO_BE_CHECKED_IN, ScanAudit.Operation.REVERT);
                 auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.REVERT_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
                 extensionManager.handleTicketRevertCheckedIn(ticketRepository.findByUUID(ticketIdentifier));
                 return true;
@@ -257,7 +258,7 @@ public class CheckInManager {
                     return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(INVALID_TICKET_CATEGORY_CHECK_IN_DATE, "Not allowed to check in at this time."));
                 }
                 var ticketsReservationId = ticket.getTicketsReservationId();
-                int previousScan = auditingRepository.countAuditsOfTypesInTheSameDay(ticketsReservationId, Set.of(CHECK_IN.name(), MANUAL_CHECK_IN.name(), BADGE_SCAN.name()), ZonedDateTime.now(event.getZoneId()));
+                int previousScan = auditingRepository.countAuditsOfTypesInTheSameDay(ticketsReservationId, Set.of(CHECK_IN.name(), MANUAL_CHECK_IN.name(), BADGE_SCAN.name()), ZonedDateTime.now(clockProvider.withZone(event.getZoneId())));
                 if(previousScan > 0) {
                     return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(BADGE_SCAN_ALREADY_DONE, "Badge scan already done"));
                 }
@@ -268,7 +269,7 @@ public class CheckInManager {
 
         String code = ticketCode.get();
 
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        ZonedDateTime now = ZonedDateTime.now(clockProvider.withZone(event.getZoneId()));
         if(!tc.hasValidCheckIn(now, event.getZoneId())) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - hh:mm");
             String from = tc.getValidCheckInFrom() == null ? ".." : formatter.format(tc.getValidCheckInFrom(event.getZoneId()));
@@ -302,7 +303,7 @@ public class CheckInManager {
 
     private static boolean isBadgeValidNow(TicketCategory tc, EventCheckInInfo event) {
         var zoneId = event.getZoneId();
-        var now = ZonedDateTime.now(zoneId);
+        var now = ZonedDateTime.now(ClockProvider.clock().withZone(zoneId));
         return now.isAfter(toZoneIdIfNotNull(tc.getValidCheckInFrom(), zoneId).orElse(event.getBegin()))
             && now.isAfter(toZoneIdIfNotNull(tc.getTicketValidityStart(), zoneId).orElse(event.getBegin()))
             && now.isBefore(toZoneIdIfNotNull(tc.getTicketValidityEnd(), zoneId).orElse(event.getEnd()));

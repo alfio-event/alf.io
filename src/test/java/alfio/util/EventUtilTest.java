@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.test.util.IntegrationTestUtil.TEST_CLOCK;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,14 +65,14 @@ public class EventUtilTest {
         configurationManager = mock(ConfigurationManager.class);
         
         when(event.getZoneId()).thenReturn(zone);
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
         when(last.getAvailableTickets()).thenReturn(0);
-        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
-        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
-        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusHours(2));
+        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
+        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
+        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusHours(2));
         //when(configurationManager.getFor(eq(STOP_WAITING_QUEUE_SUBSCRIPTIONS), any())).thenReturn(buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS));
     }
 
@@ -122,14 +121,14 @@ public class EventUtilTest {
     @DisplayName("do not display the waiting list form if the last category is expired")
     void doNotDisplayWaitingQueueFormIfCategoryExpired() {
         List<SaleableTicketCategory> categories = asList(first, last);
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
         when(last.getAvailableTickets()).thenReturn(0);
-        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
-        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
-        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1).minusHours(1));
+        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
+        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
+        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1).minusHours(1));
         when(configurationManager.getFor(anyList(), any())).thenReturn(Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true)));
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, EventUtilTest::ticketsNotAvailable));
     }
@@ -138,10 +137,10 @@ public class EventUtilTest {
     @DisplayName("do not display the waiting list form if the only category is not expired")
     void doNotDisplayWaitingQueueFormIfCategoryNotExpired() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
         when(last.getAvailableTickets()).thenReturn(0);
         when(configurationManager.getFor(anyList(), any())).thenReturn(Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true)));
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, EventUtilTest::ticketsNotAvailable));
@@ -159,10 +158,10 @@ public class EventUtilTest {
     @DisplayName("do not display the waiting list form if the waiting list is disabled")
     void doNotDisplayWaitingQueueFormIfDisabled() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(2));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(2));
         when(configurationManager.getFor(anyList(), any())).thenReturn(Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, false)));
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, EventUtilTest::ticketsNotAvailable));
     }
@@ -172,10 +171,10 @@ public class EventUtilTest {
     void displayWaitingQueueFormBeforeSalesStart() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
         when(configurationManager.getFor(anyList(), any())).thenReturn(Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, true)));
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(last.getAvailableTickets()).thenReturn(1);
         assertTrue(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, EventUtilTest::ticketsAvailable));
     }
@@ -185,14 +184,14 @@ public class EventUtilTest {
     void displayWaitingQueueFormBeforeSalesStart2() {
         List<SaleableTicketCategory> categories = asList(first, last);
         when(configurationManager.getFor(anyList(), any())).thenReturn(Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, true)));
-        when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(3));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(3));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
+        when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
         when(last.getAvailableTickets()).thenReturn(1);
         when(first.getAvailableTickets()).thenReturn(1);
         assertTrue(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, EventUtilTest::ticketsAvailable));
@@ -203,10 +202,10 @@ public class EventUtilTest {
     void doNotDisplayFormBeforeStartIfPreRegistrationDisabled() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
         when(configurationManager.getFor(anyList(), any())).thenReturn(Map.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS), ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, false)));
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(last.getAvailableTickets()).thenReturn(1);
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, EventUtilTest::ticketsAvailable));
     }
@@ -219,10 +218,10 @@ public class EventUtilTest {
             STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
             ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, true),
             ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE)));
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
         when(last.getAvailableTickets()).thenReturn(1);
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, EventUtilTest::ticketsAvailable));
     }
@@ -235,14 +234,14 @@ public class EventUtilTest {
             STOP_WAITING_QUEUE_SUBSCRIPTIONS, buildConf(STOP_WAITING_QUEUE_SUBSCRIPTIONS),
             ENABLE_PRE_REGISTRATION, buildConf(ENABLE_PRE_REGISTRATION, true),
             ENABLE_WAITING_QUEUE, buildConf(ENABLE_WAITING_QUEUE, true)));
-        when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(3));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(3));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
+        when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
         when(last.getAvailableTickets()).thenReturn(1);
         when(first.getAvailableTickets()).thenReturn(1);
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, EventUtilTest::ticketsAvailable));
@@ -252,8 +251,8 @@ public class EventUtilTest {
     @DisplayName("recognize pre-sales period")
     void recognizePreSalesPeriod() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(last.getAvailableTickets()).thenReturn(0);
         assertTrue(EventUtil.isPreSales(event, categories));
     }
@@ -262,12 +261,12 @@ public class EventUtilTest {
     @DisplayName("recognize pre-sales from first category")
     void recognizePreSalesFromFirstCategory() {
         List<SaleableTicketCategory> categories = asList(first, last);
-        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1).plusHours(1));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2).plusHours(1));
+        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1).plusHours(1));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2).plusHours(1));
         when(last.getAvailableTickets()).thenReturn(5);
         when(first.getAvailableTickets()).thenReturn(5);
         assertTrue(EventUtil.isPreSales(event, categories));
@@ -277,8 +276,8 @@ public class EventUtilTest {
     @DisplayName("recognize post-sales period")
     void recognizePostSalesPeriod() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
         when(last.getAvailableTickets()).thenReturn(5);
         assertFalse(EventUtil.isPreSales(event, categories));
     }
@@ -286,12 +285,12 @@ public class EventUtilTest {
     @Test
     void recognizePostSalesFromFirstCategory() {
         List<SaleableTicketCategory> categories = asList(first, last);
-        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).minusDays(1));
-        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(1));
-        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(2));
-        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(TEST_CLOCK).plusDays(3));
+        when(first.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(first.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
+        when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
+        when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(2));
+        when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
         when(last.getAvailableTickets()).thenReturn(5);
         when(first.getAvailableTickets()).thenReturn(5);
         assertFalse(EventUtil.isPreSales(event, categories));
