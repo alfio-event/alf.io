@@ -25,3 +25,13 @@ $primary-light: lighten($primary, 75%);
     margin: 30px;
     box-shadow: 0 0.3rem 0.5rem rgba(0, 0, 0, 0.15) !important;
 }
+
+td, th {
+    border: 1px solid grey;
+    text-align: center;
+    vertical-align: center;
+}
+th {
+    background-color: #ff9900;
+    color: white;
+}
