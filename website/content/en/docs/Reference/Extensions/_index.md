@@ -103,6 +103,34 @@ Other event-related variables are also injected in the scope.
 
 ## Supported Application Events
 
+| Event                            | Additional global variables | About |
+|----------------------------------|-----------------------------|-------|
+| RESERVATION_CONFIRMED            |                             |       |
+| RESERVATION_CANCELLED            |                             |       |
+| RESERVATION_CREDIT_NOTE_ISSUED   |                             |       |
+| TICKET_CANCELLED                 |                             |       |
+| RESERVATION_EXPIRED              |                             |       |
+| TICKET_ASSIGNED                  |                             |       |
+| WAITING_QUEUE_SUBSCRIBED         |                             |       |
+| INVOICE_GENERATION               |                             |       |
+| TAX_ID_NUMBER_VALIDATION         |                             |       |
+| RESERVATION_VALIDATION           |                             |       |
+| EVENT_METADATA_UPDATE            |                             |       |
+| STUCK_RESERVATIONS               |                             |       |
+| OFFLINE_RESERVATIONS_WILL_EXPIRE |                             |       |
+| EVENT_CREATED                    |                             |       |
+| EVENT_STATUS_CHANGE              |                             |       |
+| WEB_API_HOOK                     |                             |       |
+| TICKET_CHECKED_IN                |                             |       |
+| TICKET_REVERT_CHECKED_IN         |                             |       |
+| PDF_GENERATION                   |                             |       |
+| OAUTH2_STATE_GENERATION          |                             |       |
+| CONFIRMATION_MAIL_CUSTOM_TEXT    |                             |       |
+| TICKET_MAIL_CUSTOM_TEXT          |                             |       |
+| REFUND_ISSUED                    |                             |       |
+| DYNAMIC_DISCOUNT_APPLICATION     |                             |       |
+| ONLINE_CHECK_IN_REDIRECT         |                             |       |
+
 #### RESERVATION_CONFIRMED
 
 extensions will be invoked **asynchronously** once a reservation has been confirmed.

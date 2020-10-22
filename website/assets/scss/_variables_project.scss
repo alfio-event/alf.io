@@ -26,12 +26,14 @@ $primary-light: lighten($primary, 75%);
     box-shadow: 0 0.3rem 0.5rem rgba(0, 0, 0, 0.15) !important;
 }
 
-td, th {
+table, td, th {
     border: 1px solid grey;
     text-align: center;
     vertical-align: center;
+    horiz-align: center;
+    width: 100%;
 }
 th {
-    background-color: #ff9900;
+    background-color: $primary;
     color: white;
 }
