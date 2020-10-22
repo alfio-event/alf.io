@@ -138,6 +138,7 @@ public class TestConfiguration {
     }
 
     @Bean
+    @Profile(Initializer.PROFILE_INTEGRATION_TEST)
     public ClockProvider clockProvider() {
         return FIXED_TIME_CLOCK;
     }
