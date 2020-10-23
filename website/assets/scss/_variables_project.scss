@@ -28,10 +28,13 @@ $primary-light: lighten($primary, 75%);
 
 table, td, th {
     border: 1px solid grey;
-    text-align: center;
-    vertical-align: center;
-    horiz-align: center;
-    width: 100%;
+    text-align: left;
+    //vertical-align: center;
+    //horiz-align: center;
+    //width: 100%;
+    //display: inline-block;
+    table-layout: auto;
+    //width: 300px;
 }
 th {
     background-color: $primary;

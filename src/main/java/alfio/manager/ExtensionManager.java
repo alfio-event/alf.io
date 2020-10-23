@@ -84,7 +84,6 @@ public class ExtensionManager {
         OFFLINE_RESERVATIONS_WILL_EXPIRE,
         EVENT_CREATED,
         EVENT_STATUS_CHANGE,
-        WEB_API_HOOK,
         TICKET_CHECKED_IN,
         TICKET_REVERT_CHECKED_IN,
         PDF_GENERATION,
