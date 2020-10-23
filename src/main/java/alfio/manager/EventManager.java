@@ -39,6 +39,7 @@ import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
@@ -112,6 +113,7 @@ public class EventManager {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ConfigurationRepository configurationRepository;
     private final PaymentManager paymentManager;
+    private final ClockProvider clockProvider;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -356,7 +358,7 @@ public class EventManager {
         if(seatsDifference != 0) {
             Event modified = eventRepository.findById(eventId);
             if(seatsDifference > 0) {
-                final MapSqlParameterSource[] params = generateEmptyTickets(modified, Date.from(ZonedDateTime.now(modified.getZoneId()).toInstant()), seatsDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
+                final MapSqlParameterSource[] params = generateEmptyTickets(modified, Date.from(ZonedDateTime.now(clockProvider.withZone(modified.getZoneId())).toInstant()), seatsDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
                 ticketRepository.bulkTicketInitialization(params);
             } else {
                 List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, Math.abs(seatsDifference), singletonList(TicketStatus.FREE.name()));
@@ -809,14 +811,14 @@ public class EventManager {
                 throw new IllegalStateException("Cannot invalidate "+absDifference+" tickets. There are only "+actualDifference+" free tickets");
             }
             ticketRepository.invalidateTickets(ids);
-            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
+            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(event.now(clockProvider).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
             ticketRepository.bulkTicketInitialization(params);
         }
     }
 
     private void createAllTicketsForEvent(Event event, EventModification em) {
         Validate.notNull(em.getAvailableSeats());
-        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event, em.getAvailableSeats(), TicketStatus.FREE);
+        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(event.now(clockProvider), event, em.getAvailableSeats(), TicketStatus.FREE);
         ticketRepository.bulkTicketInitialization(params);
     }
 
@@ -953,7 +955,7 @@ public class EventManager {
 
     private Stream<Event> getActiveEventsStream() {
         return eventRepository.findAll().stream()
-            .filter(e -> e.getEnd().truncatedTo(ChronoUnit.DAYS).plusDays(1).isAfter(ZonedDateTime.now(e.getZoneId()).truncatedTo(ChronoUnit.DAYS)));
+            .filter(e -> e.getEnd().truncatedTo(ChronoUnit.DAYS).plusDays(1).isAfter(ZonedDateTime.now(clockProvider.withZone(e.getZoneId())).truncatedTo(ChronoUnit.DAYS)));
     }
 
     public Function<Ticket, Boolean> checkTicketCancellationPrerequisites() {

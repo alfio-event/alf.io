@@ -32,6 +32,7 @@ import alfio.model.transaction.webhook.StripeChargeTransactionWebhookPayload;
 import alfio.model.transaction.webhook.StripePaymentIntentWebhookPayload;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.util.ClockProvider;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.BalanceTransaction;
@@ -70,6 +71,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     private final TicketReservationRepository ticketReservationRepository;
     private final EventRepository eventRepository;
     private final AuditingRepository auditingRepository;
+    private final ClockProvider clockProvider;
     private final List<String> interestingEventTypes = List.of(PAYMENT_INTENT_SUCCEEDED, PAYMENT_INTENT_PAYMENT_FAILED, PAYMENT_INTENT_CREATED);
     private final Set<String> cancellableStatuses = Set.of("requires_payment_method", "requires_confirmation", "requires_action");
 
@@ -80,13 +82,15 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
                                        TicketReservationRepository ticketReservationRepository,
                                        EventRepository eventRepository,
                                        AuditingRepository auditingRepository,
-                                       Environment environment) {
+                                       Environment environment,
+                                       ClockProvider clockProvider) {
         this.configurationManager = configurationManager;
         this.transactionRepository = transactionRepository;
         this.ticketReservationRepository = ticketReservationRepository;
         this.eventRepository = eventRepository;
         this.auditingRepository = auditingRepository;
         this.baseStripeManager = new BaseStripeManager(configurationManager, configurationRepository, ticketRepository, environment);
+        this.clockProvider = clockProvider;
     }
 
     @Override
@@ -193,7 +197,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             long platformFee = paymentIntentParams.containsKey("application_fee") ? (long) paymentIntentParams.get("application_fee") : 0L;
             PaymentManagerUtils.invalidateExistingTransactions(paymentSpecification.getReservationId(), transactionRepository);
             transactionRepository.insert(intent.getId(), intent.getId(),
-                paymentSpecification.getReservationId(), ZonedDateTime.now(paymentSpecification.getEvent().getZoneId()),
+                paymentSpecification.getReservationId(), ZonedDateTime.now(clockProvider.withZone(paymentSpecification.getEvent().getZoneId())),
                 paymentSpecification.getPriceWithVAT(), paymentSpecification.getEvent().getCurrency(), "Payment Intent",
                 PaymentProxy.STRIPE.name(), platformFee,0L, Transaction.Status.PENDING, Map.of(CLIENT_SECRET_METADATA, clientSecret, STRIPE_MANAGER_TYPE_KEY, STRIPE_MANAGER));
             return new StripeSCACreditCardToken(intent.getId(), null, clientSecret);
@@ -309,7 +313,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         long gtwFee = Optional.ofNullable(charge.getBalanceTransactionObject()).map(BalanceTransaction::getFee).orElse(0L);
         transactionRepository.lockByIdForUpdate(transaction.getId());// this serializes
         int affectedRows = transactionRepository.updateIfStatus(transaction.getId(), chargeId,
-            transaction.getPaymentId(), ZonedDateTime.now(event.getZoneId()), transaction.getPlatformFee(), gtwFee,
+            transaction.getPaymentId(), event.now(clockProvider), transaction.getPlatformFee(), gtwFee,
             Transaction.Status.COMPLETE, Map.of(), Transaction.Status.PENDING);
         List<Map<String, Object>> modifications = List.of(Map.of("paymentId", chargeId, "paymentMethod", "stripe"));
         if(affectedRows == 0) {

@@ -28,6 +28,7 @@ import alfio.model.modification.SendCodeModification;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
+import alfio.test.util.TestUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import org.junit.jupiter.api.Assertions;
@@ -95,7 +96,7 @@ public class SpecialPriceManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(specialPriceRepository.markAsSent(any(), anyString(), anyString(), anyString())).thenReturn(1);
         setRestricted(ticketCategory, true);
-        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSourceManager, i18nManager, configurationManager);
+        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSourceManager, i18nManager, configurationManager, TestUtil.clockProvider());
     }
 
     @Test

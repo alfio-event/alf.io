@@ -24,6 +24,7 @@ import alfio.model.TicketCategoryStatisticView;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,7 @@ public class EventManagerUnbindTicketsTest {
             ticketRepository, specialPriceRepository, null, null, null,
             null, null, null,
             null, null, organizationRepository,
-            null, null, null, null, null, null);
+            null, null, null, null, null, null, TestUtil.clockProvider());
     }
 
     @Test

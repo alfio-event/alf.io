@@ -19,6 +19,7 @@ package alfio.model;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.StatisticsContainer;
 import alfio.model.modification.TicketWithStatistic;
+import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
@@ -27,7 +28,6 @@ import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -146,7 +146,7 @@ public class TicketCategoryWithAdditionalInfo implements StatisticsContainer, Pr
     }
 
     public boolean isExpired() {
-        return ZonedDateTime.now(event.getZoneId()).isAfter(ticketCategory.getExpiration(event.getZoneId()));
+        return event.now(ClockProvider.clock()).isAfter(ticketCategory.getExpiration(event.getZoneId()));
     }
 
     public boolean isContainingOrphans() {

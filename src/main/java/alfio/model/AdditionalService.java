@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.util.ClockProvider;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import org.springframework.security.crypto.codec.Hex;
@@ -24,7 +25,6 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -113,15 +113,15 @@ public class AdditionalService {
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {
-        return Optional.ofNullable(utcInception).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(zoneId).minus(1L, ChronoUnit.HOURS));
+        return Optional.ofNullable(utcInception).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)).minus(1L, ChronoUnit.HOURS));
     }
 
     public ZonedDateTime getExpiration(ZoneId zoneId) {
-        return Optional.ofNullable(utcExpiration).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(zoneId).plus(1L, ChronoUnit.HOURS));
+        return Optional.ofNullable(utcExpiration).map(i -> i.withZoneSameInstant(zoneId)).orElseGet(() -> ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)).plus(1L, ChronoUnit.HOURS));
     }
 
     public boolean getSaleable() {
-        ZonedDateTime now = ZonedDateTime.now(Clock.systemUTC());
+        ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock());
         return getUtcInception().isBefore(now) && getUtcExpiration().isAfter(now);
     }
 

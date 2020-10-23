@@ -22,6 +22,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ValidationResult;
+import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.Errors;
@@ -35,7 +36,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static alfio.test.util.IntegrationTestUtil.TEST_CLOCK;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
@@ -44,8 +44,14 @@ import static org.mockito.Mockito.when;
 
 public class ValidatorTest {
 
-    private static final DateTimeModification VALID_EXPIRATION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).plusHours(1L));
-    private static final DateTimeModification VALID_INCEPTION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).minusDays(1L));
+    private static final DateTimeModification VALID_EXPIRATION;
+    private static final DateTimeModification VALID_INCEPTION;
+
+    static {
+        var clock = TestUtil.clockProvider().getClock();
+        VALID_EXPIRATION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clock).plusHours(1L));
+        VALID_INCEPTION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clock).minusDays(1L));
+    }
 
     private EventModification eventModification;
     private Errors errors;

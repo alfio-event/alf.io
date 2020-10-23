@@ -34,6 +34,7 @@ import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
+import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -47,7 +48,6 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -337,7 +337,7 @@ public class ExtensionManager {
             if(dynamicDiscountResult == null || dynamicDiscountResult.getDiscountType() == PromoCodeDiscount.DiscountType.NONE) {
                 return Optional.empty();
             }
-            var now = ZonedDateTime.now(Clock.systemUTC());
+            var now = ZonedDateTime.now(ClockProvider.clock());
             // dynamic discount is supposed to return a formatted amount in the event's currency
             var discountAmount = new BigDecimal(dynamicDiscountResult.getAmount());
             int discountAmountInCents = dynamicDiscountResult.getDiscountType() == PERCENTAGE ? discountAmount.intValue() : MonetaryUtil.unitToCents(discountAmount, event.getCurrency());

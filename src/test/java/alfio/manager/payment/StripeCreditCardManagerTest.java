@@ -24,6 +24,7 @@ import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.TransactionRequest;
 import alfio.repository.TicketRepository;
+import alfio.test.util.TestUtil;
 import com.stripe.exception.*;
 import com.stripe.net.RequestOptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,8 +36,8 @@ import java.util.Optional;
 
 import static alfio.manager.testSupport.StripeUtils.completeStripeConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.model.system.ConfigurationKeys.STRIPE_CC_ENABLED;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,7 +59,7 @@ public class StripeCreditCardManagerTest {
         TicketRepository ticketRepository = mock(TicketRepository.class);
         event = mock(Event.class);
         baseStripeManager = new BaseStripeManager(configurationManager, null, ticketRepository,  null);
-        stripeCreditCardManager = new StripeCreditCardManager(configurationManager, null, baseStripeManager);
+        stripeCreditCardManager = new StripeCreditCardManager(null, baseStripeManager, TestUtil.clockProvider());
     }
 
     @Test

@@ -37,7 +37,7 @@ public interface WaitingQueueRepository {
     @Query("select * from waiting_queue where id = :id")
     WaitingQueueSubscription loadById(@Bind("id") int id);
 
-    @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' order by creation asc limit :max for update")
+    @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' order by creation, id limit :max for update")
     List<WaitingQueueSubscription> loadWaiting(@Bind("eventId") int eventId, @Bind("max") int maxNumber);
 
     @Query("insert into waiting_queue (event_id, full_name, first_name, last_name, email_address, creation, status, user_language, subscription_type, selected_category_id) values(:eventId, :fullName, :firstName, :lastName, :emailAddress, :creation, 'WAITING', :userLanguage, :subscriptionType, :selectedCategoryId)")
