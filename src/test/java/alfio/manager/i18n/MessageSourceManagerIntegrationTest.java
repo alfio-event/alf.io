@@ -31,6 +31,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
+import alfio.util.ClockProvider;
 import alfio.util.Json;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -49,7 +50,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static alfio.test.util.IntegrationTestUtil.*;
+import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
+import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -87,8 +89,8 @@ public class MessageSourceManagerIntegrationTest extends BaseIntegrationTest {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(TEST_CLOCK).minusDays(1), LocalTime.now(TEST_CLOCK)),
-                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
                 Map.of("en", "desc"), BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);

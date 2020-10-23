@@ -27,6 +27,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.util.ClockProvider;
 import alfio.util.ErrorsCode;
 import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;
@@ -52,12 +53,13 @@ import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 @AllArgsConstructor
 public class PromoCodeRequestManager {
 
-    private SpecialPriceRepository specialPriceRepository;
-    private PromoCodeDiscountRepository promoCodeRepository;
-    private TicketCategoryRepository ticketCategoryRepository;
-    private EventManager eventManager;
-    private EventRepository eventRepository;
-    private TicketReservationManager ticketReservationManager;
+    private final SpecialPriceRepository specialPriceRepository;
+    private final PromoCodeDiscountRepository promoCodeRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
+    private final EventManager eventManager;
+    private final EventRepository eventRepository;
+    private final TicketReservationManager ticketReservationManager;
+    private final ClockProvider clockProvider;
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -128,7 +130,7 @@ public class PromoCodeRequestManager {
 
     public ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(Event event, String promoCode) {
         ZoneId eventZoneId = event.getZoneId();
-        ZonedDateTime now = ZonedDateTime.now(eventZoneId);
+        ZonedDateTime now = ZonedDateTime.now(clockProvider.withZone(eventZoneId));
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
         Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPublicPromoCodeInEventOrOrganization(event.getId(), trimmedCode));

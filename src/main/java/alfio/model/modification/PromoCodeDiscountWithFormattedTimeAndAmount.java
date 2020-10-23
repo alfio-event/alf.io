@@ -18,6 +18,7 @@ package alfio.model.modification;
 
 import alfio.model.EventStatistic;
 import alfio.model.PromoCodeDiscount;
+import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.experimental.Delegate;
@@ -42,11 +43,11 @@ public class PromoCodeDiscountWithFormattedTimeAndAmount {
     }
 
     public boolean isCurrentlyValid() {
-        return isCurrentlyValid(eventZoneId, ZonedDateTime.now(eventZoneId));
+        return isCurrentlyValid(eventZoneId, ZonedDateTime.now(ClockProvider.clock().withZone(eventZoneId)));
     }
     
     public boolean isExpired() {
-        return isExpired(eventZoneId, ZonedDateTime.now(eventZoneId));
+        return isExpired(eventZoneId, ZonedDateTime.now(ClockProvider.clock().withZone(eventZoneId)));
     }
     
     public String getFormattedStart() {

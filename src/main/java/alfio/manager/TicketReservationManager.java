@@ -150,8 +150,8 @@ public class TicketReservationManager {
     private final BillingDocumentRepository billingDocumentRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final Json json;
-    private final PromoCodeDiscountRepository promoCodeRepository;
     private final BillingDocumentManager billingDocumentManager;
+    private final ClockProvider clockProvider;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -201,8 +201,8 @@ public class TicketReservationManager {
                                     BillingDocumentRepository billingDocumentRepository,
                                     NamedParameterJdbcTemplate jdbcTemplate,
                                     Json json,
-                                    PromoCodeDiscountRepository promoCodeRepository,
-                                    BillingDocumentManager billingDocumentManager) {
+                                    BillingDocumentManager billingDocumentManager,
+                                    ClockProvider clockProvider) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -236,8 +236,8 @@ public class TicketReservationManager {
         this.billingDocumentRepository = billingDocumentRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.json = json;
-        this.promoCodeRepository = promoCodeRepository;
         this.billingDocumentManager = billingDocumentManager;
+        this.clockProvider = clockProvider;
     }
 
     /**
@@ -265,7 +265,7 @@ public class TicketReservationManager {
         Optional<PromoCodeDiscount> dynamicDiscount = createDynamicPromoCode(discount, event, list, reservationId);
 
         ticketReservationRepository.createNewReservation(reservationId,
-            ZonedDateTime.now(event.getZoneId()),
+            event.now(clockProvider),
             reservationExpiration, dynamicDiscount.or(() -> discount).map(PromoCodeDiscount::getId).orElse(null),
             locale.getLanguage(),
             event.getId(),
@@ -453,7 +453,7 @@ public class TicketReservationManager {
                         AdditionalServicePriceContainer pc = AdditionalServicePriceContainer.from(additionalServiceReservation.getAmount(), as, e, discount);
                         var currencyCode = pc.getCurrencyCode();
                         additionalServiceItemRepository.insert(UUID.randomUUID().toString(),
-                            ZonedDateTime.now(Clock.systemUTC()),
+                            ZonedDateTime.now(clockProvider.getClock()),
                             transactionId,
                             as.getId(),
                             AdditionalServiceItemStatus.PENDING,
@@ -715,7 +715,7 @@ public class TicketReservationManager {
         Validate.isTrue(ticketReservation.isPendingOfflinePayment(), "invalid status");
 
 
-        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now(event.getZoneId()));
+        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), event.now(clockProvider));
 
         registerAlfioTransaction(event, reservationId, PaymentProxy.OFFLINE);
 
@@ -749,12 +749,12 @@ public class TicketReservationManager {
         var transactionOptional = transactionRepository.loadOptionalByReservationId(reservationId);
         String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
         if(transactionOptional.isEmpty()) {
-            transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
+            transactionRepository.insert(transactionId, null, reservationId, event.now(clockProvider),
                 priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
                 platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
         } else if(paymentProxy == PaymentProxy.OFFLINE) {
             var transaction = transactionOptional.get();
-            transactionRepository.update(transaction.getId(), transactionId, null, ZonedDateTime.now(event.getZoneId()),
+            transactionRepository.update(transaction.getId(), transactionId, null, event.now(clockProvider),
                 platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
         } else {
             log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
@@ -1008,7 +1008,7 @@ public class TicketReservationManager {
 
         Date eventTime = new Date();
         auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
-        ticketReservationRepository.updateRegistrationTimestamp(reservationId, ZonedDateTime.now(spec.getEvent().getZoneId()));
+        ticketReservationRepository.updateRegistrationTimestamp(reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getEvent().getZoneId())));
         if(spec.isTcAccepted()) {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getEvent().getTermsAndConditionsUrl())));
         }
@@ -1073,7 +1073,7 @@ public class TicketReservationManager {
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
         specialPriceRepository.updateStatusForReservation(singletonList(reservationId), Status.TAKEN.toString());
-        ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
         int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
@@ -1454,13 +1454,13 @@ public class TicketReservationManager {
         return ticketReservationRepository.findOptionalReservationById(reservationId);
     }
 
-    private Optional<TicketReservation> findByIdForNotification(String reservationId, ZoneId eventZoneId, int quietPeriod) {
-        return findById(reservationId).filter(notificationNotSent(eventZoneId, quietPeriod));
+    private Optional<TicketReservation> findByIdForNotification(String reservationId, Clock clock, int quietPeriod) {
+        return findById(reservationId).filter(notificationNotSent(clock, quietPeriod));
     }
 
-    private static Predicate<TicketReservation> notificationNotSent(ZoneId eventZoneId, int quietPeriod) {
-        return r -> r.latestNotificationTimestamp(eventZoneId)
-                .map(t -> t.truncatedTo(ChronoUnit.DAYS).plusDays(quietPeriod).isBefore(ZonedDateTime.now(eventZoneId).truncatedTo(ChronoUnit.DAYS)))
+    private static Predicate<TicketReservation> notificationNotSent(Clock clock, int quietPeriod) {
+        return r -> r.latestNotificationTimestamp(clock.getZone())
+                .map(t -> t.truncatedTo(ChronoUnit.DAYS).plusDays(quietPeriod).isBefore(ZonedDateTime.now(clock).truncatedTo(ChronoUnit.DAYS)))
                 .orElse(true);
     }
 
@@ -1580,7 +1580,7 @@ public class TicketReservationManager {
             Locale oldUserLocale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
             String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
             notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
-            if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
+            if(event.getBegin().isBefore(event.now(clockProvider))) {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
             }
@@ -1700,11 +1700,11 @@ public class TicketReservationManager {
 
     //called each hour
     public void sendReminderForOfflinePaymentsToEventManagers() {
-        eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC())).stream().filter(event -> {
-            ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId());
+        eventRepository.findAllActives(ZonedDateTime.now(clockProvider.getClock())).stream().filter(event -> {
+            ZonedDateTime dateTimeForEvent = event.now(clockProvider);
             return dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour() == 5; //only for the events at 5:00 local time
         }).forEachOrdered(event -> {
-            ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).plusDays(1);
+            ZonedDateTime dateTimeForEvent = event.now(clockProvider).truncatedTo(ChronoUnit.DAYS).plusDays(1);
             List<TicketReservationInfo> reservations = ticketReservationRepository.findAllOfflinePaymentReservationWithExpirationBeforeForUpdate(dateTimeForEvent, event.getId());
             log.info("for event {} there are {} pending offline payments to handle", event.getId(), reservations.size());
             if(!reservations.isEmpty()) {
@@ -1742,7 +1742,7 @@ public class TicketReservationManager {
             var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             int daysBeforeStart = configurationManager.getFor(ASSIGNMENT_REMINDER_START, ConfigurationLevel.event(event)).getValueAsIntOrDefault(10);
             List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
-            Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
+            Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, clockProvider.withZone(event.getZoneId()), daysBeforeStart).isPresent()).collect(toSet());
             tickets.stream()
                     .filter(t -> notYetNotifiedReservations.contains(t.getTicketsReservationId()))
                     .forEach(t -> {
@@ -1761,7 +1761,7 @@ public class TicketReservationManager {
         return eventRepository.findAll().stream()
                 .filter(e -> {
                     int daysBeforeStart = configurationManager.getFor(ASSIGNMENT_REMINDER_START, ConfigurationLevel.event(e)).getValueAsIntOrDefault(10);
-                    int days = (int) ChronoUnit.DAYS.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate());
+                    int days = (int) ChronoUnit.DAYS.between(ZonedDateTime.now(clockProvider.withZone(e.getZoneId())).toLocalDate(), e.getBegin().toLocalDate());
                     return days > 0 && days <= daysBeforeStart;
                 });
     }
@@ -1774,12 +1774,12 @@ public class TicketReservationManager {
                 ZoneId eventZoneId = event.getZoneId();
                 int quietPeriod = configurationManager.getFor(ASSIGNMENT_REMINDER_INTERVAL, ConfigurationLevel.event(event)).getValueAsIntOrDefault(3);
                 p.getRight().stream()
-                    .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
+                    .map(id -> findByIdForNotification(id, clockProvider.withZone(eventZoneId), quietPeriod))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .forEach(reservation -> {
                         Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
-                        ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
+                        ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(clockProvider.withZone(eventZoneId)));
                         Locale locale = findReservationLanguage(reservation.getId());
                         notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", 
                         		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
@@ -2229,7 +2229,7 @@ public class TicketReservationManager {
     }
 
     public void checkOfflinePaymentsStatus() {
-        eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC()))
+        eventRepository.findAllActives(ZonedDateTime.now(clockProvider.getClock()))
             .forEach(this::checkOfflinePaymentsForEvent);
     }
 

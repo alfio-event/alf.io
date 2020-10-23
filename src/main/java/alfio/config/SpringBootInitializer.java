@@ -17,6 +17,7 @@
 package alfio.config;
 
 import alfio.manager.system.ExternalConfiguration;
+import alfio.util.ClockProvider;
 import com.openhtmltopdf.util.XRLog;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -31,6 +32,7 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.servlet.Filter;
 import javax.servlet.SessionCookieConfig;
+import java.time.Clock;
 import java.util.logging.Level;
 
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
@@ -68,5 +70,10 @@ public class SpringBootInitializer {
         cef.setEncoding("UTF-8");
         cef.setForceEncoding(true);
         return cef;
+    }
+
+    @Bean
+    public ClockProvider clockProvider() {
+        return ClockProvider.init(Clock.systemUTC());
     }
 }

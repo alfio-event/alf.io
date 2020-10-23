@@ -40,10 +40,7 @@ import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
-import alfio.util.Json;
-import alfio.util.LocaleUtil;
-import alfio.util.TemplateManager;
-import alfio.util.TemplateResource;
+import alfio.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
@@ -62,7 +59,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -111,6 +107,7 @@ public class AdminReservationManager {
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final BillingDocumentManager billingDocumentManager;
+    private final ClockProvider clockProvider;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username, Notification notification) {
@@ -378,7 +375,7 @@ public class AdminReservationManager {
         return input.flatMap(t -> {
             String reservationId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
-            ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(event.getZoneId()), validity, null,
+            ticketReservationRepository.createNewReservation(reservationId, event.now(clockProvider), validity, null,
                 arm.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(),
@@ -509,7 +506,7 @@ public class AdminReservationManager {
     private Result<TicketCategory> createCategory(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
         Category category = ti.getCategory();
         List<Attendee> attendees = ti.getAttendees();
-        DateTimeModification inception = fromZonedDateTime(ZonedDateTime.now(event.getZoneId()));
+        DateTimeModification inception = fromZonedDateTime(event.now(clockProvider));
 
         int tickets = attendees.size();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
@@ -564,7 +561,7 @@ public class AdminReservationManager {
     }
 
     private void createMissingTickets(Event event, int tickets) {
-        final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), tickets, Ticket.TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
+        final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(event.now(clockProvider).toInstant()), tickets, Ticket.TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
         ticketRepository.bulkTicketInitialization(params);
     }
 

@@ -31,6 +31,7 @@ import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
@@ -56,7 +57,8 @@ import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 import static alfio.manager.TicketReservationManagerIntegrationTest.DESCRIPTION;
-import static alfio.test.util.IntegrationTestUtil.*;
+import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
+import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -101,8 +103,8 @@ public class TicketReservationManagerConcurrentTest {
         transactionTemplate.execute(tx -> {
             List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                    new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
-                    new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                     DESCRIPTION, BigDecimal.TEN, true, "", true, null,
                     null, null, null, null, null, TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT, null, AlfioMetadata.empty()));
 
@@ -113,7 +115,7 @@ public class TicketReservationManagerConcurrentTest {
             firstCategoryId = ticketCategoryRepository.findAllTicketCategories(eventId).get(0).getId();
 
             specialPriceTokenGenerator.generatePendingCodesForCategory(firstCategoryId);
-            promoCodeDiscountRepository.addPromoCode(ACCESS_CODE, eventId, event.getOrganizationId(), ZonedDateTime.now(TEST_CLOCK), ZonedDateTime.now(TEST_CLOCK).plusDays(1), 0, PromoCodeDiscount.DiscountType.NONE, null, 100, null, null, PromoCodeDiscount.CodeType.ACCESS, firstCategoryId);
+            promoCodeDiscountRepository.addPromoCode(ACCESS_CODE, eventId, event.getOrganizationId(), ZonedDateTime.now(ClockProvider.clock()), ZonedDateTime.now(ClockProvider.clock()).plusDays(1), 0, PromoCodeDiscount.DiscountType.NONE, null, 100, null, null, PromoCodeDiscount.CodeType.ACCESS, firstCategoryId);
             promoCodeDiscount = promoCodeDiscountRepository.findPublicPromoCodeInEventOrOrganization(eventId, ACCESS_CODE).orElseThrow();
             return null;
         });

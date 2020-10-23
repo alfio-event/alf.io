@@ -28,6 +28,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
+import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static alfio.test.util.IntegrationTestUtil.*;
+import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
+import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -90,8 +92,8 @@ class DemoModeDataManagerIntegrationTest extends BaseIntegrationTest {
     void deleteExpiredUsersAndEvents() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
-                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 Map.of("en", "desc"), BigDecimal.TEN, false, "", false, null,
                 null, null, null, null, 0, null, null, AlfioMetadata.empty()));
 
@@ -109,8 +111,8 @@ class DemoModeDataManagerIntegrationTest extends BaseIntegrationTest {
     void doNotDeleteNewUsers() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
-                new DateTimeModification(LocalDate.now(TEST_CLOCK), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 Map.of("en", "desc"), BigDecimal.TEN, false, "", false, null,
                 null, null, null, null, 0, null, null, AlfioMetadata.empty()));
 

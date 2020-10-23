@@ -33,6 +33,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -86,8 +87,8 @@ public class CheckInManagerIntegrationTest {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(TEST_CLOCK).minusDays(1), LocalTime.now(TEST_CLOCK)),
-                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false,
                 "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
@@ -100,8 +101,8 @@ public class CheckInManagerIntegrationTest {
             1,
             100,
             2,
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).minusDays(1)),
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(TEST_CLOCK).plusDays(1)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).minusDays(1)),
+            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1)),
             BigDecimal.ZERO,
             AdditionalService.VatType.INHERITED,
             List.of(),

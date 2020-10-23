@@ -25,6 +25,8 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.test.util.TestUtil;
+import alfio.util.ClockProvider;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +41,6 @@ import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
-import static alfio.test.util.IntegrationTestUtil.TEST_CLOCK;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -93,7 +94,8 @@ public class WaitingQueueSubscriptionProcessorTest {
             messageSourceManager,
             templateManager,
             ticketRepository,
-            transactionManager);
+            transactionManager,
+            TestUtil.clockProvider());
     }
 
     @Test
@@ -120,7 +122,7 @@ public class WaitingQueueSubscriptionProcessorTest {
         when(messageSource.getMessage(anyString(), any(), eq(Locale.ENGLISH))).thenReturn("subject");
         when(subscription.getLocale()).thenReturn(Locale.ENGLISH);
         when(subscription.getEmailAddress()).thenReturn("me");
-        ZonedDateTime expiration = ZonedDateTime.now(TEST_CLOCK).plusDays(1);
+        ZonedDateTime expiration = ZonedDateTime.now(ClockProvider.clock()).plusDays(1);
         when(waitingQueueManager.distributeSeats(eq(event))).thenReturn(Stream.of(Triple.of(subscription, reservation, expiration)));
         String reservationId = "reservation-id";
         when(ticketReservationManager.createTicketReservation(eq(event), anyList(), anyList(), any(Date.class), eq(Optional.empty()), any(Locale.class), eq(true))).thenReturn(reservationId);

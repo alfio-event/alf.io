@@ -28,6 +28,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.test.util.TestUtil;
 import com.stripe.model.Charge;
 import com.stripe.model.ChargeCollection;
 import com.stripe.model.PaymentIntent;
@@ -89,7 +90,7 @@ class StripeWebhookPaymentManagerTest {
         ticketReservation = mock(TicketReservation.class);
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
-        stripeWebhookPaymentManager = new StripeWebhookPaymentManager(configurationManager, ticketRepository, transactionRepository, configurationRepository, ticketReservationRepository, eventRepository, auditingRepository, environment);
+        stripeWebhookPaymentManager = new StripeWebhookPaymentManager(configurationManager, ticketRepository, transactionRepository, configurationRepository, ticketReservationRepository, eventRepository, auditingRepository, environment, TestUtil.clockProvider());
     }
 
     @Test

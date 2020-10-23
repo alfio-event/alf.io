@@ -27,6 +27,7 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.util.ClockProvider;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +66,7 @@ public class WaitingQueueSubscriptionProcessor {
     private final TemplateManager templateManager;
     private final TicketRepository ticketRepository;
     private final PlatformTransactionManager transactionManager;
+    private final ClockProvider clockProvider;
 
     public void handleWaitingTickets() {
         Map<Boolean, List<Event>> activeEvents = eventManager.getActiveEvents().stream()
@@ -88,7 +90,7 @@ public class WaitingQueueSubscriptionProcessor {
 
     public void revertTicketToFreeIfCategoryIsExpired(Event event) {
         int eventId = event.getId();
-        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, ZonedDateTime.now(event.getZoneId()));
+        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, event.now(clockProvider));
         Map<Pair<Integer, Boolean>, List<Integer>> releasedByCategory = releasedButExpired.stream().collect(Collectors.groupingBy(
             t-> Pair.of(t.getTicketCategoryId(), t.isTicketCategoryBounded()),
             Collectors.mapping(TicketInfo::getTicketId, toList())

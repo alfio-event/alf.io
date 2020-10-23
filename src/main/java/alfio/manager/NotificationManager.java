@@ -53,7 +53,6 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,7 +68,6 @@ import static alfio.model.system.ConfigurationKeys.BASE_URL;
 @Log4j2
 public class NotificationManager {
 
-    public static final Clock UTC = Clock.systemUTC();
     private final Mailer mailer;
     private final MessageSourceManager messageSourceManager;
     private final EmailMessageRepository emailMessageRepository;
@@ -79,6 +77,7 @@ public class NotificationManager {
     private final ConfigurationManager configurationManager;
     private final Gson gson;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final ClockProvider clockProvider;
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
@@ -99,7 +98,8 @@ public class NotificationManager {
                                TicketRepository ticketRepository,
                                TicketFieldRepository ticketFieldRepository,
                                AdditionalServiceItemRepository additionalServiceItemRepository,
-                               ExtensionManager extensionManager) {
+                               ExtensionManager extensionManager,
+                               ClockProvider clockProvider) {
         this.messageSourceManager = messageSourceManager;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
@@ -112,6 +112,7 @@ public class NotificationManager {
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
         this.gson = builder.create();
+        this.clockProvider = clockProvider;
         attachmentTransformer = new EnumMap<>(Mailer.AttachmentIdentifier.class);
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository, organizationRepository, messageSourceManager));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(eventRepository,
@@ -244,7 +245,7 @@ public class NotificationManager {
         tx.execute(status -> {
             emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
                 id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
-                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(UTC))
+                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock()))
             );
             return null;
         });
@@ -282,7 +283,7 @@ public class NotificationManager {
         Optional<Integer> existing = emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum);
 
         existing.ifPresentOrElse(id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
-            () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+            () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock())));
     }
 
     public Pair<Integer, List<LightweightMailMessage>> loadAllMessagesForEvent(int eventId, Integer page, String search) {
@@ -309,7 +310,7 @@ public class NotificationManager {
 
         AtomicInteger counter = new AtomicInteger();
 
-        eventRepository.findAllActiveIds(ZonedDateTime.now(UTC))
+        eventRepository.findAllActiveIds(ZonedDateTime.now(clockProvider.getClock()))
             .stream()
             .flatMap(id -> emailMessageRepository.loadIdsWaitingForProcessing(id, now).stream())
             .distinct()
@@ -347,7 +348,7 @@ public class NotificationManager {
     private void sendMessage(EventAndOrganizationId event, EmailMessage message) {
         String displayName = eventRepository.getDisplayNameById(message.getEventId());
         mailer.send(event, displayName, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.ofNullable(message.getHtmlMessage()), decodeAttachments(message.getAttachments()));
-        emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
+        emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(clockProvider.getClock()), Collections.singletonList(IN_PROCESS.name()));
     }
 
     private String encodeAttachments(Mailer.Attachment... files) {

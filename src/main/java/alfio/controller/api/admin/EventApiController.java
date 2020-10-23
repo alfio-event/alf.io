@@ -109,6 +109,7 @@ public class EventApiController {
     private final FileUploadManager fileUploadManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
+    private final ClockProvider clockProvider;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -665,9 +666,9 @@ public class EventApiController {
         return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName()).map(event -> {
             var eventId = event.getId();
             var zoneId = event.getZoneId();
-            var from = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationConfirmedTimestamp(event.getId()), () -> ZonedDateTime.now(zoneId).minusDays(1));
-            var reservedFrom = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationCreatedTimestamp(event.getId()), () -> ZonedDateTime.now(zoneId).minusDays(1));
-            var to = parseDate(t, zoneId, Optional::empty, () -> ZonedDateTime.now(zoneId)).plusDays(1L);
+            var from = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationConfirmedTimestamp(event.getId()), () -> ZonedDateTime.now(clockProvider.getClock().withZone(zoneId)).minusDays(1));
+            var reservedFrom = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationCreatedTimestamp(event.getId()), () -> ZonedDateTime.now(clockProvider.getClock().withZone(zoneId)).minusDays(1));
+            var to = parseDate(t, zoneId, Optional::empty, () -> ZonedDateTime.now(clockProvider.getClock().withZone(zoneId))).plusDays(1L);
 
             var granularity = getGranularity(reservedFrom, to);
             var ticketSoldStatistics = eventStatisticsManager.getTicketSoldStatistics(eventId, from, to, granularity);

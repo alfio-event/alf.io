@@ -36,6 +36,7 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.ClockProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -104,8 +105,8 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
 
             List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", 10,
-                    new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(1), LocalTime.now(TEST_CLOCK)),
-                    new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(2), LocalTime.now(TEST_CLOCK)),
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(2), LocalTime.now(ClockProvider.clock())),
                     DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
             Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
             event = pair.getKey();
@@ -132,8 +133,8 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
             assertEquals(18, ticketRepository.findFreeByEventId(event.getId()).size());
 
             TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
-                new DateTimeModification(LocalDate.now(TEST_CLOCK).minusDays(1), LocalTime.now(TEST_CLOCK)),
-                new DateTimeModification(LocalDate.now(TEST_CLOCK).plusDays(5), LocalTime.now(TEST_CLOCK)),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
             eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
