@@ -33,7 +33,6 @@ import alfio.util.Validator;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -74,7 +73,7 @@ public class BookingInfoTicketLoader {
                 .orElse(event.getBegin());
             formattedDates = Formatters.getFormattedDate(event, checkInDate, "common.ticket-category.date-format",
                 messageSourceManager.getMessageSourceForEvent(event));
-            onlineEventStarted = ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).isAfter(checkInDate);
+            onlineEventStarted = event.now(clockProvider).isAfter(checkInDate);
         }
 
         return toBookingInfoTicket(ticket,

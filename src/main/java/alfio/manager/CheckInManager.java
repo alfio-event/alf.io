@@ -116,7 +116,7 @@ public class CheckInManager {
      */
     public CheckInStatus performCheckinForOnlineEvent(Ticket ticket, EventCheckInInfo event, TicketCategory tc) {
         Validate.isTrue(event.getFormat() == Event.EventFormat.ONLINE);
-        if(!tc.hasValidCheckIn(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())), event.getZoneId())) {
+        if(!tc.hasValidCheckIn(event.now(clockProvider), event.getZoneId())) {
             return INVALID_TICKET_CATEGORY_CHECK_IN_DATE;
         }
         if(ticket.isCheckedIn()) {
@@ -258,7 +258,7 @@ public class CheckInManager {
                     return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(INVALID_TICKET_CATEGORY_CHECK_IN_DATE, "Not allowed to check in at this time."));
                 }
                 var ticketsReservationId = ticket.getTicketsReservationId();
-                int previousScan = auditingRepository.countAuditsOfTypesInTheSameDay(ticketsReservationId, Set.of(CHECK_IN.name(), MANUAL_CHECK_IN.name(), BADGE_SCAN.name()), ZonedDateTime.now(clockProvider.withZone(event.getZoneId())));
+                int previousScan = auditingRepository.countAuditsOfTypesInTheSameDay(ticketsReservationId, Set.of(CHECK_IN.name(), MANUAL_CHECK_IN.name(), BADGE_SCAN.name()), event.now(clockProvider));
                 if(previousScan > 0) {
                     return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(BADGE_SCAN_ALREADY_DONE, "Badge scan already done"));
                 }
@@ -269,7 +269,7 @@ public class CheckInManager {
 
         String code = ticketCode.get();
 
-        ZonedDateTime now = ZonedDateTime.now(clockProvider.withZone(event.getZoneId()));
+        ZonedDateTime now = event.now(clockProvider);
         if(!tc.hasValidCheckIn(now, event.getZoneId())) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - hh:mm");
             String from = tc.getValidCheckInFrom() == null ? ".." : formatter.format(tc.getValidCheckInFrom(event.getZoneId()));

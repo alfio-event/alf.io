@@ -27,6 +27,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -65,6 +66,8 @@ public class EventUtilTest {
         configurationManager = mock(ConfigurationManager.class);
         
         when(event.getZoneId()).thenReturn(zone);
+        when(event.now(any(ClockProvider.class))).thenCallRealMethod();
+        when(event.now(any(Clock.class))).thenCallRealMethod();
         when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));

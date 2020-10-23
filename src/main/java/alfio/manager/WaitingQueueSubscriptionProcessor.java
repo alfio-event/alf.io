@@ -90,7 +90,7 @@ public class WaitingQueueSubscriptionProcessor {
 
     public void revertTicketToFreeIfCategoryIsExpired(Event event) {
         int eventId = event.getId();
-        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, ZonedDateTime.now(clockProvider.withZone(event.getZoneId())));
+        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, event.now(clockProvider));
         Map<Pair<Integer, Boolean>, List<Integer>> releasedByCategory = releasedButExpired.stream().collect(Collectors.groupingBy(
             t-> Pair.of(t.getTicketCategoryId(), t.isTicketCategoryBounded()),
             Collectors.mapping(TicketInfo::getTicketId, toList())

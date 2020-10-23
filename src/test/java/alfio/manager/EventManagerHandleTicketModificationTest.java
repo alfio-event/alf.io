@@ -21,11 +21,13 @@ import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.repository.TicketRepository;
 import alfio.test.util.TestUtil;
+import alfio.util.ClockProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -55,6 +57,7 @@ public class EventManagerHandleTicketModificationTest {
         ticketRepository = mock(TicketRepository.class);
 
         when(event.getId()).thenReturn(eventId);
+        when(event.now(any(ClockProvider.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock().withZone(ZoneId.systemDefault())));
         eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, TestUtil.clockProvider());
         when(original.getId()).thenReturn(originalCategoryId);
         when(updated.getId()).thenReturn(updatedCategoryId);

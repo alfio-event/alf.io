@@ -450,7 +450,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         String reservationId = reserveTickets(event, first, 2);
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
         assertTrue(waitingQueueManager.subscribe(event, new CustomerName("John Doe 2", "John", "Doe 2", event.mustUseFirstAndLastName()), "john@doe2.com", null, Locale.ENGLISH));
-        ticketCategoryRepository.update(first.getId(), first.getName(), first.getInception(event.getZoneId()), ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).minusMinutes(1L), first.getMaxTickets(), first.isAccessRestricted(),
+        ticketCategoryRepository.update(first.getId(), first.getName(), first.getInception(event.getZoneId()), event.now(clockProvider).minusMinutes(1L), first.getMaxTickets(), first.isAccessRestricted(),
             MonetaryUtil.unitToCents(first.getPrice(), first.getCurrencyCode()), first.getCode(), null, null, null, null, first.getTicketCheckInStrategy());
 
         List<Integer> ticketIds = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
@@ -458,7 +458,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);
 
-        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(event.getId(), ZonedDateTime.now(clockProvider.withZone(event.getZoneId())));
+        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(event.getId(), event.now(clockProvider));
         assertEquals(2, releasedButExpired.size());
 
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());

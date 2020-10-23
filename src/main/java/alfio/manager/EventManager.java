@@ -811,14 +811,14 @@ public class EventManager {
                 throw new IllegalStateException("Cannot invalidate "+absDifference+" tickets. There are only "+actualDifference+" free tickets");
             }
             ticketRepository.invalidateTickets(ids);
-            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
+            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(event.now(clockProvider).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
             ticketRepository.bulkTicketInitialization(params);
         }
     }
 
     private void createAllTicketsForEvent(Event event, EventModification em) {
         Validate.notNull(em.getAvailableSeats());
-        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())), event, em.getAvailableSeats(), TicketStatus.FREE);
+        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(event.now(clockProvider), event, em.getAvailableSeats(), TicketStatus.FREE);
         ticketRepository.bulkTicketInitialization(params);
     }
 

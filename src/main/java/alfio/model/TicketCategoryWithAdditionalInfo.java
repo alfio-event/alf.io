@@ -28,7 +28,6 @@ import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -147,7 +146,7 @@ public class TicketCategoryWithAdditionalInfo implements StatisticsContainer, Pr
     }
 
     public boolean isExpired() {
-        return ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId())).isAfter(ticketCategory.getExpiration(event.getZoneId()));
+        return event.now(ClockProvider.clock()).isAfter(ticketCategory.getExpiration(event.getZoneId()));
     }
 
     public boolean isContainingOrphans() {

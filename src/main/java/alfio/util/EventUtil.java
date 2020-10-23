@@ -88,7 +88,7 @@ public final class EventUtil {
 
     private static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, Predicate<EventAndOrganizationId> noTicketsAvailable, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> confVal) {
         return findLastCategory(categories).map(lastCategory -> {
-            ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId()));
+            ZonedDateTime now = event.now(ClockProvider.clock());
             if(isPreSales(event, categories)) {
                 return confVal.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault();
             } else if(confVal.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault()) {
@@ -116,7 +116,7 @@ public final class EventUtil {
     }
 
     public static boolean isPreSales(Event event, List<SaleableTicketCategory> categories) {
-        ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId()));
+        ZonedDateTime now = event.now(ClockProvider.clock());
         return findFirstCategory(categories).map(c -> now.isBefore(c.getZonedInception())).orElse(false);
     }
 

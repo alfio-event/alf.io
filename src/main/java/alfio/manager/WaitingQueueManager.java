@@ -74,7 +74,7 @@ public class WaitingQueueManager {
             WaitingQueueSubscription.Type subscriptionType = getSubscriptionType(event);
             validateSubscriptionType(event, subscriptionType);
             validateSelectedCategoryId(event.getId(), selectedCategoryId);
-            AffectedRowCountAndKey<Integer> key = waitingQueueRepository.insert(event.getId(), customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), email, ZonedDateTime.now(clockProvider.withZone(event.getZoneId())), userLanguage.getLanguage(), subscriptionType, selectedCategoryId);
+            AffectedRowCountAndKey<Integer> key = waitingQueueRepository.insert(event.getId(), customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), email, event.now(clockProvider), userLanguage.getLanguage(), subscriptionType, selectedCategoryId);
             notifySubscription(event, customerName, email, userLanguage, subscriptionType);
             extensionManager.handleWaitingQueueSubscription(waitingQueueRepository.loadById(key.getKey()));
             return true;
@@ -107,7 +107,7 @@ public class WaitingQueueManager {
     }
 
     private WaitingQueueSubscription.Type getSubscriptionType(Event event) {
-        ZonedDateTime now = ZonedDateTime.now(clockProvider.withZone(event.getZoneId()));
+        ZonedDateTime now = event.now(clockProvider);
         return ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
                 .filter(tc -> !tc.isAccessRestricted())
                 .filter(tc -> now.isAfter(tc.getInception(event.getZoneId())))
@@ -160,7 +160,7 @@ public class WaitingQueueManager {
         // all other people, we must process their a little bit before the sale period starts
         Optional<TicketCategory> categoryWithInceptionInFuture = ticketCategories.stream()
                 .min(TicketCategory.COMPARATOR)
-                .filter(t -> ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).isBefore(t.getInception(event.getZoneId()).minusMinutes(5)));
+                .filter(t -> event.now(clockProvider).isBefore(t.getInception(event.getZoneId()).minusMinutes(5)));
         int ticketsNeeded = Math.min(waitingPeople, eventRepository.countExistingTickets(event.getId()));
         if(ticketsNeeded > 0) {
             preReserveIfNeeded(event, ticketsNeeded);
@@ -219,7 +219,7 @@ public class WaitingQueueManager {
             .filter(t -> t.getCategoryId() != null || !unboundedCategories.isEmpty())
             .iterator();
         int expirationTimeout = configurationManager.getFor(WAITING_QUEUE_RESERVATION_TIMEOUT, ConfigurationLevel.event(event)).getValueAsIntOrDefault(4);
-        ZonedDateTime expiration = ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
+        ZonedDateTime expiration = event.now(clockProvider).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
 
         if(!tickets.hasNext()) {
             log.warn("Unable to assign tickets, returning an empty stream");

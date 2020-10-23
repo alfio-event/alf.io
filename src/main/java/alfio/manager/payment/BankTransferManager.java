@@ -134,7 +134,7 @@ public class BankTransferManager implements PaymentProvider {
 
     public static ZonedDateTime getOfflinePaymentDeadline(PaymentContext context, ConfigurationManager configurationManager) {
         Event event = context.getEvent();
-        ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId()));
+        ZonedDateTime now = event.now(ClockProvider.clock());
         int waitingPeriod = getOfflinePaymentWaitingPeriod(context, configurationManager).orElse( 0 );
         if(waitingPeriod == 0) {
             log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");
@@ -151,7 +151,7 @@ public class BankTransferManager implements PaymentProvider {
     }
 
     private static OptionalInt getOfflinePaymentWaitingPeriod(Event event, int configuredValue) {
-        ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock().withZone(event.getZoneId()));
+        ZonedDateTime now = event.now(ClockProvider.clock());
         ZonedDateTime eventBegin = event.getBegin();
         int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
         if (daysToBegin < 0) {

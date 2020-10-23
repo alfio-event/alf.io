@@ -59,7 +59,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -376,7 +375,7 @@ public class AdminReservationManager {
         return input.flatMap(t -> {
             String reservationId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
-            ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.withZone(event.getZoneId())), validity, null,
+            ticketReservationRepository.createNewReservation(reservationId, event.now(clockProvider), validity, null,
                 arm.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(),
@@ -507,7 +506,7 @@ public class AdminReservationManager {
     private Result<TicketCategory> createCategory(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
         Category category = ti.getCategory();
         List<Attendee> attendees = ti.getAttendees();
-        DateTimeModification inception = fromZonedDateTime(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())));
+        DateTimeModification inception = fromZonedDateTime(event.now(clockProvider));
 
         int tickets = attendees.size();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
@@ -562,7 +561,7 @@ public class AdminReservationManager {
     }
 
     private void createMissingTickets(Event event, int tickets) {
-        final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).toInstant()), tickets, Ticket.TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
+        final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(event.now(clockProvider).toInstant()), tickets, Ticket.TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
         ticketRepository.bulkTicketInitialization(params);
     }
 

@@ -383,7 +383,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     public void saveToken(String reservationId, Event event, PayPalToken token) {
         PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository);
         transactionRepository.insert(reservationId, token.getPaymentId(), reservationId,
-            ZonedDateTime.now(clockProvider.withZone(event.getZoneId())), 0, event.getCurrency(), "Paypal token", PaymentProxy.PAYPAL.name(), 0, 0,
+            event.now(clockProvider), 0, event.getCurrency(), "Paypal token", PaymentProxy.PAYPAL.name(), 0, 0,
             alfio.model.transaction.Transaction.Status.PENDING, Map.of(PaymentManager.PAYMENT_TOKEN, json.asJsonString(token)));
     }
 

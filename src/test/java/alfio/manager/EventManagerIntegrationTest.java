@@ -649,8 +649,8 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = eventAndUser.getLeft();
         String username = eventAndUser.getRight();
         TicketCategoryModification tcm = new TicketCategoryModification(null, "additional", 20,
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).minusMinutes(1)),
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).plusDays(5)),
+            DateTimeModification.fromZonedDateTime(event.now(clockProvider).minusMinutes(1)),
+            DateTimeModification.fromZonedDateTime(event.now(clockProvider).plusDays(5)),
             Collections.emptyMap(), BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
         Result<Integer> result = eventManager.insertCategory(event, tcm, username);
         assertTrue(result.isSuccess());
@@ -664,8 +664,8 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = eventAndUser.getLeft();
         String username = eventAndUser.getRight();
         TicketCategoryModification tcm = new TicketCategoryModification(null, "additional", 20,
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).minusMinutes(1)),
-            DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).plusDays(5)),
+            DateTimeModification.fromZonedDateTime(event.now(clockProvider).minusMinutes(1)),
+            DateTimeModification.fromZonedDateTime(event.now(clockProvider).plusDays(5)),
             Collections.emptyMap(), BigDecimal.TEN, true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
         Result<Integer> result = eventManager.insertCategory(event, tcm, username);
         assertTrue(result.isSuccess());

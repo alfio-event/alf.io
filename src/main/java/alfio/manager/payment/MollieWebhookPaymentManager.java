@@ -444,11 +444,11 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                         case "failed":
                         case "expired":
                             transactionMetadata.put("paymentMethod", Optional.ofNullable(body.getPaymentMethod()).map(PaymentMethod::name).orElse(null));
-                            transactionRepository.update(transaction.getId(), paymentId, paymentId, ZonedDateTime.now(clockProvider.withZone(event.getZoneId())),
+                            transactionRepository.update(transaction.getId(), paymentId, paymentId, event.now(clockProvider),
                                 transaction.getPlatformFee(), transaction.getGatewayFee(), transaction.getStatus(), transactionMetadata);
                             return status.equals("failed") ? PaymentWebhookResult.failed("failed") : PaymentWebhookResult.cancelled();
                         case "canceled":
-                            transactionRepository.update(transaction.getId(), paymentId, paymentId, ZonedDateTime.now(clockProvider.withZone(event.getZoneId())),
+                            transactionRepository.update(transaction.getId(), paymentId, paymentId, event.now(clockProvider),
                                 0L, 0L, Transaction.Status.CANCELLED, transaction.getMetadata());
                             return PaymentWebhookResult.cancelled();
                         case "open":

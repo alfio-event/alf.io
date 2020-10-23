@@ -16,14 +16,21 @@
  */
 package alfio.model;
 
+import alfio.util.ClockProvider;
+
+import java.time.Clock;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-public interface EventCheckInInfo extends EventTimeZoneInfo {
+interface EventTimeZoneInfo {
 
-    int getId();
-    String getPrivateKey();
-    ZonedDateTime getBegin();
-    ZonedDateTime getEnd();
-    Event.EventFormat getFormat();
+    ZoneId getZoneId();
 
+    default ZonedDateTime now(ClockProvider clockProvider) {
+        return ZonedDateTime.now(clockProvider.withZone(getZoneId()));
+    }
+
+    default ZonedDateTime now(Clock clock) {
+        return ZonedDateTime.now(clock.withZone(getZoneId()));
+    }
 }

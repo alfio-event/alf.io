@@ -201,7 +201,7 @@ public class DataMigrator {
         if(!alreadyDefined || optional.filter(this::needsFixing).isPresent()) {
             transactionTemplate.execute(s -> {
                 //optional.ifPresent(eventMigration -> eventMigrationRepository.lockEventMigrationForUpdate(eventMigration.getId()));
-                if(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())).isBefore(event.getEnd())) {
+                if(event.now(clockProvider).isBefore(event.getEnd())) {
                     fixAvailableSeats(event);
                     fillDescriptions(event);
                     fixCategoriesSize(event);
@@ -226,7 +226,7 @@ public class DataMigrator {
     }
 
     private void createBillingDocuments(Event event) {
-        if(event.getEnd().isAfter(ZonedDateTime.now(clockProvider.withZone(event.getZoneId())))) {
+        if(event.getEnd().isAfter(event.now(clockProvider))) {
             List<String> reservations = jdbc.queryForList("select id from tickets_reservation where event_id_fk = :eventId and status in ('OFFLINE_PAYMENT', 'COMPLETE') and invoice_number is not null and id not in(select distinct reservation_id_fk from billing_document where event_id_fk = :eventId)", new MapSqlParameterSource("eventId", event.getId()), String.class);
             if(reservations.isEmpty()) {
                 return;
