@@ -235,8 +235,8 @@ class TicketReservationManagerTest {
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(event.mustUseFirstAndLastName()).thenReturn(false);
         when(event.getCurrency()).thenReturn(EVENT_CURRENCY);
-        when(event.now(any(ClockProvider.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock().withZone(ZoneId.systemDefault())));
-        when(event.now(any(Clock.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock().withZone(ZoneId.systemDefault())));
+        when(event.now(any(ClockProvider.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
+        when(event.now(any(Clock.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(specialPrice.getCode()).thenReturn(SPECIAL_PRICE_CODE);
         when(specialPrice.getId()).thenReturn(SPECIAL_PRICE_ID);
