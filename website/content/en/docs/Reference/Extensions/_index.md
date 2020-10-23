@@ -102,32 +102,370 @@ Alf.io provides some objects and properties to the script in the script scope:
 Other event-related variables are also injected in the scope.
 
 ## Supported Application Events
-| Event                            | Additional global variables                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Expected result type                                                                                                                          | About                                                                                                                                                                                                                                                                                                                                                                 |
-|----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| RESERVATION_CONFIRMED            | `TicketReservation reservation`<br>`BillingDetails billingDetails`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** once a reservation has been confirmed.                                                                                                                                                                                                                                                                                  |
-| RESERVATION_CANCELLED            | `Collection<String> reservationIdsToRemove`<br>`Event event`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `void`                                                                                                                                        | Extensions will be invoked **synchronously** once one or more reservations have expired.                                                                                                                                                                                                                                                                              |
-| RESERVATION_CREDIT_NOTE_ISSUED   | `Event event`<br>`List<String> reservationIds`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `void`                                                                                                                                        | Extensions will be invoked **synchronously** when the reservations credit note is issued for the event.                                                                                                                                                                                                                                                               |
-| TICKET_CANCELLED                 | `Collection<String> ticketUUIDs`<br>`Event event`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `void`                                                                                                                                        | Extension will be invoked **synchronously** once one or more tickets (but not the entire reservation at once) have been cancelled. Once a ticket has been cancelled, its UUID is reset.                                                                                                                                                                               |
-| RESERVATION_EXPIRED              | `Collection<String> reservationIdsToRemove`<br>`Event event`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `void`                                                                                                                                        | Extensions will be invoked **synchronously** once one or more reservations have expired.                                                                                                                                                                                                                                                                              |
-| TICKET_ASSIGNED                  | `Ticket ticket`<br>`Map<String, List<String>> additionalInfo`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** once a ticket has been assigned.                                                                                                                                                                                                                                                                                        |
-| WAITING_QUEUE_SUBSCRIBED         | `WaitingQueueSubscription waitingQueueSubscription`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** once someone subscribes to the waiting queue.                                                                                                                                                                                                                                                                           |
-| INVOICE_GENERATION               | `String reservationId`<br>`String email`<br>`String customerName`<br>`String userLanguage`: ISO 639-1 2-letters language code<br>`String billingAddress`<br>`String customerReference`<br>[`TotalPrice`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TotalPrice.java) `reservationCost`<br>`boolean invoiceRequested`: whether or not the user has requested an invoice or just a receipt<br>`String vatCountryCode`: the EU country of business of the customer, if any<br>`String vatNr`<br>[`VatStatus`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PriceContainer.java#L37) `vatStatus`: see [#278](https://github.com/alfio-event/alf.io/issues/278) | `Optional<`[`InvoiceGeneration`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/InvoiceGeneration.java)`>` | Extensions will be invoked **synchronously** while generating an invoice.                                                                                                                                                                                                                                                                                             |
-| TAX_ID_NUMBER_VALIDATION         | `String countryCode`<br>`String taxIdNumber`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `boolean`                                                                                                                                     | Extensions will be invoked **synchronously** when a Tax ID (VAT/GST) number has to be validated. Please note that Alf.io already supports EU VAT validation (by calling the EU VIES web service). In these cases, the TAX_ID validation will be called only as fallback. **Your extension should return a failed validation result if the country is not supported.** |
-| RESERVATION_VALIDATION           | `Event event`<br>`String reservationId`<br>`TicketReservation reservation`<br>`Object clientForm`<br>`NamedParameterJdbcTemplate jdbcTemplate`<br>`BindingResult bindingResult`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `void`                                                                                                                                        | Extensions will be invoked **synchronously** when a reservation needs to be validated.                                                                                                                                                                                                                                                                                |
-| EVENT_METADATA_UPDATE            | [`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java) `metadata`<br>`Event event`<br>`Organization organization`<br>`MaybeConfiguration baseUrl`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | [`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java) `metadata`          | Extensions will be invoked **synchronously** when metadata needs to be updated.                                                                                                                                                                                                                                                                                       |
-| STUCK_RESERVATIONS               | `List<String> stuckReservationsId`<br>`Event event`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** when the system detects a stuck reservation.                                                                                                                                                                                                                                                                            |
-| OFFLINE_RESERVATIONS_WILL_EXPIRE | `List<TicketReservationInfo> reservations`<br>`Event event`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** when an offline reservation will expire.                                                                                                                                                                                                                                                                                |
-| EVENT_CREATED                    | `Event event`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** and **synchronously** when an event has been created.                                                                                                                                                                                                                                                                   |
-| EVENT_STATUS_CHANGE              | `Event.Status status`: possible values are 'DRAFT', 'PUBLIC' and 'DISABLED'<br>`Event event`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** and **synchronously** when an event status changes.                                                                                                                                                                                                                                                                     |
-| TICKET_CHECKED_IN                | `Ticket ticket`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** once a ticket has been checked in.                                                                                                                                                                                                                                                                                      |
-| TICKET_REVERT_CHECKED_IN         | `Ticket ticket`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** once a ticket has been reverted from the checked in status.                                                                                                                                                                                                                                                             |
-| PDF_GENERATION                   | `String html`<br>`Event event`<br>`OutputStream outputStream`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `boolean`                                                                                                                                     | Extensions will be invoked **synchronously** when there is a PDF transformation. A `boolean` is returned to indicate if it was successful or not.                                                                                                                                                                                                                     |
-| OAUTH2_STATE_GENERATION          | `int organizationId`<br>`MaybeConfiguration baseUrl`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `Optional<String>`                                                                                                                            | Extensions will be invoked when an OAuth needs to be generated to a state parameter.                                                                                                                                                                                                                                                                                  |
-| CONFIRMATION_MAIL_CUSTOM_TEXT    | `Event event`<br>`TicketReservation reservation`<br>`TicketReservationAdditionalInfo additionalInfo`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `Optional<`[`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CustomEmailText.java)`>` | Extensions will be invoked  **synchronously** when a reservation email custom text is made.                                                                                                                                                                                                                                                                           |
-| TICKET_MAIL_CUSTOM_TEXT          | `Event event`<br>`TicketReservation reservation`<br>`TicketReservationAdditionalInfo additionalInfo`<br>`List<TicketFieldValue> fields`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `Optional<`[`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CustomEmailText.java)`>`                                                                                                                  | Extensions will be invoked **synchronously** when a ticket email custom text is made.                                                                                                                                                                                                                                                                                 |
-| REFUND_ISSUED                    | `Event event`<br>`TicketReservation reservation`<br>`TransactionAndPaymentInfo info`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `void`                                                                                                                                        | Extensions will be invoked **asynchronously** once a refund needs to be made.                                                                                                                                                                                                                                                                                         |
-| DYNAMIC_DISCOUNT_APPLICATION     | `Event event`<br>`Map<Integer, Long> quantityByCategory`<br>`String reservationId`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `Optional<`[`PromoCodeDiscount`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PromoCodeDiscount.java)`>`       | Extensions will be invoked **synchronously** when a discount needs to be applied.                                                                                                                                                                                                                                                                                     |
-| ONLINE_CHECK_IN_REDIRECT         | `String originalUrl`<br>`Ticket ticket`<br>[`EventWithCheckInInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/checkin/EventWithCheckInInfo.java) `event`<br>`int eventId`<br>`int organizationId`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | `Optional<String>`                                                                                                                            | Extensions will be invoked when an online check in happens.                                                                                                                                                                                                                                                                                                           |
+<table>
+    <thead>
+        <tr>
+            <th rowspan="2" valign="center">Event</th>
+            <th colspan="2" >Additional global variables</th>
+            <th rowspan="2">Expected result type</th>
+            <th rowspan="2">About</th>
+        </tr>
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan="2">RESERVATION_CONFIRMED</td>
+            <td>`TicketReservation`</td>
+            <td>`ticketReservation`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extensions will be invoked **asynchronously** once a reservation has been confirmed.</td>
+        </tr>
+        <tr>
+            <td>`BillingDetails`</td>
+            <td>`billingDetails`</td>
+        </tr>
+        <tr>
+            <td rowspan="2">RESERVATION_CANCELLED</td>
+            <td>`Collection<String>`</td>
+            <td>`reservationIdsToRemove`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extensions will be invoked synchronously once one or more reservations have expired.</td>
+        </tr>
+        <tr>
+            <td>`Event`</td>
+            <td>`event`</td>
+        </tr>
+        <tr>
+            <td rowspan="2">RESERVATION_CREDIT_NOTE_ISSUED</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extensions will be invoked synchronously when the reservations credit note is issued for the event.</td>
+        </tr>
+        <tr>
+            <td>`List<String>`</td>
+            <td>`reservationIds`</td>
+        </tr>
+        <tr>
+            <td rowspan="2">TICKET_CANCELLED</td>
+            <td>`Collection<String>`</td>
+            <td>`ticketUUIDs`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extension will be invoked synchronously once one or more tickets (but not the entire reservation at once) have been cancelled. Once a ticket has been cancelled, its UUID is reset.</td>
+        </tr>
+        <tr>
+            <td>`Event`</td>
+            <td>`event`</td>
+        </tr>
+        <tr>
+            <td rowspan="2">RESERVATION_EXPIRED</td>
+            <td>`Collection<String>`</td>
+            <td>`reservationIdsToRemove`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extensions will be invoked synchronously once one or more reservations have expired.</td>
+        </tr>
+        <tr>
+            <td>`Event`</td>
+            <td>`event`</td>
+        </tr>
+        <tr>
+            <td rowspan="2">TICKET_ASSIGNED</td>
+            <td>`Ticket`</td>
+            <td>`ticket`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extensions will be invoked asynchronously once a ticket has been assigned.</td>
+        </tr>
+        <tr>
+            <td>`Map<String, List<String>>`</td>
+            <td>`additionalInfo`</td>
+        </tr>
+        <tr>
+            <td>WAITING_QUEUE_SUBSCRIBED</td>
+            <td>`WaitingQueueSubscription`</td>
+            <td>`waitingQueueSubscription`</td>
+            <td>`void`</td>
+            <td>Extensions will be invoked asynchronously once someone subscribes to the waiting queue.</td>
+        </tr>
+        <tr>
+            <td rowspan="12">INVOICE_GENERATION</td>
+            <td>`String`</td>
+            <td>`reservationId`</td>
+            <td rowspan="12">`Optional<InvoiceGeneration>`</td>
+            <td rowspan="12">Extensions will be invoked synchronously while generating an invoice.</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`email`</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`email`</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`customerName`</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`userLanguage`: ISO 639-1 2-letters language code</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`billingAddress`</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`customerReference`</td>
+        </tr>
+        <tr>
+            <td>[`TotalPrice`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TotalPrice.java)</td>
+            <td>`reservationCost`</td>
+        </tr>
+        <tr>
+            <td>`boolean`</td>
+            <td>`invoiceRequested`: whether or not the user has requested an invoice or just a receipt</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`vatCountryCode`: the EU country of business of the customer, if any</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`vatNr`</td>
+        </tr>
+        <tr>
+            <td>[`VatStatus`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PriceContainer.java#L37) </td>
+            <td>`vatStatus`: see [#278](https://github.com/alfio-event/alf.io/issues/278)</td>
+        </tr>
+        <tr>
+            <td rowspan="2">TAX_ID_NUMBER_VALIDATION</td>
+            <td>`String`</td>
+            <td>`countryCode`</td>
+            <td rowspan="2">`boolean`</td>
+            <td rowspan="2">Extensions will be invoked synchronously when a Tax ID (VAT/GST) number has to be validated. Please note that Alf.io already supports EU VAT validation (by calling the EU VIES web service). In these cases, the TAX_ID validation will be called only as fallback. Your extension should return a failed validation result if the country is not supported.</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`taxIdNumber`</td>
+        </tr>
+        <tr>
+            <td rowspan="6">RESERVATION_VALIDATION</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="6">`void`</td>
+            <td rowspan="6">Extensions will be invoked synchronously when a reservation needs to be validated.</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`reservationId`</td>
+        </tr>
+        <tr>
+            <td>`TicketReservation`</td>
+            <td>`reservation`</td>
+        </tr>
+        <tr>
+            <td>`Object`</td>
+            <td>`clientForm`</td>
+        </tr>
+        <tr>
+            <td>`NamedParameterJdbcTemplate`</td>
+            <td>`jdbcTemplate`</td>
+        </tr>
+        <tr>
+            <td>`BindingResult`</td>
+            <td>`bindingResult`</td>
+        </tr> 
+        <tr>
+            <td rowspan="4">EVENT_METADATA_UPDATE</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="4">[`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java) </td>
+            <td rowspan="4">Extensions will be invoked synchronously when metadata needs to be updated.</td>
+        </tr>
+        <tr>
+            <td>[`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java)</td>
+            <td>`metadata`</td>
+        </tr>  
+        <tr>
+            <td>`Organization`</td>
+            <td>`organization`</td>
+        </tr>   
+        <tr>
+            <td>`MaybeConfiguration`</td>
+            <td>`baseUrl`</td>
+        </tr>  
+        <tr>
+            <td rowspan="2">STUCK_RESERVATIONS</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extensions will be invoked asynchronously when the system detects a stuck reservation.</td>
+        </tr>
+        <tr>
+            <td>`List<String>`</td>
+            <td>`stuckReservationsId`</td>
+        </tr>   
+        <tr>
+            <td rowspan="2">OFFLINE_RESERVATIONS_WILL_EXPIRE</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extensions will be invoked asynchronously when an offline reservation will expire.</td>
+        </tr>
+        <tr>
+            <td>`List<TicketReservationInfo>`</td>
+            <td>`reservations`</td>
+        </tr> 
+        <tr>
+            <td>EVENT_CREATED</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td>`void`</td>
+            <td>Extensions will be invoked asynchronously and synchronously when an event has been created.</td>
+        </tr>
+        <tr>
+            <td rowspan="2">EVENT_STATUS_CHANGE</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="2">`void`</td>
+            <td rowspan="2">Extensions will be invoked asynchronously and synchronously when an event status changes.</td>
+        </tr>
+        <tr>
+            <td>`Event.Status`</td>
+            <td>`status`: possible values are ‘DRAFT’, ‘PUBLIC’ and ‘DISABLED’</td>
+        </tr>    
+        <tr>
+            <td>TICKET_CHECKED_IN</td>
+            <td>`Ticket`</td>
+            <td>`ticket`</td>
+            <td>`void`</td>
+            <td>Extensions will be invoked asynchronously once a ticket has been checked in.</td>
+        </tr>
+        <tr>
+            <td>TICKET_REVERT_CHECKED_IN</td>
+            <td>`Ticket`</td>
+            <td>`ticket`</td>
+            <td>`void`</td>
+            <td>Extensions will be invoked asynchronously once a ticket has been reverted from the checked in status.</td>
+        </tr>
+        <tr>
+            <td rowspan="3">PDF_GENERATION</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="3">`boolean`</td>
+            <td rowspan="3">Extensions will be invoked synchronously when there is a PDF transformation. A `boolean` is returned to indicate if it was successful or not.</td>
+        </tr>
+        <tr>
+            <td>`String`</td>
+            <td>`html`</td>
+        </tr>  
+        <tr>
+            <td>`OutputStream`</td>
+            <td>`outputStream`</td>
+        </tr>
+        <tr>
+            <td rowspan="2">OAUTH2_STATE_GENERATION</td>
+            <td>`int`</td>
+            <td>`organizationId`</td>
+            <td rowspan="2">`Optional<String>`</td>
+            <td rowspan="2">Extensions will be invoked when an OAuth needs to be generated to a state parameter.</td>
+        </tr>
+        <tr>
+            <td>`MaybeConfiguration`</td>
+            <td>`baseUrl`</td>
+        </tr> 
+        <tr>
+            <td rowspan="3">CONFIRMATION_MAIL_CUSTOM_TEXT</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="3">`Optional<`[`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CustomEmailText.java)`>`</td>
+            <td rowspan="3">Extensions will be invoked synchronously when a reservation email custom text is made.</td>
+        </tr>
+        <tr>
+            <td>`TicketReservation`</td>
+            <td>`reservation`</td>
+        </tr>  
+        <tr>
+            <td>`TicketReservationAdditionalInfo`</td>
+            <td>`additionalInfo`</td>
+        </tr> 
+        <tr>
+            <td rowspan="4">TICKET_MAIL_CUSTOM_TEXT</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="4">`Optional<`[`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CustomEmailText.java)`>`</td>
+            <td rowspan="4">Extensions will be invoked synchronously when a ticket email custom text is made.</td>
+        </tr>
+        <tr>
+            <td>`TicketReservation`</td>
+            <td>`reservation`</td>
+        </tr>  
+        <tr>
+            <td>`TicketReservationAdditionalInfo`</td>
+            <td>`additionalInfo`</td>
+        </tr>
+        <tr>
+            <td>`List<TicketFieldValue>`</td>
+            <td>`fields`</td>
+        </tr>
+        <tr>
+            <td rowspan="3">REFUND_ISSUED</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="3">`void`</td>
+            <td rowspan="3">Extensions will be invoked asynchronously once a refund needs to be made.</td>
+        </tr>
+        <tr>
+            <td>`TicketReservation`</td>
+            <td>`reservation`</td>
+        </tr>  
+        <tr>
+            <td>`TransactionAndPaymentInfo`</td>
+            <td>`info`</td>
+        </tr> 
+        <tr>
+            <td rowspan="3">DYNAMIC_DISCOUNT_APPLICATION</td>
+            <td>`Event`</td>
+            <td>`event`</td>
+            <td rowspan="3">`Optional<`[`PromoCodeDiscount`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PromoCodeDiscount.java)`>` </td>
+            <td rowspan="3">Extensions will be invoked synchronously when a discount needs to be applied.</td>
+        </tr>
+        <tr>
+            <td>`Map<Integer, Long>`</td>
+            <td>`quantityByCategory`</td>
+        </tr>  
+        <tr>
+            <td>`String`</td>
+            <td>`reservationId`</td>
+        </tr> 
+        <tr>
+            <td rowspan="5">ONLINE_CHECK_IN_REDIRECT</td>
+            <td>`Ticket`</td>
+            <td>`ticket`</td>
+            <td rowspan="5">`Optional<String>`</td>
+            <td rowspan="5">Extensions will be invoked when an online check in happens.</td>
+        </tr>
+        <tr>
+            <td>[`EventWithCheckInInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/checkin/EventWithCheckInInfo.java)</td>
+            <td>`event`</td>
+        </tr>  
+        <tr>
+            <td>`String`</td>
+            <td>`originalUrl`</td>
+        </tr> 
+        <tr>
+            <td>`int`</td>
+            <td>`eventId`</td>
+        </tr> 
+        <tr>
+            <td>`int`</td>
+            <td>`organizationId`</td>
+        </tr> 
+    </tbody>
+</table>
 ## Methods
 
 #### getScriptMetadata
