@@ -17,6 +17,7 @@
 package alfio.util;
 
 import alfio.model.Ticket;
+import alfio.test.util.TestUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,7 +28,7 @@ import java.util.Map;
 
 public class ObjectDiffTest {
 
-    ZonedDateTime now = ZonedDateTime.now(ClockProvider.clock());
+    ZonedDateTime now = ZonedDateTime.now(TestUtil.clockProvider().getClock());
 
     Ticket preUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.ACQUIRED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",

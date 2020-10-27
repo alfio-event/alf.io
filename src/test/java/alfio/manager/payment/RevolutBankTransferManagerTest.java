@@ -26,8 +26,6 @@ import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.provider.RevolutTransactionDescriptor;
 import alfio.repository.TransactionRepository;
-import alfio.test.util.TestUtil;
-import alfio.util.ClockProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +37,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static alfio.model.system.ConfigurationKeys.REVOLUT_MANUAL_REVIEW;
+import static alfio.test.util.TestUtil.clockProvider;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
@@ -70,7 +69,7 @@ class RevolutBankTransferManagerTest {
         when(transaction.getId()).thenReturn(TRANSACTION_ID);
         when(transaction.getCurrency()).thenReturn("CHF");
         when(transaction.getStatus()).thenReturn(Transaction.Status.PENDING);
-        when(transaction.getTimestamp()).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
+        when(transaction.getTimestamp()).thenReturn(ZonedDateTime.now(clockProvider().getClock()));
         when(first.getTransaction()).thenReturn(transaction);
 
         second = mock(TicketReservationWithTransaction.class);
@@ -85,7 +84,7 @@ class RevolutBankTransferManagerTest {
         BankTransferManager bankTransferManager = mock(BankTransferManager.class);
         configurationManager = mock(ConfigurationManager.class);
         transactionRepository = mock(TransactionRepository.class);
-        revolutBankTransferManager = new RevolutBankTransferManager(bankTransferManager, configurationManager, transactionRepository, HttpClient.newHttpClient(), TestUtil.clockProvider());
+        revolutBankTransferManager = new RevolutBankTransferManager(bankTransferManager, configurationManager, transactionRepository, HttpClient.newHttpClient(), clockProvider());
         event = mock(Event.class);
 
         when(configurationManager.getShortReservationID(eq(event), eq(firstReservation))).thenReturn(FIRST_UUID.substring(0,8));
