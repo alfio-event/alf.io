@@ -29,7 +29,7 @@ $primary-light: lighten($primary, 75%);
 table, td, th {
     border: 1px solid grey;
     text-align: left;
-    table-layout: fixed;
+    table-layout: auto;
 }
 th {
     background-color: $primary;
