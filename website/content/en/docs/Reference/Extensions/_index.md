@@ -100,8 +100,8 @@ Alf.io provides some objects and properties to the script in the script scope:
             </tr>
             <tr>
                 <td>`extensionLogger`</td>
-                <td>`ExtentionLogger`</td>
-                <td>A logger that writes in the extension_log table. It implements the [`ExtensionLogger`] ( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionLogger.java) interface.</td>
+                <td>[`ExtensionLogger`] ( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionLogger.java)</td>
+                <td>A logger that writes in the extension_log table.</td>
             </tr>
             <tr>
                 <td>`simpleHttpClient`</td>
@@ -189,13 +189,13 @@ Below is a table of all the possible Application events, with some additional gl
         <tbody>
         <tr>
             <td rowspan="2">RESERVATION_CONFIRMED</td>
-            <td>`TicketReservation`</td>
+            <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
             <td>`ticketReservation`</td>
             <td rowspan="2">`void`</td>
             <td rowspan="2">Extensions will be invoked **asynchronously** once a reservation has been confirmed.</td>
         </tr>
         <tr>
-            <td>`BillingDetails`</td>
+            <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/BillingDetails.java)</td>
             <td>`billingDetails`</td>
         </tr>
         <tr>
@@ -206,12 +206,12 @@ Below is a table of all the possible Application events, with some additional gl
             <td rowspan="2">Extensions will be invoked synchronously once one or more reservations have expired.</td>
         </tr>
         <tr>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
         </tr>
         <tr>
             <td rowspan="2">RESERVATION_CREDIT_NOTE_ISSUED</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="2">`void`</td>
             <td rowspan="2">Extensions will be invoked synchronously when the reservations credit note is issued for the event.</td>
@@ -228,7 +228,7 @@ Below is a table of all the possible Application events, with some additional gl
             <td rowspan="2">Extension will be invoked synchronously once one or more tickets (but not the entire reservation at once) have been cancelled. Once a ticket has been cancelled, its UUID is reset.</td>
         </tr>
         <tr>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
         </tr>
         <tr>
@@ -239,12 +239,12 @@ Below is a table of all the possible Application events, with some additional gl
             <td rowspan="2">Extensions will be invoked synchronously once one or more reservations have expired.</td>
         </tr>
         <tr>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
         </tr>
         <tr>
             <td rowspan="2">TICKET_ASSIGNED</td>
-            <td>`Ticket`</td>
+            <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
             <td>`ticket`</td>
             <td rowspan="2">`void`</td>
             <td rowspan="2">Extensions will be invoked asynchronously once a ticket has been assigned.</td>
@@ -255,7 +255,7 @@ Below is a table of all the possible Application events, with some additional gl
         </tr>
         <tr>
             <td>WAITING_QUEUE_SUBSCRIBED</td>
-            <td>`WaitingQueueSubscription`</td>
+            <td>[`WaitingQueueSubscription`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/WaitingQueueSubscription.java)</td>
             <td>`waitingQueueSubscription`</td>
             <td>`void`</td>
             <td>Extensions will be invoked asynchronously once someone subscribes to the waiting queue.</td>
@@ -324,7 +324,7 @@ Below is a table of all the possible Application events, with some additional gl
         </tr>
         <tr>
             <td rowspan="6">RESERVATION_VALIDATION</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="6">`void`</td>
             <td rowspan="6">Extensions will be invoked synchronously when a reservation needs to be validated.</td>
@@ -334,7 +334,7 @@ Below is a table of all the possible Application events, with some additional gl
             <td>`reservationId`</td>
         </tr>
         <tr>
-            <td>`TicketReservation`</td>
+            <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
             <td>`reservation`</td>
         </tr>
         <tr>
@@ -351,7 +351,7 @@ Below is a table of all the possible Application events, with some additional gl
         </tr>
         <tr>
             <td rowspan="4">EVENT_METADATA_UPDATE</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="4">[`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java) </td>
             <td rowspan="4">Extensions will be invoked synchronously when metadata needs to be updated.</td>
@@ -361,16 +361,16 @@ Below is a table of all the possible Application events, with some additional gl
             <td>`metadata`</td>
         </tr>
         <tr>
-            <td>`Organization`</td>
+            <td>[`Organization`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/user/Organization.java)</td>
             <td>`organization`</td>
         </tr>
         <tr>
-            <td>`MaybeConfiguration`</td>
+            <td>[`MaybeConfiguration`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/manager/system/ConfigurationManager.java)</td>
             <td>`baseUrl`</td>
         </tr>
         <tr>
             <td rowspan="2">STUCK_RESERVATIONS</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="2">`void`</td>
             <td rowspan="2">Extensions will be invoked asynchronously when the system detects a stuck reservation.</td>
@@ -381,25 +381,25 @@ Below is a table of all the possible Application events, with some additional gl
         </tr>
         <tr>
             <td rowspan="2">OFFLINE_RESERVATIONS_WILL_EXPIRE</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="2">`void`</td>
             <td rowspan="2">Extensions will be invoked asynchronously when an offline reservation will expire.</td>
         </tr>
         <tr>
-            <td>`List<TicketReservationInfo>`</td>
+            <td>`List<`[`TicketReservationInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationInfo.java)`>`</td>
             <td>`reservations`</td>
         </tr>
         <tr>
             <td>EVENT_CREATED</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td>`void`</td>
             <td>Extensions will be invoked asynchronously and synchronously when an event has been created.</td>
         </tr>
         <tr>
             <td rowspan="2">EVENT_STATUS_CHANGE</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="2">`void`</td>
             <td rowspan="2">Extensions will be invoked asynchronously and synchronously when an event status changes.</td>
@@ -410,21 +410,21 @@ Below is a table of all the possible Application events, with some additional gl
         </tr>
         <tr>
             <td>TICKET_CHECKED_IN</td>
-            <td>`Ticket`</td>
+            <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
             <td>`ticket`</td>
             <td>`void`</td>
             <td>Extensions will be invoked asynchronously once a ticket has been checked in.</td>
         </tr>
         <tr>
             <td>TICKET_REVERT_CHECKED_IN</td>
-            <td>`Ticket`</td>
+            <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
             <td>`ticket`</td>
             <td>`void`</td>
             <td>Extensions will be invoked asynchronously once a ticket has been reverted from the checked in status.</td>
         </tr>
         <tr>
             <td rowspan="3">PDF_GENERATION</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="3">`boolean`</td>
             <td rowspan="3">Extensions will be invoked synchronously when there is a PDF transformation. A `boolean` is returned to indicate if it was successful or not.</td>
@@ -445,61 +445,61 @@ Below is a table of all the possible Application events, with some additional gl
             <td rowspan="2">Extensions will be invoked when an OAuth needs to be generated to a state parameter.</td>
         </tr>
         <tr>
-            <td>`MaybeConfiguration`</td>
+            <td>[`MaybeConfiguration`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/manager/system/ConfigurationManager.java)</td>
             <td>`baseUrl`</td>
         </tr>
         <tr>
             <td rowspan="3">CONFIRMATION_MAIL_CUSTOM_TEXT</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="3">[`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CustomEmailText.java) or `null`</td>
             <td rowspan="3">Extensions will be invoked synchronously when a reservation email custom text is made.</td>
         </tr>
         <tr>
-            <td>`TicketReservation`</td>
+            <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
             <td>`reservation`</td>
         </tr>
         <tr>
-            <td>`TicketReservationAdditionalInfo`</td>
+            <td>[`TicketReservationAdditionalInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationAdditionalInfo.java)</td>
             <td>`additionalInfo`</td>
         </tr>
         <tr>
             <td rowspan="4">TICKET_MAIL_CUSTOM_TEXT</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="4">[`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CustomEmailText.java) or `null`</td>
             <td rowspan="4">Extensions will be invoked synchronously when a ticket email custom text is made.</td>
         </tr>
         <tr>
-            <td>`TicketReservation`</td>
+            <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
             <td>`reservation`</td>
         </tr>
         <tr>
-            <td>`TicketReservationAdditionalInfo`</td>
+            <td>[`TicketReservationAdditionalInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationAdditionalInfo.java)</td>
             <td>`additionalInfo`</td>
         </tr>
         <tr>
-            <td>`List<TicketFieldValue>`</td>
+            <td>`List<`[`TicketFieldValue`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketFieldValue.java)`>`</td>
             <td>`fields`</td>
         </tr>
         <tr>
             <td rowspan="3">REFUND_ISSUED</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="3">`void`</td>
             <td rowspan="3">Extensions will be invoked asynchronously once a refund needs to be made.</td>
         </tr>
         <tr>
-            <td>`TicketReservation`</td>
+            <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
             <td>`reservation`</td>
         </tr>
         <tr>
-            <td>`TransactionAndPaymentInfo`</td>
+            <td>[`TransactionAndPaymentInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TransactionAndPaymentInfo.java)</td>
             <td>`info`</td>
         </tr>
         <tr>
             <td rowspan="3">DYNAMIC_DISCOUNT_APPLICATION</td>
-            <td>`Event`</td>
+            <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
             <td>`event`</td>
             <td rowspan="3">[`PromoCodeDiscount`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PromoCodeDiscount.java) or `null` </td>
             <td rowspan="3">Extensions will be invoked synchronously when a discount needs to be applied.</td>
@@ -514,7 +514,7 @@ Below is a table of all the possible Application events, with some additional gl
         </tr>
         <tr>
             <td rowspan="5">ONLINE_CHECK_IN_REDIRECT</td>
-            <td>`Ticket`</td>
+            <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
             <td>`ticket`</td>
             <td rowspan="5">`String` or `null`</td>
             <td rowspan="5">Extensions will be invoked when an online check in happens.</td>
