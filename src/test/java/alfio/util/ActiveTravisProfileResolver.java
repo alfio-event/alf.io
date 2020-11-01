@@ -19,19 +19,17 @@ package alfio.util;
 import alfio.test.util.IntegrationTestUtil;
 import org.springframework.test.context.ActiveProfilesResolver;
 
+import java.util.Objects;
+
 //workaround, it seems that @ActiveProfiles ignore actively the property passed by command line (-Dspring.profiles.active=travis)
 public class ActiveTravisProfileResolver implements ActiveProfilesResolver {
     @Override
     public String[] resolve(Class<?> testClass) {
-        String prop = System.getProperty("spring.profiles.active");
-        if (prop != null && prop.contains("travis")) {
-
+        String prop = Objects.requireNonNullElse(System.getProperty("spring.profiles.active"), "");
+        if (prop.contains("travis")) {
             IntegrationTestUtil.DB_CONF.get("PGSQL-TRAVIS")
                 .forEach(System::setProperty);
-
-            return new String[]{"travis"};
-        } else {
-            return new String[]{};
         }
+        return prop.split(",");
     }
 }
