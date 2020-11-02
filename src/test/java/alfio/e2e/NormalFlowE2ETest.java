@@ -297,11 +297,12 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             if(e2e && env.acceptsProfiles(Profiles.of("travis"))) {
                 LOGGER.info("e2e profile detected, CI profile detected. Running full suite on BrowserStack");
                 var url = new URL(browserStackUrl);
+                var githubBuildNumber = "-" + env.getProperty("github.run.number", "NA");
                 return List.of(
-                    new BrowserWebDriver(BrowserWebDriver.Browser.IE, buildRemoteDriver(url,"Windows", "10", "IE", "11", "testFlowIE11")),
-                    new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, buildRemoteDriver(url,"Windows", "10", "Chrome", "latest", "testFlowChrome")),
-                    new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url,"Windows", "10", "Firefox", "latest", "testFlowFirefox")),
-                    new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url,"OS X", "Catalina", "Safari", "13.1", "testFlowSafari"))
+                    new BrowserWebDriver(BrowserWebDriver.Browser.IE, buildRemoteDriver(url,"Windows", "10", "IE", "11", "testFlowIE11"+githubBuildNumber)),
+                    new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, buildRemoteDriver(url,"Windows", "10", "Chrome", "latest", "testFlowChrome"+githubBuildNumber)),
+                    new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url,"Windows", "10", "Firefox", "latest", "testFlowFirefox"+githubBuildNumber)),
+                    new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url,"OS X", "Catalina", "Safari", "13.1", "testFlowSafari"+githubBuildNumber))
                 );
             } else if(e2e) {
                 LOGGER.info("e2e profile detected, outside of CI. Returning local ChromeDriver");
