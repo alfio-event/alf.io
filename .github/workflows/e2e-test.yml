@@ -1,4 +1,4 @@
-name: upload-test
+name: "E2E Test"
 on:
     schedule:
         - cron:  '0 4 * * *'

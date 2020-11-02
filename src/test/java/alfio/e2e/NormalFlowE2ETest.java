@@ -220,7 +220,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         driver.switchTo().frame(By.cssSelector("iframe[allowpaymentrequest=true]").findElement(driver));
         wait.until(presenceOfElementLocated(By.name("cardnumber")));
         var cardNumberElement = driver.findElement(By.name("cardnumber"));
-        sendSlowInput(cardNumberElement, browserWebDriver, "4000", "0004", "0000", "0008");
+        sendSlowInput(cardNumberElement, browserWebDriver, "4000000400000008".chars().mapToObj(Character::toString).toArray(String[]::new));
         sendSlowInput(driver.findElement(By.name("exp-date")),browserWebDriver, "12", "20");
         driver.findElement(By.name("cvc")).sendKeys("123");
         //driver.findElement(By.name("postal")).sendKeys("65000");
@@ -272,7 +272,6 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             caps.setCapability("browser", browser);
             caps.setCapability("browser_version", browserVersion);
             caps.setCapability("name", profileName);
-            //caps.setCapability("browserstack.sendKeys", "true");
             caps.setCapability("browserstack.console", "errors");
             caps.setCapability("browserstack.networkLogs", "true");
             caps.setCapability("seleniumVersion", "4.0.0-alpha-6");
