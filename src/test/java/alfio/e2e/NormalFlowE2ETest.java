@@ -281,7 +281,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
 
         @Bean
         String browserStackUrl(Environment env) {
-            if(env.acceptsProfiles(Profiles.of("travis"))) {
+            if(env.acceptsProfiles(Profiles.of("e2e")) && env.acceptsProfiles(Profiles.of("travis"))) {
                 return "https://"
                     + env.getRequiredProperty("browserstack.username")
                     + ":"
