@@ -35,7 +35,7 @@
                 "maxTickets": null,
                 "accessRestricted": false,
                 "price": 10.0,
-                "startSellingDate": "--NOW--",
+                "startSellingDate": "--CATEGORY_START_SELLING--",
                 "endSellingDate": "--EVENT_START_DATE--"
             }
         ]

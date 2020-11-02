@@ -36,6 +36,8 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
@@ -64,6 +66,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElemen
 @SpringBootTest
 public class NormalFlowE2ETest extends BaseIntegrationTest {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(NormalFlowE2ETest.class);
     private static final String JSON_BODY;
 
     static {
@@ -78,12 +81,12 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
     private String eventUrl;
     private String slug;
 
-    private final List<WebDriver> webDrivers;
+    private final List<BrowserWebDriver> webDrivers;
     private final Environment environment;
     private final ClockProvider clockProvider;
 
     @Autowired
-    public NormalFlowE2ETest(List<WebDriver> webDrivers,
+    public NormalFlowE2ETest(List<BrowserWebDriver> webDrivers,
                              Environment environment,
                              ClockProvider clockProvider) {
         this.webDrivers = webDrivers;
@@ -99,7 +102,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
 
             slug = UUID.randomUUID().toString();
             var now = LocalDateTime.now(clockProvider.getClock());
-            var requestBody = JSON_BODY.replace("--NOW--", now.toString())
+            var requestBody = JSON_BODY.replace("--CATEGORY_START_SELLING--", now.minusDays(1).toString())
                 .replace("--SLUG--", slug)
                 .replace("--EVENT_START_DATE--", now.plusDays(2).toString())
                 .replace("--EVENT_END_DATE--", now.plusDays(2).plusHours(2).toString());
@@ -138,20 +141,21 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
 
     @Test
     public void testFlow() {
-        for(var driver : webDrivers) {
+        for(var browserWebDriver : webDrivers) {
+            var driver = browserWebDriver.driver;
             try {
                 driver.navigate().to(eventUrl);
                 WebDriverWait wait = new WebDriverWait(driver, 10);
                 wait.until(presenceOfElementLocated(By.cssSelector("div.markdown-content")));
-                page1TicketSelection(driver);
+                page1TicketSelection(browserWebDriver);
                 //wait until page is loaded
                 wait.until(presenceOfElementLocated(By.cssSelector("h2[translate='reservation-page.your-details']")));
                 //
-                page2ContactDetails(driver, wait);
+                page2ContactDetails(browserWebDriver, wait);
                 //wait until page is loaded
                 wait.until(presenceOfElementLocated(By.cssSelector("h2[translate='reservation-page.title']")));
                 //
-                page3Payment(driver, wait);
+                page3Payment(browserWebDriver, wait);
                 WebElement fourthPageElem = new WebDriverWait(driver, 30).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
                 Assert.assertNotNull(fourthPageElem);
             } finally {
@@ -160,17 +164,18 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         }
     }
 
-    private void page1TicketSelection(WebDriver driver) {
+    private void page1TicketSelection(BrowserWebDriver browserWebDriver) {
         // select 1 ticket
-        WebElement dropdown = driver.findElement(By.cssSelector("select[formcontrolname=amount]"));
+        WebElement dropdown = browserWebDriver.driver.findElement(By.cssSelector("select[formcontrolname=amount]"));
         dropdown.findElement(By.xpath("//option[. = '1']")).click();
         //
         // click continue button, submit form
-        driver.findElement(By.cssSelector("button.btn-success[translate='show-event.continue']")).sendKeys(Keys.RETURN);
+        browserWebDriver.driver.findElement(By.cssSelector("button.btn-success[translate='show-event.continue']")).sendKeys(Keys.RETURN);
 
     }
 
-    private void page2ContactDetails(WebDriver driver, WebDriverWait wait) {
+    private void page2ContactDetails(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
+        var driver = browserWebDriver.driver;
         driver.findElement(By.id("first-name")).sendKeys("Test");
         driver.findElement(By.id("last-name")).sendKeys("McTest");
         driver.findElement(By.id("email")).sendKeys(environment.getProperty("e2e.email", "noreply@example.org"));
@@ -178,7 +183,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         var invoiceRequested = driver.findElements(By.cssSelector("label[for=invoiceRequested]"));
         if(CollectionUtils.isNotEmpty(invoiceRequested)) {
             // select "I need an invoice for this reservation"
-            invoiceRequested.get(0).sendKeys(Keys.SPACE);
+            selectElement(invoiceRequested.get(0), browserWebDriver);
         }
 
         driver.findElement(By.cssSelector("label[for=invoiceTypePrivate]")).click();
@@ -190,7 +195,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode']")).click();
         driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] input[id=vatCountry]")).sendKeys("switzerland");
         wait.until(presenceOfElementLocated(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")));
-        driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")).sendKeys(Keys.TAB);
+        selectElement(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")), browserWebDriver, Keys.TAB);
 
         Assert.assertTrue(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] div.ng-value")).getText().contains("(CH)"));
 
@@ -207,30 +212,48 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
     }
 
     @SneakyThrows
-    private void page3Payment(WebDriver driver, WebDriverWait wait) {
-        driver.findElement(By.id("CREDIT_CARD-label")).sendKeys(Keys.SPACE);
+    private void page3Payment(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
+        var driver = browserWebDriver.driver;
+        selectElement(driver.findElement(By.id("CREDIT_CARD-label")), browserWebDriver);
         wait.until(presenceOfElementLocated(By.cssSelector("iframe[allowpaymentrequest=true]")));
         driver.findElement(By.id("card-name")).sendKeys("Test McTest");
         driver.switchTo().frame(By.cssSelector("iframe[allowpaymentrequest=true]").findElement(driver));
         wait.until(presenceOfElementLocated(By.name("cardnumber")));
         var cardNumberElement = driver.findElement(By.name("cardnumber"));
-        sendSlowInput("4242424242424242", cardNumberElement);
-        sendSlowInput("1220", driver.findElement(By.name("exp-date")));
-        sendSlowInput("123", driver.findElement(By.name("cvc")));
-        sendSlowInput("65000", driver.findElement(By.name("postal")));
+        sendSlowInput(cardNumberElement, browserWebDriver, "4000", "0004", "0000", "0008");
+        sendSlowInput(driver.findElement(By.name("exp-date")),browserWebDriver, "12", "20");
+        driver.findElement(By.name("cvc")).sendKeys("123");
+        //driver.findElement(By.name("postal")).sendKeys("65000");
         driver.switchTo().defaultContent();
-        driver.findElements(By.id("privacy-policy-label")).forEach(e -> e.sendKeys(Keys.SPACE));
-        driver.findElement(By.id("terms-conditions-label")).sendKeys(Keys.SPACE);
+        driver.findElements(By.id("privacy-policy-label")).forEach(e -> selectElement(e, browserWebDriver));
+        selectElement(driver.findElement(By.id("terms-conditions-label")), browserWebDriver);
 
         //submit
         driver.findElement(By.cssSelector(".btn-success")).sendKeys(Keys.RETURN);
     }
 
     @SneakyThrows
-    private void sendSlowInput(String input, WebElement element) {
-        for (var c : input.toCharArray()) {
-            element.sendKeys(Character.toString(c));
+    private void sendSlowInput(WebElement element, BrowserWebDriver browserWebDriver, CharSequence... strings) {
+        if(browserWebDriver.browser == BrowserWebDriver.Browser.SAFARI || browserWebDriver.browser == BrowserWebDriver.Browser.IE) {
+            for (var str : strings) {
+                element.sendKeys(str);
+                Thread.sleep(50L);
+            }
+        } else {
+            element.sendKeys(String.join(" ", strings));
             Thread.sleep(50L);
+        }
+    }
+
+    private void selectElement(WebElement element, BrowserWebDriver driver) {
+        selectElement(element, driver, Keys.SPACE);
+    }
+
+    private void selectElement(WebElement element, BrowserWebDriver driver, Keys keyToSend) {
+        if(driver.browser == BrowserWebDriver.Browser.SAFARI) {
+            element.sendKeys(keyToSend);
+        } else {
+            element.click();
         }
     }
 
@@ -249,7 +272,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             caps.setCapability("browser", browser);
             caps.setCapability("browser_version", browserVersion);
             caps.setCapability("name", profileName);
-            caps.setCapability("browserstack.sendKeys", "true");
+            //caps.setCapability("browserstack.sendKeys", "true");
             caps.setCapability("browserstack.console", "errors");
             caps.setCapability("browserstack.networkLogs", "true");
             caps.setCapability("seleniumVersion", "4.0.0-alpha-6");
@@ -269,19 +292,36 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         }
 
         @Bean
-        List<WebDriver> webDrivers(Environment env, String browserStackUrl) throws Exception {
-            if(env.acceptsProfiles(Profiles.of("travis"))) {
+        List<BrowserWebDriver> webDrivers(Environment env, String browserStackUrl) throws Exception {
+            boolean e2e = env.acceptsProfiles(Profiles.of("e2e"));
+            if(e2e && env.acceptsProfiles(Profiles.of("travis"))) {
+                LOGGER.info("e2e profile detected, CI profile detected. Running full suite on BrowserStack");
                 var url = new URL(browserStackUrl);
                 return List.of(
-                    buildRemoteDriver(url,"Windows", "10", "IE", "11", "testFlowIE11"),
-                    buildRemoteDriver(url,"Windows", "10", "Chrome", "latest", "testFlowChrome"),
-                    buildRemoteDriver(url,"Windows", "10", "Firefox", "latest", "testFlowFirefox"),
-                    buildRemoteDriver(url,"OS X", "Catalina", "Safari", "13.1", "testFlowSafari")
+                    new BrowserWebDriver(BrowserWebDriver.Browser.IE, buildRemoteDriver(url,"Windows", "10", "IE", "11", "testFlowIE11")),
+                    new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, buildRemoteDriver(url,"Windows", "10", "Chrome", "latest", "testFlowChrome")),
+                    new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url,"Windows", "10", "Firefox", "latest", "testFlowFirefox")),
+                    new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url,"OS X", "Catalina", "Safari", "13.1", "testFlowSafari"))
                 );
-            } else if(env.acceptsProfiles(Profiles.of("e2e"))) {
-                return List.of(new ChromeDriver());
+            } else if(e2e) {
+                LOGGER.info("e2e profile detected, outside of CI. Returning local ChromeDriver");
+                return List.of(new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, new ChromeDriver()));
             }
+            LOGGER.info("e2e profile was not detected, test will be skipped");
             return List.of();
+        }
+    }
+
+    private static class BrowserWebDriver {
+        private enum Browser {
+            IE, CHROME, FIREFOX, SAFARI
+        }
+        private final Browser browser;
+        private final WebDriver driver;
+
+        private BrowserWebDriver(Browser browser, WebDriver driver) {
+            this.browser = browser;
+            this.driver = driver;
         }
     }
 }
