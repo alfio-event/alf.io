@@ -28,6 +28,7 @@ import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
@@ -58,6 +59,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 
@@ -140,6 +142,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
     }
 
     @Test
+    @Timeout(value = 15L, unit = TimeUnit.MINUTES)
     public void testFlow() {
         for(var browserWebDriver : webDrivers) {
             var driver = browserWebDriver.driver;
@@ -275,6 +278,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             caps.setCapability("browserstack.console", "errors");
             caps.setCapability("browserstack.networkLogs", "true");
             caps.setCapability("seleniumVersion", "4.0.0-alpha-6");
+            caps.setCapability("browserstack.idleTimeout", "180");
             return new RemoteWebDriver(url, caps);
         }
 
