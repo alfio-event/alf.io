@@ -2,9 +2,6 @@ name: "E2E Test"
 on:
     schedule:
         - cron:  '0 4 * * *'
-    pull_request:
-        branches:
-            - master
 jobs:
     build:
         if: github.repository == 'alfio-event/alf.io'
