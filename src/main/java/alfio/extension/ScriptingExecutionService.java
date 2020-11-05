@@ -135,7 +135,12 @@ public class ScriptingExecutionService {
             for (var entry : params.entrySet()) {
                 scope.put(entry.getKey(), scope, entry.getValue());
             }
-            Object res = cx.evaluateString(scope, script, name, 1, null);
+            // before evaluating check if the script is valid
+            // if (ScriptValidation.parseJS(script)) {
+                Object res = cx.evaluateString(scope, script, name, 1, null);
+            // } else {
+            //     throw new ScriptNotValidException();
+            // }
             extensionLogger.logSuccess("Script executed successfully");
             if (res instanceof NativeJavaObject) {
                 NativeJavaObject nativeRes = (NativeJavaObject) res;
