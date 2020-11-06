@@ -14,22 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-/**
- * This file is part of alf.io.
- * <p>
- * alf.io is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * <p>
- * alf.io is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * <p>
- * You should have received a copy of the GNU General Public License
- * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
- */
 package alfio.controller.api.admin;
 
 import alfio.controller.support.TemplateProcessor;
@@ -46,6 +30,7 @@ import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.ClockProvider;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -92,6 +77,7 @@ public class ResourceController {
     private final OrganizationRepository organizationRepository;
     private final FileUploadManager fileUploadManager;
     private final ExtensionManager extensionManager;
+    private final ClockProvider clockProvider;
 
 
     @ExceptionHandler(Exception.class)
@@ -141,8 +127,8 @@ public class ResourceController {
             } else {
                 checkAccess(organizationId, principal);
                 var zoneId = ZoneId.of("Europe/Zurich");
-                event = new Event(-1, Event.EventFormat.IN_PERSON, "TEST", "TEST", "TEST", "0", "0", ZonedDateTime.now(zoneId),
-                    ZonedDateTime.now(zoneId), "Europe/Zurich", "http://localhost", "http://localhost", null,
+                event = new Event(-1, Event.EventFormat.IN_PERSON, "TEST", "TEST", "TEST", "0", "0", ZonedDateTime.now(clockProvider.withZone(zoneId)),
+                    ZonedDateTime.now(clockProvider.withZone(zoneId)), "Europe/Zurich", "http://localhost", "http://localhost", null,
                     "http://localhost", null, null, "CHF", BigDecimal.TEN, null, "42", organizationId,
                     ContentLanguage.ALL_LANGUAGES_IDENTIFIER, 0, PriceContainer.VatStatus.NONE, "1", Event.Status.PUBLIC);
             }

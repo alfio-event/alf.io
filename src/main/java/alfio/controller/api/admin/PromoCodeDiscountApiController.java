@@ -25,10 +25,10 @@ import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.model.modification.PromotionalEmailModification;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
+import alfio.util.ClockProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -47,6 +47,7 @@ public class PromoCodeDiscountApiController {
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
+    private final ClockProvider clockProvider;
 
     @PostMapping("/promo-code")
     public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode) {
@@ -113,7 +114,7 @@ public class PromoCodeDiscountApiController {
     
     @PostMapping("/promo-code/{promoCodeId}/disable")
     public void disablePromoCode(@PathVariable("promoCodeId") int promoCodeId) {
-        promoCodeRepository.updateEventPromoCodeEnd(promoCodeId, ZonedDateTime.now(Clock.systemUTC()));
+        promoCodeRepository.updateEventPromoCodeEnd(promoCodeId, ZonedDateTime.now(clockProvider.getClock()));
     }
 
     @PostMapping("/promo-code/{promoCodeId}/send-email")

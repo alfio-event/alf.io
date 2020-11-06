@@ -20,18 +20,19 @@ import alfio.model.support.Array;
 import ch.digitalfondue.npjt.mapper.ColumnMapper;
 import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
 import ch.digitalfondue.npjt.mapper.ParameterConverter;
+import lombok.SneakyThrows;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
 import java.lang.annotation.Annotation;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 
 public class ArrayColumnMapper extends ColumnMapper {
 
-    private static final int ORDER = Integer.MAX_VALUE - 30;
+    private static final int ORDER = Integer.MAX_VALUE - 31;
 
     private ArrayColumnMapper(String name, Class<?> paramType) {
         super(name, paramType);
@@ -48,7 +49,11 @@ public class ArrayColumnMapper extends ColumnMapper {
 
     private static boolean hasAnnotation(Annotation[] annotations) {
         return annotations != null
-            && Arrays.stream(annotations).anyMatch(annotation -> annotation.annotationType() == Array.class);
+            && Arrays.stream(annotations).anyMatch(ArrayColumnMapper::annotationFinder);
+    }
+
+    private static boolean annotationFinder(Annotation annotation){
+        return annotation.annotationType() == Array.class;
     }
 
     public static class Factory implements ColumnMapperFactory {
@@ -79,16 +84,24 @@ public class ArrayColumnMapper extends ColumnMapper {
         }
     }
 
-    public static class Converter implements ParameterConverter {
+    public static class Converter implements ParameterConverter.AdvancedParameterConverter {
         @Override
         public boolean accept(Class<?> parameterType, Annotation[] annotations) {
             return hasAnnotation(annotations) && List.class.isAssignableFrom(parameterType);
         }
 
+        @SneakyThrows
         @Override
-        public void processParameter(String parameterName, Object arg, Class<?> parameterType, MapSqlParameterSource ps) {
-            Object array = arg != null ? ((List<?>) arg).toArray() : null;
-            ps.addValue(parameterName, array);
+        public void processParameter(ProcessParameterContext processParameterContext) {
+            var arg = processParameterContext.getArg();
+            var ps = processParameterContext.getParameterSource();
+            if(arg == null) {
+                ps.addValue(processParameterContext.getParameterName(), null, Types.ARRAY);
+            } else {
+                Array def = (Array) Arrays.stream(processParameterContext.getParameterAnnotations()).filter(ArrayColumnMapper::annotationFinder).findFirst().orElseThrow();
+                var array = processParameterContext.getConnection().createArrayOf(def.type(), ((List<?>) arg).toArray());
+                ps.addValue(processParameterContext.getParameterName(), array);
+            }
         }
 
         @Override

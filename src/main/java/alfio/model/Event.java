@@ -17,6 +17,7 @@
 package alfio.model;
 
 import alfio.model.transaction.PaymentProxy;
+import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -40,7 +41,7 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 
 @Getter
 @Log4j2
-public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo {
+public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo, EventTimeZoneInfo {
 
     private static final String VERSION_FOR_FIRST_AND_LAST_NAME = "15.1.8.8";
 
@@ -260,7 +261,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     }
 
     public boolean expiredSince(int days) {
-        return ZonedDateTime.now(getZoneId()).truncatedTo(ChronoUnit.DAYS).minusDays(days).isAfter(getEnd().truncatedTo(ChronoUnit.DAYS));
+        return ZonedDateTime.now(ClockProvider.clock().withZone(getZoneId())).truncatedTo(ChronoUnit.DAYS).minusDays(days).isAfter(getEnd().truncatedTo(ChronoUnit.DAYS));
     }
 
     public String getPrivacyPolicyLinkOrNull() {

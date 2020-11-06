@@ -265,7 +265,7 @@ public class UsersApiController {
             .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
         // this check should be inside the userManager but it generates circular dependecy with configuration manager..
         var org = organizationRepository.findAllOrganizationIdForUser(principal.getName());
-        if(org.size() > 0 && configurationManager.getFor(WRITE_USER_CREDENTIAL_FOR_JITSI_SYNC, ConfigurationLevel.organization(org.get(0))).getValueAsBooleanOrDefault(false)) {
+        if(org.size() > 0 && configurationManager.getFor(WRITE_USER_CREDENTIAL_FOR_JITSI_SYNC, ConfigurationLevel.organization(org.get(0))).getValueAsBooleanOrDefault()) {
             try {
                 File directory = new File("/home/alfio/users");
                 if (!directory.exists()) {

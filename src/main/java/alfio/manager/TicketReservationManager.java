@@ -166,6 +166,7 @@ import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -255,9 +256,9 @@ public class TicketReservationManager {
     private final BillingDocumentRepository billingDocumentRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final Json json;
-    private final PromoCodeDiscountRepository promoCodeRepository;
     private final BillingDocumentManager billingDocumentManager;
     private final EventManager eventManager;
+    private final ClockProvider clockProvider;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -307,9 +308,10 @@ public class TicketReservationManager {
                                     BillingDocumentRepository billingDocumentRepository,
                                     NamedParameterJdbcTemplate jdbcTemplate,
                                     Json json,
-                                    PromoCodeDiscountRepository promoCodeRepository,
                                     BillingDocumentManager billingDocumentManager,
-                                    EventManager eventManager) {
+                                    EventManager eventManager,
+                                    ClockProvider clockProvider) {
+
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -343,9 +345,9 @@ public class TicketReservationManager {
         this.billingDocumentRepository = billingDocumentRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.json = json;
-        this.promoCodeRepository = promoCodeRepository;
         this.billingDocumentManager = billingDocumentManager;
         this.eventManager = eventManager;
+        this.clockProvider = clockProvider;
     }
 
     /**
@@ -375,7 +377,7 @@ public class TicketReservationManager {
         Optional<PromoCodeDiscount> discount = tmpDiscount;
 
         ticketReservationRepository.createNewReservation(reservationId,
-            ZonedDateTime.now(event.getZoneId()),
+            event.now(clockProvider),
             reservationExpiration, dynamicDiscount.or(() -> discount).map(PromoCodeDiscount::getId).orElse(null),
             locale.getLanguage(),
             event.getId(),
@@ -563,7 +565,7 @@ public class TicketReservationManager {
                         AdditionalServicePriceContainer pc = AdditionalServicePriceContainer.from(additionalServiceReservation.getAmount(), as, e, discount);
                         var currencyCode = pc.getCurrencyCode();
                         additionalServiceItemRepository.insert(UUID.randomUUID().toString(),
-                            ZonedDateTime.now(Clock.systemUTC()),
+                            ZonedDateTime.now(clockProvider.getClock()),
                             transactionId,
                             as.getId(),
                             AdditionalServiceItemStatus.PENDING,
@@ -881,7 +883,7 @@ public class TicketReservationManager {
         Validate.isTrue(ticketReservation.isPendingOfflinePayment(), "invalid status");
 
 
-        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now(event.getZoneId()));
+        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), event.now(clockProvider));
 
         registerAlfioTransaction(event, reservationId, PaymentProxy.OFFLINE);
 
@@ -897,7 +899,7 @@ public class TicketReservationManager {
         final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
         billingDocumentManager.createBillingDocument(event, finalReservation, username, orderSummaryForReservation(finalReservation, event));
         var configuration = configurationManager.getFor(EnumSet.of(DEFERRED_BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL), ConfigurationLevel.event(event));
-        if(!configuration.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault(false) || configuration.get(DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL).getValueAsBooleanOrDefault(true)) {
+        if(!configuration.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault() || configuration.get(DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL).getValueAsBooleanOrDefault()) {
             sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language, username);
         }
         extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event.getId());
@@ -915,12 +917,12 @@ public class TicketReservationManager {
         var transactionOptional = transactionRepository.loadOptionalByReservationId(reservationId);
         String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
         if(transactionOptional.isEmpty()) {
-            transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
+            transactionRepository.insert(transactionId, null, reservationId, event.now(clockProvider),
                 priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
                 platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
         } else if(paymentProxy == PaymentProxy.OFFLINE) {
             var transaction = transactionOptional.get();
-            transactionRepository.update(transaction.getId(), transactionId, null, ZonedDateTime.now(event.getZoneId()),
+            transactionRepository.update(transaction.getId(), transactionId, null, event.now(clockProvider),
                 platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
         } else {
             log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
@@ -943,7 +945,7 @@ public class TicketReservationManager {
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getId(), ticketReservation.getEmail(), messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation-email-subject",
                 new Object[]{getShortReservationID(event, ticketReservation), event.getDisplayName()}, language),
-           (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
+           () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
             attachments);
     }
 
@@ -977,7 +979,7 @@ public class TicketReservationManager {
 
         String shortReservationID = configurationManager.getShortReservationID(event, ticketReservation);
         notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, "Reservation complete " + shortReservationID,
-        	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
+        	() -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
             attachments);
     }
 
@@ -1022,7 +1024,7 @@ public class TicketReservationManager {
             Locale reservationLanguage = findReservationLanguage(reservationId);
             String subject = getReservationEmailSubject(event, reservationLanguage, "reservation-email-expired-subject", reservation.getId());
             notificationManager.sendSimpleEmail(event, reservationId, reservation.getEmail(), subject,
-            	(MultipartTemplateGenerator)() ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
+            	() ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
             );
             cancelReservation(reservation, expired, username);
         }
@@ -1043,7 +1045,7 @@ public class TicketReservationManager {
             reservationId,
             reservation.getEmail(),
             getReservationEmailSubject(event, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
-            (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
+            () -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
             generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), billingDocument.getModel(), CREDIT_NOTE)
         );
     }
@@ -1081,8 +1083,12 @@ public class TicketReservationManager {
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
         model.put("euBusiness", euBusiness);
         model.put("publicId", configurationManager.getPublicReservationID(event, reservation));
-        model.put("invoicingAdditionalInfo", ticketReservationRepository.getAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
+        model.put("invoicingAdditionalInfo", loadAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
         return model;
+    }
+
+    public TicketReservationAdditionalInfo loadAdditionalInfo(String reservationId) {
+        return ticketReservationRepository.getAdditionalInfo(reservationId);
     }
 
     @Transactional(readOnly = true)
@@ -1163,14 +1169,15 @@ public class TicketReservationManager {
 
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
+        List<Ticket> tickets = null;
         if(paymentProxy != PaymentProxy.OFFLINE) {
-            acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent(), sendTickets);
+            tickets = acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent(), sendTickets);
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), eventId);
         }
 
         Date eventTime = new Date();
         auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
-        ticketReservationRepository.updateRegistrationTimestamp(reservationId, ZonedDateTime.now(spec.getEvent().getZoneId()));
+        ticketReservationRepository.updateRegistrationTimestamp(reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getEvent().getZoneId())));
         if(spec.isTcAccepted()) {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getEvent().getTermsAndConditionsUrl())));
         }
@@ -1181,8 +1188,24 @@ public class TicketReservationManager {
 
         if(sendReservationConfirmationEmail) {
             TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
-            sendConfirmationEmail(spec.getEvent(), updatedReservation, locale, username);
+            sendConfirmationEmailIfNecessary(updatedReservation, tickets, spec.getEvent(), locale, username);
             sendReservationCompleteEmailToOrganizer(spec.getEvent(), updatedReservation, locale, username);
+        }
+    }
+
+    void sendConfirmationEmailIfNecessary(TicketReservation ticketReservation,
+                                          List<Ticket> tickets,
+                                          Event event,
+                                          Locale locale,
+                                          String username) {
+        var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), ConfigurationLevel.event(event));
+        if(ticketReservation.getSrcPriceCts() > 0
+            || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
+            || !tickets.get(0).getEmail().equals(ticketReservation.getEmail())
+            || !config.get(SEND_RESERVATION_EMAIL_IF_NECESSARY).getValueAsBooleanOrDefault()
+            || !config.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault()
+            ) {
+            sendConfirmationEmail(event, ticketReservation, locale, username);
         }
     }
 
@@ -1190,7 +1213,7 @@ public class TicketReservationManager {
         return StringUtils.isNotBlank(event.getPrivacyPolicyLinkOrNull());
     }
 
-    private void acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
+    private List<Ticket> acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
                               String userLanguage, String billingAddress, String customerReference, Event event, boolean sendTickets) {
 
         TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
@@ -1201,7 +1224,7 @@ public class TicketReservationManager {
         Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
         int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
 
-        if(!configurationManager.getFor(ENABLE_TICKET_TRANSFER, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true)) {
+        if(!configurationManager.getFor(ENABLE_TICKET_TRANSFER, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
             //automatically lock assignment
             int locked = ticketRepository.forbidReassignment(preUpdateTicket.keySet());
             Validate.isTrue(updatedTickets == locked, "Expected to lock "+updatedTickets+" tickets, locked "+ locked);
@@ -1219,18 +1242,19 @@ public class TicketReservationManager {
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
         specialPriceRepository.updateStatusForReservation(singletonList(reservationId), Status.TAKEN.toString());
-        ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
         int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
         waitingQueueManager.fireReservationConfirmed(reservationId);
         //we must notify the plugins about ticket assignment and send them by email
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
-        findTicketsInReservation(reservationId).stream()
+        List<Ticket> assignedTickets = findTicketsInReservation(reservationId);
+        assignedTickets.stream()
             .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
             .forEach(ticket -> {
                 Locale locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
-                if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true)) {
+                if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
                     sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                 }
                 Map<String, List<String>> additionalInfo = ticketFieldRepository.findNameAndValue(ticket.getId())
@@ -1238,7 +1262,7 @@ public class TicketReservationManager {
                     .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
                 extensionManager.handleTicketAssignment(ticket, additionalInfo);
             });
-
+        return assignedTickets;
     }
 
     public PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation ticketReservation, Locale ticketLanguage) {
@@ -1261,16 +1285,16 @@ public class TicketReservationManager {
                     && allMetadata.getAttributes().containsKey(Event.EventOccurrence.CARNET.toString())
                     ){
                     // multiple event
-                    var promoCode = promoCodeRepository.getPromoCodeByIdTicket(((Integer)ticket.getId()).toString());
+                    var promoCode = promoCodeDiscountRepository.getPromoCodeByIdTicket(((Integer)ticket.getId()).toString());
                     initialOptions.put("promoCode", promoCode);
                     initialOptions.put("promoCodeAmount", allMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString()));
                 } else {
                     //single event
                     if (ticketReservation.getPromoCodeDiscountId()!=null) {
-                        var pCode = promoCodeRepository.getPromoCode(ticketReservation.getPromoCodeDiscountId());
+                        var pCode = promoCodeDiscountRepository.getPromoCode(ticketReservation.getPromoCodeDiscountId());
                         if (!pCode.isEmpty() && pCode.get().getEmailReference().equalsIgnoreCase(ticketReservation.getEmail())){
                             //we should notify remaining promocodes
-                            initialOptions.put("promoCodeAmount", pCode.get().getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(pCode.get().getId(), categoriesOrNull(pCode.get()), null, categoriesOrNull(pCode.get()) != null ? "X" : null));
+                            initialOptions.put("promoCodeAmount", pCode.get().getMaxUsage() - promoCodeDiscountRepository.countConfirmedPromoCode(pCode.get().getId(), categoriesOrNull(pCode.get()), null, categoriesOrNull(pCode.get()) != null ? "X" : null));
                         }
                     }
 
@@ -1327,7 +1351,7 @@ public class TicketReservationManager {
         try {
             nestedTransactionTemplate.execute(tc -> {
                 Event event = eventRepository.findByReservationId(reservationId);
-                boolean enabled = configurationManager.getFor(AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
+                boolean enabled = configurationManager.getFor(AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
                 if (enabled) {
                     deleteOfflinePayment(event, reservationId, true, false, null);
                 } else {
@@ -1360,7 +1384,7 @@ public class TicketReservationManager {
             reservationsGroupedByEvent.forEach((event, reservations) -> {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(),
-                    STUCK_TICKETS_SUBJECT,  (TextTemplateGenerator)() -> String.format(STUCK_TICKETS_MSG, event.getDisplayName()));
+                    STUCK_TICKETS_SUBJECT,  () -> RenderedTemplate.plaintext(String.format(STUCK_TICKETS_MSG, event.getDisplayName())));
 
                 extensionManager.handleStuckReservations(event, reservations.stream().map(p -> p.getLeft().getId()).collect(toList()));
             });
@@ -1611,18 +1635,22 @@ public class TicketReservationManager {
         }
         return configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(eventAndOrganizationId, ticketCategoryId)).getValueAsIntOrDefault(5);
     }
+
+    public Optional<TicketReservation> findByIdForEvent(String reservationId, int eventId) {
+        return ticketReservationRepository.findOptionalReservationByIdAndEventId(reservationId, eventId);
+    }
     
     public Optional<TicketReservation> findById(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId);
     }
 
-    private Optional<TicketReservation> findByIdForNotification(String reservationId, ZoneId eventZoneId, int quietPeriod) {
-        return findById(reservationId).filter(notificationNotSent(eventZoneId, quietPeriod));
+    private Optional<TicketReservation> findByIdForNotification(String reservationId, Clock clock, int quietPeriod) {
+        return findById(reservationId).filter(notificationNotSent(clock, quietPeriod));
     }
 
-    private static Predicate<TicketReservation> notificationNotSent(ZoneId eventZoneId, int quietPeriod) {
-        return r -> r.latestNotificationTimestamp(eventZoneId)
-                .map(t -> t.truncatedTo(ChronoUnit.DAYS).plusDays(quietPeriod).isBefore(ZonedDateTime.now(eventZoneId).truncatedTo(ChronoUnit.DAYS)))
+    private static Predicate<TicketReservation> notificationNotSent(Clock clock, int quietPeriod) {
+        return r -> r.latestNotificationTimestamp(clock.getZone())
+                .map(t -> t.truncatedTo(ChronoUnit.DAYS).plusDays(quietPeriod).isBefore(ZonedDateTime.now(clock).truncatedTo(ChronoUnit.DAYS)))
                 .orElse(true);
     }
 
@@ -1730,7 +1758,7 @@ public class TicketReservationManager {
         ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId());
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
-        boolean sendTicketAllowed = configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
+        boolean sendTicketAllowed = configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
         if (sendTicketAllowed && (newTicket.getStatus() == TicketStatus.ACQUIRED || newTicket.getStatus() == TicketStatus.TO_BE_PAID)
             && (!equalsIgnoreCase(newEmail, ticket.getEmail()) || !equalsIgnoreCase(customerName.getFullName(), ticket.getFullName()))) {
             sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
@@ -1741,10 +1769,10 @@ public class TicketReservationManager {
         if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
             Locale oldUserLocale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
             String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
-            notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), subject, (MultipartTemplateGenerator)() -> ownerChangeTextBuilder.generate(newTicket));
-            if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
+            notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
+            if(event.getBegin().isBefore(event.now(clockProvider))) {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
-                notificationManager.sendSimpleEmail(event, null, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", (MultipartTemplateGenerator)() -> ownerChangeTextBuilder.generate(newTicket));
+                notificationManager.sendSimpleEmail(event, null, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
             }
         }
 
@@ -1856,17 +1884,17 @@ public class TicketReservationManager {
                     Locale locale = p.getRight();
                     ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
                     notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation.reminder.mail.subject", 
-                    		new Object[]{getShortReservationID(event, reservation)}, locale), (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
+                    		new Object[]{getShortReservationID(event, reservation)}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
                 });
     }
 
     //called each hour
     public void sendReminderForOfflinePaymentsToEventManagers() {
-        eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC())).stream().filter(event -> {
-            ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId());
+        eventRepository.findAllActives(ZonedDateTime.now(clockProvider.getClock())).stream().filter(event -> {
+            ZonedDateTime dateTimeForEvent = event.now(clockProvider);
             return dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour() == 5; //only for the events at 5:00 local time
         }).forEachOrdered(event -> {
-            ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).plusDays(1);
+            ZonedDateTime dateTimeForEvent = event.now(clockProvider).truncatedTo(ChronoUnit.DAYS).plusDays(1);
             List<TicketReservationInfo> reservations = ticketReservationRepository.findAllOfflinePaymentReservationWithExpirationBeforeForUpdate(dateTimeForEvent, event.getId());
             log.info("for event {} there are {} pending offline payments to handle", event.getId(), reservations.size());
             if(!reservations.isEmpty()) {
@@ -1875,7 +1903,7 @@ public class TicketReservationManager {
                 String subject = String.format("There are %d pending offline payments that will expire in event: %s", reservations.size(), event.getDisplayName());
                 String baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
                 Map<String, Object> model = TemplateResource.prepareModelForOfflineReservationExpiringEmailForOrganizer(event, reservations, baseUrl);
-                notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject, (MultipartTemplateGenerator)() ->
+                notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject, () ->
                     templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER, model, Locale.ENGLISH));
                 extensionManager.handleOfflineReservationsWillExpire(event, reservations);
             }
@@ -1891,7 +1919,7 @@ public class TicketReservationManager {
 
     public void sendReminderForOptionalData() {
         getNotifiableEventsStream()
-                .filter(e -> configurationManager.getFor(OPTIONAL_DATA_REMINDER_ENABLED, ConfigurationLevel.event(e)).getValueAsBooleanOrDefault(true))
+                .filter(e -> configurationManager.getFor(OPTIONAL_DATA_REMINDER_ENABLED, ConfigurationLevel.event(e)).getValueAsBooleanOrDefault())
                 .filter(e -> ticketFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
                 .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
@@ -1904,7 +1932,7 @@ public class TicketReservationManager {
             var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             int daysBeforeStart = configurationManager.getFor(ASSIGNMENT_REMINDER_START, ConfigurationLevel.event(event)).getValueAsIntOrDefault(10);
             List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
-            Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
+            Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, clockProvider.withZone(event.getZoneId()), daysBeforeStart).isPresent()).collect(toSet());
             tickets.stream()
                     .filter(t -> notYetNotifiedReservations.contains(t.getTicketsReservationId()))
                     .forEach(t -> {
@@ -1913,7 +1941,7 @@ public class TicketReservationManager {
                         Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(LocaleUtil::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
                         notificationManager.sendSimpleEmail(event, t.getTicketsReservationId(), t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", 
-                        		new Object[]{event.getDisplayName()}, locale), (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
+                        		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });
             return null;
         });
@@ -1923,7 +1951,7 @@ public class TicketReservationManager {
         return eventRepository.findAll().stream()
                 .filter(e -> {
                     int daysBeforeStart = configurationManager.getFor(ASSIGNMENT_REMINDER_START, ConfigurationLevel.event(e)).getValueAsIntOrDefault(10);
-                    int days = (int) ChronoUnit.DAYS.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate());
+                    int days = (int) ChronoUnit.DAYS.between(ZonedDateTime.now(clockProvider.withZone(e.getZoneId())).toLocalDate(), e.getBegin().toLocalDate());
                     return days > 0 && days <= daysBeforeStart;
                 });
     }
@@ -1936,15 +1964,15 @@ public class TicketReservationManager {
                 ZoneId eventZoneId = event.getZoneId();
                 int quietPeriod = configurationManager.getFor(ASSIGNMENT_REMINDER_INTERVAL, ConfigurationLevel.event(event)).getValueAsIntOrDefault(3);
                 p.getRight().stream()
-                    .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
+                    .map(id -> findByIdForNotification(id, clockProvider.withZone(eventZoneId), quietPeriod))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .forEach(reservation -> {
                         Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
-                        ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
+                        ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(clockProvider.withZone(eventZoneId)));
                         Locale locale = findReservationLanguage(reservation.getId());
                         notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", 
-                        		new Object[]{event.getDisplayName()}, locale), (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
+                        		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
                     });
                 return null;
             });
@@ -1983,7 +2011,7 @@ public class TicketReservationManager {
         var isFree = ticket.getFinalPriceCts() == 0;
 
         var configurationLevel = ticket.getCategoryId() != null ? ConfigurationLevel.ticketCategory(event, ticket.getCategoryId()) : ConfigurationLevel.event(event);
-        var enableFreeCancellation = configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, configurationLevel).getValueAsBooleanOrDefault(false);
+        var enableFreeCancellation = configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, configurationLevel).getValueAsBooleanOrDefault();
         var conditionsMet = CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket);
 
         // reported the conditions of TicketDecorator.getCancellationEnabled
@@ -2004,7 +2032,7 @@ public class TicketReservationManager {
         Locale locale = LocaleUtil.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
         notificationManager.sendSimpleEmail(event, reservationId, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
                 new Object[]{event.getDisplayName()}, locale),
-        		(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
+        		() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
 
         String ticketCategoryDescription = ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
 
@@ -2012,7 +2040,7 @@ public class TicketReservationManager {
         Map<String, Object> adminModel = TemplateResource.buildModelForTicketHasBeenCancelledAdmin(organization, event, ticket,
             ticketCategoryDescription, additionalServiceItems, asi -> additionalServiceTextRepository.findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE));
         notificationManager.sendSimpleEmail(event, null, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
-        		(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
+        		() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
 
         int deletedValues = ticketFieldRepository.deleteAllValuesForTicket(ticket.getId());
         log.debug("deleting {} field values for ticket {}", deletedValues, ticket.getId());
@@ -2140,7 +2168,8 @@ public class TicketReservationManager {
     }
 
 
-    public void updateReservationInvoicingAdditionalInformation(String reservationId, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
+    public void updateReservationInvoicingAdditionalInformation(String reservationId, EventAndOrganizationId event, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
+        auditingRepository.insert(reservationId, null, event.getId(), BILLING_DATA_UPDATED, new Date(), RESERVATION, reservationId, json.asJsonString(List.of(ticketReservationInvoicingAdditionalInfo)));
         ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, json.asJsonString(ticketReservationInvoicingAdditionalInfo));
     }
 
@@ -2289,6 +2318,7 @@ public class TicketReservationManager {
                 switch(paymentWebhookResult.getType()) {
                     case FAILED:
                     case REJECTED:
+                    case CANCELLED:
                         return PaymentResult.failed(paymentWebhookResult.getReason());
                     case NOT_RELEVANT:
                     case ERROR:
@@ -2334,16 +2364,16 @@ public class TicketReservationManager {
         "reservationUrl", reservationUrl(reservation, event));
 
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
-        if(cancelReservation || configurationManager.getFor(NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)) {
+        if(cancelReservation || configurationManager.getFor(NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
             notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
                 new Object[]{shortReservationID, event.getDisplayName()}, locale),
-            	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER, model, locale),
+            	() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER, model, locale),
                 List.of());
         }
 
         notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
             new Object[]{shortReservationID, event.getDisplayName()}, locale),
-        	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL, model, locale),
+        	() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL, model, locale),
             List.of());
 
     }
@@ -2389,7 +2419,7 @@ public class TicketReservationManager {
     }
 
     public void checkOfflinePaymentsStatus() {
-        eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC()))
+        eventRepository.findAllActives(ZonedDateTime.now(clockProvider.getClock()))
             .forEach(this::checkOfflinePaymentsForEvent);
     }
 
@@ -2531,7 +2561,7 @@ public class TicketReservationManager {
                 "approvalErrors", errors
             );
             notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject,
-            	(MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.OFFLINE_PAYMENT_MATCHES_FOUND, model, Locale.ENGLISH));
+            	() -> templateManager.renderTemplate(event, TemplateResource.OFFLINE_PAYMENT_MATCHES_FOUND, model, Locale.ENGLISH));
         }
 
 

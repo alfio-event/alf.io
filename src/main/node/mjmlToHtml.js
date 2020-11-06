@@ -5,7 +5,8 @@ const mjml2html = require('mjml')
 
 
 const srcMjml = path.join(__dirname, '/../resources/alfio/mjml/**/*.mjml');
-const dstMjml = path.join(__dirname, '/../resources/alfio/templates/');
+const dstMjml = path.join(__dirname, '/../../../build/generated/resources/alfio/templates/');
+fs.mkdirSync(dstMjml, { recursive: true });
 const mustacheExtension = ".ms"
 
 glob(srcMjml, {nodir: true}, function (err, files) {

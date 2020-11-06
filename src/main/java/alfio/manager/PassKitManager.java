@@ -114,7 +114,7 @@ public class PassKitManager {
             PASSBOOK_TYPE_IDENTIFIER, PASSBOOK_KEYSTORE, PASSBOOK_KEYSTORE_PASSWORD,
             PASSBOOK_TEAM_IDENTIFIER, PASSBOOK_PRIVATE_KEY_ALIAS), ConfigurationLevel.event(event));
 
-        if(!conf.get(ENABLE_PASS).getValueAsBooleanOrDefault(false)) {
+        if(!conf.get(ENABLE_PASS).getValueAsBooleanOrDefault()) {
             return Map.of();
         }
         var configValues = Map.of(
@@ -249,7 +249,7 @@ public class PassKitManager {
 
         var event = eventOptional.get();
         var typeIdentifierOptional = configurationManager.getFor(PASSBOOK_TYPE_IDENTIFIER, ConfigurationLevel.event(event));
-        if(!typeIdentifierOptional.isPresent() || !typeIdentifier.equals(typeIdentifierOptional.getValueOrDefault(null))) {
+        if(!typeIdentifierOptional.isPresent() || !typeIdentifier.equals(typeIdentifierOptional.getValueOrNull())) {
             log.trace("typeIdentifier does not match. Expected {}, got {}", typeIdentifierOptional.getValueOrDefault("not-found"), typeIdentifier);
             return Optional.empty();
         }

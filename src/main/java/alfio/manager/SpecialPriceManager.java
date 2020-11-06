@@ -18,13 +18,13 @@ package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.support.MultipartTemplateGenerator;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
+import alfio.util.ClockProvider;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -34,7 +34,6 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -55,6 +54,7 @@ public class SpecialPriceManager {
     private final MessageSourceManager messageSourceManager;
     private final I18nManager i18nManager;
     private final ConfigurationManager configurationManager;
+    private final ClockProvider clockProvider;
 
     private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, EventAndOrganizationId event, String username) {
         final TicketCategory category = checkOwnership(categoryId, event, username);
@@ -113,15 +113,15 @@ public class SpecialPriceManager {
         set.forEach(m -> {
             var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             Locale locale = LocaleUtil.forLanguageTag(StringUtils.defaultString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
-            var usePartnerCode = configurationManager.getFor(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
+            var usePartnerCode = configurationManager.getFor(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
             var promoCodeDescription = messageSource.getMessage("show-event.promo-code-type."+(usePartnerCode ? "partner" : "promotional"), null, null, locale);
             Map<String, Object> model = TemplateResource.prepareModelForSendReservedCode(organization, event, m, eventManager.getEventUrl(event), promoCodeDescription);
             notificationManager.sendSimpleEmail(event,
                 null,
                 m.getEmail(),
                 messageSource.getMessage("email-code.subject", new Object[] {event.getDisplayName(), promoCodeDescription}, locale),
-                (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.SEND_RESERVED_CODE, model, locale));
-            int marked = specialPriceRepository.markAsSent(ZonedDateTime.now(event.getZoneId()), m.getAssignee().trim(), m.getEmail().trim(), m.getCode().trim());
+                () -> templateManager.renderTemplate(event, TemplateResource.SEND_RESERVED_CODE, model, locale));
+            int marked = specialPriceRepository.markAsSent(event.now(clockProvider), m.getAssignee().trim(), m.getEmail().trim(), m.getCode().trim());
             Validate.isTrue(marked == 1, "Expected exactly one row updated, got "+marked);
         });
         return true;

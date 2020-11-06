@@ -141,10 +141,17 @@
             </div>
 
 
+<<<<<<< HEAD
             <div class="page-header" id="PAYMENT" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
                 <h2>Payment</h2>
                 <span>Payment provider settings</span>
             </div>
+=======
+                <div class="page-header" id="PAYMENT" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline || organizationConf.paymentSaferpay">
+                    <h2>Payment</h2>
+                    <span>Payment provider settings</span>
+                </div>
+>>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
 
             <div data-ng-if="organizationConf.payment" class="panel panel-default">
                 <div class="panel-heading">
@@ -190,8 +197,21 @@
                         <p><strong>IMPORTANT:</strong> if you are going to accept payments in a currency you don't hold, please make sure to enable automatic currency conversion. </p>
                         <p>To do that, go to <a href="https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref">PayPal dashboard</a> and select <code>Profile</code> -> <code>Profile and Settings</code> -> <code>My Selling Tools</code> -> <code>Block Payments</code></p>
                     </div>
+<<<<<<< HEAD
                     <div data-ng-repeat="setting in organizationConf.paymentPaypal.settings">
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+=======
+                    <div class="panel-body">
+                        <div class="alert alert-info">
+                            <p><i class="fa fa-info-circle"></i> in order to accept payments through PayPal, you must create and enable a new <strong>REST API app</strong>, as explained <a href="https://developer.paypal.com/docs/integration/admin/manage-apps/" target="_blank">here</a></p>
+                            <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
+                            <p><strong>IMPORTANT:</strong> if you are going to accept payments in a currency you don't hold, please make sure to enable automatic currency conversion. </p>
+                            <p>To do that, go to <a href="https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref">PayPal dashboard</a> and select <code>Profile</code> -> <code>Settings</code> -> <code>Account Settings</code> -> <code>Payment Preferences</code> -> <code>Block Payments</code></p>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.paymentPaypal.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        </div>
+>>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
                     </div>
                 </div>
             </div>
@@ -250,12 +270,28 @@
                 </div>
             </div>
 
+<<<<<<< HEAD
             <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
                 <h2>Alf.io PI settings</h2>
             </div>
             <div data-ng-if="organizationConf.alfioPi" class="panel panel-default">
                 <div class="panel-heading">
                     <div class="panel-title"><i class="fa fa-check"></i> Alf.io-PI integration for offline check-in and label printing</div>
+=======
+                <div data-ng-if="organizationConf.paymentSaferpay" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-credit-card"></i> Saferpay</div>
+                    </div>
+                    <div class="panel-body">
+                        <div data-ng-repeat="setting in organizationConf.paymentSaferpay.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
+                    <h2>Alf.io PI settings</h2>
+>>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
                 </div>
                 <div class="panel-body">
                     <div class="alert alert-info">

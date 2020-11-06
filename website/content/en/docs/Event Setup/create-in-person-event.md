@@ -8,7 +8,7 @@ description: >
 
 ## How to create a new event
 
-Click on the "Create new event" button in the Dashboard.
+Click on the "Create new event" button in the "Events" view.
 You will be asked to enter the following information:
 
 - Basic info
@@ -70,6 +70,9 @@ Specify the reference time zone for the event. This is particularly useful if yo
 Add description for your event in one or more languages. To add another language or replace the default (English) click on "Add translation" button. 
 
 This field supports [Markdown](https://commonmark.org/help/).
+
+*please note that the default max length for description is 4000 characters.
+ If this does not fit your needs, you can set a new limit using the "Max characters in descriptions" configuration* 
 
 ## URLs Configuration
 

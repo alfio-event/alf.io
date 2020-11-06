@@ -26,6 +26,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.support.AbstractMessageSource;
 
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -73,14 +74,30 @@ public class MessageSourceManager {
 
     private static final String[] EMPTY_ARRAY = new String[]{};
 
+    private static final Pattern PLACEHOLDER_TO_REPLACE = Pattern.compile("\\{(\\d+)\\}");
+
+    private static String convertPlaceholder(String value) {
+        return PLACEHOLDER_TO_REPLACE.matcher(value).replaceAll("{{$1}}").replace("\'\'", "\'");
+    }
+
+    public static Map<String, Map<String, String>> convertPlaceholdersForEachLanguage(Map<String, Map<String, String>> bundles) {
+        Map<String, Map<String, String>> res = new HashMap<>(bundles.size());
+        bundles.forEach((l, b) -> res.put(l, convertPlaceholders(b)));
+        return res;
+    }
+
+    private static Map<String, String> convertPlaceholders(Map<String, String> bundle) {
+        Map<String, String> res = new HashMap<>(bundle.size());
+        bundle.forEach((k, v) -> res.put(k, convertPlaceholder(v)));
+        return res;
+    }
+
     public Map<String, String> getBundleAsMap(String baseName, boolean withSystemOverride, String lang) {
         var locale = LocaleUtil.forLanguageTag(lang);
         var messageSource = getRootMessageSource(withSystemOverride);
         return getKeys(baseName, locale)
             .stream()
-            .collect(Collectors.toMap(Function.identity(), k -> messageSource.getMessage(k, EMPTY_ARRAY, locale)
-                //replace all placeholder {0} -> {{0}} so it can be consumed by ngx-translate
-                .replaceAll("\\{(\\d+)\\}", "{{$1}}")));
+            .collect(Collectors.toMap(Function.identity(), k -> convertPlaceholder(messageSource.getMessage(k, EMPTY_ARRAY, locale))));
     }
 
     private static class MessageSourceWithOverride extends AbstractMessageSource {
@@ -108,7 +125,7 @@ public class MessageSourceManager {
         return ARGUMENT_FINDER.matcher(translation).replaceAll(replacement);
     }
 
-    public static Map<String, String> cleanTranslationsForFrontend(Map<String, String> translations) {
+    static Map<String, String> cleanTranslationsForFrontend(Map<String, String> translations) {
         return translations.entrySet().stream()
             .map(entry -> Pair.of(entry.getKey(), cleanArguments(entry.getValue(), "{{$1}}").replaceAll("''", "'")))
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));

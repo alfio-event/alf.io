@@ -1,22 +1,27 @@
 <div class="modal-header">
-    <h3>Copy event</h3>
+    <h2>Copy event</h2>
 </div>
 
 <form name="copyForm" role="form" data-ng-submit="$ctrl.submit()">
-    <div class="modal-body">
-
-        <div class="form-group">
+    <div class="modal-body" data-ng-if="!$ctrl.loading">
+        <div class="form-group" ng-if="!$ctrl.selectedEvent">
             <label>Search event:</label>
-            <input class="form-control" type="text" ng-model="selected"
+            <input class="form-control" type="text" ng-model="selected" data-grab-focus
                    uib-typeahead="event for event in $ctrl.events | filter: $ctrl.match($viewValue)"
                    typeahead-template-url="copy-event-typeahead-event.html"
                    typeahead-input-formatter="$model.displayName"
                    typeahead-on-select="$ctrl.onSelect($item, $model, $label)">
         </div>
 
-        <div class="form-group" ng-if="$ctrl.selectedEvent.displayName !== undefined">
-            <label>Currently selected event to copy:</label>
-            <div>{{$ctrl.selectedEvent.displayName}} - {{$ctrl.selectedEvent.formattedBegin | formatDate}} / {{$ctrl.selectedEvent.formattedEnd | formatDate}}</div>
+        <div data-ng-if="$ctrl.selectedEvent">
+            <h3>Copy from:</h3>
+            <div class="alert alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert" data-ng-click="$ctrl.clearSelection()" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <div class="text-center">
+                    <h4>{{$ctrl.selectedEvent.displayName}}</h4>
+                    <h5 class="text-muted"><b>from</b> {{$ctrl.selectedEvent.formattedBegin | formatDate}} <b>to</b> {{$ctrl.selectedEvent.formattedEnd | formatDate}}</small></h5>
+                </div>
+            </div>
         </div>
 
         <div ng-if="$ctrl.additionalFields && $ctrl.additionalFields.length > 0">

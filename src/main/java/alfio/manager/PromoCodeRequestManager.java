@@ -30,6 +30,13 @@ import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
+import alfio.repository.EventRepository;
+import alfio.repository.PromoCodeDiscountRepository;
+import alfio.repository.SpecialPriceRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.util.ClockProvider;
+import alfio.util.ErrorsCode;
+import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -65,6 +72,7 @@ public class PromoCodeRequestManager {
     private final EmailMessageRepository emailMessageRepository;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
+    private final ClockProvider clockProvider;
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -135,7 +143,7 @@ public class PromoCodeRequestManager {
 
     public ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(Event event, String promoCode) {
         ZoneId eventZoneId = event.getZoneId();
-        ZonedDateTime now = ZonedDateTime.now(eventZoneId);
+        ZonedDateTime now = ZonedDateTime.now(clockProvider.withZone(eventZoneId));
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
         Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPublicPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
@@ -249,8 +257,8 @@ public class PromoCodeRequestManager {
         EventAndOrganizationId eventAndOrganizationId = new EventAndOrganizationId(eventId,pCode.get().getOrganizationId());
         var temp = TemplateProcessor.buildGenericEmail(templateManager, TemplateResource.EMAIL_FOR_PROMO_CODE, locale, model, eventAndOrganizationId );
         var subject = "Promo code activation";
-        var textRender = temp.getLeft();
-        var htmlRender = temp.getRight();
+        var textRender = temp.getTextPart();
+        var htmlRender = temp.getHtmlPart();
         emailMessageRepository.insertWithPromoCode(eventId, "", pCode.get().getEmailReference(), null, subject, textRender, htmlRender, "", "", ZonedDateTime.now(UTC),pCode.get().getOrganizationId());
         return true;
     }
@@ -274,8 +282,8 @@ public class PromoCodeRequestManager {
         }
         EventAndOrganizationId eventAndOrganizationId = new EventAndOrganizationId(eventId,organizationId);
         var temp = TemplateProcessor.buildGenericEmail(templateManager, TemplateResource.PROMOTIONAL_EMAIL, locale, model, eventAndOrganizationId );
-        var textRender = temp.getLeft();
-        var htmlRender = temp.getRight();
+        var textRender = temp.getTextPart();
+        var htmlRender = temp.getHtmlPart();
         emailMessageRepository.insertWithPromoCode(eventId, "", recipient, null, subject, textRender, htmlRender, "", "", ZonedDateTime.now(UTC), organizationId);
         return true;
     }

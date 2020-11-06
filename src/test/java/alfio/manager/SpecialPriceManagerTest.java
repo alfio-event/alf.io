@@ -16,38 +16,9 @@
  */
 package alfio.manager;
 
-import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.context.MessageSource;
-
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.support.MultipartTemplateGenerator;
+import alfio.manager.support.TemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
@@ -57,8 +28,24 @@ import alfio.model.modification.SendCodeModification;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
+import alfio.test.util.TestUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.MessageSource;
+
+import java.time.ZoneId;
+import java.util.*;
+
+import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
 public class SpecialPriceManagerTest {
@@ -109,7 +96,7 @@ public class SpecialPriceManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(specialPriceRepository.markAsSent(any(), anyString(), anyString(), anyString())).thenReturn(1);
         setRestricted(ticketCategory, true);
-        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSourceManager, i18nManager, configurationManager);
+        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSourceManager, i18nManager, configurationManager, TestUtil.clockProvider());
     }
 
     @Test
@@ -168,9 +155,10 @@ public class SpecialPriceManagerTest {
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(1))).thenReturn(List.of(specialPrice1));
         assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", " it")), "", 0, ""));
-        ArgumentCaptor<MultipartTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(MultipartTemplateGenerator.class);
+        ArgumentCaptor<TemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TemplateGenerator.class);
         verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
+        @SuppressWarnings("rawtypes")
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
         Map<String, Object> model = captor.getValue();
@@ -193,9 +181,10 @@ public class SpecialPriceManagerTest {
 
     private void sendMessage(String promoCodeDescription) {
         assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", "it")), "", 0, ""));
-        ArgumentCaptor<MultipartTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(MultipartTemplateGenerator.class);
+        ArgumentCaptor<TemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TemplateGenerator.class);
         verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
+        @SuppressWarnings("rawtypes")
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
         Map<String, Object> model = captor.getValue();

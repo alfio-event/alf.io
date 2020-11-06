@@ -91,6 +91,7 @@ public class EventApiV2Controller {
     private final PromoCodeRequestManager promoCodeRequestManager;
     private final EventLoader eventLoader;
     private final ExtensionManager extensionManager;
+    private final ClockProvider clockProvider;
 
 
     @GetMapping("events")
@@ -150,7 +151,7 @@ public class EventApiV2Controller {
             Optional<SpecialPrice> specialCode = appliedPromoCode.getValue().getLeft();
             Optional<PromoCodeDiscount> promoCodeDiscount = appliedPromoCode.getValue().getRight();
 
-            final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+            final ZonedDateTime now = event.now(clockProvider);
             //hide access restricted ticket categories
             var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
 
@@ -178,7 +179,7 @@ public class EventApiV2Controller {
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
 
-            boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false);
+            boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault();
             var categoriesByExpiredFlag = saleableTicketCategories.stream()
                 .map(stc -> {
                     var description = Formatters.applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()));
@@ -227,7 +228,7 @@ public class EventApiV2Controller {
             var tcForWaitingList = unboundedCategories.stream().map(stc -> new ItemsByCategory.TicketCategoryForWaitingList(stc.getId(), stc.getName())).collect(toList());
             //
             var activeCategories = categoriesByExpiredFlag.get(false);
-            var expiredCategories = configurations.get(DISPLAY_EXPIRED_CATEGORIES).getValueAsBooleanOrDefault(true) ? categoriesByExpiredFlag.get(true) : List.<TicketCategory>of();
+            var expiredCategories = configurations.get(DISPLAY_EXPIRED_CATEGORIES).getValueAsBooleanOrDefault() ? categoriesByExpiredFlag.get(true) : List.<TicketCategory>of();
 
             return new ResponseEntity<>(new ItemsByCategory(activeCategories, expiredCategories, additionalServicesRes, displayWaitingQueueForm, preSales, tcForWaitingList), getCorsHeaders(), HttpStatus.OK);
         }).orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());

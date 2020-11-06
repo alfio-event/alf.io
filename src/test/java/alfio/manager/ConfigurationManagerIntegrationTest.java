@@ -40,6 +40,7 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.BaseIntegrationTest;
+import alfio.util.ClockProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -103,17 +104,17 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
         List<TicketCategoryModification> ticketsCategory = Collections.singletonList(
             new TicketCategoryModification(null, "default", 20,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false, null, null,
                 null, null, null, 0, null, null, AlfioMetadata.empty()));
         EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", null, null, null,
             "eventShortName", "displayName", organization.getId(),
             "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
-            new DateTimeModification(LocalDate.now(), LocalTime.now()),
-            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+            new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
             BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null, null, AlfioMetadata.empty());
-        eventManager.createEvent(em);
+        eventManager.createEvent(em, USERNAME);
 
         event = eventManager.getSingleEvent("eventShortName", "test");
         ticketCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
@@ -137,7 +138,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testMissingConfigValue() {
-        var config = configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getRequiredValue();
+        configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getRequiredValue();
         fail("something wrong happened...");
     }
 
@@ -163,15 +164,15 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testBooleanValue() {
         //missing value
-        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(false));
+        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault());
 
         //false value
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "false");
-        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(true));
+        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault());
 
         //true value
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "true");
-        assertTrue(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(false));
+        assertTrue(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault());
     }
 
     @Test
@@ -344,8 +345,8 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
         assertEquals(ConfigurationPathLevel.ORGANIZATION, res.get(ENABLE_WAITING_QUEUE).getConfigurationPathLevelOrDefault(null));
         assertEquals(ConfigurationPathLevel.ORGANIZATION, res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getConfigurationPathLevelOrDefault(null));
-        assertTrue(res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false));
-        assertFalse(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getValueAsBooleanOrDefault(true));
+        assertTrue(res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault());
+        assertFalse(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getValueAsBooleanOrDefault());
 
 
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "20", "");

@@ -16,11 +16,10 @@
  */
 package alfio.manager.support;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import alfio.model.Ticket;
+import alfio.util.RenderedTemplate;
 
 @FunctionalInterface
 public interface PartialTicketTextGenerator {
-	Pair<String, String> generate(Ticket ticket);
+	RenderedTemplate generate(Ticket ticket);
 }

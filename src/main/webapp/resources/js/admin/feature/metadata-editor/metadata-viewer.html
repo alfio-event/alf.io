@@ -12,9 +12,13 @@
         </thead>
         <tbody>
         <tr data-ng-repeat="callLink in $ctrl.metadata.onlineConfiguration.callLinks">
+<<<<<<< HEAD
             <td>
                 <a ng-href="{{callLink.link}}" target="_blank">{{callLink.link}}</a>
             </td>
+=======
+            <td><a ng-href="{{callLink.link}}" rel="noopener" target="_blank">{{callLink.link}}</a></td>
+>>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
             <td data-ng-bind="callLink.validFrom | formatDate"></td>
             <td data-ng-bind="callLink.validTo | formatDate"></td>
             <td data-ng-if="$ctrl.metadata.attributes.enableJitsiJWT">

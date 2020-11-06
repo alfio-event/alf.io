@@ -33,6 +33,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
+import alfio.util.ClockProvider;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
@@ -55,12 +56,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -122,9 +125,20 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    @Profile("!"+Initializer.PROFILE_SPRING_BOOT)
     public PlatformTransactionManager platformTransactionManager(DataSource dataSource) {
-        return new DataSourceTransactionManager(dataSource);
+        return new CustomDataSourceTransactionManager(dataSource);
+    }
+
+    private static class CustomDataSourceTransactionManager extends DataSourceTransactionManager {
+        CustomDataSourceTransactionManager(DataSource dataSource) {
+            super(dataSource);
+        }
+
+        @Override
+        protected void prepareTransactionalConnection(Connection con, TransactionDefinition definition) throws SQLException {
+            super.prepareTransactionalConnection(con, definition);
+            RoleAndOrganizationsTransactionPreparer.prepareTransactionalConnection(con);
+        }
     }
 
     @Bean
@@ -206,12 +220,6 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    public RoleAndOrganizationsAspect getRoleAndOrganizationsAspect(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                                                    OrganizationRepository organizationRepository) {
-        return new RoleAndOrganizationsAspect(namedParameterJdbcTemplate, organizationRepository);
-    }
-
-    @Bean
     @DependsOn("migrator")
     @Profile("!" + Initializer.PROFILE_DISABLE_JOBS)
     public Jobs jobs(AdminReservationRequestManager adminReservationRequestManager,
@@ -224,12 +232,13 @@ public class DataSourceConfiguration {
                      PlatformTransactionManager platformTransactionManager,
                      BillingDocumentManager billingDocumentManager,
                      EventRepository eventRepository,
-                     OrganizationRepository organizationRepository
+                     OrganizationRepository organizationRepository,
+                     ClockProvider clockProvider
                      ) {
         return new Jobs(adminReservationRequestManager, fileUploadManager,
             notificationManager, specialPriceTokenGenerator, ticketReservationManager,
             waitingQueueSubscriptionProcessor,
-            adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager, billingDocumentManager, eventRepository, notificationManager, organizationRepository));
+            adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager, billingDocumentManager, eventRepository, notificationManager, organizationRepository, clockProvider));
     }
 
     @Bean
@@ -239,11 +248,13 @@ public class DataSourceConfiguration {
                                     BillingDocumentManager billingDocumentManager,
                                     EventRepository eventRepository,
                                     NotificationManager notificationManager,
-                                    OrganizationRepository organizationRepository) {
+                                    OrganizationRepository organizationRepository,
+                                    ClockProvider clockProvider) {
         return new AdminJobManager(
             List.of(reservationJobExecutor(ticketReservationManager), billingDocumentJobExecutor(billingDocumentManager, ticketReservationManager, eventRepository, notificationManager, organizationRepository)),
             adminJobQueueRepository,
-            transactionManager);
+            transactionManager,
+            clockProvider);
     }
 
     @Bean

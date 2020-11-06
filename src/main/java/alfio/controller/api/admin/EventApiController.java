@@ -43,12 +43,8 @@ import alfio.repository.EventDescriptionRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.util.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonObject;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import com.paypal.http.serializer.Json;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -58,13 +54,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.json.JSONObject;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -72,15 +65,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.math.BigDecimal;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.security.Principal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -124,6 +116,7 @@ public class EventApiController {
     private final FileUploadManager fileUploadManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
+    private final ClockProvider clockProvider;
 
     @ExceptionHandler(DataAccessException.class)
     public String exception(DataAccessException e) {
@@ -206,18 +199,23 @@ public class EventApiController {
 
     @PostMapping("/events/check")
     public ValidationResult validateEventRequest(@RequestBody EventModification eventModification, Errors errors) {
-        return validateEvent(eventModification,errors);
+        int descriptionMaxLength = getDescriptionLength();
+        return validateEvent(eventModification, errors, descriptionMaxLength);
     }
 
-    public static ValidationResult validateEvent(EventModification eventModification, Errors errors) {
-        ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
+    private int getDescriptionLength() {
+        return configurationManager.getFor(ConfigurationKeys.DESCRIPTION_MAXLENGTH, ConfigurationLevel.system()).getValueAsIntOrDefault(4096);
+    }
+
+    public static ValidationResult validateEvent(EventModification eventModification, Errors errors, int descriptionMaxLength) {
+        ValidationResult base = validateEventHeader(Optional.empty(), eventModification, descriptionMaxLength, errors)
             .or(validateEventDates(eventModification, errors))
             .or(validateTicketCategories(eventModification, errors))
             .or(validateEventPrices(eventModification, errors))
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
-                .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "].", eventModification))
+                .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "].", eventModification, descriptionMaxLength))
                 .reduce(ValidationResult::or)
                 .orElse(ValidationResult.success()))
             .or(validateAdditionalTicketFields(eventModification.getTicketFields(), errors));
@@ -250,8 +248,8 @@ public class EventApiController {
     }
 
     @PostMapping("/events/new")
-    public String insertEvent(@RequestBody EventModification eventModification) {
-        eventManager.createEvent(eventModification);
+    public String insertEvent(@RequestBody EventModification eventModification, Principal principal) {
+        eventManager.createEvent(eventModification, principal.getName());
         return OK;
     }
 
@@ -264,7 +262,7 @@ public class EventApiController {
     @PostMapping("/events/{id}/header/update")
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         Event event = eventManager.getSingleEventById(id, principal.getName());
-        return validateEventHeader(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
+        return validateEventHeader(Optional.of(event), eventModification, getDescriptionLength(), errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{id}/prices/update")
@@ -275,12 +273,12 @@ public class EventApiController {
 
     @PostMapping("/events/{eventId}/categories/{categoryId}/update")
     public ValidationResult updateExistingCategory(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
-        return validateCategory(category, errors).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
+        return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/new")
     public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
-        return validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
+        return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
     
     @PutMapping("/events/reallocate")
@@ -674,9 +672,9 @@ public class EventApiController {
         return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName()).map(event -> {
             var eventId = event.getId();
             var zoneId = event.getZoneId();
-            var from = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationConfirmedTimestamp(event.getId()), () -> ZonedDateTime.now(zoneId).minusDays(1));
-            var reservedFrom = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationCreatedTimestamp(event.getId()), () -> ZonedDateTime.now(zoneId).minusDays(1));
-            var to = parseDate(t, zoneId, Optional::empty, () -> ZonedDateTime.now(zoneId)).plusDays(1L);
+            var from = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationConfirmedTimestamp(event.getId()), () -> ZonedDateTime.now(clockProvider.getClock().withZone(zoneId)).minusDays(1));
+            var reservedFrom = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationCreatedTimestamp(event.getId()), () -> ZonedDateTime.now(clockProvider.getClock().withZone(zoneId)).minusDays(1));
+            var to = parseDate(t, zoneId, Optional::empty, () -> ZonedDateTime.now(clockProvider.getClock().withZone(zoneId))).plusDays(1L);
 
             var granularity = getGranularity(reservedFrom, to);
             var ticketSoldStatistics = eventStatisticsManager.getTicketSoldStatistics(eventId, from, to, granularity);

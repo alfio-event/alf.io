@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static alfio.model.system.ConfigurationKeys.REVOLUT_MANUAL_REVIEW;
+import static alfio.test.util.TestUtil.clockProvider;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
@@ -68,7 +69,7 @@ class RevolutBankTransferManagerTest {
         when(transaction.getId()).thenReturn(TRANSACTION_ID);
         when(transaction.getCurrency()).thenReturn("CHF");
         when(transaction.getStatus()).thenReturn(Transaction.Status.PENDING);
-        when(transaction.getTimestamp()).thenReturn(ZonedDateTime.now());
+        when(transaction.getTimestamp()).thenReturn(ZonedDateTime.now(clockProvider().getClock()));
         when(first.getTransaction()).thenReturn(transaction);
 
         second = mock(TicketReservationWithTransaction.class);
@@ -83,7 +84,7 @@ class RevolutBankTransferManagerTest {
         BankTransferManager bankTransferManager = mock(BankTransferManager.class);
         configurationManager = mock(ConfigurationManager.class);
         transactionRepository = mock(TransactionRepository.class);
-        revolutBankTransferManager = new RevolutBankTransferManager(bankTransferManager, configurationManager, transactionRepository, HttpClient.newHttpClient());
+        revolutBankTransferManager = new RevolutBankTransferManager(bankTransferManager, configurationManager, transactionRepository, HttpClient.newHttpClient(), clockProvider());
         event = mock(Event.class);
 
         when(configurationManager.getShortReservationID(eq(event), eq(firstReservation))).thenReturn(FIRST_UUID.substring(0,8));
@@ -107,7 +108,7 @@ class RevolutBankTransferManagerTest {
     private void internalMatchSingleTransaction(boolean automaticConfirmation) {
         var paymentContext = new PaymentContext(event);
         var automaticConfirmationMock = mock(ConfigurationManager.MaybeConfiguration.class);
-        when(automaticConfirmationMock.getValueAsBooleanOrDefault(anyBoolean())).thenReturn(!automaticConfirmation);
+        when(automaticConfirmationMock.getValueAsBooleanOrDefault()).thenReturn(!automaticConfirmation);
         when(configurationManager.getFor(eq(REVOLUT_MANUAL_REVIEW), any())).thenReturn(automaticConfirmationMock);
         when(transactionRepository.lockLatestForUpdate(eq(FIRST_UUID))).thenReturn(Optional.of(transaction));
         var pendingReservations = List.of(first, second, third);

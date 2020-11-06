@@ -16,6 +16,7 @@
  */
 package alfio.manager.support.response;
 
+import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -45,6 +46,17 @@ public class ValidatedResponse<T> {
         }).collect(Collectors.toList());
 
         return new ValidatedResponse<>(ValidationResult.failed(transformed), value);
+    }
+
+    public static <T> ValidatedResponse<T> fromResult(Result<T> result, String objectName) {
+        if(result.isSuccess()) {
+            return new ValidatedResponse<>(ValidationResult.success(), result.getData());
+        }
+        var transformed = result.getErrors().stream()
+            .map(ec -> new ValidationResult.ErrorDescriptor(objectName, "", ec.getCode()))
+            .collect(Collectors.toList());
+
+        return new ValidatedResponse<>(ValidationResult.failed(transformed), null);
     }
 
     public<R> ValidatedResponse<R> withValue(R value) {

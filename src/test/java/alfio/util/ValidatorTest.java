@@ -20,7 +20,9 @@ import alfio.model.AdditionalService;
 import alfio.model.AdditionalServiceText;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ValidationResult;
+import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.Errors;
@@ -30,20 +32,30 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ValidatorTest {
 
-    private static final DateTimeModification VALID_EXPIRATION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusHours(1L));
-    private static final DateTimeModification VALID_INCEPTION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().minusDays(1L));
+    private static final DateTimeModification VALID_EXPIRATION;
+    private static final DateTimeModification VALID_INCEPTION;
+
+    static {
+        var clock = TestUtil.clockProvider().getClock();
+        VALID_EXPIRATION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clock).plusHours(1L));
+        VALID_INCEPTION = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clock).minusDays(1L));
+    }
 
     private EventModification eventModification;
     private Errors errors;
+    private TicketCategoryModification ticketCategoryModification;
     private EventModification.AdditionalServiceText title = new EventModification.AdditionalServiceText(0, "it", "titolo", AdditionalServiceText.TextType.TITLE);
     private EventModification.AdditionalServiceText description = new EventModification.AdditionalServiceText(0, "it", "descrizione", AdditionalServiceText.TextType.DESCRIPTION);
 
@@ -51,6 +63,45 @@ public class ValidatorTest {
     public void init() {
         eventModification = mock(EventModification.class);
         errors = new MapBindingResult(new HashMap<>(), "test");
+        ticketCategoryModification = mock(TicketCategoryModification.class);
+        when(ticketCategoryModification.getInception()).thenReturn(VALID_INCEPTION);
+        when(ticketCategoryModification.getExpiration()).thenReturn(VALID_EXPIRATION);
+        when(ticketCategoryModification.getName()).thenReturn("name");
+    }
+
+    @Test
+    void successfulDescriptionValidation() {
+        when(eventModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
+        Validator.validateEventHeader(Optional.empty(), eventModification, 5, errors);
+        assertFalse(errors.hasFieldErrors("description"));
+    }
+
+    @Test
+    void failedDescriptionValidation() {
+        when(eventModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
+        Validator.validateEventHeader(Optional.empty(), eventModification, 4, errors);
+        assertTrue(errors.hasFieldErrors("description"));
+    }
+
+    @Test
+    void successfulCategoryDescriptionValidation() {
+        when(ticketCategoryModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
+        Validator.validateCategory(ticketCategoryModification, errors, 5);
+        assertFalse(errors.hasFieldErrors("description"));
+    }
+
+    @Test
+    void successfulCategoryDescriptionValidationWhenEmpty() {
+        when(ticketCategoryModification.getDescription()).thenReturn(Map.of());
+        Validator.validateCategory(ticketCategoryModification, errors, 5);
+        assertFalse(errors.hasFieldErrors("description"));
+    }
+
+    @Test
+    void failedCategoryDescriptionValidation() {
+        when(ticketCategoryModification.getDescription()).thenReturn(Map.of("it", "12345", "en", "1234"));
+        Validator.validateCategory(ticketCategoryModification, errors, 4);
+        assertTrue(errors.hasFieldErrors("description"));
     }
 
     @Test

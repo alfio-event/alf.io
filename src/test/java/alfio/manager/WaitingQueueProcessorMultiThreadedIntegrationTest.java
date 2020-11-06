@@ -36,6 +36,7 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.ClockProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -104,14 +105,14 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
 
             List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", 10,
-                    new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                    new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(2), LocalTime.now(ClockProvider.clock())),
                     DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
             Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
             event = pair.getKey();
             waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event.mustUseFirstAndLastName()), "peppino@garibaldi.com", null, Locale.ENGLISH);
             waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event.mustUseFirstAndLastName()), "bixio@mille.org", null, Locale.ITALIAN);
-            assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
+            assertEquals(2, (int) waitingQueueRepository.countWaitingPeople(event.getId()));
 
 
             final int parallelism = 10;
@@ -132,8 +133,8 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
             assertEquals(18, ticketRepository.findFreeByEventId(event.getId()).size());
 
             TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
             eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 

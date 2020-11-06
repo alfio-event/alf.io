@@ -14,11 +14,32 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.support;
+package alfio.model.transaction.token;
 
-import org.apache.commons.lang3.tuple.Pair;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.PaymentToken;
 
-@FunctionalInterface
-public interface MultipartTemplateGenerator extends TemplateGenerator {
-	Pair<String, String> generate();
+public class SaferpayToken implements PaymentToken {
+
+    private final String token;
+
+    public SaferpayToken(String token) {
+        this.token = token;
+    }
+
+    @Override
+    public String getToken() {
+        return token;
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethod() {
+        return PaymentMethod.CREDIT_CARD;
+    }
+
+    @Override
+    public PaymentProxy getPaymentProvider() {
+        return PaymentProxy.SAFERPAY;
+    }
 }

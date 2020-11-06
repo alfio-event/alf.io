@@ -1,0 +1,146 @@
+<mjml>
+  <mj-head>
+	    <mj-font name="Source Sans Pro" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" />
+	    <mj-attributes>
+	    	<mj-all font-family="Source Sans Pro, Helvetica" />
+	    </mj-attributes>
+        <mj-style>
+              body {
+                background: white;
+                color: #393939;
+              }
+              .content-section {
+                background: white;
+              }
+              a {
+                color: #0056b3;
+                text-decoration: none;
+              }
+              a:hover {
+                color: #0056b3;
+                text-decoration: underline;
+              }
+
+              @media (prefers-color-scheme: dark) {
+                body {
+                  background: black;
+                  color: #ccc;
+                }
+                a {
+                  color: inherit;
+                  text-decoration: none;
+                }
+                a:hover {
+                  color: inherit;
+                  text-decoration: underline;
+                }
+              }
+
+              tr {
+                line-height:2;
+                text-align:center;
+              }
+
+              tr .bottom-border {
+                border-bottom:2px solid #ecedee;
+              }
+        </mj-style>
+	  </mj-head>
+	<mj-body>
+		<mj-section padding-bottom="0px" background-color="white">
+			<mj-column width="100%">
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+		<mj-section padding-bottom="0px" background-color="#f8f8f8">
+			<mj-column width="100%">
+				<mj-text align="center" font-family="Helvetica Neue" font-size="20px" color="grey" font-weight="200">
+					{{event.displayName}}
+				</mj-text>
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+    
+   		<mj-section background-color="white">
+			<mj-column width="100%">
+		        <mj-text align="center" font-size="14px">
+		        	{{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}<br/>
+              		{{custom-header-text}}
+		        </mj-text>
+	        
+	        	<mj-text align="center" font-size="20px">{{#i18n}}email-ticket.thank-you{{/i18n}}</mj-text>
+				
+				<mj-text align="center" font-size="14px">{{#i18n}}email-ticket.attached [{{event.displayName}}]{{/i18n}}</mj-text>
+			    
+			    <mj-raw>{{#custom-body-text?}}</mj-raw>
+			    <mj-text align="center" font-size="14px">{{custom-body-text}}</mj-text>
+			    <mj-raw>{{/custom-body-text?}}</mj-raw>
+			    
+			</mj-column>
+		</mj-section>
+
+	     <mj-section background-color="#f8f8ff">
+			<mj-column width="130px">
+	   			<mj-image src="{{baseUrl}}/resources/images/email/icon_map.png"></mj-image>
+			</mj-column>
+			
+			<mj-column width="350px">
+			
+				<mj-text font-size="20px" align="center" color="#212529">{{#i18n}}email.event-info{{/i18n}}</mj-text>
+				
+				<mj-text align="center" font-size="14px">{{#i18n}}email.event-reminder-location{{/i18n}}</mj-text>
+				<mj-text align="center" font-size="14px">{{event.location}}</mj-text>
+
+	    		<mj-raw>{{#event.sameDay}}</mj-raw>
+	    		<mj-text align="center" font-size="16px" font-weight="bold">
+					{{#i18n}}event-days.same-day [{{#format-date}}{{validityStart}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}] [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}] {{/i18n}}
+	    		</mj-text>
+	    		<mj-raw>{{/event.sameDay}}</mj-raw>
+	    		
+	    		
+	    		<mj-raw>{{^event.sameDay}}</mj-raw>
+				<mj-table font-size="16px" font-weight="bold" >
+					<tr class="bottom-border">
+						<td>{{#i18n}}event-days.not-same-day [{{#format-date}}{{validityStart}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}]{{/i18n}}</td>
+					</tr>
+					<tr>
+						<td>{{#i18n}}event-days.not-same-day [{{#format-date}}{{validityEnd}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}]{{/i18n}}</td>
+					</tr>
+				</mj-table>
+				<mj-raw>{{/event.sameDay}}</mj-raw>
+				
+				<mj-text align="center" font-size="14px">
+					(<a href="{{googleCalendarUrl}}" rel="notrack" align="center">{{#i18n}}show-event.add-to-calendar{{/i18n}}</a>)
+				</mj-text>
+			</mj-column>
+		</mj-section>
+    
+	    <mj-section>
+            <mj-column width="100%">
+                <mj-button align="center" background-color="#7C8B95" href="{{ticketUrl}}" rel="notrack"> {{#i18n}}email-ticket.view-modify{{/i18n}}</mj-button>
+            </mj-column>
+	    </mj-section>
+	   	
+	   	<mj-raw>{{#custom-footer-text?}}</mj-raw>
+	    <mj-section background-color="white">
+	      <mj-column width="100%">
+	    	<mj-text align="center">
+	        	{{custom-footer-text}}
+	        </mj-text>
+	      </mj-column>
+	    </mj-section>
+	    <mj-raw>{{/custom-footer-text?}}</mj-raw>
+
+        <mj-section>
+            <mj-column width="100%">
+                <mj-text align="center">{{#i18n}}alfio.credits{{/i18n}}</mj-text>
+            </mj-column>
+        </mj-section>
+
+	</mj-body>
+</mjml>
+

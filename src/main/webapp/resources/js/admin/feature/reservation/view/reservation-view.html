@@ -32,8 +32,8 @@
                 </div>
 
                 <div class="well">
-                    <h4>URL to share: <a ng-href="{{$ctrl.reservationUrl}}" class="hidden-xs hidden-sm" target="_blank">{{$ctrl.reservationUrl}}</a></h4>
-                    <small class="visible-xs visible-sm"><a ng-href="{{$ctrl.reservationUrl}}" target="_blank">{{$ctrl.reservationUrl}}</a></small>
+                    <h4>URL to share: <a ng-href="{{$ctrl.reservationUrl}}" class="hidden-xs hidden-sm" target="_blank" rel="noopener">{{$ctrl.reservationUrl}}</a></h4>
+                    <small class="visible-xs visible-sm"><a ng-href="{{$ctrl.reservationUrl}}" target="_blank" rel="noopener">{{$ctrl.reservationUrl}}</a></small>
                 </div>
 
                 <div class="row wMarginBottom">
@@ -62,7 +62,7 @@
                             <dl class="dl">
                                 <dt>Payment id</dt>
                                 <dd ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
-                                <dt>Transaction timestamp</dt>
+                                <dt>Timestamp</dt>
                                 <dd ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
                                 <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
                                 <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
@@ -102,14 +102,16 @@
                                     <dt ng-if="$ctrl.paymentInfo.transaction">Payment id</dt>
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
 
-                                    <dt ng-if="$ctrl.paymentInfo.transaction">Transaction timestamp</dt>
+                                    <dt ng-if="$ctrl.paymentInfo.transaction">Timestamp</dt>
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
                                     <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
-                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">{{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</dd>
+                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">
+                                        {{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}
+                                    </dd>
                                 </dl>
                             </div>
                             <div class="col-xs-12 col-sm-6" ng-if="$ctrl.reservation.status !== 'STUCK' && $ctrl.paymentInfo.supportRefund">
@@ -121,7 +123,7 @@
                                                 <div class="form-inline">
                                                     <label for="amountToRefund">Amount</label>
                                                     <div class="input-group">
-                                                        <input type="text" class="form-control input-sm" ng-model="$ctrl.amountToRefund" id="amountToRefund">
+                                                        <input type="number" class="form-control input-sm" ng-model="$ctrl.amountToRefund" id="amountToRefund">
                                                         <div class="input-group-addon">{{$ctrl.paymentInfo.transaction.currency}}</div>
                                                     </div>
                                                 </div>

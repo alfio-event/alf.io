@@ -81,7 +81,7 @@ public class EventStatisticsManager {
     }
 
     private boolean displayStatisticsForEvent(EventAndOrganizationId event) {
-        return configurationManager.getFor(DISPLAY_STATS_IN_EVENT_DETAIL, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
+        return configurationManager.getFor(DISPLAY_STATS_IN_EVENT_DETAIL, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
     }
 
 

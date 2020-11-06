@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.support.MultipartTemplateGenerator;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
@@ -28,6 +27,7 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
+import alfio.util.ClockProvider;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +66,7 @@ public class WaitingQueueSubscriptionProcessor {
     private final TemplateManager templateManager;
     private final TicketRepository ticketRepository;
     private final PlatformTransactionManager transactionManager;
+    private final ClockProvider clockProvider;
 
     public void handleWaitingTickets() {
         Map<Boolean, List<Event>> activeEvents = eventManager.getActiveEvents().stream()
@@ -89,7 +90,7 @@ public class WaitingQueueSubscriptionProcessor {
 
     public void revertTicketToFreeIfCategoryIsExpired(Event event) {
         int eventId = event.getId();
-        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, ZonedDateTime.now(event.getZoneId()));
+        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, event.now(clockProvider));
         Map<Pair<Integer, Boolean>, List<Integer>> releasedByCategory = releasedButExpired.stream().collect(Collectors.groupingBy(
             t-> Pair.of(t.getTicketCategoryId(), t.isTicketCategoryBounded()),
             Collectors.mapping(TicketInfo::getTicketId, toList())
@@ -109,7 +110,7 @@ public class WaitingQueueSubscriptionProcessor {
 
     private boolean isWaitingListFormEnabled(EventAndOrganizationId event) {
         var res = configurationManager.getFor(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION), ConfigurationLevel.event(event));
-        return res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false) || res.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
+        return res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault() || res.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault();
     }
 
     public void distributeAvailableSeats(Event event) {
@@ -127,7 +128,7 @@ public class WaitingQueueSubscriptionProcessor {
                     reservationId,
                     subscription.getEmailAddress(),
                     subject,
-                    (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_RESERVATION_EMAIL, model, locale));
+                    () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_RESERVATION_EMAIL, model, locale));
             waitingQueueRepository.flagAsPending(reservationId, subscription.getId());
         });
     }

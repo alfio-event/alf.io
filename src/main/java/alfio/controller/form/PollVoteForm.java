@@ -14,9 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.support;
+package alfio.controller.form;
 
-@FunctionalInterface
-public interface TextTemplateGenerator extends TemplateGenerator {
-    String generate();
+import lombok.Data;
+
+import java.io.Serializable;
+
+@Data
+public class PollVoteForm implements Serializable {
+    private String pin;
+    private Long optionId;
 }

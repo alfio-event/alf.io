@@ -29,6 +29,7 @@ import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
+import alfio.util.ClockProvider;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,6 +57,7 @@ public class ConfigurationApiController {
     private final BillingDocumentManager billingDocumentManager;
     private final AdminJobManager adminJobManager;
     private final EventManager eventManager;
+    private final ClockProvider clockProvider;
 
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
@@ -158,10 +160,16 @@ public class ConfigurationApiController {
         return TicketHelper.getLocalizedEUCountriesForVat(Locale.ENGLISH, configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
     }
 
+    @GetMapping(value = "/instance-settings")
+    public InstanceSettings loadInstanceSettings() {
+        var settings = configurationManager.getFor(EnumSet.of(DESCRIPTION_MAXLENGTH, BASE_URL), ConfigurationLevel.system());
+        return new InstanceSettings(settings.get(DESCRIPTION_MAXLENGTH).getValueAsIntOrDefault(4096), settings.get(BASE_URL).getRequiredValue());
+    }
+
     @GetMapping(value = "/platform-mode/status/{organizationId}")
     public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
         Map<String, Boolean> result = new HashMap<>();
-        boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
+        boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault();
         result.put("enabled", platformModeEnabled);
         if(platformModeEnabled) {
             var options = configurationManager.getFor(List.of(STRIPE_CONNECTED_ID, MOLLIE_CONNECT_REFRESH_TOKEN), ConfigurationLevel.organization(organizationId));
@@ -179,7 +187,7 @@ public class ConfigurationApiController {
     @GetMapping(value = "/event/{eventId}/invoice-first-date")
     public ResponseEntity<ZonedDateTime> getFirstInvoiceDate(@PathVariable("eventId") Integer eventId, Principal principal) {
         return ResponseEntity.of(optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()))
-            .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(event.getZoneId()))));
+            .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(clockProvider.getClock().withZone(event.getZoneId())))));
     }
 
     @GetMapping(value = "/event/{eventId}/matching-invoices")
@@ -219,5 +227,11 @@ public class ConfigurationApiController {
     static class OrganizationConfig {
         private final Organization organization;
         private final Map<ConfigurationKeys.SettingCategory, List<Configuration>> config;
+    }
+
+    @Data
+    static class InstanceSettings {
+        private final int descriptionMaxLength;
+        private final String baseUrl;
     }
 }

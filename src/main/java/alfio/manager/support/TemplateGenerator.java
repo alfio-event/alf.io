@@ -16,6 +16,8 @@
  */
 package alfio.manager.support;
 
-public interface TemplateGenerator {
+import alfio.util.RenderedTemplate;
 
+public interface TemplateGenerator {
+    RenderedTemplate generate();
 }

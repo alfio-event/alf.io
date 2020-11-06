@@ -25,6 +25,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
+import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.ListUtils;
@@ -76,6 +77,7 @@ public class DataMigrator {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final BillingDocumentManager billingDocumentManager;
+    private final ClockProvider clockProvider;
 
     static {
         PRICE_UPDATE_BY_KEY.put("event", "update event set src_price_cts = :srcPriceCts, vat_status = :vatStatus where id = :eventId");
@@ -99,7 +101,8 @@ public class DataMigrator {
                         PromoCodeDiscountRepository promoCodeDiscountRepository,
                         AdditionalServiceItemRepository additionalServiceItemRepository,
                         AdditionalServiceRepository additionalServiceRepository,
-                        BillingDocumentManager billingDocumentManager) {
+                        BillingDocumentManager billingDocumentManager,
+                        ClockProvider clockProvider) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -115,6 +118,7 @@ public class DataMigrator {
         this.additionalServiceItemRepository = additionalServiceItemRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.billingDocumentManager = billingDocumentManager;
+        this.clockProvider = clockProvider;
     }
 
     public void migrateEventsToCurrentVersion() {
@@ -197,7 +201,7 @@ public class DataMigrator {
         if(!alreadyDefined || optional.filter(this::needsFixing).isPresent()) {
             transactionTemplate.execute(s -> {
                 //optional.ifPresent(eventMigration -> eventMigrationRepository.lockEventMigrationForUpdate(eventMigration.getId()));
-                if(ZonedDateTime.now(event.getZoneId()).isBefore(event.getEnd())) {
+                if(event.now(clockProvider).isBefore(event.getEnd())) {
                     fixAvailableSeats(event);
                     fillDescriptions(event);
                     fixCategoriesSize(event);
@@ -222,7 +226,7 @@ public class DataMigrator {
     }
 
     private void createBillingDocuments(Event event) {
-        if(event.getEnd().isAfter(ZonedDateTime.now(event.getZoneId()))) {
+        if(event.getEnd().isAfter(event.now(clockProvider))) {
             List<String> reservations = jdbc.queryForList("select id from tickets_reservation where event_id_fk = :eventId and status in ('OFFLINE_PAYMENT', 'COMPLETE') and invoice_number is not null and id not in(select distinct reservation_id_fk from billing_document where event_id_fk = :eventId)", new MapSqlParameterSource("eventId", event.getId()), String.class);
             if(reservations.isEmpty()) {
                 return;

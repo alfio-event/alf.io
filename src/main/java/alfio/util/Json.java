@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fatboyindustrial.gsonjavatime.Converters;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -29,7 +30,7 @@ import java.io.IOException;
 
 public class Json {
 
-    public static final Gson GSON = new GsonBuilder().create();
+    public static final Gson GSON = Converters.registerAll(new GsonBuilder()).create();
 
 
     private static final ObjectMapper mapper;

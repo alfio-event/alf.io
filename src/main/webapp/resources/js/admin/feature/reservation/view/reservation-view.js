@@ -9,12 +9,12 @@
             onClose: '<',
             onConfirm: '<'
         },
-        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', ReservationViewCtrl],
+        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', 'ConfigurationService', ReservationViewCtrl],
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal) {
+    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal, ConfigurationService) {
         var ctrl = this;
         ctrl.displayPotentialMatch = false;
 
@@ -67,8 +67,14 @@
                ctrl.allLanguages = allLangs.data;
             });
             var src = ctrl.reservationDescriptor.reservation;
-            var currentURL = $window.location.href;
-            ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage);
+            ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'BASE_URL').then(function(resp) {
+                var baseUrl = resp.data;
+                var cleanUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+                ctrl.reservationUrl = cleanUrl + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage;
+            }, function() {
+                var currentURL = $window.location.href;
+                ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage);
+            })
             var vatApplied = null;
             if(['INCLUDED', 'NOT_INCLUDED'].indexOf(src.vatStatus) > -1) {
                 vatApplied = 'Y';
@@ -93,7 +99,7 @@
                     vatNr: src.vatNr,
                     vatCountryCode: src.vatCountryCode,
                     invoiceRequested: src.invoiceRequested,
-                    invoicingAdditionalInfo: angular.copy(src.invoicingAdditionalInfo)
+                    invoicingAdditionalInfo: angular.copy(ctrl.reservationDescriptor.additionalInfo.invoicingAdditionalInfo)
                 },
                 advancedBillingOptions: {
                     vatApplied: vatApplied
@@ -360,7 +366,7 @@
         };
 
         ctrl.confirmRefund = function() {
-            if(ctrl.amountToRefund != null && ctrl.amountToRefund.length > 0) {
+            if(ctrl.amountToRefund != null && ctrl.amountToRefund > 0) {
                 if ($window.confirm('Are you sure to refund ' + ctrl.amountToRefund + ctrl.paymentInfo.transaction.currency + ' ?')) {
                     ctrl.refundInProgress = true;
                     AdminReservationService.refund(ctrl.event.shortName, ctrl.reservation.id, ctrl.amountToRefund).then(function () {

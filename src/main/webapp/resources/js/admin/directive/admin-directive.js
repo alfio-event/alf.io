@@ -242,7 +242,9 @@
         return {
             restrict: 'A',
             link: function(scope, element, attrs) {
-                element.focus();
+                setTimeout(function() {
+                    element.focus();
+                }, 10);
             }
         };
     });
@@ -336,7 +338,17 @@
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
             controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService) {
+<<<<<<< HEAD
                 $scope.baseUrl = ConfigurationService.getBaseUrl();
+=======
+
+                ConfigurationService.loadInstanceSettings().then(function(result) {
+                    var data = result.data;
+                    $scope.baseUrl = data.baseUrl;
+                    $scope.descriptionLimit = data.descriptionMaxLength;
+                });
+
+>>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
 
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
@@ -724,7 +736,10 @@
                     return angular.isDefined(index) ? index + "-" + name : name;
                 };
 
-                $scope.baseUrl = ConfigurationService.getBaseUrl();
+                ConfigurationService.loadInstanceSettings().then(function(result) {
+                    $scope.baseUrl = result.baseUrl;
+                    $scope.descriptionLimit = result.descriptionMaxLength;
+                });
 
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;
@@ -888,6 +903,7 @@
         return {
             restrict: 'AE',
             scope: {
+                event: '=',
                 eventName: '=',
                 styleClass: '@'
             },
@@ -898,7 +914,8 @@
                 var ctrl = this;
                 ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
                 var getPendingPayments = function() {
-                    if(ctrl.eventName != null && ctrl.eventName.length > 0) {
+                    var eventPresent = ctrl.event && _.includes(ctrl.event.allowedPaymentProxies, 'OFFLINE');
+                    if(eventPresent || (!ctrl.event && ctrl.eventName != null && ctrl.eventName.length > 0)) {
                         EventService.getPendingPaymentsCount(ctrl.eventName).then(function(count) {
                             $rootScope.$broadcast('PendingReservationsFound', count);
                         });

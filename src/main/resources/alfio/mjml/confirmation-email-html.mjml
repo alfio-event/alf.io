@@ -5,6 +5,17 @@
 	    	<mj-all font-family="Source Sans Pro, Helvetica" />
 	    </mj-attributes>
 	    <mj-style>
+          body {
+            background: white;
+            color: #393939;
+          }
+
+          @media (prefers-color-scheme: dark) {
+            body {
+            background: black;
+            color: #ccc;
+            }
+          }
 	      a {
 	      	color: #0056b3;
 	      	text-decoration: none;
@@ -52,8 +63,13 @@
 		            {{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.completed [{{event.displayName}}] [<a href="{{reservationUrl}}" rel="notrack">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
 		            {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.displayName}}] [<a href="{{reservationUrl}}" rel="notrack">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
 					</mj-text>
+<<<<<<< HEAD
 			    <mj-button background-color="#28a745" href="{{reservationUrl}}">
                     {{#i18n}}email-confirmation.reservation-view{{/i18n}}
+=======
+			    <mj-button rel="notrack" background-color="#28a745" href="{{reservationUrl}}">
+			        View reservation
+>>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
 			    </mj-button>
 			</mj-column>
 		</mj-section>

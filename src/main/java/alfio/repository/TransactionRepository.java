@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.support.JSONData;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
@@ -104,6 +105,11 @@ public interface TransactionRepository {
 
     @Query(SELECT_VALID_BY_RESERVATION_ID + " and status = :status for update")
     Optional<Transaction> loadOptionalByReservationIdAndStatusForUpdate(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
+
+    @Query(SELECT_VALID_BY_RESERVATION_ID + " and status = :status and payment_proxy = :paymentProxy")
+    Optional<Transaction> loadOptionalByStatusAndPaymentProxyForUpdate(@Bind("reservationId") String reservationId,
+                                                                       @Bind("status") Transaction.Status status,
+                                                                       @Bind("paymentProxy")PaymentProxy paymentProxy);
 
     @Query("select * from b_transaction where id = :id and status = :status")
     Optional<Transaction> loadOptionalByIdAndStatus(@Bind("id") int id, @Bind("status") Transaction.Status status);

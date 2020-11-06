@@ -93,7 +93,8 @@ public class EventLoader {
                     ENABLE_EU_VAT_DIRECTIVE,
                     COUNTRY_OF_BUSINESS,
 
-                    DISPLAY_TICKETS_LEFT_INDICATOR
+                    DISPLAY_TICKETS_LEFT_INDICATOR,
+                    EVENT_CUSTOM_CSS
                 ), ConfigurationLevel.event(event));
 
                 var locationDescriptor = LocationDescriptor.fromGeoData(event.getFormat(), event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
@@ -102,7 +103,7 @@ public class EventLoader {
                 boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
                 String recaptchaApiKey = null;
                 if (captchaForTicketSelection) {
-                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null);
+                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrNull();
                 }
                 //
                 boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurationsValues);
@@ -121,9 +122,9 @@ public class EventLoader {
                 boolean euVatCheckingEnabled = EuVatChecker.reverseChargeEnabled(configurationsValues);
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(configurationsValues);
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(configurationsValues);
-                boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBooleanOrDefault(false);
-                boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
-                boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).getValueAsBooleanOrDefault(false);
+                boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBooleanOrDefault();
+                boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault();
+                boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).getValueAsBooleanOrDefault();
 
                 var invoicingConf = new EventWithAdditionalInfo.InvoicingConfiguration(canGenerateReceiptOrInvoiceToCustomer,
                     euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
@@ -131,17 +132,18 @@ public class EventLoader {
                 //
 
                 //
-                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault(false);
-                boolean enableAttendeeAutocomplete = configurationsValues.get(ENABLE_ATTENDEE_AUTOCOMPLETE).getValueAsBooleanOrDefault(true);
-                boolean enableTicketTransfer = configurationsValues.get(ENABLE_TICKET_TRANSFER).getValueAsBooleanOrDefault(true);
+                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault();
+                boolean enableAttendeeAutocomplete = configurationsValues.get(ENABLE_ATTENDEE_AUTOCOMPLETE).getValueAsBooleanOrDefault();
+                boolean enableTicketTransfer = configurationsValues.get(ENABLE_TICKET_TRANSFER).getValueAsBooleanOrDefault();
                 var assignmentConf = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
                 //
 
+//<<<<<<< HEAD
                 //promoCodes
                 boolean hasAccessPromotions = false;
-                if (configurationsValues.get(ENABLE_TAGS_IN_PROMO_CODES).getValueAsBooleanOrDefault(false)) {
+                if (configurationsValues.get(ENABLE_TAGS_IN_PROMO_CODES).getValueAsBooleanOrDefault()) {
                     //new code for carnet management
-                    hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault(true) &&
+                    hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault() &&
                         (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 );
                     if (!hasAccessPromotions){
                         //let's try witth event and organizations (checking tags)
@@ -180,11 +182,19 @@ public class EventLoader {
 //                            promoCodeRepository.countByEventTagsAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
                 } else {
                     //old way for promo codes (the classic one)
-                    hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault(true) &&
+                    hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault() &&
                         (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                             promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
                 }
-                boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBooleanOrDefault(false);
+                boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBooleanOrDefault();
+//=======
+//
+//                //promotion codes
+//                boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault() &&
+//                    (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
+//                        promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
+//                boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBooleanOrDefault();
+//>>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
 
@@ -193,22 +203,24 @@ public class EventLoader {
                 //
 
                 Integer availableTicketsCount = null;
-                if (configurationsValues.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false)) {
+                if (configurationsValues.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault()) {
                     availableTicketsCount = ticketRepository.countFreeTicketsForPublicStatistics(event.getId());
                 }
+
+                var customCss = configurationsValues.get(EVENT_CUSTOM_CSS).getValueOrNull();
 
                 return new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
-                    i18nOverride, availableTicketsCount);
+                    MessageSourceManager.convertPlaceholdersForEachLanguage(i18nOverride), availableTicketsCount, customCss);
             });
     }
 
     public boolean isRecaptchaForTicketSelectionEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
         Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_TICKET_SELECTION) && configurationValues.containsKey(RECAPTCHA_API_KEY));
-        return configurationValues.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault(false) &&
-            configurationValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
+        return configurationValues.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault() &&
+            configurationValues.get(RECAPTCHA_API_KEY).getValueOrNull() != null;
     }
 }

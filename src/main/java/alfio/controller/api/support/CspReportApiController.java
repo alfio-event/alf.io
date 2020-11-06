@@ -45,7 +45,7 @@ public class CspReportApiController {
 
         var conf = configurationManager.getFor(Set.of(SECURITY_CSP_REPORT_ENABLED, SECURITY_CSP_REPORT_URI), ConfigurationLevel.system());
 
-        boolean enabledReport = conf.get(SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault(false);
+        boolean enabledReport = conf.get(SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault();
 
         String uri = conf.get(SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
 

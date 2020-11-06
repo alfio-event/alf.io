@@ -51,7 +51,7 @@ public class FileController {
             } else {
                 response.setContentType(metadata.getContentType());
                 response.setContentLength(metadata.getContentSize());
-                response.setHeader("ETag", digest);
+                response.setHeader("ETag", metadata.getId()); //id = digest
                 response.setHeader("Cache-Control", MAX_AGE_6_MONTH);
                 try (var os = response.getOutputStream()) {
                     manager.outputFile(digest, os);

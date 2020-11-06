@@ -24,6 +24,7 @@ import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.TestUtil;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -62,7 +63,7 @@ public class CheckInManagerTest {
         when(organization.getId()).thenReturn(ORG_ID);
         when(eventRepository.retrieveCheckInStatisticsForEvent(EVENT_ID)).thenReturn(new CheckInStatistics(0, 0, new Date()));
         checkInManager = new CheckInManager(null, eventRepository, null, null, null, null,
-            null, configurationManager, organizationRepository, null, null, null, null);
+            null, configurationManager, organizationRepository, null, null, null, null, null, TestUtil.clockProvider());
     }
 
     @Test

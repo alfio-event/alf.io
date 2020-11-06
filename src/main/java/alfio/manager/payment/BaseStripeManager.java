@@ -93,13 +93,13 @@ class BaseStripeManager {
 
     Map<String, ?> getModelOptions(PaymentContext context) {
         Map<String, Object> options = new HashMap<>();
-        options.put("enableSCA", configurationManager.getFor(STRIPE_ENABLE_SCA, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false));
+        options.put("enableSCA", configurationManager.getFor(STRIPE_ENABLE_SCA, context.getConfigurationLevel()).getValueAsBooleanOrDefault());
         options.put("stripe_p_key", getPublicKey(context));
         return options;
     }
 
     private boolean isConnectEnabled(PaymentContext context) {
-        return configurationManager.getFor(PLATFORM_MODE_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
+        return configurationManager.getFor(PLATFORM_MODE_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault();
     }
 
     String getSystemSecretKey() {
@@ -290,8 +290,8 @@ class BaseStripeManager {
         var optionsToLoad = EnumSet.copyOf(additionalKeys);
         optionsToLoad.addAll(EnumSet.of(STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID));
         var configuration = configurationManager.getFor(optionsToLoad, context.getConfigurationLevel());
-        return configuration.get(STRIPE_CC_ENABLED).getValueAsBooleanOrDefault(false)
-            && (!configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false) || context.getConfigurationLevel().getPathLevel() == ConfigurationPathLevel.SYSTEM || configuration.get(STRIPE_CONNECTED_ID).isPresent())
+        return configuration.get(STRIPE_CC_ENABLED).getValueAsBooleanOrDefault()
+            && (!configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault() || context.getConfigurationLevel().getPathLevel() == ConfigurationPathLevel.SYSTEM || configuration.get(STRIPE_CONNECTED_ID).isPresent())
             && subValidator.test(configuration);
     }
 

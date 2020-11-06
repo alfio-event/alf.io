@@ -22,7 +22,6 @@ import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
 import alfio.model.ContentLanguage;
 import alfio.model.EventDescription;
 import alfio.model.FileBlobMetadata;
@@ -68,8 +67,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
-import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Controller
 @AllArgsConstructor
@@ -100,7 +98,6 @@ public class IndexController {
     private final ConfigurationManager configurationManager;
     private final EventRepository eventRepository;
     private final Environment environment;
-    private final UserManager userManager;
     private final TemplateManager templateManager;
     private final FileUploadRepository fileUploadRepository;
     private final MessageSourceManager messageSourceManager;
@@ -126,17 +123,29 @@ public class IndexController {
      <pre>
      { path: '', component: EventListComponent, canActivate: [LanguageGuard] },
      { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [EventGuard, LanguageGuard] },
+     { path: 'event/:eventShortName/poll', loadChildren: () => import('./poll/poll.module').then(m => m.PollModule), canActivate: [EventGuard, LanguageGuard] },
      { path: 'event/:eventShortName/reservation/:reservationId', children: [
      { path: 'book', component: BookingComponent, canActivate: reservationsGuard },
      { path: 'overview', component: OverviewComponent, canActivate: reservationsGuard },
      { path: 'waitingPayment', redirectTo: 'waiting-payment'},
      { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: reservationsGuard },
+     { path: 'deferred-payment', component: DeferredOfflinePaymentComponent, canActivate: reservationsGuard },
      { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: reservationsGuard },
      { path: 'success', component: SuccessComponent, canActivate: reservationsGuard },
      { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard },
-     { path: 'error', component: ErrorComponent, canActivate: reservationsGuard }
+     { path: 'error', component: ErrorComponent, canActivate: reservationsGuard },
      ]},
-     { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] }
+     { path: 'event/:eventShortName/ticket/:ticketId', children: [
+     { path: 'view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] },
+     { path: 'update', component: UpdateTicketComponent, canActivate: [EventGuard, LanguageGuard] }
+     ]}
+     </pre>
+     Poll routing:
+     <pre>
+     { path: '', component: PollComponent, children: [
+     {path: '', component: PollSelectionComponent },
+     {path: ':pollId', component: DisplayPollComponent }
+     ]}
      </pre>
 
      */
@@ -153,7 +162,11 @@ public class IndexController {
         "/event/{eventShortName}/reservation/{reservationId}/not-found",
         "/event/{eventShortName}/reservation/{reservationId}/error",
         "/event/{eventShortName}/ticket/{ticketId}/view",
-        "/event/{eventShortName}/ticket/{ticketId}/update"
+        "/event/{eventShortName}/ticket/{ticketId}/update",
+        //
+        // poll
+        "/event/{eventShortName}/poll",
+        "/event/{eventShortName}/poll/{pollId}"
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
@@ -173,11 +186,18 @@ public class IndexController {
             }
         } else {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
+                var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrNull();
                 var idx = INDEX_PAGE.cloneNode(true);
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
                 var head = idx.getElementsByTagName("head").get(0);
                 head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), "application/json", "preload-info", null));
                 head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
+                if (baseCustomCss != null) {
+                    var style = new Element("style");
+                    style.setAttribute("type", "text/css");
+                    style.appendChild(new Text(baseCustomCss));
+                    head.appendChild(style);
+                }
                 if (eventShortName != null) {
                     eventLoader.loadEventInfo(eventShortName, session).ifPresent(ev -> {
                         head.appendChild(buildScripTag(Json.toJson(ev), "application/json", "preload-event", eventShortName));
@@ -315,17 +335,13 @@ public class IndexController {
         model.addAttribute("hasRecaptchaApiKey", false);
 
         //
-        model.addAttribute("request", request);
-        model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
-        model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
-        model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-        model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
+        addCommonModelAttributes(model, request);
         //
 
         var configuration = configurationManager.getFor(EnumSet.of(RECAPTCHA_API_KEY, ENABLE_CAPTCHA_FOR_LOGIN), ConfigurationLevel.system());
 
         configuration.get(RECAPTCHA_API_KEY).getValue()
-            .filter(key -> configuration.get(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true))
+            .filter(key -> configuration.get(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault())
             .ifPresent(key -> {
                 model.addAttribute("hasRecaptchaApiKey", true);
                 model.addAttribute("recaptchaApiKey", key);
@@ -369,11 +385,8 @@ public class IndexController {
         model.addAttribute("isOwner", isAdmin || authorities.contains(Role.OWNER.getRoleName()));
         model.addAttribute("isAdmin", isAdmin);
         //
-        model.addAttribute("request", request);
-        model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
-        model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
-        model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-        model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
+        addCommonModelAttributes(model, request);
+        model.addAttribute("displayProjectBanner", isAdmin && configurationManager.getForSystem(SHOW_PROJECT_BANNER).getValueAsBooleanOrDefault());
         //
 
         try (var os = response.getOutputStream()) {
@@ -383,6 +396,14 @@ public class IndexController {
             model.addAttribute("nonce", nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
         }
+    }
+
+    private void addCommonModelAttributes(Model model, HttpServletRequest request) {
+        model.addAttribute("request", request);
+        model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
+        model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
+        model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
+        model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
     }
 
 
@@ -400,7 +421,7 @@ public class IndexController {
 
         var conf = configurationManager.getFor(List.of(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED, ConfigurationKeys.SECURITY_CSP_REPORT_URI), ConfigurationLevel.system());
 
-        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault(false);
+        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault();
         if (enabledReport) {
             reportUri = " report-uri " + conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
         }
@@ -409,7 +430,7 @@ public class IndexController {
         // with base-uri set to 'self'
 
         response.addHeader("Content-Security-Policy", "object-src 'none'; "+
-            "script-src 'nonce-" + nonce + "' 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:; " +
+            "script-src 'strict-dynamic' 'nonce-" + nonce + "' 'unsafe-inline' http: https:; " +
             "base-uri 'self'; "
             + reportUri);
 

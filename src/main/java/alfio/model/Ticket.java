@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.support.Array;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,10 +26,7 @@ import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 public class Ticket implements TicketInfoContainer {
@@ -60,6 +58,8 @@ public class Ticket implements TicketInfoContainer {
     private final String extReference;
     private final String currencyCode;
 
+    private final List<String> tags;
+
     public Ticket(@JsonProperty("id") @Column("id") int id,
                   @JsonProperty("uuid") @Column("uuid") String uuid,
                   @JsonProperty("creation") @Column("creation") ZonedDateTime creation,
@@ -78,7 +78,8 @@ public class Ticket implements TicketInfoContainer {
                   @JsonProperty("vatCts") @Column("vat_cts") int vatCts,
                   @JsonProperty("discountCts") @Column("discount_cts") int discountCts,
                   @JsonProperty("extReference") @Column("ext_reference") String extReference,
-                  @JsonProperty("currencyCode") @Column("currency_code") String currencyCode) {
+                  @JsonProperty("currencyCode") @Column("currency_code") String currencyCode,
+                  @JsonProperty("tags") @Column("tags") @Array List<String> tags) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -99,6 +100,7 @@ public class Ticket implements TicketInfoContainer {
         this.discountCts = discountCts;
         this.extReference = extReference;
         this.currencyCode = currencyCode;
+        this.tags = tags;
     }
     
     @Override

@@ -17,6 +17,7 @@
 package alfio.model.user;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -27,15 +28,23 @@ public class Organization {
     private final String name;
     private final String description;
     private final String email;
+    private final String nameOpenId;
 
     public Organization(@Column("id") int id,
                         @Column("name") String name,
                         @Column("description") String description,
-                        @Column("email") String email) {
+                        @Column("email") String email,
+                        @Column("name_openid") String nameOpenId) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.email = email;
+        this.nameOpenId = nameOpenId;
+    }
+
+    @JsonIgnore
+    public String getNameOpenId() {
+        return nameOpenId;
     }
 
     @Override

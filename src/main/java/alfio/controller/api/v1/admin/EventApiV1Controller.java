@@ -18,6 +18,8 @@ package alfio.controller.api.v1.admin;
 
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
@@ -28,6 +30,7 @@ import alfio.model.modification.LinkedGroupModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionRepository;
 import alfio.util.Json;
@@ -69,6 +72,7 @@ public class EventApiV1Controller {
     private final GroupManager groupManager;
     private final ExtensionService extensionService;
     private final ExtensionRepository extensionRepository;
+    private final ConfigurationManager configurationManager;
 
     @PostMapping("/create")
     @Transactional
@@ -89,7 +93,8 @@ public class EventApiV1Controller {
             .checkPrecondition(() -> {
                 EventModification eventModification = request.toEventModification(organization, eventNameManager::generateShortName, imageRef);
                 errorsContainer.set(new BeanPropertyBindingResult(eventModification, "event"));
-                ValidationResult validationResult = validateEvent(eventModification, errorsContainer.get());
+                int descriptionMaxLength = configurationManager.getFor(ConfigurationKeys.DESCRIPTION_MAXLENGTH, ConfigurationLevel.system()).getValueAsIntOrDefault(4096);
+                ValidationResult validationResult = validateEvent(eventModification, errorsContainer.get(), descriptionMaxLength);
                 if(!validationResult.isSuccess()) {
                     log.warn("validation failed {}", validationResult.getValidationErrors());
                 }
@@ -191,7 +196,7 @@ public class EventApiV1Controller {
     private Optional<Event> insertEvent(EventCreationRequest request, Principal user, String imageRef) {
         Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
         EventModification em = request.toEventModification(organization,eventNameManager::generateShortName,imageRef);
-        eventManager.createEvent(em);
+        eventManager.createEvent(em, user.getName());
         Optional<Event> event = eventManager.getOptionalByName(em.getShortName(),user.getName());
 
         event.ifPresent(e -> {

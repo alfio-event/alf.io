@@ -97,26 +97,26 @@ public class TemplateManager {
     }
 
     
-    private Pair<String, String> renderTemplate(Optional<? extends EventAndOrganizationId> event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
-    	var enrichedModel = modelEnricher(model, event, locale);
+    private RenderedTemplate renderMultipartTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+    	var enrichedModel = modelEnricher(model, Optional.of(event), locale);
     	var isMultipart = templateResource.isMultipart();
     	
-        var textRender = render(new ClassPathResource(templateResource.classPath()), enrichedModel, locale, event.orElse(null), isMultipart ? TemplateOutput.TEXT : templateResource.getTemplateOutput());
+        var textRender = render(new ClassPathResource(templateResource.classPath()), enrichedModel, locale, event, isMultipart ? TemplateOutput.TEXT : templateResource.getTemplateOutput());
         
-        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, ConfigurationLevel.event(event.orElse(null))).getValueAsBooleanOrDefault(true);
+        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
         
         var htmlRender = isMultipart && htmlEnabled ? 
-        		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, event.orElse(null), TemplateOutput.HTML) :
+        		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, event, TemplateOutput.HTML) :
         		null;
         		
-    	return Pair.of(textRender, htmlRender);
+    	return RenderedTemplate.multipart(textRender, htmlRender);
     }
 
-    public Pair<String, String> renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+    public RenderedTemplate renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
         Map<String, Object> updatedModel = modelEnricher(model, Optional.of(event), locale);
         return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
-            .map(resource -> Pair.of(render(new ByteArrayResource(resource), updatedModel, locale, event, templateResource.getTemplateOutput()), (String) null))
-            .orElseGet(() -> renderTemplate(Optional.of(event), templateResource, updatedModel, locale));
+            .map(resource -> RenderedTemplate.plaintext(render(new ByteArrayResource(resource), updatedModel, locale, event, templateResource.getTemplateOutput())))
+            .orElseGet(() -> renderMultipartTemplate(event, templateResource, updatedModel, locale));
     }
 
     public String renderString(EventAndOrganizationId event, String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
@@ -373,4 +373,5 @@ public class TemplateManager {
 
         return sb.toString();
     }
+
 }

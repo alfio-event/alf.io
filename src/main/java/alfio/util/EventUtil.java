@@ -82,16 +82,16 @@ public final class EventUtil {
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
         var confVal = configurationManager.getFor(List.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), ConfigurationLevel.event(event));
-        return !confVal.get(STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false)
+        return !confVal.get(STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault()
             && checkWaitingQueuePreconditions(event, categories, noTicketsAvailable, confVal);
     }
 
     private static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, Predicate<EventAndOrganizationId> noTicketsAvailable, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> confVal) {
         return findLastCategory(categories).map(lastCategory -> {
-            ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+            ZonedDateTime now = event.now(ClockProvider.clock());
             if(isPreSales(event, categories)) {
-                return confVal.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
-            } else if(confVal.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false)) {
+                return confVal.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault();
+            } else if(confVal.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault()) {
                 return now.isBefore(lastCategory.getZonedExpiration()) && noTicketsAvailable.test(event);
             }
             return false;
@@ -116,7 +116,7 @@ public final class EventUtil {
     }
 
     public static boolean isPreSales(Event event, List<SaleableTicketCategory> categories) {
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        ZonedDateTime now = event.now(ClockProvider.clock());
         return findFirstCategory(categories).map(c -> now.isBefore(c.getZonedInception())).orElse(false);
     }
 
@@ -240,7 +240,7 @@ public final class EventUtil {
     }
 
     public static Optional<CallLink> firstMatchingCallLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
-        var now = ZonedDateTime.now(eventZoneId);
+        var now = ZonedDateTime.now(ClockProvider.clock().withZone(eventZoneId));
         return firstMatchingCallLink(categoryConfiguration, eventZoneId, now)
             .or(() -> firstMatchingCallLink(eventConfiguration, eventZoneId, now));
     }

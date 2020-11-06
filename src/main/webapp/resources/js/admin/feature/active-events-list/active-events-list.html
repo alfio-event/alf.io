@@ -18,7 +18,7 @@
                 <div class="col-md-1 hidden-xs hidden-sm">
                     <h4>
                         <a ui-sref="events.single.detail({eventName: event.shortName})">
-                            <img class="img-responsive" ng-src="/file/{{event.fileBlobId}}" ng-if="event.fileBlobId">
+                            <img class="img-responsive" ng-src="/file/{{event.fileBlobId}}" ng-if="$ctrl.displayImage && event.fileBlobId">
                             <img class="img-responsive" ng-src="/resources/images/sample-logo.png" ng-if="!event.fileBlobId">
                         </a>
                     </h4>

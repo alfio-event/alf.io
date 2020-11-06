@@ -73,6 +73,6 @@ public class FeeCalculator {
     }
 
     private static boolean isPlatformModeEnabled(EventAndOrganizationId event, ConfigurationManager configurationManager) {
-        return configurationManager.getFor(PLATFORM_MODE_ENABLED, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
+        return configurationManager.getFor(PLATFORM_MODE_ENABLED, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
     }
 }
