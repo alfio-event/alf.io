@@ -54,6 +54,27 @@ public class TicketCategory {
         ONCE_PER_DAY
     }
 
+    /**
+     * Defines the category access type. It will impact how tickets are generated/sent/checked-in.
+     */
+    public enum TicketAccessType {
+        /**
+         * Inherit the access type from the Event format (default)
+         */
+        INHERIT,
+
+        /**
+         * Attendees of this category will receive a ticket and Wallet Pass, and will be allowed to access
+         * the event venue.
+         */
+        IN_PERSON,
+
+        /**
+         * Attendees of this category can only access the event online.
+         */
+        ONLINE
+    }
+
     private final int id;
     private final ZonedDateTime utcInception;
     private final ZonedDateTime utcExpiration;
@@ -72,6 +93,7 @@ public class TicketCategory {
     private final String currencyCode;
     private final int ordinal;
     private final TicketCheckInStrategy ticketCheckInStrategy;
+    private final TicketAccessType ticketAccessType;
 
 
     public TicketCategory(@JsonProperty("id") @Column("id") int id,
@@ -91,7 +113,8 @@ public class TicketCategory {
                           @JsonProperty("ticketValidityEnd") @Column("ticket_validity_end") ZonedDateTime ticketValidityEnd,
                           @JsonProperty("currencyCode") @Column("currency_code") String currencyCode,
                           @JsonProperty("ordinal") @Column("ordinal") Integer ordinal,
-                          @JsonProperty("ticketCheckInStrategy") @Column("ticket_checkin_strategy") TicketCheckInStrategy ticketCheckInStrategy) {
+                          @JsonProperty("ticketCheckInStrategy") @Column("ticket_checkin_strategy") TicketCheckInStrategy ticketCheckInStrategy,
+                          @JsonProperty("ticketAccessType") @Column("ticket_access_type") TicketAccessType ticketAccessType) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;
@@ -110,6 +133,7 @@ public class TicketCategory {
         this.currencyCode = currencyCode;
         this.ordinal = ordinal != null ? ordinal : 0;
         this.ticketCheckInStrategy = ticketCheckInStrategy;
+        this.ticketAccessType = ticketAccessType;
     }
 
     public BigDecimal getPrice() {
