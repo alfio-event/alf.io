@@ -168,7 +168,9 @@ public final class EventUtil {
          VEvent vEvent = new VEvent();
          vEvent.setSummary(event.getDisplayName());
          vEvent.setDescription(description);
-         vEvent.setLocation(RegExUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+         if(!event.isOnline()) {
+            vEvent.setLocation(RegExUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+         }
          ZonedDateTime begin = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
          ZonedDateTime end = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
          vEvent.setDateStart(Date.from(begin.toInstant()));
@@ -204,7 +206,7 @@ public final class EventUtil {
             .queryParam("dates", validityStart.format(formatter) + "/" + validityEnd.format(formatter))
             .queryParam("ctz", event.getTimeZone())
             .queryParam("text", event.getDisplayName())
-            .queryParam("location", event.getLocation())
+            .queryParam("location", event.isOnline() ? null : event.getLocation())
             .queryParam("detail", description)
             .toUriString();
     }
