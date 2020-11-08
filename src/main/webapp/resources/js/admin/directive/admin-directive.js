@@ -338,17 +338,15 @@
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
             controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService) {
-<<<<<<< HEAD
-                $scope.baseUrl = ConfigurationService.getBaseUrl();
-=======
+//<<<<<<< HEAD
+//                $scope.baseUrl = ConfigurationService.getBaseUrl();
+//=======
 
                 ConfigurationService.loadInstanceSettings().then(function(result) {
                     var data = result.data;
                     $scope.baseUrl = data.baseUrl;
                     $scope.descriptionLimit = data.descriptionMaxLength;
                 });
-
->>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
 
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',

@@ -826,14 +826,12 @@ div.preformatted {
     background-color: white !important;
     margin-bottom: 0 !important;
 }
-<<<<<<< HEAD
 .tag-chip {
     background-color: #bbffb2;
     border-radius: 50px;
     padding: 1px 8px 4px 8px;
     margin-right: 1rem;
     white-space: nowrap;
-=======
 
 .poll-chart .ct-label {
     color: black;
@@ -846,5 +844,4 @@ div.preformatted {
 
 .bg-white {
     background-color: white;
->>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
 }

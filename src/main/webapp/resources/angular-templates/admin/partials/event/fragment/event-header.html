@@ -40,7 +40,6 @@
             </div>
             <div class="col-md-6 col-xs-12">
                 <dl class="dl-horizontal">
-<<<<<<< HEAD
                     <dt ng-if="event.metadata.tags && event.metadata.tags.length > 0">TAGS</dt>
                     <dd><div ng-if="event.metadata.tags && event.metadata.tags.length > 0"><span class="tag-chip" data-ng-repeat="tag in event.metadata.tags">{{tag}}</span></div></dd>
                     <dt ng-if="event.metadata.attributes">Attributes</dt>
@@ -50,11 +49,7 @@
                         </div>
                     </dd>
                    <dt>Public URL</dt>
-                    <dd><a ng-href="{{eventPublicURL}}" target="_blank">{{eventPublicURL}}</a></dd>
-=======
-                    <dt>Public URL</dt>
                     <dd><a ng-href="{{eventPublicURL}}" target="_blank" rel="noopener">{{eventPublicURL}}</a></dd>
->>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
                     <dt>Organized by</dt>
                     <dd>{{organization.name}} &lt;{{organization.email}}&gt;</dd>
                     <dt>Website URL</dt>

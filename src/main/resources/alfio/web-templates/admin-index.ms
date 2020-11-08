@@ -223,17 +223,7 @@
                 </div>
             </div>
             <footer class="text-center" ng-if="!ctrl.displaySidebar">
-<<<<<<< HEAD
-                <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</h5>
-                <!--
-                <small><a href="https://github.com/alfio-event/alf.io/issues" target="_blank">report an issue</a> or <a href="https://groups.google.com/d/forum/alfio" target="_blank">ask for help</a></small>
-                <div class="wMarginTop10px">
-                    <a class="btn btn-xs btn-success" href="https://alfio-event.typeform.com/to/frPgBy" target="_blank">Tell us about you!</a>
-                </div>
-                -->
-=======
                 <project-banner data-full-banner="{{displayProjectBanner}}" data-alfio-version="'{{alfioVersion}}'"></project-banner>
->>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
             </footer>
         </div>
     </div>

@@ -12,195 +12,165 @@
     </div>
 
     <uib-tabset>
-        <uib-tab index="2" heading="Promo codes">
-            <promo-codes for-organization="true" organization-id="organizationConf.organization.id"></promo-codes>
-        </uib-tab>
-        <uib-tab index="1" heading="Internationalization">
-            <internationalization-editor organization-id="organizationConf.organization.id"></internationalization-editor>
-        </uib-tab>
-        <uib-tab index="3" heading="Templates">
-            <resources-show for-organization="true" organization-id="organizationConf.organization.id"></resources-show>
-        </uib-tab>
-        <uib-tab index="4" heading="Replay" data-ng-if="organizationConf.enableVideoManagement">
-            <replays for-organization="true" organization-id="organizationConf.organization.id"></replays>
-        </uib-tab>
         <uib-tab index="0" heading="Settings">
-        <form name="settingsForm" novalidate data-ng-submit="organizationConf.saveSettings(settingsForm)" class="wMarginTop30px">
-            <div class="page-header" id="GENERAL">
-                <h2>General</h2>
-                <span>General settings</span>
-            </div>
-            <div data-ng-if="organizationConf.general">
-                <div data-ng-repeat="setting in organizationConf.general.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="organizationConf.globalSettings" data-delete-handler="organizationConf.delete(config)"></setting>
+            <form name="settingsForm" novalidate data-ng-submit="organizationConf.saveSettings(settingsForm)" class="wMarginTop30px">
+                <div class="page-header" id="GENERAL">
+                    <h2>General</h2>
+                    <span>General settings</span>
                 </div>
-            </div>
-
-            <div class="page-header" id="RESERVATION_UI">
-                <h2>Reservation Process</h2>
-                <span>Customizations for the public-facing reservation process</span>
-            </div>
-            <div>
-                <div data-ng-repeat="setting in organizationConf.reservationUi.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                <div data-ng-if="organizationConf.general">
+                    <div data-ng-repeat="setting in organizationConf.general.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="organizationConf.globalSettings" data-delete-handler="organizationConf.delete(config)"></setting>
+                    </div>
                 </div>
-            </div>
 
-            <div class="page-header" id="PASS_INTEGRATION">
-                <h2>Pass Integration</h2>
-                <span>Integration with Apple (tm) Pass</span>
-            </div>
-            <div>
-                <div data-ng-repeat="setting in organizationConf.passIntegration.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                <div class="page-header" id="RESERVATION_UI">
+                    <h2>Reservation Process</h2>
+                    <span>Customizations for the public-facing reservation process</span>
                 </div>
-            </div>
-
-            <div class="page-header" id="WAITING_LIST">
-                <h2>Waiting List</h2>
-                <span>Waiting List configuration</span>
-            </div>
-            <div>
-                <div data-ng-repeat="setting in organizationConf.waitingList.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                </div>
-            </div>
-
-            <div class="page-header" id="MAIL">
-                <h2>E-Mail</h2>
-                <span>E-Mail settings</span>
-            </div>
-
-            <div data-ng-if="organizationConf.mail">
-                <div data-ng-if="organizationConf.mail.type">
-                    <div class="radio-inline">
-                        <label>
-                            <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'smtp'">
-                            SMTP
-                        </label>
-                    </div>
-                    <div class="radio-inline">
-                        <label>
-                            <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'mailgun'">
-                            Mailgun.com
-                        </label>
-                    </div>
-                    <div class="radio-inline">
-                        <label>
-                            <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'mailjet'">
-                            Mailjet.com
-                        </label>
-                    </div>
-                    <div class="radio-inline">
-                        <label>
-                            <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'disabled'">
-                            Disable
-                        </label>
-                    </div>
-                    <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value">
+                <div>
+                    <div data-ng-repeat="setting in organizationConf.reservationUi.settings">
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                     </div>
-                    <div>
-                        <setting obj="organizationConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    </div>
-                    <div>
-                        <setting obj="organizationConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    </div>
-                    <div>
-                        <setting obj="organizationConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    </div>
-                    <div>
-                        <setting obj="organizationConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    </div>
-                    <div>
-                        <setting obj="organizationConf.mail.enableHtmlEmails" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    </div>
                 </div>
-                <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                </div>
-            </div>
 
-            <div class="page-header" id="INVOICE">
-                <h2>Invoice</h2>
-            </div>
-            <div>
-                <div data-ng-repeat="setting in organizationConf.settings.INVOICE">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                <div class="page-header" id="PASS_INTEGRATION">
+                    <h2>Pass Integration</h2>
+                    <span>Integration with Apple (tm) Pass</span>
                 </div>
-            </div>
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-eur"></i> EU-Specific invoice settings</div>
-                </div>
-                <div class="panel-body">
-                    <div data-ng-repeat="setting in organizationConf.invoiceEu.settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(setting)" list-values="setting.listValues"></setting>
+                <div>
+                    <div data-ng-repeat="setting in organizationConf.passIntegration.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                     </div>
                 </div>
-            </div>
+
+                <div class="page-header" id="WAITING_LIST">
+                    <h2>Waiting List</h2>
+                    <span>Waiting List configuration</span>
+                </div>
+                <div>
+                    <div data-ng-repeat="setting in organizationConf.waitingList.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                    </div>
+                </div>
+
+                <div class="page-header" id="MAIL">
+                    <h2>E-Mail</h2>
+                    <span>E-Mail settings</span>
+                </div>
+
+                <div data-ng-if="organizationConf.mail">
+                    <div data-ng-if="organizationConf.mail.type">
+                        <div class="radio-inline">
+                            <label>
+                                <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'smtp'">
+                                SMTP
+                            </label>
+                        </div>
+                        <div class="radio-inline">
+                            <label>
+                                <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'mailgun'">
+                                Mailgun.com
+                            </label>
+                        </div>
+                        <div class="radio-inline">
+                            <label>
+                                <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'mailjet'">
+                                Mailjet.com
+                            </label>
+                        </div>
+                        <div class="radio-inline">
+                            <label>
+                                <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'disabled'">
+                                Disable
+                            </label>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                        <div>
+                            <setting obj="organizationConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                        <div>
+                            <setting obj="organizationConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                        <div>
+                            <setting obj="organizationConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                        <div>
+                            <setting obj="organizationConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                        <div>
+                            <setting obj="organizationConf.mail.enableHtmlEmails" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                    </div>
+                    <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                    </div>
+                </div>
+
+                <div class="page-header" id="INVOICE">
+                    <h2>Invoice</h2>
+                </div>
+                <div>
+                    <div data-ng-repeat="setting in organizationConf.settings.INVOICE">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-eur"></i> EU-Specific invoice settings</div>
+                    </div>
+                    <div class="panel-body">
+                        <div data-ng-repeat="setting in organizationConf.invoiceEu.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(setting)" list-values="setting.listValues"></setting>
+                        </div>
+                    </div>
+                </div>
 
 
-<<<<<<< HEAD
-            <div class="page-header" id="PAYMENT" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
-                <h2>Payment</h2>
-                <span>Payment provider settings</span>
-            </div>
-=======
                 <div class="page-header" id="PAYMENT" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline || organizationConf.paymentSaferpay">
                     <h2>Payment</h2>
                     <span>Payment provider settings</span>
                 </div>
->>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
 
-            <div data-ng-if="organizationConf.payment" class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-dollar"></i> General</div>
-                </div>
-                <div class="panel-body">
-                    <div data-ng-repeat="setting in organizationConf.payment.settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                <div data-ng-if="organizationConf.payment" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-dollar"></i> General</div>
                     </div>
-                </div>
-            </div>
-
-            <div data-ng-if="organizationConf.paymentStripe" class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-cc-stripe"></i> Stripe configuration</div>
-                </div>
-                <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
-                    <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
-                    <div data-ng-repeat="setting in organizationConf.paymentStripe.settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
-                    </div>
-                </div>
-                <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
-                    <div class="row">
-                        <div class="col-xs-4 col-md-3">
-                            <a class="stripe-connect" ng-href="/admin/configuration/payment/stripe/connect/{{organizationConf.organizationId}}"><span>Connect with Stripe</span></a>
-                        </div>
-                        <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.stripeConnected}">
-                            <i class="fa" ng-class="{'fa-check': organizationConf.stripeConnected, 'fa-question': !organizationConf.stripeConnected}"></i> <span ng-if="organizationConf.stripeConnected">Connected</span> <span ng-if="!organizationConf.stripeConnected">NOT Connected</span>
+                    <div class="panel-body">
+                        <div data-ng-repeat="setting in organizationConf.payment.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div data-ng-if="organizationConf.paymentPaypal" class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-paypal"></i> PayPal configuration</div>
-                </div>
-                <div class="panel-body">
-                    <div class="alert alert-info">
-                        <p><i class="fa fa-info-circle"></i> in order to accept payments through PayPal, you must create and enable a new <strong>REST API app</strong>, as explained <a href="https://developer.paypal.com/docs/integration/admin/manage-apps/" target="_blank">here</a></p>
-                        <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
-                        <p><strong>IMPORTANT:</strong> if you are going to accept payments in a currency you don't hold, please make sure to enable automatic currency conversion. </p>
-                        <p>To do that, go to <a href="https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref">PayPal dashboard</a> and select <code>Profile</code> -> <code>Profile and Settings</code> -> <code>My Selling Tools</code> -> <code>Block Payments</code></p>
+                <div data-ng-if="organizationConf.paymentStripe" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-cc-stripe"></i> Stripe configuration</div>
                     </div>
-<<<<<<< HEAD
-                    <div data-ng-repeat="setting in organizationConf.paymentPaypal.settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
-=======
+                    <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
+                        <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
+                        <div data-ng-repeat="setting in organizationConf.paymentStripe.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        </div>
+                    </div>
+                    <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
+                        <div class="row">
+                            <div class="col-xs-4 col-md-3">
+                                <a class="stripe-connect" ng-href="/admin/configuration/payment/stripe/connect/{{organizationConf.organizationId}}"><span>Connect with Stripe</span></a>
+                            </div>
+                            <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.stripeConnected}">
+                                <i class="fa" ng-class="{'fa-check': organizationConf.stripeConnected, 'fa-question': !organizationConf.stripeConnected}"></i> <span ng-if="organizationConf.stripeConnected">Connected</span> <span ng-if="!organizationConf.stripeConnected">NOT Connected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-ng-if="organizationConf.paymentPaypal" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-paypal"></i> PayPal configuration</div>
+                    </div>
                     <div class="panel-body">
                         <div class="alert alert-info">
                             <p><i class="fa fa-info-circle"></i> in order to accept payments through PayPal, you must create and enable a new <strong>REST API app</strong>, as explained <a href="https://developer.paypal.com/docs/integration/admin/manage-apps/" target="_blank">here</a></p>
@@ -211,73 +181,63 @@
                         <div data-ng-repeat="setting in organizationConf.paymentPaypal.settings">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
->>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
                     </div>
                 </div>
-            </div>
 
-            <div data-ng-if="organizationConf.paymentMollie" class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="panel-title"> Mollie configuration</div>
-                </div>
-                <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
-                    <div data-ng-repeat="setting in organizationConf.paymentMollie.settings | mollieConnect:false">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                <div data-ng-if="organizationConf.paymentMollie" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"> Mollie configuration</div>
                     </div>
-                </div>
-                <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
-                    <div class="row">
-                        <div class="col-xs-4 col-md-3">
-                            <a ng-href="/admin/configuration/payment/mollie/connect/{{organizationConf.organizationId}}">
-                                <img src="/resources/images/payment/mollie-connect-button.png" srcset="/resources/images/payment/mollie-connect-button@2x.png 2x">
-                            </a>
-                        </div>
-                        <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.mollieConnected}">
-                            <i class="fa" ng-class="{'fa-check': organizationConf.mollieConnected, 'fa-question': !organizationConf.mollieConnected}"></i> <span ng-if="organizationConf.mollieConnected">Connected</span> <span ng-if="!organizationConf.mollieConnected">NOT Connected</span>
+                    <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
+                        <div data-ng-repeat="setting in organizationConf.paymentMollie.settings | mollieConnect:false">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
-                    <div data-ng-repeat="setting in organizationConf.paymentMollie.settings | mollieConnect:true">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                    <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
+                        <div class="row">
+                            <div class="col-xs-4 col-md-3">
+                                <a ng-href="/admin/configuration/payment/mollie/connect/{{organizationConf.organizationId}}">
+                                    <img src="/resources/images/payment/mollie-connect-button.png" srcset="/resources/images/payment/mollie-connect-button@2x.png 2x">
+                                </a>
+                            </div>
+                            <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.mollieConnected}">
+                                <i class="fa" ng-class="{'fa-check': organizationConf.mollieConnected, 'fa-question': !organizationConf.mollieConnected}"></i> <span ng-if="organizationConf.mollieConnected">Connected</span> <span ng-if="!organizationConf.mollieConnected">NOT Connected</span>
+                            </div>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.paymentMollie.settings | mollieConnect:true">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div data-ng-if="organizationConf.paymentOffline" class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-exchange"></i> Bank Transfer payment configuration</div>
-                </div>
-                <div class="panel-body">
-                    <div class="alert alert-info">
-                        <p><i class="fa fa-info-circle"></i> More info and documentation available <a href="https://alf.io/docs/configuration/payment/bank-transfer/" target="_blank" rel="noreferrer noopener">on the help page</a>.</p>
+                <div data-ng-if="organizationConf.paymentOffline" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-exchange"></i> Bank Transfer payment configuration</div>
                     </div>
-                    <setting data-obj="organizationConf.paymentOffline.enabled" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    <setting data-obj="organizationConf.paymentOffline.deferredSetting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    <div ng-if="organizationConf.paymentOffline.deferredSetting.value == 'true'">
-                        <setting data-obj="deferredSetting" data-ng-repeat="deferredSetting in organizationConf.paymentOffline.deferredConfigOptions"></setting>
-                    </div>
-                    <div data-ng-repeat="setting in organizationConf.paymentOffline.generalSettings" ng-if="organizationConf.paymentOffline.deferredSetting.value != 'true'">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    </div>
-                    <div ng-if="organizationConf.paymentOffline.deferredSetting.value != 'true'">
-                        <div class="page-header">
-                            <h3>Revolut integration</h3>
+                    <div class="panel-body">
+                        <div class="alert alert-info">
+                            <p><i class="fa fa-info-circle"></i> More info and documentation available <a href="https://alf.io/docs/configuration/payment/bank-transfer/" target="_blank" rel="noreferrer noopener">on the help page</a>.</p>
                         </div>
-                        <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
-                        <div data-ng-repeat="setting in organizationConf.paymentOffline.revolutSettings">
+                        <setting data-obj="organizationConf.paymentOffline.enabled" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        <setting data-obj="organizationConf.paymentOffline.deferredSetting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        <div ng-if="organizationConf.paymentOffline.deferredSetting.value == 'true'">
+                            <setting data-obj="deferredSetting" data-ng-repeat="deferredSetting in organizationConf.paymentOffline.deferredConfigOptions"></setting>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.paymentOffline.generalSettings" ng-if="organizationConf.paymentOffline.deferredSetting.value != 'true'">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
+                        <div ng-if="organizationConf.paymentOffline.deferredSetting.value != 'true'">
+                            <div class="page-header">
+                                <h3>Revolut integration</h3>
+                            </div>
+                            <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
+                            <div data-ng-repeat="setting in organizationConf.paymentOffline.revolutSettings">
+                                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-<<<<<<< HEAD
-            <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
-                <h2>Alf.io PI settings</h2>
-            </div>
-            <div data-ng-if="organizationConf.alfioPi" class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-check"></i> Alf.io-PI integration for offline check-in and label printing</div>
-=======
                 <div data-ng-if="organizationConf.paymentSaferpay" class="panel panel-default">
                     <div class="panel-heading">
                         <div class="panel-title"><i class="fa fa-credit-card"></i> Saferpay</div>
@@ -291,36 +251,48 @@
 
                 <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
                     <h2>Alf.io PI settings</h2>
->>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
                 </div>
-                <div class="panel-body">
-                    <div class="alert alert-info">
-                        <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/alfio-event/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
+                <div data-ng-if="organizationConf.alfioPi" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-check"></i> Alf.io-PI integration for offline check-in and label printing</div>
                     </div>
-                    <div data-ng-repeat="setting in organizationConf.alfioPiOptions">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
-                    </div>
-                </div>
-            </div>
-
-            <div class="page-header" data-ng-if="organizationConf.extensionSettings && (organizationConf.extensionSettings | keys).length > 0">
-                <h2>Extensions</h2>
-            </div>
-            <div class="panel panel-default" data-ng-repeat="settingId in organizationConf.extensionSettings | keys">
-                <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-plug"></i> {{organizationConf.extensionSettings[settingId][0].extensionDisplayName}}</div>
-                </div>
-                <div class="panel-body">
-                    <div>
-                        <div data-ng-repeat="setting in organizationConf.extensionSettings[settingId]">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.deleteExtensionSetting(setting)"></setting>
+                    <div class="panel-body">
+                        <div class="alert alert-info">
+                            <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/alfio-event/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.alfioPiOptions">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <control-buttons data-form-obj="organizationConf" data-success-text="Save" data-cancel-handler="organizationConf.cancel"></control-buttons>
-        </form>
-    </uib-tab>
+                <div class="page-header" data-ng-if="organizationConf.extensionSettings && (organizationConf.extensionSettings | keys).length > 0">
+                    <h2>Extensions</h2>
+                </div>
+                <div class="panel panel-default" data-ng-repeat="settingId in organizationConf.extensionSettings | keys">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-plug"></i> {{organizationConf.extensionSettings[settingId][0].extensionDisplayName}}</div>
+                    </div>
+                    <div class="panel-body">
+                        <div>
+                            <div data-ng-repeat="setting in organizationConf.extensionSettings[settingId]">
+                                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.deleteExtensionSetting(setting)"></setting>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <control-buttons data-form-obj="organizationConf" data-success-text="Save" data-cancel-handler="organizationConf.cancel"></control-buttons>
+            </form>
+        </uib-tab>
+        <uib-tab index="1" heading="Internationalization">
+            <internationalization-editor organization-id="organizationConf.organization.id"></internationalization-editor>
+        </uib-tab>
+        <uib-tab index="2" heading="Promo codes">
+            <promo-codes for-organization="true" organization-id="organizationConf.organization.id"></promo-codes>
+        </uib-tab>
+        <uib-tab index="3" heading="Templates">
+            <resources-show for-organization="true" organization-id="organizationConf.organization.id"></resources-show>
+        </uib-tab>
     </uib-tabset>
 </div>

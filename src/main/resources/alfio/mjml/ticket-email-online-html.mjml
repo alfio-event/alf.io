@@ -134,7 +134,6 @@
 			</mj-column>
 		</mj-section>
     
-<<<<<<< HEAD
 	    <mj-section background-color="white">
 	   		<mj-column width="130px">
 	   			<mj-image src="{{baseUrl}}/resources/images/email/icon_link.png"></mj-image>
@@ -153,14 +152,6 @@
                 <mj-text align="center" font-size="14px">{{#i18n}}email-ticket.look-forward{{/i18n}}</mj-text>
 	    	</mj-column>
 	   	</mj-section>
-=======
-	    <mj-section>
-            <mj-column width="100%">
-                <mj-button rel="notrack" align="center" background-color="#7C8B95" href="{{ticketUrl}}"> {{#i18n}}email-ticket.view-modify{{/i18n}}</mj-button>
-            </mj-column>
-	    </mj-section>
->>>>>>> 7e28b7decf8894d981715b92272f4124a4461e09
-	   	
 	   	<mj-raw>{{#custom-footer-text?}}</mj-raw>
 	    <mj-section background-color="white">
 	      <mj-column width="100%">
