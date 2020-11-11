@@ -324,6 +324,7 @@ bootRun {
         opts += externalConfig.readLines()
     }
     jvmArgs = opts
+    mainClass = 'alfio.config.SpringBootLauncher'
 }
 
 bootWar {
