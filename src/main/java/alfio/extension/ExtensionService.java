@@ -104,9 +104,15 @@ public class ExtensionService {
     }
 
     @Transactional
-    public void createOrUpdate(String previousPath, String previousName, Extension script) {
+    public void createOrUpdate(String previousPath, String previousName, Extension script) throws Exception {
         Validate.notBlank(script.getName(), "Name is mandatory");
         Validate.notBlank(script.getPath(), "Path must be defined");
+        ScriptValidation validation = new ScriptValidation(script.getScript());
+        try {
+            validation.validate();
+        } catch (Exception e) {
+            throw e;
+        }
         String hash = DigestUtils.sha256Hex(script.getScript());
         ExtensionMetadata extensionMetadata = getMetadata(script.getName(), script.getScript());
 

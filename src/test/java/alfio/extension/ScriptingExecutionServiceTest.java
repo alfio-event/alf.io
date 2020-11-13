@@ -19,6 +19,7 @@ package alfio.extension;
 import alfio.extension.exception.ExecutionTimeoutException;
 import alfio.extension.exception.OutOfBoundariesException;
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

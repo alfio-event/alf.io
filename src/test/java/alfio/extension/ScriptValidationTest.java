@@ -41,9 +41,31 @@ public class ScriptValidationTest {
     }
 
     @Test
-    void testWhileLoopValidation() throws Exception {
+    void testWhileLoopValidation() {
         try {
             String concatenation = getScriptContent("timeout.js");
+            ScriptValidation validation = new ScriptValidation(concatenation);
+            Assertions.assertTrue(validation.validate());
+        } catch (Exception ex) {
+            assertTrue(ex instanceof ScriptNotValidException);
+        }
+    }
+
+    @Test
+    void testDoLoopValidation() {
+        try {
+            String concatenation = getScriptContent("doLoop.js");
+            ScriptValidation validation = new ScriptValidation(concatenation);
+            Assertions.assertTrue(validation.validate());
+        } catch (Exception ex) {
+            assertTrue(ex instanceof ScriptNotValidException);
+        }
+    }
+
+    @Test
+    void testWithStatementValidation() {
+        try {
+            String concatenation = getScriptContent("withStatement.js");
             ScriptValidation validation = new ScriptValidation(concatenation);
             Assertions.assertTrue(validation.validate());
         } catch (Exception ex) {

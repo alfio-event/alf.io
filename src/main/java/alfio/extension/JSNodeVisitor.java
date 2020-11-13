@@ -58,7 +58,7 @@ public class JSNodeVisitor implements NodeVisitor {
         int nodeType = node.getType();
         // we will track only variables and functions
         // add function calls, loops, while
-        if (nodeType != Token.FUNCTION && nodeType != Token.VAR && nodeType != Token.NAME && nodeType != Token.WHILE && nodeType != Token.OBJECTLIT && nodeType != Token.CALL && nodeType != Token.GETPROP &&
+        if (nodeType != Token.FUNCTION && nodeType != Token.WITH && nodeType != Token.LABEL && nodeType != Token.VAR && nodeType != Token.NAME && nodeType != Token.WHILE && nodeType != Token.DO && nodeType != Token.OBJECTLIT && nodeType != Token.CALL && nodeType != Token.GETPROP &&
             !(nodeType == Token.NAME && node.getParent() instanceof ObjectProperty)) {
             if (isVariableName(node)) {
                 // check if it is in the current function
@@ -75,7 +75,7 @@ public class JSNodeVisitor implements NodeVisitor {
         if (node.getType() == Token.VAR && !(node instanceof VariableInitializer)) {
             return;
         }
-        if(node instanceof WhileLoop) {
+        if(node instanceof WhileLoop || node instanceof DoLoop || node instanceof WithStatement || node instanceof LabeledStatement) {
             throw new ScriptNotValidException("Script not valid.");
         }
         JSSymbol currSym = null;
