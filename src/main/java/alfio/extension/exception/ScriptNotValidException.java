@@ -17,11 +17,10 @@
 package alfio.extension.exception;
 
 /**
- * Exception thrown if a timeout happens when executing a script.
+ * Exception thrown if script is not valid for execution.
  */
-public class ExecutionTimeoutException extends RuntimeException {
-
-    public ExecutionTimeoutException(String message) {
+public class ScriptNotValidException extends RuntimeException{
+    public ScriptNotValidException(String message) {
         super(message);
     }
 }

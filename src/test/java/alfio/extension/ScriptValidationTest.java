@@ -1,29 +1,20 @@
 package alfio.extension;
 
+import alfio.extension.exception.ScriptNotValidException;
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class ScriptValidationTest {
-    private static ScriptingExecutionService scriptingExecutionService;
-    private ExtensionLogger extensionLogger = Mockito.mock(ExtensionLogger.class);
-
-    @BeforeAll
-    public static void init() {
-        Supplier<Executor> executorSupplier = () -> Runnable::run;
-        scriptingExecutionService = new ScriptingExecutionService(Mockito.mock(HttpClient.class), executorSupplier);
-    }
 
     private String getScriptContent(String file) throws IOException {
         String concatenation;
@@ -37,8 +28,26 @@ public class ScriptValidationTest {
     @Test
     void testBaseScriptValidation() throws Exception {
         String concatenation = getScriptContent("base.js");
-//        scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertTrue(validation.parseJS());
+        Assertions.assertTrue(validation.validate());
+    }
+
+    @Test
+    @Ignore
+    void testBoundariesExitValidation() throws Exception {
+        String concatenation = getScriptContent("boundariesExit.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertTrue(validation.validate());
+    }
+
+    @Test
+    void testWhileLoopValidation() throws Exception {
+        try {
+            String concatenation = getScriptContent("timeout.js");
+            ScriptValidation validation = new ScriptValidation(concatenation);
+            Assertions.assertTrue(validation.validate());
+        } catch (Exception ex) {
+            assertTrue(ex instanceof ScriptNotValidException);
+        }
     }
 }

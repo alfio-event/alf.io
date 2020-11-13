@@ -18,6 +18,7 @@
 package alfio.extension;
 
 import alfio.extension.exception.OutOfBoundariesException;
+import alfio.extension.exception.ScriptNotValidException;
 import alfio.extension.support.SandboxContextFactory;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -135,13 +136,15 @@ public class ScriptingExecutionService {
             for (var entry : params.entrySet()) {
                 scope.put(entry.getKey(), scope, entry.getValue());
             }
+            Object res;
             // before evaluating check if the script is valid
-            // if (ScriptValidation.parseJS(script)) {
-                Object res = cx.evaluateString(scope, script, name, 1, null);
-            // } else {
-            //     throw new ScriptNotValidException();
-            // }
-            extensionLogger.logSuccess("Script executed successfully");
+            ScriptValidation validation = new ScriptValidation(script);
+            if (validation.validate()) {
+                res = cx.evaluateString(scope, script, name, 1, null);
+            } else {
+                throw new ScriptNotValidException("Script is not valid.");
+            }
+            extensionLogger.logSuccess("Script executed successfully.");
             if (res instanceof NativeJavaObject) {
                 NativeJavaObject nativeRes = (NativeJavaObject) res;
                 return (T) nativeRes.unwrap();

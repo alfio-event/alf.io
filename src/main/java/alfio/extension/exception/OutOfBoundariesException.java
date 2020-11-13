@@ -17,7 +17,7 @@
 package alfio.extension.exception;
 
 /**
- * description
+ * Exception thrown if some out of boundaries usage (forbidden methods calls) happens when executing a script.
  */
 public class OutOfBoundariesException extends RuntimeException{
 

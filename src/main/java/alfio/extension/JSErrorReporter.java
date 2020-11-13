@@ -24,24 +24,23 @@ import org.mozilla.javascript.EvaluatorException;
  *
  * @author Ram Kulkarni
  * http://ramkulkarni.com/blog/parsing-javascript-code-using-mozilla-rhino/
+ *
+ * Implements ErrorReporter interface of Rhino and prints syntax errors in the JS script.
  */
-public class JSErrorReporter implements ErrorReporter  {
+public class JSErrorReporter implements ErrorReporter {
 
     @Override
-    public void warning(String message, String sourceName, int line,
-                        String lineSource, int lineOffset) {
+    public void warning(String message, String sourceName, int line, String lineSource, int lineOffset) {
         System.out.println("Warning : " + message);
     }
 
     @Override
-    public EvaluatorException runtimeError(String message, String sourceName,
-                                           int line, String lineSource, int lineOffset) {
+    public EvaluatorException runtimeError(String message, String sourceName, int line, String lineSource, int lineOffset) {
         return null;
     }
 
     @Override
-    public void error(String message, String sourceName, int line,
-                      String lineSource, int lineOffset) {
+    public void error(String message, String sourceName, int line, String lineSource, int lineOffset) {
         System.out.println("Error : " + message);
     }
 

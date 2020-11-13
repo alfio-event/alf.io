@@ -18,62 +18,53 @@
 package alfio.extension;
 
 import java.util.Stack;
+
+import alfio.extension.exception.ScriptNotValidException;
 import org.mozilla.javascript.Token;
-import org.mozilla.javascript.ast.Assignment;
-import org.mozilla.javascript.ast.AstNode;
-import org.mozilla.javascript.ast.Name;
-import org.mozilla.javascript.ast.NodeVisitor;
-import org.mozilla.javascript.ast.ObjectProperty;
-import org.mozilla.javascript.ast.PropertyGet;
-import org.mozilla.javascript.ast.VariableInitializer;
+import org.mozilla.javascript.ast.*;
 
 /**
  *
  * @author Ram Kulkarni
  * http://ramkulkarni.com/blog/parsing-javascript-code-using-mozilla-rhino/
+ *
+ * Implements Rhino’s NodeVisitor interface and builds hierarchy of JSSymbol
  */
-public class JSNodeVisitor implements NodeVisitor
-{
+public class JSNodeVisitor implements NodeVisitor {
     Stack<JSSymbol> functionsStack = new Stack<>();
     int currentFuncEndOffset = -1;
     JSSymbol root = null;
 
     @Override
     public boolean visit(AstNode node) {
-        if (node == null)
+        if (node == null) {
             return false;
+        }
 
         addToParent(node);
-
         return true;
     }
 
-    private void addToParent(AstNode node)
-    {
-        if (root == null)
-        {
+    private void addToParent(AstNode node) {
+        if (root == null) {
             root = new JSSymbol(node);
             functionsStack.push(root);
             currentFuncEndOffset = node.getAbsolutePosition() + node.getLength();
             return;
         }
-
-        if (functionsStack.size() == 0)
+        if (functionsStack.size() == 0) {
             return;
-
+        }
         int nodeType = node.getType();
-
-        //we will track only variables and functions
-        if (nodeType != Token.FUNCTION && nodeType != Token.VAR && nodeType != Token.OBJECTLIT &&
-            !(nodeType == Token.NAME && node.getParent() instanceof ObjectProperty))
-        {
-            if (isVariableName(node))
-            {
-                //check if it is in the current function
+        // we will track only variables and functions
+        // add function calls, loops, while
+        if (nodeType != Token.FUNCTION && nodeType != Token.VAR && nodeType != Token.NAME && nodeType != Token.WHILE && nodeType != Token.OBJECTLIT && nodeType != Token.CALL && nodeType != Token.GETPROP &&
+            !(nodeType == Token.NAME && node.getParent() instanceof ObjectProperty)) {
+            if (isVariableName(node)) {
+                // check if it is in the current function
                 String symbolName = ((Name)node).getIdentifier();
                 JSSymbol currentSymContainer = functionsStack.peek();
-                if (!currentSymContainer.childExist(symbolName))
-                {
+                if (!currentSymContainer.childExist(symbolName)) {
                     //this is a global symbol
                     root.addChild(node);
                 }
@@ -81,20 +72,19 @@ public class JSNodeVisitor implements NodeVisitor
             return;
         }
 
-        if (node.getType() == Token.VAR && node instanceof VariableInitializer == false)
+        if (node.getType() == Token.VAR && !(node instanceof VariableInitializer)) {
             return;
-
+        }
+        if(node instanceof WhileLoop) {
+            throw new ScriptNotValidException("Script not valid.");
+        }
         JSSymbol currSym = null;
-
         JSSymbol parent = functionsStack.peek();
-        if (parent.getNode().getAbsolutePosition() + parent.getNode().getLength() > node.getAbsolutePosition())
-        {
+        if (parent.getNode().getAbsolutePosition() + parent.getNode().getLength() > node.getAbsolutePosition()) {
             //add child node to parent
             currSym = new JSSymbol(node);
             parent.addChild(currSym);
-        }
-        else //outside current function boundary
-        {
+        } else { //outside current function boundary
             //pop current parent
             functionsStack.pop();
             addToParent(node);
@@ -102,22 +92,17 @@ public class JSNodeVisitor implements NodeVisitor
         }
 
         //currSym is already set above
-        if (nodeType == Token.FUNCTION || nodeType == Token.OBJECTLIT)
-        {
+        if (nodeType == Token.FUNCTION || nodeType == Token.OBJECTLIT || nodeType == Token.CALL) {
             AstNode parentNode = node.getParent();
             AstNode leftNode = null;
-            if (parentNode.getType() == Token.ASSIGN)
-            {
+            if (parentNode.getType() == Token.ASSIGN) {
                 leftNode = ((Assignment)parentNode).getLeft();
-            }
-            else if (parentNode instanceof ObjectProperty)
-            {
+            } else if (parentNode instanceof ObjectProperty) {
                 leftNode = ((ObjectProperty)parentNode).getLeft();
             }
-
-            if (leftNode instanceof Name)
-                currSym.setName(((Name)leftNode).getIdentifier());
-
+            if (leftNode instanceof Name) {
+                currSym.setName(((Name) leftNode).getIdentifier());
+            }
             functionsStack.push(currSym);
             currentFuncEndOffset = node.getAbsolutePosition() + node.getLength();
         }
@@ -125,25 +110,19 @@ public class JSNodeVisitor implements NodeVisitor
 
     //This is a helper function to get variables used outside
     //variable initializer
-    private boolean isVariableName (AstNode node)
-    {
+    private boolean isVariableName (AstNode node) {
         AstNode parentNode = node.getParent();
-
-        if (parentNode == null || node instanceof Name == false)
+        if (parentNode == null || !(node instanceof Name)) {
             return false;
-
+        }
         int parentType =  parentNode.getType();
-
-        if (parentType == Token.GETPROP) //get only the left most variable
-        {
+        if (parentType == Token.GETPROP)  { //get only the left most variable
             return (((PropertyGet)parentNode).getLeft() == node);
         }
-
         return (parentType != Token.FUNCTION &&
             parentType != Token.VAR &&
             parentType != Token.CALL
         );
-
     }
 
     public JSSymbol getRoot() {

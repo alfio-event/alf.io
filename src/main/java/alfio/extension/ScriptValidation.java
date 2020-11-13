@@ -23,6 +23,8 @@ import org.mozilla.javascript.ast.AstRoot;
 
 // http://ramkulkarni.com/blog/understanding-ast-created-by-mozilla-rhino-parser/
 // http://ramkulkarni.com/blog/parsing-javascript-code-using-mozilla-rhino/
+
+// https://github.com/mozilla/rhino/tree/master/src/org/mozilla/javascript/ast
 public class ScriptValidation {
 
     private String script;
@@ -31,7 +33,7 @@ public class ScriptValidation {
         this.script = script;
     }
 
-    public boolean parseJS() throws Exception {
+    public boolean validate() throws Exception {
         CompilerEnvirons env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
 
@@ -39,7 +41,6 @@ public class ScriptValidation {
         AstRoot rootNode = parser.parse(script, null, 0);
 
         JSNodeVisitor nodeVisitor = new JSNodeVisitor();
-
         rootNode.visit(nodeVisitor);
 
         if (nodeVisitor.getRoot().visit(new JSSymbolVisitor())) {
