@@ -72,4 +72,15 @@ public class ScriptValidationTest {
             assertTrue(ex instanceof ScriptNotValidException);
         }
     }
+
+    @Test
+    void testLabeledStatementValidation() {
+        try {
+            String concatenation = getScriptContent("labeledStatement.js");
+            ScriptValidation validation = new ScriptValidation(concatenation);
+            Assertions.assertTrue(validation.validate());
+        } catch (Exception ex) {
+            assertTrue(ex instanceof ScriptNotValidException);
+        }
+    }
 }
