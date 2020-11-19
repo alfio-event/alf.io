@@ -69,7 +69,7 @@ public class ScriptingExecutionServiceTest {
     }
 
     @Test
-    void testExecutionTimeout()  {
+    void testExecutionTimeout() {
         assertTimeoutPreemptively(Duration.ofSeconds(11L), () -> {
             try {
                 String concatenation = getScriptContent("timeout.js");
@@ -82,7 +82,7 @@ public class ScriptingExecutionServiceTest {
     }
 
     @Test
-    void testOutOfBoundariesReflection() throws IOException {
+    void testOutOfBoundariesReflection() {
         try {
             String concatenation = getScriptContent("boundariesReflection.js");
             scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);

@@ -33,11 +33,25 @@ public class ScriptValidationTest {
     }
 
     @Test
-    @Ignore
-    void testBoundariesExitValidation() throws Exception {
-        String concatenation = getScriptContent("boundariesExit.js");
-        ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertTrue(validation.validate());
+    void testBoundariesExitValidation() {
+        try {
+            String concatenation = getScriptContent("boundariesExit.js");
+            ScriptValidation validation = new ScriptValidation(concatenation);
+            Assertions.assertTrue(validation.validate());
+        } catch (Exception ex) {
+            assertTrue(ex instanceof ScriptNotValidException);
+        }
+    }
+
+    @Test
+    void testBoundariesReflectionValidation() {
+        try {
+            String concatenation = getScriptContent("boundariesReflection.js");
+            ScriptValidation validation = new ScriptValidation(concatenation);
+            Assertions.assertTrue(validation.validate());
+        } catch (Exception ex) {
+            assertTrue(ex instanceof ScriptNotValidException);
+        }
     }
 
     @Test

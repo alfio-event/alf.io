@@ -56,13 +56,20 @@ public class JSNodeVisitor implements NodeVisitor {
             return;
         }
         int nodeType = node.getType();
-        // we will track only variables and functions
-        // add function calls, loops, while
-        if (nodeType != Token.FUNCTION && nodeType != Token.WITH && nodeType != Token.LABEL && nodeType != Token.VAR && nodeType != Token.NAME && nodeType != Token.WHILE && nodeType != Token.DO && nodeType != Token.OBJECTLIT && nodeType != Token.CALL && nodeType != Token.GETPROP &&
-            !(nodeType == Token.NAME && node.getParent() instanceof ObjectProperty)) {
+        // we will track, variables and functions, function calls, loops, with statement, labeled statement
+        if (nodeType != Token.FUNCTION
+            && nodeType != Token.WITH
+            && nodeType != Token.LABEL
+            && nodeType != Token.VAR
+            && nodeType != Token.NAME
+            && nodeType != Token.WHILE
+            && nodeType != Token.DO
+            && nodeType != Token.OBJECTLIT
+            && nodeType != Token.CALL
+            && nodeType != Token.GETPROP) {
             if (isVariableName(node)) {
                 // check if it is in the current function
-                String symbolName = ((Name)node).getIdentifier();
+                String symbolName = ((Name) node).getIdentifier();
                 JSSymbol currentSymContainer = functionsStack.peek();
                 if (!currentSymContainer.childExist(symbolName)) {
                     //this is a global symbol
@@ -71,11 +78,16 @@ public class JSNodeVisitor implements NodeVisitor {
             }
             return;
         }
-
         if (node.getType() == Token.VAR && !(node instanceof VariableInitializer)) {
             return;
         }
-        if(node instanceof WhileLoop || node instanceof DoLoop || node instanceof WithStatement || node instanceof LabeledStatement) {
+        if (node instanceof WhileLoop
+            || node instanceof DoLoop
+            || node instanceof WithStatement
+            || node instanceof LabeledStatement
+            || (node instanceof PropertyGet && ((PropertyGet) node).getRight().getString().equals("System"))
+            || (node instanceof PropertyGet && ((PropertyGet) node).getRight().getString().equals("getClass"))
+            || (node instanceof Name && node.getString().equals("newInstance"))) {
             throw new ScriptNotValidException("Script not valid.");
         }
         JSSymbol currSym = null;
@@ -92,7 +104,7 @@ public class JSNodeVisitor implements NodeVisitor {
         }
 
         //currSym is already set above
-        if (nodeType == Token.FUNCTION || nodeType == Token.OBJECTLIT || nodeType == Token.CALL) {
+        if (nodeType == Token.FUNCTION || nodeType == Token.OBJECTLIT) {
             AstNode parentNode = node.getParent();
             AstNode leftNode = null;
             if (parentNode.getType() == Token.ASSIGN) {
@@ -119,10 +131,7 @@ public class JSNodeVisitor implements NodeVisitor {
         if (parentType == Token.GETPROP)  { //get only the left most variable
             return (((PropertyGet)parentNode).getLeft() == node);
         }
-        return (parentType != Token.FUNCTION &&
-            parentType != Token.VAR &&
-            parentType != Token.CALL
-        );
+        return (parentType != Token.FUNCTION && parentType != Token.VAR);
     }
 
     public JSSymbol getRoot() {
