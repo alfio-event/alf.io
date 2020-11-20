@@ -17,9 +17,11 @@
 
 package alfio.extension;
 
+import java.util.ArrayList;
 import java.util.Stack;
 
 import alfio.extension.exception.ScriptNotValidException;
+import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.*;
 
@@ -34,6 +36,7 @@ public class JSNodeVisitor implements NodeVisitor {
     Stack<JSSymbol> functionsStack = new Stack<>();
     int currentFuncEndOffset = -1;
     JSSymbol root = null;
+    ArrayList<String> functionCalls = new ArrayList<>();
 
     @Override
     public boolean visit(AstNode node) {
@@ -56,7 +59,8 @@ public class JSNodeVisitor implements NodeVisitor {
             return;
         }
         int nodeType = node.getType();
-        // we will track, variables and functions, function calls, loops, with statement, labeled statement
+        // we will track variables and functions, function calls, loops,
+        // with statement, labeled statement, level of function calls
         if (nodeType != Token.FUNCTION
             && nodeType != Token.WITH
             && nodeType != Token.LABEL
@@ -66,7 +70,8 @@ public class JSNodeVisitor implements NodeVisitor {
             && nodeType != Token.DO
             && nodeType != Token.OBJECTLIT
             && nodeType != Token.CALL
-            && nodeType != Token.GETPROP) {
+            && nodeType != Token.GETPROP
+            && nodeType != Token.EXPR_VOID) {
             if (isVariableName(node)) {
                 // check if it is in the current function
                 String symbolName = ((Name) node).getIdentifier();
@@ -80,6 +85,30 @@ public class JSNodeVisitor implements NodeVisitor {
         }
         if (node.getType() == Token.VAR && !(node instanceof VariableInitializer)) {
             return;
+        }
+        // keep track of function calls
+        if (node instanceof FunctionCall) {
+            AstNode target = ((FunctionCall) node).getTarget();
+            if (!(target instanceof PropertyGet)) {
+                Name name = (Name) target;
+                // keep all function calls inside an ArrayList
+                functionCalls.add(name.getIdentifier());
+                // go back in the script and find the parent i.e. the function in which this node is inside
+                AstNode parentNode = node.getParent();
+                while (parentNode != null) {
+                    if (parentNode instanceof FunctionNode) {
+                        Name parentName = ((FunctionNode) parentNode).getFunctionName();
+                        String id = parentName.getIdentifier();
+                        // when the function name is found, check if it was called from somewhere else
+                        // if this function is called from another place and it contains another function call, throw an exception
+                        if (functionCalls.contains(id)) {
+                            throw new ScriptNotValidException("Script not valid.");
+                        }
+                        break;
+                    }
+                    parentNode = parentNode.getParent();
+                }
+            }
         }
         if (node instanceof WhileLoop
             || node instanceof DoLoop

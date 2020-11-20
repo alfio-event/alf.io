@@ -2,7 +2,6 @@ package alfio.extension;
 
 import alfio.extension.exception.ScriptNotValidException;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -10,8 +9,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class ScriptValidationTest {
@@ -29,72 +26,55 @@ public class ScriptValidationTest {
     void testBaseScriptValidation() throws Exception {
         String concatenation = getScriptContent("base.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertTrue(validation.validate());
+        Assertions.assertDoesNotThrow(() -> validation.validate());
     }
 
     @Test
-    void testBoundariesExitValidation() {
-        try {
-            String concatenation = getScriptContent("boundariesExit.js");
-            ScriptValidation validation = new ScriptValidation(concatenation);
-            Assertions.assertTrue(validation.validate());
-        } catch (Exception ex) {
-            assertTrue(ex instanceof ScriptNotValidException);
-        }
+    void testBoundariesExitValidation() throws IOException {
+        String concatenation = getScriptContent("boundariesExit.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
     }
 
     @Test
-    void testBoundariesReflectionValidation() {
-        try {
-            String concatenation = getScriptContent("boundariesReflection.js");
-            ScriptValidation validation = new ScriptValidation(concatenation);
-            Assertions.assertTrue(validation.validate());
-        } catch (Exception ex) {
-            assertTrue(ex instanceof ScriptNotValidException);
-        }
+    void testBoundariesReflectionValidation() throws IOException {
+        String concatenation = getScriptContent("boundariesReflection.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertThrows(ScriptNotValidException.class, () -> validation.validate());
     }
 
     @Test
-    void testWhileLoopValidation() {
-        try {
-            String concatenation = getScriptContent("timeout.js");
-            ScriptValidation validation = new ScriptValidation(concatenation);
-            Assertions.assertTrue(validation.validate());
-        } catch (Exception ex) {
-            assertTrue(ex instanceof ScriptNotValidException);
-        }
+    void testWhileLoopValidation() throws IOException {
+        String concatenation = getScriptContent("timeout.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
     }
 
     @Test
-    void testDoLoopValidation() {
-        try {
-            String concatenation = getScriptContent("doLoop.js");
-            ScriptValidation validation = new ScriptValidation(concatenation);
-            Assertions.assertTrue(validation.validate());
-        } catch (Exception ex) {
-            assertTrue(ex instanceof ScriptNotValidException);
-        }
+    void testDoLoopValidation() throws IOException {
+        String concatenation = getScriptContent("doLoop.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
     }
 
     @Test
-    void testWithStatementValidation() {
-        try {
-            String concatenation = getScriptContent("withStatement.js");
-            ScriptValidation validation = new ScriptValidation(concatenation);
-            Assertions.assertTrue(validation.validate());
-        } catch (Exception ex) {
-            assertTrue(ex instanceof ScriptNotValidException);
-        }
+    void testWithStatementValidation() throws IOException {
+        String concatenation = getScriptContent("withStatement.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
     }
 
     @Test
-    void testLabeledStatementValidation() {
-        try {
-            String concatenation = getScriptContent("labeledStatement.js");
-            ScriptValidation validation = new ScriptValidation(concatenation);
-            Assertions.assertTrue(validation.validate());
-        } catch (Exception ex) {
-            assertTrue(ex instanceof ScriptNotValidException);
-        }
+    void testLabeledStatementValidation() throws IOException {
+        String concatenation = getScriptContent("labeledStatement.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
+    }
+
+    @Test
+    void testFunctionLevelsValidation() throws IOException {
+        String concatenation = getScriptContent("functionLevels.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
     }
 }

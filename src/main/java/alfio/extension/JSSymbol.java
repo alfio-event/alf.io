@@ -66,9 +66,6 @@ public class JSSymbol {
         } else if (node instanceof Name) {
             name = ((Name) node).getIdentifier();
         }
-//        else if (node instanceof Jump) {
-//            loop = ((Jump) node).getLoop();
-//        }
     }
 
     public int getType() {
