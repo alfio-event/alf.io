@@ -77,4 +77,11 @@ public class ScriptValidationTest {
         ScriptValidation validation = new ScriptValidation(concatenation);
         Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
     }
+
+    @Test
+    void testFunctionLevelsLegitValidation() throws IOException {
+        String concatenation = getScriptContent("functionLegitLevels.js");
+        ScriptValidation validation = new ScriptValidation(concatenation);
+        Assertions.assertDoesNotThrow(() -> validation.validate());
+    }
 }
