@@ -121,7 +121,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testMigration() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -150,7 +150,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testMigrationWithExistingRecord() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -179,7 +179,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testAlreadyMigratedEvent() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -209,7 +209,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testUpdateDisplayName() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -235,7 +235,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testUpdateTicketReservation() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -259,11 +259,11 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testFixCategoriesSize() {
         List<TicketCategoryModification> categories = Arrays.asList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS -1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
-            new TicketCategoryModification(null, "default", 1,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -282,7 +282,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testFixStuckTickets() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));

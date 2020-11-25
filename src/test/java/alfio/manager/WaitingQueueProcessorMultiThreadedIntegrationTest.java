@@ -23,6 +23,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
+import alfio.model.TicketCategory;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
@@ -104,7 +105,7 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
         try {
 
             List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", 10,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                     new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
                     new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(2), LocalTime.now(ClockProvider.clock())),
                     DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -132,7 +133,7 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
             }
             assertEquals(18, ticketRepository.findFreeByEventId(event.getId()).size());
 
-            TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
+            TicketCategoryModification tcm = new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());

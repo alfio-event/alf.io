@@ -227,6 +227,7 @@ public class EventCreationRequest{
             return new TicketCategoryModification(
                 categoryId,
                 name,
+                TicketCategory.TicketAccessType.INHERIT, // TODO specify access type in event creation request
                 capacity,
                 new DateTimeModification(startSellingDate.toLocalDate(),startSellingDate.toLocalTime()),
                 new DateTimeModification(endSellingDate.toLocalDate(),endSellingDate.toLocalTime()),

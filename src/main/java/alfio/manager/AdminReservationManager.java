@@ -509,7 +509,8 @@ public class AdminReservationManager {
         DateTimeModification inception = fromZonedDateTime(event.now(clockProvider));
 
         int tickets = attendees.size();
-        TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
+        var accessType = event.getFormat() != Event.EventFormat.HYBRID ? TicketCategory.TicketAccessType.INHERIT : TicketCategory.TicketAccessType.IN_PERSON;
+        TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), accessType, tickets,
             inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "",
             true, null, null, null, null, null, 0, null, null,
             AlfioMetadata.empty());
@@ -547,7 +548,7 @@ public class AdminReservationManager {
         Event modified = increaseSeatsIfNeeded(ti, event, missingTickets, event);
         if(freeTicketsInCategory < tickets && existing.isBounded()) {
             int maxTickets = existing.getMaxTickets() + (tickets - freeTicketsInCategory);
-            TicketCategoryModification tcm = new TicketCategoryModification(existingCategoryId, existing.getName(), maxTickets,
+            TicketCategoryModification tcm = new TicketCategoryModification(existingCategoryId, existing.getName(), existing.getTicketAccessType(), maxTickets,
                 fromZonedDateTime(existing.getInception(modified.getZoneId())), fromZonedDateTime(existing.getExpiration(event.getZoneId())),
                 Collections.emptyMap(), existing.getPrice(), existing.isAccessRestricted(), "", true, existing.getCode(),
                 fromZonedDateTime(existing.getValidCheckInFrom(modified.getZoneId())),

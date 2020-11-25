@@ -503,7 +503,7 @@
     }]);
 
 
-    var createCategoryValidUntil = function(sticky, categoryEndTime) {
+    var createCategoryValidUntil = function(sticky, categoryEndTime, event) {
         var now = moment().startOf('hour');
         var inceptionDateTime = {
             date: now.format('YYYY-MM-DD'),
@@ -524,7 +524,8 @@
             expiration: expirationDateTime,
             tokenGenerationRequested: false,
             sticky: sticky,
-            bounded: false
+            bounded: false,
+            ticketAccessType: event.format === 'HYBRID' ? 'IN_PERSON' : 'INHERIT'
         };
 
     };
@@ -713,7 +714,7 @@
             return TicketCategoryEditorService.openCategoryDialog($scope, category, $scope.event, null, null);
         };
         $scope.addCategory = function() {
-            var category = createCategoryValidUntil(true, $scope.event.begin);
+            var category = createCategoryValidUntil(true, $scope.event.begin, $scope.event);
             if (!$scope.event.freeOfCharge) {
                 category.price = $scope.event.regularPrice
             }
@@ -1306,7 +1307,7 @@
 
         $scope.addCategory = function(event) {
             var eventBegin = moment(event.begin);
-            TicketCategoryEditorService.openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}), event, validationErrorHandler, reloadIfSeatsModification);
+            TicketCategoryEditorService.openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}, event), event, validationErrorHandler, reloadIfSeatsModification);
         };
 
         $scope.openConfiguration = function(event, category) {

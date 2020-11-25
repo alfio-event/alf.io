@@ -102,7 +102,7 @@ public class TicketReservationManagerConcurrentTest {
 
         transactionTemplate.execute(tx -> {
             List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                     new DateTimeModification(LocalDate.now(clockProvider().getClock()), LocalTime.now(clockProvider().getClock())),
                     new DateTimeModification(LocalDate.now(clockProvider().getClock()), LocalTime.now(clockProvider().getClock())),
                     DESCRIPTION, BigDecimal.TEN, true, "", true, null,

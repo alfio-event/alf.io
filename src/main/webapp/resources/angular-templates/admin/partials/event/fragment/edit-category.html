@@ -12,6 +12,11 @@
     <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.name" data-show-existing-errors="showExistingErrors"></field-error>
 </div>
 
+<div class="form-group" ng-if="showTicketAccessTypes">
+    <label for="accessType">Ticket Holders can access the event</label>
+    <select data-ng-model="ticketCategory.ticketAccessType" name="accessType" id="accessType" class="form-control" required data-ng-options="accessType.id as accessType.description for accessType in accessTypes"></select>
+</div>
+
 <div class="form-group" data-ng-repeat="(lang, language) in definedLanguages">
     <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>
     <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category" data-ng-maxlength="descriptionLimit"></textarea>

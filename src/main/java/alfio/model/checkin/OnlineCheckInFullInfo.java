@@ -120,6 +120,7 @@ public class OnlineCheckInFullInfo {
                                  @Column("tc_ordinal") int ordinal,
                                  @Column("tc_ticket_checkin_strategy") TicketCategory.TicketCheckInStrategy ticketCheckInStrategy,
                                  @Column("tc_metadata") @JSONData AlfioMetadata categoryMetadata,
+                                 @Column("tc_ticket_access_type") TicketCategory.TicketAccessType ticketAccessType,
 
                                  @Column("e_format") Event.EventFormat eventFormat,
                                  @Column("e_short_name") String eventShortName,
@@ -140,7 +141,7 @@ public class OnlineCheckInFullInfo {
             reservationRegistrationTimestamp, reservationSrcPriceCts, reservationFinalPriceCts, reservationVatCts, reservationDiscountCts, reservationCurrencyCode);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts, code, validCheckInFrom, validCheckInTo,
-                ticketValidityStart, ticketValidityEnd, currencyCode, ordinal, ticketCheckInStrategy);
+                ticketValidityStart, ticketValidityEnd, currencyCode, ordinal, ticketCheckInStrategy, ticketAccessType);
 
         this.categoryMetadata = categoryMetadata;
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountry, vatNr, invoicingAdditionalInfo);

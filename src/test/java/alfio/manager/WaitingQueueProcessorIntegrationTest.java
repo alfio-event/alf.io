@@ -108,7 +108,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testPreRegistration() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", 10,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(2), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -121,7 +121,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         assertEquals(18, ticketRepository.findFreeByEventId(event.getId()).size());
 
-        TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
+        TicketCategoryModification tcm = new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
@@ -187,7 +187,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
 
         //explicitly expand the category
         TicketCategory category = eventManager.loadTicketCategories(event).get(0);
-        eventManager.updateCategory(category.getId(), event.getId(), new TicketCategoryModification(category.getId(), category.getName(), category.getMaxTickets() + 1,
+        eventManager.updateCategory(category.getId(), event.getId(), new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, category.getMaxTickets() + 1,
             fromZonedDateTime(category.getInception(event.getZoneId())), fromZonedDateTime(category.getExpiration(event.getZoneId())), emptyMap(), category.getPrice(),
             category.isAccessRestricted(), "", category.isBounded(), null, null, null, null, null, 0, null, null, AlfioMetadata.empty()), "admin");
 
@@ -204,13 +204,13 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         int boundedCategorySize = AVAILABLE_SEATS - (withUnboundedCategory ? 1 : 0);
         List<TicketCategoryModification> categories = new ArrayList<>();
         categories.add(
-            new TicketCategoryModification(null, "default", boundedCategorySize,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, boundedCategorySize,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(2), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.ZERO, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
 
         if(withUnboundedCategory) {
-             categories.add(new TicketCategoryModification(null, "unbounded", 0,
+             categories.add(new TicketCategoryModification(null, "unbounded", TicketCategory.TicketAccessType.INHERIT, 0,
                  new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
                  new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(2), LocalTime.now(ClockProvider.clock())),
                  DESCRIPTION, BigDecimal.ZERO, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
