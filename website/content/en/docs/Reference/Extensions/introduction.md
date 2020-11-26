@@ -2,7 +2,7 @@
 ---
 title: "Introduction"
 linkTitle: "Introduction"
-weight: 6
+weight: 1
 date: 2020-11-26
 description: >
   Introduction about the extensions
@@ -12,6 +12,7 @@ description: >
 The extensions must be written in Javascript. However, we put some limitations on the functionalities of the language 
 in order to prevent misuse or just to help you avoid making some mistakes. What we do is, before compiling your script, 
 we verify that the code is legal. Then, also during compilation time, other checks are used to double verify the code.
+Towards the end of this page you can find some sample code of a valid script.
 
 # Limitations on loops
 
@@ -89,5 +90,58 @@ function increment(x) {
 function addAndIncrement(a, b) {
     // no other function call -> OK
     return (a + b + 1);
+}
+```
+
+# Example of a working script
+
+After showing you what cannot be done, here is some sample code to give you an idea of how a typical script should look like: 
+```javascript
+/**
+ * The script metadata object describes whether or not your extension should be invoked asynchronously, and which events it supports
+ * @returns {{ async: boolean, events: string[] }}
+ */
+function getScriptMetadata() {
+    return {
+        id: 'myExtensionIdentifier', // optional: id and version will be used later as a mechanism for checking if the script has a newer version
+        displayName: 'My Extension', //mandatory: the name displayed in the configuration page
+        version: 0, // optional
+        async: false,
+        events: [
+            //supported values:
+            //'RESERVATION_CONFIRMED', //fired on reservation confirmation. No results expected.
+            //'RESERVATION_EXPIRED', //fired when reservation(s) expired
+            //'RESERVATION_CANCELLED', //fired when reservation(s) are cancelled
+            //'TICKET_CANCELLED', //fired when ticket(s) (but not the entire reservation) are cancelled
+            //'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.
+            //'TICKET_CHECKED_IN', //fired when a ticket has been checked in. No results expected.
+            //'TICKET_REVERT_CHECKED_IN', //fired when a ticket has been reverted from the checked in status. No results expected.
+            //'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
+            //'STUCK_RESERVATIONS', //fired when the system has detected stuck reservations. No results expected.
+            //'OFFLINE_RESERVATIONS_WILL_EXPIRE', //fired when an offline reservation will expire. No results expected.
+            //'EVENT_CREATED', //fired when an event has been created. Return boolean for synchronous variant, no results expected for the asynchronous one.
+            //'EVENT_STATUS_CHANGE', //fired when an event status has changed (normally, from DRAFT to PUBLIC). Return boolean for synchronous variant, no results expected for the asynchronous one.
+            'INVOICE_GENERATION' //, //fired on invoice generation. Returns the invoice model.
+            //'TAX_ID_NUMBER_VALIDATION' //fired in case a TAX ID (VAT/GST) Number has to be formally validated
+        ]
+        //,
+        //parameters: {fields: [{name:'name',description:'description',type:'TEXT',required:true}], configurationLevels: ['SYSTEM', 'ORGANIZATION', 'EVENT']} //parameters
+    };
+}
+
+/**
+ * Executes the extension.
+ * @param scriptEvent
+ * @returns Object
+ */
+function executeScript(scriptEvent) {
+    log.warn('hello from script with event: ' + scriptEvent);
+    log.warn('extension parameters are: ' + extensionParameters);
+    //this sample calls the https://csrng.net/ website and generates a random invoice number
+    var randomNumber = simpleHttpClient.get('https://csrng.net/csrng/csrng.php?min=0&max=100').getJsonBody()[0].random;
+    log.warn('the invoice number will be: ' + randomNumber);
+    return {
+        invoiceNumber: randomNumber
+    };
 }
 ```

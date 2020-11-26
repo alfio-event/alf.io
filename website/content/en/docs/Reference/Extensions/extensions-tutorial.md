@@ -1,7 +1,7 @@
 ---
 title: "Extensions tutorial"
 linkTitle: "Extensions tutorial"
-weight: 6
+weight: 2
 date: 2020-11-26
 description: >
   Tutorial on how to use the extensions
@@ -22,62 +22,13 @@ Extensions allow you to link Alf.io with your existing tools, such as:
 
 ## How it works
 
-Extensions can be added and modified only by the Administrator. 
-For security and stability reasons, it is not possible to do that with less privileged users.
+Extensions can be added and modified by each user. However, some limitations are applied that can be found
+[here](https://alf.io/docs/reference/extensions/introduction/#alf-io-extensions-language).
 
-Each extension consists of a JavaScript script. You can find a sample below:
+Each extension consists of a JavaScript script and is registered to one or more Application Events, 
+and is fired as soon as the Application Event occurs.
 
-```javascript
-/**
- * The script metadata object describes whether or not your extension should be invoked asynchronously, and which events it supports
- * @returns {{ async: boolean, events: string[] }}
- */
-function getScriptMetadata() {
-    return {
-        id: 'myExtensionIdentifier', // optional: id and version will be used later as a mechanism for checking if the script has a newer version
-        displayName: 'My Extension', //mandatory: the name displayed in the configuration page
-        version: 0, // optional
-        async: false,
-        events: [
-            //supported values:
-            //'RESERVATION_CONFIRMED', //fired on reservation confirmation. No results expected.
-            //'RESERVATION_EXPIRED', //fired when reservation(s) expired
-            //'RESERVATION_CANCELLED', //fired when reservation(s) are cancelled
-            //'TICKET_CANCELLED', //fired when ticket(s) (but not the entire reservation) are cancelled
-            //'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.
-            //'TICKET_CHECKED_IN', //fired when a ticket has been checked in. No results expected.
-            //'TICKET_REVERT_CHECKED_IN', //fired when a ticket has been reverted from the checked in status. No results expected.
-            //'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
-            //'STUCK_RESERVATIONS', //fired when the system has detected stuck reservations. No results expected.
-            //'OFFLINE_RESERVATIONS_WILL_EXPIRE', //fired when an offline reservation will expire. No results expected.
-            //'EVENT_CREATED', //fired when an event has been created. Return boolean for synchronous variant, no results expected for the asynchronous one.
-            //'EVENT_STATUS_CHANGE', //fired when an event status has changed (normally, from DRAFT to PUBLIC). Return boolean for synchronous variant, no results expected for the asynchronous one.
-            'INVOICE_GENERATION' //, //fired on invoice generation. Returns the invoice model.
-            //'TAX_ID_NUMBER_VALIDATION' //fired in case a TAX ID (VAT/GST) Number has to be formally validated
-        ]
-        //,
-        //parameters: {fields: [{name:'name',description:'description',type:'TEXT',required:true}], configurationLevels: ['SYSTEM', 'ORGANIZATION', 'EVENT']} //parameters
-    };
-}
-
-/**
- * Executes the extension.
- * @param scriptEvent
- * @returns Object
- */
-function executeScript(scriptEvent) {
-    log.warn('hello from script with event: ' + scriptEvent);
-    log.warn('extension parameters are: ' + extensionParameters);
-    //this sample calls the https://csrng.net/ website and generates a random invoice number
-    var randomNumber = simpleHttpClient.get('https://csrng.net/csrng/csrng.php?min=0&max=100').getJsonBody()[0].random;
-    log.warn('the invoice number will be: ' + randomNumber);
-    return {
-        invoiceNumber: randomNumber
-    };
-}
-```
-
-Each extension is registered to one or more Application Events, and is fired as soon as the Application Event occurs.
+You can find some sample code in the [introduction](https://alf.io/docs/reference/extensions/introduction/#example-of-a-working-script) page.
 
 ## Scope Variables
 
