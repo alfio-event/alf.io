@@ -15,36 +15,37 @@ we verify that the code is legal. Then, also during compilation time, other chec
 
 # Limitations on loops
 
-Loops such as `while` and `do` are not permitted. In case they are used, an exception is thrown. Below is an example of 
-code that would throw an exception.
-
-```javascript
-```
-Instead, take a look at an example of what should be done instead.
-```javascript
-```
+Loops such as `while` and `do` are not permitted. In case they are used, the script fails. Instead, you can use 
+the `for`, `for/in` or `for/of` loops for any kind of iteration.
 
 # Timeout handling
 
 Sometimes the execution can take too long because of various reasons, therefore a timeout of 5 seconds is set for
-each instruction. If it takes more than that, an `ExecutionTimeoutException` will be thrown.
+each instruction. If it takes more than that, the script will be forcibly terminated.
 
 # `with` statement
 
-Usage of a `with` statement is forbidden. It will throw a `ScriptNotValidException` in case it is used.
-
+Usage of a `with` statement is forbidden. To avoid it, you can use a temporary variable. So, you can replace this:
+```javascript
+with (person) {
+    console.log("Hello " + firstName + " "+ lastName);
+}
+```
+with this:
+```javascript
+var p = person;
+console.log("Hello " + p.firstName + " "+ p.lastName);
+```
 # Labeled statement
 
 Labeled statements are rarely found, because usually function calls are used. They are also not permitted when writing 
-the extensions. Below is an example of code that would throw a `ScriptNotValidException`. 
-```javascript
-```
+the extensions. As mentioned above, `for`, `for/in` or `for/of` loops can be used instead.
 
 # Functions limitations
 
 Java functions can be called from the scripts, therefore we limit some harmful usage by applying sandboxing. Access to
-`java.lang.System.exit(0)` and `getClass()` are disabled. In general, access to Java classes is not possible. However,
-the standard objects (Object, String, Number, Date, etc.) can be used. In addition, we enable the use of
+`java.lang.System.exit()` and `getClass()` are disabled. In general, access to Java classes is not possible. However,
+the standard objects (`Object`, `String`, `Number`, `Date`, etc.) can be used. In addition, we enable the use of
 the following classes: `GSON`, [`SimpleHttpClient`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java),
  `HashMap`, [`ExtensionUtils`]( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionUtils.java) 
  and [`Logger`](https://logging.apache.org/log4j/2.x/log4j-api/apidocs/org/apache/logging/log4j/Logger.html).
@@ -52,7 +53,7 @@ the following classes: `GSON`, [`SimpleHttpClient`](https://github.com/alfio-eve
 
 # Function calls level limitation
 
-Nesting more than one function call is not allowed. Below is an example of code that would throw a `ScriptNotValidException`. 
+Nesting more than one function call is not allowed. Below is an example of code that should ***not*** be used. 
 ```javascript
 function executeScript(scriptEvent) {
     var a = 1;
