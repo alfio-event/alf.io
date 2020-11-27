@@ -26,12 +26,16 @@ public class SandboxContextFactory extends ContextFactory {
     // Custom Context to store execution time.
     private static class MyContext extends Context {
         long startTime;
+
+        public MyContext(ContextFactory factory) {
+            super(factory);
+
+        }
     }
 
     @Override
     protected Context makeContext() {
-//        Context cx = super.makeContext(); for the moment lines 59-60 work only with custom Context
-        MyContext cx = new MyContext();
+        MyContext cx = new MyContext(ContextFactory.getGlobal());
         cx.setWrapFactory(new SandboxWrapFactory());
         // Use pure interpreter mode to allow for observeInstructionCount(Context, int) to work
         cx.setOptimizationLevel(-1);
