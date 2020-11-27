@@ -16,22 +16,21 @@
  */
 package alfio.extension.support;
 
-import org.mozilla.javascript.*;
+import alfio.extension.exception.OutOfBoundariesException;
+import org.mozilla.javascript.NativeJavaMap;
+import org.mozilla.javascript.Scriptable;
 
-import java.util.List;
-import java.util.Map;
-
-// source: https://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
-public class SandboxWrapFactory extends WrapFactory {
+public class SandboxNativeJavaMap extends NativeJavaMap {
+    public SandboxNativeJavaMap(Scriptable scope, Object map) {
+        super(scope, map);
+    }
 
     @Override
-    public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class<?> staticType) {
-        if (List.class.isAssignableFrom(javaObject.getClass())) {
-            return new SandboxNativeJavaList(scope, javaObject);
+    public Object get(String name, Scriptable start) {
+        if (name.equals("getClass") || !has(name, start)){
+            throw new OutOfBoundariesException("Out of boundaries class use.");
         }
-        if (Map.class.isAssignableFrom(javaObject.getClass())) {
-            return new SandboxNativeJavaMap(scope, javaObject);
-        }
-        return new SandboxNativeJavaObject(scope, javaObject, staticType);
+
+        return super.get(name, start);
     }
 }
