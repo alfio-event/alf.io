@@ -17,11 +17,10 @@
 
 package alfio.extension;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Stack;
 
 import alfio.extension.exception.ScriptNotValidException;
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.*;
 
@@ -33,7 +32,7 @@ import org.mozilla.javascript.ast.*;
  * Implements Rhino’s NodeVisitor interface and builds hierarchy of JSSymbol
  */
 public class JSNodeVisitor implements NodeVisitor {
-    Stack<JSSymbol> functionsStack = new Stack<>();
+    ArrayDeque<JSSymbol> functionsStack = new ArrayDeque<>();
     int currentFuncEndOffset = -1;
     JSSymbol root = null;
     ArrayList<String> functionCalls = new ArrayList<>();
@@ -51,7 +50,7 @@ public class JSNodeVisitor implements NodeVisitor {
     private void addToParent(AstNode node) {
         if (root == null) {
             root = new JSSymbol(node);
-            functionsStack.push(root);
+            functionsStack.addFirst(root);
             currentFuncEndOffset = node.getAbsolutePosition() + node.getLength();
             return;
         }
@@ -75,7 +74,7 @@ public class JSNodeVisitor implements NodeVisitor {
             if (isVariableName(node)) {
                 // check if it is in the current function
                 String symbolName = ((Name) node).getIdentifier();
-                JSSymbol currentSymContainer = functionsStack.peek();
+                JSSymbol currentSymContainer = functionsStack.peekFirst();
                 if (!currentSymContainer.childExist(symbolName)) {
                     //this is a global symbol
                     root.addChild(node);
@@ -120,14 +119,14 @@ public class JSNodeVisitor implements NodeVisitor {
             throw new ScriptNotValidException("Script not valid.");
         }
         JSSymbol currSym = null;
-        JSSymbol parent = functionsStack.peek();
+        JSSymbol parent = functionsStack.peekFirst();
         if (parent.getNode().getAbsolutePosition() + parent.getNode().getLength() > node.getAbsolutePosition()) {
             //add child node to parent
             currSym = new JSSymbol(node);
             parent.addChild(currSym);
         } else { //outside current function boundary
             //pop current parent
-            functionsStack.pop();
+            functionsStack.removeFirst();
             addToParent(node);
             return;
         }
@@ -144,7 +143,7 @@ public class JSNodeVisitor implements NodeVisitor {
             if (leftNode instanceof Name) {
                 currSym.setName(((Name) leftNode).getIdentifier());
             }
-            functionsStack.push(currSym);
+            functionsStack.addFirst(currSym);
             currentFuncEndOffset = node.getAbsolutePosition() + node.getLength();
         }
     }

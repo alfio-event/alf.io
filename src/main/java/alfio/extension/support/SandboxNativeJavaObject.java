@@ -22,7 +22,7 @@ import org.mozilla.javascript.Scriptable;
 
 // source: https://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
 public class SandboxNativeJavaObject extends NativeJavaObject {
-    public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class staticType) {
+    public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class<?> staticType) {
         super(scope, javaObject, staticType);
     }
 
