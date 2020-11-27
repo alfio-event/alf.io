@@ -27,6 +27,7 @@ import alfio.model.result.Result;
 import alfio.model.support.TicketWithAdditionalFields;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
+import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -48,6 +49,7 @@ public class AttendeeManager {
     private final UserManager userManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final ClockProvider clockProvider;
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String notes, SponsorScan.LeadStatus leadStatus, String username) {
         int userId = userRepository.getByUsername(username).getId();
@@ -67,7 +69,7 @@ public class AttendeeManager {
         Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(userId, event.getId(), ticket.getId());
         if(existingRegistration.isEmpty()) {
             ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
-            sponsorScanRepository.insert(userId, ZonedDateTime.now(eventZoneId), event.getId(), ticket.getId(), notes, leadStatus);
+            sponsorScanRepository.insert(userId, ZonedDateTime.now(clockProvider.withZone(eventZoneId)), event.getId(), ticket.getId(), notes, leadStatus);
         } else {
             sponsorScanRepository.updateNotesAndLeadStatus(userId, event.getId(), ticket.getId(), notes, leadStatus);
         }

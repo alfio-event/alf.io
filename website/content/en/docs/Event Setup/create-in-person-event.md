@@ -8,7 +8,7 @@ description: >
 
 ## How to create a new event
 
-Click on the "Create new event" button in the Dashboard.
+Click on the "Create new event" button in the "Events" view.
 You will be asked to enter the following information:
 
 - Basic info

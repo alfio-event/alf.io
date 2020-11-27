@@ -17,26 +17,28 @@
 package alfio.util;
 
 import alfio.model.Ticket;
+import alfio.test.util.TestUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.ZonedDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ObjectDiffTest {
 
-    ZonedDateTime now = ZonedDateTime.now();
+    ZonedDateTime now = ZonedDateTime.now(TestUtil.clockProvider().getClock());
 
     Ticket preUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.ACQUIRED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",
         false, "en",
-        0,  0, 0, 0, null, null);
+        0,  0, 0, 0, null, null, List.of());
 
     Ticket postUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.CANCELLED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",
         false, "en",
-        0,  0, 0, 0, null, null);
+        0,  0, 0, 0, null, null, List.of());
 
     @Test
     public void diffMapTest() {

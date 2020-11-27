@@ -20,6 +20,7 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.IndexController;
+import alfio.controller.api.ControllerConfiguration;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
@@ -51,10 +52,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
-import alfio.util.BaseIntegrationTest;
-import alfio.util.EventUtil;
-import alfio.util.Json;
-import alfio.util.MonetaryUtil;
+import alfio.util.*;
 import ch.digitalfondue.jfiveparse.Element;
 import ch.digitalfondue.jfiveparse.Parser;
 import ch.digitalfondue.jfiveparse.Selector;
@@ -73,8 +71,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -110,16 +106,10 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
-
-    @Configuration
-    @ComponentScan(basePackages = {"alfio.controller"})
-    public static class ControllerConfiguration {
-
-    }
 
     @Autowired
     private ConfigurationRepository configurationRepository;
@@ -185,10 +175,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private TicketReservationManager ticketReservationManager;
 
-    @Autowired
-    private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
-    //
-
     //
     @Autowired
     private InfoApiController infoApiController;
@@ -212,13 +198,16 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private NamedParameterJdbcTemplate jdbcTemplate;
 
     @Autowired
-    private ExtensionRepository extensionRepository;
-
-    @Autowired
     private ExtensionLogRepository extensionLogRepository;
 
     @Autowired
     private ExtensionService extensionService;
+
+    @Autowired
+    private PollRepository pollRepository;
+
+    @Autowired
+    private ClockProvider clockProvider;
 
 
     private Event event;
@@ -241,12 +230,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
             new TicketCategoryModification(null, "hidden", 2,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
             );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
@@ -254,11 +243,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         event = eventAndUser.getKey();
         user = eventAndUser.getValue() + "_owner";
         //promo code at event level
-        eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
+        eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
 
         hiddenCategoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isAccessRestricted).collect(Collectors.toList()).get(0).getId();
 
-        eventManager.addPromoCode(HIDDEN_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId);
+        eventManager.addPromoCode(HIDDEN_CODE, event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId);
 
 
         // add additional fields before and after, with one mandatory
@@ -279,7 +268,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         // add additional service
         var addServ = new EventModification.AdditionalService(null, new BigDecimal("40.00"), true, 0, 1, 1,
 
-            new DateTimeModification(ZonedDateTime.now().minusDays(2).toLocalDate(), ZonedDateTime.now().minusDays(2).toLocalTime()),
+            new DateTimeModification(ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalDate(), ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalTime()),
             new DateTimeModification(event.getEnd().plusDays(2).toLocalDate(), event.getEnd().plusDays(2).toLocalTime()),
             event.getVat(), AdditionalService.VatType.INHERITED,
             null,
@@ -526,7 +515,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         // dynamic promo codes can be applied only automatically
         {
-            eventManager.addPromoCode("DYNAMIC_CODE", event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DYNAMIC, null);
+            eventManager.addPromoCode("DYNAMIC_CODE", event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DYNAMIC, null);
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, eventApiV2Controller.validateCode(event.getShortName(), "DYNAMIC_CODE").getStatusCode());
 
             // try to enter it anyway
@@ -1115,26 +1104,21 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 configurationRepository.update(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "true");
                 offlineIdentifiers = checkInApiController.getOfflineIdentifiers(event.getShortName(), 0L, new MockHttpServletResponse(), principal);
                 assertFalse(offlineIdentifiers.isEmpty());
-                Map<String, String> payload = checkInApiController.getOfflineEncryptedInfo(event.getShortName(), Collections.emptyList(), offlineIdentifiers, principal);
-                assertEquals(1, payload.size());
-                TicketWithCategory ticketwc = ticketAndcheckInResult.getTicket();
-                String ticketKey = ticketwc.hmacTicketInfo(event.getPrivateKey());
-                String hashedTicketKey = DigestUtils.sha256Hex(ticketKey);
-                String encJson = payload.get(hashedTicketKey);
-                assertNotNull(encJson);
-                String ticketPayload = CheckInManager.decrypt(ticketwc.getUuid() + "/" + ticketKey, encJson);
-                Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<>() {
-                });
-                assertNotNull(jsonPayload);
-                assertEquals(9, jsonPayload.size());
-                assertEquals("Test", jsonPayload.get("firstName"));
-                assertEquals("Testson", jsonPayload.get("lastName"));
-                assertEquals("Test Testson", jsonPayload.get("fullName"));
-                assertEquals(ticketwc.getUuid(), jsonPayload.get("uuid"));
-                assertEquals("testmctest@test.com", jsonPayload.get("email"));
-                assertEquals("CHECKED_IN", jsonPayload.get("status"));
-                assertEquals("default", jsonPayload.get("category"));
-                assertEquals(TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT.name(), jsonPayload.get("categoryCheckInStrategy"));
+                // download encrypted ticket data
+                TicketWithCategory ticketwc = testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, false);
+
+                // insert a poll and download again encrypted data. This time we expect a pin to be present because we haven't specified a tag
+                var rowCountAndKey = pollRepository.insert(Map.of("en", "test poll"), null, List.of(), 0, event.getId(), event.getOrganizationId());
+                testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, true);
+
+                // we define a tag for the poll, this time we won't have a pin in the result
+                pollRepository.update(Map.of("en", "test poll"), null, List.of("blabla"), 0, rowCountAndKey.getKey(), event.getId());
+                testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, false);
+
+                // now we add a matching tag to the ticket. As a result, the pin must be included in the result
+                ticketRepository.updateTicketTags(List.of(ticketwc.getId()), List.of("blabla"));
+                testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, true);
+
                 //
 
                 // check register sponsor scan success flow
@@ -1190,7 +1174,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.INVALID_TICKET_CATEGORY_CHECK_IN_DATE, ticketAndcheckInResult.getResult().getStatus());
 
                 eventRepository.updateHeader(event.getId(), event.getDisplayName(), event.getWebsiteUrl(), event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(),
-                    event.getFileBlobId(), event.getLocation(), event.getLatitude(), event.getLongitude(), ZonedDateTime.now(event.getZoneId()).minusSeconds(1), event.getEnd(), event.getTimeZone(),
+                    event.getFileBlobId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.now(clockProvider).minusSeconds(1), event.getEnd(), event.getTimeZone(),
                     event.getOrganizationId(), event.getLocales(), event.getFormat());
 
                 ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
@@ -1213,6 +1197,36 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             eventManager.deleteEvent(event.getId(), user);
         }
 
+    }
+
+    private TicketWithCategory testEncryptedCheckInPayload(Principal principal,
+                                                           TicketAndCheckInResult ticketAndcheckInResult,
+                                                           List<Integer> offlineIdentifiers,
+                                                           boolean expectPin) {
+        Map<String, String> payload = checkInApiController.getOfflineEncryptedInfo(event.getShortName(), Collections.emptyList(), offlineIdentifiers, principal);
+        assertEquals(1, payload.size());
+        TicketWithCategory ticketwc = ticketAndcheckInResult.getTicket();
+        String ticketKey = ticketwc.hmacTicketInfo(event.getPrivateKey());
+        String hashedTicketKey = DigestUtils.sha256Hex(ticketKey);
+        String encJson = payload.get(hashedTicketKey);
+        assertNotNull(encJson);
+        String ticketPayload = CheckInManager.decrypt(ticketwc.getUuid() + "/" + ticketKey, encJson);
+        Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<>() {
+        });
+        assertNotNull(jsonPayload);
+        assertEquals(expectPin ? 10 : 9, jsonPayload.size());
+        assertEquals("Test", jsonPayload.get("firstName"));
+        assertEquals("Testson", jsonPayload.get("lastName"));
+        assertEquals("Test Testson", jsonPayload.get("fullName"));
+        assertEquals(ticketwc.getUuid(), jsonPayload.get("uuid"));
+        assertEquals("testmctest@test.com", jsonPayload.get("email"));
+        assertEquals("CHECKED_IN", jsonPayload.get("status"));
+        assertEquals("default", jsonPayload.get("category"));
+        if(expectPin) {
+            assertEquals(PinGenerator.uuidToPin(ticketwc.getUuid()), jsonPayload.get("pin"));
+        }
+        assertEquals(TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT.name(), jsonPayload.get("categoryCheckInStrategy"));
+        return ticketwc;
     }
 
     private void cleanupExtensionLog() {

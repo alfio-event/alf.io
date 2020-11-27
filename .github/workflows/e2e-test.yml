@@ -1,0 +1,36 @@
+name: "E2E Test"
+on:
+    schedule:
+        - cron:  '0 4 * * *'
+jobs:
+    build:
+        if: github.repository == 'alfio-event/alf.io'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+            - uses: actions/cache@v1
+              with:
+                  path: ~/.gradle/caches
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradle-
+            - uses: actions/cache@v1
+              with:
+                  path: ~/.gradle/wrapper
+                  key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradlew-
+            - name: Set up JDK 11
+              uses: actions/setup-java@v1
+              with:
+                  java-version: 11
+            - name: 'BrowserStack Env Setup'
+              uses: 'browserstack/github-actions/setup-env@master'
+              with:
+                  username: ${{ secrets.BROWSERSTACK_USERNAME }}
+                  access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+            - name: Build with Gradle
+              run: ./gradlew test -Dspring.profiles.active=travis,e2e --tests NormalFlowE2ETest
+              env:
+                  E2E_SERVER_APIKEY: ${{ secrets.E2E_SERVER_APIKEY }}
+                  E2E_SERVER_URL: ${{ secrets.E2E_SERVER_URL }}

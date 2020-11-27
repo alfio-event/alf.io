@@ -27,6 +27,7 @@ import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
+import alfio.util.ClockProvider;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
@@ -51,6 +52,7 @@ public class ConfigurationApiController {
     private final BillingDocumentManager billingDocumentManager;
     private final AdminJobManager adminJobManager;
     private final EventManager eventManager;
+    private final ClockProvider clockProvider;
 
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
@@ -180,7 +182,7 @@ public class ConfigurationApiController {
     @GetMapping(value = "/event/{eventId}/invoice-first-date")
     public ResponseEntity<ZonedDateTime> getFirstInvoiceDate(@PathVariable("eventId") Integer eventId, Principal principal) {
         return ResponseEntity.of(optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()))
-            .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(event.getZoneId()))));
+            .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(clockProvider.getClock().withZone(event.getZoneId())))));
     }
 
     @GetMapping(value = "/event/{eventId}/matching-invoices")

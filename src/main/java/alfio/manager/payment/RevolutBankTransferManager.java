@@ -28,6 +28,7 @@ import alfio.model.transaction.capabilities.OfflineProcessor;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.provider.RevolutTransactionDescriptor;
 import alfio.repository.TransactionRepository;
+import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -68,6 +69,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
     private final HttpClient client;
+    private final ClockProvider clockProvider;
     private static final Cache<String, List<String>> accountsCache = Caffeine.newBuilder()
         .expireAfterWrite(Duration.ofHours(1))
         .build();
@@ -182,7 +184,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             return Result.error(ErrorCode.custom("no-account", "No active accounts found."));
         }
         try {
-            var from = lastCheck != null ? lastCheck.withZoneSameInstant(UTC) : ZonedDateTime.now(UTC).minusDays(1);//defaults to now - 24h
+            var from = lastCheck != null ? lastCheck.withZoneSameInstant(clockProvider.getClock().getZone()) : ZonedDateTime.now(clockProvider.getClock()).minusDays(1);//defaults to now - 24h
             var request = HttpRequest.newBuilder(URI.create(revolutUrl + "/api/1.0/transactions?from=" + from.format(JSON_DATETIME_FORMATTER)))
                 .GET()
                 .header("Authorization", "Bearer "+revolutKey)

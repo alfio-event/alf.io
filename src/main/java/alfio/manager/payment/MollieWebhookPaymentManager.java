@@ -36,10 +36,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
-import alfio.util.ErrorsCode;
-import alfio.util.HttpUtils;
-import alfio.util.Json;
-import alfio.util.MonetaryUtil;
+import alfio.util.*;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonObject;
@@ -104,9 +101,9 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         MOLLIE_CONNECT_REFRESH_TOKEN,
         MOLLIE_CONNECT_CALLBACK
     );
-    private static String MOLLIE_ENDPOINT = "https://api.mollie.com/v2/";
-    private static String PAYMENTS_ENDPOINT = MOLLIE_ENDPOINT+"payments";
-    private static String METHODS_ENDPOINT = MOLLIE_ENDPOINT+"methods";
+    private static final String MOLLIE_ENDPOINT = "https://api.mollie.com/v2/";
+    private static final String PAYMENTS_ENDPOINT = MOLLIE_ENDPOINT+"payments";
+    private static final String METHODS_ENDPOINT = MOLLIE_ENDPOINT+"methods";
     private final Cache<MethodCacheKey, Set<PaymentMethod>> methodsCache = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofMinutes(5)).build();
     private final Cache<Integer, String> accessTokenCache = Caffeine.newBuilder()
@@ -119,6 +116,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     private final TicketRepository ticketRepository;
     private final TransactionRepository transactionRepository;
     private final MollieConnectManager mollieConnectManager;
+    private final ClockProvider clockProvider;
 
     private HttpRequest.Builder requestFor(String url, Map<ConfigurationKeys, MaybeConfiguration> configuration, ConfigurationLevel configurationLevel) {
         // check if platform mode is active
@@ -333,7 +331,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                 ticketReservationRepository.updateValidity(reservationId, Date.from(expiration.toInstant()));
                 invalidateExistingTransactions(reservationId, transactionRepository);
                 transactionRepository.insert(paymentId, paymentId,
-                    reservationId, ZonedDateTime.now(spec.getEvent().getZoneId()),
+                    reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getEvent().getZoneId())),
                     spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Mollie Payment",
                     PaymentProxy.MOLLIE.name(), 0L,0L, Transaction.Status.PENDING, Map.of());
                 return PaymentResult.redirect(checkoutLink);
@@ -446,11 +444,11 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                         case "failed":
                         case "expired":
                             transactionMetadata.put("paymentMethod", Optional.ofNullable(body.getPaymentMethod()).map(PaymentMethod::name).orElse(null));
-                            transactionRepository.update(transaction.getId(), paymentId, paymentId, ZonedDateTime.now(event.getZoneId()),
+                            transactionRepository.update(transaction.getId(), paymentId, paymentId, event.now(clockProvider),
                                 transaction.getPlatformFee(), transaction.getGatewayFee(), transaction.getStatus(), transactionMetadata);
                             return status.equals("failed") ? PaymentWebhookResult.failed("failed") : PaymentWebhookResult.cancelled();
                         case "canceled":
-                            transactionRepository.update(transaction.getId(), paymentId, paymentId, ZonedDateTime.now(event.getZoneId()),
+                            transactionRepository.update(transaction.getId(), paymentId, paymentId, event.now(clockProvider),
                                 0L, 0L, Transaction.Status.CANCELLED, transaction.getMetadata());
                             return PaymentWebhookResult.cancelled();
                         case "open":

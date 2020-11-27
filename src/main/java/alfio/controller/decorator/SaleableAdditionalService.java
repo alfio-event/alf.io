@@ -20,6 +20,7 @@ import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
+import alfio.util.ClockProvider;
 import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
@@ -32,15 +33,19 @@ public class SaleableAdditionalService implements PriceContainer {
     @Delegate(excludes = {Exclusions.class, PriceContainer.class})
     private final AdditionalService additionalService;
     private final PromoCodeDiscount promoCodeDiscount;
+    private final Clock clock;
 
-    public SaleableAdditionalService(Event event, AdditionalService additionalService, PromoCodeDiscount promoCodeDiscount) {
+    public SaleableAdditionalService(Event event,
+                                     AdditionalService additionalService,
+                                     PromoCodeDiscount promoCodeDiscount) {
         this.event = event;
         this.additionalService = additionalService;
         this.promoCodeDiscount = promoCodeDiscount;
+        this.clock = ClockProvider.clock().withZone(event.getZoneId());
     }
 
     public boolean isExpired() {
-        return getUtcExpiration().isBefore(now());
+        return getUtcExpiration().isBefore(ZonedDateTime.now(clock));
     }
 
     public boolean isNotExpired() {
@@ -52,11 +57,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getSaleInFuture() {
-        return getUtcInception().isAfter(now());
-    }
-
-    private static ZonedDateTime now() {
-        return ZonedDateTime.now(Clock.systemUTC());
+        return getUtcInception().isAfter(ZonedDateTime.now(clock));
     }
 
     public boolean getFree() {

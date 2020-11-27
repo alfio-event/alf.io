@@ -27,6 +27,7 @@ import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.util.ClockProvider;
 import alfio.util.ErrorsCode;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -109,7 +110,7 @@ public class ReservationForm implements Serializable {
 
         final boolean validAdditionalServiceSelected = additionalServices.stream().allMatch(asm -> {
             AdditionalService as = eventManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
-            ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+            ZonedDateTime now = event.now(ClockProvider.clock());
             return as.getInception(event.getZoneId()).isBefore(now) &&
                 as.getExpiration(event.getZoneId()).isAfter(now) &&
                 asm.getQuantity() >= 0 &&
@@ -127,7 +128,7 @@ public class ReservationForm implements Serializable {
         Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode))
             .flatMap(tickReservationManager::getSpecialPriceByCode);
         //
-        final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        final ZonedDateTime now = event.now(ClockProvider.clock());
         maxTicketsByTicketReservation.forEach(pair -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
         return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
     }

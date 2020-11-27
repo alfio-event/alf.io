@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
+import static alfio.test.util.TestUtil.clockProvider;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -73,9 +74,9 @@ public class TemplateResourceTest {
     }
 
     private Pair<ZonedDateTime, ZonedDateTime> getDates() {
-        ZonedDateTime eventBegin = ZonedDateTime.now().plusDays(1);
-        ZonedDateTime eventEnd = ZonedDateTime.now().plusDays(3);
-        ZonedDateTime validityStart = ZonedDateTime.now().plusDays(2);
+        ZonedDateTime eventBegin = ZonedDateTime.now(clockProvider().getClock()).plusDays(1);
+        ZonedDateTime eventEnd = ZonedDateTime.now(clockProvider().getClock()).plusDays(3);
+        ZonedDateTime validityStart = ZonedDateTime.now(clockProvider().getClock()).plusDays(2);
 
         when(event.getBegin()).thenReturn(eventBegin);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());

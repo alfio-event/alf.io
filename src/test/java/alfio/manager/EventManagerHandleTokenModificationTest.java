@@ -20,11 +20,10 @@ import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketRepository;
+import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -53,7 +52,7 @@ class EventManagerHandleTokenModificationTest {
         TicketRepository ticketRepository = mock(TicketRepository.class);
         when(event.getId()).thenReturn(eventId);
         eventManager = new EventManager(null, null, null, null,
-            null, ticketRepository, specialPriceRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            null, ticketRepository, specialPriceRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, TestUtil.clockProvider());
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
         when(original.getSrcPriceCts()).thenReturn(1000);
@@ -96,7 +95,6 @@ class EventManagerHandleTokenModificationTest {
     @Test
     @DisplayName("handle the ticket addition")
     void handleTicketAddition() {
-        ArgumentCaptor<SqlParameterSource[]> captor = ArgumentCaptor.forClass(SqlParameterSource[].class);
         when(original.isAccessRestricted()).thenReturn(true);
         when(updated.isAccessRestricted()).thenReturn(true);
         eventManager.handleTokenModification(original, updated, 50);

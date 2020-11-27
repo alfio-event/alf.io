@@ -23,6 +23,7 @@ import alfio.manager.system.ExternalConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
+import alfio.util.ClockProvider;
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +38,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.http.HttpClient;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,6 +48,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+
+import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
 
 
 @Configuration
@@ -101,7 +105,7 @@ public class TestConfiguration {
         properties.put("alfio.version", "2.0-SNAPSHOT");
         properties.put("alfio.build-ts", ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1).toString());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintWriter pw = new PrintWriter(out);
+        PrintWriter pw = new PrintWriter(out, true, Charset.defaultCharset());
         properties.list(pw);
         pw.flush();
         var configurer =  new PropertySourcesPlaceholderConfigurer();
@@ -131,5 +135,11 @@ public class TestConfiguration {
         ExternalConfiguration externalConfiguration = new ExternalConfiguration();
         externalConfiguration.setSettings(Map.of(ConfigurationKeys.BASE_URL.name(), "http://localhost:8080"));
         return externalConfiguration;
+    }
+
+    @Bean
+    @Profile(Initializer.PROFILE_INTEGRATION_TEST)
+    public ClockProvider clockProvider() {
+        return FIXED_TIME_CLOCK;
     }
 }

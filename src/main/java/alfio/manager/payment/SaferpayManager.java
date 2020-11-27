@@ -33,6 +33,7 @@ import alfio.model.transaction.webhook.EmptyWebhookPayload;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
+import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
 import alfio.util.MonetaryUtil;
 import com.google.gson.JsonParser;
@@ -72,6 +73,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     private final TicketReservationRepository ticketReservationRepository;
     private final TransactionRepository transactionRepository;
     private final TicketRepository ticketRepository;
+    private final ClockProvider clockProvider;
 
     @Override
     public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
@@ -350,7 +352,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
         ticketReservationRepository.updateValidity(reservationId, Date.from(expiration.toInstant()));
         invalidateExistingTransactions(reservationId, transactionRepository);
         transactionRepository.insert(paymentToken, paymentToken,
-            reservationId, ZonedDateTime.now(spec.getEvent().getZoneId()),
+            reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getEvent().getZoneId())),
             spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Saferpay Payment",
             PaymentProxy.SAFERPAY.name(), 0L,0L, Transaction.Status.PENDING, Map.of("retryCount", String.valueOf(retryCount)));
 

@@ -27,6 +27,7 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
+import alfio.util.ClockProvider;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -67,7 +68,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Locale;
@@ -180,7 +180,7 @@ public class WebSecurityConfig {
                 if (User.Type.API_KEY != user.getType()) {
                     throw new WrongAccountTypeException("Wrong account type for username " + apiKey);
                 }
-                if (!user.isCurrentlyValid(ZonedDateTime.now(ZoneId.of("UTC")))) {
+                if (!user.isCurrentlyValid(ZonedDateTime.now(ClockProvider.clock()))) {
                     throw new DisabledException("Api key " + apiKey + " is expired");
                 }
 

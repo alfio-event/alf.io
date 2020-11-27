@@ -27,6 +27,7 @@ import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.ConfigurationKeys;
+import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.ExportUtils;
 import lombok.AllArgsConstructor;
@@ -57,6 +58,7 @@ public class AdminWaitingQueueApiController {
     private final TicketReservationManager ticketReservationManager;
     private final ConfigurationManager configurationManager;
     private final EventStatisticsManager eventStatisticsManager;
+    private final ClockProvider clockProvider;
 
     @GetMapping("/status")
     public Map<String, Boolean> getStatusForEvent(@PathVariable("eventName") String eventName, Principal principal) {
@@ -66,7 +68,7 @@ public class AdminWaitingQueueApiController {
     }
 
     private Map<String, Boolean> loadStatus(Event event) {
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        ZonedDateTime now = ZonedDateTime.now(clockProvider.getClock().withZone(event.getZoneId()));
         List<SaleableTicketCategory> stcList = eventManager.loadTicketCategories(event)
             .stream()
             .filter(tc -> !tc.isAccessRestricted())

@@ -44,10 +44,8 @@ import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
-import alfio.util.Json;
-import alfio.util.RenderedTemplate;
-import alfio.util.TemplateManager;
-import alfio.util.WorkingDaysAdjusters;
+import alfio.test.util.TestUtil;
+import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -61,10 +59,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -87,7 +82,6 @@ class TicketReservationManagerTest {
     private static final int EVENT_ID = 42;
     private static final int TICKET_CATEGORY_ID = 24;
     private static final String SPECIAL_PRICE_CODE = "SPECIAL-PRICE";
-    private static final String SPECIAL_PRICE_SESSION_ID = "session-id";
     private static final int SPECIAL_PRICE_ID = -42;
     private static final String USER_LANGUAGE = "it";
     private static final int TICKET_ID = 2048756;
@@ -234,13 +228,15 @@ class TicketReservationManagerTest {
             billingDocumentRepository,
             jdbcTemplate,
             json,
-            promoCodeDiscountRepository,
-            mock(BillingDocumentManager.class));
+            mock(BillingDocumentManager.class),
+            TestUtil.clockProvider());
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(event.mustUseFirstAndLastName()).thenReturn(false);
         when(event.getCurrency()).thenReturn(EVENT_CURRENCY);
+        when(event.now(any(ClockProvider.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
+        when(event.now(any(Clock.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(specialPrice.getCode()).thenReturn(SPECIAL_PRICE_CODE);
         when(specialPrice.getId()).thenReturn(SPECIAL_PRICE_ID);
@@ -255,8 +251,8 @@ class TicketReservationManagerTest {
         when(ticket.getSrcPriceCts()).thenReturn(10);
         when(ticketCategory.getId()).thenReturn(TICKET_CATEGORY_ID);
         when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(organization);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+        when(event.getZoneId()).thenReturn(ClockProvider.clock().getZone());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
         when(extensionManager.handleInvoiceGeneration(any(), any(), any())).thenReturn(Optional.empty());
@@ -334,7 +330,7 @@ class TicketReservationManagerTest {
         PartialTicketTextGenerator ownerChangeTextBuilder = mock(PartialTicketTextGenerator.class);
         when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>"));
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().minusSeconds(1));
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusSeconds(1));
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(originalEmail), anyString(), any(TemplateGenerator.class));
@@ -417,8 +413,8 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
 
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
+        when(event.getZoneId()).thenReturn(ClockProvider.clock().getZone());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         trm.sendReminderForTicketAssignment();
@@ -488,22 +484,22 @@ class TicketReservationManagerTest {
     private void initOfflinePaymentTest() {
         when(configurationManager.getFor(eq(OFFLINE_PAYMENT_DAYS), any()))
             .thenReturn(new MaybeConfiguration(OFFLINE_PAYMENT_DAYS, new ConfigurationKeyValuePathLevel(OFFLINE_PAYMENT_DAYS.getValue(), "2", null)));
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
+        when(event.getZoneId()).thenReturn(ClockProvider.clock().getZone());
     }
 
     @Test
     void returnTheExpiredDateAsConfigured() {
         initOfflinePaymentTest();
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
-        ZonedDateTime expectedDate = ZonedDateTime.now().plusDays(2L).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
+        ZonedDateTime expectedDate = ZonedDateTime.now(ClockProvider.clock()).plusDays(2L).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
         assertEquals(expectedDate, offlinePaymentDeadline);
     }
 
     @Test
     void returnTheConfiguredWaitingTime() {
         initOfflinePaymentTest();
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
         OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager);
         assertTrue(offlinePaymentWaitingPeriod.isPresent());
         assertEquals(2, offlinePaymentWaitingPeriod.getAsInt());
@@ -512,19 +508,19 @@ class TicketReservationManagerTest {
     @Test
     void considerEventBeginDateWhileCalculatingExpDate() {
         initOfflinePaymentTest();
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
 
-        long days = ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate());
-        assertTrue("value must be 3 on Friday", LocalDate.now().getDayOfWeek() != DayOfWeek.FRIDAY || days == 3);
-        assertTrue("value must be 2 on Saturday",LocalDate.now().getDayOfWeek() != DayOfWeek.SATURDAY || days == 2);
-        assertTrue("value must be 1 on week days",!EnumSet.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY).contains(LocalDate.now().getDayOfWeek()) || days == 1);
+        long days = ChronoUnit.DAYS.between(LocalDate.now(ClockProvider.clock()), offlinePaymentDeadline.toLocalDate());
+        assertTrue("value must be 3 on Friday", LocalDate.now(ClockProvider.clock()).getDayOfWeek() != DayOfWeek.FRIDAY || days == 3);
+        assertTrue("value must be 2 on Saturday",LocalDate.now(ClockProvider.clock()).getDayOfWeek() != DayOfWeek.SATURDAY || days == 2);
+        assertTrue("value must be 1 on week days",!EnumSet.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY).contains(LocalDate.now(ClockProvider.clock()).getDayOfWeek()) || days == 1);
     }
 
     @Test
     void returnConfiguredWaitingTimeConsideringEventStart() {
         initOfflinePaymentTest();
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager);
         assertTrue(offlinePaymentWaitingPeriod.isPresent());
         assertEquals(1, offlinePaymentWaitingPeriod.getAsInt());
@@ -533,16 +529,16 @@ class TicketReservationManagerTest {
     @Test
     void neverReturnADateInThePast() {
         initOfflinePaymentTest();
-        when(event.getBegin()).thenReturn(ZonedDateTime.now());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
-        assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
+        assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now(ClockProvider.clock())));
     }
 
 //    FIXME implement test
 //    @Test
 //    void throwExceptionAfterEventStart() {
 //        initOfflinePaymentTest();
-//        when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
+//        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusDays(1));
 //        assertThrows(BankTransactionManager.OfflinePaymentException.class, () -> BankTransactionManager.getOfflinePaymentDeadline(event, configurationManager));
 //    }
 
@@ -747,8 +743,8 @@ class TicketReservationManagerTest {
     //performPayment reservation
 
     private void initConfirmReservation() {
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(5));
+        when(event.getZoneId()).thenReturn(ClockProvider.clock().getZone());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(5));
     }
 
     @Test
@@ -807,7 +803,7 @@ class TicketReservationManagerTest {
     }
 
     private void mockBillingDocument() {
-        BillingDocument document = new BillingDocument(42, 42, "", "42", BillingDocument.Type.INVOICE, "{}", ZonedDateTime.now(), BillingDocument.Status.VALID, "42");
+        BillingDocument document = new BillingDocument(42, 42, "", "42", BillingDocument.Type.INVOICE, "{}", ZonedDateTime.now(ClockProvider.clock()), BillingDocument.Status.VALID, "42");
         when(billingDocumentRepository.findLatestByReservationId(eq(RESERVATION_ID))).thenReturn(Optional.of(document));
     }
 
@@ -959,7 +955,7 @@ class TicketReservationManagerTest {
     void confirmOfflinePayments() {
         initConfirmReservation();
         TicketReservation reservation = mock(TicketReservation.class);
-        when(reservation.getConfirmationTimestamp()).thenReturn(ZonedDateTime.now());
+        when(reservation.getConfirmationTimestamp()).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
         when(reservation.getId()).thenReturn(RESERVATION_ID);
         when(reservation.getPaymentMethod()).thenReturn(PaymentProxy.OFFLINE);
         when(reservation.getStatus()).thenReturn(OFFLINE_PAYMENT);
@@ -991,7 +987,7 @@ class TicketReservationManagerTest {
         when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(BillingDocument.Type.class), anyString(), any(ZonedDateTime.class), anyInt()))
             .thenReturn(new AffectedRowCountAndKey<>(1, 1L));
         when(billingDocumentRepository.findByIdAndReservationId(anyLong(), anyString()))
-            .thenReturn(Optional.of(new BillingDocument(1, 1, "1", "42", BillingDocument.Type.INVOICE, "{}", ZonedDateTime.now(),
+            .thenReturn(Optional.of(new BillingDocument(1, 1, "1", "42", BillingDocument.Type.INVOICE, "{}", ZonedDateTime.now(ClockProvider.clock()),
                 BillingDocument.Status.VALID, null)));
         when(json.fromJsonString(anyString(), eq(OrderSummary.class))).thenReturn(mock(OrderSummary.class));
         when(json.asJsonString(any())).thenReturn("{}");
@@ -1021,8 +1017,8 @@ class TicketReservationManagerTest {
             event.getLocation(),
             event.getLatitude(),
             event.getLongitude(),
-            Optional.ofNullable(event.getBegin()).orElse(ZonedDateTime.now().plusDays(2).minusHours(2)),
-            Optional.ofNullable(event.getEnd()).orElse(ZonedDateTime.now().plusDays(2)),
+            Optional.ofNullable(event.getBegin()).orElse(ZonedDateTime.now(ClockProvider.clock()).plusDays(2).minusHours(2)),
+            Optional.ofNullable(event.getEnd()).orElse(ZonedDateTime.now(ClockProvider.clock()).plusDays(2)),
             "UTC",
             event.getWebsiteUrl(),
             event.getExternalUrl(),
@@ -1124,8 +1120,8 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+        when(event.getZoneId()).thenReturn(ClockProvider.clock().getZone());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton(RESERVATION_ID));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(1);
@@ -1147,7 +1143,7 @@ class TicketReservationManagerTest {
         when(configurationManager.getFor(eq(OPTIONAL_DATA_REMINDER_ENABLED), any())).thenReturn(
             new MaybeConfiguration(OPTIONAL_DATA_REMINDER_ENABLED)
         );
-        when(ticketReservation.latestNotificationTimestamp(any())).thenReturn(Optional.of(ZonedDateTime.now().minusDays(10)));
+        when(ticketReservation.latestNotificationTimestamp(any())).thenReturn(Optional.of(ZonedDateTime.now(ClockProvider.clock()).minusDays(10)));
         String RESERVATION_ID = "abcd";
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticket.getTicketsReservationId()).thenReturn(RESERVATION_ID);
@@ -1157,8 +1153,8 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationByIdForUpdate(eq(RESERVATION_ID))).thenReturn(ticketReservation);
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+        when(event.getZoneId()).thenReturn(ClockProvider.clock().getZone());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(1);
         trm.sendReminderForOptionalData();
@@ -1184,8 +1180,8 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationByIdForUpdate(eq(RESERVATION_ID))).thenReturn(ticketReservation);
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+        when(event.getZoneId()).thenReturn(ClockProvider.clock().getZone());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(0);
         trm.sendReminderForOptionalData();
@@ -1285,20 +1281,23 @@ class TicketReservationManagerTest {
     @Nested
     class SendReservationEmailIfNecessary {
 
-        private MaybeConfiguration maybeConfiguration;
+        private MaybeConfiguration sendReservationEmailIfNecessary;
+        private MaybeConfiguration sendTickets;
         private final String reservationEmail = "blabla@example.org";
-
 
         @BeforeEach
         @SuppressWarnings("unchecked")
         void setUp() {
-            maybeConfiguration = mock(MaybeConfiguration.class);
-            Map<ConfigurationKeys, MaybeConfiguration> configurations = mock(Map.class);
-            when(configurations.get(any(ConfigurationKeys.class))).thenReturn(maybeConfiguration);
-            when(configurationManager.getFor(anyCollection(), any())).thenReturn(configurations);
+            sendReservationEmailIfNecessary = mock(MaybeConfiguration.class);
+            sendTickets = mock(MaybeConfiguration.class);
             when(ticketReservation.getSrcPriceCts()).thenReturn(0);
             when(ticketReservation.getEmail()).thenReturn(reservationEmail);
             when(ticket.getEmail()).thenReturn(reservationEmail);
+            Map<ConfigurationKeys, MaybeConfiguration> configurations = mock(Map.class);
+            when(configurations.get(any(ConfigurationKeys.class))).thenReturn(mock(MaybeConfiguration.class));
+            when(configurations.get(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY))).thenReturn(sendReservationEmailIfNecessary);
+            when(configurations.get(eq(SEND_TICKETS_AUTOMATICALLY))).thenReturn(sendTickets);
+            when(configurationManager.getFor(anyCollection(), any())).thenReturn(configurations);
         }
 
         @Test
@@ -1335,16 +1334,23 @@ class TicketReservationManagerTest {
 
         @Test
         void emailSentBecauseFlagIsSetToFalse() {
-            when(configurationManager.getFor(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY), any())).thenReturn(maybeConfiguration);
-            when(maybeConfiguration.getValueAsBooleanOrDefault()).thenReturn(false);
+            when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(false);
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+        }
+
+        @Test
+        void emailSentBecauseTicketIsNotSent() {
+            when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
+            when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(false);
             trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
         }
 
         @Test
         void emailNOTSentBecauseFlagIsSetToTrue() {
-            when(configurationManager.getFor(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY), any())).thenReturn(maybeConfiguration);
-            when(maybeConfiguration.getValueAsBooleanOrDefault()).thenReturn(true);
+            when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
+            when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(true);
             trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
         }

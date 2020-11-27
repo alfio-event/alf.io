@@ -25,6 +25,7 @@ import alfio.model.transaction.token.StripeCreditCardToken;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.test.util.TestUtil;
 import com.stripe.exception.AuthenticationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
@@ -55,7 +56,6 @@ public class StripeManagerTest {
     private CustomerName customerName;
 
     private final String paymentId = "customer#1";
-    private final String error = "errorCode";
 
     @BeforeEach
     public void setUp() {
@@ -81,7 +81,7 @@ public class StripeManagerTest {
                 }});
             }
         };
-        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(configurationManager, transactionRepository, baseStripeManager);
+        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(transactionRepository, baseStripeManager, TestUtil.clockProvider());
         PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
         PaymentResult result = stripeCreditCardManager.doPayment(spec);
         assertEquals(result, PaymentResult.successful(paymentId));
@@ -95,7 +95,7 @@ public class StripeManagerTest {
                 throw new AuthenticationException("401", "42", "401", 401);
             }
         };
-        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(configurationManager, transactionRepository, baseStripeManager);
+        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(transactionRepository, baseStripeManager, TestUtil.clockProvider());
         PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
         PaymentResult result = stripeCreditCardManager.doPayment(spec);
         assertEquals(result, PaymentResult.failed("error.STEP2_STRIPE_abort"));
@@ -112,7 +112,7 @@ public class StripeManagerTest {
                 }});
             }
         };
-        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(configurationManager, transactionRepository, baseStripeManager);
+        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(transactionRepository, baseStripeManager, TestUtil.clockProvider());
         when(event.getCurrency()).thenReturn("CHF");
         when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong(), eq(Transaction.Status.COMPLETE), anyMap()))
             .thenThrow(new NullPointerException());

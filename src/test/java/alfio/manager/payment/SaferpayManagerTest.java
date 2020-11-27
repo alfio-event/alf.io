@@ -24,6 +24,7 @@ import alfio.model.transaction.Transaction;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
+import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,6 +72,7 @@ class SaferpayManagerTest {
     private SaferpayManager manager;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     public void init() {
         var configurationManager = mock(ConfigurationManager.class);
         var configuration = mock(Map.class);
@@ -80,7 +82,7 @@ class SaferpayManagerTest {
         when(event.getOrganizationId()).thenReturn(1);
         when(event.getId()).thenReturn(5);
         when(paymentContext.getEvent()).thenReturn(event);
-        manager = new SaferpayManager(configurationManager, httpClient, ticketReservationRepository, transactionRepository, ticketRepository);
+        manager = new SaferpayManager(configurationManager, httpClient, ticketReservationRepository, transactionRepository, ticketRepository, TestUtil.clockProvider());
     }
 
     @Test

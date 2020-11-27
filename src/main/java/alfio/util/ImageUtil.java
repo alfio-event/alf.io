@@ -16,6 +16,9 @@
  */
 package alfio.util;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.MultiFormatWriter;
@@ -23,21 +26,58 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.EnumMap;
 import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.center;
 import static org.apache.commons.lang3.StringUtils.truncate;
 
+@Log4j2
 public final class ImageUtil {
+
+    private static final Cache<String, File> FONT_CACHE = Caffeine.newBuilder()
+        .removalListener((String key, File value, RemovalCause cause) -> {
+            if(value != null) {
+                boolean result = value.delete();
+                log.trace("value {} deleted: {}", key, result);
+            }
+        })
+        .build();
+
+
+    private static final String DEJA_VU_SANS = "/alfio/font/DejaVuSansMono.ttf";
+
+    private static File loadDejaVuFont(String classPathResource) {
+        try {
+            File cachedFile = File.createTempFile("font-cache", ".tmp");
+            cachedFile.deleteOnExit();
+            try (InputStream is = new ClassPathResource(DEJA_VU_SANS).getInputStream(); OutputStream tmpOs = new FileOutputStream(cachedFile)) {
+                is.transferTo(tmpOs);
+            }
+            return cachedFile;
+        } catch (IOException e) {
+            log.warn("error while loading DejaVuSansMono.ttf font", e);
+            return null;
+        }
+    }
+
+    public static File getDejaVuSansMonoFont() {
+        File defaultFont = FONT_CACHE.get(DEJA_VU_SANS, ImageUtil::loadDejaVuFont);
+        if (defaultFont != null && !defaultFont.exists()) { // fallback, the cached font will not be shared though
+            FONT_CACHE.invalidate(DEJA_VU_SANS);
+            defaultFont = loadDejaVuFont(DEJA_VU_SANS);
+        }
+        return defaultFont;
+    }
+
+
     private ImageUtil() {
     }
 
@@ -59,8 +99,7 @@ public final class ImageUtil {
     }
 
     public static byte[] createQRCodeWithDescription(String text, String description) {
-        try (InputStream fi = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
-             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             BitMatrix matrix = drawQRCode(text);
             BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(matrix);
             BufferedImage scaled = new BufferedImage(200, 230, BufferedImage.TYPE_INT_ARGB);
@@ -70,8 +109,11 @@ public final class ImageUtil {
             graphics.setColor(Color.WHITE);
             graphics.fillRect(0, 200, 200, 30);
             graphics.setColor(Color.BLACK);
-            graphics.setFont(Font.createFont(Font.TRUETYPE_FONT, fi).deriveFont(14f));
-            graphics.drawString(center(truncate(description, 23), 25), 0, 215);
+            File fontFile = getDejaVuSansMonoFont();
+            if (fontFile != null) {
+                graphics.setFont(Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(14f));
+                graphics.drawString(center(truncate(description, 23), 25), 0, 215);
+            }
             ImageIO.write(scaled, "png", baos);
             return baos.toByteArray();
         } catch (WriterException | IOException | FontFormatException e) {
