@@ -1276,10 +1276,17 @@ public class EventManager {
     @SneakyThrows
     public String saveVideo(int organizationId, byte[] bytes, String fileName) {
         var localRes = StringUtils.split(configurationManager.getFor(ConfigurationKeys.LOCAL_RES_FOR_VIDEOSTREAM, ConfigurationLevel.organization(organizationId)).getValueOrDefault(""),'|');
-        var filePath = localRes[0].trim().endsWith("/") ? localRes[0].trim() + fileName : localRes[0].trim() + "/" + fileName;
+        var filePath = localRes[0].trim().endsWith("/") ? localRes[0].trim() + fileName : localRes[0].trim() + "/" + replaceSpecialChars(fileName);
         Path fileToSave = Paths.get(filePath);
         Files.write(fileToSave, bytes);
         return "File Saved";
+    }
+
+    private String replaceSpecialChars(String str) {
+        var fExt = str.substring(str.lastIndexOf("."));
+        var fName = str.substring(0, str.lastIndexOf("."));
+        fName = fName.replaceAll("[^a-zA-Z0-9]", "_");
+        return fName + fExt;
     }
 
     public String getVideoStreamPathByOrganizationId(int organizationId,String fileName){
