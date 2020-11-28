@@ -80,8 +80,8 @@ public interface EmailMessageRepository {
     @Query("update email_message set status = :status where id = :messageId and event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatus(@Bind("messageId") int messageId, @Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("status") String status, @Bind("expectedStatuses") List<String> expectedStatuses);
 
-    @Query("update email_message set status = :status where id = :messageId and event_id = :eventId")
-    int updateStatus(@Bind("eventId") int eventId, @Bind("status") String status, @Bind("messageId") int messageId);
+    @Query("update email_message set status = 'WAITING', html_message = :htmlMessage where id = :messageId and event_id = :eventId")
+    int updateStatusToWaitingWithHtml(@Bind("eventId") int eventId, @Bind("messageId") int messageId, @Bind("htmlMessage") String htmlMessage);
 
     @Query("update email_message set status = :status, attempts = :attempts where id = :messageId and status in (:expectedStatuses) ")
     int updateStatusAndAttempts(@Bind("messageId") int messageId, @Bind("status") String status, @Bind("attempts") int attempts, @Bind("expectedStatuses") List<String> expectedStatuses);

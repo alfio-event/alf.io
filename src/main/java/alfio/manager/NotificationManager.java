@@ -250,7 +250,8 @@ public class NotificationManager {
         
         tx.execute(status -> {
             emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
-                id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
+                // see issue #967
+                id -> emailMessageRepository.updateStatusToWaitingWithHtml(event.getId(), id, renderedTemplate.getHtmlPart()),
                 () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock()))
             );
             return null;
@@ -288,7 +289,10 @@ public class NotificationManager {
         //in order to minimize the database size, it is worth checking if there is already another message in the table
         Optional<Integer> existing = emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum);
 
-        existing.ifPresentOrElse(id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
+        existing.ifPresentOrElse(id ->
+            //see issue #967
+            emailMessageRepository.updateStatusToWaitingWithHtml(event.getId(), id, renderedTemplate.getHtmlPart())
+            ,
             () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock())));
     }
 
