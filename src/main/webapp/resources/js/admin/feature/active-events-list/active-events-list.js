@@ -18,7 +18,8 @@ function activeEventsListCtrl(EventService) {
 
     ctrl.$onInit = function() {
         EventService.getAllActiveEvents().success(function(data) {
-            ctrl.displayImage = data.length <= 10; // temporary fix issues if there are a lot of events in the list
+            // ctrl.displayImage = data.length <= 10; // temporary fix issues if there are a lot of events in the list
+			ctrl.displayImage = true; // temporary fix issues if there are a lot of events in the list
             ctrl.events = data;
             ctrl.loading = false;
         });
