@@ -532,10 +532,62 @@
                     reader.onload = function(e) {
                         $scope.$applyAsync(function() {
                             var imageBase64 = e.target.result;
+
+                            var fileType = files[0].type;
+                            var fileName = files[0].name;
+                            var fileContent = imageBase64.substring(imageBase64.indexOf('base64,') + 7);
+
+
                             $scope.imageBase64 = imageBase64;
-                            FileUploadService.uploadImageWithResize({file : imageBase64.substring(imageBase64.indexOf('base64,') + 7), type : files[0].type, name : files[0].name}).success(function(imageId) {
-                                $scope.obj.fileBlobId = imageId;
-                            })
+
+                            if (files[0].type === 'image/svg+xml') {
+                                var img = new Image();
+
+                                var fromSvgToPng = function(image) {
+                                    var cnv = document.createElement('canvas');
+                                    cnv.width = image.width;
+                                    cnv.height = image.height;
+                                    var canvasCtx = cnv.getContext('2d');
+                                    canvasCtx.drawImage(image, 0, 0);
+                                    var imgData = cnv.toDataURL('image/png');
+
+                                    fileType = "image/png";
+                                    fileName = fileName+".png";
+                                    fileContent = imgData.substring(imgData.indexOf('base64,') + 7);
+                                    $scope.$applyAsync(function() {
+                                        FileUploadService.uploadImageWithResize({file : fileContent, type : fileType, name : fileName}).success(function(imageId) {
+                                            $scope.obj.fileBlobId = imageId;
+                                        });
+                                    });
+                                }
+
+                                img.onload = function() {
+                                    if (img.width < 500 && img.height < 500) {
+                                        var img2 = new Image();
+                                        var ratio = 1;
+                                        if (img.width > img.height) {
+                                            ratio = 500 / img.width;
+                                        } else {
+                                            ratio = 500 / img.height;
+                                        }
+                                        img2.width = img.width * ratio;
+                                        img2.height = img.height * ratio;
+                                        img2.onload = function() {
+                                            fromSvgToPng(img2)
+                                        }
+                                        img2.src = imageBase64;
+                                    } else {
+                                        fromSvgToPng(img);
+                                    }
+                                };
+                                img.src = imageBase64;
+                            } else {
+                                FileUploadService.uploadImageWithResize({file : fileContent, type : fileType, name : fileName}).success(function(imageId) {
+                                    $scope.obj.fileBlobId = imageId;
+                                });
+                            }
+
+                            //
                         })
 
                     };
@@ -1317,6 +1369,5 @@
                 })
             }
         }
-    })
-    
+    });
 })();
