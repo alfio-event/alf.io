@@ -552,7 +552,7 @@
                                     var canvasCtx = cnv.getContext('2d');
                                     canvasCtx.drawImage(image, 0, 0);
                                     var imgData = cnv.toDataURL('image/png');
-                                    img.remove();
+                                    //img.remove();
                                     fileType = "image/png";
                                     fileName = fileName+".png";
                                     fileContent = imgData.substring(imgData.indexOf('base64,') + 7);
@@ -563,16 +563,26 @@
                                     });
 
                                 }
-                                img.height = 500;
+
+                                //
+                                var parser = new DOMParser();
+                                var svgRoot = parser.parseFromString(atob(fileContent), 'text/xml').getElementsByTagName("svg")[0];
+                                if(svgRoot.hasAttribute('height')) {
+                                    img.height = svgRoot.getAttribute('height');
+                                    img.width = svgRoot.getAttribute('width');
+                                } else {
+                                    img.height = 500;
+                                }
+                                //imageBase64 = 'data:image/svg+xml;base64,'+btoa(new XMLSerializer().serializeToString(svgRoot));
+
+
                                 img.setAttribute('aria-hidden', 'true');
                                 img.style.position = 'absolute';
                                 img.style.top = '-10000px';
                                 img.style.left = '-10000px';
                                 img.onload = function() {
-                                    //see FF limitation https://stackoverflow.com/a/61195034
+                                    // see FF limitation https://stackoverflow.com/a/61195034
                                     // we need to set in a explicit way the size _inside_ the svg
-                                    var parser = new DOMParser();
-                                    var svgRoot = parser.parseFromString(atob(fileContent), 'text/xml').getElementsByTagName("svg")[0];
                                     svgRoot.setAttribute('width', img.width+'px');
                                     svgRoot.setAttribute('height', img.height+'px');
                                     var serializedSvg = new XMLSerializer().serializeToString(svgRoot);
