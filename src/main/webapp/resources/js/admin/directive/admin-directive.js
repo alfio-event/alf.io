@@ -541,6 +541,8 @@
                             $scope.imageBase64 = imageBase64;
 
                             if (files[0].type === 'image/svg+xml') {
+
+
                                 var img = new Image();
 
                                 var fromSvgToPng = function(image) {
@@ -550,7 +552,7 @@
                                     var canvasCtx = cnv.getContext('2d');
                                     canvasCtx.drawImage(image, 0, 0);
                                     var imgData = cnv.toDataURL('image/png');
-
+                                    img.remove();
                                     fileType = "image/png";
                                     fileName = fileName+".png";
                                     fileContent = imgData.substring(imgData.indexOf('base64,') + 7);
@@ -559,27 +561,27 @@
                                             $scope.obj.fileBlobId = imageId;
                                         });
                                     });
-                                }
 
+                                }
+                                img.height = 500;
+                                img.setAttribute('aria-hidden', 'true');
+                                img.style.position = 'absolute';
+                                img.style.top = '-10000px';
+                                img.style.left = '-10000px';
                                 img.onload = function() {
-                                    if (img.width < 500 && img.height < 500) {
-                                        var img2 = new Image();
-                                        var ratio = 1;
-                                        if (img.width > img.height) {
-                                            ratio = 500 / img.width;
-                                        } else {
-                                            ratio = 500 / img.height;
-                                        }
-                                        img2.width = img.width * ratio;
-                                        img2.height = img.height * ratio;
-                                        img2.onload = function() {
-                                            fromSvgToPng(img2)
-                                        }
-                                        img2.src = imageBase64;
-                                    } else {
+                                    //see FF limitation https://stackoverflow.com/a/61195034
+                                    // we need to set in a explicit way the size _inside_ the svg
+                                    var parser = new DOMParser();
+                                    var svgRoot = parser.parseFromString(atob(fileContent), 'text/xml').getElementsByTagName("svg")[0];
+                                    svgRoot.setAttribute('width', img.width+'px');
+                                    svgRoot.setAttribute('height', img.height+'px');
+                                    var serializedSvg = new XMLSerializer().serializeToString(svgRoot);
+                                    img.onload = function() {
                                         fromSvgToPng(img);
                                     }
+                                    img.src = 'data:image/svg+xml;base64,'+btoa(serializedSvg);
                                 };
+                                window.document.body.appendChild(img);
                                 img.src = imageBase64;
                             } else {
                                 FileUploadService.uploadImageWithResize({file : fileContent, type : fileType, name : fileName}).success(function(imageId) {
