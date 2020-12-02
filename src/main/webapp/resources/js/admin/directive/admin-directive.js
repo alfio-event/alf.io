@@ -532,19 +532,12 @@
                     reader.onload = function(e) {
                         $scope.$applyAsync(function() {
                             var imageBase64 = e.target.result;
-
                             var fileType = files[0].type;
                             var fileName = files[0].name;
                             var fileContent = imageBase64.substring(imageBase64.indexOf('base64,') + 7);
-
-
                             $scope.imageBase64 = imageBase64;
-
-                            if (files[0].type === 'image/svg+xml') {
-
-
+                            if (fileType=== 'image/svg+xml') {
                                 var img = new Image();
-
                                 var fromSvgToPng = function(image) {
                                     var cnv = document.createElement('canvas');
                                     cnv.width = image.width;
@@ -552,7 +545,7 @@
                                     var canvasCtx = cnv.getContext('2d');
                                     canvasCtx.drawImage(image, 0, 0);
                                     var imgData = cnv.toDataURL('image/png');
-                                    //img.remove();
+                                    img.remove();
                                     fileType = "image/png";
                                     fileName = fileName+".png";
                                     fileContent = imgData.substring(imgData.indexOf('base64,') + 7);
@@ -561,21 +554,15 @@
                                             $scope.obj.fileBlobId = imageId;
                                         });
                                     });
-
                                 }
-
-                                //
                                 var parser = new DOMParser();
                                 var svgRoot = parser.parseFromString(atob(fileContent), 'text/xml').getElementsByTagName("svg")[0];
-                                if(svgRoot.hasAttribute('height')) {
+                                if (svgRoot.hasAttribute('height')) {
                                     img.height = svgRoot.getAttribute('height');
                                     img.width = svgRoot.getAttribute('width');
                                 } else {
                                     img.height = 500;
                                 }
-                                //imageBase64 = 'data:image/svg+xml;base64,'+btoa(new XMLSerializer().serializeToString(svgRoot));
-
-
                                 img.setAttribute('aria-hidden', 'true');
                                 img.style.position = 'absolute';
                                 img.style.top = '-10000px';
@@ -598,8 +585,6 @@
                                     $scope.obj.fileBlobId = imageId;
                                 });
                             }
-
-                            //
                         })
 
                     };
