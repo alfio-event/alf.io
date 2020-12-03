@@ -33,12 +33,11 @@ import org.mozilla.javascript.ast.*;
  * This class holds reference to AST node and child elements.
  */
 public class JSSymbol {
-    private AstNode node = null;
-    private ArrayList<JSSymbol> children = new ArrayList<>();
-    private Map<String, JSSymbol> localVars = new HashMap<String, JSSymbol>();
+    private final AstNode node;
+    private final ArrayList<JSSymbol> children = new ArrayList<>();
+    private final Map<String, JSSymbol> localVars = new HashMap<String, JSSymbol>();
     private String name = null;
     private JSSymbol parent = null;
-    private AstNode loop = null;
 
     public JSSymbol(AstNode node) {
         this.node = node;
@@ -108,11 +107,12 @@ public class JSSymbol {
         return name;
     }
 
-    public boolean visit (JSSymbolVisitor visitor) {
-        boolean ret = visitor.visit(this);
+    public boolean visit () {
+        boolean ret = this.getNode() instanceof AstRoot || this.getNode().getType() == Token.FUNCTION;
+//        boolean ret = visitor.visit(this);
         if (ret) {
             for (JSSymbol child : children) {
-                child.visit(visitor);
+                child.visit();
             }
             return true;
         } else {

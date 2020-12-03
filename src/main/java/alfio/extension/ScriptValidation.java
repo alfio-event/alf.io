@@ -43,7 +43,7 @@ public class ScriptValidation {
         JSNodeVisitor nodeVisitor = new JSNodeVisitor();
         rootNode.visit(nodeVisitor);
 
-        return nodeVisitor.getRoot().visit(new JSSymbolVisitor());
+        return nodeVisitor.getRoot().visit();
     }
 
 }

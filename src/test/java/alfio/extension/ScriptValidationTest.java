@@ -42,62 +42,62 @@ public class ScriptValidationTest {
     void testBaseScriptValidation() throws Exception {
         String concatenation = getScriptContent("base.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertDoesNotThrow(() -> validation.validate());
+        Assertions.assertDoesNotThrow(validation::validate);
     }
 
     @Test
     void testBoundariesExitValidation() throws IOException {
         String concatenation = getScriptContent("boundariesExit.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
+        Assertions.assertThrows(ScriptNotValidException.class, validation::validate);
     }
 
     @Test
     void testBoundariesReflectionValidation() throws IOException {
         String concatenation = getScriptContent("boundariesReflection.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertThrows(ScriptNotValidException.class, () -> validation.validate());
+        Assertions.assertThrows(ScriptNotValidException.class, validation::validate);
     }
 
     @Test
     void testWhileLoopValidation() throws IOException {
         String concatenation = getScriptContent("timeout.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
+        Assertions.assertThrows(ScriptNotValidException.class, validation::validate);
     }
 
     @Test
     void testDoLoopValidation() throws IOException {
         String concatenation = getScriptContent("doLoop.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
+        Assertions.assertThrows(ScriptNotValidException.class, validation::validate);
     }
 
     @Test
     void testWithStatementValidation() throws IOException {
         String concatenation = getScriptContent("withStatement.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
+        Assertions.assertThrows(ScriptNotValidException.class, validation::validate);
     }
 
     @Test
     void testLabeledStatementValidation() throws IOException {
         String concatenation = getScriptContent("labeledStatement.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
+        Assertions.assertThrows(ScriptNotValidException.class, validation::validate);
     }
 
     @Test
     void testFunctionLevelsValidation() throws IOException {
         String concatenation = getScriptContent("functionLevels.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertThrows(ScriptNotValidException.class, () ->validation.validate());
+        Assertions.assertThrows(ScriptNotValidException.class, validation::validate);
     }
 
     @Test
     void testFunctionLevelsLegitValidation() throws IOException {
         String concatenation = getScriptContent("functionLegitLevels.js");
         ScriptValidation validation = new ScriptValidation(concatenation);
-        Assertions.assertDoesNotThrow(() -> validation.validate());
+        Assertions.assertDoesNotThrow(validation::validate);
     }
 }
