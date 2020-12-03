@@ -532,10 +532,59 @@
                     reader.onload = function(e) {
                         $scope.$applyAsync(function() {
                             var imageBase64 = e.target.result;
+                            var fileType = files[0].type;
+                            var fileName = files[0].name;
+                            var fileContent = imageBase64.substring(imageBase64.indexOf('base64,') + 7);
                             $scope.imageBase64 = imageBase64;
-                            FileUploadService.uploadImageWithResize({file : imageBase64.substring(imageBase64.indexOf('base64,') + 7), type : files[0].type, name : files[0].name}).success(function(imageId) {
-                                $scope.obj.fileBlobId = imageId;
-                            })
+                            if (fileType=== 'image/svg+xml') {
+                                var img = new Image();
+                                var fromSvgToPng = function(image) {
+                                    var cnv = document.createElement('canvas');
+                                    cnv.width = image.width;
+                                    cnv.height = image.height;
+                                    var canvasCtx = cnv.getContext('2d');
+                                    canvasCtx.drawImage(image, 0, 0);
+                                    var imgData = cnv.toDataURL('image/png');
+                                    img.remove();
+                                    fileType = "image/png";
+                                    fileName = fileName+".png";
+                                    fileContent = imgData.substring(imgData.indexOf('base64,') + 7);
+                                    $scope.$applyAsync(function() {
+                                        FileUploadService.uploadImageWithResize({file : fileContent, type : fileType, name : fileName}).success(function(imageId) {
+                                            $scope.obj.fileBlobId = imageId;
+                                        });
+                                    });
+                                }
+                                var parser = new DOMParser();
+                                var svgRoot = parser.parseFromString(atob(fileContent), 'text/xml').getElementsByTagName("svg")[0];
+                                if (svgRoot.hasAttribute('height')) {
+                                    img.height = svgRoot.getAttribute('height');
+                                    img.width = svgRoot.getAttribute('width');
+                                } else {
+                                    img.height = 500;
+                                }
+                                img.setAttribute('aria-hidden', 'true');
+                                img.style.position = 'absolute';
+                                img.style.top = '-10000px';
+                                img.style.left = '-10000px';
+                                img.onload = function() {
+                                    // see FF limitation https://stackoverflow.com/a/61195034
+                                    // we need to set in a explicit way the size _inside_ the svg
+                                    svgRoot.setAttribute('width', img.width+'px');
+                                    svgRoot.setAttribute('height', img.height+'px');
+                                    var serializedSvg = new XMLSerializer().serializeToString(svgRoot);
+                                    img.onload = function() {
+                                        fromSvgToPng(img);
+                                    }
+                                    img.src = 'data:image/svg+xml;base64,'+btoa(serializedSvg);
+                                };
+                                window.document.body.appendChild(img);
+                                img.src = imageBase64;
+                            } else {
+                                FileUploadService.uploadImageWithResize({file : fileContent, type : fileType, name : fileName}).success(function(imageId) {
+                                    $scope.obj.fileBlobId = imageId;
+                                });
+                            }
                         })
 
                     };
@@ -1317,6 +1366,5 @@
                 })
             }
         }
-    })
-    
+    });
 })();

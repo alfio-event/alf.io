@@ -138,7 +138,8 @@
             <div>
                 <a class="pull-right text-muted" data-ng-if="imageBase64 && !obj.id" data-ng-click="removeImage(obj)"><i class="fa fa-times fa-2x"></i></a>
                 <a class="pull-right text-muted" data-ng-if="imageBase64 && obj.id" data-ng-click="resetImage(obj)"><i class="fa fa-undo fa-2x"></i></a>
-                <img data-ng-if="imageBase64 || obj.fileBlobId" data-ng-src="{{imageBase64 || ('/file/' + obj.fileBlobId)}}" class="img-responsive center-block event-logo">
+                <img data-ng-if="imageBase64 && !obj.fileBlobId" data-ng-src="{{imageBase64}}" class="img-responsive center-block event-logo">
+                <img data-ng-if="obj.fileBlobId" data-ng-src="{{('/file/' + obj.fileBlobId)}}" class="img-responsive center-block event-logo">
                 <div class="alert alert-danger alert-form ng-invalid" data-ng-if="!imageBase64 && !obj.fileBlobId"><i class="fa fa-warning"></i> Event logo is missing!</div>
             </div>
         </div>
