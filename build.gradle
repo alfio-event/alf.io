@@ -151,6 +151,7 @@ dependencies {
     implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.1', {
         exclude module: 'gson'
     }
+
     implementation "org.apache.commons:commons-lang3:3.11"
     implementation "org.apache.commons:commons-text:1.9"
     implementation "com.opencsv:opencsv:5.2"
@@ -164,6 +165,7 @@ dependencies {
     implementation 'ch.digitalfondue.vatchecker:vatchecker:1.4.3'
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
+    implementation 'org.mozilla:rhino-runtime:1.7.13'
 
     implementation "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
 
@@ -218,7 +220,9 @@ dependencies {
 
     implementation "org.joda:joda-money:1.0.1"
 
-    testImplementation 'org.mock-server:mockserver-netty:5.11.1'
+    testImplementation 'org.mock-server:mockserver-netty:5.11.1', {
+        exclude group: 'org.mozilla', module: 'rhino'
+    }
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     testImplementation 'org.seleniumhq.selenium:selenium-java:4.0.0-alpha-6'

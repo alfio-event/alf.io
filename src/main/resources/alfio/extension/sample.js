@@ -36,7 +36,7 @@ function executeScript(scriptEvent) {
     log.warn('hello from script with event: ' + scriptEvent);
     log.warn('extension parameters are: ' + extensionParameters);
     //this sample calls the https://csrng.net/ website and generates a random invoice number
-    var randomNumber = simpleHttpClient.get('https://csrng.net/csrng/csrng.php?min=0&max=100').getJsonBody()[0].random;
+    var randomNumber = simpleHttpClient.get('https://jsonplaceholder.typicode.com/todos/1').getJsonBody().get("userId");
     log.warn('the invoice number will be: ' + randomNumber);
     return {
         invoiceNumber: randomNumber
