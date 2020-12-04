@@ -27,13 +27,13 @@ import org.mozilla.javascript.ast.AstRoot;
 // https://github.com/mozilla/rhino/tree/master/src/org/mozilla/javascript/ast
 public class ScriptValidation {
 
-    private String script;
+    private final String script;
 
     public ScriptValidation(String script) {
         this.script = script;
     }
 
-    public boolean validate() throws Exception {
+    public void validate() {
         CompilerEnvirons env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
 
@@ -42,8 +42,6 @@ public class ScriptValidation {
 
         JSNodeVisitor nodeVisitor = new JSNodeVisitor();
         rootNode.visit(nodeVisitor);
-
-        return nodeVisitor.getRoot().visit();
     }
 
 }

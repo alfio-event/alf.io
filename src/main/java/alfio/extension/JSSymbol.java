@@ -32,29 +32,15 @@ import org.mozilla.javascript.ast.*;
  *
  * This class holds reference to AST node and child elements.
  */
-public class JSSymbol {
+class JSSymbol {
     private final AstNode node;
     private final ArrayList<JSSymbol> children = new ArrayList<>();
-    private final Map<String, JSSymbol> localVars = new HashMap<String, JSSymbol>();
-    private String name = null;
+    private final Map<String, JSSymbol> localVars = new HashMap<>();
     private JSSymbol parent = null;
 
     public JSSymbol(AstNode node) {
         this.node = node;
-        if (node instanceof VariableInitializer) {
-            name = ((Name) ((VariableInitializer) node).getTarget()).getIdentifier();
-        } else if (node instanceof FunctionNode) {
-            Name funcName = ((FunctionNode)node).getFunctionName();
-            if (funcName != null) {
-                name = funcName.getIdentifier();
-            } else {
-                AstNode parent = node.getParent();
-                if (parent instanceof VariableInitializer) {
-                    name = ((Name)((VariableInitializer)parent).getTarget()).getIdentifier();
-                } else {
-                    name = "Anonymous";
-                }
-            }
+        if (node instanceof FunctionNode) {
             FunctionNode funcNode = (FunctionNode)node;
             List<AstNode> args = funcNode.getParams();
             if (args != null) {
@@ -62,8 +48,6 @@ public class JSSymbol {
                     addChild(argNode);
                 }
             }
-        } else if (node instanceof Name) {
-            name = ((Name) node).getIdentifier();
         }
     }
 
@@ -103,32 +87,11 @@ public class JSSymbol {
         return localVars.containsKey(name);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public boolean visit () {
-        boolean ret = this.getNode() instanceof AstRoot || this.getNode().getType() == Token.FUNCTION;
-//        boolean ret = visitor.visit(this);
-        if (ret) {
-            for (JSSymbol child : children) {
-                child.visit();
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     public JSSymbol getParent() {
         return parent;
     }
 
     public void setParent(JSSymbol parent) {
         this.parent = parent;
-    }
-
-    void setName(String name) {
-        this.name = name;
     }
 }
