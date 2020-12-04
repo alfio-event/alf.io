@@ -14,22 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support;
+package alfio.config.support.auth;
 
-import alfio.model.user.Role;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import org.springframework.security.authentication.AccountStatusException;
 
-import java.util.Map;
-import java.util.Set;
+public class WrongAccountTypeException extends AccountStatusException {
 
-@Getter
-@AllArgsConstructor
-public class OpenIdAlfioUser {
-    private final String idToken;
-    private final String subject;
-    private final String email;
-    private final boolean isAdmin;
-    private final Set<Role> alfioRoles;
-    private final Map<String, Set<String>> alfioOrganizationAuthorizations;
+    public WrongAccountTypeException(String msg) {
+        super(msg);
+    }
 }

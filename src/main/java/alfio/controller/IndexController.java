@@ -18,6 +18,7 @@ package alfio.controller;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
+import alfio.config.support.auth.OpenIdAlfioAuthentication;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
@@ -369,10 +370,10 @@ public class IndexController {
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
 
-        boolean isDBAuthentication = !(principal instanceof WebSecurityConfig.OpenIdAlfioAuthentication);
+        boolean isDBAuthentication = !(principal instanceof OpenIdAlfioAuthentication);
         model.addAttribute("isDBAuthentication", isDBAuthentication);
         if (!isDBAuthentication) {
-            String idpLogoutRedirectionUrl = ((WebSecurityConfig.OpenIdAlfioAuthentication) SecurityContextHolder.getContext().getAuthentication()).getIdpLogoutRedirectionUrl();
+            String idpLogoutRedirectionUrl = ((OpenIdAlfioAuthentication) SecurityContextHolder.getContext().getAuthentication()).getIdpLogoutRedirectionUrl();
             model.addAttribute("idpLogoutRedirectionUrl", idpLogoutRedirectionUrl);
         } else {
             model.addAttribute("idpLogoutRedirectionUrl", null);

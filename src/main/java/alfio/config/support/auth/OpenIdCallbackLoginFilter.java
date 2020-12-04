@@ -14,9 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support;
+package alfio.config.support.auth;
 
-import alfio.config.WebSecurityConfig;
 import alfio.manager.system.OpenIdAuthenticationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Organization;
@@ -114,7 +113,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
 
         List<GrantedAuthority> authorities = alfioUser.getAlfioRoles().stream().map(Role::getRoleName)
             .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        WebSecurityConfig.OpenIdAlfioAuthentication authentication = new WebSecurityConfig.OpenIdAlfioAuthentication(authorities, alfioUser.getIdToken(), alfioUser.getSubject(), alfioUser.getEmail(), openIdAuthenticationManager.buildLogoutUrl());
+        OpenIdAlfioAuthentication authentication = new OpenIdAlfioAuthentication(authorities, alfioUser.getIdToken(), alfioUser.getSubject(), alfioUser.getEmail(), openIdAuthenticationManager.buildLogoutUrl());
         return getAuthenticationManager().authenticate(authentication);
     }
 

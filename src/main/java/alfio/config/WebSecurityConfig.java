@@ -16,12 +16,11 @@
  */
 package alfio.config;
 
-import alfio.config.support.OpenIdCallbackLoginFilter;
+import alfio.config.support.auth.*;
 import alfio.manager.RecaptchaService;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.OpenIdAuthenticationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -30,7 +29,6 @@ import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.ClockProvider;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -38,44 +36,33 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.*;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 
 @Configuration
 @EnableWebSecurity
@@ -94,61 +81,12 @@ public class WebSecurityConfig {
     private static final String API_CLIENT = "API_CLIENT";
     private static final String X_REQUESTED_WITH = "X-Requested-With";
 
-    private static boolean isTokenAuthentication(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
-    }
-
     @Bean
     public CsrfTokenRepository getCsrfTokenRepository() {
         HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
         repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
         repository.setParameterName(CSRF_PARAM_NAME);
         return repository;
-    }
-
-    private static class APIKeyAuthFilter extends AbstractPreAuthenticatedProcessingFilter {
-
-        @Override
-        protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-            return isTokenAuthentication(request) ? StringUtils.trim(request.getHeader("Authorization").substring("apikey ".length())) : null;
-        }
-
-        @Override
-        protected Object getPreAuthenticatedCredentials(HttpServletRequest request) {
-            return "N/A";
-        }
-    }
-
-    public static class APITokenAuthentication extends AbstractAuthenticationToken {
-
-        private final Object principal;
-        private final Object credentials;
-
-
-        public APITokenAuthentication(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
-            super(authorities);
-            this.credentials = credentials;
-            this.principal = principal;
-            setAuthenticated(true);
-        }
-
-        @Override
-        public Object getCredentials() {
-            return credentials;
-        }
-
-        @Override
-        public Object getPrincipal() {
-            return principal;
-        }
-    }
-
-    public static class WrongAccountTypeException extends AccountStatusException {
-
-        public WrongAccountTypeException(String msg) {
-            super(msg);
-        }
     }
 
     @Configuration
@@ -191,7 +129,7 @@ public class WebSecurityConfig {
             });
 
 
-            http.requestMatcher(WebSecurityConfig::isTokenAuthentication)
+            http.requestMatcher(RequestTypeMatchers::isTokenAuthentication)
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and().csrf().disable()
                 .authorizeRequests()
@@ -211,6 +149,13 @@ public class WebSecurityConfig {
     @Configuration
     @Order(1)
     public static class OpenIdFormBasedWebSecurity extends AbstractFormBasedWebSecurity {
+
+        private final OpenIdAuthenticationManager openIdAuthenticationManager;
+        private final UserRepository userRepository;
+        private final AuthorityRepository authorityRepository;
+        private final UserOrganizationRepository userOrganizationRepository;
+        private final OrganizationRepository organizationRepository;
+
         public OpenIdFormBasedWebSecurity(Environment environment,
                                           UserManager userManager,
                                           RecaptchaService recaptchaService,
@@ -223,9 +168,33 @@ public class WebSecurityConfig {
                                           AuthorityRepository authorityRepository,
                                           UserOrganizationRepository userOrganizationRepository,
                                           OrganizationRepository organizationRepository) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository,
-                dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository,
-                userOrganizationRepository, organizationRepository);
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder);
+            this.openIdAuthenticationManager = openIdAuthenticationManager;
+            this.userRepository = userRepository;
+            this.authorityRepository = authorityRepository;
+            this.userOrganizationRepository = userOrganizationRepository;
+            this.organizationRepository = organizationRepository;
+        }
+
+        @Override
+        protected void customizeAuthenticationManager(AuthenticationManagerBuilder auth) {
+            auth.authenticationProvider(new OpenIdAuthenticationProvider());
+        }
+
+        @Override
+        protected void addAdditionalFilters(HttpSecurity http) throws Exception {
+            var callbackLoginFilter = new OpenIdCallbackLoginFilter(openIdAuthenticationManager,
+                new AntPathRequestMatcher("/callback", "GET"),
+                authenticationManager(),
+                userRepository,
+                authorityRepository,
+                getPasswordEncoder(),
+                getUserManager(),
+                userOrganizationRepository,
+                organizationRepository);
+            http.addFilterBefore(callbackLoginFilter, UsernamePasswordAuthenticationFilter.class);
+            log.trace("adding openid filter");
+            http.addFilterBefore(new OpenIdAuthenticationFilter("/authentication", openIdAuthenticationManager), RecaptchaLoginFilter.class);
         }
     }
 
@@ -242,14 +211,8 @@ public class WebSecurityConfig {
                                     ConfigurationManager configurationManager,
                                     CsrfTokenRepository csrfTokenRepository,
                                     DataSource dataSource,
-                                    PasswordEncoder passwordEncoder,
-                                    UserRepository userRepository,
-                                    AuthorityRepository authorityRepository,
-                                    UserOrganizationRepository userOrganizationRepository,
-                                    OrganizationRepository organizationRepository) {
-            super(environment, userManager, recaptchaService, configurationManager,
-                csrfTokenRepository, dataSource, passwordEncoder, null,
-                userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
+                                    PasswordEncoder passwordEncoder) {
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder);
         }
     }
 
@@ -262,11 +225,6 @@ public class WebSecurityConfig {
         private final CsrfTokenRepository csrfTokenRepository;
         private final DataSource dataSource;
         private final PasswordEncoder passwordEncoder;
-        private final OpenIdAuthenticationManager openIdAuthenticationManager;
-        private final UserRepository userRepository;
-        private final AuthorityRepository authorityRepository;
-        private final UserOrganizationRepository userOrganizationRepository;
-        private final OrganizationRepository organizationRepository;
 
         @Override
         public void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -274,9 +232,15 @@ public class WebSecurityConfig {
                 .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
                 .authoritiesByUsernameQuery("select username, role from authority where username = ?")
                 .passwordEncoder(passwordEncoder);
-            if (openIdAuthenticationManager != null) {
-                auth.authenticationProvider(new OpenIdAuthenticationProvider());
-            }
+            // call implementation-specific logic
+            customizeAuthenticationManager(auth);
+        }
+
+        /**
+         * By using this method, implementations can customize the AuthenticationManager configuration
+         * @param auth
+         */
+        protected void customizeAuthenticationManager(AuthenticationManagerBuilder auth) {
         }
 
         @Override
@@ -359,14 +323,9 @@ public class WebSecurityConfig {
 
             //
             http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
-            if (openIdAuthenticationManager != null) {
-                http.addFilterBefore(new OpenIdCallbackLoginFilter(openIdAuthenticationManager, new AntPathRequestMatcher("/callback", "GET"),
-                    authenticationManager(), userRepository, authorityRepository, passwordEncoder, userManager, userOrganizationRepository,
-                    organizationRepository), UsernamePasswordAuthenticationFilter.class);
-                log.trace("adding openid filter");
-                http.addFilterBefore(new OpenIdAuthenticationFilter("/authentication", openIdAuthenticationManager), RecaptchaLoginFilter.class);
-            }
 
+            // call implementation-specific logic
+            addAdditionalFilters(http);
 
             //FIXME create session and set csrf cookie if we are getting a v2 public api, an admin api call , will switch to pure cookie based
             http.addFilterBefore((servletRequest, servletResponse, filterChain) -> {
@@ -392,141 +351,19 @@ public class WebSecurityConfig {
             }
         }
 
-        private static class OpenIdAuthenticationProvider implements AuthenticationProvider {
-            @Override
-            public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                return authentication;
-            }
-
-            @Override
-            public boolean supports(Class<?> authentication) {
-                return authentication.equals(OpenIdAlfioAuthentication.class);
-            }
+        /**
+         * This method is called right after applying the {@link RecaptchaLoginFilter}
+         * @param http
+         */
+        protected void addAdditionalFilters(HttpSecurity http) throws Exception {
         }
 
-        private static class OpenIdAuthenticationFilter extends GenericFilterBean {
-            private final RequestMatcher requestMatcher;
-            private final OpenIdAuthenticationManager openIdAuthenticationManager;
-
-            private OpenIdAuthenticationFilter(String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager) {
-                this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
-                this.openIdAuthenticationManager = openIdAuthenticationManager;
-            }
-
-            @Override
-            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-                HttpServletRequest req = (HttpServletRequest) request;
-                HttpServletResponse res = (HttpServletResponse) response;
-
-                if (requestMatcher.matches(req)) {
-                    if (SecurityContextHolder.getContext().getAuthentication() != null || req.getParameterMap().containsKey("logout")) {
-                        res.sendRedirect("/admin/");
-                        return;
-                    }
-                    log.trace("calling buildAuthorizeUrl");
-                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl());
-                    return;
-                }
-
-                chain.doFilter(request, response);
-            }
+        protected UserManager getUserManager() {
+            return userManager;
         }
 
-        private static class RecaptchaLoginFilter extends GenericFilterBean {
-            private final RequestMatcher requestMatcher;
-            private final RecaptchaService recaptchaService;
-            private final String recaptchaFailureUrl;
-            private final ConfigurationManager configurationManager;
-
-
-            RecaptchaLoginFilter(RecaptchaService recaptchaService,
-                                 String loginProcessingUrl,
-                                 String recaptchaFailureUrl,
-                                 ConfigurationManager configurationManager) {
-                this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
-                this.recaptchaService = recaptchaService;
-                this.recaptchaFailureUrl = recaptchaFailureUrl;
-                this.configurationManager = configurationManager;
-            }
-
-
-            @Override
-            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-                HttpServletRequest req = (HttpServletRequest) request;
-                HttpServletResponse res = (HttpServletResponse) response;
-                if (requestMatcher.matches(req) &&
-                    configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault() &&
-                    !recaptchaService.checkRecaptcha(null, req)) {
-                    res.sendRedirect(recaptchaFailureUrl);
-                    return;
-                }
-
-                chain.doFilter(request, response);
-            }
-        }
-
-        // generate a user if it does not exists, to be used by the demo profile
-        private static class UserCreatorBeforeLoginFilter extends GenericFilterBean {
-
-            private final UserManager userManager;
-            private final RequestMatcher requestMatcher;
-
-            UserCreatorBeforeLoginFilter(UserManager userManager, String loginProcessingUrl) {
-                this.userManager = userManager;
-                this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
-            }
-
-
-            @Override
-            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-                HttpServletRequest req = (HttpServletRequest) request;
-
-                //ensure organization/user
-                if (requestMatcher.matches(req) && req.getParameter("username") != null && req.getParameter("password") != null) {
-                    String username = req.getParameter("username");
-                    if (!userManager.usernameExists(username)) {
-                        int orgId = userManager.createOrganization(username, "Demo organization", username);
-                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null, null);
-                    }
-                }
-
-                chain.doFilter(request, response);
-            }
+        protected PasswordEncoder getPasswordEncoder() {
+            return passwordEncoder;
         }
     }
-
-    public static class OpenIdAlfioAuthentication extends AbstractAuthenticationToken {
-        private final String idToken;
-        private final String subject;
-        private final String email;
-        private final String idpLogoutRedirectionUrl;
-
-        public OpenIdAlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject, String email, String idpLogoutRedirectionUrl) {
-            super(authorities);
-            this.idToken = idToken;
-            this.subject = subject;
-            this.email = email;
-            this.idpLogoutRedirectionUrl = idpLogoutRedirectionUrl;
-        }
-
-        @Override
-        public Object getCredentials() {
-            return idToken;
-        }
-
-        @Override
-        public Object getPrincipal() {
-            return subject;
-        }
-
-        @Override
-        public String getName() {
-            return email;
-        }
-
-        public String getIdpLogoutRedirectionUrl() {
-            return idpLogoutRedirectionUrl;
-        }
-    }
-
 }
