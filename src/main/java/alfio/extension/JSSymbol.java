@@ -32,7 +32,7 @@ import org.mozilla.javascript.ast.*;
  *
  * This class holds reference to AST node and child elements.
  */
-public class JSSymbol {
+class JSSymbol {
     private final AstNode node;
     private final ArrayList<JSSymbol> children = new ArrayList<>();
     private final Map<String, JSSymbol> localVars = new HashMap<>();
