@@ -17,7 +17,6 @@
 
 package alfio.extension;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 
 import alfio.extension.exception.ScriptNotValidException;
@@ -31,30 +30,22 @@ import org.mozilla.javascript.ast.*;
  *
  * Implements Rhino’s NodeVisitor interface and builds hierarchy of JSSymbol
  */
-public class JSNodeVisitor implements NodeVisitor {
-    ArrayDeque<JSSymbol> functionsStack = new ArrayDeque<>();
-    int currentFuncEndOffset = -1;
-    JSSymbol root = null;
-    ArrayList<String> functionCalls = new ArrayList<>();
+class JSNodeVisitor implements NodeVisitor {
+    private JSSymbol root = null;
+    private final ArrayList<String> functionCalls = new ArrayList<>();
 
     @Override
     public boolean visit(AstNode node) {
         if (node == null) {
             return false;
         }
-
-        addToParent(node);
+        checkNode(node);
         return true;
     }
 
-    private void addToParent(AstNode node) {
+    private void checkNode(AstNode node) {
         if (root == null) {
             root = new JSSymbol(node);
-            functionsStack.addFirst(root);
-            currentFuncEndOffset = node.getAbsolutePosition() + node.getLength();
-            return;
-        }
-        if (functionsStack.size() == 0) {
             return;
         }
         int nodeType = node.getType();
@@ -71,15 +62,6 @@ public class JSNodeVisitor implements NodeVisitor {
             && nodeType != Token.CALL
             && nodeType != Token.GETPROP
             && nodeType != Token.EXPR_VOID) {
-            if (isVariableName(node)) {
-                // check if it is in the current function
-                String symbolName = ((Name) node).getIdentifier();
-                JSSymbol currentSymContainer = functionsStack.peekFirst();
-                if (!currentSymContainer.childExist(symbolName)) {
-                    //this is a global symbol
-                    root.addChild(node);
-                }
-            }
             return;
         }
         if (node.getType() == Token.VAR && !(node instanceof VariableInitializer)) {
@@ -118,38 +100,6 @@ public class JSNodeVisitor implements NodeVisitor {
             || (node instanceof Name && node.getString().equals("newInstance"))) {
             throw new ScriptNotValidException("Script not valid.");
         }
-        JSSymbol currSym = null;
-        JSSymbol parent = functionsStack.peekFirst();
-        if (parent.getNode().getAbsolutePosition() + parent.getNode().getLength() > node.getAbsolutePosition()) {
-            //add child node to parent
-            currSym = new JSSymbol(node);
-            parent.addChild(currSym);
-        } else { //outside current function boundary
-            //pop current parent
-            functionsStack.removeFirst();
-            addToParent(node);
-            return;
-        }
-
-        //currSym is already set above
-        if (nodeType == Token.FUNCTION || nodeType == Token.OBJECTLIT) {
-            functionsStack.addFirst(currSym);
-            currentFuncEndOffset = node.getAbsolutePosition() + node.getLength();
-        }
-    }
-
-    //This is a helper function to get variables used outside
-    //variable initializer
-    private boolean isVariableName (AstNode node) {
-        AstNode parentNode = node.getParent();
-        if (parentNode == null || !(node instanceof Name)) {
-            return false;
-        }
-        int parentType =  parentNode.getType();
-        if (parentType == Token.GETPROP)  { //get only the left most variable
-            return (((PropertyGet)parentNode).getLeft() == node);
-        }
-        return (parentType != Token.FUNCTION && parentType != Token.VAR);
     }
 
     public JSSymbol getRoot() {
