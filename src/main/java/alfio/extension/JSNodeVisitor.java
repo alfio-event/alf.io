@@ -133,16 +133,6 @@ public class JSNodeVisitor implements NodeVisitor {
 
         //currSym is already set above
         if (nodeType == Token.FUNCTION || nodeType == Token.OBJECTLIT) {
-            AstNode parentNode = node.getParent();
-            AstNode leftNode = null;
-            if (parentNode.getType() == Token.ASSIGN) {
-                leftNode = ((Assignment)parentNode).getLeft();
-            } else if (parentNode instanceof ObjectProperty) {
-                leftNode = ((ObjectProperty)parentNode).getLeft();
-            }
-            if (leftNode instanceof Name) {
-                currSym.setName(((Name) leftNode).getIdentifier());
-            }
             functionsStack.addFirst(currSym);
             currentFuncEndOffset = node.getAbsolutePosition() + node.getLength();
         }
