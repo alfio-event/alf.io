@@ -33,7 +33,7 @@ public class ScriptValidation {
         this.script = script;
     }
 
-    public boolean validate() {
+    public void validate() {
         CompilerEnvirons env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
 
@@ -42,8 +42,6 @@ public class ScriptValidation {
 
         JSNodeVisitor nodeVisitor = new JSNodeVisitor();
         rootNode.visit(nodeVisitor);
-
-        return nodeVisitor.getRoot().visit();
     }
 
 }

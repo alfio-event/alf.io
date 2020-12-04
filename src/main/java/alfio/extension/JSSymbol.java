@@ -87,18 +87,6 @@ public class JSSymbol {
         return localVars.containsKey(name);
     }
 
-    public boolean visit () {
-        boolean ret = this.getNode() instanceof AstRoot || this.getNode().getType() == Token.FUNCTION;
-        if (ret) {
-            for (JSSymbol child : children) {
-                child.visit();
-            }
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     public JSSymbol getParent() {
         return parent;
     }
