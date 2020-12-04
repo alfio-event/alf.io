@@ -16,7 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.config.support.OpenIdAlfioUser;
+import alfio.config.support.auth.OpenIdAlfioUser;
 import alfio.model.user.Role;
 import alfio.util.HttpUtils;
 import com.auth0.jwt.JWT;
