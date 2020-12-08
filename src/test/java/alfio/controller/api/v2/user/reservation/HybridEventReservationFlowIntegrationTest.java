@@ -145,7 +145,7 @@ public class HybridEventReservationFlowIntegrationTest extends BaseReservationFl
 
     private ReservationFlowContext createContext() {
         List<TicketCategoryModification> categories = Arrays.asList(
-            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.IN_PERSON, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
@@ -154,12 +154,12 @@ public class HybridEventReservationFlowIntegrationTest extends BaseReservationFl
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
-        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, null, Event.EventFormat.ONLINE);
+        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, null, Event.EventFormat.HYBRID);
         return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner");
     }
 
     @Test
-    public void onlineEvent() throws Exception {
+    public void hybridEvent() throws Exception {
         super.testBasicFlow(this::createContext);
     }
 }

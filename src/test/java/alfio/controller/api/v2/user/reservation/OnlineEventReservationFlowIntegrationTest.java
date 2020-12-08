@@ -149,17 +149,17 @@ public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFl
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
-            new TicketCategoryModification(null, "hidden", TicketCategory.TicketAccessType.IN_PERSON, 2,
+            new TicketCategoryModification(null, "hidden", TicketCategory.TicketAccessType.INHERIT, 2,
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()).plusDays(1), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
-        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, null, Event.EventFormat.HYBRID);
+        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, null, Event.EventFormat.ONLINE);
         return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner");
     }
 
     @Test
-    public void hybridEvent() throws Exception {
+    public void onlineEvent() throws Exception {
         super.testBasicFlow(this::createContext);
     }
 }
