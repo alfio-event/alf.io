@@ -672,10 +672,6 @@ public class TicketReservationManager {
             if (paymentResult.isSuccessful()) {
 
                 reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
-                // check for carnet
-                if (spec.getEvent().isOnline()) {
-                    managePromoCodeForCarnetEvent(spec.getEvent(), reservation);
-                }
                 transitionToComplete(spec, reservationCost, paymentProxy, null);
             } else if(paymentResult.isFailed()) {
                 reTransitionToPending(spec.getReservationId());
@@ -1249,6 +1245,11 @@ public class TicketReservationManager {
         waitingQueueManager.fireReservationConfirmed(reservationId);
         //we must notify the plugins about ticket assignment and send them by email
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
+        // check for carnet
+        if (event.isOnline()) {
+            log.info("StripeWebhook managePromoCodeForCarnetEvent");
+            managePromoCodeForCarnetEvent(event, reservation);
+        }
         List<Ticket> assignedTickets = findTicketsInReservation(reservationId);
         assignedTickets.stream()
             .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
