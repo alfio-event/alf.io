@@ -118,7 +118,8 @@ public interface PromoCodeDiscountRepository {
     Optional<PromoCodeDiscount> getPromoCode(@Bind("id") int promoCodeId);
 
     @Query("select promo_code from promo_code " +
-        "where metadata->'attributes'->>'idTicket' = :idTicket ")
+        "where metadata->'attributes'->>'idTicket' = :idTicket " +
+        "limit 1")
     String getPromoCodeByIdTicket(@Bind("idTicket") String idTicket );
 
     @Query("select count(*) from promo_code where event_id_fk = :eventId or (event_id_fk is null and organization_id_fk = :organizationId)")
