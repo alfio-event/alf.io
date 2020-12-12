@@ -115,7 +115,7 @@ public class CheckInManager {
      * @return
      */
     public CheckInStatus performCheckinForOnlineEvent(Ticket ticket, EventCheckInInfo event, TicketCategory tc) {
-        Validate.isTrue(event.getFormat() == Event.EventFormat.ONLINE);
+        Validate.isTrue(event.getFormat() == Event.EventFormat.ONLINE || tc.getTicketAccessType() == TicketCategory.TicketAccessType.ONLINE);
         if(!tc.hasValidCheckIn(event.now(clockProvider), event.getZoneId())) {
             return INVALID_TICKET_CATEGORY_CHECK_IN_DATE;
         }
