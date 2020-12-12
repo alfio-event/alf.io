@@ -14,7 +14,7 @@
 
 <div class="form-group" ng-if="showTicketAccessTypes">
     <label for="accessType">Ticket Holders can access the event</label>
-    <select data-ng-model="ticketCategory.ticketAccessType" name="accessType" id="accessType" class="form-control" required data-ng-options="accessType.id as accessType.description for accessType in accessTypes"></select>
+    <select data-ng-model="ticketCategory.ticketAccessType" name="ticketAccessType" id="accessType" class="form-control" required data-ng-options="accessType.id as accessType.description for accessType in ticketAccessTypes"></select>
 </div>
 
 <div class="form-group" data-ng-repeat="(lang, language) in definedLanguages">

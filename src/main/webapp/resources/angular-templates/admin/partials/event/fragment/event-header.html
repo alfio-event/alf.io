@@ -15,7 +15,7 @@
 </div>
 <event-overview data-event="event" ng-if="event.displayStatistics"></event-overview>
 
-<div class="panel panel-default" data-ng-if="event.format === 'ONLINE'">
+<div class="panel panel-default" data-ng-if="event.format === 'ONLINE' || event.format === 'HYBRID'">
     <div class="panel-heading">
         <div class="panel-title">
             <strong>Online event settings</strong>

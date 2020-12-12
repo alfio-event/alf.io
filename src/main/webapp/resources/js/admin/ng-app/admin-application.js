@@ -1378,6 +1378,7 @@
                 ticketValidityEnd: ticketValidityEnd,
                 tokenGenerationRequested: category.accessRestricted,
                 ticketCheckInStrategy: category.ticketCheckInStrategy,
+                ticketAccessType: category.ticketAccessType,
                 sticky: false
             };
 

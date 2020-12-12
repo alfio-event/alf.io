@@ -1,4 +1,4 @@
-<div data-ng-if="!event">
+N<div data-ng-if="!event">
     <i class="fa fa-refresh fa-spin fa-2x text-muted"></i>
 </div>
 <div data-ng-if="event">
@@ -135,13 +135,15 @@
                                 </div>
                             </div>
                         </div>
-                        <hr data-ng-if="event.format !== 'ONLINE' || !ticketCategory.metadata">
-                        <div class="row" data-ng-if="event.format !== 'ONLINE' || !ticketCategory.metadata">
-                            <div class="col-md-2 col-md-push-10 col-xs-12">
-                                <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
+                        <div data-ng-if="event.format === 'IN_PERSON' || ticketCategory.ticketAccessType === 'IN_PERSON'">
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-2 col-md-push-10 col-xs-12">
+                                    <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
+                                </div>
                             </div>
                         </div>
-                        <div data-ng-if="event.format === 'ONLINE' && ticketCategory.metadata">
+                        <div data-ng-if="event.format !== 'IN_PERSON' && ticketCategory.ticketAccessType === 'ONLINE'">
                             <metadata-viewer event="event" parent-id="ticketCategory.id" metadata="ticketCategory.metadata" available-languages="event.contentLanguages" level="'category'">
                                 <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
                             </metadata-viewer>
