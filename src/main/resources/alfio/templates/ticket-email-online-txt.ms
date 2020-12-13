@@ -1,4 +1,5 @@
 {{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}
+
 {{#i18n}}email-ticket.thank-you{{/i18n}}
 {{#i18n}}email-ticket.confirmation-event [{{event.displayName}}]{{/i18n}}
 {{custom-header-text}}

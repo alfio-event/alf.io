@@ -340,7 +340,7 @@ public interface TicketRepository {
     @Query("select distinct category_id from ticket where tickets_reservation_id = :reservationId and src_price_cts > 0")
     List<Integer> getCategoriesIdToPayInReservation(@Bind("reservationId") String reservationId);
 
-    @Query("select * from checkin_ticket_event_and_category_info where t_uuid = :ticketUUID and e_short_name = :eventShortName and e_format = 'ONLINE'")
+    @Query("select * from checkin_ticket_event_and_category_info where t_uuid = :ticketUUID and e_short_name = :eventShortName and (e_format = 'ONLINE' or tc_ticket_access_type = 'ONLINE') ")
     Optional<OnlineCheckInFullInfo> getFullInfoForOnlineCheckin(@Bind("eventShortName") String eventShortName, @Bind("ticketUUID") String ticketUUID);
 
     @Query("update ticket set status = 'CHECKED_IN', locked_assignment = true where uuid = :uuid and event_id = :eventId and status = 'ACQUIRED'")

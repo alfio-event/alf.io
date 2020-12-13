@@ -253,7 +253,7 @@ public final class EventUtil {
             .findFirst();
     }
 
-    public static boolean isAccessOnline(TicketCategory category, Event event) {
+    public static boolean isAccessOnline(TicketCategory category, EventCheckInInfo event) {
         return event.getFormat() == Event.EventFormat.ONLINE
             || event.getFormat() == Event.EventFormat.HYBRID
             && category.getTicketAccessType() == TicketCategory.TicketAccessType.ONLINE;

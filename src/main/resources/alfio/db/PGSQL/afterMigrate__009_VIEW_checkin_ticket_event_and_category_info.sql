@@ -102,6 +102,7 @@ create view checkin_ticket_event_and_category_info as (
              tc.ordinal tc_ordinal,
              tc.ticket_checkin_strategy tc_ticket_checkin_strategy,
              tc.metadata tc_metadata,
+             tc.ticket_access_type tc_ticket_access_type,
 
              -- event
 
