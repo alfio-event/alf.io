@@ -252,4 +252,10 @@ public final class EventUtil {
             .filter(callLink -> now.isBefore(callLink.getValidTo().atZone(zoneId)) && now.plusSeconds(1).isAfter(callLink.getValidFrom().atZone(zoneId)))
             .findFirst();
     }
+
+    public static boolean isAccessOnline(TicketCategory category, Event event) {
+        return event.getFormat() == Event.EventFormat.ONLINE
+            || event.getFormat() == Event.EventFormat.HYBRID
+            && category.getTicketAccessType() == TicketCategory.TicketAccessType.ONLINE;
+    }
 }

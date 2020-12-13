@@ -1,6 +1,15 @@
 {{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}
+{{#i18n}}email-ticket.thank-you{{/i18n}}
+{{#i18n}}email-ticket.confirmation-event [{{event.displayName}}]{{/i18n}}
 {{custom-header-text}}
-{{#i18n}}email-ticket.attached [{{event.displayName}}]{{/i18n}}
+*********************************************
+{{#i18n}}email.event.online.important-information{{/i18n}}
+
+{{#i18n}}email.event.online.check-in{{/i18n}}
+{{onlineCheckInUrl}}
+
+{{prerequisites}}
+*********************************************
 
 {{#i18n}}email-confirmation.reservationURL [{{ticketUrl}}]{{/i18n}}
 {{custom-body-text}}
@@ -12,16 +21,6 @@
 {{#event.sameDay}}{{#i18n}}event-days.same-day [{{#format-date}}{{validityStart}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}] [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}] {{/i18n}}{{/event.sameDay}}
 {{^event.sameDay}}{{#i18n}}event-days.not-same-day [{{#format-date}}{{validityStart}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}]{{/i18n}} - {{#i18n}}event-days.not-same-day [{{#format-date}}{{validityEnd}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}]{{/i18n}} {{/event.sameDay}}
 
-*********************************************
-{{#i18n}}email.event.online.important-information{{/i18n}}
-
-{{#i18n}}email.event.online.check-in{{/i18n}}
-{{onlineCheckInUrl}}
-
-{{prerequisites}}
-*********************************************
-
-{{#i18n}}email-ticket.add-to-calendar [{{googleCalendarUrl}}]{{/i18n}}
 {{custom-footer-text}}
 {{#i18n}}email.kind-regards{{/i18n}}
 

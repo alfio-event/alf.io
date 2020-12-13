@@ -14,6 +14,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
+
 drop view if exists checkin_ticket_event_and_category_info;
 create type EVENT_FORMAT as enum ('IN_PERSON', 'ONLINE', 'HYBRID');
 alter table event

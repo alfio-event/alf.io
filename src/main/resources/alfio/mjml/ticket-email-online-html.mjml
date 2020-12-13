@@ -127,10 +127,6 @@
 					</tr>
 				</mj-table>
 				<mj-raw>{{/event.sameDay}}</mj-raw>
-				
-				<mj-text align="center" font-size="14px">
-					(<a href="{{googleCalendarUrl}}" rel="notrack" align="center">{{#i18n}}show-event.add-to-calendar{{/i18n}}</a>)
-				</mj-text>
 			</mj-column>
 		</mj-section>
     
