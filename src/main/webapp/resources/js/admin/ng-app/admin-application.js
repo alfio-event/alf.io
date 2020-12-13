@@ -938,14 +938,12 @@
                     $scope.event.vatPercentage = eventToCopy.vatPercentage;
                     $scope.event.vatIncluded = eventToCopy.vatIncluded;
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
+                    $scope.event.format = eventToCopy.format;
 
                     //legacy event, has all the ticket categories with ordinal 0
                     var isAllOrdinal0 = eventToCopy.ticketCategories.reduce(function(accumulator, tc) {return accumulator && (tc.ordinal === 0);}, true);
 
                     $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc, idx) {
-
-
-
                         //inception/expiration : we keep the same date interval
                         var categoryAdjustedStart = adjustDate(tc.formattedInception);
                         var categoryAdjustedEnd = adjustDate(tc.formattedExpiration);
@@ -961,6 +959,7 @@
                             tokenGenerationRequested: tc.accessRestricted,
                             code: tc.code,
                             description: tc.description ? angular.copy(tc.description) : null,
+                            ticketAccessType: eventToCopy.format === 'HYBRID' ? tc.ticketAccessType : null
                         };
 
                         if (tc.formattedValidCheckInFrom) {
