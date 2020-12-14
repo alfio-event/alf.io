@@ -46,6 +46,15 @@
             }
 
             ctrl.categories = ctrl.event.ticketCategories;
+            ctrl.ticketAccessTypes = [
+                {
+                    id: 'IN_PERSON',
+                    description: 'in person'
+                },{
+                    id: 'ONLINE',
+                    description: 'online'
+                }
+            ];
         };
 
         ctrl.addTicketInfo = function() {
@@ -146,7 +155,7 @@
 
         ctrl.getCategoryDescription = function(ticketInfo, index) {
             if(angular.isDefined(ticketInfo.category.existingCategoryId)) {
-                var filtered = ctrl.categories.filter(function(c) {return c.id == ticketInfo.category.existingCategoryId;});
+                var filtered = ctrl.categories.filter(function(c) {return c.id === ticketInfo.category.existingCategoryId;});
                 return filtered.length > 0 ? filtered[0].name : index;
             }
             return ticketInfo.category['name'] || index;

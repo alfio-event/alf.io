@@ -175,7 +175,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "reference", "en", "1234", "CH", null);
-        Category category = new Category(null, "name", new BigDecimal("100.00"));
+        Category category = new Category(null, "name", new BigDecimal("100.00"), null);
         int attendees = AVAILABLE_SEATS;
         List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, false));
         AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, false, null, null);
@@ -213,8 +213,8 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         TicketCategory existingCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
 
 
-        Category resExistingCategory = new Category(existingCategory.getId(), "", existingCategory.getPrice());
-        Category resNewCategory = new Category(null, "name", new BigDecimal("100.00"));
+        Category resExistingCategory = new Category(existingCategory.getId(), "", existingCategory.getPrice(), null);
+        Category resNewCategory = new Category(null, "name", new BigDecimal("100.00"), null);
         int attendees = 1;
         List<TicketsInfo> ticketsInfoList = Arrays.asList(new TicketsInfo(resExistingCategory, generateAttendees(attendees), false, false), new TicketsInfo(resNewCategory, generateAttendees(attendees), false, false),new TicketsInfo(resExistingCategory, generateAttendees(attendees), false, false));
         AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false,false, null, null);
@@ -222,7 +222,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         assertTrue(result.isSuccess());
         Pair<TicketReservation, List<Ticket>> data = result.getData();
         List<Ticket> tickets = data.getRight();
-        assertTrue(tickets.size() == 3);
+        assertEquals(3, tickets.size());
         assertNotNull(data.getLeft());
         assertTrue(tickets.stream().allMatch(t -> t.getTicketsReservationId().equals(data.getKey().getId())));
         int resExistingCategoryId = tickets.get(0).getCategoryId();
@@ -296,7 +296,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         List<Attendee> allAttendees = new ArrayList<>();
         List<TicketsInfo> ticketsInfoList = existingCategories.stream()
             .map(existingCategory -> {
-                Category category = new Category(existingCategory.getId(), existingCategory.getName(), existingCategory.getPrice());
+                Category category = new Category(existingCategory.getId(), existingCategory.getName(), existingCategory.getPrice(), null);
                 List<Attendee> attendees = generateAttendees(attendeesIterator.next());
                 allAttendees.addAll(attendees);
                 return new TicketsInfo(category, attendees, addSeatsIfNotAvailable, false);

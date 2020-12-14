@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.TicketCategory;
 import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -25,10 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -138,14 +136,17 @@ public class AdminReservationModification implements Serializable {
         private final Integer existingCategoryId;
         private final String name;
         private final BigDecimal price;
+        private final TicketCategory.TicketAccessType ticketAccessType;
 
         @JsonCreator
         public Category(@JsonProperty("existingCategoryId") Integer existingCategoryId,
                         @JsonProperty("name") String name,
-                        @JsonProperty("price") BigDecimal price) {
+                        @JsonProperty("price") BigDecimal price,
+                        @JsonProperty("ticketAccessType") TicketCategory.TicketAccessType ticketAccessType) {
             this.existingCategoryId = existingCategoryId;
             this.name = name;
             this.price = price;
+            this.ticketAccessType = Objects.requireNonNullElse(ticketAccessType, TicketCategory.TicketAccessType.INHERIT);
         }
 
         public boolean isExisting() {

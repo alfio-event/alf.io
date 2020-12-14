@@ -500,7 +500,7 @@ public class AdminReservationManager {
     private Result<List<TicketsInfo>> checkCategoryCapacity(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
         Result<TicketCategory> ticketCategoryResult = ti.getCategory().isExisting() ? checkExistingCategory(ti, event, username) : createCategory(ti, event, reservation, username);
         return ticketCategoryResult
-            .map(tc -> Collections.singletonList(new TicketsInfo(new Category(tc.getId(), tc.getName(), tc.getPrice()), ti.getAttendees(), ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees())));
+            .map(tc -> List.of(new TicketsInfo(new Category(tc.getId(), tc.getName(), tc.getPrice(), tc.getTicketAccessType()), ti.getAttendees(), ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees())));
     }
 
     private Result<TicketCategory> createCategory(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
@@ -509,7 +509,7 @@ public class AdminReservationManager {
         DateTimeModification inception = fromZonedDateTime(event.now(clockProvider));
 
         int tickets = attendees.size();
-        var accessType = event.getFormat() != Event.EventFormat.HYBRID ? TicketCategory.TicketAccessType.INHERIT : TicketCategory.TicketAccessType.IN_PERSON;
+        var accessType = event.getFormat() != Event.EventFormat.HYBRID ? TicketCategory.TicketAccessType.INHERIT : Objects.requireNonNull(category.getTicketAccessType());
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), accessType, tickets,
             inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "",
             true, null, null, null, null, null, 0, null, null,
