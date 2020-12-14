@@ -17,8 +17,8 @@
 package alfio.controller.api.v2.model;
 
 import alfio.controller.decorator.SaleableTicketCategory;
+import alfio.model.TicketCategory.TicketAccessType;
 import lombok.Getter;
-import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.util.Map;
 
@@ -31,6 +31,7 @@ public class TicketCategory {
     private final Map<String, String> description;
     private final int id;
     private final String name;
+    private final TicketAccessType ticketAccessType;
     private final boolean bounded;
     private final int maximumSaleableTickets;
     private final boolean free;
@@ -59,6 +60,7 @@ public class TicketCategory {
         this.description = description;
         this.id = saleableTicketCategory.getId();
         this.name = saleableTicketCategory.getName();
+        this.ticketAccessType = saleableTicketCategory.getTicketAccessType();
         this.bounded = saleableTicketCategory.isBounded();
         this.maximumSaleableTickets = max(0, min(saleableTicketCategory.getMaxTicketsAfterConfiguration(), saleableTicketCategory.getAvailableTickets()));
         this.free = saleableTicketCategory.getFree();

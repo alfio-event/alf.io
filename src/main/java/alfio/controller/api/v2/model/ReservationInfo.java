@@ -19,6 +19,7 @@ package alfio.controller.api.v2.model;
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
 import alfio.model.SummaryRow.SummaryType;
+import alfio.model.TicketCategory;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -77,6 +78,7 @@ public class ReservationInfo {
     @Getter
     public static class TicketsByTicketCategory {
         private final String name;
+        private final TicketCategory.TicketAccessType ticketAccessType;
         private final List<BookingInfoTicket> tickets;
     }
 

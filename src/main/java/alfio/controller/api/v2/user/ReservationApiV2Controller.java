@@ -140,7 +140,7 @@ public class ReservationApiV2Controller {
                     var ts = e.getValue().stream()
                         .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false))
                         .collect(Collectors.toList());
-                    return new TicketsByTicketCategory(tc.getName(), ts);
+                    return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
                 })
                 .collect(Collectors.toList());
 
