@@ -46,7 +46,6 @@ public class MetadataModification {
 
     public AlfioMetadata toMetadataObj() {
         return new AlfioMetadata(
-            List.of(),
             new OnlineConfiguration(callLinks.stream().map(CallLinkModification::toCallLink).collect(Collectors.toList())),
             requirementsDescriptions,
             List.of()

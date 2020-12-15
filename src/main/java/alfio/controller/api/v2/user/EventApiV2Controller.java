@@ -95,7 +95,7 @@ public class EventApiV2Controller {
 
 
     @GetMapping("events")
-    public ResponseEntity<List<BasicEventInfo>> listEvents() {
+    public ResponseEntity<List<BasicEventInfo>> listEvents(/* TODO search by: organizer, tag, subscription */) {
 
         var contentLanguages = i18nManager.getAvailableLanguages();
 
