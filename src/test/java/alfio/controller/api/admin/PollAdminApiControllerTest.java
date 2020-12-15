@@ -22,10 +22,7 @@ import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
-import alfio.model.Audit;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.PollModification;
@@ -95,7 +92,7 @@ class PollAdminApiControllerTest {
     void init() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = List.of(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(clockProvider().getClock()).minusDays(1), LocalTime.now(clockProvider().getClock())),
                 new DateTimeModification(LocalDate.now(clockProvider().getClock()).plusDays(1), LocalTime.now(clockProvider().getClock())),
                 DESCRIPTION, BigDecimal.ZERO, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())

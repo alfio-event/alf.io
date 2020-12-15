@@ -83,7 +83,7 @@ public class IntegrationTestUtil {
                                                 UserManager userManager,
                                                 EventManager eventManager,
                                                 EventRepository eventRepository) {
-        return initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, null);
+        return initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, null, Event.EventFormat.IN_PERSON);
     }
 
     public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,
@@ -91,7 +91,8 @@ public class IntegrationTestUtil {
                                                 UserManager userManager,
                                                 EventManager eventManager,
                                                 EventRepository eventRepository,
-                                                List<EventModification.AdditionalService> additionalServices) {
+                                                List<EventModification.AdditionalService> additionalServices,
+                                                Event.EventFormat eventFormat) {
 
         String organizationName = UUID.randomUUID().toString();
         String username = UUID.randomUUID().toString();
@@ -109,7 +110,7 @@ public class IntegrationTestUtil {
         desc.put("it", "muh description");
         desc.put("de", "muh description");
 
-        EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", "privacy","url", null,
+        EventModification em = new EventModification(null, eventFormat, "url", "url", "url", "privacy","url", null,
                 eventName, "event display name", organization.getId(),
                 "muh location", "0.0", "0.0", ClockProvider.clock().getZone().getId(), desc,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),

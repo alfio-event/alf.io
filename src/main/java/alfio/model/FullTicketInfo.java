@@ -119,7 +119,8 @@ public class FullTicketInfo implements TicketInfoContainer {
                           @Column("tc_ticket_validity_start") ZonedDateTime ticketValidityStart,
                           @Column("tc_ticket_validity_end") ZonedDateTime ticketValidityEnd,
                           @Column("tc_ordinal") int ordinal,
-                          @Column("tc_ticket_checkin_strategy") TicketCategory.TicketCheckInStrategy ticketCheckInStrategy
+                          @Column("tc_ticket_checkin_strategy") TicketCategory.TicketCheckInStrategy ticketCheckInStrategy,
+                          @Column("tc_ticket_access_type") TicketCategory.TicketAccessType ticketAccessType
                           ) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
@@ -130,7 +131,7 @@ public class FullTicketInfo implements TicketInfoContainer {
             reservationRegistrationTimestamp, reservationSrcPriceCts, reservationFinalPriceCts, reservationVatCts, reservationDiscountCts, reservationCurrencyCode);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts, code, validCheckInFrom, validCheckInTo,
-                ticketValidityStart, ticketValidityEnd, currencyCode, ordinal, ticketCheckInStrategy);
+                ticketValidityStart, ticketValidityEnd, currencyCode, ordinal, ticketCheckInStrategy, ticketAccessType);
 
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountry, vatNr, invoicingAdditionalInfo);
 

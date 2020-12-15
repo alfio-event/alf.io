@@ -20,10 +20,7 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.manager.GroupManager;
 import alfio.manager.SameCountryValidator;
-import alfio.model.ContentLanguage;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketFieldConfiguration;
+import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -64,13 +61,13 @@ public final class Validator {
             errors.rejectValue("organizationId", "error.organizationId");
         }
 
-        if(isFormatInPerson(event, ev)) {
+        if(allowsInPersonAccess(event, ev)) {
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
         }
 
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
 
-        if(isFormatInPerson(event, ev) && isLocationMissing(ev)) {
+        if(allowsInPersonAccess(event, ev) && isLocationMissing(ev)) {
             errors.rejectValue("locationDescriptor", "error.coordinates");
         }
 
@@ -102,6 +99,10 @@ public final class Validator {
     public static ValidationResult validateTicketCategories(EventModification ev, Errors errors) {
         if(CollectionUtils.isEmpty(ev.getTicketCategories())) {
             errors.rejectValue("ticketCategories", "error.ticketCategories");
+        }
+        if(ev.getTicketCategories().stream()
+            .anyMatch(tc -> tc.getTicketAccessType() == TicketCategory.TicketAccessType.INHERIT && ev.getFormat() == Event.EventFormat.HYBRID)) {
+            errors.rejectValue("ticketCategories", "error.ticketCategories.format");
         }
         return evaluateValidationResult(errors);
     }
@@ -336,8 +337,8 @@ public final class Validator {
         }
     }
 
-    private static boolean isFormatInPerson(Optional<Event> event, EventModification ev) {
-        return event.map(Event::getFormat).orElse(ev.getFormat()) == Event.EventFormat.IN_PERSON;
+    private static boolean allowsInPersonAccess(Optional<Event> event, EventModification ev) {
+        return event.map(Event::getFormat).orElse(ev.getFormat()) != Event.EventFormat.ONLINE;
     }
 
     public static boolean isEmailValid(String email) {

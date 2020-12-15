@@ -21,6 +21,7 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.user.Organization;
+import alfio.util.EventUtil;
 import alfio.util.ImageUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -62,7 +63,7 @@ public final class TemplateProcessor {
                                                                Map<String, Object> additionalOptions) {
         return ticket -> {
             Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, baseUrl, ticketURL, calendarURL, ticket, category, additionalOptions);
-            return templateManager.renderTemplate(event, event.getIsOnline() ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT : TemplateResource.TICKET_EMAIL, model, language);
+            return templateManager.renderTemplate(event, EventUtil.isAccessOnline(category, event) ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT : TemplateResource.TICKET_EMAIL, model, language);
         };
     }
 

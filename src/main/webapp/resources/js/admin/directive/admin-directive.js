@@ -362,6 +362,9 @@
                     },{
                         id: 'ONLINE',
                         description: 'online'
+                    },{
+                        id: 'HYBRID',
+                        description: 'hybrid (in person + online)'
                     }
                 ];
 
@@ -733,7 +736,19 @@
                     }
                 ];
 
+                var ticketAccessTypes = [
+                    {
+                        id: 'IN_PERSON',
+                        description: 'in person'
+                    },{
+                        id: 'ONLINE',
+                        description: 'online'
+                    }
+                ];
+
                 $scope.allocationStrategies = allocationStrategies;
+                $scope.ticketAccessTypes = ticketAccessTypes;
+                $scope.showTicketAccessTypes = $scope.event.format === 'HYBRID';
                 $scope.onTokenGenerationRequestedChange = function() {
                     if($scope.ticketCategory.tokenGenerationRequested) {
                         $scope.ticketCategory.bounded = true;

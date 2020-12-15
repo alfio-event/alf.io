@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.TicketCategory;
 import alfio.model.TicketCategory.TicketCheckInStrategy;
 import alfio.model.metadata.AlfioMetadata;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -30,6 +31,7 @@ public class TicketCategoryModification {
 
     private final Integer id;
     private final String name;
+    private final TicketCategory.TicketAccessType ticketAccessType;
     private final int maxTickets;
     private final DateTimeModification inception;
     private final DateTimeModification expiration;
@@ -53,6 +55,7 @@ public class TicketCategoryModification {
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
                                       @JsonProperty("name") String name,
+                                      @JsonProperty("ticketAccessType") TicketCategory.TicketAccessType ticketAccessType,
                                       @JsonProperty("maxTickets") int maxTickets,
                                       @JsonProperty("inception") DateTimeModification inception,
                                       @JsonProperty("expiration") DateTimeModification expiration,
@@ -72,6 +75,7 @@ public class TicketCategoryModification {
                                       @JsonProperty("metadata") AlfioMetadata metadata) {
         this.id = id;
         this.name = name;
+        this.ticketAccessType = ticketAccessType;
         this.maxTickets = maxTickets;
         this.inception = inception;
         this.expiration = expiration;

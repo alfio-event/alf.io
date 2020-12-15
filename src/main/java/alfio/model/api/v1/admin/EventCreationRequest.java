@@ -47,6 +47,7 @@ public class EventCreationRequest{
     private String title;
     private String slug;
     private List<DescriptionRequest> description;
+    private Event.EventFormat format;
     private LocationRequest location;
     private String timezone;
     private LocalDateTime startDate;
@@ -73,7 +74,7 @@ public class EventCreationRequest{
 
         return new EventModification(
             null,
-            Event.EventFormat.IN_PERSON,
+            Objects.requireNonNullElse(format, Event.EventFormat.IN_PERSON),
             websiteUrl,
             null,
             termsAndConditionsUrl,
@@ -125,7 +126,7 @@ public class EventCreationRequest{
 
         return new EventModification(
             original.getId(),
-            Event.EventFormat.IN_PERSON,
+            original.getFormat(),
             first(websiteUrl,original.getWebsiteUrl()),
             null,
             first(termsAndConditionsUrl,original.getWebsiteUrl()),
@@ -214,6 +215,7 @@ public class EventCreationRequest{
         private String accessCode;
         private CustomTicketValidityRequest customValidity;
         private GroupLinkRequest groupLink;
+        private TicketCategory.TicketAccessType ticketAccessType;
 
         TicketCategoryModification toTicketCategoryModification() {
             return toTicketCategoryModification(null);
@@ -227,6 +229,7 @@ public class EventCreationRequest{
             return new TicketCategoryModification(
                 categoryId,
                 name,
+                Objects.requireNonNullElse(ticketAccessType, TicketCategory.TicketAccessType.INHERIT),
                 capacity,
                 new DateTimeModification(startSellingDate.toLocalDate(),startSellingDate.toLocalTime()),
                 new DateTimeModification(endSellingDate.toLocalDate(),endSellingDate.toLocalTime()),

@@ -114,7 +114,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test
     public void testPriceIsOverridden() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null,
@@ -138,11 +138,11 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test
     public void testTicketSelection() {
         List<TicketCategoryModification> categories = List.of(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
-                new TicketCategoryModification(null, "default", 10,
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -243,7 +243,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         configurationRepository.insert(DEFERRED_BANK_TRANSFER_ENABLED.name(), "true", "");
 
         List<TicketCategoryModification> categories = List.of(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -299,7 +299,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test
     public void testTicketWithDiscount() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -378,7 +378,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test
     public void testAdditionalServiceWithDiscount() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -427,7 +427,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
     private Triple<Event, TicketCategory, String> testTicketsWithAccessCode() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -501,7 +501,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test
     public void testWithAdditionalServices() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -509,7 +509,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         List<EventModification.AdditionalService> additionalServices = Collections.singletonList(new EventModification.AdditionalService(null, BigDecimal.TEN, true, 1, 100, 5,
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).minusDays(1L)), DateTimeModification.fromZonedDateTime(ZonedDateTime.now(ClockProvider.clock()).plusDays(1L)),
             BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, additionalServices).getKey();
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, additionalServices, Event.EventFormat.IN_PERSON).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
@@ -549,7 +549,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test(expected = TicketReservationManager.NotEnoughTicketsException.class)
     public void testTicketSelectionNotEnoughTicketsAvailable() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -568,7 +568,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test
     public void testDeletePendingPaymentUnboundedCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -609,7 +609,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test
     public void testCleanupExpiredReservations() {
         List<TicketCategoryModification> categories = List.of(
-            new TicketCategoryModification(null, "default", 10,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
@@ -647,7 +647,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Test
     public void testCleanupOfflineExpiredReservations() {
         List<TicketCategoryModification> categories = List.of(
-            new TicketCategoryModification(null, "default", 10,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));

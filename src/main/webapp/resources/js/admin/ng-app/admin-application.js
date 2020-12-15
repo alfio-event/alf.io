@@ -503,7 +503,7 @@
     }]);
 
 
-    var createCategoryValidUntil = function(sticky, categoryEndTime) {
+    var createCategoryValidUntil = function(sticky, categoryEndTime, event) {
         var now = moment().startOf('hour');
         var inceptionDateTime = {
             date: now.format('YYYY-MM-DD'),
@@ -524,7 +524,8 @@
             expiration: expirationDateTime,
             tokenGenerationRequested: false,
             sticky: sticky,
-            bounded: false
+            bounded: false,
+            ticketAccessType: event.format === 'HYBRID' ? 'IN_PERSON' : 'INHERIT'
         };
 
     };
@@ -713,7 +714,7 @@
             return TicketCategoryEditorService.openCategoryDialog($scope, category, $scope.event, null, null);
         };
         $scope.addCategory = function() {
-            var category = createCategoryValidUntil(true, $scope.event.begin);
+            var category = createCategoryValidUntil(true, $scope.event.begin, $scope.event);
             if (!$scope.event.freeOfCharge) {
                 category.price = $scope.event.regularPrice
             }
@@ -937,14 +938,12 @@
                     $scope.event.vatPercentage = eventToCopy.vatPercentage;
                     $scope.event.vatIncluded = eventToCopy.vatIncluded;
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
+                    $scope.event.format = eventToCopy.format;
 
                     //legacy event, has all the ticket categories with ordinal 0
                     var isAllOrdinal0 = eventToCopy.ticketCategories.reduce(function(accumulator, tc) {return accumulator && (tc.ordinal === 0);}, true);
 
                     $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc, idx) {
-
-
-
                         //inception/expiration : we keep the same date interval
                         var categoryAdjustedStart = adjustDate(tc.formattedInception);
                         var categoryAdjustedEnd = adjustDate(tc.formattedExpiration);
@@ -960,6 +959,7 @@
                             tokenGenerationRequested: tc.accessRestricted,
                             code: tc.code,
                             description: tc.description ? angular.copy(tc.description) : null,
+                            ticketAccessType: eventToCopy.format === 'HYBRID' ? tc.ticketAccessType : null
                         };
 
                         if (tc.formattedValidCheckInFrom) {
@@ -1306,7 +1306,7 @@
 
         $scope.addCategory = function(event) {
             var eventBegin = moment(event.begin);
-            TicketCategoryEditorService.openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}), event, validationErrorHandler, reloadIfSeatsModification);
+            TicketCategoryEditorService.openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}, event), event, validationErrorHandler, reloadIfSeatsModification);
         };
 
         $scope.openConfiguration = function(event, category) {
@@ -1377,6 +1377,7 @@
                 ticketValidityEnd: ticketValidityEnd,
                 tokenGenerationRequested: category.accessRestricted,
                 ticketCheckInStrategy: category.ticketCheckInStrategy,
+                ticketAccessType: category.ticketAccessType,
                 sticky: false
             };
 

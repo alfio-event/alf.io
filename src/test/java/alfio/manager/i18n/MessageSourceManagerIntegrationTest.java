@@ -23,6 +23,7 @@ import alfio.config.Initializer;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -45,7 +46,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -87,8 +87,8 @@ public class MessageSourceManagerIntegrationTest extends BaseIntegrationTest {
     public void ensureConfiguration() {
 
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
-        List<TicketCategoryModification> categories = Arrays.asList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+        List<TicketCategoryModification> categories = List.of(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
                 Map.of("en", "desc"), BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())

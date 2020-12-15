@@ -103,7 +103,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         desc.put("de", "muh description");
 
         List<TicketCategoryModification> ticketsCategory = Collections.singletonList(
-            new TicketCategoryModification(null, "default", 20,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 20,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false, null, null,

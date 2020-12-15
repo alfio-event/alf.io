@@ -1105,7 +1105,7 @@ public class TicketReservationManager {
             var initialOptions = extensionManager.handleTicketEmailCustomText(event, ticketReservation, ticketReservationRepository.getAdditionalInfo(ticketReservation.getId()), ticketFieldRepository.findAllByTicketId(ticket.getId()))
                 .map(CustomEmailText::toMap)
                 .orElse(Map.of());
-            if(event.getFormat() == Event.EventFormat.ONLINE) {
+            if(EventUtil.isAccessOnline(ticketCategory, event)) {
                 initialOptions = new HashMap<>(initialOptions);
                 var eventMetadata = Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
                 var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));

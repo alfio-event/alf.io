@@ -35,6 +35,7 @@ create view ticket_category_with_currency as (
         tc.organization_id_fk organization_id_fk,
         tc.ordinal ordinal,
         tc.ticket_checkin_strategy ticket_checkin_strategy,
+        tc.ticket_access_type ticket_access_type,
         e.currency currency_code
     from ticket_category tc, event e
     where tc.event_id = e.id

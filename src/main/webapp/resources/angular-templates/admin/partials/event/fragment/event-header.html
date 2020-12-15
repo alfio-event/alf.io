@@ -15,7 +15,7 @@
 </div>
 <event-overview data-event="event" ng-if="event.displayStatistics"></event-overview>
 
-<div class="panel panel-default" data-ng-if="event.format === 'ONLINE'">
+<div class="panel panel-default" data-ng-if="event.format === 'ONLINE' || event.format === 'HYBRID'">
     <div class="panel-heading">
         <div class="panel-title">
             <strong>Online event settings</strong>
@@ -50,8 +50,8 @@
                     <dd><a href="{{event.termsAndConditionsUrl}}" target="_blank" rel="noopener">{{event.termsAndConditionsUrl}}</a></dd>
                     <dt data-ng-if="event.privacyPolicyUrl">Privacy Policy URL</dt>
                     <dd data-ng-if="event.privacyPolicyUrl"><a href="{{event.privacyPolicyUrl}}" target="_blank" rel="noopener">{{event.privacyPolicyUrl}}</a></dd>
-                    <dt data-ng-if="event.format === 'IN_PERSON'">Location</dt>
-                    <dd data-ng-if="event.format === 'IN_PERSON'"><a ng-href="{{event.geolocation.mapUrl}}" target="_blank" rel="noopener">{{event.location}}</a></dd>
+                    <dt data-ng-if="event.format !== 'ONLINE'">Location</dt>
+                    <dd data-ng-if="event.format !== 'ONLINE'"><a ng-href="{{event.geolocation.mapUrl}}" target="_blank" rel="noopener">{{event.location}}</a></dd>
                     <dt>Languages</dt>
                     <dd>
                         <ol class="breadcrumb language-breadcrumb"><li data-ng-repeat="cl in event.contentLanguages">{{cl.displayLanguage}}</li></ol>

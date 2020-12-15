@@ -114,13 +114,13 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testCheckInStatistics() {
         List<TicketCategoryModification> categories = Collections.singletonList(
-            new TicketCategoryModification(null, "default", 0,
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 0,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
+        TicketCategoryModification tcm = new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
             new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
             new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
             DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());

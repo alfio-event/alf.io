@@ -600,7 +600,7 @@ public class EventManager {
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 atZone(tc.getValidCheckInFrom(), zoneId), atZone(tc.getValidCheckInTo(), zoneId),
                 atZone(tc.getTicketValidityStart(), zoneId), atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT),
-                Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty));
+                Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), tc.getTicketAccessType());
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -622,7 +622,7 @@ public class EventManager {
             atZone(tc.getTicketValidityStart(), zoneId),
             atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
             Objects.requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT),
-            Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty));
+            Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), tc.getTicketAccessType());
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
@@ -712,7 +712,7 @@ public class EventManager {
                 atZone(tc.getValidCheckInTo(), zoneId),
                 atZone(tc.getTicketValidityStart(), zoneId),
                 atZone(tc.getTicketValidityEnd(), zoneId),
-                Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
+                Objects.requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT), tc.getTicketAccessType());
         TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;
         if(original.isBounded() ^ tc.isBounded()) {

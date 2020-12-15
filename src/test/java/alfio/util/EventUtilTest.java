@@ -20,6 +20,7 @@ import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
+import alfio.model.TicketCategory;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import org.junit.jupiter.api.BeforeEach;
@@ -312,6 +313,30 @@ public class EventUtilTest {
     @DisplayName("return price if event is not free of charge")
     void evaluatePriceIfEventIsFreeOfCharge() {
         assertEquals(0, EventUtil.evaluatePrice(new BigDecimal("100.00"), true, "CHF"));
+    }
+
+    @Test
+    @DisplayName("recognize if the ticket holder must access the event online")
+    void evaluateTicketAccess() {
+        var category = mock(TicketCategory.class);
+
+        // if the event format is "in person", return false
+        when(event.getFormat()).thenReturn(Event.EventFormat.IN_PERSON);
+        assertFalse(EventUtil.isAccessOnline(category, event));
+
+        // if the event is online, return true
+        when(event.getFormat()).thenReturn(Event.EventFormat.ONLINE);
+        assertTrue(EventUtil.isAccessOnline(category, event));
+
+        // if the event is hybrid, return true if the ticket access type is ONLINE
+        when(event.getFormat()).thenReturn(Event.EventFormat.HYBRID);
+        when(category.getTicketAccessType()).thenReturn(TicketCategory.TicketAccessType.ONLINE);
+        assertTrue(EventUtil.isAccessOnline(category, event));
+
+        // otherwise return false
+        when(event.getFormat()).thenReturn(Event.EventFormat.HYBRID);
+        when(category.getTicketAccessType()).thenReturn(TicketCategory.TicketAccessType.IN_PERSON);
+        assertFalse(EventUtil.isAccessOnline(category, event));
     }
 
 

@@ -50,7 +50,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     }
 
     public enum EventFormat {
-        IN_PERSON, ONLINE
+        IN_PERSON, ONLINE, HYBRID
     }
 
     private final EventFormat format;

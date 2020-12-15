@@ -18,6 +18,8 @@ package alfio.util;
 
 import alfio.model.AdditionalService;
 import alfio.model.AdditionalServiceText;
+import alfio.model.Event;
+import alfio.model.TicketCategory;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -30,15 +32,12 @@ import org.springframework.validation.MapBindingResult;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -165,5 +164,15 @@ public class ValidatorTest {
         assertFalse(Validator.validateAdditionalService(invalid2, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
         assertNotNull(errors.getFieldError("additionalServices"));
+    }
+
+    @Test
+    void accessTypeMandatoryForHybridEvent() {
+        when(eventModification.getFormat()).thenReturn(Event.EventFormat.HYBRID);
+        when(ticketCategoryModification.getTicketAccessType()).thenReturn(TicketCategory.TicketAccessType.INHERIT);
+        when(eventModification.getTicketCategories()).thenReturn(List.of(ticketCategoryModification));
+        Validator.validateTicketCategories(eventModification, errors);
+        assertTrue(errors.hasFieldErrors());
+        assertNotNull(errors.getFieldError("ticketCategories"));
     }
 }

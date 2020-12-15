@@ -129,7 +129,7 @@ public enum TemplateResource {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             var now = event.now(ClockProvider.clock());
-            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
+            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null, TicketCategory.TicketAccessType.INHERIT);
             return buildModelForTicketEmail(organization, event, sampleTicketReservation(event.getZoneId()), "http://your-domain.tld", "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(event.getZoneId()), ticketCategory, Map.of());
         }
     },
@@ -138,7 +138,7 @@ public enum TemplateResource {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             var now = event.now(ClockProvider.clock());
-            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
+            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null, TicketCategory.TicketAccessType.INHERIT);
             return buildModelForTicketEmail(organization, event, sampleTicketReservation(event.getZoneId()), "http://your-domain.tld", "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(event.getZoneId()), ticketCategory, Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event"));
         }
     },
@@ -169,7 +169,7 @@ public enum TemplateResource {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             var now = event.now(ClockProvider.clock());
-            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
+            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null, TicketCategory.TicketAccessType.INHERIT);
             return buildModelForTicketPDF(organization, event, sampleTicketReservation(event.getZoneId()), ticketCategory, sampleTicket(event.getZoneId()), imageData, "ABCD", Collections.emptyMap());
         }
     },
@@ -280,7 +280,7 @@ public enum TemplateResource {
     private static TicketCategory sampleCategory(ZoneId zoneId) {
         var clock = ClockProvider.clock().withZone(zoneId);
         return new TicketCategory(0, ZonedDateTime.now(clock).minusDays(1), ZonedDateTime.now(clock).plusDays(1), 100, "test category", false, TicketCategory.Status.ACTIVE,
-            0, true, 100, null, null, null, null, null, "CHF", 0, null);
+            0, true, 100, null, null, null, null, null, "CHF", 0, null, TicketCategory.TicketAccessType.INHERIT);
     }
 
     private static Ticket sampleTicket(String firstName, String lastName, String email, ZoneId zoneId) {

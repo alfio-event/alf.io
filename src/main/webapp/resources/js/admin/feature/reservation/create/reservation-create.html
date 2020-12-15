@@ -180,19 +180,25 @@
                     </div>
                     <div class="col-xs-12" ng-switch-when="custom">
                         <div class="row">
-                            <div class="col-xs-12" ng-class="{'col-md-6': $ctrl.event.freeOfCharge,'col-md-4': !$ctrl.event.freeOfCharge}">
+                            <div class="col-xs-6" ng-class="{'col-md-6': $ctrl.event.freeOfCharge, 'col-md-4': !$ctrl.event.freeOfCharge}">
                                 <div class="form-group">
                                     <label for="ticketInfo-{{$index}}-name">Name</label>
-                                    <input type="text" class="form-control" ng-model="ticketInfo.category.name" required id="ticketInfo-{{$index}}-name" />
+                                    <input type="text" class="form-control" data-grab-focus="" ng-model="ticketInfo.category.name" required id="ticketInfo-{{$index}}-name" />
                                 </div>
                             </div>
-                            <div class="col-xs-6 col-md-4" ng-if="!$ctrl.event.freeOfCharge">
+                            <div class="col-xs-6 col-md-3" ng-if="$ctrl.event.format === 'HYBRID'">
                                 <div class="form-group">
-                                    <label for="ticketInfo-{{$index}}-price">Ticket price</label>
+                                    <label for="ticketInfo-{{$index}}-category-access-type">Ticket Holders can access the event</label>
+                                    <select data-ng-model="ticketInfo.category.ticketAccessType" name="ticketAccessType" id="ticketInfo-{{$index}}-category-access-type" class="form-control" required data-ng-options="accessType.id as accessType.description for accessType in $ctrl.ticketAccessTypes"></select>
+                                </div>
+                            </div>
+                            <div class="col-xs-6" ng-if="!$ctrl.event.freeOfCharge" ng-class="{'col-md-2': $ctrl.event.format === 'HYBRID', 'col-md-4': $ctrl.event.format !== 'HYBRID'}">
+                                <div class="form-group">
+                                    <label for="ticketInfo-{{$index}}-price">Ticket price {{$ctrl.event.currency}}</label>
                                     <input type="number" min="0" class="form-control" ng-model="ticketInfo.category.price" required id="ticketInfo-{{$index}}-price" />
                                 </div>
                             </div>
-                            <div class="col-xs-6 col-md-4" ng-if="!$ctrl.event.freeOfCharge">
+                            <div class="col-xs-6" ng-if="!$ctrl.event.freeOfCharge" ng-class="{'col-md-2': $ctrl.event.format === 'HYBRID', 'col-md-4': $ctrl.event.format !== 'HYBRID'}">
                                 <div class="form-group">
                                     <label>Final ticket price</label>
                                     <div class="form-control-static">

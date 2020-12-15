@@ -28,10 +28,7 @@ import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
-import alfio.util.ClockProvider;
-import alfio.util.Json;
-import alfio.util.MonetaryUtil;
-import alfio.util.PinGenerator;
+import alfio.util.*;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -115,7 +112,7 @@ public class CheckInManager {
      * @return
      */
     public CheckInStatus performCheckinForOnlineEvent(Ticket ticket, EventCheckInInfo event, TicketCategory tc) {
-        Validate.isTrue(event.getFormat() == Event.EventFormat.ONLINE);
+        Validate.isTrue(EventUtil.isAccessOnline(tc, event));
         if(!tc.hasValidCheckIn(event.now(clockProvider), event.getZoneId())) {
             return INVALID_TICKET_CATEGORY_CHECK_IN_DATE;
         }
