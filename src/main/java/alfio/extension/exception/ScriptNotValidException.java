@@ -19,7 +19,7 @@ package alfio.extension.exception;
 /**
  * Exception thrown if script is not valid for execution.
  */
-public class ScriptNotValidException extends RuntimeException{
+public class ScriptNotValidException extends AlfioScriptingException {
     public ScriptNotValidException(String message) {
         super(message);
     }

@@ -17,15 +17,15 @@
 package alfio.extension.exception;
 
 /**
- * Exception thrown if some out of boundaries usage (forbidden methods calls) happens when executing a script.
+ * Base Exception for runtime errors, mostly violations detected in scripts
  */
-public class OutOfBoundariesException extends AlfioScriptingException {
+public class AlfioScriptingException extends RuntimeException {
 
-    public OutOfBoundariesException(String message) {
+    public AlfioScriptingException(String message) {
         super(message);
     }
 
-    public OutOfBoundariesException(String message, Throwable cause) {
+    public AlfioScriptingException(String message, Throwable cause) {
         super(message, cause);
     }
 }

@@ -18,6 +18,7 @@
 package alfio.manager;
 
 import alfio.extension.ExtensionService;
+import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -358,10 +359,15 @@ public class ExtensionManager {
     }
 
     private <T> T syncCall(ExtensionEvent extensionEvent, Event event, Map<String, Object> payload, Class<T> clazz) {
-        return extensionService.executeScriptsForEvent(extensionEvent.name(),
-            toPath(event.getOrganizationId(), event.getId()),
-            fillWithBasicInfo(payload, event),
-            clazz);
+        try {
+            return extensionService.executeScriptsForEvent(extensionEvent.name(),
+                toPath(event.getOrganizationId(), event.getId()),
+                fillWithBasicInfo(payload, event),
+                clazz);
+        } catch(AlfioScriptingException ex) {
+            log.warn("Unexpected exception while executing script:", ex);
+            return null;
+        }
     }
 
     private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, Event event) {

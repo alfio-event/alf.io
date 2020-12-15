@@ -19,7 +19,7 @@ package alfio.extension.exception;
 /**
  * Exception thrown if a timeout happens when executing a script.
  */
-public class ExecutionTimeoutException extends RuntimeException {
+public class ExecutionTimeoutException extends AlfioScriptingException {
 
     public ExecutionTimeoutException(String message) {
         super(message);
