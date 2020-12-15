@@ -118,6 +118,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
             "Title",
             this.shortName,
             Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
+            null,
             new EventCreationRequest.LocationRequest(
                 "Pollegio 6742 Switzerland",
                 new EventCreationRequest.CoordinateRequest("45.5","9.00")
@@ -145,6 +146,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
                         BigDecimal.TEN,
                         LocalDateTime.of(2019, 1, 10, 12, 0),
                         LocalDateTime.of(2019, 1, 30, 18, 0),
+                        null,
                         null,
                         null,
                         null
@@ -197,7 +199,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
 
         String newTitle = "new title";
-        EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null,null,null,null,null,null, null,null,
+        EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null, null,null,null,null,null,null, null,null,
             new EventCreationRequest.TicketRequest(null,10,null,null,null,null,null,null), null, null
         );
         controller.update(shortName,updateRequest,mockPrincipal);
