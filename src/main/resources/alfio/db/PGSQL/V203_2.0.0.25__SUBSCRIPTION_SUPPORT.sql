@@ -31,7 +31,7 @@ create table subscription_descriptor (
 );
 
 create table subscription (
-    id bigserial primary key not null,
+    id uuid primary key not null,
     first_name text not null,
     last_name text not null,
     email_address text not null,
@@ -44,9 +44,9 @@ create table subscription (
 create table subscription_event (
     id bigserial primary key not null,
     event_id_fk int not null references event(id),
-    subscription_id_fk bigint not null constraint subscription_event_subscription_id_fk references subscription(id),
+    subscription_id_fk uuid not null constraint subscription_event_subscription_id_fk references subscription(id),
     price_per_ticket integer not null default 0
 );
 
 alter table event add column tags text array not null default array[]::text[];
-alter table ticket add column subscription_id_fk bigint constraint ticket_subscription_id_fk references subscription(id);
+alter table ticket add column subscription_id_fk uuid constraint ticket_subscription_id_fk references subscription(id);
