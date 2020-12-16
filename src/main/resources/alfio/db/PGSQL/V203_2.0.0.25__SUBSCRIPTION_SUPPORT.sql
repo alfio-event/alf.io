@@ -35,17 +35,18 @@ create table subscription (
     first_name text not null,
     last_name text not null,
     email_address text not null,
-    code text not null unique,
-    subscription_descriptor_fk bigint not null references subscription_descriptor(id),
+    code text not null constraint subscription_code_unique unique,
+    subscription_descriptor_fk bigint not null constraint subscription_subscription_descriptor_fk references subscription_descriptor(id),
+    reservation_id_fk character(36) not null constraint subscription_reservation_id_fk references tickets_reservation(id),
     usage_count integer not null
 );
 
 create table subscription_event (
     id bigserial primary key not null,
     event_id_fk int not null references event(id),
-    subscription_id_fk bigint not null references subscription(id),
+    subscription_id_fk bigint not null constraint subscription_event_subscription_id_fk references subscription(id),
     price_per_ticket integer not null default 0
 );
 
 alter table event add column tags text array not null default array[]::text[];
-alter table ticket add column subscription_id_fk bigint references subscription(id);
+alter table ticket add column subscription_id_fk bigint constraint ticket_subscription_id_fk references subscription(id);
