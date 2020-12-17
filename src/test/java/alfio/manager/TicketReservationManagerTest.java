@@ -391,7 +391,7 @@ class TicketReservationManagerTest {
         when(reservation.getId()).thenReturn("abcd");
         when(reservation.getUserLanguage()).thenReturn("en");
         when(reservation.getEmail()).thenReturn("ciccio");
-        when(reservation.getValidity()).thenReturn(new Date());
+        when(reservation.getValidity()).thenReturn(new Date(Instant.now(ClockProvider.clock()).getEpochSecond()));
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
         when(ticketReservationRepository.findOptionalReservationById(eq("abcd"))).thenReturn(Optional.of(reservation));
 
@@ -430,13 +430,15 @@ class TicketReservationManagerTest {
         when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
         when(reservation.getId()).thenReturn("abcd");
         when(reservation.getUserLanguage()).thenReturn("en");
-        when(reservation.getValidity()).thenReturn(new Date());
+        when(reservation.getValidity()).thenReturn(new Date(Instant.now(ClockProvider.clock()).getEpochSecond()));
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
         when(ticketReservationRepository.findOptionalReservationById(eq("abcd"))).thenReturn(Optional.of(reservation));
         when(configurationManager.getFor(eq(BANKING_KEY), any())).thenReturn(BANKING_INFO);
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
-        when(event.getZoneId()).thenReturn(ZoneId.of("GMT-4"));
-        when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("GMT-4")).plusDays(1));
+
+        var zoneClock = Clock.offset(ClockProvider.clock(), Duration.ofHours(4).negated());
+        when(event.getZoneId()).thenReturn(zoneClock.getZone());
+        when(event.getBegin()).thenReturn(ZonedDateTime.now(zoneClock.getZone()).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         when(reservation.getEmail()).thenReturn("ciccio");
@@ -625,7 +627,7 @@ class TicketReservationManagerTest {
 
     @Test
     void doNothingIfNoReservations() {
-        Date now = new Date();
+        Date now = new Date(Instant.now(ClockProvider.clock()).getEpochSecond());
         when(ticketReservationRepository.findExpiredReservationForUpdate(eq(now))).thenReturn(Collections.emptyList());
         trm.cleanupExpiredReservations(now);
         verify(ticketReservationRepository).findExpiredReservationForUpdate(eq(now));
@@ -634,7 +636,7 @@ class TicketReservationManagerTest {
 
     @Test
     void cancelExpiredReservations() {
-        Date now = new Date();
+        Date now = new Date(Instant.now(ClockProvider.clock()).getEpochSecond());
         List<String> reservationIds = singletonList("reservation-id");
         when(ticketReservationRepository.findExpiredReservationForUpdate(eq(now))).thenReturn(reservationIds);
         trm.cleanupExpiredReservations(now);
@@ -962,7 +964,7 @@ class TicketReservationManagerTest {
         when(reservation.getUserLanguage()).thenReturn("en");
         when(reservation.getFullName()).thenReturn("Full Name");
         when(reservation.getEmail()).thenReturn("ciccio");
-        when(reservation.getValidity()).thenReturn(new Date());
+        when(reservation.getValidity()).thenReturn(new Date(Instant.now(ClockProvider.clock()).getEpochSecond()));
         when(reservation.getInvoiceModel()).thenReturn("{\"summary\":[], \"originalTotalPrice\":{\"priceWithVAT\":100}}");
 
         TicketReservation copy = copy(reservation);
