@@ -54,7 +54,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.33.0'
     id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.8.1'
-    id 'org.springframework.boot' version '2.3.4.RELEASE'
+    id 'org.springframework.boot' version '2.3.7.RELEASE'
     id 'org.sonarqube' version '3.0'
     id 'net.ltgt.errorprone' version '1.3.0'
 	id 'com.github.node-gradle.node' version '2.2.4'
