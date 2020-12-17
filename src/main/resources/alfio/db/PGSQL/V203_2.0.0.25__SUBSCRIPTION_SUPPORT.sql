@@ -46,7 +46,9 @@ create table subscription (
     subscription_descriptor_fk bigint not null constraint subscription_subscription_descriptor_fk references subscription_descriptor(id),
     reservation_id_fk character(36) not null constraint subscription_reservation_id_fk references tickets_reservation(id),
     usage_count integer not null,
-    organization_id_fk int not null constraint subscription_organization_id_fk references organization(id)
+    organization_id_fk int not null constraint subscription_organization_id_fk references organization(id),
+    creation_ts timestamp with time zone not null default now(),
+    update_ts timestamp with time zone
 );
 
 alter table subscription enable row level security;
