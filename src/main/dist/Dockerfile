@@ -5,17 +5,17 @@
 # - https://august.nagro.us/small-java.html
 #
 
-FROM azul/zulu-openjdk-alpine:11.0.6 as zulu
+FROM azul/zulu-openjdk-alpine:14 as zulu
 
 RUN $JAVA_HOME/bin/jlink --compress=1 --strip-debug --no-header-files --no-man-pages \
     --module-path $JAVA_HOME/jmods \
     # see https://github.com/ben-manes/caffeine/issues/273
     # see https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html#GUID-9224B90B-7B2F-41F9-BB96-C0A1B6A0FEAA
-    --add-modules jdk.scripting.nashorn,java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported,jdk.crypto.ec,java.net.http,jdk.localedata \
+    --add-modules java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported,jdk.crypto.ec,java.net.http,jdk.localedata \
     --include-locales en,it,es,nl,fr,de,ro,pt,tr,pl,da,bg,sv \
     --output /jlinked
 
-FROM alpine:3.11.5
+FROM alpine:3.12
 
 COPY --from=zulu /jlinked /opt/jdk/
 
@@ -40,7 +40,6 @@ ENV ALFIO_JAVA_OPTS=""
 ENV ALFIO_PERFORMANCE_OPTS="-Dspring.jmx.enabled=false -Dlog4j2.disableJmx=true"
 
 CMD /opt/jdk/bin/java $ALFIO_JAVA_OPTS $ALFIO_PERFORMANCE_OPTS -XX:+UseContainerSupport \
-    --add-modules jdk.scripting.nashorn \
     -cp ./WEB-INF/classes:./resources:./WEB-INF/lib/*:./WEB-INF/lib-provided/* alfio.config.SpringBootLauncher
 
 EXPOSE 8080
