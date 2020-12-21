@@ -20,6 +20,8 @@ create type SUBSCRIPTION_AVAILABILITY as enum ('ONCE_PER_EVENT', 'UNLIMITED');
 
 create table subscription_descriptor (
     id bigserial primary key not null,
+    title jsonb not null,
+    description jsonb,
     max_entries int not null default 0,
     creation_ts timestamp with time zone not null default now(),
     valid_from timestamp with time zone not null,

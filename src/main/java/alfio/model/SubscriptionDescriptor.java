@@ -16,10 +16,12 @@
  */
 package alfio.model;
 
+import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
+import java.util.Map;
 
 @Getter
 public class SubscriptionDescriptor {
@@ -37,6 +39,8 @@ public class SubscriptionDescriptor {
     private final String currency;
     private final SubscriptionAvailability availability;
     private final boolean isPublic;
+    private final Map<String, String> title;
+    private final Map<String, String> description;
     private final int organizationId;
 
     public SubscriptionDescriptor(@Column("id") long id,
@@ -48,6 +52,8 @@ public class SubscriptionDescriptor {
                                   @Column("currency") String currency,
                                   @Column("availability") SubscriptionAvailability availability,
                                   @Column("is_public") boolean isPublic,
+                                  @Column("title") @JSONData Map<String, String> title,
+                                  @Column("description") @JSONData Map<String, String> description,
                                   @Column("organization_id_fk") int organizationId) {
         this.id = id;
         this.maxEntries = maxEntries;
@@ -58,6 +64,8 @@ public class SubscriptionDescriptor {
         this.currency = currency;
         this.availability = availability;
         this.isPublic = isPublic;
+        this.title = title;
+        this.description = description;
         this.organizationId = organizationId;
     }
 }
