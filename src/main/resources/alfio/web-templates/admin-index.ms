@@ -93,6 +93,7 @@
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/extension/log/extension-log.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/ticket-category/ticket-category.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/group/groups.js"></script>
+    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/subscriptions/subscriptions.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/util/reservation-identifier.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/copy-event/copy-event.js"></script>
@@ -130,6 +131,7 @@
                             <ul class="nav navbar-nav">
                                 <li data-ui-sref-active="active"><a data-ui-sref="index" ng-click="ctrl.menuCollapsed = true">Events</a></li>
                                 {{#isOwner}}
+                                <li data-ui-sref-active="active"><a data-ui-sref="subscriptions" ng-click="ctrl.menuCollapsed = true">Subscriptions</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="organizations" ng-click="ctrl.menuCollapsed = true">Organizations</a></li>
                                 {{#isDBAuthentication}}
                                 <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>
