@@ -23,7 +23,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.List;
 
@@ -50,6 +49,13 @@ public class SubscriptionApiController {
     }
 
     @PostMapping("/")
-    public void create(@PathVariable("organizationId") int organizationId, Principal principal) {
+    public ResponseEntity<Boolean> create(@PathVariable("organizationId") int organizationId,
+                       @RequestBody SubscriptionDescriptor subscriptionDescriptor,
+                       Principal principal) {
+        if (userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
+            return ResponseEntity.ok(subscriptionManager.createSubscriptionDescriptor(subscriptionDescriptor));
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 }
