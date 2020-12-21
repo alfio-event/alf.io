@@ -18,11 +18,9 @@ package alfio.manager;
 
 import alfio.model.SubscriptionDescriptor;
 import alfio.repository.SubscriptionRepository;
-import alfio.repository.user.OrganizationRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Principal;
 import java.util.List;
 
 @Component
@@ -30,17 +28,21 @@ import java.util.List;
 public class SubscriptionManager {
 
     private final SubscriptionRepository subscriptionRepository;
-    private final OrganizationRepository organizationRepository;
 
-    public SubscriptionManager(SubscriptionRepository subscriptionRepository,
-                               OrganizationRepository organizationRepository) {
+    public SubscriptionManager(SubscriptionRepository subscriptionRepository) {
         this.subscriptionRepository = subscriptionRepository;
-        this.organizationRepository = organizationRepository;
     }
 
-    public List<SubscriptionDescriptor> findAll(int organizationId, Principal principal) {
-        var userName = principal.getName();
-        var access = organizationRepository.hasAccess(userName, organizationId);
-        return access ? subscriptionRepository.findAllByOrganizationIds(organizationId) : List.of();
+    public List<SubscriptionDescriptor> findAll(int organizationId) {
+        return subscriptionRepository.findAllByOrganizationIds(organizationId);
+    }
+
+    public boolean createSubscriptionDescriptor(SubscriptionDescriptor subscriptionDescriptor) {
+        return subscriptionRepository.createSubscriptionDescriptor(subscriptionDescriptor.getMaxEntries(),
+            subscriptionDescriptor.getValidFrom(), subscriptionDescriptor.getValidTo(),
+            subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(),
+            subscriptionDescriptor.getAvailability(), subscriptionDescriptor.isPublic(),
+            subscriptionDescriptor.getTitle(), subscriptionDescriptor.getDescription(),
+            subscriptionDescriptor.getOrganizationId()) == 1;
     }
 }

@@ -17,9 +17,13 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.SubscriptionManager;
+import alfio.manager.user.UserManager;
 import alfio.model.SubscriptionDescriptor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.List;
 
@@ -28,18 +32,24 @@ import java.util.List;
 public class SubscriptionApiController {
 
     private final SubscriptionManager subscriptionManager;
+    private final UserManager userManager;
 
-    public SubscriptionApiController(SubscriptionManager subscriptionManager) {
+    public SubscriptionApiController(SubscriptionManager subscriptionManager, UserManager userManager) {
         this.subscriptionManager = subscriptionManager;
+        this.userManager = userManager;
     }
 
     @GetMapping("/list")
-    List<SubscriptionDescriptor> findAll(@PathVariable("organizationId") int organizationId, Principal principal) {
-        return subscriptionManager.findAll(organizationId, principal);
+    ResponseEntity<List<SubscriptionDescriptor>> findAll(@PathVariable("organizationId") int organizationId, Principal principal) {
+        if (userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
+            return ResponseEntity.ok(subscriptionManager.findAll(organizationId));
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
     }
 
     @PostMapping("/")
-    public void create(@PathVariable("organizationId") int organizationId) {
-
+    public void create(@PathVariable("organizationId") int organizationId, Principal principal) {
     }
 }
