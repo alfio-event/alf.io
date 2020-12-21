@@ -30,7 +30,7 @@ import java.util.Map;
 public interface SubscriptionRepository {
 
     @Query("insert into subscription_descriptor (max_entries, valid_from, valid_to, price_cts, currency, availability, is_public, title, description, organization_id_fk) " +
-           " values(:maxEntries, :validFrom, :validTo, :priceCts, :currency, :availability, :isPublic, :title::jsonb, :description::jsonb, :organizationId)")
+           " values(:maxEntries, :validFrom, :validTo, :priceCts, :currency, :availability::SUBSCRIPTION_AVAILABILITY, :isPublic, :title::jsonb, :description::jsonb, :organizationId)")
     int createSubscriptionDescriptor(@Bind("maxEntries") int maxEntries,
                                      @Bind("validFrom") ZonedDateTime validFrom, @Bind("validTo") ZonedDateTime validTo,
                                      @Bind("priceCts") int priceCts, @Bind("currency") String currency,
@@ -41,5 +41,5 @@ public interface SubscriptionRepository {
                                      @Bind("organizationId") int organizationId);
 
     @Query("select * from subscription_descriptor where organization_id_fk = :organizationId order by creation_ts asc")
-    List<SubscriptionDescriptor> findAllByOrganizationIds(int organizationId);
+    List<SubscriptionDescriptor> findAllByOrganizationIds(@Bind("organizationId") int organizationId);
 }
