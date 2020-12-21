@@ -40,7 +40,6 @@ public interface SubscriptionRepository {
                                      @Bind("description") @JSONData Map<String, String> description,
                                      @Bind("organizationId") int organizationId);
 
-
     @Query("select * from subscription_descriptor where organization_id_fk = :organizationId order by creation_ts asc")
-    List<SubscriptionDescriptor> findAllByOrganizationId(int organizationId);
+    List<SubscriptionDescriptor> findAllByOrganizationIds(int organizationId);
 }

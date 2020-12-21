@@ -18,6 +18,7 @@ package alfio.model;
 
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
@@ -43,18 +44,18 @@ public class SubscriptionDescriptor {
     private final Map<String, String> description;
     private final int organizationId;
 
-    public SubscriptionDescriptor(@Column("id") long id,
-                                  @Column("max_entries") int maxEntries,
-                                  @Column("creation_ts") ZonedDateTime creation,
-                                  @Column("valid_from") ZonedDateTime validFrom,
-                                  @Column("valid_to") ZonedDateTime validTo,
-                                  @Column("price_cts") int price,
-                                  @Column("currency") String currency,
-                                  @Column("availability") SubscriptionAvailability availability,
-                                  @Column("is_public") boolean isPublic,
-                                  @Column("title") @JSONData Map<String, String> title,
-                                  @Column("description") @JSONData Map<String, String> description,
-                                  @Column("organization_id_fk") int organizationId) {
+    public SubscriptionDescriptor(@JsonProperty("id") @Column("id") long id,
+                                  @JsonProperty("maxEntries") @Column("max_entries") int maxEntries,
+                                  @JsonProperty("creation") @Column("creation_ts") ZonedDateTime creation,
+                                  @JsonProperty("validFrom") @Column("valid_from") ZonedDateTime validFrom,
+                                  @JsonProperty("validTo") @Column("valid_to") ZonedDateTime validTo,
+                                  @JsonProperty("priceCts") @Column("price_cts") int price,
+                                  @JsonProperty("currency") @Column("currency") String currency,
+                                  @JsonProperty("availability") @Column("availability") SubscriptionAvailability availability,
+                                  @JsonProperty("isPublic") @Column("is_public") boolean isPublic,
+                                  @JsonProperty("title") @Column("title") @JSONData Map<String, String> title,
+                                  @JsonProperty("description") @Column("description") @JSONData Map<String, String> description,
+                                  @JsonProperty("organizationId") @Column("organization_id_fk") int organizationId) {
         this.id = id;
         this.maxEntries = maxEntries;
         this.creation = creation;
