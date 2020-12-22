@@ -3,7 +3,8 @@
 
     angular.module('subscriptions', ['adminServices'])
     .config(['$stateProvider', function($stateProvider) {
-        $stateProvider.state('subscriptions', {
+        $stateProvider
+        .state('subscriptions', {
             url: '/subscriptions',
             template: '<subscriptions-container organizations="ctrl.organizations"></subscriptions-container>',
             controller: ['loadOrganizations', function (loadOrganizations) {
@@ -16,14 +17,27 @@
                 }
             }
         })
-    }]).component('subscriptionsContainer', {
-            controller: ['$stateParams', '$state', '$scope', ContainerCtrl],
-            templateUrl: '../resources/js/admin/feature/subscriptions/all.html',
-            bindings: { organizations: '<'}
+        .state('subscriptions.list', {
+            url: '/:orgId/list',
+            template: '<subscriptions-list organization-id="ctrl.orgId"></subscriptions-list>',
+            controllerAs: 'ctrl',
+            controller: ['$stateParams', function ($stateParams) {
+                this.orgId = $stateParams.orgId;
+            }]
+        })
+    }])
+    .component('subscriptionsContainer', {
+        controller: ['$stateParams', '$state', '$scope', ContainerCtrl],
+        templateUrl: '../resources/js/admin/feature/subscriptions/container.html',
+        bindings: { organizations: '<'}
+    })
+    .component('subscriptionsList', {
+        controller: [SubscriptionsListCtrl],
+        templateUrl: '../resources/js/admin/feature/subscriptions/list.html',
+        bindings: {
+            organizationId: '<'
+        }
     });
-
-
-
 
     function ContainerCtrl($stateParams, $state, $scope) {
         var ctrl = this;
@@ -43,9 +57,12 @@
                 }
                 ctrl.organization = _.find(ctrl.organizations, function(org) {return org.id === orgId});
                 if($state.current.name === 'subscriptions') {
-                    $state.go('.all', {orgId: ctrl.organization.id});
+                    $state.go('.list', {orgId: ctrl.organization.id});
                 }
             }
         };
+    }
+
+    function SubscriptionsListCtrl() {
     }
 })();
