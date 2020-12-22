@@ -67,15 +67,15 @@
         var ctrl = this;
 
         ctrl.$onInit = function() {
-            SubscriptionService.loadSubscriptions(ctrl.organizationId).then(function(res) {
-                ctrl.subscriptions = res.data;
+            SubscriptionService.loadSubscriptionsDescriptors(ctrl.organizationId).then(function(res) {
+                ctrl.subscriptionsDescriptors = res.data;
             });
         }
     }
 
     function SubscriptionService($http, HttpErrorHandler, $q, NotificationHandler) {
         return {
-            loadSubscriptions: function(orgId) {
+            loadSubscriptionsDescriptors: function(orgId) {
                 return $http.get('/admin/api/organization/'+orgId+'/subscription/list').error(HttpErrorHandler.handle);
             }
         };
