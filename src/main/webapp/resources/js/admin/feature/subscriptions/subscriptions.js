@@ -32,12 +32,12 @@
         bindings: { organizations: '<'}
     })
     .component('subscriptionsList', {
-        controller: [SubscriptionsListCtrl],
+        controller: ['SubscriptionService', SubscriptionsListCtrl],
         templateUrl: '../resources/js/admin/feature/subscriptions/list.html',
         bindings: {
             organizationId: '<'
         }
-    });
+    }).service('SubscriptionService', ['$http', 'HttpErrorHandler', '$q', 'NotificationHandler', SubscriptionService]);
 
     function ContainerCtrl($stateParams, $state, $scope) {
         var ctrl = this;
@@ -63,6 +63,21 @@
         };
     }
 
-    function SubscriptionsListCtrl() {
+    function SubscriptionsListCtrl(SubscriptionService) {
+        var ctrl = this;
+
+        ctrl.$onInit = function() {
+            SubscriptionService.loadSubscriptions(ctrl.organizationId).then(function(res) {
+                ctrl.subscriptions = res.data;
+            });
+        }
+    }
+
+    function SubscriptionService($http, HttpErrorHandler, $q, NotificationHandler) {
+        return {
+            loadSubscriptions: function(orgId) {
+                return $http.get('/admin/api/organization/'+orgId+'/subscription/list').error(HttpErrorHandler.handle);
+            }
+        };
     }
 })();
