@@ -17,6 +17,9 @@
 
 
 create type SUBSCRIPTION_AVAILABILITY as enum ('ONCE_PER_EVENT', 'UNLIMITED');
+create type ALLOCATION_STATUS as enum ('FREE', 'PRE_RESERVED', 'PENDING', 'TO_BE_PAID', 'ACQUIRED', 'CANCELLED',
+                                        'CHECKED_IN', 'EXPIRED',
+                                        'INVALIDATED', 'RELEASED');
 
 create table subscription_descriptor (
     id bigserial primary key not null,
@@ -50,7 +53,8 @@ create table subscription (
     usage_count integer not null,
     organization_id_fk int not null constraint subscription_organization_id_fk references organization(id),
     creation_ts timestamp with time zone not null default now(),
-    update_ts timestamp with time zone
+    update_ts timestamp with time zone,
+    status ALLOCATION_STATUS not null default 'FREE'
 );
 
 alter table subscription enable row level security;
