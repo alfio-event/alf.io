@@ -1,0 +1,118 @@
+<form name="editSubscriptionForm" ng-submit="$ctrl.save(editSubscriptionForm, $ctrl.subscription)" ng-if="$ctrl.subscription">
+    <h2>
+        <span ng-if="!$ctrl.existing">Create new</span><span ng-if="$ctrl.existing">Edit</span> Subscription
+    </h2>
+
+    <div class="page-header">
+        <h3>Title</h3>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6" data-ng-repeat="lang in $ctrl.selectedLanguages">
+            <div class="form-group" bs-form-error="editSubscriptionForm['title-'+lang.locale]">
+                <label for="title-{{lang.locale}}">{{lang.displayLanguage}}</label><a class="pull-right text-muted" ng-if="$ctrl.selectedLanguages.length > 1" title="remove {{lang.displayLanguage}}" ng-click="$ctrl.deselectLanguage(lang)"><i class="fa fa-trash"></i></a><display-commonmark-preview class="pull-right" style="margin-right: 20px" text="$ctrl.subscription.title[lang.locale]"></display-commonmark-preview>
+                <textarea ng-model="$ctrl.subscription.title[lang.locale]" name="title-{{lang.locale}}" id="title-{{lang.locale}}" required class="form-control" ng-minlength="10" data-ng-maxlength="255"></textarea>
+                <field-error data-form-obj="editSubscriptionForm" data-field-obj="editSubscriptionForm['title-'+lang.locale]" data-min-char="10" data-max-char="255" data-show-existing-errors="true"></field-error>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-6">
+            <div class="btn-group" uib-dropdown is-open="isDropDownOpen" data-ng-if="$ctrl.availableLanguages.length > 0">
+                <button id="single-button" type="button" class="btn btn-success" uib-dropdown-toggle>
+                    Add translation <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                    <li role="menuitem" data-ng-repeat="language in $ctrl.availableLanguages"><a ng-click="$ctrl.selectLanguage(language)">{{language.displayLanguage}}</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <common-mark-help></common-mark-help>
+        </div>
+    </div>
+    <div class="page-header">
+        <h3>Description</h3>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6" data-ng-repeat="lang in $ctrl.selectedLanguages">
+            <div class="form-group" bs-form-error="editSubscriptionForm['description-'+lang.locale]">
+                <label for="description-{{lang.locale}}">{{lang.displayLanguage}}</label><display-commonmark-preview class="pull-right" style="margin-right: 20px" text="$ctrl.subscription.description[lang.locale]"></display-commonmark-preview>
+                <textarea ng-model="$ctrl.subscription.description[lang.locale]" name="description-{{lang.locale}}" id="description-{{lang.locale}}" required class="form-control" ng-minlength="10" data-ng-maxlength="255"></textarea>
+                <field-error data-form-obj="editSubscriptionForm" data-field-obj="editSubscriptionForm['description-'+lang.locale]" data-min-char="10" data-max-char="255" data-show-existing-errors="true"></field-error>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 text-right">
+            <common-mark-help></common-mark-help>
+        </div>
+    </div>
+    <div class="page-header">
+        <h3>Details</h3>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="maxEntries">Num tickets included (leave empty if unlimited)</label>
+                <input id="maxEntries" type="number" ng-model="$ctrl.subscription.maxEntries" class="form-control">
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="availability">Subscription can be used</label>
+                <select id="availability" ng-options="key as value for (key , value) in $ctrl.subscriptionAvailabilityTypes" ng-model="$ctrl.subscription.availability" class="form-control"></select>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="validFrom">Valid from</label>
+                <input id="validFrom" autocomplete="off" single-date start-model="$ctrl.subscription.validFromModel" ng-model="$ctrl.subscription.validFromText" class="form-control">
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="validTo">Valid to (optional)</label>
+                <input id="validTo" autocomplete="off" single-date start-model="$ctrl.subscription.validToModel" no-init-date="true" ng-model="$ctrl.subscription.validToText" class="form-control">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="price">Price</label>
+                <input id="price" autocomplete="off" type="number" step="any" ng-model="$ctrl.subscription.price" class="form-control">
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="currency">Currency</label>
+                <input id="currency" autocomplete="off" type="text" ng-model="$ctrl.subscription.currency" class="form-control" uib-typeahead="currency.code as currency.name for currency in $ctrl.currencies | filter:$viewValue | limitTo:8" required pattern="[A-Z]{3}">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="vatStatus">Tax Policy</label>
+                <select id="vatStatus" ng-options="key as value for (key , value) in $ctrl.vatStatuses" ng-model="$ctrl.subscription.vatStatus" class="form-control"></select>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+            <div class="form-group">
+                <label for="vat">Taxes %</label>
+                <input id="vat" type="number" min="0" step="any" ng-model="$ctrl.subscription.vat" class="form-control" ng-required="$ctrl.subscription.vatStatus !== 'NONE'">
+            </div>
+        </div>
+    </div>
+    <hr class="wMarginTop30px"/>
+    <div class="row wMarginBottom30px">
+        <div class="col-md-4 col-md-push-8 col-xs-12">
+            <button class="btn btn-lg btn-warning btn-block" data-ng-disabled="editSubscriptionForm.$waiting" style="margin-bottom: 10px">Save</button>
+        </div>
+        <div class="col-md-4 col-md-pull-4 col-xs-12">
+            <button type="button" class="btn btn-lg btn-default btn-block" data-ng-disabled="editSubscriptionForm.$waiting" data-ng-click="$ctrl.cancel()" style="margin-bottom: 10px">Back</button>
+        </div>
+    </div>
+</form>

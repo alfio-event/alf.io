@@ -22,6 +22,7 @@ import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
 import alfio.model.PriceContainer;
 import alfio.model.SubscriptionDescriptor;
+import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -83,14 +84,25 @@ public class SubscriptionManagerIntegrationTest {
         userManager.createOrganization(organizationName, "desc", "email@example.com");
         int orgId = organizationRepository.getIdByName(organizationName);
         assertTrue(subscriptionManager.findAll(orgId).isEmpty());
-        subscriptionManager.createSubscriptionDescriptor(new SubscriptionDescriptor(0, 42,
-            null, ZonedDateTime.now(ClockProvider.clock()).minusDays(1), ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
-            100, new BigDecimal("7.7"), PriceContainer.VatStatus.INCLUDED, "CHF", SubscriptionDescriptor.SubscriptionAvailability.ONCE_PER_EVENT, true,
-            Map.of("en", "title"), Map.of("en", "description"), orgId));
+        subscriptionManager.createSubscriptionDescriptor(new SubscriptionDescriptorModification(null,
+            42,
+            ZonedDateTime.now(ClockProvider.clock()).minusDays(1),
+            ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
+            new BigDecimal("100"),
+            new BigDecimal("7.7"),
+            PriceContainer.VatStatus.INCLUDED,
+            "CHF",
+            SubscriptionDescriptor.SubscriptionAvailability.ONCE_PER_EVENT,
+            true,
+            Map.of("en", "title"),
+            Map.of("en", "description"),
+            orgId));
         var res = subscriptionManager.findAll(orgId);
         assertEquals(1, res.size());
-        assertEquals("title", res.get(0).getTitle().get("en"));
-        assertEquals("description", res.get(0).getDescription().get("en"));
+        var descriptor = res.get(0);
+        assertEquals("title", descriptor.getTitle().get("en"));
+        assertEquals("description", descriptor.getDescription().get("en"));
+        assertEquals(10000, descriptor.getPrice());
     }
 
 }

@@ -19,6 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
 import alfio.model.SubscriptionDescriptor;
+import alfio.model.modification.SubscriptionDescriptorModification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,11 +50,11 @@ public class SubscriptionApiController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<Boolean> create(@PathVariable("organizationId") int organizationId,
-                       @RequestBody SubscriptionDescriptor subscriptionDescriptor,
+    public ResponseEntity<Long> create(@PathVariable("organizationId") int organizationId,
+                       @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
                        Principal principal) {
         if (organizationId == subscriptionDescriptor.getOrganizationId() && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
-            return ResponseEntity.ok(subscriptionManager.createSubscriptionDescriptor(subscriptionDescriptor));
+            return ResponseEntity.of(subscriptionManager.createSubscriptionDescriptor(subscriptionDescriptor));
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

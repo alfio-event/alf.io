@@ -17,11 +17,14 @@
 package alfio.manager;
 
 import alfio.model.SubscriptionDescriptor;
+import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.repository.SubscriptionRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Component
 @Transactional
@@ -37,13 +40,24 @@ public class SubscriptionManager {
         return subscriptionRepository.findAllByOrganizationIds(organizationId);
     }
 
-    public boolean createSubscriptionDescriptor(SubscriptionDescriptor subscriptionDescriptor) {
-        return subscriptionRepository.createSubscriptionDescriptor(subscriptionDescriptor.getMaxEntries(),
-            subscriptionDescriptor.getValidFrom(), subscriptionDescriptor.getValidTo(),
-            subscriptionDescriptor.getPrice(), subscriptionDescriptor.getVat(),
-            subscriptionDescriptor.getVatStatus(), subscriptionDescriptor.getCurrency(),
-            subscriptionDescriptor.getAvailability(), subscriptionDescriptor.isPublic(),
-            subscriptionDescriptor.getTitle(), subscriptionDescriptor.getDescription(),
-            subscriptionDescriptor.getOrganizationId()) == 1;
+    public Optional<Long> createSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
+        var result = subscriptionRepository.createSubscriptionDescriptor(
+            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), 0),
+            subscriptionDescriptor.getValidFrom(),
+            subscriptionDescriptor.getValidTo(),
+            subscriptionDescriptor.getPriceCts(),
+            subscriptionDescriptor.getVat(),
+            subscriptionDescriptor.getVatStatus(),
+            subscriptionDescriptor.getCurrency(),
+            subscriptionDescriptor.getAvailability(),
+            Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
+            subscriptionDescriptor.getTitle(),
+            subscriptionDescriptor.getDescription(),
+            subscriptionDescriptor.getOrganizationId());
+
+        if(result.getAffectedRowCount() == 1) {
+            return Optional.of(result.getKey());
+        }
+        return Optional.empty();
     }
 }
