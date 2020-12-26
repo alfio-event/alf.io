@@ -20,6 +20,7 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
+import alfio.model.PriceContainer;
 import alfio.model.SubscriptionDescriptor;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
@@ -36,6 +37,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.UUID;
@@ -83,7 +85,7 @@ public class SubscriptionManagerIntegrationTest {
         assertTrue(subscriptionManager.findAll(orgId).isEmpty());
         subscriptionManager.createSubscriptionDescriptor(new SubscriptionDescriptor(0, 42,
             null, ZonedDateTime.now(ClockProvider.clock()).minusDays(1), ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
-            100, "CHF", SubscriptionDescriptor.SubscriptionAvailability.ONCE_PER_EVENT, true,
+            100, new BigDecimal("7.7"), PriceContainer.VatStatus.INCLUDED, "CHF", SubscriptionDescriptor.SubscriptionAvailability.ONCE_PER_EVENT, true,
             Map.of("en", "title"), Map.of("en", "description"), orgId));
         var res = subscriptionManager.findAll(orgId);
         assertEquals(1, res.size());
