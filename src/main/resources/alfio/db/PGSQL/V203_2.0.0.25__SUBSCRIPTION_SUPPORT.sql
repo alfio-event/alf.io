@@ -21,6 +21,10 @@ create type ALLOCATION_STATUS as enum ('FREE', 'PRE_RESERVED', 'PENDING', 'TO_BE
                                         'CHECKED_IN', 'EXPIRED',
                                         'INVALIDATED', 'RELEASED');
 
+create type VAT_STATUS as enum(
+    'NONE', 'INCLUDED', 'NOT_INCLUDED',
+    'INCLUDED_EXEMPT', 'NOT_INCLUDED_EXEMPT');
+
 create table subscription_descriptor (
     id bigserial primary key not null,
     title jsonb not null,
@@ -30,6 +34,8 @@ create table subscription_descriptor (
     valid_from timestamp with time zone not null,
     valid_to timestamp with time zone,
     price_cts integer not null,
+    vat decimal(5,2) not null,
+    vat_status VAT_STATUS not null check (vat_status in('NONE', 'INCLUDED', 'NOT_INCLUDED')),
     currency text,
     availability SUBSCRIPTION_AVAILABILITY not null default 'ONCE_PER_EVENT',
     is_public boolean not null default false,

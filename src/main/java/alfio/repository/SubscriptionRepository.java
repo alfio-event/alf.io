@@ -16,12 +16,14 @@
  */
 package alfio.repository;
 
+import alfio.model.PriceContainer;
 import alfio.model.SubscriptionDescriptor;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +31,12 @@ import java.util.Map;
 @QueryRepository
 public interface SubscriptionRepository {
 
-    @Query("insert into subscription_descriptor (max_entries, valid_from, valid_to, price_cts, currency, availability, is_public, title, description, organization_id_fk) " +
-           " values(:maxEntries, :validFrom, :validTo, :priceCts, :currency, :availability::SUBSCRIPTION_AVAILABILITY, :isPublic, :title::jsonb, :description::jsonb, :organizationId)")
+    @Query("insert into subscription_descriptor (max_entries, valid_from, valid_to, price_cts, vat, vat_status, currency, availability, is_public, title, description, organization_id_fk) " +
+           " values(:maxEntries, :validFrom, :validTo, :priceCts, :vat, :vatStatus::VAT_STATUS, :currency, :availability::SUBSCRIPTION_AVAILABILITY, :isPublic, :title::jsonb, :description::jsonb, :organizationId)")
     int createSubscriptionDescriptor(@Bind("maxEntries") int maxEntries,
                                      @Bind("validFrom") ZonedDateTime validFrom, @Bind("validTo") ZonedDateTime validTo,
-                                     @Bind("priceCts") int priceCts, @Bind("currency") String currency,
+                                     @Bind("priceCts") int priceCts, @Bind("vat") BigDecimal vat,
+                                     @Bind("vatStatus") PriceContainer.VatStatus vatStatus, @Bind("currency") String currency,
                                      @Bind("availability") SubscriptionDescriptor.SubscriptionAvailability availability,
                                      @Bind("isPublic") boolean isPublic,
                                      @Bind("title") @JSONData Map<String, String> title,

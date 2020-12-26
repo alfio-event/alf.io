@@ -40,7 +40,8 @@ public class SubscriptionManager {
     public boolean createSubscriptionDescriptor(SubscriptionDescriptor subscriptionDescriptor) {
         return subscriptionRepository.createSubscriptionDescriptor(subscriptionDescriptor.getMaxEntries(),
             subscriptionDescriptor.getValidFrom(), subscriptionDescriptor.getValidTo(),
-            subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(),
+            subscriptionDescriptor.getPrice(), subscriptionDescriptor.getVat(),
+            subscriptionDescriptor.getVatStatus(), subscriptionDescriptor.getCurrency(),
             subscriptionDescriptor.getAvailability(), subscriptionDescriptor.isPublic(),
             subscriptionDescriptor.getTitle(), subscriptionDescriptor.getDescription(),
             subscriptionDescriptor.getOrganizationId()) == 1;

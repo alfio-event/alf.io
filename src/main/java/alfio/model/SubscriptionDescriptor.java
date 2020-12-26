@@ -21,6 +21,7 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
@@ -37,6 +38,8 @@ public class SubscriptionDescriptor {
     private final ZonedDateTime validFrom;
     private final ZonedDateTime validTo;
     private final int price;
+    private final BigDecimal vat;
+    private final PriceContainer.VatStatus vatStatus;
     private final String currency;
     private final SubscriptionAvailability availability;
     private final boolean isPublic;
@@ -50,6 +53,8 @@ public class SubscriptionDescriptor {
                                   @JsonProperty("validFrom") @Column("valid_from") ZonedDateTime validFrom,
                                   @JsonProperty("validTo") @Column("valid_to") ZonedDateTime validTo,
                                   @JsonProperty("priceCts") @Column("price_cts") int price,
+                                  @JsonProperty("vat") @Column("vat") BigDecimal vat,
+                                  @JsonProperty("vatStatus") @Column("vat_status")PriceContainer.VatStatus vatStatus,
                                   @JsonProperty("currency") @Column("currency") String currency,
                                   @JsonProperty("availability") @Column("availability") SubscriptionAvailability availability,
                                   @JsonProperty("isPublic") @Column("is_public") boolean isPublic,
@@ -62,6 +67,8 @@ public class SubscriptionDescriptor {
         this.validFrom = validFrom;
         this.validTo = validTo;
         this.price = price;
+        this.vat = vat;
+        this.vatStatus = vatStatus;
         this.currency = currency;
         this.availability = availability;
         this.isPublic = isPublic;

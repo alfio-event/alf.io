@@ -52,7 +52,7 @@ public class SubscriptionApiController {
     public ResponseEntity<Boolean> create(@PathVariable("organizationId") int organizationId,
                        @RequestBody SubscriptionDescriptor subscriptionDescriptor,
                        Principal principal) {
-        if (userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
+        if (organizationId == subscriptionDescriptor.getOrganizationId() && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
             return ResponseEntity.ok(subscriptionManager.createSubscriptionDescriptor(subscriptionDescriptor));
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
