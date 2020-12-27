@@ -23,6 +23,7 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Getter
 public class SubscriptionDescriptor {
@@ -31,7 +32,7 @@ public class SubscriptionDescriptor {
         ONCE_PER_EVENT, UNLIMITED
     }
 
-    private final long id;
+    private final UUID id;
     private final int maxEntries;
     private final ZonedDateTime creation;
     private final ZonedDateTime validFrom;
@@ -46,7 +47,7 @@ public class SubscriptionDescriptor {
     private final Map<String, String> description;
     private final int organizationId;
 
-    public SubscriptionDescriptor(@Column("id") long id,
+    public SubscriptionDescriptor(@Column("id") UUID id,
                                   @Column("max_entries") int maxEntries,
                                   @Column("creation_ts") ZonedDateTime creation,
                                   @Column("valid_from") ZonedDateTime validFrom,

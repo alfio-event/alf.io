@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @Transactional
@@ -40,9 +41,11 @@ public class SubscriptionManager {
         return subscriptionRepository.findAllByOrganizationIds(organizationId);
     }
 
-    public Optional<Long> createSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
+    public Optional<UUID> createSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
+        var id = UUID.randomUUID();
         var result = subscriptionRepository.createSubscriptionDescriptor(
-            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), 0),
+            id,
+            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
             subscriptionDescriptor.getValidFrom(),
             subscriptionDescriptor.getValidTo(),
             subscriptionDescriptor.getPriceCts(),
@@ -55,10 +58,7 @@ public class SubscriptionManager {
             subscriptionDescriptor.getDescription(),
             subscriptionDescriptor.getOrganizationId());
 
-        if(result.getAffectedRowCount() == 1) {
-            return Optional.of(result.getKey());
-        }
-        return Optional.empty();
+        return result == 1 ? Optional.of(id) : Optional.empty();
     }
 
     public List<SubscriptionDescriptor> getActivePublicSubscriptionsDescriptor() {

@@ -26,7 +26,7 @@ create type VAT_STATUS as enum(
     'INCLUDED_EXEMPT', 'NOT_INCLUDED_EXEMPT');
 
 create table subscription_descriptor (
-    id bigserial primary key not null,
+    id uuid primary key not null,
     title jsonb not null,
     description jsonb,
     max_entries int not null default 0,
@@ -54,7 +54,7 @@ create table subscription (
     last_name text not null,
     email_address text not null,
     code text not null constraint subscription_code_unique unique,
-    subscription_descriptor_fk bigint not null constraint subscription_subscription_descriptor_fk references subscription_descriptor(id),
+    subscription_descriptor_fk uuid not null constraint subscription_subscription_descriptor_fk references subscription_descriptor(id),
     reservation_id_fk character(36) not null constraint subscription_reservation_id_fk references tickets_reservation(id),
     usage_count integer not null,
     organization_id_fk int not null constraint subscription_organization_id_fk references organization(id),

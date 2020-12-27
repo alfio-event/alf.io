@@ -19,8 +19,10 @@ package alfio.controller.api.v2.model;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 @AllArgsConstructor
 public class BasicSubscriptionInfo {
-    private final long id;
+    private final UUID id;
 }

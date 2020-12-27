@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/admin/api/organization/{organizationId}/subscription")
@@ -50,9 +51,9 @@ public class SubscriptionApiController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<Long> create(@PathVariable("organizationId") int organizationId,
-                       @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
-                       Principal principal) {
+    public ResponseEntity<UUID> create(@PathVariable("organizationId") int organizationId,
+                                       @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
+                                       Principal principal) {
         if (organizationId == subscriptionDescriptor.getOrganizationId() && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
             return ResponseEntity.of(subscriptionManager.createSubscriptionDescriptor(subscriptionDescriptor));
         } else {
