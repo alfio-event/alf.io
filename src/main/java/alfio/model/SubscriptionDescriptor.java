@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.PriceContainer.VatStatus;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
@@ -28,52 +29,81 @@ import java.util.UUID;
 @Getter
 public class SubscriptionDescriptor {
 
-    public enum SubscriptionAvailability {
+    public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED
     }
 
+    public enum SubscriptionTimeUnit {
+        DAYS, MONTHS, YEARS
+    }
+
+    public enum SubscriptionValidityType {
+        STANDARD, CUSTOM, NOT_SET
+    }
+
     private final UUID id;
-    private final int maxEntries;
-    private final ZonedDateTime creation;
-    private final ZonedDateTime validFrom;
-    private final ZonedDateTime validTo;
-    private final int price;
-    private final BigDecimal vat;
-    private final PriceContainer.VatStatus vatStatus;
-    private final String currency;
-    private final SubscriptionAvailability availability;
-    private final boolean isPublic;
     private final Map<String, String> title;
     private final Map<String, String> description;
+    private final int maxAvailable;
+    private final ZonedDateTime creation;
+    private final ZonedDateTime onSaleFrom;
+    private final ZonedDateTime onSaleTo;
+    private final int price;
+    private final BigDecimal vat;
+    private final VatStatus vatStatus;
+    private final String currency;
+    private final boolean isPublic;
     private final int organizationId;
 
+    private final int maxEntries;
+    private final SubscriptionValidityType validityType;
+    private final SubscriptionTimeUnit validityTimeUnit;
+    private final Integer validityUnits;
+    private final ZonedDateTime validityFrom;
+    private final ZonedDateTime validityTo;
+    private final SubscriptionUsageType usageType;
+
     public SubscriptionDescriptor(@Column("id") UUID id,
-                                  @Column("max_entries") int maxEntries,
-                                  @Column("creation_ts") ZonedDateTime creation,
-                                  @Column("valid_from") ZonedDateTime validFrom,
-                                  @Column("valid_to") ZonedDateTime validTo,
-                                  @Column("price_cts") int price,
-                                  @Column("vat") BigDecimal vat,
-                                  @Column("vat_status")PriceContainer.VatStatus vatStatus,
-                                  @Column("currency") String currency,
-                                  @Column("availability") SubscriptionAvailability availability,
-                                  @Column("is_public") boolean isPublic,
                                   @Column("title") @JSONData Map<String, String> title,
                                   @Column("description") @JSONData Map<String, String> description,
-                                  @Column("organization_id_fk") int organizationId) {
+                                  @Column("max_available") int maxAvailable,
+                                  @Column("creation_ts") ZonedDateTime creation,
+                                  @Column("on_sale_from") ZonedDateTime onSaleFrom,
+                                  @Column("on_sale_to") ZonedDateTime onSaleTo,
+                                  @Column("price_cts") int price,
+                                  @Column("vat") BigDecimal vat,
+                                  @Column("vat_status") VatStatus vatStatus,
+                                  @Column("currency") String currency,
+                                  @Column("is_public") boolean isPublic,
+                                  @Column("organization_id_fk") int organizationId,
+
+                                  @Column("max_entries") int maxEntries,
+                                  @Column("validity_type") SubscriptionValidityType validityType,
+                                  @Column("validity_time_unit") SubscriptionTimeUnit validityTimeUnit,
+                                  @Column("validity_units") Integer validityUnits,
+                                  @Column("validity_from") ZonedDateTime validityFrom,
+                                  @Column("validity_to") ZonedDateTime validityTo,
+                                  @Column("usage_type") SubscriptionUsageType usageType) {
         this.id = id;
-        this.maxEntries = maxEntries;
+        this.title = title;
+        this.description = description;
+        this.maxAvailable = maxAvailable;
         this.creation = creation;
-        this.validFrom = validFrom;
-        this.validTo = validTo;
+        this.onSaleFrom = onSaleFrom;
+        this.onSaleTo = onSaleTo;
         this.price = price;
         this.vat = vat;
         this.vatStatus = vatStatus;
         this.currency = currency;
-        this.availability = availability;
         this.isPublic = isPublic;
-        this.title = title;
-        this.description = description;
         this.organizationId = organizationId;
+
+        this.maxEntries = maxEntries;
+        this.validityType = validityType;
+        this.validityTimeUnit = validityTimeUnit;
+        this.validityUnits = validityUnits;
+        this.validityFrom = validityFrom;
+        this.validityTo = validityTo;
+        this.usageType = usageType;
     }
 }

@@ -45,18 +45,25 @@ public class SubscriptionManager {
         var id = UUID.randomUUID();
         var result = subscriptionRepository.createSubscriptionDescriptor(
             id,
-            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
-            subscriptionDescriptor.getValidFrom(),
-            subscriptionDescriptor.getValidTo(),
+            subscriptionDescriptor.getTitle(),
+            subscriptionDescriptor.getDescription(),
+            Objects.requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1),
+            subscriptionDescriptor.getOnSaleFrom(),
+            subscriptionDescriptor.getOnSaleTo(),
             subscriptionDescriptor.getPriceCts(),
             subscriptionDescriptor.getVat(),
             subscriptionDescriptor.getVatStatus(),
             subscriptionDescriptor.getCurrency(),
-            subscriptionDescriptor.getAvailability(),
             Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
-            subscriptionDescriptor.getTitle(),
-            subscriptionDescriptor.getDescription(),
-            subscriptionDescriptor.getOrganizationId());
+            subscriptionDescriptor.getOrganizationId(),
+
+            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
+            subscriptionDescriptor.getValidityType(),
+            subscriptionDescriptor.getValidityTimeUnit(),
+            subscriptionDescriptor.getValidityUnits(),
+            subscriptionDescriptor.getValidityFrom(),
+            subscriptionDescriptor.getValidityTo(),
+            subscriptionDescriptor.getUsageType());
 
         return result == 1 ? Optional.of(id) : Optional.empty();
     }

@@ -15,8 +15,9 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-
-create type SUBSCRIPTION_AVAILABILITY as enum ('ONCE_PER_EVENT', 'UNLIMITED');
+create type SUBSCRIPTION_TIME_UNIT as enum ('DAYS', 'MONTHS', 'YEARS');
+create type SUBSCRIPTION_VALIDITY_TYPE as enum ('STANDARD', 'CUSTOM', 'NOT_SET');
+create type SUBSCRIPTION_USAGE_TYPE as enum ('ONCE_PER_EVENT', 'UNLIMITED');
 create type ALLOCATION_STATUS as enum ('FREE', 'PRE_RESERVED', 'PENDING', 'TO_BE_PAID', 'ACQUIRED', 'CANCELLED',
                                         'CHECKED_IN', 'EXPIRED',
                                         'INVALIDATED', 'RELEASED');
@@ -29,17 +30,25 @@ create table subscription_descriptor (
     id uuid primary key not null,
     title jsonb not null,
     description jsonb,
-    max_entries int not null default 0,
+    max_available integer not null default -1,
     creation_ts timestamp with time zone not null default now(),
-    valid_from timestamp with time zone not null,
-    valid_to timestamp with time zone,
+    on_sale_from timestamp with time zone not null,
+    on_sale_to timestamp with time zone,
     price_cts integer not null,
     vat decimal(5,2) not null,
     vat_status VAT_STATUS not null check (vat_status in('NONE', 'INCLUDED', 'NOT_INCLUDED')),
     currency text,
-    availability SUBSCRIPTION_AVAILABILITY not null default 'ONCE_PER_EVENT',
     is_public boolean not null default false,
-    organization_id_fk int not null constraint subscription_descriptor_organization_id_fk references organization(id)
+    organization_id_fk integer not null constraint subscription_descriptor_organization_id_fk references organization(id),
+
+    -- subscription template
+    max_entries integer not null default -1,
+    validity_type SUBSCRIPTION_VALIDITY_TYPE not null,
+    validity_time_unit SUBSCRIPTION_TIME_UNIT check (validity_type <> 'STANDARD' OR validity_time_unit is not null),
+    validity_units integer check (validity_type <> 'STANDARD' OR (validity_units is not null AND validity_units > 0)),
+    validity_from timestamp with time zone check (validity_type <> 'CUSTOM' OR validity_from is not null),
+    validity_to timestamp with time zone,
+    usage_type SUBSCRIPTION_USAGE_TYPE not null default 'ONCE_PER_EVENT'
 );
 
 alter table subscription_descriptor enable row level security;
@@ -57,7 +66,14 @@ create table subscription (
     subscription_descriptor_fk uuid not null constraint subscription_subscription_descriptor_fk references subscription_descriptor(id),
     reservation_id_fk character(36) not null constraint subscription_reservation_id_fk references tickets_reservation(id),
     usage_count integer not null,
-    organization_id_fk int not null constraint subscription_organization_id_fk references organization(id),
+    max_usage integer,
+    valid_from timestamp with time zone not null default now(),
+    valid_to timestamp with time zone,
+    src_price_cts integer not null default 0,
+    final_price_cts integer not null default 0,
+    vat_cts integer not null default 0,
+    discount_cts integer not null default 0,
+    organization_id_fk integer not null constraint subscription_organization_id_fk references organization(id),
     creation_ts timestamp with time zone not null default now(),
     update_ts timestamp with time zone,
     status ALLOCATION_STATUS not null default 'FREE'
@@ -71,10 +87,10 @@ create policy subscription_access_policy on subscription to public
 
 create table subscription_event (
     id bigserial primary key not null,
-    event_id_fk int not null references event(id),
+    event_id_fk integer not null references event(id),
     subscription_id_fk uuid not null constraint subscription_event_subscription_id_fk references subscription(id),
     price_per_ticket integer not null default 0,
-    organization_id_fk int not null constraint subscription_event_organization_id_fk references organization(id)
+    organization_id_fk integer not null constraint subscription_event_organization_id_fk references organization(id)
 );
 
 alter table subscription_event enable row level security;

@@ -85,18 +85,24 @@ public class SubscriptionManagerIntegrationTest {
         int orgId = organizationRepository.getIdByName(organizationName);
         assertTrue(subscriptionManager.findAll(orgId).isEmpty());
         subscriptionManager.createSubscriptionDescriptor(new SubscriptionDescriptorModification(null,
+            Map.of("en", "title"),
+            Map.of("en", "description"),
             42,
-            ZonedDateTime.now(ClockProvider.clock()).minusDays(1),
-            ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
+            ZonedDateTime.now(ClockProvider.clock()),
+            null,
             new BigDecimal("100"),
             new BigDecimal("7.7"),
             PriceContainer.VatStatus.INCLUDED,
             "CHF",
-            SubscriptionDescriptor.SubscriptionAvailability.ONCE_PER_EVENT,
             true,
-            Map.of("en", "title"),
-            Map.of("en", "description"),
-            orgId));
+            orgId,
+            42,
+            SubscriptionDescriptor.SubscriptionValidityType.CUSTOM,
+            null,
+            null,
+            ZonedDateTime.now(ClockProvider.clock()).minusDays(1),
+            ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
+            SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT));
         var res = subscriptionManager.findAll(orgId);
         assertEquals(1, res.size());
         var descriptor = res.get(0);
