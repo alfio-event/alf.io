@@ -44,4 +44,7 @@ public interface SubscriptionRepository {
 
     @Query("select * from subscription_descriptor where organization_id_fk = :organizationId order by creation_ts asc")
     List<SubscriptionDescriptor> findAllByOrganizationIds(@Bind("organizationId") int organizationId);
+
+    @Query("select * from subscription_descriptor where is_public = true and (max_entries > 0 or max_entries = -1) and valid_from <= now() and valid_to >= now() order by valid_from asc")
+    List<SubscriptionDescriptor> findAllActiveAndPublic();
 }

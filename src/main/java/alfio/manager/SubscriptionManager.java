@@ -60,4 +60,8 @@ public class SubscriptionManager {
         }
         return Optional.empty();
     }
+
+    public List<SubscriptionDescriptor> getActivePublicSubscriptionsDescriptor() {
+        return subscriptionRepository.findAllActiveAndPublic();
+    }
 }
