@@ -22,6 +22,7 @@ import alfio.repository.SubscriptionRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -68,7 +69,7 @@ public class SubscriptionManager {
         return result == 1 ? Optional.of(id) : Optional.empty();
     }
 
-    public List<SubscriptionDescriptor> getActivePublicSubscriptionsDescriptor() {
-        return subscriptionRepository.findAllActiveAndPublic();
+    public List<SubscriptionDescriptor> getActivePublicSubscriptionsDescriptor(ZonedDateTime from) {
+        return subscriptionRepository.findAllActiveAndPublic(from);
     }
 }

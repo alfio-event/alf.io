@@ -109,6 +109,10 @@ public class SubscriptionManagerIntegrationTest {
         assertEquals("title", descriptor.getTitle().get("en"));
         assertEquals("description", descriptor.getDescription().get("en"));
         assertEquals(10000, descriptor.getPrice());
+
+        var publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()));
+        assertEquals(1, publicSubscriptions.size());
+        assertEquals(res.get(0).getId(), publicSubscriptions.get(0).getId());
     }
 
 }

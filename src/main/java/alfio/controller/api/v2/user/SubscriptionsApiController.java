@@ -18,11 +18,13 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.v2.model.BasicSubscriptionInfo;
 import alfio.manager.SubscriptionManager;
+import alfio.util.ClockProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,7 +40,8 @@ public class SubscriptionsApiController {
 
     @GetMapping("subscriptions")
     public ResponseEntity<List<BasicSubscriptionInfo>> listSubscriptions(/* TODO search by: organizer, tag, subscription */) {
-        var activeSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor()
+        var now = ZonedDateTime.now(ClockProvider.clock());
+        var activeSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(now)
             .stream()
             .map(s -> new BasicSubscriptionInfo(s.getId()))
             .collect(Collectors.toList());
