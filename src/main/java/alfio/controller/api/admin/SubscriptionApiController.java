@@ -50,12 +50,49 @@ public class SubscriptionApiController {
 
     }
 
+    @GetMapping("/{subscriptionId}")
+    ResponseEntity<SubscriptionDescriptorModification> getSingle(@PathVariable("organizationId") int organizationId,
+                                                                 @PathVariable("subscriptionId") UUID subscriptionId,
+                                                                 Principal principal) {
+        if(userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
+            return ResponseEntity.of(subscriptionManager.findOne(subscriptionId, organizationId).map(SubscriptionDescriptorModification::fromModel));
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
     @PostMapping("/")
-    public ResponseEntity<UUID> create(@PathVariable("organizationId") int organizationId,
-                                       @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
-                                       Principal principal) {
+    ResponseEntity<UUID> create(@PathVariable("organizationId") int organizationId,
+                                @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
+                                Principal principal) {
         if (organizationId == subscriptionDescriptor.getOrganizationId() && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
             return ResponseEntity.of(subscriptionManager.createSubscriptionDescriptor(subscriptionDescriptor));
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    @PostMapping("/{subscriptionId}")
+    ResponseEntity<UUID> create(@PathVariable("organizationId") int organizationId,
+                                       @PathVariable("subscriptionId") UUID subscriptionId,
+                                       @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
+                                       Principal principal) {
+        if (organizationId == subscriptionDescriptor.getOrganizationId()
+            && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())
+            && subscriptionId.equals(subscriptionDescriptor.getId())
+        ) {
+            return ResponseEntity.of(subscriptionManager.updateSubscriptionDescriptor(subscriptionDescriptor));
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    @PatchMapping("/{subscriptionId}/is-public")
+    ResponseEntity<Boolean> setPublicState(@PathVariable("organizationId") int organizationId,
+                                                  @PathVariable("subscriptionId") UUID subscriptionId,
+                                                  @RequestParam("status") boolean status,
+                                                  Principal principal) {
+        if (userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
+            return ResponseEntity.ok(subscriptionManager.setPublicStatus(subscriptionId, organizationId, status));
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

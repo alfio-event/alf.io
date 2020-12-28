@@ -44,7 +44,7 @@ public class SubscriptionManager {
 
     public Optional<UUID> createSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
         var id = UUID.randomUUID();
-        var result = subscriptionRepository.createSubscriptionDescriptor(
+        int result = subscriptionRepository.createSubscriptionDescriptor(
             id,
             subscriptionDescriptor.getTitle(),
             subscriptionDescriptor.getDescription(),
@@ -67,6 +67,41 @@ public class SubscriptionManager {
             subscriptionDescriptor.getUsageType());
 
         return result == 1 ? Optional.of(id) : Optional.empty();
+    }
+
+    public Optional<UUID> updateSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
+        int result = subscriptionRepository.updateSubscriptionDescriptor(
+            subscriptionDescriptor.getTitle(),
+            subscriptionDescriptor.getDescription(),
+            Objects.requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1),
+            subscriptionDescriptor.getOnSaleFrom(),
+            subscriptionDescriptor.getOnSaleTo(),
+            subscriptionDescriptor.getPriceCts(),
+            subscriptionDescriptor.getVat(),
+            subscriptionDescriptor.getVatStatus(),
+            subscriptionDescriptor.getCurrency(),
+            Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
+
+            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
+            subscriptionDescriptor.getValidityType(),
+            subscriptionDescriptor.getValidityTimeUnit(),
+            subscriptionDescriptor.getValidityUnits(),
+            subscriptionDescriptor.getValidityFrom(),
+            subscriptionDescriptor.getValidityTo(),
+            subscriptionDescriptor.getUsageType(),
+
+            subscriptionDescriptor.getId(),
+            subscriptionDescriptor.getOrganizationId()
+        );
+        return result == 1 ? Optional.of(subscriptionDescriptor.getId()) : Optional.empty();
+    }
+
+    public Optional<SubscriptionDescriptor> findOne(UUID id, int organizationId) {
+        return subscriptionRepository.findOne(id, organizationId);
+    }
+
+    public boolean setPublicStatus(UUID id, int organizationId, boolean isPublic) {
+        return subscriptionRepository.setPublicStatus(id, organizationId, isPublic) == 1;
     }
 
     public List<SubscriptionDescriptor> getActivePublicSubscriptionsDescriptor(ZonedDateTime from) {

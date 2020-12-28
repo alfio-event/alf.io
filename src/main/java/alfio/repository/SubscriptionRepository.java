@@ -30,6 +30,7 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @QueryRepository
@@ -62,9 +63,42 @@ public interface SubscriptionRepository {
                                      @Bind("validityTo") ZonedDateTime validityTo,
                                      @Bind("usageType") SubscriptionUsageType usageType);
 
+    @Query("update subscription_descriptor set title = :title::jsonb, description = :description::jsonb, max_available = :maxAvailable," +
+        " on_sale_from = :onSaleFrom, on_sale_to = :onSaleTo, price_cts = :priceCts, vat = :vat, vat_status = :vatStatus::VAT_STATUS, " +
+        " currency = :currency, is_public = :isPublic, max_entries = :maxEntries, validity_type = :validityType::SUBSCRIPTION_VALIDITY_TYPE," +
+        " validity_time_unit = :validityTimeUnit::SUBSCRIPTION_TIME_UNIT, validity_units = :validityUnits, validity_from = :validityFrom," +
+        " validity_to = :validityTo, usage_type = :usageType::SUBSCRIPTION_USAGE_TYPE where id = :id and organization_id_fk = :organizationId")
+    int updateSubscriptionDescriptor(@Bind("title") @JSONData Map<String, String> title,
+                                     @Bind("description") @JSONData Map<String, String> description,
+                                     @Bind("maxAvailable") int maxAvailable,
+                                     @Bind("onSaleFrom") ZonedDateTime onSaleFrom,
+                                     @Bind("onSaleTo") ZonedDateTime onSaleTo,
+                                     @Bind("priceCts") int priceCts,
+                                     @Bind("vat") BigDecimal vat,
+                                     @Bind("vatStatus") VatStatus vatStatus,
+                                     @Bind("currency") String currency,
+                                     @Bind("isPublic") boolean isPublic,
+
+                                     @Bind("maxEntries") int maxEntries,
+                                     @Bind("validityType") SubscriptionValidityType validityType,
+                                     @Bind("validityTimeUnit") SubscriptionTimeUnit validityTimeUnit,
+                                     @Bind("validityUnits") Integer validityUnits,
+                                     @Bind("validityFrom") ZonedDateTime validityFrom,
+                                     @Bind("validityTo") ZonedDateTime validityTo,
+                                     @Bind("usageType") SubscriptionUsageType usageType,
+
+                                     @Bind("id") UUID id,
+                                     @Bind("organizationId") int organizationId);
+
+    @Query("update subscription_descriptor set is_public = :isPublic where id = :id and organization_id_fk = :organizationId")
+    int setPublicStatus(@Bind("id") UUID id, @Bind("organizationId") int organizationId, @Bind("isPublic") boolean isPublic);
+
     @Query("select * from subscription_descriptor where organization_id_fk = :organizationId order by creation_ts asc")
     List<SubscriptionDescriptor> findAllByOrganizationIds(@Bind("organizationId") int organizationId);
 
     @Query("select * from subscription_descriptor where is_public = true and (max_entries > 0 or max_entries = -1) and (on_sale_from is null or :from >= on_sale_from)  and (on_sale_to is null or :from <= on_sale_to) order by on_sale_from asc")
     List<SubscriptionDescriptor> findAllActiveAndPublic(@Bind("from") ZonedDateTime from);
+
+    @Query("select * from subscription_descriptor where id = :id and organization_id_fk = :organizationId")
+    Optional<SubscriptionDescriptor> findOne(@Bind("id") UUID id, @Bind("organizationId") int organizationId);
 }

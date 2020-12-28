@@ -143,6 +143,17 @@
             }
         }
 
+        function evaluatePresetName(subscription) {
+            switch(subscription.validityType) {
+                case "NOT_SET":
+                    return "multipleEntries";
+                case "CUSTOM":
+                    return "custom";
+                default:
+                    return "period";
+            }
+        }
+
         ctrl.selectPreset = function(name, event) {
             if(event) {
                 event.preventDefault();
@@ -155,7 +166,7 @@
             var promises = [EventService.getSupportedLanguages(), UtilsService.getAvailableCurrencies()];
             if(ctrl.subscriptionId) {
                 ctrl.existing = true;
-                promises.push($q.resolve({}));
+                promises.push(SubscriptionService.loadDescriptor(ctrl.organizationId, ctrl.subscriptionId));
             } else {
                 promises.push($q.resolve({
                     data: {
@@ -173,28 +184,36 @@
                 ctrl.languages = res[0].data;
                 ctrl.currencies = res[1].data;
                 ctrl.subscription = res[2].data;
-                if(ctrl.subscription.validFrom) {
-                    ctrl.subscription.validFromModel = SubscriptionService.dateToDateTimeObject(ctrl.subscription.validFrom);
-                } else {
-                    ctrl.subscription.validFromModel = SubscriptionService.dateToDateTimeObject(moment());
-                }
-                if(ctrl.subscription.validTo) {
-                    ctrl.subscription.validToModel = SubscriptionService.dateToDateTimeObject(ctrl.subscription.validTo);
-                }
                 if(ctrl.existing) {
-                    ctrl.selectedLanguages = Object.keys(ctrl.subscription.title).map(function(key) {
-                        return _.find(ctrl.languages, function(lang) {
-                            return lang.locale === key;
-                        });
-                    });
+                    initExistingSubscription();
                 } else {
                     ctrl.selectedLanguages = [ctrl.languages[0]]
                 }
                 refreshAvailableLanguages();
             });
-
-
         }
+
+        ctrl.toggleVisibility = function() {
+            SubscriptionService.toggleVisibility(ctrl.subscription).then(function(res) {
+                reloadSubscription();
+            });
+        };
+
+        var initExistingSubscription = function() {
+            ctrl.selectedLanguages = Object.keys(ctrl.subscription.title).map(function(key) {
+                return _.find(ctrl.languages, function(lang) {
+                    return lang.locale === key;
+                });
+            });
+            ctrl.preset = evaluatePresetName(ctrl.subscription);
+        }
+
+        var reloadSubscription = function() {
+            SubscriptionService.loadDescriptor(ctrl.organizationId, ctrl.subscription.id).then(function(res) {
+                ctrl.subscription = res.data;
+                initExistingSubscription();
+            });
+        };
 
         ctrl.selectLanguage = function(language) {
             ctrl.selectedLanguages.push(language);
@@ -219,7 +238,9 @@
             }
             if(ctrl.existing) {
                 // edit existing subscription
-                // TODO edit
+                SubscriptionService.update(subscription).then(function(res) {
+                    reloadSubscription();
+                })
             } else {
                 // insert new
                 SubscriptionService.createNew(subscription).then(function(res) {
@@ -240,32 +261,26 @@
                 return $http.get('/admin/api/organization/'+organizationId+'/subscription/list')
                     .error(HttpErrorHandler.handle);
             },
+            loadDescriptor: function(organizationId, subscriptionId) {
+                return $http.get('/admin/api/organization/'+organizationId+'/subscription/'+subscriptionId)
+                    .error(HttpErrorHandler.handle);
+            },
             createNew: function(subscription) {
-                var payload = {
-                    id: subscription.id,
-                    title: subscription.title,
-                    description: subscription.description,
-                    maxAvailable: subscription.maxAvailable,
-                    onSaleFrom: self.dateTimeObjectToDate(subscription.onSaleFromModel),
-                    onSaleTo: self.dateTimeObjectToDate(subscription.onSaleToModel),
-                    price: subscription.price,
-                    vat: subscription.vat,
-                    currency: subscription.currency,
-                    vatStatus: subscription.vatStatus,
-                    isPublic: subscription.isPublic,
-                    organizationId: subscription.organizationId,
-
-                    maxEntries: subscription.maxEntries,
-                    validityType: subscription.validityType,
-                    validityTimeUnit: subscription.validityTimeUnit,
-                    validityUnits: subscription.validityUnits,
-                    validityFrom: self.dateTimeObjectToDate(subscription.validityFromModel),
-                    validityTo: self.dateTimeObjectToDate(subscription.validityToModel),
-                    usageType: subscription.usageType,
-                };
-
+                var payload = self.modelToSubscriptionPayload(subscription);
                 return $http.post('/admin/api/organization/'+payload.organizationId+'/subscription/', payload)
                     .error(HttpErrorHandler.handle);
+            },
+            update: function(subscription) {
+                var payload = self.modelToSubscriptionPayload(subscription);
+                return $http.post('/admin/api/organization/'+payload.organizationId+'/subscription/'+subscription.id, payload)
+                    .error(HttpErrorHandler.handle);
+            },
+            toggleVisibility: function(subscription) {
+                return $http.patch('/admin/api/organization/'+subscription.organizationId+'/subscription/'+subscription.id+'/is-public', null, {
+                    params: {
+                        'status': !subscription.isPublic
+                    }
+                }).error(HttpErrorHandler.handle);
             },
             subscriptionAvailabilityTypes: {
                 'ONCE_PER_EVENT': 'Once per Event',
@@ -301,6 +316,30 @@
                     return moment(obj.date + ' ' + obj.time, 'YYYY-MM-DD HH:mm');
                 }
                 return null;
+            },
+            modelToSubscriptionPayload: function(subscription) {
+                return {
+                    id: subscription.id,
+                    title: subscription.title,
+                    description: subscription.description,
+                    maxAvailable: subscription.maxAvailable,
+                    onSaleFrom: self.dateTimeObjectToDate(subscription.onSaleFromModel),
+                    onSaleTo: self.dateTimeObjectToDate(subscription.onSaleToModel),
+                    price: subscription.price,
+                    vat: subscription.vat,
+                    currency: subscription.currency,
+                    vatStatus: subscription.vatStatus,
+                    isPublic: subscription.isPublic,
+                    organizationId: subscription.organizationId,
+
+                    maxEntries: subscription.maxEntries,
+                    validityType: subscription.validityType,
+                    validityTimeUnit: subscription.validityTimeUnit,
+                    validityUnits: subscription.validityUnits,
+                    validityFrom: self.dateTimeObjectToDate(subscription.validityFromModel),
+                    validityTo: self.dateTimeObjectToDate(subscription.validityToModel),
+                    usageType: subscription.usageType,
+                };
             }
         };
         return self;

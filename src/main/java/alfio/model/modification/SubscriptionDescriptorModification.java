@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import alfio.model.PriceContainer.VatStatus;
+import alfio.model.SubscriptionDescriptor;
 import alfio.model.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.SubscriptionDescriptor.SubscriptionUsageType;
 import alfio.model.SubscriptionDescriptor.SubscriptionValidityType;
@@ -94,5 +95,45 @@ public class SubscriptionDescriptorModification {
 
     public int getPriceCts() {
         return MonetaryUtil.unitToCents(price, currency);
+    }
+
+    public DateTimeModification getValidityFromModel() {
+        return DateTimeModification.fromZonedDateTime(validityFrom);
+    }
+
+    public DateTimeModification getValidityToModel() {
+        return DateTimeModification.fromZonedDateTime(validityTo);
+    }
+
+    public DateTimeModification getOnSaleFromModel() {
+        return DateTimeModification.fromZonedDateTime(onSaleFrom);
+    }
+
+    public DateTimeModification getOnSaleToModel() {
+        return DateTimeModification.fromZonedDateTime(onSaleTo);
+    }
+
+    public static SubscriptionDescriptorModification fromModel(SubscriptionDescriptor subscriptionDescriptor) {
+        return new SubscriptionDescriptorModification(
+            subscriptionDescriptor.getId(),
+            subscriptionDescriptor.getTitle(),
+            subscriptionDescriptor.getDescription(),
+            subscriptionDescriptor.getMaxAvailable(),
+            subscriptionDescriptor.getOnSaleFrom(),
+            subscriptionDescriptor.getOnSaleTo(),
+            MonetaryUtil.centsToUnit(subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency()),
+            subscriptionDescriptor.getVat(),
+            subscriptionDescriptor.getVatStatus(),
+            subscriptionDescriptor.getCurrency(),
+            subscriptionDescriptor.isPublic(),
+            subscriptionDescriptor.getOrganizationId(),
+            subscriptionDescriptor.getMaxEntries(),
+            subscriptionDescriptor.getValidityType(),
+            subscriptionDescriptor.getValidityTimeUnit(),
+            subscriptionDescriptor.getValidityUnits(),
+            subscriptionDescriptor.getValidityFrom(),
+            subscriptionDescriptor.getValidityTo(),
+            subscriptionDescriptor.getUsageType()
+        );
     }
 }

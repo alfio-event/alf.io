@@ -84,25 +84,7 @@ public class SubscriptionManagerIntegrationTest {
         userManager.createOrganization(organizationName, "desc", "email@example.com");
         int orgId = organizationRepository.getIdByName(organizationName);
         assertTrue(subscriptionManager.findAll(orgId).isEmpty());
-        subscriptionManager.createSubscriptionDescriptor(new SubscriptionDescriptorModification(null,
-            Map.of("en", "title"),
-            Map.of("en", "description"),
-            42,
-            ZonedDateTime.now(ClockProvider.clock()),
-            null,
-            new BigDecimal("100"),
-            new BigDecimal("7.7"),
-            PriceContainer.VatStatus.INCLUDED,
-            "CHF",
-            true,
-            orgId,
-            42,
-            SubscriptionDescriptor.SubscriptionValidityType.CUSTOM,
-            null,
-            null,
-            ZonedDateTime.now(ClockProvider.clock()).minusDays(1),
-            ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
-            SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT));
+        subscriptionManager.createSubscriptionDescriptor(buildSubscriptionDescriptor(orgId, null, new BigDecimal("100")));
         var res = subscriptionManager.findAll(orgId);
         assertEquals(1, res.size());
         var descriptor = res.get(0);
@@ -110,9 +92,45 @@ public class SubscriptionManagerIntegrationTest {
         assertEquals("description", descriptor.getDescription().get("en"));
         assertEquals(10000, descriptor.getPrice());
 
+        // update price
+        subscriptionManager.updateSubscriptionDescriptor(buildSubscriptionDescriptor(orgId, descriptor.getId(), new BigDecimal("200")));
+
+        res = subscriptionManager.findAll(orgId);
+        assertEquals(1, res.size());
+        descriptor = res.get(0);
+        assertEquals("title", descriptor.getTitle().get("en"));
+        assertEquals("description", descriptor.getDescription().get("en"));
+        assertEquals(20000, descriptor.getPrice());
+
         var publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()));
+        assertEquals(0, publicSubscriptions.size());
+
+        subscriptionManager.setPublicStatus(descriptor.getId(), orgId, true);
+        publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()));
         assertEquals(1, publicSubscriptions.size());
         assertEquals(res.get(0).getId(), publicSubscriptions.get(0).getId());
+    }
+
+    private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price) {
+        return new SubscriptionDescriptorModification(id,
+            Map.of("en", "title"),
+            Map.of("en", "description"),
+            42,
+            ZonedDateTime.now(ClockProvider.clock()),
+            null,
+            price,
+            new BigDecimal("7.7"),
+            PriceContainer.VatStatus.INCLUDED,
+            "CHF",
+            false,
+            orgId,
+            42,
+            SubscriptionDescriptor.SubscriptionValidityType.CUSTOM,
+            null,
+            null,
+            ZonedDateTime.now(ClockProvider.clock()).minusDays(1),
+            ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
+            SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT);
     }
 
 }
