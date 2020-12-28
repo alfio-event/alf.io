@@ -246,8 +246,8 @@
                     title: subscription.title,
                     description: subscription.description,
                     maxAvailable: subscription.maxAvailable,
-                    onSaleFrom: self.dateTimeObjectToDate(subscription.onSaleFromModel, subscription.onSaleFromText),
-                    onSaleTo: self.dateTimeObjectToDate(subscription.onSaleToModel, subscription.onSaleToText),
+                    onSaleFrom: self.dateTimeObjectToDate(subscription.onSaleFromModel),
+                    onSaleTo: self.dateTimeObjectToDate(subscription.onSaleToModel),
                     price: subscription.price,
                     vat: subscription.vat,
                     currency: subscription.currency,
@@ -259,8 +259,8 @@
                     validityType: subscription.validityType,
                     validityTimeUnit: subscription.validityTimeUnit,
                     validityUnits: subscription.validityUnits,
-                    validityFrom: self.dateTimeObjectToDate(subscription.validityFromModel, subscription.validityFromText),
-                    validityTo: self.dateTimeObjectToDate(subscription.validityToModel, subscription.validityToText),
+                    validityFrom: self.dateTimeObjectToDate(subscription.validityFromModel),
+                    validityTo: self.dateTimeObjectToDate(subscription.validityToModel),
                     usageType: subscription.usageType,
                 };
 
@@ -296,9 +296,9 @@
                     time: m.format('HH:mm')
                 };
             },
-            dateTimeObjectToDate: function(obj, objAsString) {
+            dateTimeObjectToDate: function(obj) {
                 if(obj && obj.date) {
-                    return moment(objAsString, 'YYYY-MM-DD HH:mm');
+                    return moment(obj.date + ' ' + obj.time, 'YYYY-MM-DD HH:mm');
                 }
                 return null;
             }
