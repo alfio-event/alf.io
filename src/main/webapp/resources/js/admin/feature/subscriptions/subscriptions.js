@@ -94,8 +94,16 @@
 
         ctrl.$onInit = function() {
             SubscriptionService.loadSubscriptionsDescriptors(ctrl.organizationId).then(function(res) {
-                ctrl.subscriptionsDescriptors = res.data;
+                ctrl.subscriptions = res.data;
             });
+        }
+
+        ctrl.firstTranslation = function(obj) {
+            if(!obj) {
+                return '';
+            }
+            var keys = Object.keys(obj);
+            return keys.length > 0 ? obj[keys[0]] : '';
         }
     }
 
@@ -105,6 +113,44 @@
 
         ctrl.subscriptionAvailabilityTypes = SubscriptionService.subscriptionAvailabilityTypes;
         ctrl.vatStatuses = SubscriptionService.vatStatus;
+        ctrl.validityTimeUnits = SubscriptionService.validityTimeUnits;
+
+        ctrl.selectedTimeUnit = function() {
+            return ctrl.validityTimeUnits[ctrl.subscription.validityTimeUnit];
+        };
+
+        ctrl.selectTimeUnit = function(timeUnit, event) {
+            if(event) {
+                event.preventDefault();
+            }
+            ctrl.subscription.validityTimeUnit = timeUnit;
+        }
+
+        var presets = {
+            "multipleEntries": {
+                validityType: 'NOT_SET',
+                usageType: 'ONCE_PER_EVENT'
+            },
+            "period": {
+                validityType: 'STANDARD',
+                usageType: 'ONCE_PER_EVENT',
+                validityTimeUnit: 'MONTHS',
+                validityUnits: 1
+            },
+            "custom": {
+                validityType: 'CUSTOM',
+                usageType: 'ONCE_PER_EVENT'
+            }
+        }
+
+        ctrl.selectPreset = function(name, event) {
+            if(event) {
+                event.preventDefault();
+            }
+            ctrl.subscription = angular.extend(ctrl.subscription, presets[name]);
+            ctrl.preset = name;
+        }
+
         ctrl.$onInit = function () {
             var promises = [EventService.getSupportedLanguages(), UtilsService.getAvailableCurrencies()];
             if(ctrl.subscriptionId) {
@@ -115,8 +161,10 @@
                     data: {
                         title: {},
                         description: {},
-                        validFromModel: {},
-                        validToModel: {},
+                        validityFromModel: {},
+                        validityToModel: {},
+                        onSaleFromModel: {},
+                        onSaleToModel: {},
                         organizationId: ctrl.organizationId
                     }
                 }));
@@ -126,12 +174,12 @@
                 ctrl.currencies = res[1].data;
                 ctrl.subscription = res[2].data;
                 if(ctrl.subscription.validFrom) {
-                    ctrl.subscription.validFromModel = createDateTimeObject(ctrl.subscription.validFrom);
+                    ctrl.subscription.validFromModel = SubscriptionService.dateToDateTimeObject(ctrl.subscription.validFrom);
                 } else {
-                    ctrl.subscription.validFromModel = createDateTimeObject(moment());
+                    ctrl.subscription.validFromModel = SubscriptionService.dateToDateTimeObject(moment());
                 }
                 if(ctrl.subscription.validTo) {
-                    ctrl.subscription.validToModel = createDateTimeObject(ctrl.subscription.validTo);
+                    ctrl.subscription.validToModel = SubscriptionService.dateToDateTimeObject(ctrl.subscription.validTo);
                 }
                 if(ctrl.existing) {
                     ctrl.selectedLanguages = Object.keys(ctrl.subscription.title).map(function(key) {
@@ -145,17 +193,7 @@
                 refreshAvailableLanguages();
             });
 
-        }
 
-        function createDateTimeObject(srcDate) {
-            if(!srcDate) {
-                return null;
-            }
-            var m = moment(srcDate);
-            return {
-                date: m.format('YYYY-MM-DD'),
-                time: m.format('HH:mm')
-            };
         }
 
         ctrl.selectLanguage = function(language) {
@@ -197,7 +235,7 @@
     }
 
     function SubscriptionService($http, HttpErrorHandler, $q, NotificationHandler) {
-        return {
+        var self = {
             loadSubscriptionsDescriptors: function(organizationId) {
                 return $http.get('/admin/api/organization/'+organizationId+'/subscription/list')
                     .error(HttpErrorHandler.handle);
@@ -205,22 +243,26 @@
             createNew: function(subscription) {
                 var payload = {
                     id: subscription.id,
-                    maxEntries: subscription.maxEntries,
-                    validFrom: moment(subscription.validFromText, 'YYYY-MM-DD HH:mm'),
-                    price: subscription.price,
-                    currency: subscription.currency,
-                    vat: subscription.vat,
-                    vatStatus: subscription.vatStatus,
-                    availability: subscription.availability,
-                    isPublic: subscription.isPublic,
                     title: subscription.title,
                     description: subscription.description,
-                    organizationId: subscription.organizationId
-                };
+                    maxAvailable: subscription.maxAvailable,
+                    onSaleFrom: self.dateTimeObjectToDate(subscription.onSaleFromModel, subscription.onSaleFromText),
+                    onSaleTo: self.dateTimeObjectToDate(subscription.onSaleToModel, subscription.onSaleToText),
+                    price: subscription.price,
+                    vat: subscription.vat,
+                    currency: subscription.currency,
+                    vatStatus: subscription.vatStatus,
+                    isPublic: subscription.isPublic,
+                    organizationId: subscription.organizationId,
 
-                if(subscription.validToModel) {
-                    payload.validTo = moment(subscription.validToText, 'YYYY-MM-DD HH:mm');
-                }
+                    maxEntries: subscription.maxEntries,
+                    validityType: subscription.validityType,
+                    validityTimeUnit: subscription.validityTimeUnit,
+                    validityUnits: subscription.validityUnits,
+                    validityFrom: self.dateTimeObjectToDate(subscription.validityFromModel, subscription.validityFromText),
+                    validityTo: self.dateTimeObjectToDate(subscription.validityToModel, subscription.validityToText),
+                    usageType: subscription.usageType,
+                };
 
                 return $http.post('/admin/api/organization/'+payload.organizationId+'/subscription/', payload)
                     .error(HttpErrorHandler.handle);
@@ -230,10 +272,37 @@
                 'UNLIMITED': 'Unlimited'
             },
             vatStatus: {
-                'INCLUDED': 'Taxes are already included in the price',
+                'INCLUDED': 'Taxes included in the price',
                 'NOT_INCLUDED': 'Taxes must be added to the price',
                 'NONE': 'Do not apply taxes'
+            },
+            validityTimeUnits: {
+                'DAYS': 'Days',
+                'MONTHS': 'Months',
+                'YEARS': 'Years'
+            },
+            subscriptionValidityTypes: {
+                'STANDARD': '',
+                'CUSTOM': '',
+                'NOT_SET': ''
+            },
+            dateToDateTimeObject: function(srcDate) {
+                if(!srcDate) {
+                    return null;
+                }
+                var m = moment(srcDate);
+                return {
+                    date: m.format('YYYY-MM-DD'),
+                    time: m.format('HH:mm')
+                };
+            },
+            dateTimeObjectToDate: function(obj, objAsString) {
+                if(obj && obj.date) {
+                    return moment(objAsString, 'YYYY-MM-DD HH:mm');
+                }
+                return null;
             }
         };
+        return self;
     }
 })();

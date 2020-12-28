@@ -48,71 +48,125 @@
         </div>
     </div>
     <div class="page-header">
-        <h3>Details</h3>
+        <h3>Type</h3>
     </div>
-    <div class="row">
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="maxEntries">Num tickets included (leave empty if unlimited)</label>
-                <input id="maxEntries" type="number" ng-model="$ctrl.subscription.maxEntries" class="form-control">
-            </div>
-        </div>
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="availability">Subscription can be used</label>
-                <select id="availability" ng-options="key as value for (key , value) in $ctrl.subscriptionAvailabilityTypes" ng-model="$ctrl.subscription.availability" class="form-control"></select>
-            </div>
-        </div>
+
+    <div class="list-group">
+        <a href="#" class="list-group-item" ng-class="{'active': $ctrl.preset === 'multipleEntries'}" ng-click="$ctrl.selectPreset('multipleEntries', $event)">
+            <h4 class="list-group-item-heading">Multi-Access Pass</h4>
+            <p class="list-group-item-text">Give a discount if an attendee pre-pays multiple access</p>
+        </a>
+        <a href="#" class="list-group-item" ng-class="{'active': $ctrl.preset === 'period'}" ng-click="$ctrl.selectPreset('period', $event)">
+            <h4 class="list-group-item-heading">Monthly, Yearly or Daily Subscription</h4>
+            <p class="list-group-item-text">Give full access to attendees for a period of time after they buy the subscription</p>
+        </a>
+        <a href="#" class="list-group-item" ng-class="{'active': $ctrl.preset === 'custom'}" ng-click="$ctrl.selectPreset('custom', $event)">
+            <h4 class="list-group-item-heading">Custom</h4>
+            <p class="list-group-item-text">Give full access to attendees only within a fixed date interval</p>
+        </a>
     </div>
-    <div class="row">
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="validFrom">Valid from</label>
-                <input id="validFrom" autocomplete="off" single-date start-model="$ctrl.subscription.validFromModel" ng-model="$ctrl.subscription.validFromText" class="form-control">
+
+    <div ng-if="$ctrl.preset">
+
+        <div class="page-header">
+            <h3>Pricing and Sales Period</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-6 col-md-3">
+                <div class="form-group">
+                    <label for="price">Price</label>
+                    <input id="price" autocomplete="off" type="number" step="any" ng-model="$ctrl.subscription.price" class="form-control">
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="form-group">
+                    <label for="currency">Currency</label>
+                    <input id="currency" autocomplete="off" type="text" ng-model="$ctrl.subscription.currency" class="form-control" uib-typeahead="currency.code as currency.name for currency in $ctrl.currencies | filter:$viewValue | limitTo:8" required pattern="[A-Z]{3}">
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="form-group">
+                    <label for="vatStatus">Tax Policy</label>
+                    <select id="vatStatus" ng-options="key as value for (key , value) in $ctrl.vatStatuses" ng-model="$ctrl.subscription.vatStatus" class="form-control"></select>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-2" ng-if="$ctrl.subscription.vatStatus !== 'NONE'">
+                <div class="form-group">
+                    <label for="vat">Taxes %</label>
+                    <input id="vat" type="number" min="0" step="any" ng-model="$ctrl.subscription.vat" class="form-control" ng-required="$ctrl.subscription.vatStatus !== 'NONE'">
+                </div>
             </div>
         </div>
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="validTo">Valid to (optional)</label>
-                <input id="validTo" autocomplete="off" single-date start-model="$ctrl.subscription.validToModel" no-init-date="true" ng-model="$ctrl.subscription.validToText" class="form-control">
+        <hr>
+        <div class="row">
+            <div class="col-sm-12 col-md-6">
+                <div class="form-group">
+                    <label for="onSaleFrom">On Sale from</label>
+                    <input id="onSaleFrom" autocomplete="off" single-date start-model="$ctrl.subscription.onSaleFromModel" ng-model="$ctrl.subscription.onSaleFromText" class="form-control">
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-6">
+                <div class="form-group">
+                    <label for="onSaleTo"><span class="sr-only">On Sale </span>to (optional)</label>
+                    <input id="onSaleTo" autocomplete="off" single-date start-model="$ctrl.subscription.onSaleToModel" no-init-date="true" ng-model="$ctrl.subscription.onSaleToText" class="form-control">
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="price">Price</label>
-                <input id="price" autocomplete="off" type="number" step="any" ng-model="$ctrl.subscription.price" class="form-control">
+
+
+        <div class="page-header">
+            <h3>Subscription Details</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12 col-md-6" ng-if="$ctrl.preset === 'multipleEntries'">
+                <div class="form-group">
+                    <label for="maxEntries">Number of access included</label>
+                    <input id="maxEntries" type="number" ng-model="$ctrl.subscription.maxEntries" class="form-control" required>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3" ng-if="$ctrl.preset === 'period'">
+                <div class="form-group">
+                    <label for="validityUnits">Duration of the subscription</label>
+                    <input id="validityUnits" type="number" ng-model="$ctrl.subscription.validityUnits" class="form-control">
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3" ng-if="$ctrl.preset === 'period'">
+                <div class="form-group">
+                    <label for="validityTimeUnit"><span class="sr-only">Time Unit</span>&nbsp;</label>
+                    <select id="validityTimeUnit" ng-options="key as value for (key , value) in $ctrl.validityTimeUnits" ng-model="$ctrl.subscription.validityTimeUnit" class="form-control"></select>
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-6">
+                <div class="form-group">
+                    <label for="usageType">Subscription can be used</label>
+                    <select id="usageType" ng-options="key as value for (key , value) in $ctrl.subscriptionAvailabilityTypes" ng-model="$ctrl.subscription.usageType" class="form-control"></select>
+                </div>
             </div>
         </div>
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="currency">Currency</label>
-                <input id="currency" autocomplete="off" type="text" ng-model="$ctrl.subscription.currency" class="form-control" uib-typeahead="currency.code as currency.name for currency in $ctrl.currencies | filter:$viewValue | limitTo:8" required pattern="[A-Z]{3}">
+        <div class="row" ng-if="$ctrl.preset === 'custom'">
+            <div class="col-sm-12 col-md-6">
+                <div class="form-group">
+                    <label for="validityFrom">Validity starts from</label>
+                    <input id="validityFrom" autocomplete="off" single-date start-model="$ctrl.subscription.validityFromModel" ng-model="$ctrl.subscription.validFromText" class="form-control">
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-6">
+                <div class="form-group">
+                    <label for="validityTo">Validity ends (optional)</label>
+                    <input id="validityTo" autocomplete="off" single-date start-model="$ctrl.subscription.validityToModel" no-init-date="true" ng-model="$ctrl.subscription.validToText" class="form-control">
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="vatStatus">Tax Policy</label>
-                <select id="vatStatus" ng-options="key as value for (key , value) in $ctrl.vatStatuses" ng-model="$ctrl.subscription.vatStatus" class="form-control"></select>
+        <hr class="wMarginTop30px"/>
+        <div class="row wMarginBottom30px">
+            <div class="col-md-4 col-md-push-8 col-xs-12">
+                <button class="btn btn-lg btn-warning btn-block" data-ng-disabled="editSubscriptionForm.$waiting" style="margin-bottom: 10px">Save</button>
             </div>
-        </div>
-        <div class="col-sm-12 col-md-6">
-            <div class="form-group">
-                <label for="vat">Taxes %</label>
-                <input id="vat" type="number" min="0" step="any" ng-model="$ctrl.subscription.vat" class="form-control" ng-required="$ctrl.subscription.vatStatus !== 'NONE'">
+            <div class="col-md-4 col-md-pull-4 col-xs-12">
+                <button type="button" class="btn btn-lg btn-default btn-block" data-ng-disabled="editSubscriptionForm.$waiting" data-ng-click="$ctrl.cancel()" style="margin-bottom: 10px">Back</button>
             </div>
-        </div>
-    </div>
-    <hr class="wMarginTop30px"/>
-    <div class="row wMarginBottom30px">
-        <div class="col-md-4 col-md-push-8 col-xs-12">
-            <button class="btn btn-lg btn-warning btn-block" data-ng-disabled="editSubscriptionForm.$waiting" style="margin-bottom: 10px">Save</button>
-        </div>
-        <div class="col-md-4 col-md-pull-4 col-xs-12">
-            <button type="button" class="btn btn-lg btn-default btn-block" data-ng-disabled="editSubscriptionForm.$waiting" data-ng-click="$ctrl.cancel()" style="margin-bottom: 10px">Back</button>
         </div>
     </div>
 </form>
