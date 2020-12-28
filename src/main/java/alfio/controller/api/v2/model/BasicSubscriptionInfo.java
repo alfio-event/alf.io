@@ -16,13 +16,26 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.model.PriceContainer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 public class BasicSubscriptionInfo {
     private final UUID id;
+    private final Map<String, String> title;
+    private final Map<String, String> description;
+
+    //
+    private final int price;
+    private final String currency;
+
+    //
+    private final BigDecimal vat;
+    private final PriceContainer.VatStatus vatStatus;
 }

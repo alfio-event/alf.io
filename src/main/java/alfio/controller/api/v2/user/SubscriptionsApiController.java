@@ -18,6 +18,7 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.v2.model.BasicSubscriptionInfo;
 import alfio.manager.SubscriptionManager;
+import alfio.manager.i18n.I18nManager;
 import alfio.util.ClockProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,17 +34,23 @@ import java.util.stream.Collectors;
 public class SubscriptionsApiController {
 
     private final SubscriptionManager subscriptionManager;
+    private final I18nManager i18nManager;
 
-    public SubscriptionsApiController(SubscriptionManager subscriptionManager) {
+    public SubscriptionsApiController(SubscriptionManager subscriptionManager, I18nManager i18nManager) {
         this.subscriptionManager = subscriptionManager;
+        this.i18nManager = i18nManager;
     }
 
     @GetMapping("subscriptions")
     public ResponseEntity<List<BasicSubscriptionInfo>> listSubscriptions(/* TODO search by: organizer, tag, subscription */) {
+        var contentLanguages = i18nManager.getAvailableLanguages();
+
         var now = ZonedDateTime.now(ClockProvider.clock());
         var activeSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(now)
             .stream()
-            .map(s -> new BasicSubscriptionInfo(s.getId()))
+            .map(s -> new BasicSubscriptionInfo(s.getId(), s.getTitle(), s.getDescription(),
+                s.getPrice(), s.getCurrency(), s.getVat(),
+                s.getVatStatus()))
             .collect(Collectors.toList());
         return ResponseEntity.ok(activeSubscriptions);
     }
