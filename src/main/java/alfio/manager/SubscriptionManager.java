@@ -107,4 +107,8 @@ public class SubscriptionManager {
     public List<SubscriptionDescriptor> getActivePublicSubscriptionsDescriptor(ZonedDateTime from) {
         return subscriptionRepository.findAllActiveAndPublic(from);
     }
+
+    public Optional<SubscriptionDescriptor> getSubscriptionById(UUID id) {
+        return subscriptionRepository.findOne(id);
+    }
 }

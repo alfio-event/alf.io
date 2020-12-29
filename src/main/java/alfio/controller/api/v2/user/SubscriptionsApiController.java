@@ -19,6 +19,7 @@ package alfio.controller.api.v2.user;
 import alfio.controller.api.v2.model.BasicSubscriptionInfo;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.i18n.I18nManager;
+import alfio.model.SubscriptionDescriptor;
 import alfio.util.ClockProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -48,10 +50,23 @@ public class SubscriptionsApiController {
         var now = ZonedDateTime.now(ClockProvider.clock());
         var activeSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(now)
             .stream()
-            .map(s -> new BasicSubscriptionInfo(s.getId(), s.getTitle(), s.getDescription(),
-                s.getPrice(), s.getCurrency(), s.getVat(),
-                s.getVatStatus()))
+            .map(SubscriptionsApiController::subscriptionDescriptorMapper)
             .collect(Collectors.toList());
         return ResponseEntity.ok(activeSubscriptions);
+    }
+
+    private static BasicSubscriptionInfo subscriptionDescriptorMapper(SubscriptionDescriptor s) {
+        return new BasicSubscriptionInfo(s.getId(), s.getTitle(), s.getDescription(),
+            s.getPrice(), s.getCurrency(), s.getVat(),
+            s.getVatStatus());
+    }
+
+    @GetMapping("/api/v2/public/subscription/:id")
+    public ResponseEntity<BasicSubscriptionInfo> getSubscriptionInfo(String uuid) {
+        var res = subscriptionManager.getSubscriptionById(UUID.fromString(uuid));
+        return res
+            .map(SubscriptionsApiController::subscriptionDescriptorMapper)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

@@ -109,6 +109,8 @@ public class SubscriptionManagerIntegrationTest {
         publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()));
         assertEquals(1, publicSubscriptions.size());
         assertEquals(res.get(0).getId(), publicSubscriptions.get(0).getId());
+
+        assertTrue(subscriptionManager.getSubscriptionById(publicSubscriptions.get(0).getId()).isPresent());
     }
 
     private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price) {

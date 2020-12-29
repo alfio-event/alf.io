@@ -101,4 +101,7 @@ public interface SubscriptionRepository {
 
     @Query("select * from subscription_descriptor where id = :id and organization_id_fk = :organizationId")
     Optional<SubscriptionDescriptor> findOne(@Bind("id") UUID id, @Bind("organizationId") int organizationId);
+
+    @Query("select * from subscription_descriptor where id = :id")
+    Optional<SubscriptionDescriptor> findOne(@Bind("id") UUID id);
 }
