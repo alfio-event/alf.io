@@ -88,10 +88,12 @@ create policy subscription_access_policy on subscription to public
 create table subscription_event (
     id bigserial primary key not null,
     event_id_fk integer not null references event(id),
-    subscription_id_fk uuid not null constraint subscription_event_subscription_id_fk references subscription(id),
+    subscription_descriptor_id_fk uuid not null constraint subscription_event_subscription_descriptor_id_fk references subscription_descriptor(id),
     price_per_ticket integer not null default 0,
     organization_id_fk integer not null constraint subscription_event_organization_id_fk references organization(id)
 );
+
+alter table subscription_event add constraint "unique_subscription_event" unique(subscription_descriptor_id_fk, event_id_fk);
 
 alter table subscription_event enable row level security;
 alter table subscription_event force row level security;

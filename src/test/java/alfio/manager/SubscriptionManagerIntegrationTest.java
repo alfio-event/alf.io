@@ -21,8 +21,8 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
 import alfio.model.PriceContainer;
-import alfio.model.SubscriptionDescriptor;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -111,6 +111,11 @@ public class SubscriptionManagerIntegrationTest {
         assertEquals(res.get(0).getId(), publicSubscriptions.get(0).getId());
 
         assertTrue(subscriptionManager.getSubscriptionById(publicSubscriptions.get(0).getId()).isPresent());
+
+        var subscriptionsWithStatistics = subscriptionManager.loadSubscriptionsWithStatistics(orgId);
+        assertEquals(1, subscriptionsWithStatistics.size());
+        assertEquals(0, subscriptionsWithStatistics.get(0).getSoldCount());
+        //TODO add event link
     }
 
     private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price) {

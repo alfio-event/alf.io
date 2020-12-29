@@ -17,10 +17,11 @@
 package alfio.repository;
 
 import alfio.model.PriceContainer.VatStatus;
-import alfio.model.SubscriptionDescriptor;
-import alfio.model.SubscriptionDescriptor.SubscriptionTimeUnit;
-import alfio.model.SubscriptionDescriptor.SubscriptionUsageType;
-import alfio.model.SubscriptionDescriptor.SubscriptionValidityType;
+import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
+import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
@@ -104,4 +105,7 @@ public interface SubscriptionRepository {
 
     @Query("select * from subscription_descriptor where id = :id")
     Optional<SubscriptionDescriptor> findOne(@Bind("id") UUID id);
+
+    @Query("select * from subscription_descriptor_statistics where sd_organization_id_fk = :organizationId")
+    List<SubscriptionDescriptorWithStatistics> findAllWithStatistics(@Bind("organizationId") int organizationId);
 }

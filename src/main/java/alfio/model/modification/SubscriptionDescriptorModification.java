@@ -17,10 +17,10 @@
 package alfio.model.modification;
 
 import alfio.model.PriceContainer.VatStatus;
-import alfio.model.SubscriptionDescriptor;
-import alfio.model.SubscriptionDescriptor.SubscriptionTimeUnit;
-import alfio.model.SubscriptionDescriptor.SubscriptionUsageType;
-import alfio.model.SubscriptionDescriptor.SubscriptionValidityType;
+import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

@@ -18,8 +18,8 @@ package alfio.controller.api.admin;
 
 import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
-import alfio.model.SubscriptionDescriptor;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.subscription.SubscriptionDescriptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

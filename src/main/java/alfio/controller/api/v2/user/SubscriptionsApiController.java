@@ -19,7 +19,7 @@ package alfio.controller.api.v2.user;
 import alfio.controller.api.v2.model.BasicSubscriptionInfo;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.i18n.I18nManager;
-import alfio.model.SubscriptionDescriptor;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.util.ClockProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

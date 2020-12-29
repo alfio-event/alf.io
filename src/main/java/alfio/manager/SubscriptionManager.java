@@ -16,8 +16,9 @@
  */
 package alfio.manager;
 
-import alfio.model.SubscriptionDescriptor;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.repository.SubscriptionRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -110,5 +111,9 @@ public class SubscriptionManager {
 
     public Optional<SubscriptionDescriptor> getSubscriptionById(UUID id) {
         return subscriptionRepository.findOne(id);
+    }
+
+    public List<SubscriptionDescriptorWithStatistics> loadSubscriptionsWithStatistics(int organizationId) {
+        return subscriptionRepository.findAllWithStatistics(organizationId);
     }
 }
