@@ -485,7 +485,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             // cannot have just one row in the log, every event adds EXACTLY two logs
             // log expected: RESERVATION_CANCELLED
             cleanupExtensionLog();
-            reservationApiV2Controller.cancelPendingReservation(context.event.getShortName(), res.getBody().getValue());
+            reservationApiV2Controller.cancelPendingReservation(res.getBody().getValue());
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
             assertEventLogged(extLogs, "RESERVATION_CANCELLED", 2, 1);
 
@@ -521,7 +521,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
-            reservationApiV2Controller.cancelPendingReservation(context.event.getShortName(), reservationId);
+            reservationApiV2Controller.cancelPendingReservation(reservationId);
 
             assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
@@ -603,7 +603,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING, context);
 
-            var cancelRes = reservationApiV2Controller.cancelPendingReservation(context.event.getShortName(), reservationId);
+            var cancelRes = reservationApiV2Controller.cancelPendingReservation(reservationId);
             assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null, context);
@@ -636,7 +636,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING, context);
 
-            var cancelRes = reservationApiV2Controller.cancelPendingReservation(context.event.getShortName(), reservationId);
+            var cancelRes = reservationApiV2Controller.cancelPendingReservation(reservationId);
             assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null, context);
@@ -724,7 +724,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var success = reservationApiV2Controller.validateToOverview(context.event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.OK, success.getStatusCode());
 
-            reservationApiV2Controller.cancelPendingReservation(context.event.getShortName(), reservationId);
+            reservationApiV2Controller.cancelPendingReservation(reservationId);
         }
 
 
@@ -792,7 +792,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);
             //
 
-            reservationApiV2Controller.backToBooking(context.event.getShortName(), reservationId);
+            reservationApiV2Controller.backToBooking(reservationId);
 
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING, context);
 
@@ -1172,7 +1172,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                              Boolean validated,
                              TicketReservation.TicketReservationStatus reservationStatus,
                              ReservationFlowContext context) {
-        var statusRes = reservationApiV2Controller.getReservationStatus(context.event.getShortName(), reservationId);
+        var statusRes = reservationApiV2Controller.getReservationStatus(reservationId);
         assertEquals(expectedHttpStatus, statusRes.getStatusCode());
         var status = statusRes.getBody();
         if (validated != null) {

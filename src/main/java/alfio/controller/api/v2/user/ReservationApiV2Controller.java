@@ -209,37 +209,33 @@ public class ReservationApiV2Controller {
         }
     }
 
-    @GetMapping("/event/{eventName}/reservation/{reservationId}/status")
-    public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable("eventName") String eventName,
-                                                                      @PathVariable("reservationId") String reservationId) {
+    @GetMapping({
+        "/reservation/{reservationId}/status",
+        "/event/{eventName}/reservation/{reservationId}/status" //<- deprecated
+    })
+    public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable("reservationId") String reservationId) {
 
-        Optional<ReservationStatusInfo> res = Optional.empty();
-        if (eventRepository.existsByShortName(eventName)) {
-            res = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
-                .map(status -> new ReservationStatusInfo(status.getStatus(), Boolean.TRUE.equals(status.getValidated())));
-        }
-
+        Optional<ReservationStatusInfo> res = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
+            .map(status -> new ReservationStatusInfo(status.getStatus(), Boolean.TRUE.equals(status.getValidated())));
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
-    @DeleteMapping("/event/{eventName}/reservation/{reservationId}")
-    public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable("eventName") String eventName,
-                                                            @PathVariable("reservationId") String reservationId) {
-
-        getReservationWithPendingStatus(eventName, reservationId)
-            .ifPresent(er -> ticketReservationManager.cancelPendingReservation(reservationId, false, null));
+    @DeleteMapping({
+        "/reservation/{reservationId}",
+        "/event/{eventName}/reservation/{reservationId}" //<- deprecated
+    })
+    public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable("reservationId") String reservationId) {
+        getReservationWithPendingStatus(reservationId).ifPresent(er -> ticketReservationManager.cancelPendingReservation(reservationId, false, null));
         return ResponseEntity.ok(true);
     }
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}/back-to-booking")
-    public ResponseEntity<Boolean> backToBooking(@PathVariable("eventName") String eventName,
-                                                 @PathVariable("reservationId") String reservationId) {
-
-        getReservationWithPendingStatus(eventName, reservationId)
-            .ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
-
-
+    @PostMapping({
+        "/reservation/{reservationId}/back-to-booking",
+        "/event/{eventName}/reservation/{reservationId}/back-to-booking" //<- deprecated
+    })
+    public ResponseEntity<Boolean> backToBooking(@PathVariable("reservationId") String reservationId) {
+        getReservationWithPendingStatus(reservationId).ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
         return ResponseEntity.ok(true);
     }
 
@@ -467,6 +463,10 @@ public class ReservationApiV2Controller {
         return eventRepository.findOptionalByShortName(eventName)
             .flatMap(event -> ticketReservationManager.findById(reservationId)
                 .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
+    }
+
+    private Optional<TicketReservation> getReservationWithPendingStatus(String reservationId) {
+        return ticketReservationManager.findById(reservationId).filter(reservation -> reservation.getStatus() == TicketReservation.TicketReservationStatus.PENDING);
     }
 
     private Optional<Pair<Event, TicketReservation>> getReservationWithPendingStatus(String eventName, String reservationId) {
