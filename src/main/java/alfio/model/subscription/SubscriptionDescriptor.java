@@ -17,6 +17,7 @@
 package alfio.model.subscription;
 
 import alfio.model.PriceContainer.VatStatus;
+import alfio.model.TaxDescriptor;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
@@ -27,7 +28,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Getter
-public class SubscriptionDescriptor {
+public class SubscriptionDescriptor implements TaxDescriptor {
 
     public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED
