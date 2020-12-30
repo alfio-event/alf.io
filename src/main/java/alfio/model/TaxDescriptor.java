@@ -21,4 +21,5 @@ import java.math.BigDecimal;
 public interface TaxDescriptor {
     BigDecimal getVat();
     PriceContainer.VatStatus getVatStatus();
+    String getCurrency();
 }

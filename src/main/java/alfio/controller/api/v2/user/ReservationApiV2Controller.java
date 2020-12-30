@@ -250,10 +250,10 @@ public class ReservationApiV2Controller {
         return getReservation(eventName, reservationId).map(er -> {
 
            var event = er.getLeft();
-           var ticketReservation = er.getRight();
+           var reservation = er.getRight();
            var locale = LocaleUtil.forLanguageTag(lang, event);
 
-            if (!ticketReservation.getValidity().after(new Date())) {
+            if (!reservation.getValidity().after(new Date())) {
                 bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
             }
 
@@ -271,14 +271,14 @@ public class ReservationApiV2Controller {
             }
 
             if(!bindingResult.hasErrors()) {
-                extensionManager.handleReservationValidation(event, ticketReservation, paymentForm, bindingResult);
+                extensionManager.handleReservationValidation(event, reservation, paymentForm, bindingResult);
             }
 
             if (bindingResult.hasErrors()) {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
+            CustomerName customerName = new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName());
 
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
@@ -288,9 +288,9 @@ public class ReservationApiV2Controller {
                     new PaymentContext(event, reservationId));
             }
             PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
-                event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
-                locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
-                orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
+                event, reservation.getEmail(), customerName, reservation.getBillingAddress(), reservation.getCustomerReference(),
+                locale, reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(),
+                orderSummary, reservation.getVatCountryCode(), reservation.getVatNr(), reservation.getVatStatus(),
                 Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
             final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, paymentForm.getPaymentProxy(), paymentForm.getSelectedPaymentMethod());
