@@ -16,6 +16,8 @@
  */
 package alfio.model.subscription;
 
+import alfio.model.ContentLanguage;
+import alfio.model.LocalizedContent;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.TaxDescriptor;
 import alfio.model.support.JSONData;
@@ -24,11 +26,13 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Getter
-public class SubscriptionDescriptor implements TaxDescriptor {
+public class SubscriptionDescriptor implements TaxDescriptor, LocalizedContent {
 
     public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED
@@ -106,5 +110,13 @@ public class SubscriptionDescriptor implements TaxDescriptor {
         this.validityFrom = validityFrom;
         this.validityTo = validityTo;
         this.usageType = usageType;
+    }
+
+    @Override
+    public List<ContentLanguage> getContentLanguages() {
+        var languages = title.keySet();
+        return ContentLanguage.ALL_LANGUAGES.stream()
+            .filter(l -> languages.contains(l.getLanguage()))
+            .collect(Collectors.toList());
     }
 }

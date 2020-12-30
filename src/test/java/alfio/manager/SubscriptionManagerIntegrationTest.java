@@ -91,6 +91,7 @@ public class SubscriptionManagerIntegrationTest {
         assertEquals("title", descriptor.getTitle().get("en"));
         assertEquals("description", descriptor.getDescription().get("en"));
         assertEquals(10000, descriptor.getPrice());
+        assertEquals("en", descriptor.getContentLanguages().get(0).getLanguage());
 
         // update price
         subscriptionManager.updateSubscriptionDescriptor(buildSubscriptionDescriptor(orgId, descriptor.getId(), new BigDecimal("200")));
