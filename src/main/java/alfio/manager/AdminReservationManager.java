@@ -376,7 +376,7 @@ public class AdminReservationManager {
             String reservationId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
             ticketReservationRepository.createNewReservation(reservationId, event.now(clockProvider), validity, null,
-                arm.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+                arm.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId());
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(),
                 customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), arm.getLanguage(),

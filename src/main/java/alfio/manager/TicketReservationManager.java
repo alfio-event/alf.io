@@ -271,7 +271,8 @@ public class TicketReservationManager {
             event.getId(),
             event.getVat(),
             event.isVatIncluded(),
-            event.getCurrency());
+            event.getCurrency(),
+            event.getOrganizationId());
         list.forEach(t -> reserveTicketsForCategory(event, reservationId, t, locale, forWaitingQueue, discount.orElse(null), dynamicDiscount.orElse(null)));
 
         int ticketCount = list
