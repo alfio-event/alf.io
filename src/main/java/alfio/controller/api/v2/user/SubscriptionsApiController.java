@@ -23,6 +23,7 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.util.ClockProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -61,9 +62,9 @@ public class SubscriptionsApiController {
             s.getVatStatus());
     }
 
-    @GetMapping("/api/v2/public/subscription/:id")
-    public ResponseEntity<BasicSubscriptionInfo> getSubscriptionInfo(String uuid) {
-        var res = subscriptionManager.getSubscriptionById(UUID.fromString(uuid));
+    @GetMapping("subscription/{id}")
+    public ResponseEntity<BasicSubscriptionInfo> getSubscriptionInfo(@PathVariable("id") String id) {
+        var res = subscriptionManager.getSubscriptionById(UUID.fromString(id));
         return res
             .map(SubscriptionsApiController::subscriptionDescriptorMapper)
             .map(ResponseEntity::ok)
