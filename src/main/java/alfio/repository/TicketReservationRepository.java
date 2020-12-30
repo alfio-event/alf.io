@@ -32,13 +32,13 @@ import java.util.Optional;
 public interface TicketReservationRepository {
 
     @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code, organization_id_fk)" +
-        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :eventVat, :vatIncluded, :currencyCode, :organizationId)")
+        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :vatPercentage, :vatIncluded, :currencyCode, :organizationId)")
     int createNewReservation(@Bind("id") String id,
                              @Bind("creationTimestamp") ZonedDateTime creationTimestamp,
                              @Bind("validity") Date validity,
                              @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId, @Bind("userLanguage") String userLanguage,
-                             @Bind("eventId") int eventId,
-                             @Bind("eventVat") BigDecimal eventVat,
+                             @Bind("eventId") Integer eventId, // <- optional
+                             @Bind("vatPercentage") BigDecimal vatPercentage,
                              @Bind("vatIncluded") Boolean vatIncluded,
                              @Bind("currencyCode") String currencyCode,
                              @Bind("organizationId") int organizationId);
