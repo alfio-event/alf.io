@@ -19,7 +19,7 @@ package alfio.model.subscription;
 import alfio.model.ContentLanguage;
 import alfio.model.LocalizedContent;
 import alfio.model.PriceContainer.VatStatus;
-import alfio.model.TaxDescriptor;
+import alfio.model.Purchasable;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
@@ -32,7 +32,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
-public class SubscriptionDescriptor implements TaxDescriptor, LocalizedContent {
+public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
 
     public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED

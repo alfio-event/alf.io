@@ -76,9 +76,9 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
         return MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
     }
 
-    public static AdditionalServiceItemPriceContainer from(AdditionalServiceItem item, AdditionalService additionalService, TaxDescriptor taxDescriptor, PromoCodeDiscount discount) {
+    public static AdditionalServiceItemPriceContainer from(AdditionalServiceItem item, AdditionalService additionalService, Purchasable purchasable, PromoCodeDiscount discount) {
         var discountToApply = isDiscountCompatible(discount) && additionalService.getType() != AdditionalService.AdditionalServiceType.DONATION ? discount : null;
-        return new AdditionalServiceItemPriceContainer(item, additionalService, taxDescriptor.getCurrency(), discountToApply, taxDescriptor.getVatStatus(), taxDescriptor.getVat());
+        return new AdditionalServiceItemPriceContainer(item, additionalService, purchasable.getCurrency(), discountToApply, purchasable.getVatStatus(), purchasable.getVat());
     }
 
     private static boolean isDiscountCompatible(PromoCodeDiscount discount) {

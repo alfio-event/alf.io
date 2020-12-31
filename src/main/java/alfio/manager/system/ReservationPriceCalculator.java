@@ -37,7 +37,7 @@ public class ReservationPriceCalculator implements PriceContainer {
     final List<Ticket> tickets;
     final List<AdditionalServiceItem> additionalServiceItems;
     final List<AdditionalService> additionalServices;
-    final TaxDescriptor taxDescriptor;
+    final Purchasable purchasable;
 
     @Override
     public int getSrcPriceCts() {
@@ -57,17 +57,17 @@ public class ReservationPriceCalculator implements PriceContainer {
 
     @Override
     public String getCurrencyCode() {
-        return taxDescriptor.getCurrency();
+        return purchasable.getCurrency();
     }
 
     @Override
     public Optional<BigDecimal> getOptionalVatPercentage() {
-        return Optional.ofNullable(firstNonNull(reservation.getUsedVatPercent(), taxDescriptor.getVat()));
+        return Optional.ofNullable(firstNonNull(reservation.getUsedVatPercent(), purchasable.getVat()));
     }
 
     @Override
     public VatStatus getVatStatus() {
-        return firstNonNull(reservation.getVatStatus(), taxDescriptor.getVatStatus());
+        return firstNonNull(reservation.getVatStatus(), purchasable.getVatStatus());
     }
 
     @Override
@@ -78,10 +78,10 @@ public class ReservationPriceCalculator implements PriceContainer {
     @Override
     public BigDecimal getTaxablePrice() {
         var ticketsTaxablePrice = tickets.stream()
-            .map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), getVatPercentageOrZero(), taxDescriptor.getVatStatus(), discount).getTaxablePrice())
+            .map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), getVatPercentageOrZero(), purchasable.getVatStatus(), discount).getTaxablePrice())
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         var additionalServiceTaxablePrice = additionalServiceItems.stream()
-            .map(asi -> AdditionalServiceItemPriceContainer.from(asi, additionalServices.stream().filter(as -> as.getId() == asi.getAdditionalServiceId()).findFirst().orElseThrow(), taxDescriptor, discount).getTaxablePrice())
+            .map(asi -> AdditionalServiceItemPriceContainer.from(asi, additionalServices.stream().filter(as -> as.getId() == asi.getAdditionalServiceId()).findFirst().orElseThrow(), purchasable, discount).getTaxablePrice())
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         var totalTicketsAndAdditional = ticketsTaxablePrice.add(additionalServiceTaxablePrice);
         if(discount != null && discount.getDiscountType() != PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION) {
@@ -91,10 +91,10 @@ public class ReservationPriceCalculator implements PriceContainer {
         return totalTicketsAndAdditional.subtract(getAppliedDiscount());
     }
 
-    public static ReservationPriceCalculator from(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, TaxDescriptor taxDescriptor, List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItemsByAdditionalService) {
+    public static ReservationPriceCalculator from(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, Purchasable purchasable, List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItemsByAdditionalService) {
         var additionalServiceItems = additionalServiceItemsByAdditionalService.stream().flatMap(p -> p.getRight().stream()).collect(Collectors.toList());
         var additionalServices = additionalServiceItemsByAdditionalService.stream().map(Pair::getKey).collect(Collectors.toList());
-        return new ReservationPriceCalculator(reservation, discount, tickets, additionalServiceItems, additionalServices, taxDescriptor);
+        return new ReservationPriceCalculator(reservation, discount, tickets, additionalServiceItems, additionalServices, purchasable);
     }
 
 }

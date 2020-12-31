@@ -1237,19 +1237,19 @@ public class TicketReservationManager {
     }
 
     private static Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
-                                                          TaxDescriptor taxDescriptor,
+                                                          Purchasable purchasable,
                                                           TicketReservation reservation,
                                                           List<Ticket> tickets,
                                                           List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
 
-        String currencyCode = taxDescriptor.getCurrency();
-        List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), taxDescriptor.getVat(), taxDescriptor.getVatStatus(), promoCodeDiscount)).collect(toList());
+        String currencyCode = purchasable.getCurrency();
+        List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), purchasable.getVat(), purchasable.getVatStatus(), promoCodeDiscount)).collect(toList());
         int discountedTickets = (int) ticketPrices.stream().filter(t -> t.getAppliedDiscount().compareTo(BigDecimal.ZERO) > 0).count();
         int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
         if(discountAppliedCount == 0 && promoCodeDiscount != null && promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT_RESERVATION) {
             discountAppliedCount = 1;
         }
-        var reservationPriceCalculator = ReservationPriceCalculator.from(reservation, promoCodeDiscount, tickets, taxDescriptor, additionalServiceItems);
+        var reservationPriceCalculator = ReservationPriceCalculator.from(reservation, promoCodeDiscount, tickets, purchasable, additionalServiceItems);
         var price = new TotalPrice(unitToCents(reservationPriceCalculator.getFinalPrice(), currencyCode),
             unitToCents(reservationPriceCalculator.getVAT(), currencyCode),
             -MonetaryUtil.unitToCents(reservationPriceCalculator.getAppliedDiscount(), currencyCode),
@@ -1258,8 +1258,8 @@ public class TicketReservationManager {
         return Pair.of(price, Optional.ofNullable(promoCodeDiscount));
     }
 
-    private static Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Stream<? extends AdditionalServiceItemPriceContainer>> generateASIPriceContainers(Event event, PromoCodeDiscount discount) {
-        return p -> p.getValue().stream().map(asi -> AdditionalServiceItemPriceContainer.from(asi, p.getKey(), event, discount));
+    private static Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Stream<? extends AdditionalServiceItemPriceContainer>> generateASIPriceContainers(Purchasable purchasable, PromoCodeDiscount discount) {
+        return p -> p.getValue().stream().map(asi -> AdditionalServiceItemPriceContainer.from(asi, p.getKey(), purchasable, discount));
     }
 
     /**

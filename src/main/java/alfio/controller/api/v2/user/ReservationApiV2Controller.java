@@ -278,7 +278,7 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            CustomerName customerName = new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName());
+            CustomerName customerName = new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), true);
 
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
@@ -334,7 +334,7 @@ public class ReservationApiV2Controller {
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus())).getLeft();
             boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
 
-            if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
+            if (forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
                 contactAndTicketsForm.setPostponeAssignment(false);
             }
 
@@ -347,7 +347,7 @@ public class ReservationApiV2Controller {
                 contactAndTicketsForm.setInvoiceRequested(false);
             }
 
-            CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event.mustUseFirstAndLastName(), false);
+            CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), true, false);
 
 
             ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), event.getVatStatus(),

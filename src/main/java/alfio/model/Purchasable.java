@@ -18,7 +18,7 @@ package alfio.model;
 
 import java.math.BigDecimal;
 
-public interface TaxDescriptor {
+public interface Purchasable {
     BigDecimal getVat();
     PriceContainer.VatStatus getVatStatus();
     String getCurrency();
