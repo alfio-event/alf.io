@@ -45,6 +45,8 @@ public class EuVatCheckerTest {
         client = mock(EUVatChecker.class);
         configurationManager = mock(ConfigurationManager.class);
         eventAndOrganizationId = mock(EventAndOrganizationId.class);
+        ConfigurationLevel cl = ConfigurationLevel.event(eventAndOrganizationId);
+        when(eventAndOrganizationId.getConfigurationLevel()).thenReturn(cl);
         when(configurationManager.getFor(eq(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE), any(ConfigurationLevel.class)))
             .thenReturn(buildConfReturn(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, "true"));
         when(configurationManager.getFor(eq(ConfigurationKeys.ENABLE_VIES_VALIDATION), any(ConfigurationLevel.class)))

@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -135,7 +134,7 @@ public class BillingDocumentManager {
     private Map<String, Object> prepareModelForBillingDocument(Event event, TicketReservation reservation, OrderSummary summary) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
-        var bankingInfo = configurationManager.getFor(Set.of(VAT_NR, INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), ConfigurationLevel.event(event));
+        var bankingInfo = configurationManager.getFor(Set.of(VAT_NR, INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), event.getConfigurationLevel());
         Optional<String> invoiceAddress = bankingInfo.get(INVOICE_ADDRESS).getValue();
         Optional<String> bankAccountNr = bankingInfo.get(BANK_ACCOUNT_NR).getValue();
         Optional<String> bankAccountOwner = bankingInfo.get(BANK_ACCOUNT_OWNER).getValue();

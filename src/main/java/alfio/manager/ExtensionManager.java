@@ -249,6 +249,7 @@ public class ExtensionManager {
             String.class));
     }
 
+    // FIXME: should not depend only by event id!
     boolean handleTaxIdValidation(int eventId, String taxIdNumber, String countryCode) {
         Event event = eventRepository.findById(eventId);
         Map<String, Object> payload = new HashMap<>();
