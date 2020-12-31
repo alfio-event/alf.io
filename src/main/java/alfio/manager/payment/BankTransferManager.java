@@ -17,7 +17,6 @@
 package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
@@ -147,7 +146,7 @@ public class BankTransferManager implements PaymentProvider {
 
     public static OptionalInt getOfflinePaymentWaitingPeriod(PaymentContext paymentContext, ConfigurationManager configurationManager) {
         Event event = paymentContext.getEvent();
-        return getOfflinePaymentWaitingPeriod(event, configurationManager.getFor(OFFLINE_PAYMENT_DAYS, ConfigurationLevel.event(event)).getValueAsIntOrDefault(5));
+        return getOfflinePaymentWaitingPeriod(event, configurationManager.getFor(OFFLINE_PAYMENT_DAYS, event.getConfigurationLevel()).getValueAsIntOrDefault(5));
     }
 
     private static OptionalInt getOfflinePaymentWaitingPeriod(Event event, int configuredValue) {

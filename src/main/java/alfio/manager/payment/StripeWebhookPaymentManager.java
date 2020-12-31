@@ -18,7 +18,6 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.PaymentWebhookResult;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Audit;
 import alfio.model.Event;
@@ -185,7 +184,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     private StripeSCACreditCardToken createNewToken(PaymentSpecification paymentSpecification) {
-        Map<String, String> baseMetadata = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(paymentSpecification.getEvent())).getValue()
+        Map<String, String> baseMetadata = configurationManager.getFor(BASE_URL, paymentSpecification.getEvent().getConfigurationLevel()).getValue()
             .map(baseUrl -> Map.of("alfioBaseUrl", baseUrl))
             .orElse(Map.of());
         var paymentIntentParams = baseStripeManager.createParams(paymentSpecification, baseMetadata);

@@ -19,7 +19,6 @@ package alfio.manager.payment;
 import alfio.manager.payment.saferpay.*;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.PaymentWebhookResult;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
@@ -338,7 +337,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     }
 
     private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> loadConfiguration(Event event) {
-        return configurationManager.getFor(EnumSet.of(SAFERPAY_ENABLED, SAFERPAY_API_USERNAME, SAFERPAY_API_PASSWORD, SAFERPAY_CUSTOMER_ID, SAFERPAY_TERMINAL_ID, SAFERPAY_LIVE_MODE, BASE_URL, RESERVATION_TIMEOUT), ConfigurationLevel.event(event));
+        return configurationManager.getFor(EnumSet.of(SAFERPAY_ENABLED, SAFERPAY_API_USERNAME, SAFERPAY_API_PASSWORD, SAFERPAY_CUSTOMER_ID, SAFERPAY_TERMINAL_ID, SAFERPAY_LIVE_MODE, BASE_URL, RESERVATION_TIMEOUT), event.getConfigurationLevel());
     }
 
     private String processPaymentInitializationResponse(HttpResponse<String> response, PaymentSpecification spec, int retryCount) {

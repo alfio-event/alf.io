@@ -20,7 +20,6 @@ import alfio.manager.PaymentManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
@@ -107,7 +106,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         TicketReservation reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
         String eventName = spec.getEvent().getShortName();
 
-        String baseUrl = StringUtils.removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(spec.getEvent())).getRequiredValue(), "/");
+        String baseUrl = StringUtils.removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, spec.getEvent().getConfigurationLevel()).getRequiredValue(), "/");
         String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/paypal/" + URL_PLACEHOLDER;
 
         String hmac = computeHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getEvent());

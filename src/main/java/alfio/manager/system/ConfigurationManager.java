@@ -319,7 +319,7 @@ public class ConfigurationManager {
     }
 
     public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
-        return event -> getFor(Set.of(keys), ConfigurationLevel.event(event)).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault());
+        return event -> getFor(Set.of(keys), event.getConfigurationLevel()).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault());
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
@@ -428,23 +428,23 @@ public class ConfigurationManager {
             .collect(groupByCategory());
     }
 
-    public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        var conf = getFor(Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH), ConfigurationLevel.event(event));
+    public String getShortReservationID(Configurable configurable, TicketReservation reservation) {
+        var conf = getFor(Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH), configurable.getConfigurationLevel());
         if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault() && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return StringUtils.substring(reservation.getId(), 0, conf.get(PARTIAL_RESERVATION_ID_LENGTH).getValueAsIntOrDefault(8)).toUpperCase();
     }
 
-    public String getPublicReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getFor(USE_INVOICE_NUMBER_AS_ID, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault() && reservation.getHasInvoiceNumber()) {
+    public String getPublicReservationID(Configurable configurable, TicketReservation reservation) {
+        if(getFor(USE_INVOICE_NUMBER_AS_ID, configurable.getConfigurationLevel()).getValueAsBooleanOrDefault() && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return reservation.getId();
     }
 
-    public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
-        var r = getFor(Set.of(INVOICE_ADDRESS, VAT_NR), ConfigurationLevel.event(event));
+    public boolean hasAllConfigurationsForInvoice(Configurable configurable) {
+        var r = getFor(Set.of(INVOICE_ADDRESS, VAT_NR), configurable.getConfigurationLevel());
         return hasAllConfigurationsForInvoice(r);
     }
 

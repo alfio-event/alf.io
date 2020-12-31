@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -81,7 +80,7 @@ public class EventStatisticsManager {
     }
 
     private boolean displayStatisticsForEvent(EventAndOrganizationId event) {
-        return configurationManager.getFor(DISPLAY_STATS_IN_EVENT_DETAIL, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+        return configurationManager.getFor(DISPLAY_STATS_IN_EVENT_DETAIL, event.getConfigurationLevel()).getValueAsBooleanOrDefault();
     }
 
 

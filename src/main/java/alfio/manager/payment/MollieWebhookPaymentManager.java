@@ -248,7 +248,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     private PaymentResult getPaymentResult(PaymentSpecification spec) {
         try {
             var event = spec.getEvent();
-            var configuration = getConfiguration(ConfigurationLevel.event(event));
+            var configuration = getConfiguration(event.getConfigurationLevel());
             var reservationId = spec.getReservationId();
             var reservation = ticketReservationRepository.findReservationById(reservationId);
             String baseUrl = StringUtils.removeEnd(configuration.get(BASE_URL).getRequiredValue(), "/");
@@ -272,7 +272,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                                                         PaymentSpecification spec,
                                                         String baseUrl,
                                                         Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) throws IOException, InterruptedException {
-        var getPaymentResponse = callGetPayment(transaction.getPaymentId(), configuration, ConfigurationLevel.event(spec.getEvent()));
+        var getPaymentResponse = callGetPayment(transaction.getPaymentId(), configuration, spec.getEvent().getConfigurationLevel());
         if(HttpUtils.callSuccessful(getPaymentResponse)) {
             try (var responseReader = new InputStreamReader(getPaymentResponse.body(), UTF_8)) {
                 var body = new MolliePaymentDetails(JsonParser.parseReader(responseReader).getAsJsonObject());
@@ -316,7 +316,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                 .ifPresent(fee -> payload.put("applicationFee", Map.of("amount", Map.of("currency", currencyCode, "value", fee), "description", "Reservation" + reservationId)));
         }
 
-        HttpRequest request = requestFor(PAYMENTS_ENDPOINT, configuration, ConfigurationLevel.event(spec.getEvent()))
+        HttpRequest request = requestFor(PAYMENTS_ENDPOINT, configuration, spec.getEvent().getConfigurationLevel())
             .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
             .POST(HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(payload)))
             .build();
@@ -412,7 +412,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
     private PaymentWebhookResult validateRemotePayment(Transaction transaction, PaymentContext paymentContext, String paymentId, Event event) {
         try {
-            var configuration = getConfiguration(ConfigurationLevel.event(event));
+            var configuration = getConfiguration(event.getConfigurationLevel());
             HttpResponse<InputStream> response = callGetPayment(paymentId, configuration, paymentContext.getConfigurationLevel());
             if(HttpUtils.callSuccessful(response)) {
                 try (var reader = new InputStreamReader(response.body(), UTF_8)) {
@@ -492,7 +492,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             .map(a -> MonetaryUtil.formatCents(a, currencyCode))
             .orElseGet(transaction::getFormattedAmount);
         log.trace("Attempting to refund {} for reservation {}", amountToRefund, transaction.getReservationId());
-        var configurationLevel = ConfigurationLevel.event(event);
+        var configurationLevel = event.getConfigurationLevel();
         var configuration = getConfiguration(configurationLevel);
         var paymentId = transaction.getPaymentId();
         var parameters = new HashMap<String, Object>();
@@ -527,7 +527,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
     @Override
     public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
-        ConfigurationLevel configurationLevel = ConfigurationLevel.event(event);
+        ConfigurationLevel configurationLevel = event.getConfigurationLevel();
         var configuration = getConfiguration(configurationLevel);
         try {
             var getPaymentResponse = callGetPayment(transaction.getPaymentId(), configuration, configurationLevel);
