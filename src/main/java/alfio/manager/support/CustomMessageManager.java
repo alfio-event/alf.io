@@ -76,7 +76,7 @@ public class CustomMessageManager {
         preview(event, input, username);//dry run for checking the syntax
         Organization organization = eventManager.loadOrganizer(event, username);
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
-        var baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
+        var baseUrl = configurationManager.getFor(BASE_URL, event.getConfigurationLevel()).getRequiredValue();
         var eventMetadata = Optional.ofNullable(eventManager.getMetadataForEvent(event).getRequirementsDescriptions());
 
         sendMessagesExecutor.execute(() -> {

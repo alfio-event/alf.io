@@ -21,7 +21,6 @@ import alfio.controller.api.v2.model.EventWithAdditionalInfo;
 import alfio.controller.support.Formatters;
 import alfio.manager.EuVatChecker;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.modification.support.LocationDescriptor;
@@ -94,7 +93,7 @@ public class EventLoader {
 
                     DISPLAY_TICKETS_LEFT_INDICATOR,
                     EVENT_CUSTOM_CSS
-                ), ConfigurationLevel.event(event));
+                ), event.getConfigurationLevel());
 
                 var locationDescriptor = LocationDescriptor.fromGeoData(event.getFormat(), event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
 

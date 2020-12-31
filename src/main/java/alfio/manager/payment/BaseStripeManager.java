@@ -21,6 +21,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.Configurable;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.PaymentInformation;
@@ -76,8 +77,8 @@ class BaseStripeManager {
         Stripe.setAppInfo("Alf.io", "2.x", "https://alf.io");
     }
 
-    String getSecretKey(EventAndOrganizationId event) {
-        return configurationManager.getFor(STRIPE_SECRET_KEY, ConfigurationLevel.event(event)).getRequiredValue();
+    String getSecretKey(Configurable configurable) {
+        return configurationManager.getFor(STRIPE_SECRET_KEY, configurable.getConfigurationLevel()).getRequiredValue();
     }
 
     String getWebhookSignatureKey() {
@@ -200,7 +201,7 @@ class BaseStripeManager {
     Optional<RequestOptions> options(Event event, UnaryOperator<RequestOptions.RequestOptionsBuilder> optionsBuilderConfigurer) {
         RequestOptions.RequestOptionsBuilder builder = optionsBuilderConfigurer.apply(RequestOptions.builder());
         if(isConnectEnabled(new PaymentContext(event))) {
-            return configurationManager.getFor(STRIPE_CONNECTED_ID, ConfigurationLevel.event(event)).getValue()
+            return configurationManager.getFor(STRIPE_CONNECTED_ID, event.getConfigurationLevel()).getValue()
                 .map(connectedId -> {
                     //connected stripe account
                     builder.setStripeAccount(connectedId);

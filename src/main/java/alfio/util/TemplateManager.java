@@ -18,7 +18,6 @@ package alfio.util;
 
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.ConfigurationKeys;
@@ -103,7 +102,7 @@ public class TemplateManager {
     	
         var textRender = render(new ClassPathResource(templateResource.classPath()), enrichedModel, locale, event, isMultipart ? TemplateOutput.TEXT : templateResource.getTemplateOutput());
         
-        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, event.getConfigurationLevel()).getValueAsBooleanOrDefault();
         
         var htmlRender = isMultipart && htmlEnabled ? 
         		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, event, TemplateOutput.HTML) :

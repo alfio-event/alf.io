@@ -142,7 +142,7 @@ public class EventApiV2Controller {
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
 
-            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), ConfigurationLevel.event(event));
+            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), event.getConfigurationLevel());
             var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
             var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             var appliedPromoCode = promoCodeRequestManager.checkCode(event, code);
@@ -312,7 +312,7 @@ public class EventApiV2Controller {
             Optional<String> promoCodeDiscount = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getRight).map(PromoCodeDiscount::getPromoCode);
             var configurationValues = configurationManager.getFor(List.of(
                 ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
-                RECAPTCHA_API_KEY), ConfigurationLevel.event(event));
+                RECAPTCHA_API_KEY), event.getConfigurationLevel());
 
             if (isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), configurationValues)) {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);

@@ -332,7 +332,7 @@ public class ReservationApiV2Controller {
             var reservation = er.getRight();
             var locale = LocaleUtil.forLanguageTag(lang, event);
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus())).getLeft();
-            boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+            boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, event.getConfigurationLevel()).getValueAsBooleanOrDefault();
 
             if (forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
                 contactAndTicketsForm.setPostponeAssignment(false);
@@ -363,7 +363,7 @@ public class ReservationApiV2Controller {
                 contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
                 contactAndTicketsForm.getAddCompanyBillingDetails(), contactAndTicketsForm.canSkipVatNrCheck(), false, locale);
 
-            boolean italyEInvoicing = configurationManager.getFor(ENABLE_ITALY_E_INVOICING, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+            boolean italyEInvoicing = configurationManager.getFor(ENABLE_ITALY_E_INVOICING, event.getConfigurationLevel()).getValueAsBooleanOrDefault();
 
             if(italyEInvoicing) {
                 ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId, event,
@@ -650,7 +650,7 @@ public class ReservationApiV2Controller {
 
     private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
-            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel.event(event))
+            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(event.getConfigurationLevel())
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 }

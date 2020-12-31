@@ -17,9 +17,7 @@
 package alfio.model.transaction;
 
 import alfio.manager.system.ConfigurationLevel;
-import alfio.model.BillingDetails;
 import alfio.model.Event;
-import lombok.Data;
 
 import java.util.Optional;
 
@@ -34,11 +32,11 @@ public class PaymentContext {
     }
 
     public PaymentContext(Event event) {
-        this(event, ConfigurationLevel.event(event));
+        this(event, event.getConfigurationLevel());
     }
 
     public PaymentContext(Event event, String reservationId) {
-        this(event, ConfigurationLevel.event(event), reservationId);
+        this(event, event.getConfigurationLevel(), reservationId);
     }
 
     public PaymentContext(Event event, ConfigurationLevel configurationLevel) {

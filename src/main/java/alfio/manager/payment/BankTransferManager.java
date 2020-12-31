@@ -113,7 +113,7 @@ public class BankTransferManager implements PaymentProvider {
         }
         Map<String, Object> model = new HashMap<>();
         model.put("delayForOfflinePayment", Math.max(1, delay.orElse( 0 )));
-        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel.event(event));
+        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(event.getConfigurationLevel());
         model.put("captchaRequestedForOffline", recaptchaEnabled);
         if(recaptchaEnabled) {
             model.put("recaptchaApiKey", configurationManager.getForSystem(RECAPTCHA_API_KEY).getValue().orElse(null));

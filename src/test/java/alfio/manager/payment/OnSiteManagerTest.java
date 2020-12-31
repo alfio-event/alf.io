@@ -38,6 +38,8 @@ class OnSiteManagerTest {
     void onSiteNotAvailableIfEventIsOnline() {
         var configurationManager = mock(ConfigurationManager.class);
         var event = mock(Event.class);
+        var cl = ConfigurationLevel.event(event);
+        when(event.getConfigurationLevel()).thenReturn(cl);
         var configuration = mock(MaybeConfiguration.class);
         when(configurationManager.getFor(eq(ON_SITE_ENABLED), any(ConfigurationLevel.class))).thenReturn(configuration);
         when(configuration.getValueAsBooleanOrDefault()).thenReturn(true);

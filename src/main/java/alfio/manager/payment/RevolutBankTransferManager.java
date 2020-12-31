@@ -64,7 +64,6 @@ import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
 @AllArgsConstructor
 public class RevolutBankTransferManager implements PaymentProvider, OfflineProcessor, PaymentInfo {
 
-    private static final ZoneId UTC = ZoneId.of("UTC");
     private final BankTransferManager bankTransferManager;
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;

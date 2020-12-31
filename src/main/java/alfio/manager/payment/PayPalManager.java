@@ -82,8 +82,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     private final Json json;
     private final ClockProvider clockProvider;
 
-    private PayPalHttpClient getClient(EventAndOrganizationId event) {
-        PayPalEnvironment apiContext = getApiContext(event);
+    private PayPalHttpClient getClient(Configurable configurable) {
+        PayPalEnvironment apiContext = getApiContext(configurable);
         return cachedClients.get(generateKey(apiContext), key -> new PayPalHttpClient(apiContext));
     }
 
@@ -91,9 +91,9 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         return DigestUtils.sha256Hex(environment.baseUrl() + "::" + environment.clientId() + "::" + environment.clientSecret());
     }
 
-    private PayPalEnvironment getApiContext(EventAndOrganizationId event) {
+    private PayPalEnvironment getApiContext(Configurable configurable) {
         var paypalConf = configurationManager.getFor(Set.of(ConfigurationKeys.PAYPAL_LIVE_MODE, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
-            ConfigurationLevel.event(event));
+            configurable.getConfigurationLevel());
         boolean isLive = paypalConf.get(ConfigurationKeys.PAYPAL_LIVE_MODE).getValueAsBooleanOrDefault();
         String clientId = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).getRequiredValue();
         String clientSecret = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_SECRET).getRequiredValue();
