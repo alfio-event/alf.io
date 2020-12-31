@@ -16,12 +16,15 @@
  */
 package alfio.model.subscription;
 
+import alfio.manager.system.ConfigurationLevel;
+import alfio.model.Configurable;
 import alfio.model.ContentLanguage;
 import alfio.model.LocalizedContent;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.Purchasable;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -32,7 +35,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
-public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
+public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Configurable {
 
     public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED
@@ -118,5 +121,11 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
         return ContentLanguage.ALL_LANGUAGES.stream()
             .filter(l -> languages.contains(l.getLanguage()))
             .collect(Collectors.toList());
+    }
+
+    @JsonIgnore
+    @Override
+    public ConfigurationLevel getConfigurationLevel() {
+        return ConfigurationLevel.organization(organizationId);
     }
 }

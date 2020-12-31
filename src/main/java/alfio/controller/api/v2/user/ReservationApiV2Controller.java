@@ -530,8 +530,8 @@ public class ReservationApiV2Controller {
         ).orElse(notFound);
     }
 
-    private boolean canAccessReceiptOrInvoice(EventAndOrganizationId event, Authentication authentication) {
-        return configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) || !isAnonymous(authentication);
+    private boolean canAccessReceiptOrInvoice(Configurable configurable, Authentication authentication) {
+        return configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurable) || !isAnonymous(authentication);
     }
 
 

@@ -23,6 +23,7 @@ import alfio.manager.system.ConfigurationLevels.CategoryLevel;
 import alfio.manager.system.ConfigurationLevels.EventLevel;
 import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
 import alfio.manager.user.UserManager;
+import alfio.model.Configurable;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.TicketReservation;
 import alfio.model.modification.ConfigurationModification;
@@ -468,16 +469,16 @@ public class ConfigurationManager {
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
-    public boolean canGenerateReceiptOrInvoiceToCustomer(EventAndOrganizationId event) {
-        return !isItalianEInvoicingEnabled(event);
+    public boolean canGenerateReceiptOrInvoiceToCustomer(Configurable configurable) {
+        return !isItalianEInvoicingEnabled(configurable);
     }
 
     public boolean canGenerateReceiptOrInvoiceToCustomer(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
         return !isItalianEInvoicingEnabled(configurationValues);
     }
 
-    public boolean isInvoiceOnly(EventAndOrganizationId event) {
-        var res = getFor(Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
+    public boolean isInvoiceOnly(Configurable configurable) {
+        var res = getFor(Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING), configurable.getConfigurationLevel());
         return isInvoiceOnly(res);
     }
 
@@ -490,8 +491,8 @@ public class ConfigurationManager {
         return configurationValues.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault() || configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault();
     }
 
-    public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
-        var res = getFor(List.of(ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
+    public boolean isItalianEInvoicingEnabled(Configurable configurable) {
+        var res = getFor(List.of(ENABLE_ITALY_E_INVOICING), configurable.getConfigurationLevel());
         return isItalianEInvoicingEnabled(res);
     }
 

@@ -17,24 +17,11 @@
 package alfio.model;
 
 import alfio.manager.system.ConfigurationLevel;
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
 
-@Getter
-public class EventAndOrganizationId implements Configurable {
-    protected final int id;
-    protected final int organizationId;
+/**
+ * Represent a resource which have a configuration path
+ */
+public interface Configurable {
 
-    public EventAndOrganizationId(@Column("id") int id,
-                                  @Column("org_id") int organizationId) {
-        this.id = id;
-        this.organizationId = organizationId;
-    }
-
-    @JsonIgnore
-    @Override
-    public ConfigurationLevel getConfigurationLevel() {
-        return ConfigurationLevel.event(this);
-    }
+    ConfigurationLevel getConfigurationLevel();
 }
