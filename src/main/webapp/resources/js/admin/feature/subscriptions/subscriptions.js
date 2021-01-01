@@ -56,7 +56,7 @@
         }
     })
     .component('subscriptionsEdit', {
-        controller: ['$state', 'SubscriptionService', 'EventService', 'UtilsService', '$q', SubscriptionsEditCtrl],
+        controller: ['$state', 'SubscriptionService', 'EventService', 'UtilsService', '$q', 'ImageTransformService', '$scope', 'PaymentProxyService', 'PAYMENT_PROXY_DESCRIPTIONS', 'NotificationHandler', SubscriptionsEditCtrl],
         templateUrl: '../resources/js/admin/feature/subscriptions/edit.html',
         bindings: {
             organizationId: '<',
@@ -107,7 +107,16 @@
         }
     }
 
-    function SubscriptionsEditCtrl($state, SubscriptionService, EventService, UtilsService, $q) {
+    function SubscriptionsEditCtrl($state,
+                                   SubscriptionService,
+                                   EventService,
+                                   UtilsService,
+                                   $q,
+                                   ImageTransformService,
+                                   $scope,
+                                   PaymentProxyService,
+                                   PAYMENT_PROXY_DESCRIPTIONS,
+                                   NotificationHandler) {
         var ctrl = this;
         ctrl.existing = false;
 
@@ -163,12 +172,16 @@
         }
 
         ctrl.$onInit = function () {
-            var promises = [EventService.getSupportedLanguages(), UtilsService.getAvailableCurrencies()];
+            var promises = [
+                EventService.getSupportedLanguages(),
+                UtilsService.getAvailableCurrencies(),
+                PaymentProxyService.getAllProxies(ctrl.organizationId)
+            ];
             if(ctrl.subscriptionId) {
                 ctrl.existing = true;
-                promises.push(SubscriptionService.loadDescriptor(ctrl.organizationId, ctrl.subscriptionId));
+                promises.unshift(SubscriptionService.loadDescriptor(ctrl.organizationId, ctrl.subscriptionId));
             } else {
-                promises.push($q.resolve({
+                promises.unshift($q.resolve({
                     data: {
                         title: {},
                         description: {},
@@ -181,9 +194,22 @@
                 }));
             }
             $q.all(promises).then(function(res) {
-                ctrl.languages = res[0].data;
-                ctrl.currencies = res[1].data;
-                ctrl.subscription = res[2].data;
+                ctrl.subscription = res[0].data;
+                ctrl.languages = res[1].data;
+                ctrl.currencies = res[2].data;
+
+                ctrl.paymentMethods = _.chain(res[3].data)
+                    .filter(function(p) { return p.status === 'ACTIVE'; })
+                    .map(function(p) {
+                        return {
+                            id: p.paymentProxy,
+                            description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider ('+p.paymentProxy+')  Please check configuration',
+                            onlyForCurrency: p.onlyForCurrency,
+                            selected: _.contains(ctrl.subscription.paymentProxies, p.paymentProxy)
+                        };
+                    })
+                    .uniq('description')
+                    .value();
                 if(ctrl.existing) {
                     initExistingSubscription();
                 } else {
@@ -206,6 +232,7 @@
                 });
             });
             ctrl.preset = evaluatePresetName(ctrl.subscription);
+            ctrl.previousFileBlobId = ctrl.subscription.fileBlobId;
         }
 
         var reloadSubscription = function() {
@@ -236,6 +263,17 @@
             if(!form.$valid) {
                 return;
             }
+
+            // update payment methods
+            ctrl.subscription.paymentProxies = ctrl.paymentMethods
+                .filter(function(pm) { return pm.selected; })
+                .map(function(pm) { return pm.id; });
+
+            if(ctrl.subscription.paymentProxies.length === 0) {
+                NotificationHandler.showError('Please select one or more payment methods');
+                return;
+            }
+
             if(ctrl.existing) {
                 // edit existing subscription
                 SubscriptionService.update(subscription).then(function(res) {
@@ -253,6 +291,32 @@
         ctrl.cancel = function() {
             $state.go('^.list', { organizationId: ctrl.organizationId });
         };
+
+        ctrl.removeImage = function() {
+            //delete id, set base64 as undefined
+            ctrl.imageBase64 = undefined;
+            ctrl.subscription.fileBlobId = undefined;
+        };
+
+        ctrl.resetImage = function() {
+            ctrl.subscription.fileBlobId = ctrl.previousFileBlobId;
+            ctrl.imageBase64 = undefined;
+        };
+
+        $scope.$watch(function () { return ctrl.droppedFile; }, function (droppedFile) {
+            if(angular.isDefined(droppedFile)) {
+                if(droppedFile !== null) {
+                    ImageTransformService.transformAndUploadImages([droppedFile]).then(function(result) {
+                        ctrl.subscription.fileBlobId = result.fileBlobId;
+                        ctrl.imageBase64 = result.imageBase64;
+                    }, function(err) {
+                        if(err != null) {
+                            alert(err);
+                        }
+                    });
+                }
+            }
+        });
     }
 
     function SubscriptionService($http, HttpErrorHandler, $q, NotificationHandler) {
@@ -339,6 +403,11 @@
                     validityFrom: self.dateTimeObjectToDate(subscription.validityFromModel),
                     validityTo: self.dateTimeObjectToDate(subscription.validityToModel),
                     usageType: subscription.usageType,
+
+                    termsAndConditionsUrl: subscription.termsAndConditionsUrl,
+                    privacyPolicyUrl: subscription.privacyPolicyUrl,
+                    fileBlobId: subscription.fileBlobId,
+                    paymentProxies: subscription.paymentProxies
                 };
             }
         };

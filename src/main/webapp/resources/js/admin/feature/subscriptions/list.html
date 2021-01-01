@@ -1,23 +1,19 @@
 <div>
     <div class="panel panel-default" data-ng-repeat="subscription in $ctrl.subscriptions"
-         data-ng-class="{'panel-danger':ticketCategory.containingOrphans, 'panel-warning':ticketCategory.containingStuckTickets}"
-         id="subscription-{{subscription.id}}">
+         id="subscription-{{subscription.descriptor.id}}">
         <div class="panel-heading">
             <div class="panel-title">
                 <div class="row">
                     <div class="col-xs-12 col-md-3">
-                        <div class="category-name">
-                            {{$ctrl.firstTranslation(subscription.title)}}
-                        </div>
+                        <div class="category-name">{{$ctrl.firstTranslation(subscription.descriptor.title)}}</div>
                     </div>
                     <div class="hidden-xs hidden-sm col-md-4">
-                        <uib-progress ng-if="subscription.maxEntries > 0" max="subscription.maxEntries" tooltip-popup-close-delay="500">
-                            <uib-bar value="ticketCategory.checkedInTickets" type="success"><span>{{ticketCategory.checkedInTickets}}</span></uib-bar>
-                            <uib-bar value="ticketCategory.soldTickets" type="warning"><span>{{ticketCategory.soldTickets}}</span></uib-bar>
-                            <uib-bar value="ticketCategory.pendingTickets" type="info" class="slice-pending">{{ticketCategory.pendingTickets}}</uib-bar>
-                            <uib-bar value="ticketCategory.notSoldTickets" type="info">{{ticketCategory.notSoldTickets}}</uib-bar>
-                            <uib-bar ng-if="!ticketCategory.bounded" value="event.dynamicAllocation" type="default">{{event.dynamicAllocation}}</uib-bar>
+                        <uib-progress ng-if="subscription.descriptor.maxAvailable > 0" max="subscription.descriptor.maxAvailable" tooltip-popup-close-delay="500">
+                            <uib-bar value="subscription.soldCount" type="success"><span>{{descriptor.soldCount}}</span></uib-bar>
                         </uib-progress>
+                        <div ng-if="subscription.descriptor.maxAvailable == -1" class="category-name">
+                            ({{subscription.soldCount}} sold)
+                        </div>
                     </div>
                     <div class="col-xs-12 col-md-5">
                         <div class="pull-right">
@@ -61,11 +57,11 @@
                         <i class="fa fa-clock-o fa-1_5x"></i><span class="sr-only">Ticket Validity</span>
                         <span class="text-muted">{{$ctrl.getTicketValidityFrom() | formatDate}} - {{$ctrl.getTicketValidityTo() | formatDate}}</span>
                     </h5>
-                    <small class="text-muted">ID: {{subscription.id}}</small>
+                    <small class="text-muted">ID: {{subscription.descriptor.id}}</small>
                 </div>
                 <div class="col-md-7 category-detail hidden-xs">
                     <uib-tabset>
-                        <uib-tab heading="{{lang}}" data-ng-repeat="(lang, desc) in subscription.description">
+                        <uib-tab heading="{{lang}}" data-ng-repeat="(lang, desc) in subscription.descriptor.description">
                             <div style="position: absolute; right: 15px; margin-top: 5px;"><display-commonmark-preview text="desc"></display-commonmark-preview></div>
                             <pre class="white text-muted">{{desc}}</pre>
                         </uib-tab>
@@ -77,7 +73,7 @@
             <hr>
             <div class="row">
                 <div class="col-md-2 col-md-push-10 col-xs-12">
-                    <a type="button" class="btn btn-warning btn-block" ui-sref="^.edit({ organizationId: subscription.organizationId, subscriptionId: subscription.id})" >Edit</a>
+                    <a type="button" class="btn btn-warning btn-block" ui-sref="^.edit({ organizationId: subscription.descriptor.organizationId, subscriptionId: subscription.descriptor.id})" >Edit</a>
                 </div>
             </div>
         </div>

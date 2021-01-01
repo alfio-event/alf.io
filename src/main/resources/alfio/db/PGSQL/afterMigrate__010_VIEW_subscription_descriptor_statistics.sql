@@ -37,6 +37,10 @@ create view subscription_descriptor_statistics as (
             sd.validity_from sd_validity_from,
             sd.validity_to sd_validity_to,
             sd.usage_type sd_usage_type,
+            sd.terms_conditions_url sd_terms_conditions_url,
+            sd.privacy_policy_url sd_privacy_policy_url,
+            sd.file_blob_id_fk sd_file_blob_id_fk,
+            sd.allowed_payment_proxies sd_allowed_payment_proxies,
             (select count(id) from subscription where status between 'ACQUIRED' and 'CHECKED_IN' and subscription_descriptor_fk = sd.id) s_sold_count,
             (select count(event_id_fk) from subscription_event where subscription_descriptor_id_fk = sd.id) s_events_count
       from subscription_descriptor sd

@@ -22,7 +22,9 @@ import alfio.model.ContentLanguage;
 import alfio.model.LocalizedContent;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.Purchasable;
+import alfio.model.support.Array;
 import alfio.model.support.JSONData;
+import alfio.model.transaction.PaymentProxy;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -71,6 +73,11 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Co
     private final ZonedDateTime validityTo;
     private final SubscriptionUsageType usageType;
 
+    private final String termsAndConditionsUrl;
+    private final String privacyPolicyUrl;
+    private final String fileBlobId;
+    private final List<PaymentProxy> paymentProxies;
+
     public SubscriptionDescriptor(@Column("id") UUID id,
                                   @Column("title") @JSONData Map<String, String> title,
                                   @Column("description") @JSONData Map<String, String> description,
@@ -91,7 +98,12 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Co
                                   @Column("validity_units") Integer validityUnits,
                                   @Column("validity_from") ZonedDateTime validityFrom,
                                   @Column("validity_to") ZonedDateTime validityTo,
-                                  @Column("usage_type") SubscriptionUsageType usageType) {
+                                  @Column("usage_type") SubscriptionUsageType usageType,
+
+                                  @Column("terms_conditions_url") String termsAndConditionsUrl,
+                                  @Column("privacy_policy_url") String privacyPolicyUrl,
+                                  @Column("file_blob_id_fk") String fileBlobId,
+                                  @Column("allowed_payment_proxies") @Array List<String> paymentProxies) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -113,6 +125,11 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Co
         this.validityFrom = validityFrom;
         this.validityTo = validityTo;
         this.usageType = usageType;
+
+        this.termsAndConditionsUrl = termsAndConditionsUrl;
+        this.privacyPolicyUrl = privacyPolicyUrl;
+        this.fileBlobId = fileBlobId;
+        this.paymentProxies = paymentProxies.stream().map(PaymentProxy::valueOf).collect(Collectors.toList());
     }
 
     @Override

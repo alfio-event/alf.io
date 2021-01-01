@@ -19,7 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.SubscriptionDescriptorModification;
-import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,9 +41,9 @@ public class SubscriptionApiController {
     }
 
     @GetMapping("/list")
-    ResponseEntity<List<SubscriptionDescriptor>> findAll(@PathVariable("organizationId") int organizationId, Principal principal) {
+    ResponseEntity<List<SubscriptionDescriptorWithStatistics>> findAll(@PathVariable("organizationId") int organizationId, Principal principal) {
         if (userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return ResponseEntity.ok(subscriptionManager.findAll(organizationId));
+            return ResponseEntity.ok(subscriptionManager.loadSubscriptionsWithStatistics(organizationId));
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

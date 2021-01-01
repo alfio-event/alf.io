@@ -21,12 +21,14 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
+import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -53,6 +55,11 @@ public class SubscriptionDescriptorModification {
     private final ZonedDateTime validityTo;
     private final SubscriptionUsageType usageType;
 
+    private final String termsAndConditionsUrl;
+    private final String privacyPolicyUrl;
+    private final String fileBlobId;
+    private final List<PaymentProxy> paymentProxies;
+
     public SubscriptionDescriptorModification(@JsonProperty("id") UUID id,
                                               @JsonProperty("title") Map<String, String> title,
                                               @JsonProperty("description") Map<String, String> description,
@@ -71,7 +78,11 @@ public class SubscriptionDescriptorModification {
                                               @JsonProperty("validityUnits") Integer validityUnits,
                                               @JsonProperty("validityFrom") ZonedDateTime validityFrom,
                                               @JsonProperty("validityTo") ZonedDateTime validityTo,
-                                              @JsonProperty("usageType") SubscriptionUsageType usageType) {
+                                              @JsonProperty("usageType") SubscriptionUsageType usageType,
+                                              @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
+                                              @JsonProperty("privacyPolicyUrl") String privacyPolicyUrl,
+                                              @JsonProperty("fileBlobId") String fileBlobId,
+                                              @JsonProperty("paymentProxies") List<PaymentProxy> paymentProxies) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -91,6 +102,10 @@ public class SubscriptionDescriptorModification {
         this.validityFrom = validityFrom;
         this.validityTo = validityTo;
         this.usageType = usageType;
+        this.termsAndConditionsUrl = termsAndConditionsUrl;
+        this.privacyPolicyUrl = privacyPolicyUrl;
+        this.fileBlobId = fileBlobId;
+        this.paymentProxies = paymentProxies;
     }
 
     public int getPriceCts() {
@@ -133,7 +148,10 @@ public class SubscriptionDescriptorModification {
             subscriptionDescriptor.getValidityUnits(),
             subscriptionDescriptor.getValidityFrom(),
             subscriptionDescriptor.getValidityTo(),
-            subscriptionDescriptor.getUsageType()
-        );
+            subscriptionDescriptor.getUsageType(),
+            subscriptionDescriptor.getTermsAndConditionsUrl(),
+            subscriptionDescriptor.getPrivacyPolicyUrl(),
+            subscriptionDescriptor.getFileBlobId(),
+            subscriptionDescriptor.getPaymentProxies());
     }
 }

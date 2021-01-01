@@ -65,7 +65,12 @@ public class SubscriptionManager {
             subscriptionDescriptor.getValidityUnits(),
             subscriptionDescriptor.getValidityFrom(),
             subscriptionDescriptor.getValidityTo(),
-            subscriptionDescriptor.getUsageType());
+            subscriptionDescriptor.getUsageType(),
+
+            subscriptionDescriptor.getTermsAndConditionsUrl(),
+            subscriptionDescriptor.getPrivacyPolicyUrl(),
+            subscriptionDescriptor.getFileBlobId(),
+            subscriptionDescriptor.getPaymentProxies());
 
         return result == 1 ? Optional.of(id) : Optional.empty();
     }
@@ -90,6 +95,11 @@ public class SubscriptionManager {
             subscriptionDescriptor.getValidityFrom(),
             subscriptionDescriptor.getValidityTo(),
             subscriptionDescriptor.getUsageType(),
+
+            subscriptionDescriptor.getTermsAndConditionsUrl(),
+            subscriptionDescriptor.getPrivacyPolicyUrl(),
+            subscriptionDescriptor.getFileBlobId(),
+            subscriptionDescriptor.getPaymentProxies(),
 
             subscriptionDescriptor.getId(),
             subscriptionDescriptor.getOrganizationId()

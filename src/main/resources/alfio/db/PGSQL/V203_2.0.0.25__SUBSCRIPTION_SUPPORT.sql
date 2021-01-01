@@ -48,7 +48,13 @@ create table subscription_descriptor (
     validity_units integer check (validity_type <> 'STANDARD' OR (validity_units is not null AND validity_units > 0)),
     validity_from timestamp with time zone check (validity_type <> 'CUSTOM' OR validity_from is not null),
     validity_to timestamp with time zone,
-    usage_type SUBSCRIPTION_USAGE_TYPE not null default 'ONCE_PER_EVENT'
+    usage_type SUBSCRIPTION_USAGE_TYPE not null default 'ONCE_PER_EVENT',
+
+    terms_conditions_url text not null,
+    privacy_policy_url text,
+    file_blob_id_fk char(64) not null constraint subscription_descriptor_file_blob_id references file_blob(id),
+    allowed_payment_proxies text array not null
+
 );
 
 alter table subscription_descriptor enable row level security;

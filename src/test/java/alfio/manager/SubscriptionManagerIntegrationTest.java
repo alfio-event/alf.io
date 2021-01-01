@@ -22,12 +22,15 @@ import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
 import alfio.model.PriceContainer;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -52,7 +56,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class SubscriptionManagerIntegrationTest {
-
 
     @Autowired
     ConfigurationRepository configurationRepository;
@@ -72,10 +75,20 @@ public class SubscriptionManagerIntegrationTest {
     @Autowired
     OrganizationRepository organizationRepository;
 
+    @Autowired
+    FileUploadManager fileUploadManager;
+
+    private String fileBlobId;
+
     @Before
     public void setup() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         initAdminUser(userRepository, authorityRepository);
+        UploadBase64FileModification toInsert = new UploadBase64FileModification();
+        toInsert.setFile(BaseIntegrationTest.ONE_PIXEL_BLACK_GIF);
+        toInsert.setName("image.gif");
+        toInsert.setType("image/gif");
+        fileBlobId = fileUploadManager.insertFile(toInsert);
     }
 
     @Test
@@ -120,6 +133,7 @@ public class SubscriptionManagerIntegrationTest {
     }
 
     private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price) {
+
         return new SubscriptionDescriptorModification(id,
             Map.of("en", "title"),
             Map.of("en", "description"),
@@ -138,7 +152,11 @@ public class SubscriptionManagerIntegrationTest {
             null,
             ZonedDateTime.now(ClockProvider.clock()).minusDays(1),
             ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
-            SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT);
+            SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT,
+            "https://example.org",
+            null,
+            fileBlobId,
+            List.of(PaymentProxy.STRIPE));
     }
 
 }

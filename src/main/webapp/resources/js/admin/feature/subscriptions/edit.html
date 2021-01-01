@@ -48,6 +48,55 @@
         </div>
     </div>
 
+    <div class="page-header">
+        <h3>URLs Configuration</h3>
+        <small class="text-muted">Define how users can access your event and where the relevant links should point.</small>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-md-6">
+            <div class="form-group" bs-form-error="editEventHeader.termsAndConditionsUrl">
+                <label for="termsAndConditionsUrl">Terms and Conditions URL</label>
+                <input type="url" url-text-field="" data-ng-model="$ctrl.subscription.termsAndConditionsUrl" name="termsAndConditionsUrl" id="termsAndConditionsUrl" required class="form-control" />
+                <field-error data-form-obj="editSubscriptionForm" data-field-obj="editSubscriptionForm.termsAndConditionsUrl" data-show-existing-errors="false"></field-error>
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-6">
+            <div class="form-group" bs-form-error="editEventHeader.privacyPolicyUrl">
+                <label for="privacyPolicyUrl">Privacy policy URL</label>
+                <input type="url" url-text-field="" data-ng-model="$ctrl.subscription.privacyPolicyUrl" name="privacyPolicyUrl" id="privacyPolicyUrl" class="form-control" aria-describedby="privacyHelp"/>
+                <small id="privacyHelp" class="help-block">Privacy policy link is optional. However, it is good practice to have one.</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-header">
+        <h3>Image</h3>
+        <small class="text-muted">Upload an image for this subscription in PNG, JPG, GIF or SVG format.</small>
+    </div>
+    <div class="row">
+        <div class="col-xs-6">
+            <div class="form-group">
+                <label for="imageFile">Image</label>
+                <div id="imageFile" class="drop-file-zone wMarginBottom well"
+                     data-accept="image/*" data-ngf-pattern="'image/*'"
+                     data-ng-model="$ctrl.droppedFile"
+                     data-ngf-drop data-ngf-select data-ngf-multiple="false" data-ngf-allow-dir="false" data-ngf-drag-over-class="'drop-file-zone-hover'">
+                    Drop image here or click to upload (Maximum size : 200KB)
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-6">
+            <div>
+                <a class="pull-right text-muted" data-ng-if="$ctrl.imageBase64 && !$ctrl.subscription.id" data-ng-click="$ctrl.removeImage()"><i class="fa fa-times fa-2x"></i></a>
+                <a class="pull-right text-muted" data-ng-if="$ctrl.imageBase64 && $ctrl.subscription.id" data-ng-click="$ctrl.resetImage()"><i class="fa fa-undo fa-2x"></i></a>
+                <img data-ng-if="$ctrl.imageBase64 && !$ctrl.subscription.fileBlobId" data-ng-src="{{$ctrl.imageBase64}}" class="img-responsive center-block event-logo">
+                <img data-ng-if="$ctrl.subscription.fileBlobId" data-ng-src="{{('/file/' + $ctrl.subscription.fileBlobId)}}" class="img-responsive center-block event-logo">
+                <div class="alert alert-danger alert-form ng-invalid" data-ng-if="!$ctrl.imageBase64 && !$ctrl.subscription.fileBlobId"><i class="fa fa-warning"></i> Image is missing!</div>
+            </div>
+        </div>
+    </div>
+
     <div class="page-header" ng-if="$ctrl.existing">
         <h3>Visibility</h3>
     </div>
@@ -79,7 +128,7 @@
     <div class="list-group">
         <a href="#" class="list-group-item" ng-class="{'active': $ctrl.preset === 'multipleEntries'}" ng-click="$ctrl.selectPreset('multipleEntries', $event)">
             <h4 class="list-group-item-heading">Multi-Access Pass</h4>
-            <p class="list-group-item-text">Give a discount if an attendee pre-pays multiple access</p>
+            <p class="list-group-item-text">Give full access to attendees for a defined number of events</p>
         </a>
         <a href="#" class="list-group-item" ng-class="{'active': $ctrl.preset === 'period'}" ng-click="$ctrl.selectPreset('period', $event)">
             <h4 class="list-group-item-heading">Monthly, Yearly or Daily Subscription</h4>
@@ -92,7 +141,6 @@
     </div>
 
     <div ng-if="$ctrl.preset">
-
         <div class="page-header">
             <h3>Pricing and Sales Period</h3>
         </div>
@@ -125,16 +173,34 @@
         </div>
         <hr>
         <div class="row">
-            <div class="col-sm-12 col-md-6">
+            <div class="col-sm-6 col-md-4">
                 <div class="form-group">
                     <label for="onSaleFrom">On Sale from</label>
                     <input id="onSaleFrom" autocomplete="off" single-date start-model="$ctrl.subscription.onSaleFromModel" ng-model="$ctrl.subscription.onSaleFromText" class="form-control">
                 </div>
             </div>
-            <div class="col-sm-12 col-md-6">
+            <div class="col-sm-6 col-md-4">
                 <div class="form-group">
                     <label for="onSaleTo"><span class="sr-only">On Sale </span>to (optional)</label>
                     <input id="onSaleTo" autocomplete="off" single-date start-model="$ctrl.subscription.onSaleToModel" no-init-date="true" ng-model="$ctrl.subscription.onSaleToText" class="form-control">
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-4">
+                <div class="form-group">
+                    <label for="maxAvailable">Max Available (optional)</label>
+                    <input id="maxAvailable" type="number" autocomplete="off" ng-model="$ctrl.subscription.maxAvailable" class="form-control">
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label>Accepted Payment Methods</label>
+                    <div class="checkbox" ng-repeat="p in $ctrl.paymentMethods">
+                        <label><input type="checkbox" ng-model="p.selected"> {{p.description}}</label>
+                    </div>
+
                 </div>
             </div>
         </div>

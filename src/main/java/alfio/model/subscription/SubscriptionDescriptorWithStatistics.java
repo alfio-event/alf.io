@@ -17,12 +17,14 @@
 package alfio.model.subscription;
 
 import alfio.model.PriceContainer;
+import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,7 +33,7 @@ public class SubscriptionDescriptorWithStatistics {
 
     private final int soldCount;
     private final int linkedEventsCount;
-    private final SubscriptionDescriptor subscriptionDescriptor;
+    private final SubscriptionDescriptor descriptor;
 
     public SubscriptionDescriptorWithStatistics(
 
@@ -57,12 +59,17 @@ public class SubscriptionDescriptorWithStatistics {
         @Column("sd_validity_to") ZonedDateTime validityTo,
         @Column("sd_usage_type") SubscriptionDescriptor.SubscriptionUsageType usageType,
 
+        @Column("sd_terms_conditions_url") String termsAndConditionsUrl,
+        @Column("sd_privacy_policy_url") String privacyPolicyUrl,
+        @Column("sd_file_blob_id_fk") String fileBlobId,
+        @Column("sd_allowed_payment_proxies") @Array List<String> paymentProxies,
+
         @Column("s_sold_count") int soldCount,
         @Column("s_events_count") int linkedEventsCount) {
 
         this.soldCount = soldCount;
         this.linkedEventsCount = linkedEventsCount;
-        this.subscriptionDescriptor = new SubscriptionDescriptor(id,
+        this.descriptor = new SubscriptionDescriptor(id,
             title,
             description,
             maxAvailable,
@@ -81,6 +88,10 @@ public class SubscriptionDescriptorWithStatistics {
             validityUnits,
             validityFrom,
             validityTo,
-            usageType);
+            usageType,
+            termsAndConditionsUrl,
+            privacyPolicyUrl,
+            fileBlobId,
+            paymentProxies);
     }
 }

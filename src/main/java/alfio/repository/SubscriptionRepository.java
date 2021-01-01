@@ -22,7 +22,9 @@ import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
+import alfio.model.support.Array;
 import alfio.model.support.JSONData;
+import alfio.model.transaction.PaymentProxy;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -39,10 +41,12 @@ public interface SubscriptionRepository {
 
     @Query("insert into subscription_descriptor (" +
         "id, title, description, max_available, on_sale_from, on_sale_to, price_cts, vat, vat_status, currency, is_public, organization_id_fk, " +
-        " max_entries, validity_type, validity_time_unit, validity_units, validity_from, validity_to, usage_type) " +
+        " max_entries, validity_type, validity_time_unit, validity_units, validity_from, validity_to, usage_type, terms_conditions_url, privacy_policy_url," +
+        " file_blob_id_fk, allowed_payment_proxies) " +
         " values(:id, :title::jsonb, :description::jsonb, :maxAvailable, :onSaleFrom, :onSaleTo, :priceCts, :vat, :vatStatus::VAT_STATUS, :currency, " +
         " :isPublic, :organizationId, :maxEntries, :validityType::SUBSCRIPTION_VALIDITY_TYPE, :validityTimeUnit::SUBSCRIPTION_TIME_UNIT, " +
-        " :validityUnits, :validityFrom, :validityTo, :usageType::SUBSCRIPTION_USAGE_TYPE)")
+        " :validityUnits, :validityFrom, :validityTo, :usageType::SUBSCRIPTION_USAGE_TYPE, :tcUrl, :privacyPolicyUrl," +
+        " :fileBlobId, :allowedPaymentProxies::text[])")
     int createSubscriptionDescriptor(@Bind("id") UUID id,
                                      @Bind("title") @JSONData Map<String, String> title,
                                      @Bind("description") @JSONData Map<String, String> description,
@@ -62,13 +66,20 @@ public interface SubscriptionRepository {
                                      @Bind("validityUnits") Integer validityUnits,
                                      @Bind("validityFrom") ZonedDateTime validityFrom,
                                      @Bind("validityTo") ZonedDateTime validityTo,
-                                     @Bind("usageType") SubscriptionUsageType usageType);
+                                     @Bind("usageType") SubscriptionUsageType usageType,
+
+                                     @Bind("tcUrl") String termsConditionsUrl,
+                                     @Bind("privacyPolicyUrl") String privacyPolicyUrl,
+                                     @Bind("fileBlobId") String fileBlobId,
+                                     @Bind("allowedPaymentProxies") @Array List<PaymentProxy> allowedPaymentProxies);
 
     @Query("update subscription_descriptor set title = :title::jsonb, description = :description::jsonb, max_available = :maxAvailable," +
         " on_sale_from = :onSaleFrom, on_sale_to = :onSaleTo, price_cts = :priceCts, vat = :vat, vat_status = :vatStatus::VAT_STATUS, " +
         " currency = :currency, is_public = :isPublic, max_entries = :maxEntries, validity_type = :validityType::SUBSCRIPTION_VALIDITY_TYPE," +
         " validity_time_unit = :validityTimeUnit::SUBSCRIPTION_TIME_UNIT, validity_units = :validityUnits, validity_from = :validityFrom," +
-        " validity_to = :validityTo, usage_type = :usageType::SUBSCRIPTION_USAGE_TYPE where id = :id and organization_id_fk = :organizationId")
+        " validity_to = :validityTo, usage_type = :usageType::SUBSCRIPTION_USAGE_TYPE," +
+        " terms_conditions_url = :tcUrl, privacy_policy_url = :privacyPolicyUrl, file_blob_id_fk = :fileBlobId, allowed_payment_proxies = :allowedPaymentProxies::text[]" +
+        " where id = :id and organization_id_fk = :organizationId")
     int updateSubscriptionDescriptor(@Bind("title") @JSONData Map<String, String> title,
                                      @Bind("description") @JSONData Map<String, String> description,
                                      @Bind("maxAvailable") int maxAvailable,
@@ -87,6 +98,11 @@ public interface SubscriptionRepository {
                                      @Bind("validityFrom") ZonedDateTime validityFrom,
                                      @Bind("validityTo") ZonedDateTime validityTo,
                                      @Bind("usageType") SubscriptionUsageType usageType,
+
+                                     @Bind("tcUrl") String termsConditionsUrl,
+                                     @Bind("privacyPolicyUrl") String privacyPolicyUrl,
+                                     @Bind("fileBlobId") String fileBlobId,
+                                     @Bind("allowedPaymentProxies") @Array List<PaymentProxy> allowedPaymentProxies,
 
                                      @Bind("id") UUID id,
                                      @Bind("organizationId") int organizationId);
