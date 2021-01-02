@@ -19,6 +19,7 @@ package alfio.model.subscription;
 import alfio.model.PriceContainer;
 import alfio.model.support.Array;
 import alfio.model.support.JSONData;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
@@ -93,5 +94,9 @@ public class SubscriptionDescriptorWithStatistics {
             privacyPolicyUrl,
             fileBlobId,
             paymentProxies);
+    }
+
+    public BigDecimal getUnitPrice() {
+        return MonetaryUtil.centsToUnit(descriptor.getPrice(), descriptor.getCurrency());
     }
 }

@@ -107,6 +107,18 @@ public class ConfigurationApiController {
         return ResponseEntity.ok(singleConfigForEvent);
     }
 
+    @GetMapping("/organizations/{organizationId}/single/{key}")
+    public ResponseEntity<String> getSingleConfigForOrganization(@PathVariable("organizationId") int organizationId,
+                                                                 @PathVariable("key") String key,
+                                                                 Principal principal) {
+
+        String config = configurationManager.getSingleConfigForOrganization(organizationId, key, principal.getName());
+        if(config == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(config);
+    }
+
     @PostMapping(value = "/organizations/{organizationId}/events/{eventId}/update")
     public boolean updateEventConfiguration(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId,
                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {

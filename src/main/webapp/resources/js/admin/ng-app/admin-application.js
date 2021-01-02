@@ -1016,7 +1016,8 @@
                                                         NotificationHandler,
                                                         $timeout,
                                                         TicketCategoryEditorService,
-                                                        GroupService) {
+                                                        GroupService,
+                                                        ConfigurationService) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -1027,8 +1028,11 @@
                 }
                 $scope.event = result.event;
                 $scope.loading = false;
-                var href = $window.location.href;
-                $scope.eventPublicURL = href.substring(0, href.indexOf('/admin/')) + '/event/' + result.event.shortName;
+
+                ConfigurationService.loadSingleConfigForEvent(result.event.id, 'BASE_URL').then(function(res) {
+                    $scope.eventPublicURL = res.data + '/event/' + result.event.shortName;
+                });
+
                 $scope.organization = result.organization;
                 $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
                     return !tc.expired && tc.bounded;

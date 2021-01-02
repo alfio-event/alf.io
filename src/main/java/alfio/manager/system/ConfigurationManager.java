@@ -289,6 +289,15 @@ public class ConfigurationManager {
         }
     }
 
+    public String getSingleConfigForOrganization(int organizationId, String keyAsString, String username) {
+        User user = userManager.findUserByUsername(username);
+        if(!userManager.isOwnerOfOrganization(user, organizationId)) {
+            return null;
+        }
+        var key = safeValueOf(keyAsString);
+        return getFirstConfigurationResult(configurationRepository.findByOrganizationAndKey(organizationId, key.name()), keyAsString);
+    }
+
     public String getSingleConfigForEvent(int eventId, String keyAsString, String username) {
         User user = userManager.findUserByUsername(username);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
@@ -297,8 +306,11 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        return configurationRepository.findByEventAndKey(organizationId, eventId, key.name())
-            .stream()
+        return getFirstConfigurationResult(configurationRepository.findByEventAndKey(organizationId, eventId, key.name()), keyAsString);
+    }
+
+    private String getFirstConfigurationResult(List<Configuration> results, String keyAsString) {
+        return Objects.requireNonNull(results).stream()
             .findFirst()
             .map(Configuration::getValue)
             .or(() -> externalConfiguration.getSingle(keyAsString).map(Configuration::getValue))

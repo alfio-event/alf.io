@@ -49,14 +49,14 @@
         bindings: { organizations: '<'}
     })
     .component('subscriptionsList', {
-        controller: ['SubscriptionService', SubscriptionsListCtrl],
+        controller: ['SubscriptionService', 'ConfigurationService', '$q', SubscriptionsListCtrl],
         templateUrl: '../resources/js/admin/feature/subscriptions/list.html',
         bindings: {
             organizationId: '<'
         }
     })
     .component('subscriptionsEdit', {
-        controller: ['$state', 'SubscriptionService', 'EventService', 'UtilsService', '$q', 'ImageTransformService', '$scope', 'PaymentProxyService', 'PAYMENT_PROXY_DESCRIPTIONS', 'NotificationHandler', SubscriptionsEditCtrl],
+        controller: ['$state', 'SubscriptionService', 'EventService', 'UtilsService', '$q', 'ImageTransformService', '$scope', 'PaymentProxyService', 'PAYMENT_PROXY_DESCRIPTIONS', 'NotificationHandler', 'ConfigurationService', SubscriptionsEditCtrl],
         templateUrl: '../resources/js/admin/feature/subscriptions/edit.html',
         bindings: {
             organizationId: '<',
@@ -89,12 +89,13 @@
         };
     }
 
-    function SubscriptionsListCtrl(SubscriptionService) {
+    function SubscriptionsListCtrl(SubscriptionService, ConfigurationService, $q) {
         var ctrl = this;
 
         ctrl.$onInit = function() {
-            SubscriptionService.loadSubscriptionsDescriptors(ctrl.organizationId).then(function(res) {
-                ctrl.subscriptions = res.data;
+            $q.all([SubscriptionService.loadSubscriptionsDescriptors(ctrl.organizationId), ConfigurationService.loadSingleConfigForOrganization(ctrl.organizationId, 'BASE_URL')]).then(function(res) {
+                ctrl.subscriptions = res[0].data;
+                ctrl.baseUrl = res[1].data;
             });
         }
 
@@ -116,7 +117,8 @@
                                    $scope,
                                    PaymentProxyService,
                                    PAYMENT_PROXY_DESCRIPTIONS,
-                                   NotificationHandler) {
+                                   NotificationHandler,
+                                   ConfigurationService) {
         var ctrl = this;
         ctrl.existing = false;
 
