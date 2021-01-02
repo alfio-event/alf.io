@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.PriceContainer.VatStatus;
+import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
@@ -38,6 +39,12 @@ import java.util.UUID;
 
 @QueryRepository
 public interface SubscriptionRepository {
+
+    String FETCH_SUBSCRIPTION_LINK = "select sd.id subscription_descriptor_id, sd.title subscription_descriptor_title, e.id event_id," +
+        " e.short_name event_short_name, e.display_name event_display_name, se.price_per_ticket price_per_ticket " +
+        " from subscription_event se" +
+        " join event e on e.id = se.event_id_fk and e.org_id = :organizationId" +
+        " join subscription_descriptor sd on sd.id = se.subscription_descriptor_id_fk and sd.organization_id_fk = :organizationId";
 
     @Query("insert into subscription_descriptor (" +
         "id, title, description, max_available, on_sale_from, on_sale_to, price_cts, vat, vat_status, currency, is_public, organization_id_fk, " +
@@ -124,4 +131,19 @@ public interface SubscriptionRepository {
 
     @Query("select * from subscription_descriptor_statistics where sd_organization_id_fk = :organizationId")
     List<SubscriptionDescriptorWithStatistics> findAllWithStatistics(@Bind("organizationId") int organizationId);
+
+    @Query("insert into subscription_event(event_id_fk, subscription_descriptor_id_fk, price_per_ticket, organization_id_fk)" +
+        " values(:eventId, :subscriptionId, :pricePerTicket, :organizationId) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket")
+    int linkSubscriptionAndEvent(@Bind("subscriptionId") UUID subscriptionId,
+                                 @Bind("eventId") int eventId,
+                                 @Bind("pricePerTicket") int pricePerTicket,
+                                 @Bind("organizationId") int organizationId);
+
+    @Query(FETCH_SUBSCRIPTION_LINK + " where se.subscription_descriptor_id_fk = :subscriptionId")
+    List<EventSubscriptionLink> findLinkedEvents(@Bind("organizationId") int organizationId,
+                                                 @Bind("subscriptionId") UUID id);
+
+    @Query(FETCH_SUBSCRIPTION_LINK + " where se.event_id_fk = :eventId")
+    List<EventSubscriptionLink> findLinkedSubscriptions(@Bind("organizationId") int organizationId,
+                                                        @Bind("eventId") int eventId);
 }

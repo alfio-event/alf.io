@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.repository.SubscriptionRepository;
@@ -125,5 +126,13 @@ public class SubscriptionManager {
 
     public List<SubscriptionDescriptorWithStatistics> loadSubscriptionsWithStatistics(int organizationId) {
         return subscriptionRepository.findAllWithStatistics(organizationId);
+    }
+
+    public int linkSubscriptionToEvent(UUID subscriptionId, int eventId, int organizationId, int pricePerTicket) {
+        return subscriptionRepository.linkSubscriptionAndEvent(subscriptionId, eventId, pricePerTicket, organizationId);
+    }
+
+    public List<EventSubscriptionLink> getLinkedEvents(int organizationId, UUID id) {
+        return subscriptionRepository.findLinkedEvents(organizationId, id);
     }
 }

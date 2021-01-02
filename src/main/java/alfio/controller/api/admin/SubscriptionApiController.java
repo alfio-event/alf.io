@@ -19,6 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -88,11 +89,22 @@ public class SubscriptionApiController {
 
     @PatchMapping("/{subscriptionId}/is-public")
     ResponseEntity<Boolean> setPublicState(@PathVariable("organizationId") int organizationId,
-                                                  @PathVariable("subscriptionId") UUID subscriptionId,
-                                                  @RequestParam("status") boolean status,
-                                                  Principal principal) {
+                                           @PathVariable("subscriptionId") UUID subscriptionId,
+                                           @RequestParam("status") boolean status,
+                                           Principal principal) {
         if (userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
             return ResponseEntity.ok(subscriptionManager.setPublicStatus(subscriptionId, organizationId, status));
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    @GetMapping("/{subscriptionId}/events")
+    ResponseEntity<List<EventSubscriptionLink>> getLinkedEvents(@PathVariable("organizationId") int organizationId,
+                                                                @PathVariable("subscriptionId") UUID subscriptionId,
+                                                                Principal principal) {
+        if(userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
+            return ResponseEntity.ok(subscriptionManager.getLinkedEvents(organizationId, subscriptionId));
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

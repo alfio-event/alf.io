@@ -20,11 +20,17 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
+import alfio.model.Event;
 import alfio.model.PriceContainer;
+import alfio.model.TicketCategory;
+import alfio.model.metadata.AlfioMetadata;
+import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -32,6 +38,7 @@ import alfio.repository.user.UserRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,14 +49,16 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static alfio.test.util.IntegrationTestUtil.initAdminUser;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static alfio.test.util.IntegrationTestUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -78,7 +87,15 @@ public class SubscriptionManagerIntegrationTest {
     @Autowired
     FileUploadManager fileUploadManager;
 
+    @Autowired
+    EventManager eventManager;
+
+    @Autowired
+    EventRepository eventRepository;
+
     private String fileBlobId;
+    private Event event;
+    private String username;
 
     @Before
     public void setup() {
@@ -89,13 +106,23 @@ public class SubscriptionManagerIntegrationTest {
         toInsert.setName("image.gif");
         toInsert.setType("image/gif");
         fileBlobId = fileUploadManager.insertFile(toInsert);
+
+        //create test event
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).minusDays(1), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+
+        event = eventAndUser.getLeft();
+        username = eventAndUser.getRight();
     }
 
     @Test
     public void testCreateRead() {
-        String organizationName = UUID.randomUUID().toString();
-        userManager.createOrganization(organizationName, "desc", "email@example.com");
-        int orgId = organizationRepository.getIdByName(organizationName);
+        int orgId = event.getOrganizationId();
+
         assertTrue(subscriptionManager.findAll(orgId).isEmpty());
         subscriptionManager.createSubscriptionDescriptor(buildSubscriptionDescriptor(orgId, null, new BigDecimal("100")));
         var res = subscriptionManager.findAll(orgId);
@@ -129,7 +156,13 @@ public class SubscriptionManagerIntegrationTest {
         var subscriptionsWithStatistics = subscriptionManager.loadSubscriptionsWithStatistics(orgId);
         assertEquals(1, subscriptionsWithStatistics.size());
         assertEquals(0, subscriptionsWithStatistics.get(0).getSoldCount());
-        //TODO add event link
+
+        assertEquals(1, subscriptionManager.linkSubscriptionToEvent(descriptor.getId(), event.getId(), orgId, 0));
+        var links = subscriptionManager.getLinkedEvents(orgId, descriptor.getId());
+        assertFalse(links.isEmpty());
+        assertEquals(event.getId(), links.get(0).getEventId());
+        assertEquals(descriptor.getId(), links.get(0).getSubscriptionDescriptorId());
+        assertEquals(0, links.get(0).getPricePerTicket());
     }
 
     private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price) {

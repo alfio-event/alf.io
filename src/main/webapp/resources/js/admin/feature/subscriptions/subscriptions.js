@@ -331,6 +331,14 @@
                 return $http.get('/admin/api/organization/'+organizationId+'/subscription/'+subscriptionId)
                     .error(HttpErrorHandler.handle);
             },
+            findLinkedEvents: function(organizationId, subscriptionId) {
+                return $http.get('/admin/api/organization/'+organizationId+'/subscription/'+subscriptionId+'/events')
+                    .error(HttpErrorHandler.handle);
+            },
+            findLinkedSubscriptions: function(organizationId, eventId) {
+                return $http.get('/admin/api/organization/'+organizationId+'/subscription/for/'+eventId)
+                    .error(HttpErrorHandler.handle);
+            },
             createNew: function(subscription) {
                 var payload = self.modelToSubscriptionPayload(subscription);
                 return $http.post('/admin/api/organization/'+payload.organizationId+'/subscription/', payload)
