@@ -41,7 +41,7 @@ class PaymentPageInitializeBuilderTest {
     @BeforeEach
     public void init() {
         System.out.println("init");
-        when(paymentSpecification.getEvent()).thenReturn(event);
+        when(paymentSpecification.getPurchasable()).thenReturn(event);
         when(paymentSpecification.getReservationId()).thenReturn("reservationId");
         when(event.getShortName()).thenReturn("shortName");
     }

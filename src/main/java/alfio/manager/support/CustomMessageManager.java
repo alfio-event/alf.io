@@ -20,7 +20,6 @@ import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -80,7 +79,7 @@ public class CustomMessageManager {
         var eventMetadata = Optional.ofNullable(eventManager.getMetadataForEvent(event).getRequirementsDescriptions());
 
         sendMessagesExecutor.execute(() -> {
-            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+            var messageSource = messageSourceManager.getMessageSourceFor(event);
             categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
                 .orElseGet(() -> ticketRepository.findAllConfirmed(event.getId()))
                 .stream()

@@ -16,11 +16,12 @@
  */
 package alfio.controller.payment.api.saferpay;
 
+import alfio.manager.PurchasableManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.saferpay.PaymentPageInitializeRequestBuilder;
+import alfio.model.Purchasable;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.EventRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,15 +35,16 @@ import java.util.Map;
 @AllArgsConstructor
 public class SaferpayPaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
-    private final EventRepository eventRepository;
+    private final PurchasableManager purchasableManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.WEBHOOK_URL_TEMPLATE)
-    ResponseEntity<String> handleTransactionNotification(@PathVariable("eventShortName") String eventName,
+    ResponseEntity<String> handleTransactionNotification(@PathVariable("purchasableType") String purchasableType,
+                                                         @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                          @PathVariable("reservationId") String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
-                .map(event -> {
+        return purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier)
+                .map(purchasable -> {
                     var result = ticketReservationManager.processTransactionWebhook("", null, PaymentProxy.SAFERPAY,
-                        Map.of("eventName", eventName, "reservationId", reservationId), new PaymentContext(event, reservationId));
+                        Map.of("purchasableType", purchasableType, "purchasableIdentifier", purchasableIdentifier, "reservationId", reservationId), new PaymentContext(purchasable, reservationId));
                     if(result.isSuccessful()) {
                         return ResponseEntity.ok("OK");
                     } else if(result.isError()) {

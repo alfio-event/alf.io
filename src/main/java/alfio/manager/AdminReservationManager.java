@@ -768,7 +768,7 @@ public class AdminReservationManager {
         Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
         Locale locale = LocaleUtil.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
         notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(),
-            messageSourceManager.getMessageSourceForEvent(event).getMessage("email-ticket-released.subject",
+            messageSourceManager.getMessageSourceFor(event).getMessage("email-ticket-released.subject",
             new Object[]{event.getDisplayName()}, locale),
             () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
     }

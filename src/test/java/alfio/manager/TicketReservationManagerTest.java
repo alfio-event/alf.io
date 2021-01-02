@@ -192,7 +192,7 @@ class TicketReservationManagerTest {
         when(ticketCategory.getCurrencyCode()).thenReturn(CATEGORY_CURRENCY);
         when(configurationManager.getFor(eq(VAT_NR), any())).thenReturn(new MaybeConfiguration(VAT_NR));
 
-        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
 
         MaybeConfiguration configuration = mock(MaybeConfiguration.class);

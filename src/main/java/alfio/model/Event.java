@@ -276,4 +276,15 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     public boolean getIsOnline() {
         return format == EventFormat.ONLINE;
     }
+
+    @JsonIgnore
+    @Override
+    public String getPublicIdentifier() {
+        return getShortName();
+    }
+
+    @Override
+    public PurchasableType getType() {
+        return PurchasableType.EVENT;
+    }
 }

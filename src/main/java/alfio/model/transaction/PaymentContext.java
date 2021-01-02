@@ -18,12 +18,13 @@ package alfio.model.transaction;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.model.Event;
+import alfio.model.Purchasable;
 
 import java.util.Optional;
 
 public class PaymentContext {
 
-    private final Event event;
+    private final Purchasable purchasable;
     private final String reservationId;
     private final ConfigurationLevel configurationLevel;
 
@@ -31,30 +32,30 @@ public class PaymentContext {
         this(null, ConfigurationLevel.system());
     }
 
-    public PaymentContext(Event event) {
-        this(event, event.getConfigurationLevel());
+    public PaymentContext(Purchasable purchasable) {
+        this(purchasable, purchasable.getConfigurationLevel());
     }
 
-    public PaymentContext(Event event, String reservationId) {
-        this(event, event.getConfigurationLevel(), reservationId);
+    public PaymentContext(Purchasable purchasable, String reservationId) {
+        this(purchasable, purchasable.getConfigurationLevel(), reservationId);
     }
 
-    public PaymentContext(Event event, ConfigurationLevel configurationLevel) {
-        this(event, configurationLevel, null);
+    public PaymentContext(Purchasable purchasable, ConfigurationLevel configurationLevel) {
+        this(purchasable, configurationLevel, null);
     }
 
-    public PaymentContext(Event event, ConfigurationLevel configurationLevel, String reservationId) {
-        this.event = event;
+    public PaymentContext(Purchasable purchasable, ConfigurationLevel configurationLevel, String reservationId) {
+        this.purchasable = purchasable;
         this.configurationLevel = configurationLevel;
         this.reservationId = reservationId;
     }
 
     /**
-     * The {@link Event} on which this configuration refers to
-     * @return Event, or null
+     * The {@link Purchasable} on which this configuration refers to
+     * @return Purchasable, or null
      */
-    public Event getEvent() {
-        return event;
+    public Purchasable getPurchasable() {
+        return purchasable;
     }
 
     public Optional<String> getReservationId() {
@@ -63,5 +64,9 @@ public class PaymentContext {
 
     public ConfigurationLevel getConfigurationLevel() {
         return configurationLevel;
+    }
+
+    public boolean isOnline() {
+        return (purchasable instanceof Event) ? ((Event) purchasable).isOnline() : true;
     }
 }

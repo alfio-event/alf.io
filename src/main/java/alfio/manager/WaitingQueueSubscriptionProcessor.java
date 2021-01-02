@@ -113,7 +113,7 @@ public class WaitingQueueSubscriptionProcessor {
     }
 
     public void distributeAvailableSeats(Event event) {
-        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+        var messageSource = messageSourceManager.getMessageSourceFor(event);
         waitingQueueManager.distributeSeats(event).forEach(triple -> {
             WaitingQueueSubscription subscription = triple.getLeft();
             Locale locale = subscription.getLocale();

@@ -118,7 +118,7 @@ class StripeWebhookPaymentManagerTest {
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
         var paymentContext = mock(PaymentContext.class);
-        when(paymentContext.getEvent()).thenReturn(event);
+        when(paymentContext.getPurchasable()).thenReturn(event);
         when(configurationManager.getFor(eq(STRIPE_SECRET_KEY), any())).thenReturn(STRIPE_SECRET_KEY_CONF);
         when(paymentIntent.getLivemode()).thenReturn(true);
         when(transactionRepository.updateIfStatus(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()), eq(Transaction.Status.PENDING))).thenReturn(1);
@@ -145,7 +145,7 @@ class StripeWebhookPaymentManagerTest {
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
         var paymentContext = mock(PaymentContext.class);
-        when(paymentContext.getEvent()).thenReturn(event);
+        when(paymentContext.getPurchasable()).thenReturn(event);
         when(configurationManager.getFor(eq(STRIPE_SECRET_KEY), any())).thenReturn(STRIPE_SECRET_KEY_CONF);
         when(paymentIntent.getLivemode()).thenReturn(true);
         when(transactionRepository.updateIfStatus(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()), eq(Transaction.Status.PENDING))).thenReturn(0);
@@ -169,7 +169,7 @@ class StripeWebhookPaymentManagerTest {
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
 
         var paymentContext = mock(PaymentContext.class);
-        when(paymentContext.getEvent()).thenReturn(event);
+        when(paymentContext.getPurchasable()).thenReturn(event);
         when(configurationManager.getFor(eq(STRIPE_SECRET_KEY), any())).thenReturn(STRIPE_SECRET_KEY_CONF);
         when(paymentIntent.getLivemode()).thenReturn(true);
 
@@ -197,7 +197,7 @@ class StripeWebhookPaymentManagerTest {
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
         var paymentContext = mock(PaymentContext.class);
-        when(paymentContext.getEvent()).thenReturn(event);
+        when(paymentContext.getPurchasable()).thenReturn(event);
         when(configurationManager.getFor(eq(STRIPE_SECRET_KEY), any())).thenReturn(STRIPE_SECRET_KEY_CONF);
         when(paymentIntent.getLivemode()).thenReturn(false);
         var paymentWebhookResult = stripeWebhookPaymentManager.processWebhook(transactionWebhookPayload, transaction, paymentContext);

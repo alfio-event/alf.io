@@ -17,7 +17,6 @@
 package alfio.model.subscription;
 
 import alfio.manager.system.ConfigurationLevel;
-import alfio.model.Configurable;
 import alfio.model.ContentLanguage;
 import alfio.model.LocalizedContent;
 import alfio.model.PriceContainer.VatStatus;
@@ -28,6 +27,7 @@ import alfio.model.transaction.PaymentProxy;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -37,7 +37,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
-public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Configurable {
+public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
 
     public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED
@@ -144,5 +144,26 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Co
     @Override
     public ConfigurationLevel getConfigurationLevel() {
         return ConfigurationLevel.organization(organizationId);
+    }
+
+    @Override
+    public List<PaymentProxy> getAllowedPaymentProxies() {
+        return getPaymentProxies();
+    }
+
+    @Override
+    public String getPrivacyPolicyLinkOrNull() {
+        return StringUtils.trimToNull(privacyPolicyUrl);
+    }
+
+    @Override
+    public String getPublicIdentifier() {
+        return getId().toString();
+    }
+
+    @JsonIgnore
+    @Override
+    public PurchasableType getType() {
+        return PurchasableType.SUBSCRIPTION;
     }
 }

@@ -16,10 +16,47 @@
  */
 package alfio.model;
 
-import java.math.BigDecimal;
+import alfio.model.transaction.PaymentProxy;
 
-public interface Purchasable {
+import java.math.BigDecimal;
+import java.util.List;
+
+public interface Purchasable extends Configurable {
     BigDecimal getVat();
     PriceContainer.VatStatus getVatStatus();
     String getCurrency();
+
+    List<PaymentProxy> getAllowedPaymentProxies();
+    String getPrivacyPolicyLinkOrNull();
+    String getPrivacyPolicyUrl();
+    String getTermsAndConditionsUrl();
+
+    //
+    int getOrganizationId();
+
+    //
+    PurchasableType getType();
+    String getPublicIdentifier();
+
+    enum PurchasableType {
+        SUBSCRIPTION("subscription"), EVENT("event");
+
+        private final String urlComponent;
+
+        PurchasableType(String urlComponent) {
+            this.urlComponent = urlComponent;
+        }
+
+        public static PurchasableType from(String purchasableType) {
+            switch (purchasableType) {
+                case "subscription": return SUBSCRIPTION;
+                case "event": return EVENT;
+                default: throw new IllegalStateException("Purchase type not supported:" + purchasableType);
+            }
+        }
+
+        public String getUrlComponent() {
+            return urlComponent;
+        }
+    }
 }
