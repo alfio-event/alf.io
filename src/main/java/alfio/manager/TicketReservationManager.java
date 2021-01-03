@@ -1348,7 +1348,7 @@ public class TicketReservationManager {
         var currencyCode = reservationCost.getCurrencyCode();
         List<TicketPriceContainer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream()
             .map(t -> TicketPriceContainer.from(t, reservationVatStatus, purchasable.getVat(), purchasable.getVatStatus(), promoCodeDiscount)).collect(toList());
-        tickets.stream()
+        purchasable.event().ifPresent(event -> tickets.stream()
             .collect(Collectors.groupingBy(TicketPriceContainer::getCategoryId))
             .forEach((categoryId, ticketsByCategory) -> {
                 final int subTotal = ticketsByCategory.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
@@ -1356,9 +1356,9 @@ public class TicketReservationManager {
                 TicketPriceContainer firstTicket = ticketsByCategory.get(0);
                 final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
                 final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(firstTicket));
-                String categoryName = ticketCategoryRepository.getByIdAndActive(categoryId, purchasable.getId()).getName();
+                String categoryName = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId()).getName();
                 summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts, currencyCode), formatCents(priceBeforeVat, currencyCode), ticketsByCategory.size(), formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET));
-            });
+            }));
 
         summary.addAll(streamAdditionalServiceItems(reservationId, purchasable)
             .map(entry -> {
@@ -1387,12 +1387,14 @@ public class TicketReservationManager {
     }
 
     private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> streamAdditionalServiceItems(String reservationId, Purchasable purchasable) {
-        return additionalServiceItemRepository.findByReservationUuid(reservationId)
+        return purchasable.event().map(event -> {
+            return additionalServiceItemRepository.findByReservationUuid(reservationId)
             .stream()
             .collect(Collectors.groupingBy(AdditionalServiceItem::getAdditionalServiceId))
             .entrySet()
             .stream()
-            .map(entry -> Pair.of(additionalServiceRepository.getById(entry.getKey(), purchasable.getId()), entry.getValue()));
+            .map(entry -> Pair.of(additionalServiceRepository.getById(entry.getKey(), event.getId()), entry.getValue()));
+        }).orElse(List.<Pair<AdditionalService, List<AdditionalServiceItem>>>of().stream());
     }
     private List<Pair<AdditionalService, List<AdditionalServiceItem>>> collectAdditionalServiceItems(String reservationId, Event event) {
         return streamAdditionalServiceItems(reservationId, event).collect(Collectors.toList());

@@ -67,4 +67,6 @@ public interface Purchasable extends Configurable, TimeZoneInfo {
             return urlComponent;
         }
     }
+
+    String getPrivateKey();
 }

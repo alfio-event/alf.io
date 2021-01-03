@@ -42,6 +42,8 @@ import java.util.stream.Collectors;
 @Getter
 public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
 
+
+
     public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED
     }
@@ -80,6 +82,7 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
     private final String privacyPolicyUrl;
     private final String fileBlobId;
     private final List<PaymentProxy> paymentProxies;
+    private final UUID privateKey;
 
     public SubscriptionDescriptor(@Column("id") UUID id,
                                   @Column("title") @JSONData Map<String, String> title,
@@ -106,7 +109,8 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
                                   @Column("terms_conditions_url") String termsAndConditionsUrl,
                                   @Column("privacy_policy_url") String privacyPolicyUrl,
                                   @Column("file_blob_id_fk") String fileBlobId,
-                                  @Column("allowed_payment_proxies") @Array List<String> paymentProxies) {
+                                  @Column("allowed_payment_proxies") @Array List<String> paymentProxies,
+                                  @Column("private_key") UUID privateKey) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -133,6 +137,8 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
         this.privacyPolicyUrl = privacyPolicyUrl;
         this.fileBlobId = fileBlobId;
         this.paymentProxies = paymentProxies.stream().map(PaymentProxy::valueOf).collect(Collectors.toList());
+
+        this.privateKey = privateKey;
     }
 
     @Override
@@ -185,5 +191,11 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
     @Override
     public Optional<Event> event() {
         return Optional.empty();
+    }
+
+    @JsonIgnore
+    @Override
+    public String getPrivateKey() {
+        return privateKey.toString();
     }
 }

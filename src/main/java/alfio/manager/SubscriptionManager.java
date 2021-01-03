@@ -70,7 +70,8 @@ public class SubscriptionManager {
             subscriptionDescriptor.getTermsAndConditionsUrl(),
             subscriptionDescriptor.getPrivacyPolicyUrl(),
             subscriptionDescriptor.getFileBlobId(),
-            subscriptionDescriptor.getPaymentProxies());
+            subscriptionDescriptor.getPaymentProxies(),
+            UUID.randomUUID());
 
         return result == 1 ? Optional.of(id) : Optional.empty();
     }
