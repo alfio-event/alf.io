@@ -632,7 +632,7 @@ public class TicketReservationManager {
 
         optionalInvoiceNumber.ifPresent(invoiceNumber -> {
             List<Map<String, Object>> modifications = List.of(Map.of("invoiceNumber", invoiceNumber));
-            auditingRepository.insert(reservationId, null, spec.getPurchasable().getId(), EXTERNAL_INVOICE_NUMBER, new Date(), RESERVATION, reservationId, modifications);
+            auditingRepository.insert(reservationId, null, spec.getPurchasable(), EXTERNAL_INVOICE_NUMBER, new Date(), RESERVATION, reservationId, modifications);
         });
 
         String invoiceNumber = optionalInvoiceNumber.orElseGet(() -> {
@@ -998,7 +998,8 @@ public class TicketReservationManager {
      */
     void completeReservation(PaymentSpecification spec, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets, String username) {
         String reservationId = spec.getReservationId();
-        int eventId = spec.getPurchasable().getId();
+        //int eventId = spec.getPurchasable().getId();
+        var purchasable = spec.getPurchasable();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         List<Ticket> tickets = null;
@@ -1008,14 +1009,14 @@ public class TicketReservationManager {
         }
 
         Date eventTime = new Date();
-        auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
+        auditingRepository.insert(reservationId, null, purchasable, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
         ticketReservationRepository.updateRegistrationTimestamp(reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getPurchasable().getZoneId())));
         if(spec.isTcAccepted()) {
-            auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getPurchasable().getTermsAndConditionsUrl())));
+            auditingRepository.insert(reservationId, null, purchasable, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getPurchasable().getTermsAndConditionsUrl())));
         }
 
         if(eventHasPrivacyPolicy(spec.getPurchasable()) && spec.isPrivacyAccepted()) {
-            auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getPurchasable().getPrivacyPolicyUrl())));
+            auditingRepository.insert(reservationId, null, purchasable, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getPurchasable().getPrivacyPolicyUrl())));
         }
 
         if(sendReservationConfirmationEmail) {
@@ -2189,27 +2190,27 @@ public class TicketReservationManager {
 
     }
 
-    public Optional<TransactionInitializationToken> initTransaction(Purchasable event, String reservationId, PaymentMethod paymentMethod, Map<String, List<String>> params) {
+    public Optional<TransactionInitializationToken> initTransaction(Purchasable purchasable, String reservationId, PaymentMethod paymentMethod, Map<String, List<String>> params) {
         ticketReservationRepository.lockReservationForUpdate(reservationId);
         var reservation = ticketReservationRepository.findReservationById(reservationId);
         var transactionRequest = new TransactionRequest(totalReservationCostWithVAT(reservation).getLeft(), ticketReservationRepository.getBillingDetailsForReservation(reservationId));
-        var optionalProvider = paymentManager.lookupProviderByMethodAndCapabilities(paymentMethod, new PaymentContext(event), transactionRequest, List.of(WebhookHandler.class, ServerInitiatedTransaction.class));
+        var optionalProvider = paymentManager.lookupProviderByMethodAndCapabilities(paymentMethod, new PaymentContext(purchasable), transactionRequest, List.of(WebhookHandler.class, ServerInitiatedTransaction.class));
         if (optionalProvider.isEmpty()) {
             return Optional.empty();
         }
-        var messageSource = messageSourceManager.getMessageSourceFor(event);
+        var messageSource = messageSourceManager.getMessageSourceFor(purchasable);
         var provider = (ServerInitiatedTransaction) optionalProvider.get();
         var paymentSpecification = new PaymentSpecification(reservation,
-            totalReservationCostWithVAT(reservation).getLeft(), event, null,
-            orderSummaryForReservation(reservation, event), false, false);
-        if(!acquireGroupMembers(reservationId, event)) {
+            totalReservationCostWithVAT(reservation).getLeft(), purchasable, null,
+            orderSummaryForReservation(reservation, purchasable), false, false);
+        if(!acquireGroupMembers(reservationId, purchasable)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
             var errorMessage = messageSource.getMessage("error.STEP2_WHITELIST", null, LocaleUtil.forLanguageTag(reservation.getUserLanguage()));
             return Optional.of(provider.errorToken(errorMessage, false));
         }
         var transactionToken = provider.initTransaction(paymentSpecification, params);
         if(transitionToExternalProcessingPayment(reservation)) {
-           auditingRepository.insert(reservationId, null, event.getId(), INIT_PAYMENT, new Date(), RESERVATION, reservationId);
+           auditingRepository.insert(reservationId, null, purchasable, INIT_PAYMENT, new Date(), RESERVATION, reservationId);
         }
         return Optional.of(transactionToken);
     }

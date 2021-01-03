@@ -150,13 +150,13 @@ public class PaymentManager {
         );
         if(res) {
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
-                purchasable.getId(),
+                purchasable,
                 Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
                 Collections.singletonList(changes));
             extensionManager.handleRefund(purchasable, reservation, getInfo(reservation, purchasable));
         } else {
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
-                purchasable.getId(),
+                purchasable,
                 Audit.EventType.REFUND_ATTEMPT_FAILED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
                 Collections.singletonList(changes));
         }

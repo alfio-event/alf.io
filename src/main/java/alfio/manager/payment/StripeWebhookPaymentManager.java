@@ -299,7 +299,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
      */
     private PaymentWebhookResult processFailedPaymentIntent(Transaction transaction, TicketReservation reservation, Purchasable purchasable) {
         List<Map<String, Object>> modifications = List.of(Map.of("paymentId", transaction.getPaymentId(), "paymentMethod", "stripe"));
-        auditingRepository.insert(reservation.getId(), null, purchasable.getId(), Audit.EventType.PAYMENT_FAILED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
+        auditingRepository.insert(reservation.getId(), null, purchasable, Audit.EventType.PAYMENT_FAILED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
         return PaymentWebhookResult.failed("Charge has been reset by Stripe. This is usually caused by a rejection from the customer's bank");
     }
 
@@ -316,12 +316,12 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             // the transaction was already confirmed by someone else.
             // We can safely return the chargeId, but we write in the auditing that we skipped the confirmation
             auditingRepository.insert(reservation.getId(), null,
-                purchasable.getId(), Audit.EventType.PAYMENT_ALREADY_CONFIRMED,
+                purchasable, Audit.EventType.PAYMENT_ALREADY_CONFIRMED,
                 new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
             return PaymentWebhookResult.successful(new StripeSCACreditCardToken(transaction.getPaymentId(), chargeId, null));
         }
         auditingRepository.insert(reservation.getId(), null,
-            purchasable.getId(), Audit.EventType.PAYMENT_CONFIRMED,
+            purchasable, Audit.EventType.PAYMENT_CONFIRMED,
             new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
         return PaymentWebhookResult.successful(new StripeSCACreditCardToken(transaction.getPaymentId(), chargeId, null));
     }
