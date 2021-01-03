@@ -17,9 +17,9 @@
                     </div>
                     <div class="col-xs-3 col-md-5">
                         <div class="pull-right">
-                            <a class="btn btn-sm btn-default" ui-sref="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})">
+                            <button type="button" class="btn btn-sm btn-default" ng-click="$ctrl.showLinkedEvents(subscription.descriptor)">
                                 <i class="fa fa-ticket"></i> Linked Events
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>

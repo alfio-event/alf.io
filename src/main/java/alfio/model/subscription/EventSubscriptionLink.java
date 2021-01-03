@@ -17,9 +17,11 @@
 package alfio.model.subscription;
 
 import alfio.model.support.JSONData;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,6 +33,7 @@ public class EventSubscriptionLink {
     private final String eventShortName;
     private final String eventDisplayName;
     private final int pricePerTicket;
+    private final String eventCurrency;
 
 
     public EventSubscriptionLink(@Column("subscription_descriptor_id") UUID subscriptionDescriptorId,
@@ -38,12 +41,18 @@ public class EventSubscriptionLink {
                                  @Column("event_id") int eventId,
                                  @Column("event_short_name") String eventShortName,
                                  @Column("event_display_name") String eventDisplayName,
+                                 @Column("event_currency") String eventCurrency,
                                  @Column("price_per_ticket") int pricePerTicket) {
         this.subscriptionDescriptorId = subscriptionDescriptorId;
         this.subscriptionDescriptorTitle = subscriptionDescriptorTitle;
         this.eventId = eventId;
         this.eventShortName = eventShortName;
+        this.eventCurrency = eventCurrency;
         this.eventDisplayName = eventDisplayName;
         this.pricePerTicket = pricePerTicket;
+    }
+
+    public BigDecimal getFormattedPricePerTicket() {
+        return MonetaryUtil.centsToUnit(pricePerTicket, eventCurrency);
     }
 }

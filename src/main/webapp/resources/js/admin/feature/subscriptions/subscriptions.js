@@ -49,7 +49,7 @@
         bindings: { organizations: '<'}
     })
     .component('subscriptionsList', {
-        controller: ['SubscriptionService', 'ConfigurationService', '$q', SubscriptionsListCtrl],
+        controller: ['SubscriptionService', 'ConfigurationService', '$q', 'NotificationHandler', '$uibModal', SubscriptionsListCtrl],
         templateUrl: '../resources/js/admin/feature/subscriptions/list.html',
         bindings: {
             organizationId: '<'
@@ -89,7 +89,7 @@
         };
     }
 
-    function SubscriptionsListCtrl(SubscriptionService, ConfigurationService, $q) {
+    function SubscriptionsListCtrl(SubscriptionService, ConfigurationService, $q, NotificationHandler, $uibModal) {
         var ctrl = this;
 
         ctrl.$onInit = function() {
@@ -105,6 +105,31 @@
             }
             var keys = Object.keys(obj);
             return keys.length > 0 ? obj[keys[0]] : '';
+        }
+
+        ctrl.showLinkedEvents = function(subscription) {
+            SubscriptionService.findLinkedEvents(ctrl.organizationId, subscription.id).then(function(res) {
+                var links = res.data;
+                if(links.length === 0) {
+                    NotificationHandler.showInfo('No linked events found...');
+                    return;
+                }
+                $uibModal.open({
+                    size: 'lg',
+                    templateUrl: '../resources/js/admin/feature/subscriptions/linked-events.html',
+                    controllerAs: '$ctrl',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        var ctrl = this;
+                        ctrl.$onInit = function() {
+                            ctrl.links = links;
+                            ctrl.dismiss = function() {
+                                $scope.$dismiss('cancel');
+                            }
+                        }
+                    }
+                });
+            });
         }
     }
 
@@ -313,7 +338,7 @@
                         ctrl.imageBase64 = result.imageBase64;
                     }, function(err) {
                         if(err != null) {
-                            alert(err);
+                            NotificationHandler.showError(err);
                         }
                     });
                 }
