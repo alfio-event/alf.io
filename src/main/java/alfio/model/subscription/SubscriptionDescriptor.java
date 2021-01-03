@@ -82,7 +82,7 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
     private final String privacyPolicyUrl;
     private final String fileBlobId;
     private final List<PaymentProxy> paymentProxies;
-    private final UUID privateKey;
+    private final String privateKey;
 
     public SubscriptionDescriptor(@Column("id") UUID id,
                                   @Column("title") @JSONData Map<String, String> title,
@@ -110,7 +110,7 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
                                   @Column("privacy_policy_url") String privacyPolicyUrl,
                                   @Column("file_blob_id_fk") String fileBlobId,
                                   @Column("allowed_payment_proxies") @Array List<String> paymentProxies,
-                                  @Column("private_key") UUID privateKey) {
+                                  @Column("private_key") String privateKey) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -196,7 +196,7 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
     @JsonIgnore
     @Override
     public String getPrivateKey() {
-        return privateKey.toString();
+        return privateKey;
     }
 
     @Override

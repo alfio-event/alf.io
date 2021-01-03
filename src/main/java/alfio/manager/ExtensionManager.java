@@ -372,13 +372,11 @@ public class ExtensionManager {
     private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, Purchasable purchasable) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
         //FIXME ugly
-        if (purchasable instanceof Event) {
-            var event = (Event) purchasable;
+        purchasable.event().ifPresent(event -> {
             payloadCopy.put("event", event);
             payloadCopy.put("eventId", event.getId());
-        } else {
-            payloadCopy.put("purchasable", purchasable);
-        }
+        });
+        payloadCopy.put("purchasable", purchasable);
         payloadCopy.put("organizationId", purchasable.getOrganizationId());
         return payloadCopy;
     }
