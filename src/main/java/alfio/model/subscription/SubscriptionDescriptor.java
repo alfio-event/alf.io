@@ -30,6 +30,7 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -165,5 +166,11 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
     @Override
     public PurchasableType getType() {
         return PurchasableType.SUBSCRIPTION;
+    }
+
+    @JsonIgnore
+    @Override
+    public ZoneId getZoneId() {
+        return ZoneId.of("UTC");
     }
 }

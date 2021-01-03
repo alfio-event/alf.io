@@ -120,9 +120,7 @@ public class ExtensionManager {
         return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
     }
 
-    void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, int eventId) {
-        Event event = eventRepository.findById(eventId);
-
+    void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, Purchasable purchasable) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("billingDetails", billingDetails);
@@ -130,7 +128,7 @@ public class ExtensionManager {
         transactionRepository.loadOptionalByReservationId(reservation.getId())
             .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
-            event,
+            purchasable,
             payload);
     }
 

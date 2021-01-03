@@ -19,9 +19,10 @@ package alfio.model;
 import alfio.model.transaction.PaymentProxy;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.util.List;
 
-public interface Purchasable extends Configurable {
+public interface Purchasable extends Configurable, TimeZoneInfo {
     BigDecimal getVat();
     PriceContainer.VatStatus getVatStatus();
     String getCurrency();
