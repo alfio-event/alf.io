@@ -25,6 +25,7 @@ import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
 import alfio.manager.user.UserManager;
 import alfio.model.Configurable;
 import alfio.model.EventAndOrganizationId;
+import alfio.model.Purchasable;
 import alfio.model.TicketReservation;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
@@ -566,20 +567,23 @@ public class ConfigurationManager {
         return res;
     }
 
-    public List<PaymentMethod> getBlacklistedMethodsForReservation(EventAndOrganizationId e, Collection<Integer> categoryIds) {
-        if(categoryIds.size() > 1) {
-            Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
-            return categoryIds.stream()
-                .filter(blacklistForCategories::containsKey)
-                .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
-                .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
-                .collect(toList());
-        } else if (categoryIds.size() > 0) {
-            return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
-                .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
-                .orElse(List.of());
-        }
-        return List.of();
+    public List<PaymentMethod> getBlacklistedMethodsForReservation(Purchasable p, Collection<Integer> categoryIds) {
+        return p.event().map(e -> {
+            if(categoryIds.size() > 1) {
+                Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
+                return categoryIds.stream()
+                    .filter(blacklistForCategories::containsKey)
+                    .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
+                    .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
+                    .collect(toList());
+            } else if (categoryIds.size() > 0) {
+                    return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
+                        .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
+                        .orElse(List.of());
+            } else {
+                return List.<PaymentMethod>of();
+            }
+        }).orElse(List.of());
     }
 
     private static boolean toBeSaved(ConfigurationModification c) {

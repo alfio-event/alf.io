@@ -204,7 +204,7 @@ public class TicketApiV2Controller {
         var sameDay = validityStart.truncatedTo(ChronoUnit.DAYS).equals(validityEnd.truncatedTo(ChronoUnit.DAYS));
 
 
-        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+        var messageSource = messageSourceManager.getMessageSourceFor(event);
         var formattedDates = Formatters.getFormattedDates(event, messageSource, event.getContentLanguages());
         //
 

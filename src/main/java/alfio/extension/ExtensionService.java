@@ -211,7 +211,7 @@ public class ExtensionService {
 
     @Transactional(readOnly = true)
     public Optional<ExtensionSupport> getSingle(Organization organization, EventAndOrganizationId event, String name) {
-        Set<String> paths = generatePossiblePath(ExtensionManager.toPath(organization.getId(), event.getId()), Comparator.reverseOrder());
+        Set<String> paths = generatePossiblePath(ExtensionManager.toPath(new EventAndOrganizationId(organization.getId(), event.getId())), Comparator.reverseOrder());
         return extensionRepository.getSingle(paths, name);
     }
 

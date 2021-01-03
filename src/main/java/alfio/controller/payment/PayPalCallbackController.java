@@ -16,12 +16,12 @@
  */
 package alfio.controller.payment;
 
+import alfio.manager.PurchasableManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.PayPalManager;
-import alfio.model.Event;
+import alfio.model.Purchasable;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.token.PayPalToken;
-import alfio.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,61 +34,67 @@ import java.util.Optional;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Controller
-@RequestMapping("/event/{eventName}/reservation/{reservationId}/payment/paypal")
+@RequestMapping("/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}/payment/paypal")
 @RequiredArgsConstructor
 public class PayPalCallbackController {
 
-    private final EventRepository eventRepository;
+    private final PurchasableManager purchasableManager;
     private final TicketReservationManager ticketReservationManager;
     private final PayPalManager payPalManager;
 
     @GetMapping("/confirm")
-    public String payPalSuccess(@PathVariable("eventName") String eventName,
+    public String payPalSuccess(@PathVariable("purchasableType") String purchasableType,
+                                @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                 @PathVariable("reservationId") String reservationId,
                                 @RequestParam(value = "token", required = false) String payPalPaymentId,
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
                                 @RequestParam(value = "hmac") String hmac) {
 
-        Optional<Event> optionalEvent = eventRepository.findOptionalByShortName(eventName);
-        if(optionalEvent.isEmpty()) {
+        var optionalPurchasable = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier);
+        if(optionalPurchasable.isEmpty()) {
             return "redirect:/";
         }
 
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
 
+        var purchasable = optionalPurchasable.get();
+
         if(optionalReservation.isEmpty()) {
-            return "redirect:/event/" + eventName;
+            return "redirect:/"+purchasable.getType().getUrlComponent()+"/" + purchasable.getPublicIdentifier();
         }
 
         var res = optionalReservation.get();
-        var ev = optionalEvent.get();
+
 
         if (isNotBlank(payPalPayerID) && isNotBlank(payPalPaymentId)) {
             var token = new PayPalToken(payPalPayerID, payPalPaymentId, hmac);
-            payPalManager.saveToken(res.getId(), ev, token);
-            return "redirect:/event/" + ev.getShortName() + "/reservation/" +res.getId() + "/overview";
+            payPalManager.saveToken(res.getId(), purchasable, token);
+            return "redirect:/"+purchasable.getType().getUrlComponent()+"/" + purchasable.getPublicIdentifier() + "/reservation/" +res.getId() + "/overview";
         } else {
-            return payPalCancel(ev.getShortName(), res.getId(), payPalPaymentId, hmac);
+            return payPalCancel(purchasable.getType().getUrlComponent(), purchasable.getPublicIdentifier(), res.getId(), payPalPaymentId, hmac);
         }
     }
 
     @GetMapping("/cancel")
-    public String payPalCancel(@PathVariable("eventName") String eventName,
+    public String payPalCancel(@PathVariable("purchasableType") String purchasableType,
+                               @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                @PathVariable("reservationId") String reservationId,
                                @RequestParam(value = "token", required = false) String payPalPaymentId,
                                @RequestParam(value = "hmac") String hmac) {
 
-        if(eventRepository.findOptionalByShortName(eventName).isEmpty()) {
+        var optionalPurchasable = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier);
+        if(optionalPurchasable.isEmpty()) {
             return "redirect:/";
         }
+        var purchasable = optionalPurchasable.get();
 
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
 
         if(optionalReservation.isEmpty()) {
-            return "redirect:/event/" + eventName;
+            return "redirect:/" + purchasable.getType().getUrlComponent() + "/" + purchasable.getPublicIdentifier();
         }
 
         payPalManager.removeToken(optionalReservation.get(), payPalPaymentId);
-        return "redirect:/event/"+eventName+"/reservation/"+reservationId+"/overview";
+        return "redirect:/" + purchasable.getType().getUrlComponent() + "/" + purchasable.getPublicIdentifier() + "/reservation/" + optionalReservation.get().getId() + "/overview";
     }
 }

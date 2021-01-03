@@ -49,11 +49,11 @@ public interface SubscriptionRepository {
     @Query("insert into subscription_descriptor (" +
         "id, title, description, max_available, on_sale_from, on_sale_to, price_cts, vat, vat_status, currency, is_public, organization_id_fk, " +
         " max_entries, validity_type, validity_time_unit, validity_units, validity_from, validity_to, usage_type, terms_conditions_url, privacy_policy_url," +
-        " file_blob_id_fk, allowed_payment_proxies) " +
+        " file_blob_id_fk, allowed_payment_proxies, private_key) " +
         " values(:id, :title::jsonb, :description::jsonb, :maxAvailable, :onSaleFrom, :onSaleTo, :priceCts, :vat, :vatStatus::VAT_STATUS, :currency, " +
         " :isPublic, :organizationId, :maxEntries, :validityType::SUBSCRIPTION_VALIDITY_TYPE, :validityTimeUnit::SUBSCRIPTION_TIME_UNIT, " +
         " :validityUnits, :validityFrom, :validityTo, :usageType::SUBSCRIPTION_USAGE_TYPE, :tcUrl, :privacyPolicyUrl," +
-        " :fileBlobId, :allowedPaymentProxies::text[])")
+        " :fileBlobId, :allowedPaymentProxies::text[], :privateKey)")
     int createSubscriptionDescriptor(@Bind("id") UUID id,
                                      @Bind("title") @JSONData Map<String, String> title,
                                      @Bind("description") @JSONData Map<String, String> description,
@@ -78,7 +78,8 @@ public interface SubscriptionRepository {
                                      @Bind("tcUrl") String termsConditionsUrl,
                                      @Bind("privacyPolicyUrl") String privacyPolicyUrl,
                                      @Bind("fileBlobId") String fileBlobId,
-                                     @Bind("allowedPaymentProxies") @Array List<PaymentProxy> allowedPaymentProxies);
+                                     @Bind("allowedPaymentProxies") @Array List<PaymentProxy> allowedPaymentProxies,
+                                     @Bind("privateKey") UUID privateKey);
 
     @Query("update subscription_descriptor set title = :title::jsonb, description = :description::jsonb, max_available = :maxAvailable," +
         " on_sale_from = :onSaleFrom, on_sale_to = :onSaleTo, price_cts = :priceCts, vat = :vat, vat_status = :vatStatus::VAT_STATUS, " +

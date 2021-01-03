@@ -17,11 +17,13 @@
 package alfio.model;
 
 import alfio.manager.system.ConfigurationLevel;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Represent a resource which have a configuration path
  */
 public interface Configurable {
 
+    @JsonIgnore
     ConfigurationLevel getConfigurationLevel();
 }

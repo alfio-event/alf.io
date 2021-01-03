@@ -16,6 +16,7 @@
  */
 package alfio.model.transaction.webhook;
 
+import alfio.model.Purchasable;
 import alfio.model.transaction.TransactionWebhookPayload;
 import lombok.AllArgsConstructor;
 
@@ -23,7 +24,8 @@ import lombok.AllArgsConstructor;
 public class MollieWebhookPayload implements TransactionWebhookPayload {
 
     private final String paymentId;
-    private final String eventName;
+    private final Purchasable.PurchasableType purchasableType;
+    private final String purchasableIdentifier;
     private final String reservationId;
 
     @Override
@@ -50,7 +52,11 @@ public class MollieWebhookPayload implements TransactionWebhookPayload {
         return paymentId;
     }
 
-    public String getEventName() {
-        return eventName;
+    public Purchasable.PurchasableType getPurchasableType() {
+        return purchasableType;
+    }
+
+    public String getPurchasableIdentifier() {
+        return purchasableIdentifier;
     }
 }

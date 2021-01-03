@@ -30,7 +30,6 @@ import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
@@ -102,7 +101,7 @@ public class EventApiV2Controller {
         var events = eventManager.getPublishedEvents()
             .stream()
             .map(e -> {
-                var messageSource = messageSourceManager.getMessageSourceForEvent(e);
+                var messageSource = messageSourceManager.getMessageSourceFor(e);
                 var formattedDates = Formatters.getFormattedDates(e, messageSource, contentLanguages);
                 return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getFormat(), e.getLocation(),
                     e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
@@ -144,7 +143,7 @@ public class EventApiV2Controller {
 
             var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), event.getConfigurationLevel());
             var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
-            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+            var messageSource = messageSourceManager.getMessageSourceFor(event);
             var appliedPromoCode = promoCodeRequestManager.checkCode(event, code);
 
 
@@ -445,7 +444,7 @@ public class EventApiV2Controller {
 
     private Map<String, String> formatDynamicCodeMessage(Event event, PromoCodeDiscount promoCodeDiscount) {
         Validate.isTrue(promoCodeDiscount != null && promoCodeDiscount.getDiscountType() != PromoCodeDiscount.DiscountType.NONE);
-        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+        var messageSource = messageSourceManager.getMessageSourceFor(event);
         Map<String, String> res = new HashMap<>();
         String code;
         String amount;

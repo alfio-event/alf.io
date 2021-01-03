@@ -17,8 +17,8 @@
 package alfio.model.subscription;
 
 import alfio.manager.system.ConfigurationLevel;
-import alfio.model.Configurable;
 import alfio.model.ContentLanguage;
+import alfio.model.Event;
 import alfio.model.LocalizedContent;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.Purchasable;
@@ -28,16 +28,21 @@ import alfio.model.transaction.PaymentProxy;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
-public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Configurable {
+public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
+
+
 
     public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED
@@ -77,6 +82,7 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Co
     private final String privacyPolicyUrl;
     private final String fileBlobId;
     private final List<PaymentProxy> paymentProxies;
+    private final String privateKey;
 
     public SubscriptionDescriptor(@Column("id") UUID id,
                                   @Column("title") @JSONData Map<String, String> title,
@@ -103,7 +109,8 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Co
                                   @Column("terms_conditions_url") String termsAndConditionsUrl,
                                   @Column("privacy_policy_url") String privacyPolicyUrl,
                                   @Column("file_blob_id_fk") String fileBlobId,
-                                  @Column("allowed_payment_proxies") @Array List<String> paymentProxies) {
+                                  @Column("allowed_payment_proxies") @Array List<String> paymentProxies,
+                                  @Column("private_key") String privateKey) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -130,6 +137,8 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Co
         this.privacyPolicyUrl = privacyPolicyUrl;
         this.fileBlobId = fileBlobId;
         this.paymentProxies = paymentProxies.stream().map(PaymentProxy::valueOf).collect(Collectors.toList());
+
+        this.privateKey = privateKey;
     }
 
     @Override
@@ -144,5 +153,54 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent, Co
     @Override
     public ConfigurationLevel getConfigurationLevel() {
         return ConfigurationLevel.organization(organizationId);
+    }
+
+    @Override
+    public List<PaymentProxy> getAllowedPaymentProxies() {
+        return getPaymentProxies();
+    }
+
+    @Override
+    public String getPrivacyPolicyLinkOrNull() {
+        return StringUtils.trimToNull(privacyPolicyUrl);
+    }
+
+    @Override
+    public String getPublicIdentifier() {
+        return getId().toString();
+    }
+
+    @JsonIgnore
+    @Override
+    public PurchasableType getType() {
+        return PurchasableType.SUBSCRIPTION;
+    }
+
+    @JsonIgnore
+    @Override
+    public ZoneId getZoneId() {
+        return ZoneId.of("UTC");
+    }
+
+    @Override
+    public String getDisplayName() {
+        return title.keySet().stream().findFirst().map(title::get).orElse("Subscription"); //FIXME
+    }
+
+    @JsonIgnore
+    @Override
+    public Optional<Event> event() {
+        return Optional.empty();
+    }
+
+    @JsonIgnore
+    @Override
+    public String getPrivateKey() {
+        return privateKey;
+    }
+
+    @Override
+    public ZonedDateTime getBegin() {
+        return validityFrom != null ? validityFrom : ZonedDateTime.now().plusMonths(3); //FIXME
     }
 }

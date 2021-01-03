@@ -53,7 +53,8 @@ create table subscription_descriptor (
     terms_conditions_url text not null,
     privacy_policy_url text,
     file_blob_id_fk char(64) not null constraint subscription_descriptor_file_blob_id references file_blob(id),
-    allowed_payment_proxies text array not null
+    allowed_payment_proxies text array not null,
+    private_key text not null
 
 );
 

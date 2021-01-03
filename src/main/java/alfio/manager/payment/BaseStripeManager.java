@@ -18,13 +18,9 @@ package alfio.manager.payment;
 
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.Configurable;
-import alfio.model.Event;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.PaymentInformation;
+import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentContext;
@@ -154,20 +150,20 @@ class BaseStripeManager {
         int tickets = ticketRepository.countTicketsInReservation(spec.getReservationId());
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", spec.getPriceWithVAT());
-        FeeCalculator.getCalculator(spec.getEvent(), configurationManager, spec.getCurrencyCode())
+        FeeCalculator.getCalculator(spec.getPurchasable(), configurationManager, spec.getCurrencyCode())
             .apply(tickets, (long) spec.getPriceWithVAT())
             .filter(l -> l > 0)
             .ifPresent(fee -> chargeParams.put("application_fee_amount", fee));
-        chargeParams.put("currency", spec.getEvent().getCurrency());
+        chargeParams.put("currency", spec.getPurchasable().getCurrency());
 
-        chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, spec.getEvent().getDisplayName()));
+        chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, spec.getPurchasable().getDisplayName()));
 
         chargeParams.put("metadata", MetadataBuilder.buildMetadata(spec, baseMetadata));
         return chargeParams;
     }
 
     protected Optional<Charge> charge(PaymentSpecification spec, Map<String, Object> chargeParams ) throws StripeException {
-        Optional<RequestOptions> opt = options(spec.getEvent(), builder -> builder.setIdempotencyKey(spec.getReservationId()));
+        Optional<RequestOptions> opt = options(spec.getPurchasable(), builder -> builder.setIdempotencyKey(spec.getReservationId()));
         if(opt.isEmpty()) {
             return Optional.empty();
         }
@@ -194,21 +190,21 @@ class BaseStripeManager {
         return BalanceTransaction.retrieve(balanceTransaction, options);
     }
 
-    Optional<RequestOptions> options(Event event) {
-        return options(event, UnaryOperator.identity());
+    Optional<RequestOptions> options(Purchasable purchasable) {
+        return options(purchasable, UnaryOperator.identity());
     }
 
-    Optional<RequestOptions> options(Event event, UnaryOperator<RequestOptions.RequestOptionsBuilder> optionsBuilderConfigurer) {
+    Optional<RequestOptions> options(Purchasable purchasable, UnaryOperator<RequestOptions.RequestOptionsBuilder> optionsBuilderConfigurer) {
         RequestOptions.RequestOptionsBuilder builder = optionsBuilderConfigurer.apply(RequestOptions.builder());
-        if(isConnectEnabled(new PaymentContext(event))) {
-            return configurationManager.getFor(STRIPE_CONNECTED_ID, event.getConfigurationLevel()).getValue()
+        if(isConnectEnabled(new PaymentContext(purchasable))) {
+            return configurationManager.getFor(STRIPE_CONNECTED_ID, purchasable.getConfigurationLevel()).getValue()
                 .map(connectedId -> {
                     //connected stripe account
                     builder.setStripeAccount(connectedId);
                     return builder.setApiKey(getSystemSecretKey()).build();
                 });
         }
-        return Optional.of(builder.setApiKey(getSecretKey(event)).build());
+        return Optional.of(builder.setApiKey(getSecretKey(purchasable)).build());
     }
 
     Optional<String> getConnectedAccount(PaymentContext paymentContext) {
@@ -218,9 +214,9 @@ class BaseStripeManager {
         return Optional.empty();
     }
 
-    Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
+    Optional<PaymentInformation> getInfo(Transaction transaction, Purchasable purchasable) {
         try {
-            Optional<RequestOptions> requestOptionsOptional = options(event);
+            Optional<RequestOptions> requestOptionsOptional = options(purchasable);
             if(requestOptionsOptional.isPresent()) {
                 RequestOptions options = requestOptionsOptional.get();
                 Charge charge = Charge.retrieve(transaction.getTransactionId(), options);
@@ -245,7 +241,7 @@ class BaseStripeManager {
     }
 
     // https://stripe.com/docs/api#create_refund
-    boolean refund(Transaction transaction, Event event, Integer amountToRefund) {
+    boolean refund(Transaction transaction, Purchasable purchasable, Integer amountToRefund) {
         Optional<Integer> amount = Optional.ofNullable(amountToRefund);
         String chargeId = transaction.getTransactionId();
         try {
@@ -254,11 +250,11 @@ class BaseStripeManager {
             Map<String, Object> params = new HashMap<>();
             params.put("charge", chargeId);
             amount.ifPresent(a -> params.put("amount", a));
-            if(transaction.getPlatformFee() > 0 && isConnectEnabled(new PaymentContext(event))) {
+            if(transaction.getPlatformFee() > 0 && isConnectEnabled(new PaymentContext(purchasable))) {
                 params.put("refund_application_fee", true);
             }
 
-            Optional<RequestOptions> requestOptionsOptional = options(event);
+            Optional<RequestOptions> requestOptionsOptional = options(purchasable);
             if(requestOptionsOptional.isPresent()) {
                 RequestOptions options = requestOptionsOptional.get();
                 Refund r = Refund.create(params, options);

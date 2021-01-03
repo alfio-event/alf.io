@@ -120,9 +120,7 @@ public class ExtensionManager {
         return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
     }
 
-    void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, int eventId) {
-        Event event = eventRepository.findById(eventId);
-
+    void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, Purchasable purchasable) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("billingDetails", billingDetails);
@@ -130,7 +128,7 @@ public class ExtensionManager {
         transactionRepository.loadOptionalByReservationId(reservation.getId())
             .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
-            event,
+            purchasable,
             payload);
     }
 
@@ -232,7 +230,7 @@ public class ExtensionManager {
         payload.put("vatNr", billingDetails.getTaxId());
         payload.put("vatStatus", spec.getVatStatus());
 
-        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getEvent(), payload, InvoiceGeneration.class));
+        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchasable(), payload, InvoiceGeneration.class));
     }
 
     public Optional<String> handleOnlineCheckInLink(String originalUrl, Ticket ticket, EventWithCheckInInfo event) {
@@ -244,7 +242,7 @@ public class ExtensionManager {
         payload.put("originalURL", originalUrl);
 
         return Optional.ofNullable(extensionService.executeScriptsForEvent(ONLINE_CHECK_IN_REDIRECT.name(),
-            toPath(event.getOrganizationId(), event.getId()),
+            toPath(event),
             payload,
             String.class));
     }
@@ -293,12 +291,12 @@ public class ExtensionManager {
         syncCall(ExtensionEvent.RESERVATION_CREDIT_NOTE_ISSUED, event, payload, Boolean.class);
     }
 
-    void handleRefund(Event event, TicketReservation reservation, TransactionAndPaymentInfo info) {
+    void handleRefund(Purchasable purchasable, TicketReservation reservation, TransactionAndPaymentInfo info) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("transaction", info.getTransaction());
         payload.put("paymentInfo", info.getPaymentInformation());
-        asyncCall(ExtensionEvent.REFUND_ISSUED, event, payload);
+        asyncCall(ExtensionEvent.REFUND_ISSUED, purchasable, payload);
     }
 
     public boolean handlePdfTransformation(String html, Event event, OutputStream outputStream) {
@@ -353,17 +351,17 @@ public class ExtensionManager {
     }
 
 
-    private void asyncCall(ExtensionEvent extensionEvent, Event event, Map<String, Object> payload) {
+    private void asyncCall(ExtensionEvent extensionEvent, Purchasable event, Map<String, Object> payload) {
         extensionService.executeScriptAsync(extensionEvent.name(),
-            toPath(event.getOrganizationId(), event.getId()),
+            toPath(event),
             fillWithBasicInfo(payload, event));
     }
 
-    private <T> T syncCall(ExtensionEvent extensionEvent, Event event, Map<String, Object> payload, Class<T> clazz) {
+    private <T> T syncCall(ExtensionEvent extensionEvent, Purchasable purchasable, Map<String, Object> payload, Class<T> clazz) {
         try {
             return extensionService.executeScriptsForEvent(extensionEvent.name(),
-                toPath(event.getOrganizationId(), event.getId()),
-                fillWithBasicInfo(payload, event),
+                toPath(purchasable),
+                fillWithBasicInfo(payload, purchasable),
                 clazz);
         } catch(AlfioScriptingException ex) {
             log.warn("Unexpected exception while executing script:", ex);
@@ -371,17 +369,29 @@ public class ExtensionManager {
         }
     }
 
-    private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, Event event) {
+    private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, Purchasable purchasable) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
-        payloadCopy.put("event", event);
-        payloadCopy.put("eventId", event.getId());
-        payloadCopy.put("organizationId", event.getOrganizationId());
+        //FIXME ugly
+        purchasable.event().ifPresent(event -> {
+            payloadCopy.put("event", event);
+            payloadCopy.put("eventId", event.getId());
+        });
+        payloadCopy.put("purchasable", purchasable);
+        payloadCopy.put("organizationId", purchasable.getOrganizationId());
         return payloadCopy;
     }
 
+    public static String toPath(EventAndOrganizationId event) {
+        return "-" + event.getOrganizationId() + "-" + event.getId();
+    }
 
-    public static String toPath(int organizationId, int eventId) {
-        return "-" + organizationId + "-" + eventId;
+    public static String toPath(Purchasable purchasable) {
+        int organizationId = purchasable.getOrganizationId();
+        if (purchasable instanceof EventAndOrganizationId) {
+            return toPath((EventAndOrganizationId) purchasable);
+        } else {
+            return "-" + organizationId;
+        }
     }
 
 }

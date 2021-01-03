@@ -174,7 +174,7 @@ public class NotificationManager {
             TicketCategory category = Optional.ofNullable(categoryId).map(ticketCategoryRepository::getById).orElse(null);
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
             if(model.containsKey("onlineCheckInUrl")) { // special case: online event
-                var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+                var messageSource = messageSourceManager.getMessageSourceFor(event);
                 description = description + buildOnlineCheckInInformation(messageSource).apply(model, locale);
             }
             return EventUtil.getIcalForEvent(event, category, description, organization).orElse(null);
@@ -237,7 +237,7 @@ public class NotificationManager {
         String displayName = event.getDisplayName();
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
-        String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
+        String subject = messageSourceManager.getMessageSourceFor(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
         var renderedTemplate = textBuilder.generate(ticket);
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, renderedTemplate);
         String recipient = ticket.getEmail();
@@ -256,8 +256,8 @@ public class NotificationManager {
         sendSimpleEmail(event, reservationId, recipient, cc, subject, textBuilder, Collections.emptyList());
     }
 
-    public List<String> getCCForEventOrganizer(EventAndOrganizationId event) {
-        var systemNotificationCC = configurationManager.getFor(ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC, ConfigurationLevel.event(event)).getValueOrDefault("");
+    public List<String> getCCForEventOrganizer(Purchasable purchasable) {
+        var systemNotificationCC = configurationManager.getFor(ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC, purchasable.getConfigurationLevel()).getValueOrDefault("");
         return Stream.of(StringUtils.split(systemNotificationCC, ','))
             .filter(Objects::nonNull)
             .map(String::trim)

@@ -192,7 +192,7 @@ class TicketReservationManagerTest {
         when(ticketCategory.getCurrencyCode()).thenReturn(CATEGORY_CURRENCY);
         when(configurationManager.getFor(eq(VAT_NR), any())).thenReturn(new MaybeConfiguration(VAT_NR));
 
-        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
 
         MaybeConfiguration configuration = mock(MaybeConfiguration.class);
@@ -237,6 +237,7 @@ class TicketReservationManagerTest {
         when(event.getCurrency()).thenReturn(EVENT_CURRENCY);
         when(event.now(any(ClockProvider.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
         when(event.now(any(Clock.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
+        when(event.event()).thenReturn(Optional.of(event));
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(specialPrice.getCode()).thenReturn(SPECIAL_PRICE_CODE);
         when(specialPrice.getId()).thenReturn(SPECIAL_PRICE_ID);

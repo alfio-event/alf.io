@@ -89,6 +89,7 @@ public class TicketReservationManagerUnitTest {
         reservation = mock(TicketReservation.class);
         event = mock(Event.class);
         when(event.getCurrency()).thenReturn("CHF");
+        when(event.event()).thenReturn(Optional.of(event));
         ticket = mock(Ticket.class);
         when(ticket.getCurrencyCode()).thenReturn("CHF");
         ticketCategory = mock(TicketCategory.class);
@@ -117,7 +118,7 @@ public class TicketReservationManagerUnitTest {
         BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
         json = mock(Json.class);
 
-        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
 
         manager = new TicketReservationManager(eventRepository,

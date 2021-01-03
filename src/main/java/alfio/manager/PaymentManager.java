@@ -114,7 +114,7 @@ public class PaymentManager {
 
     private List<PaymentMethodDTO> getPaymentMethods(PaymentContext context, TransactionRequest transactionRequest) {
         String blacklist = configurationManager.getFor(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST, context.getConfigurationLevel()).getValueOrDefault("");
-        var proxies = Optional.ofNullable(context.getEvent()).map(Event::getAllowedPaymentProxies).orElseGet(PaymentProxy::availableProxies);
+        var proxies = Optional.ofNullable(context.getPurchasable()).map(Purchasable::getAllowedPaymentProxies).orElseGet(PaymentProxy::availableProxies);
         return proxies.stream()
             .filter(p -> !blacklist.contains(p.getKey()))
             .map(proxy -> Pair.of(proxy, paymentMethodsByProxy(context, transactionRequest, proxy)))
@@ -129,19 +129,19 @@ public class PaymentManager {
             .collect(Collectors.toSet());
     }
 
-    public List<PaymentMethodDTO> getPaymentMethods(Event event, TransactionRequest transactionRequest) {
-        return getPaymentMethods(new PaymentContext(event), transactionRequest);
+    public List<PaymentMethodDTO> getPaymentMethods(Purchasable purchasable, TransactionRequest transactionRequest) {
+        return getPaymentMethods(new PaymentContext(purchasable), transactionRequest);
     }
 
     public List<PaymentMethodDTO> getPaymentMethods(int organizationId) {
         return getPaymentMethods(new PaymentContext(null, ConfigurationLevel.organization(organizationId)), TransactionRequest.empty());
     }
 
-    public boolean refund(TicketReservation reservation, Event event, Integer amount, String username) {
+    public boolean refund(TicketReservation reservation, Purchasable purchasable, Integer amount, String username) {
         Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
 
         boolean res = lookupProviderByTransactionAndCapabilities(transaction, List.of(RefundRequest.class))
-            .map(paymentProvider -> ((RefundRequest)paymentProvider).refund(transaction, event, amount))
+            .map(paymentProvider -> ((RefundRequest)paymentProvider).refund(transaction, purchasable, amount))
             .orElse(false);
 
         Map<String, Object> changes = Map.of(
@@ -150,13 +150,13 @@ public class PaymentManager {
         );
         if(res) {
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
-                event.getId(),
+                purchasable,
                 Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
                 Collections.singletonList(changes));
-            extensionManager.handleRefund(event, reservation, getInfo(reservation, event));
+            extensionManager.handleRefund(purchasable, reservation, getInfo(reservation, purchasable));
         } else {
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
-                event.getId(),
+                purchasable,
                 Audit.EventType.REFUND_ATTEMPT_FAILED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
                 Collections.singletonList(changes));
         }
@@ -164,9 +164,9 @@ public class PaymentManager {
         return res;
     }
 
-    TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {
+    TransactionAndPaymentInfo getInfo(TicketReservation reservation, Purchasable purchasable) {
         Optional<TransactionAndPaymentInfo> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId())
-            .map(transaction -> internalGetInfo(reservation, event, transaction));
+            .map(transaction -> internalGetInfo(reservation, purchasable, transaction));
         maybeTransaction.ifPresent(info -> {
             try {
                 Transaction transaction = info.getTransaction();
@@ -187,10 +187,10 @@ public class PaymentManager {
             || transaction.getGatewayFee()  != safeParseLong(paymentInformation.getFee());
     }
 
-    private TransactionAndPaymentInfo internalGetInfo(TicketReservation reservation, Event event, Transaction transaction) {
+    private TransactionAndPaymentInfo internalGetInfo(TicketReservation reservation, Purchasable purchasable, Transaction transaction) {
         return lookupProviderByTransactionAndCapabilities(transaction, List.of(PaymentInfo.class))
             .map(provider -> {
-                Optional<PaymentInformation> info = ((PaymentInfo) provider).getInfo(transaction, event);
+                Optional<PaymentInformation> info = ((PaymentInfo) provider).getInfo(transaction, purchasable);
                 return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, info.orElse(null));
             })
             .orElseGet(() -> {
@@ -210,8 +210,8 @@ public class PaymentManager {
         return Optional.ofNullable(src).map(Long::parseLong).orElse(0L);
     }
 
-    public Map<String, ?> loadModelOptionsFor(List<PaymentProxy> activePaymentMethods, Event event) {
-        PaymentContext context = new PaymentContext(event);
+    public Map<String, ?> loadModelOptionsFor(List<PaymentProxy> activePaymentMethods, Purchasable purchasable) {
+        PaymentContext context = new PaymentContext(purchasable);
         return activePaymentMethods.stream()
             .flatMap(pp -> getProviderOptions(context, pp))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

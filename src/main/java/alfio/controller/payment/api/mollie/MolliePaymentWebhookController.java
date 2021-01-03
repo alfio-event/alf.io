@@ -16,10 +16,11 @@
  */
 package alfio.controller.payment.api.mollie;
 
+import alfio.manager.PurchasableManager;
 import alfio.manager.TicketReservationManager;
+import alfio.model.Purchasable;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.EventRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -40,19 +41,20 @@ import static alfio.manager.payment.MollieWebhookPaymentManager.WEBHOOK_URL_TEMP
 @AllArgsConstructor
 public class MolliePaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
-    private final EventRepository eventRepository;
+    private final PurchasableManager purchasableManager;
 
     @SuppressWarnings("MVCPathVariableInspection")
     @PostMapping(WEBHOOK_URL_TEMPLATE)
     public ResponseEntity<String> receivePaymentConfirmation(HttpServletRequest request,
-                                                             @PathVariable("eventShortName") String eventName,
+                                                             @PathVariable("purchasableType") String purchasableType,
+                                                             @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                              @PathVariable("reservationId") String reservationId) {
         return Optional.ofNullable(StringUtils.trimToNull(request.getParameter("id")))
-            .flatMap(id -> eventRepository.findOptionalByShortName(eventName)
-                    .map(event -> {
+            .flatMap(id -> purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier)
+                    .map(purchasable -> {
                         var content = "id="+id;
                         var result = ticketReservationManager.processTransactionWebhook(content, null, PaymentProxy.MOLLIE,
-                            Map.of("eventName", eventName, "reservationId", reservationId), new PaymentContext(event, reservationId));
+                            Map.of("purchasableType", purchasableType, "purchasableIdentifier", purchasableIdentifier, "reservationId", reservationId), new PaymentContext(purchasable, reservationId));
                         if(result.isSuccessful()) {
                             return ResponseEntity.ok("OK");
                         } else if(result.isError()) {

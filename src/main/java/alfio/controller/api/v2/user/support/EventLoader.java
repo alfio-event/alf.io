@@ -53,7 +53,7 @@ public class EventLoader {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
                 //
-                var messageSourceAndOverride = messageSourceManager.getMessageSourceForEventAndOverride(event);
+                var messageSourceAndOverride = messageSourceManager.getMessageSourceForPurchasableAndOverride(event);
                 var messageSource = messageSourceAndOverride.getLeft();
                 var i18nOverride = messageSourceAndOverride.getRight();
 

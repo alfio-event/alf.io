@@ -91,7 +91,7 @@ public class WaitingQueueManager {
     }
 
     private void notifySubscription(Event event, CustomerName name, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
-        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+        var messageSource = messageSourceManager.getMessageSourceFor(event);
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = TemplateResource.buildModelForWaitingQueueJoined(organization, event, name);
         notificationManager.sendSimpleEmail(event, null, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),

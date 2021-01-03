@@ -16,9 +16,10 @@
  */
 package alfio.controller.payment;
 
+import alfio.manager.PurchasableManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.saferpay.PaymentPageInitializeRequestBuilder;
-import alfio.repository.EventRepository;
+import alfio.model.Purchasable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,26 +31,27 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class SaferpayCallbackController {
 
     private final TicketReservationManager ticketReservationManager;
-    private final EventRepository eventRepository;
+    private final PurchasableManager purchasableManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.CANCEL_URL_TEMPLATE)
-    public String saferpayCancel(@PathVariable("eventName") String eventName,
+    public String saferpayCancel(@PathVariable("purchasableType") String purchasableType,
+                                 @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                  @PathVariable("reservationId") String reservationId) {
-        var optionalEvent = eventRepository.findOptionalByShortName(eventName);
-        if(optionalEvent.isEmpty()) {
+        var maybePurchasable = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier);
+        if(maybePurchasable.isEmpty()) {
             return "redirect:/";
         }
-        var event = optionalEvent.get();
-        var optionalReservation = ticketReservationManager.findByIdForEvent(reservationId, event.getId());
+        var purchasable = maybePurchasable.get();
+        var optionalReservation = ticketReservationManager.findById(reservationId);
         if(optionalReservation.isEmpty()) {
-            return "redirect:/event/"+eventName;
+            return "redirect:/"+purchasable.getType().getUrlComponent()+"/"+purchasable.getPublicIdentifier();
         }
-        var optionalResult = ticketReservationManager.forceTransactionCheck(event, optionalReservation.get());
+        var optionalResult = ticketReservationManager.forceTransactionCheck(purchasable, optionalReservation.get());
         if(optionalResult.isEmpty()) {
             // there's no transaction available.
-            return "redirect:/event/"+eventName;
+            return "redirect:/"+purchasable.getType().getUrlComponent()+"/"+purchasable.getPublicIdentifier();
         }
         return "redirect:" + UriComponentsBuilder.fromPath(PaymentPageInitializeRequestBuilder.SUCCESS_URL_TEMPLATE)
-            .buildAndExpand(eventName, reservationId).toUriString();
+            .buildAndExpand(purchasable.getType().getUrlComponent(), purchasable.getPublicIdentifier(), reservationId).toUriString();
      }
 }

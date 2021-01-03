@@ -32,7 +32,6 @@ import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
@@ -304,7 +303,7 @@ public class ReservationApiV2Controller {
             if (!status.isSuccessful()) {
                 String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
                 MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
-                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSourceManager.getMessageSourceForEvent(event).getMessage(message, locale)}, null);
+                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSourceManager.getMessageSourceFor(event).getMessage(message, locale)}, null);
                 return buildReservationPaymentStatus(bindingResult);
             }
 
@@ -626,7 +625,7 @@ public class ReservationApiV2Controller {
 
     private Map<String, String> formatDateForLocales(Event event, ZonedDateTime date, String formattingCode) {
 
-        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+        var messageSource = messageSourceManager.getMessageSourceFor(event);
 
         Map<String, String> res = new HashMap<>();
         for (ContentLanguage cl : event.getContentLanguages()) {

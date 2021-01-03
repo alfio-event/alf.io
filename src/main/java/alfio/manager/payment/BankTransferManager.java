@@ -18,7 +18,7 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
+import alfio.model.Purchasable;
 import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -78,7 +78,7 @@ public class BankTransferManager implements PaymentProvider {
 
     boolean bankTransferActive(PaymentContext paymentContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
         return options.get(BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault()
-            && (paymentContext.getEvent() == null || getOfflinePaymentWaitingPeriod(paymentContext.getEvent(), options.get(OFFLINE_PAYMENT_DAYS).getValueAsIntOrDefault(5)).orElse(0) > 0);
+            && (paymentContext.getPurchasable() == null || getOfflinePaymentWaitingPeriod(paymentContext.getPurchasable(), options.get(OFFLINE_PAYMENT_DAYS).getValueAsIntOrDefault(5)).orElse(0) > 0);
     }
 
     Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options(PaymentContext paymentContext) {
@@ -106,13 +106,13 @@ public class BankTransferManager implements PaymentProvider {
     @Override
     public Map<String, ?> getModelOptions(PaymentContext context) {
         OptionalInt delay = getOfflinePaymentWaitingPeriod(context, configurationManager);
-        Event event = context.getEvent();
+        Purchasable purchasable = context.getPurchasable();
         if(delay.isEmpty()) {
-            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
+            log.error("Already started event {} has been found with OFFLINE payment enabled" , purchasable.getDisplayName());
         }
         Map<String, Object> model = new HashMap<>();
         model.put("delayForOfflinePayment", Math.max(1, delay.orElse( 0 )));
-        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(event.getConfigurationLevel());
+        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(purchasable.getConfigurationLevel());
         model.put("captchaRequestedForOffline", recaptchaEnabled);
         if(recaptchaEnabled) {
             model.put("recaptchaApiKey", configurationManager.getForSystem(RECAPTCHA_API_KEY).getValue().orElse(null));
@@ -132,8 +132,8 @@ public class BankTransferManager implements PaymentProvider {
     }
 
     public static ZonedDateTime getOfflinePaymentDeadline(PaymentContext context, ConfigurationManager configurationManager) {
-        Event event = context.getEvent();
-        ZonedDateTime now = event.now(ClockProvider.clock());
+        Purchasable purchasable = context.getPurchasable();
+        ZonedDateTime now = purchasable.now(ClockProvider.clock());
         int waitingPeriod = getOfflinePaymentWaitingPeriod(context, configurationManager).orElse( 0 );
         if(waitingPeriod == 0) {
             log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");
@@ -145,13 +145,13 @@ public class BankTransferManager implements PaymentProvider {
     }
 
     public static OptionalInt getOfflinePaymentWaitingPeriod(PaymentContext paymentContext, ConfigurationManager configurationManager) {
-        Event event = paymentContext.getEvent();
-        return getOfflinePaymentWaitingPeriod(event, configurationManager.getFor(OFFLINE_PAYMENT_DAYS, event.getConfigurationLevel()).getValueAsIntOrDefault(5));
+        Purchasable purchasable = paymentContext.getPurchasable();
+        return getOfflinePaymentWaitingPeriod(purchasable, configurationManager.getFor(OFFLINE_PAYMENT_DAYS, purchasable.getConfigurationLevel()).getValueAsIntOrDefault(5));
     }
 
-    private static OptionalInt getOfflinePaymentWaitingPeriod(Event event, int configuredValue) {
-        ZonedDateTime now = event.now(ClockProvider.clock());
-        ZonedDateTime eventBegin = event.getBegin();
+    private static OptionalInt getOfflinePaymentWaitingPeriod(Purchasable purchasable, int configuredValue) {
+        ZonedDateTime now = purchasable.now(ClockProvider.clock());
+        ZonedDateTime eventBegin = purchasable.getBegin();
         int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
         if (daysToBegin < 0) {
             return OptionalInt.empty();

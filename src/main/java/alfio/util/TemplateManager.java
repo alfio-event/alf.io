@@ -132,7 +132,7 @@ public class TemplateManager {
 
     private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<? extends EventAndOrganizationId> event, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
-        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, messageSourceManager.getMessageSourceForEvent(ev).getMessage("common.vat", null, locale)));
+        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, messageSourceManager.getMessageSourceFor(ev.getOrganizationId(), ev.getId()).getMessage("common.vat", null, locale)));
         return toEnrich;
     }
 
@@ -142,7 +142,7 @@ public class TemplateManager {
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
             mv.addObject("country-name", COUNTRY_NAME);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
-            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceForEvent(eventAndOrganizationId)).createTranslator());
+            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceFor(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId())).createTranslator());
             var updatedModel = mv.getModel();
             updatedModel.putIfAbsent("custom-header-text", "");
             updatedModel.putIfAbsent("custom-body-text", "");
