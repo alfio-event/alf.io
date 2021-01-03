@@ -89,6 +89,7 @@ public class TicketReservationManagerUnitTest {
         reservation = mock(TicketReservation.class);
         event = mock(Event.class);
         when(event.getCurrency()).thenReturn("CHF");
+        when(event.event()).thenReturn(Optional.of(event));
         ticket = mock(Ticket.class);
         when(ticket.getCurrencyCode()).thenReturn("CHF");
         ticketCategory = mock(TicketCategory.class);

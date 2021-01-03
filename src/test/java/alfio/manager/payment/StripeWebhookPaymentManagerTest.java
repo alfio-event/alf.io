@@ -126,7 +126,7 @@ class StripeWebhookPaymentManagerTest {
         assertEquals(PaymentWebhookResult.Type.SUCCESSFUL, paymentWebhookResult.getType());
         verify(transactionRepository).updateIfStatus(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()), eq(Transaction.Status.PENDING));
         Map<String, Object> changes = Map.of("paymentId", CHARGE_ID, "paymentMethod", "stripe");
-        verify(auditingRepository).insert(eq(RESERVATION_ID), isNull(), eq(EVENT_ID), eq(Audit.EventType.PAYMENT_CONFIRMED), any(), eq(Audit.EntityType.RESERVATION), eq(RESERVATION_ID), eq(List.of(changes)));
+        verify(auditingRepository).insert(eq(RESERVATION_ID), isNull(), eq(event), eq(Audit.EventType.PAYMENT_CONFIRMED), any(), eq(Audit.EntityType.RESERVATION), eq(RESERVATION_ID), eq(List.of(changes)));
     }
 
     @Test
@@ -153,7 +153,7 @@ class StripeWebhookPaymentManagerTest {
         assertEquals(PaymentWebhookResult.Type.SUCCESSFUL, paymentWebhookResult.getType());
         verify(transactionRepository).updateIfStatus(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()), eq(Transaction.Status.PENDING));
         Map<String, Object> changes = Map.of("paymentId", CHARGE_ID, "paymentMethod", "stripe");
-        verify(auditingRepository).insert(eq(RESERVATION_ID), isNull(), eq(EVENT_ID), eq(Audit.EventType.PAYMENT_ALREADY_CONFIRMED), any(), eq(Audit.EntityType.RESERVATION), eq(RESERVATION_ID), eq(List.of(changes)));
+        verify(auditingRepository).insert(eq(RESERVATION_ID), isNull(), eq(event), eq(Audit.EventType.PAYMENT_ALREADY_CONFIRMED), any(), eq(Audit.EntityType.RESERVATION), eq(RESERVATION_ID), eq(List.of(changes)));
     }
 
     @Test
@@ -178,7 +178,7 @@ class StripeWebhookPaymentManagerTest {
         assertTrue(StringUtils.isNotBlank(paymentWebhookResult.getReason()));
         verify(transactionRepository, never()).updateStatusForReservation(eq(RESERVATION_ID), eq(Transaction.Status.FAILED));
         Map<String, Object> changes = Map.of("paymentId", PAYMENT_ID, "paymentMethod", "stripe");
-        verify(auditingRepository).insert(eq(RESERVATION_ID), isNull(), eq(EVENT_ID), eq(Audit.EventType.PAYMENT_FAILED), any(), eq(Audit.EntityType.RESERVATION), eq(RESERVATION_ID), eq(List.of(changes)));
+        verify(auditingRepository).insert(eq(RESERVATION_ID), isNull(), eq(event), eq(Audit.EventType.PAYMENT_FAILED), any(), eq(Audit.EntityType.RESERVATION), eq(RESERVATION_ID), eq(List.of(changes)));
     }
 
     @Test
