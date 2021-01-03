@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
@@ -46,6 +47,7 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
 
     private final BigDecimal grossIncome;
     private final AlfioMetadata metadata;
+    private final List<UUID> linkedSubscriptions;
 
     @JsonIgnore
     public Event getEvent() {

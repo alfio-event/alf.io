@@ -153,4 +153,7 @@ public interface SubscriptionRepository {
     @Query(FETCH_SUBSCRIPTION_LINK + " where se.event_id_fk = :eventId")
     List<EventSubscriptionLink> findLinkedSubscriptions(@Bind("organizationId") int organizationId,
                                                         @Bind("eventId") int eventId);
+
+    @Query("select subscription_descriptor_id_fk from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
+    List<UUID> findLinkedSubscriptionIds(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
 }
