@@ -29,6 +29,7 @@ import alfio.model.transaction.PaymentProxy;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.QueryType;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -45,6 +46,9 @@ public interface SubscriptionRepository {
         " from subscription_event se" +
         " join event e on e.id = se.event_id_fk and e.org_id = :organizationId" +
         " join subscription_descriptor sd on sd.id = se.subscription_descriptor_id_fk and sd.organization_id_fk = :organizationId";
+
+    String INSERT_SUBSCRIPTION_LINK = "insert into subscription_event(event_id_fk, subscription_descriptor_id_fk, price_per_ticket, organization_id_fk)" +
+        " values(:eventId, :subscriptionId, :pricePerTicket, :organizationId) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket";
 
     @Query("insert into subscription_descriptor (" +
         "id, title, description, max_available, on_sale_from, on_sale_to, price_cts, vat, vat_status, currency, is_public, organization_id_fk, " +
@@ -133,12 +137,14 @@ public interface SubscriptionRepository {
     @Query("select * from subscription_descriptor_statistics where sd_organization_id_fk = :organizationId")
     List<SubscriptionDescriptorWithStatistics> findAllWithStatistics(@Bind("organizationId") int organizationId);
 
-    @Query("insert into subscription_event(event_id_fk, subscription_descriptor_id_fk, price_per_ticket, organization_id_fk)" +
-        " values(:eventId, :subscriptionId, :pricePerTicket, :organizationId) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket")
+    @Query(INSERT_SUBSCRIPTION_LINK)
     int linkSubscriptionAndEvent(@Bind("subscriptionId") UUID subscriptionId,
                                  @Bind("eventId") int eventId,
                                  @Bind("pricePerTicket") int pricePerTicket,
                                  @Bind("organizationId") int organizationId);
+
+    @Query(type = QueryType.TEMPLATE, value = INSERT_SUBSCRIPTION_LINK)
+    String insertSubscriptionEventLink();
 
     @Query(FETCH_SUBSCRIPTION_LINK + " where se.subscription_descriptor_id_fk = :subscriptionId")
     List<EventSubscriptionLink> findLinkedEvents(@Bind("organizationId") int organizationId,

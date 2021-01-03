@@ -70,6 +70,8 @@ public class EventModification {
 
     private final AlfioMetadata metadata;
 
+    private final List<UUID> linkedSubscriptions;
+
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
                              @JsonProperty("format") Event.EventFormat format,
@@ -101,7 +103,8 @@ public class EventModification {
                              @JsonProperty("locales") int locales,
                              @JsonProperty("ticketFields") List<AdditionalField> ticketFields,
                              @JsonProperty("additionalServices") List<AdditionalService> additionalServices,
-                             @JsonProperty("metadata") AlfioMetadata metadata) {
+                             @JsonProperty("metadata") AlfioMetadata metadata,
+                             @JsonProperty("linkedSubscriptions") List<UUID> linkedSubscriptions) {
         this.id = id;
         this.format = format;
         this.websiteUrl = websiteUrl;
@@ -133,6 +136,7 @@ public class EventModification {
         this.locales = locales;
         this.ticketFields = ticketFields;
         this.metadata = metadata;
+        this.linkedSubscriptions = linkedSubscriptions;
     }
 
     public int getPriceInCents() {

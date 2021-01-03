@@ -548,7 +548,7 @@
         }
     });
 
-    directives.directive('editPrices', ['UtilsService', '$filter', function(UtilsService, $filter) {
+    directives.directive('editPrices', ['UtilsService', '$filter', 'SubscriptionService', function(UtilsService, $filter, SubscriptionService) {
         return {
             scope: {
                 obj: '=targetObj',
@@ -563,7 +563,7 @@
             controller: function EditPricesController($scope, PriceCalculator) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','freeOfCharge', 'allowedPaymentProxies', 'availableSeats',
-                        'regularPrice', 'currency', 'vatPercentage', 'vatIncluded', 'organizationId']);
+                        'regularPrice', 'currency', 'vatPercentage', 'vatIncluded', 'organizationId', 'linkedSubscriptions']);
                     angular.extend($scope.obj, source);
                 }
 
@@ -598,6 +598,27 @@
                         initPaymentProxies();
                     }, true);
                 }
+
+                SubscriptionService.loadSubscriptionsDescriptors($scope.obj.organizationId).then(function(res) {
+                    $scope.subscriptionDescriptors = res.data.map(function(r) {
+                        var descriptor = r.descriptor;
+                        descriptor.selected = ($scope.obj && $scope.obj.linkedSubscriptions && _.contains($scope.obj.linkedSubscriptions, descriptor.id));
+                        return descriptor;
+                    });
+                    $scope.$watch('subscriptionDescriptors', function(newVal) {
+                        $scope.obj.linkedSubscriptions = newVal
+                            .filter(function(sub) { return sub.selected; })
+                            .map(function(sub) { return sub.id; });
+                    }, true);
+                });
+
+                $scope.getFirstTranslation = function(localized) {
+                    var keys = Object.keys(localized);
+                    if(keys.length > 0) {
+                        return localized[keys[0]];
+                    }
+                    return null;
+                };
             }
         }
     }]);

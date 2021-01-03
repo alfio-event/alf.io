@@ -18,7 +18,6 @@ package alfio.manager;
 
 import alfio.config.Initializer;
 import alfio.manager.support.CategoryEvaluator;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -195,10 +194,24 @@ public class EventManager {
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
+        createSubscriptionLinks(eventId, organization.getId(), em);
         extensionManager.handleEventCreation(event);
         var eventMetadata = extensionManager.handleMetadataUpdate(event, organization, AlfioMetadata.empty());
         if(eventMetadata != null) {
             eventRepository.updateMetadata(eventMetadata, eventId);
+        }
+    }
+
+    private void createSubscriptionLinks(int eventId, int organizationId, EventModification em) {
+        if(CollectionUtils.isNotEmpty(em.getLinkedSubscriptions())) {
+            var parameters = em.getLinkedSubscriptions().stream()
+                .map(id -> new MapSqlParameterSource("eventId", eventId)
+                    .addValue("subscriptionId", id)
+                    .addValue("pricePerTicket", 0)
+                    .addValue("organizationId", organizationId))
+                .toArray(MapSqlParameterSource[]::new);
+            var result = jdbcTemplate.batchUpdate(SubscriptionRepository.INSERT_SUBSCRIPTION_LINK, parameters);
+            Validate.isTrue(Arrays.stream(result).allMatch(r -> r == 1), "Cannot link subscription");
         }
     }
 
