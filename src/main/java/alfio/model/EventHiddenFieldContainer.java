@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.manager.system.ConfigurationLevel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -34,4 +35,7 @@ public interface EventHiddenFieldContainer {
 
     @JsonIgnore
     BigDecimal getVat();
+
+    @JsonIgnore
+    ConfigurationLevel getConfigurationLevel();
 }
