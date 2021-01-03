@@ -97,7 +97,7 @@ public class PaymentApiController {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/api/v2/public/{}/{eventName}/reservation/{reservationId}/transaction/force-check")
+    @GetMapping("/api/v2/public/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}/transaction/force-check")
     public ResponseEntity<PaymentResult> forceCheckStatus(@PathVariable("purchasableType") String purchasableType,
                                                           @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                           @PathVariable("reservationId") String reservationId) {
