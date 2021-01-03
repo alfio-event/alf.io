@@ -198,4 +198,9 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
     public String getPrivateKey() {
         return privateKey.toString();
     }
+
+    @Override
+    public ZonedDateTime getBegin() {
+        return validityFrom != null ? validityFrom : ZonedDateTime.now().plusMonths(3); //FIXME
+    }
 }

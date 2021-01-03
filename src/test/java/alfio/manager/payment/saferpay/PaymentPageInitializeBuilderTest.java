@@ -18,6 +18,7 @@ package alfio.manager.payment.saferpay;
 
 import alfio.manager.payment.PaymentSpecification;
 import alfio.model.Event;
+import alfio.model.Purchasable;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,7 +44,8 @@ class PaymentPageInitializeBuilderTest {
         System.out.println("init");
         when(paymentSpecification.getPurchasable()).thenReturn(event);
         when(paymentSpecification.getReservationId()).thenReturn("reservationId");
-        when(event.getShortName()).thenReturn("shortName");
+        when(event.getPublicIdentifier()).thenReturn("shortName");
+        when(event.getType()).thenReturn(Purchasable.PurchasableType.EVENT);
     }
 
     @Test

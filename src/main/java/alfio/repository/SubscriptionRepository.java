@@ -72,7 +72,7 @@ public interface SubscriptionRepository {
                                      @Bind("privacyPolicyUrl") String privacyPolicyUrl,
                                      @Bind("fileBlobId") String fileBlobId,
                                      @Bind("allowedPaymentProxies") @Array List<PaymentProxy> allowedPaymentProxies,
-                                     @Bind("private_key") UUID privateKey);
+                                     @Bind("privateKey") UUID privateKey);
 
     @Query("update subscription_descriptor set title = :title::jsonb, description = :description::jsonb, max_available = :maxAvailable," +
         " on_sale_from = :onSaleFrom, on_sale_to = :onSaleTo, price_cts = :priceCts, vat = :vat, vat_status = :vatStatus::VAT_STATUS, " +

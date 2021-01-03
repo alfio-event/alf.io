@@ -19,6 +19,7 @@ package alfio.model;
 import alfio.model.transaction.PaymentProxy;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +45,8 @@ public interface Purchasable extends Configurable, TimeZoneInfo {
 
     //FIXME: check every USE
     Optional<Event> event();
+
+    ZonedDateTime getBegin();
 
 
     enum PurchasableType {
