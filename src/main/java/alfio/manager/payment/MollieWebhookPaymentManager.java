@@ -464,7 +464,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                     log.warn("Received suspicious call for non-existent payment id "+paymentId);
                     return PaymentWebhookResult.notRelevant("");
                 }
-                log.warn("was not able to get payment id " + paymentId + " for event " + purchasable.getShortName());
+                log.warn("was not able to get payment id " + paymentId + " for purchasable of type " +purchasable.getType() + " with public identifier " + purchasable.getPublicIdentifier());
                 return PaymentWebhookResult.error("internal error");
             }
         } catch(Exception ex) {

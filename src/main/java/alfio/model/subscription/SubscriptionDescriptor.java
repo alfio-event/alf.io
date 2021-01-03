@@ -18,6 +18,7 @@ package alfio.model.subscription;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.model.ContentLanguage;
+import alfio.model.Event;
 import alfio.model.LocalizedContent;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.Purchasable;
@@ -34,6 +35,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -172,5 +174,16 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
     @Override
     public ZoneId getZoneId() {
         return ZoneId.of("UTC");
+    }
+
+    @Override
+    public String getDisplayName() {
+        return title.keySet().stream().findFirst().map(title::get).orElse("Subscription"); //FIXME
+    }
+
+    @JsonIgnore
+    @Override
+    public Optional<Event> event() {
+        return Optional.empty();
     }
 }

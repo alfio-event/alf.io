@@ -695,8 +695,8 @@ public class TicketReservationManager {
         return true;
     }
 
-    private boolean acquireGroupMembers(String reservationId, EventAndOrganizationId event) {
-        List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(event.getId());
+    private boolean acquireGroupMembers(String reservationId, Purchasable purchasable) {
+        List<LinkedGroup> linkedGroups = purchasable.event().map(event -> groupManager.getLinksForEvent(event.getId())).orElse(List.of());
         if(!linkedGroups.isEmpty()) {
             List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
             return Boolean.TRUE.equals(requiresNewTransactionTemplate.execute(status ->
@@ -1004,7 +1004,7 @@ public class TicketReservationManager {
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         List<Ticket> tickets = null;
         if(paymentProxy != PaymentProxy.OFFLINE) {
-            tickets = acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getPurchasable(), sendTickets);
+            tickets = spec.getPurchasable().event().map(ev -> acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), ev, sendTickets)).orElse(List.of());
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), spec.getPurchasable());
         }
 
@@ -1021,8 +1021,11 @@ public class TicketReservationManager {
 
         if(sendReservationConfirmationEmail) {
             TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
-            sendConfirmationEmailIfNecessary(updatedReservation, tickets, spec.getPurchasable(), locale, username);
-            sendReservationCompleteEmailToOrganizer(spec.getPurchasable(), updatedReservation, locale, username);
+            var t = tickets;
+            spec.getPurchasable().event().ifPresent(event -> {
+                sendConfirmationEmailIfNecessary(updatedReservation, t, event, locale, username);
+                sendReservationCompleteEmailToOrganizer(event, updatedReservation, locale, username);
+            });
         }
     }
 
@@ -1539,8 +1542,8 @@ public class TicketReservationManager {
         return ticketRepository.findFirstTicketInReservation(reservationId);
     }
 
-    public Optional<String> getVAT(EventAndOrganizationId event) {
-        return configurationManager.getFor(VAT_NR, ConfigurationLevel.event(event)).getValue();
+    public Optional<String> getVAT(Purchasable purchasable) {
+        return configurationManager.getFor(VAT_NR, purchasable.getConfigurationLevel()).getValue();
     }
 
     public void updateTicketOwner(Ticket ticket,
@@ -2093,14 +2096,14 @@ public class TicketReservationManager {
                 int slackTime = configurationManager.getFor(RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT, paymentContext.getConfigurationLevel()).getValueAsIntOrDefault(10);
                 PaymentMethod paymentMethodForTransaction = paymentProvider.getPaymentMethodForTransaction(transaction);
                 if(expiration.before(now)) {
-                    sendTransactionFailedEmail(purchasable, reservation, paymentMethodForTransaction, paymentWebhookResult, true);
+                    purchasable.event().ifPresent(event -> sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, true)); //FIXME
                     cancelReservation(reservation, false, null);
                     break;
                 } else if(DateUtils.addMinutes(expiration, -slackTime).before(now)) {
                     ticketReservationRepository.updateValidity(reservation.getId(), DateUtils.addMinutes(now, slackTime));
                 }
                 reTransitionToPending(reservation.getId(), false);
-                sendTransactionFailedEmail(purchasable, reservation, paymentMethodForTransaction, paymentWebhookResult, false);
+                purchasable.event().ifPresent(event -> sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, false));
                 break;
             }
             case CANCELLED: {

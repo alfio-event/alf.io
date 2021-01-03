@@ -19,8 +19,8 @@ package alfio.model;
 import alfio.model.transaction.PaymentProxy;
 
 import java.math.BigDecimal;
-import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 
 public interface Purchasable extends Configurable, TimeZoneInfo {
     BigDecimal getVat();
@@ -38,6 +38,13 @@ public interface Purchasable extends Configurable, TimeZoneInfo {
     //
     PurchasableType getType();
     String getPublicIdentifier();
+
+
+    String getDisplayName();
+
+    //FIXME: check every USE
+    Optional<Event> event();
+
 
     enum PurchasableType {
         SUBSCRIPTION("subscription"), EVENT("event");
