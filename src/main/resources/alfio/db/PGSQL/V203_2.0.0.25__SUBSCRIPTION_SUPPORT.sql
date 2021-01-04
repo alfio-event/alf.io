@@ -113,6 +113,3 @@ alter table ticket add column subscription_id_fk uuid constraint ticket_subscrip
 
 
 alter table tickets_reservation alter column event_id_fk drop not null;
-
-create type PURCHASABLE_TYPE as enum('EVENT', 'SUBSCRIPTION');
-alter table tickets_reservation add column reservation_type PURCHASABLE_TYPE default 'EVENT';
