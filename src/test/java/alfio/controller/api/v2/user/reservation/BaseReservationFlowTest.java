@@ -803,7 +803,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);
 
             var paymentForm = new PaymentForm();
-            var handleResError = reservationApiV2Controller.confirmOverview(context.event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+            var handleResError = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
                 new MockHttpServletRequest());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
 
@@ -818,7 +818,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
             //
 
-            var handleRes = reservationApiV2Controller.confirmOverview(context.event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+            var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
                 new MockHttpServletRequest());
 
             assertEquals(HttpStatus.OK, handleRes.getStatusCode());

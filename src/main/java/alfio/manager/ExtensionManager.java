@@ -271,7 +271,7 @@ public class ExtensionManager {
     }
 
     @Transactional(readOnly = true)
-    public void handleReservationValidation(Event event, TicketReservation reservation, Object clientForm, BindingResult bindingResult) {
+    public void handleReservationValidation(Purchasable purchasable, TicketReservation reservation, Object clientForm, BindingResult bindingResult) {
         Map<String, Object> payload = Map.of(
             "reservationId", reservation.getId(),
             "reservation", reservation,
@@ -280,7 +280,7 @@ public class ExtensionManager {
             "bindingResult", bindingResult
         );
 
-        syncCall(ExtensionEvent.RESERVATION_VALIDATION, event, payload, Void.class);
+        syncCall(ExtensionEvent.RESERVATION_VALIDATION, purchasable, payload, Void.class);
     }
 
     void handleReservationsCreditNoteIssuedForEvent(Event event, List<String> reservationIds) {

@@ -238,15 +238,17 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(true);
     }
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}")
-    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable("eventName") String eventName,
-                                                                                       @PathVariable("reservationId") String reservationId,
+    @PostMapping({
+        "/reservation/{reservationId}",
+        "/event/{eventName}/reservation/{reservationId}"// <- deprecated
+    })
+    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable("reservationId") String reservationId,
                                                                                        @RequestParam("lang") String lang,
                                                                                        @RequestBody  PaymentForm paymentForm,
                                                                                        BindingResult bindingResult,
                                                                                        HttpServletRequest request) {
 
-        return getReservation(eventName, reservationId).map(er -> {
+        return getReservation(reservationId).map(er -> {
 
            var event = er.getLeft();
            var reservation = er.getRight();
@@ -458,10 +460,10 @@ public class ReservationApiV2Controller {
         }
     }
 
-    private Optional<Pair<Event, TicketReservation>> getReservation(String eventName, String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
-            .flatMap(event -> ticketReservationManager.findById(reservationId)
-                .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
+    private Optional<Pair<Purchasable, TicketReservation>> getReservation(String reservationId) {
+        return purchasableManager.findByReservationId(reservationId)
+            .flatMap(purchasable -> ticketReservationManager.findById(reservationId)
+                .flatMap(reservation -> Optional.of(Pair.of(purchasable, reservation))));
     }
 
     private Optional<TicketReservation> getReservationWithPendingStatus(String reservationId) {
