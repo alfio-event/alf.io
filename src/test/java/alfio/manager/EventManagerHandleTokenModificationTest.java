@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.repository.SpecialPriceRepository;
+import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketRepository;
 import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +53,7 @@ class EventManagerHandleTokenModificationTest {
         TicketRepository ticketRepository = mock(TicketRepository.class);
         when(event.getId()).thenReturn(eventId);
         eventManager = new EventManager(null, null, null, null,
-            null, ticketRepository, specialPriceRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, TestUtil.clockProvider());
+            null, ticketRepository, specialPriceRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, TestUtil.clockProvider(), mock(SubscriptionRepository.class));
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
         when(original.getSrcPriceCts()).thenReturn(1000);

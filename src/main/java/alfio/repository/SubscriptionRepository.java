@@ -42,7 +42,7 @@ import java.util.UUID;
 public interface SubscriptionRepository {
 
     String FETCH_SUBSCRIPTION_LINK = "select sd.id subscription_descriptor_id, sd.title subscription_descriptor_title, e.id event_id," +
-        " e.short_name event_short_name, e.display_name event_display_name, se.price_per_ticket price_per_ticket " +
+        " e.short_name event_short_name, e.display_name event_display_name, e.currency event_currency, se.price_per_ticket price_per_ticket " +
         " from subscription_event se" +
         " join event e on e.id = se.event_id_fk and e.org_id = :organizationId" +
         " join subscription_descriptor sd on sd.id = se.subscription_descriptor_id_fk and sd.organization_id_fk = :organizationId";
@@ -156,4 +156,14 @@ public interface SubscriptionRepository {
 
     @Query("select subscription_descriptor_id_fk from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
     List<UUID> findLinkedSubscriptionIds(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
+
+    @Query("delete from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId" +
+        " and subscription_descriptor_id_fk not in (:descriptorIds)")
+    int removeStaleSubscriptions(@Bind("eventId") int eventId,
+                                 @Bind("organizationId") int organizationId,
+                                 @Bind("descriptorIds") List<UUID> currentDescriptors);
+
+    @Query("delete from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
+    int removeAllSubscriptionsForEvent(@Bind("eventId") int eventId,
+                                       @Bind("organizationId") int organizationId);
 }

@@ -113,6 +113,7 @@ public class EventManager {
     private final ConfigurationRepository configurationRepository;
     private final PaymentManager paymentManager;
     private final ClockProvider clockProvider;
+    private final SubscriptionRepository subscriptionRepository;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -379,6 +380,16 @@ public class EventManager {
                 int invalidatedTickets = ticketRepository.invalidateTickets(ids);
                 Validate.isTrue(ids.size() == invalidatedTickets, String.format("error during ticket invalidation: expected %d, got %d", ids.size(), invalidatedTickets));
             }
+        }
+        int organizationId = original.getOrganizationId();
+        if(CollectionUtils.isNotEmpty(em.getLinkedSubscriptions())) {
+            int removed = subscriptionRepository.removeStaleSubscriptions(eventId, organizationId, em.getLinkedSubscriptions());
+            log.trace("removed {} subscription links", removed);
+            createSubscriptionLinks(eventId, organizationId, em);
+        } else if (em.getLinkedSubscriptions() != null) {
+            // the user removed all the subscriptions
+            int removed = subscriptionRepository.removeAllSubscriptionsForEvent(eventId, organizationId);
+            log.trace("removed all subscription links ({}) for event {}", removed, eventId);
         }
     }
 
