@@ -139,10 +139,10 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
-    public boolean discardTransaction(Transaction transaction, Event event) {
+    public boolean discardTransaction(Transaction transaction, Purchasable purchasable) {
         var paymentId = transaction.getPaymentId();
         try {
-            var requestOptions = baseStripeManager.options(event).orElseThrow();
+            var requestOptions = baseStripeManager.options(purchasable).orElseThrow();
             var paymentIntent = PaymentIntent.retrieve(paymentId, requestOptions);
             if(cancellableStatuses.contains(paymentIntent.getStatus())) {
                 paymentIntent.cancel(requestOptions);
