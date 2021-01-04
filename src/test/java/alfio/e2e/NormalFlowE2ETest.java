@@ -24,11 +24,7 @@ import alfio.util.HttpUtils;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
@@ -160,7 +156,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
                 //
                 page3Payment(browserWebDriver, wait);
                 WebElement fourthPageElem = new WebDriverWait(driver, 30).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
-                Assert.assertNotNull(fourthPageElem);
+                Assertions.assertNotNull(fourthPageElem);
             } finally {
                 driver.quit();
             }
@@ -200,7 +196,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         wait.until(presenceOfElementLocated(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")));
         selectElement(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")), browserWebDriver, Keys.TAB);
 
-        Assert.assertTrue(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] div.ng-value")).getText().contains("(CH)"));
+        Assertions.assertTrue(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] div.ng-value")).getText().contains("(CH)"));
 
         // insert data for attendee:
         // first&last name + email are already filled
@@ -224,7 +220,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         wait.until(presenceOfElementLocated(By.name("cardnumber")));
         var cardNumberElement = driver.findElement(By.name("cardnumber"));
         sendSlowInput(cardNumberElement, browserWebDriver, "4000000400000008".chars().mapToObj(Character::toString).toArray(String[]::new));
-        sendSlowInput(driver.findElement(By.name("exp-date")),browserWebDriver, "12", "20");
+        sendSlowInput(driver.findElement(By.name("exp-date")),browserWebDriver, "12", "30");
         driver.findElement(By.name("cvc")).sendKeys("123");
         //driver.findElement(By.name("postal")).sendKeys("65000");
         driver.switchTo().defaultContent();
