@@ -45,7 +45,7 @@ class PaymentPageInitializeBuilderTest {
         when(paymentSpecification.getPurchasable()).thenReturn(event);
         when(paymentSpecification.getReservationId()).thenReturn("reservationId");
         when(event.getPublicIdentifier()).thenReturn("shortName");
-        when(event.getType()).thenReturn(Purchasable.PurchasableType.EVENT);
+        when(event.getType()).thenReturn(Purchasable.PurchasableType.event);
     }
 
     @Test

@@ -34,10 +34,10 @@ public class SaferpayCallbackController {
     private final PurchasableManager purchasableManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.CANCEL_URL_TEMPLATE)
-    public String saferpayCancel(@PathVariable("purchasableType") String purchasableType,
+    public String saferpayCancel(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
                                  @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                  @PathVariable("reservationId") String reservationId) {
-        var maybePurchasable = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier);
+        var maybePurchasable = purchasableManager.findBy(purchasableType, purchasableIdentifier);
         if(maybePurchasable.isEmpty()) {
             return "redirect:/";
         }

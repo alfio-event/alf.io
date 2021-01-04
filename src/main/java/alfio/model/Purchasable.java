@@ -52,7 +52,7 @@ public interface Purchasable extends Configurable, TimeZoneInfo, LocalizedConten
 
 
     enum PurchasableType {
-        SUBSCRIPTION("subscription"), EVENT("event");
+        subscription("subscription"), event("event");
 
         private final String urlComponent;
 
@@ -62,8 +62,8 @@ public interface Purchasable extends Configurable, TimeZoneInfo, LocalizedConten
 
         public static PurchasableType from(String purchasableType) {
             switch (purchasableType) {
-                case "subscription": return SUBSCRIPTION;
-                case "event": return EVENT;
+                case "subscription": return subscription;
+                case "event": return event;
                 default: throw new IllegalStateException("Purchase type not supported:" + purchasableType);
             }
         }

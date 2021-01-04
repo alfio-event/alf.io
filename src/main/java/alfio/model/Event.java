@@ -285,7 +285,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
 
     @Override
     public PurchasableType getType() {
-        return PurchasableType.EVENT;
+        return PurchasableType.event;
     }
 
     @Override

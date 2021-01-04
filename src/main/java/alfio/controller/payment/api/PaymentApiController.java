@@ -24,7 +24,6 @@ import alfio.model.Purchasable;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.TransactionInitializationToken;
-import alfio.repository.EventRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
@@ -46,11 +45,11 @@ public class PaymentApiController {
                                                                           @PathVariable("reservationId") String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
-        return initTransaction(Purchasable.PurchasableType.EVENT.getUrlComponent(), eventName, reservationId, paymentMethodStr, allParams);
+        return initTransaction(Purchasable.PurchasableType.event, eventName, reservationId, paymentMethodStr, allParams);
     }
 
     @PostMapping("/api/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}/payment/{method}/init")
-    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("purchasableType") String purchasableType,
+    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
                                                                           @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                                           @PathVariable("reservationId") String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
@@ -61,7 +60,7 @@ public class PaymentApiController {
             return ResponseEntity.badRequest().build();
         }
 
-        return getEventReservationPair(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier, reservationId)
+        return getEventReservationPair(purchasableType, purchasableIdentifier, reservationId)
             .flatMap(pair -> ticketReservationManager.initTransaction(pair.getLeft(), reservationId, paymentMethod, allParams))
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
@@ -78,11 +77,11 @@ public class PaymentApiController {
     public ResponseEntity<PaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
                                                               @PathVariable("reservationId") String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
-        return getTransactionStatus(Purchasable.PurchasableType.EVENT.getUrlComponent(), eventName, reservationId, paymentMethodStr);
+        return getTransactionStatus(Purchasable.PurchasableType.event, eventName, reservationId, paymentMethodStr);
     }
 
     @GetMapping("/api/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}/payment/{method}/status")
-    public ResponseEntity<PaymentResult> getTransactionStatus(@PathVariable("purchasableType") String purchasableType,
+    public ResponseEntity<PaymentResult> getTransactionStatus(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
                                                               @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                               @PathVariable("reservationId") String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
@@ -91,17 +90,17 @@ public class PaymentApiController {
             return ResponseEntity.badRequest().build();
         }
 
-        return getEventReservationPair(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier, reservationId)
+        return getEventReservationPair(purchasableType, purchasableIdentifier, reservationId)
             .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/api/v2/public/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}/transaction/force-check")
-    public ResponseEntity<PaymentResult> forceCheckStatus(@PathVariable("purchasableType") String purchasableType,
+    public ResponseEntity<PaymentResult> forceCheckStatus(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
                                                           @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                           @PathVariable("reservationId") String reservationId) {
-        return ResponseEntity.of(getEventReservationPair(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier, reservationId)
+        return ResponseEntity.of(getEventReservationPair(purchasableType, purchasableIdentifier, reservationId)
             .flatMap(pair -> ticketReservationManager.forceTransactionCheck(pair.getLeft(), pair.getRight())));
     }
 }

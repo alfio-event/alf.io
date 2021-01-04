@@ -43,14 +43,14 @@ public class PayPalCallbackController {
     private final PayPalManager payPalManager;
 
     @GetMapping("/confirm")
-    public String payPalSuccess(@PathVariable("purchasableType") String purchasableType,
+    public String payPalSuccess(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
                                 @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                 @PathVariable("reservationId") String reservationId,
                                 @RequestParam(value = "token", required = false) String payPalPaymentId,
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
                                 @RequestParam(value = "hmac") String hmac) {
 
-        var optionalPurchasable = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier);
+        var optionalPurchasable = purchasableManager.findBy(purchasableType, purchasableIdentifier);
         if(optionalPurchasable.isEmpty()) {
             return "redirect:/";
         }
@@ -71,18 +71,18 @@ public class PayPalCallbackController {
             payPalManager.saveToken(res.getId(), purchasable, token);
             return "redirect:/"+purchasable.getType().getUrlComponent()+"/" + purchasable.getPublicIdentifier() + "/reservation/" +res.getId() + "/overview";
         } else {
-            return payPalCancel(purchasable.getType().getUrlComponent(), purchasable.getPublicIdentifier(), res.getId(), payPalPaymentId, hmac);
+            return payPalCancel(purchasable.getType(), purchasable.getPublicIdentifier(), res.getId(), payPalPaymentId, hmac);
         }
     }
 
     @GetMapping("/cancel")
-    public String payPalCancel(@PathVariable("purchasableType") String purchasableType,
+    public String payPalCancel(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
                                @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                @PathVariable("reservationId") String reservationId,
                                @RequestParam(value = "token", required = false) String payPalPaymentId,
                                @RequestParam(value = "hmac") String hmac) {
 
-        var optionalPurchasable = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier);
+        var optionalPurchasable = purchasableManager.findBy(purchasableType, purchasableIdentifier);
         if(optionalPurchasable.isEmpty()) {
             return "redirect:/";
         }

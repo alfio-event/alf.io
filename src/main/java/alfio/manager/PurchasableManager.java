@@ -39,8 +39,8 @@ public class PurchasableManager {
 
     public Optional<? extends Purchasable> findBy(Purchasable.PurchasableType purchasableType, String publicIdentifier) {
         switch (purchasableType) {
-            case EVENT: return eventRepository.findOptionalByShortName(publicIdentifier);
-            case SUBSCRIPTION: return subscriptionRepository.findOne(UUID.fromString(publicIdentifier));
+            case event: return eventRepository.findOptionalByShortName(publicIdentifier);
+            case subscription: return subscriptionRepository.findOne(UUID.fromString(publicIdentifier));
             default: throw new IllegalStateException("not a covered type " + purchasableType);
         }
     }

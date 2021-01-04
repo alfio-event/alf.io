@@ -19,7 +19,6 @@ package alfio.model.subscription;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
-import alfio.model.LocalizedContent;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.Purchasable;
 import alfio.model.support.Array;
@@ -173,7 +172,7 @@ public class SubscriptionDescriptor implements Purchasable {
     @JsonIgnore
     @Override
     public PurchasableType getType() {
-        return PurchasableType.SUBSCRIPTION;
+        return PurchasableType.subscription;
     }
 
     @JsonIgnore

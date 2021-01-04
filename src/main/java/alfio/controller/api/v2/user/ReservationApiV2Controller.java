@@ -106,11 +106,11 @@ public class ReservationApiV2Controller {
      * @return
      */
     @GetMapping("/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}")
-    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("purchasableType") String purchasableType,
+    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
                                                               @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                               @PathVariable("reservationId") String reservationId) {
 
-        Optional<ReservationInfo> res = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier).flatMap(purchasable -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+        Optional<ReservationInfo> res = purchasableManager.findBy(purchasableType, purchasableIdentifier).flatMap(purchasable -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
             var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, purchasable);
 
