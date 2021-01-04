@@ -41,8 +41,7 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 
 @Getter
 @Log4j2
-public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo,
-    Purchasable, LocalizedContent {
+public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo, Purchasable {
 
     private static final String VERSION_FOR_FIRST_AND_LAST_NAME = "15.1.8.8";
 
@@ -198,6 +197,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         return timeZone;
     }
 
+    @Override
     public boolean isFreeOfCharge() {
         return srcPriceCts == 0;
     }

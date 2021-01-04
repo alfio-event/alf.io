@@ -957,14 +957,14 @@ public class TicketReservationManager {
      * ValidPaymentMethod should be configured in organisation and event. And if even already started then event should not have PaymentProxy.OFFLINE as only payment method
      *
      * @param paymentMethodDTO
-     * @param event
+     * @param purchasable
      * @param configurationManager
      * @return
      */
-    public static boolean isValidPaymentMethod(PaymentManager.PaymentMethodDTO paymentMethodDTO, Event event, ConfigurationManager configurationManager) {
+    public static boolean isValidPaymentMethod(PaymentManager.PaymentMethodDTO paymentMethodDTO, Purchasable purchasable, ConfigurationManager configurationManager) {
         return paymentMethodDTO.isActive()
-            && event.getAllowedPaymentProxies().contains(paymentMethodDTO.getPaymentProxy())
-            && (!paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager));
+            && purchasable.getAllowedPaymentProxies().contains(paymentMethodDTO.getPaymentProxy())
+            && (!paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(new PaymentContext(purchasable), configurationManager));
     }
 
     private void reTransitionToPending(String reservationId, boolean deleteTransactions) {
@@ -1807,11 +1807,11 @@ public class TicketReservationManager {
         return results.get(0);
     }
 
-    public String getShortReservationID(EventAndOrganizationId event, String reservationId) {
+    public String getShortReservationID(Configurable event, String reservationId) {
         return configurationManager.getShortReservationID(event, findById(reservationId).orElseThrow());
     }
 
-    public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
+    public String getShortReservationID(Configurable event, TicketReservation reservation) {
         return configurationManager.getShortReservationID(event, reservation);
     }
 

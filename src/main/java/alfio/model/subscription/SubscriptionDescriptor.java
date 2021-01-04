@@ -40,7 +40,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
-public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
+public class SubscriptionDescriptor implements Purchasable {
 
 
 
@@ -202,5 +202,10 @@ public class SubscriptionDescriptor implements Purchasable, LocalizedContent {
     @Override
     public ZonedDateTime getBegin() {
         return validityFrom != null ? validityFrom : ZonedDateTime.now().plusMonths(3); //FIXME
+    }
+
+    @Override
+    public boolean isFreeOfCharge() {
+        return false;
     }
 }

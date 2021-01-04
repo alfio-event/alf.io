@@ -23,7 +23,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface Purchasable extends Configurable, TimeZoneInfo {
+public interface Purchasable extends Configurable, TimeZoneInfo, LocalizedContent {
     BigDecimal getVat();
     PriceContainer.VatStatus getVatStatus();
     String getCurrency();
@@ -39,6 +39,8 @@ public interface Purchasable extends Configurable, TimeZoneInfo {
     //
     PurchasableType getType();
     String getPublicIdentifier();
+
+    boolean isFreeOfCharge();
 
 
     String getDisplayName();
