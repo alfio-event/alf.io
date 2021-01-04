@@ -101,16 +101,16 @@ public class ReservationApiV2Controller {
      * Note: now it will return for any states of the reservation.
      *
      * @param purchasableType
-     * @param publicIdentifier
+     * @param purchasableIdentifier
      * @param reservationId
      * @return
      */
-    @GetMapping("/{purchasableType}/{publicIdentifier}/reservation/{reservationId}")
+    @GetMapping("/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}")
     public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("purchasableType") String purchasableType,
-                                                              @PathVariable("publicIdentifier") String publicIdentifier,
+                                                              @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                               @PathVariable("reservationId") String reservationId) {
 
-        Optional<ReservationInfo> res = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), publicIdentifier).flatMap(purchasable -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+        Optional<ReservationInfo> res = purchasableManager.findBy(Purchasable.PurchasableType.from(purchasableType), purchasableIdentifier).flatMap(purchasable -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
             var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, purchasable);
 
