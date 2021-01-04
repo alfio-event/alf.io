@@ -46,15 +46,13 @@ public class MolliePaymentWebhookController {
     @SuppressWarnings("MVCPathVariableInspection")
     @PostMapping(WEBHOOK_URL_TEMPLATE)
     public ResponseEntity<String> receivePaymentConfirmation(HttpServletRequest request,
-                                                             @PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
-                                                             @PathVariable("purchasableIdentifier") String purchasableIdentifier,
                                                              @PathVariable("reservationId") String reservationId) {
         return Optional.ofNullable(StringUtils.trimToNull(request.getParameter("id")))
-            .flatMap(id -> purchasableManager.findBy(purchasableType, purchasableIdentifier)
+            .flatMap(id -> purchasableManager.findByReservationId(reservationId)
                     .map(purchasable -> {
                         var content = "id="+id;
                         var result = ticketReservationManager.processTransactionWebhook(content, null, PaymentProxy.MOLLIE,
-                            Map.of("purchasableType", purchasableType.getUrlComponent(), "purchasableIdentifier", purchasableIdentifier, "reservationId", reservationId), new PaymentContext(purchasable, reservationId));
+                            Map.of("purchasableType", purchasable.getType().getUrlComponent(), "purchasableIdentifier", purchasable.getPublicIdentifier(), "reservationId", reservationId), new PaymentContext(purchasable, reservationId));
                         if(result.isSuccessful()) {
                             return ResponseEntity.ok("OK");
                         } else if(result.isError()) {

@@ -74,7 +74,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @AllArgsConstructor
 public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHandler, RefundRequest, PaymentInfo {
 
-    public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/mollie/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}";
+    public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/mollie/reservation/{reservationId}";
     private static final Set<PaymentMethod> EMPTY_METHODS = Collections.unmodifiableSet(EnumSet.noneOf(PaymentMethod.class));
     static final Map<String, PaymentMethod> SUPPORTED_METHODS = Map.of(
         "ideal", PaymentMethod.IDEAL,
@@ -306,7 +306,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         payload.put("amount", Map.of("value", spec.getOrderSummary().getTotalPrice(), "currency", spec.getPurchasable().getCurrency()));
         payload.put("description", String.format("%s - %d ticket(s) for event %s", configurationManager.getShortReservationID(spec.getPurchasable(), reservation), tickets, spec.getPurchasable().getDisplayName()));
         payload.put("redirectUrl", bookUrl);
-        payload.put("webhookUrl", baseUrl + UriComponentsBuilder.fromPath(WEBHOOK_URL_TEMPLATE).buildAndExpand(purchasableType, publicIdentifier, reservationId).toUriString());
+        payload.put("webhookUrl", baseUrl + UriComponentsBuilder.fromPath(WEBHOOK_URL_TEMPLATE).buildAndExpand(reservationId).toUriString());
         payload.put("metadata", MetadataBuilder.buildMetadata(spec, Map.of()));
 
         if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault()) {

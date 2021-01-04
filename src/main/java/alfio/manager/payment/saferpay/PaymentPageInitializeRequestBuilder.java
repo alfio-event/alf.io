@@ -27,7 +27,7 @@ import java.io.StringWriter;
 import java.util.Set;
 
 public class PaymentPageInitializeRequestBuilder {
-    public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/saferpay/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}/success";
+    public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/saferpay/reservation/{reservationId}/success";
     public static final String SUCCESS_URL_TEMPLATE = "/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}";
     public static final String CANCEL_URL_TEMPLATE = "/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}/payment/saferpay/cancel";
 
@@ -71,7 +71,7 @@ public class PaymentPageInitializeRequestBuilder {
         var eventUrl = cleanBaseUrl + expandUriTemplate(SUCCESS_URL_TEMPLATE, purchasableType, purchasableIdentifier, reservationId);
         this.successURL = eventUrl + "/book";
         this.failureURL = cleanBaseUrl + expandUriTemplate(CANCEL_URL_TEMPLATE, purchasableType, purchasableIdentifier, reservationId);
-        this.notifyURL  = cleanBaseUrl + expandUriTemplate(WEBHOOK_URL_TEMPLATE, purchasableType, purchasableIdentifier, reservationId);
+        this.notifyURL  = cleanBaseUrl + expandUriTemplate(WEBHOOK_URL_TEMPLATE, reservationId);
     }
 
     public PaymentPageInitializeRequestBuilder addAuthentication(String customerId, String requestId, String terminalId) {
@@ -130,6 +130,10 @@ public class PaymentPageInitializeRequestBuilder {
             array.value(method);
         }
         return array.endArray();
+    }
+
+    private String expandUriTemplate(String template, String reservationId) {
+        return UriComponentsBuilder.fromPath(template).buildAndExpand(reservationId).toUriString();
     }
 
     private String expandUriTemplate(String template, String purchasableType, String purchasableIdentifier, String reservationId) {

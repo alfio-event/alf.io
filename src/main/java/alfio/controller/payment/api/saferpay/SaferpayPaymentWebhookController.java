@@ -38,13 +38,11 @@ public class SaferpayPaymentWebhookController {
     private final PurchasableManager purchasableManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.WEBHOOK_URL_TEMPLATE)
-    ResponseEntity<String> handleTransactionNotification(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
-                                                         @PathVariable("purchasableIdentifier") String purchasableIdentifier,
-                                                         @PathVariable("reservationId") String reservationId) {
-        return purchasableManager.findBy(purchasableType, purchasableIdentifier)
+    ResponseEntity<String> handleTransactionNotification(@PathVariable("reservationId") String reservationId) {
+        return purchasableManager.findByReservationId(reservationId)
                 .map(purchasable -> {
                     var result = ticketReservationManager.processTransactionWebhook("", null, PaymentProxy.SAFERPAY,
-                        Map.of("purchasableType", purchasableType.getUrlComponent(), "purchasableIdentifier", purchasableIdentifier, "reservationId", reservationId), new PaymentContext(purchasable, reservationId));
+                        Map.of("purchasableType", purchasable.getType().getUrlComponent(), "purchasableIdentifier", purchasable.getPublicIdentifier(), "reservationId", reservationId), new PaymentContext(purchasable, reservationId));
                     if(result.isSuccessful()) {
                         return ResponseEntity.ok("OK");
                     } else if(result.isError()) {

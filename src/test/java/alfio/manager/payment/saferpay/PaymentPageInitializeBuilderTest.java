@@ -78,7 +78,7 @@ class PaymentPageInitializeBuilderTest {
         // Notifications
         var notification = parsedJson.get("Notification").getAsJsonObject();
         assertNotNull(notification);
-        assertEquals("http://localhost/api/payment/webhook/saferpay/event/shortName/reservation/reservationId/success", notification.get("NotifyUrl").getAsString());
+        assertEquals("http://localhost/api/payment/webhook/saferpay/reservation/reservationId/success", notification.get("NotifyUrl").getAsString());
 
         // payment methods
         var paymentMethods = parsedJson.get("PaymentMethods").getAsJsonArray();

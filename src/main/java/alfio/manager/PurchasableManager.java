@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.model.Purchasable;
 import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
+import alfio.repository.TicketReservationRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,10 +32,14 @@ public class PurchasableManager {
 
     private final EventRepository eventRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final TicketReservationRepository ticketReservationRepository;
 
-    public PurchasableManager(EventRepository eventRepository, SubscriptionRepository subscriptionRepository) {
+    public PurchasableManager(EventRepository eventRepository,
+                              SubscriptionRepository subscriptionRepository,
+                              TicketReservationRepository ticketReservationRepository) {
         this.eventRepository = eventRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
     }
 
     public Optional<? extends Purchasable> findBy(Purchasable.PurchasableType purchasableType, String publicIdentifier) {
@@ -43,5 +48,11 @@ public class PurchasableManager {
             case subscription: return subscriptionRepository.findOne(UUID.fromString(publicIdentifier));
             default: throw new IllegalStateException("not a covered type " + purchasableType);
         }
+    }
+
+    public Optional<Purchasable> findByReservationId(String reservationId) {
+        return ticketReservationRepository.findEventIdFor(reservationId).map(eventRepository::findById)
+            .map(Purchasable.class::cast)
+            .or(() -> subscriptionRepository.findDescriptorByReservationId(reservationId));
     }
 }

@@ -258,4 +258,7 @@ public interface TicketReservationRepository {
 
     @Query("update tickets_reservation set invoicing_additional_information = :info::json where id = :id")
     int updateInvoicingAdditionalInformation(@Bind("id") String reservationId, @Bind("info") String info);
+
+    @Query("select event_id_fk from tickets_reservation where id = :id")
+    Optional<Integer> findEventIdFor(@Bind("id") String reservationId);
 }
