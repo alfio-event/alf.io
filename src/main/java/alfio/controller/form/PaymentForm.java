@@ -16,7 +16,7 @@
  */
 package alfio.controller.form;
 
-import alfio.model.Event;
+import alfio.model.Purchasable;
 import alfio.model.TotalPrice;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -42,8 +42,8 @@ public class PaymentForm implements Serializable {
     private String captcha;
 
 
-    public void validate(BindingResult bindingResult, Event event, TotalPrice reservationCost) {
-        List<PaymentProxy> allowedProxies = event.getAllowedPaymentProxies();
+    public void validate(BindingResult bindingResult, Purchasable purchasable, TotalPrice reservationCost) {
+        List<PaymentProxy> allowedProxies = purchasable.getAllowedPaymentProxies();
 
         Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentProxy);
         boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
@@ -53,7 +53,7 @@ public class PaymentForm implements Serializable {
         }
 
         if (Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted
-            || (StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && (Objects.isNull(privacyPolicyAccepted) || !privacyPolicyAccepted))) {
+            || (StringUtils.isNotEmpty(purchasable.getPrivacyPolicyUrl()) && (Objects.isNull(privacyPolicyAccepted) || !privacyPolicyAccepted))) {
             bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
         }
     }

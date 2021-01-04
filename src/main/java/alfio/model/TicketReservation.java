@@ -17,7 +17,6 @@
 package alfio.model;
 
 import alfio.model.transaction.PaymentProxy;
-import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;

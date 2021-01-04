@@ -647,9 +647,9 @@ public class ReservationApiV2Controller {
     }
 
 
-    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
+    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, String recaptchaResponse, HttpServletRequest request, Configurable configurable) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
-            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(event.getConfigurationLevel())
+            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurable.getConfigurationLevel())
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 }

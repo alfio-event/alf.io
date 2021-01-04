@@ -1309,9 +1309,9 @@ public class TicketReservationManager {
         return promoCodeDiscount.getPromoCode() + " " + formattedDiscountedCategories;
     }
 
-    public OrderSummary orderSummaryForReservationId(String reservationId, Event event) {
+    public OrderSummary orderSummaryForReservationId(String reservationId, Purchasable purchasable) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        return orderSummaryForReservation(reservation, event);
+        return orderSummaryForReservation(reservation, purchasable);
     }
 
     public OrderSummary orderSummaryForReservation(TicketReservation reservation, Purchasable event) {
