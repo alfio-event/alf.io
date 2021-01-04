@@ -563,9 +563,11 @@ public class ReservationApiV2Controller {
     //----------------
 
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/init")
-    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("eventName") String eventName,
-                                                                          @PathVariable("reservationId") String reservationId,
+    @PostMapping({
+        "/reservation/{reservationId}/payment/{method}/init",
+        "/event/{eventName}/reservation/{reservationId}/payment/{method}/init" //<-deprecated
+    })
+    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("reservationId") String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
         var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
@@ -574,7 +576,7 @@ public class ReservationApiV2Controller {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(eventName, reservationId)
+        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(reservationId)
             .map(pair -> {
                 var event = pair.getLeft();
                 return ticketReservationManager.initTransaction(event, reservationId, paymentMethod, allParams)
@@ -584,31 +586,39 @@ public class ReservationApiV2Controller {
         return responseEntity.orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
-    @DeleteMapping("/event/{eventName}/reservation/{reservationId}/payment/token")
+    @DeleteMapping({
+        "/reservation/{reservationId}/payment/token",
+        "/event/{eventName}/reservation/{reservationId}/payment/token" //<-deprecated
+    })
     public ResponseEntity<Boolean> removeToken(@PathVariable("eventName") String eventName,
                                                @PathVariable("reservationId") String reservationId) {
 
-        var res = getEventReservationPair(eventName, reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
+        var res = getEventReservationPair(reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
         return ResponseEntity.ok(res);
     }
 
-    @DeleteMapping("/event/{eventName}/reservation/{reservationId}/payment")
-    public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable("eventName") String eventName,
-                                                        @PathVariable("reservationId") String reservationId) {
+    @DeleteMapping({
+        "/reservation/{reservationId}/payment",
+        "/event/{eventName}/reservation/{reservationId}/payment" //<-deprecated
+    })
+    public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable("reservationId") String reservationId) {
 
-        var res = getEventReservationPair(eventName, reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
+        var res = getEventReservationPair(reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
         return ResponseEntity.ok(res);
     }
 
-    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(String eventName, String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
+    private Optional<Pair<Purchasable, TicketReservation>> getEventReservationPair(String reservationId) {
+        return purchasableManager.findByReservationId(reservationId)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
             .filter(pair -> pair.getRight().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));
     }
 
-    @GetMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/status")
-    public ResponseEntity<ReservationPaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
+    @GetMapping({
+        "/reservation/{reservationId}/payment/{method}/status",
+        "/event/{eventName}/reservation/{reservationId}/payment/{method}/status" //<-deprecated
+    })
+    public ResponseEntity<ReservationPaymentResult> getTransactionStatus(
                                                               @PathVariable("reservationId") String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
 
@@ -618,7 +628,7 @@ public class ReservationApiV2Controller {
             return ResponseEntity.badRequest().build();
         }
 
-        return getEventReservationPair(eventName, reservationId)
+        return getEventReservationPair(reservationId)
             .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
             .map(pr -> ResponseEntity.ok(new ReservationPaymentResult(pr.isSuccessful(), pr.isRedirect(), pr.getRedirectUrl(), pr.isFailed(), pr.getGatewayIdOrNull())))
             .orElseGet(() -> ResponseEntity.notFound().build());

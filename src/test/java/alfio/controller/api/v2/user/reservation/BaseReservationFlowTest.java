@@ -814,7 +814,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
 
             // bank transfer does not have a transaction, it's created on confirmOverview call
-            var tStatus = reservationApiV2Controller.getTransactionStatus(context.event.getShortName(), reservationId, "BANK_TRANSFER");
+            var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
             assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
             //
 
@@ -825,7 +825,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, context);
 
-            tStatus = reservationApiV2Controller.getTransactionStatus(context.event.getShortName(), reservationId, "BANK_TRANSFER");
+            tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
             assertEquals(HttpStatus.OK, tStatus.getStatusCode());
             assertNotNull(tStatus.getBody());
             assertFalse(tStatus.getBody().isSuccess());
@@ -852,7 +852,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
 
-            tStatus = reservationApiV2Controller.getTransactionStatus(context.event.getShortName(), reservationId, "BANK_TRANSFER");
+            tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
             assertEquals(HttpStatus.OK, tStatus.getStatusCode());
             assertNotNull(tStatus.getBody());
             assertTrue(tStatus.getBody().isSuccess());

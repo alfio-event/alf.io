@@ -589,7 +589,7 @@ public class TicketReservationManager {
             .collect(Collectors.toSet());
     }
 
-    public boolean cancelPendingPayment(String reservationId, Event event) {
+    public boolean cancelPendingPayment(String reservationId, Purchasable purchasable) {
         var optionalReservation = findById(reservationId);
         if(optionalReservation.isEmpty()) {
             return false;
@@ -601,12 +601,12 @@ public class TicketReservationManager {
         }
         Transaction transaction = optionalTransaction.get();
         boolean remoteDeleteResult = paymentManager.lookupProviderByTransactionAndCapabilities(transaction, List.of(ServerInitiatedTransaction.class))
-            .map(provider -> ((ServerInitiatedTransaction)provider).discardTransaction(optionalTransaction.get(), event))
+            .map(provider -> ((ServerInitiatedTransaction)provider).discardTransaction(optionalTransaction.get(), purchasable))
             .orElse(true);
 
         if(remoteDeleteResult) {
             reTransitionToPending(reservationId);
-            auditingRepository.insert(reservationId, null, event.getId(), RESET_PAYMENT, new Date(), RESERVATION, reservationId);
+            auditingRepository.insert(reservationId, null, purchasable.event().map(Event::getId).orElse(null), RESET_PAYMENT, new Date(), RESERVATION, reservationId);
             return true;
         }
         log.warn("Cannot delete payment with ID {} for reservation {}", transaction.getPaymentId(), reservationId);
