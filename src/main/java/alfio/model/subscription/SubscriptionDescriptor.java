@@ -20,7 +20,7 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.PriceContainer.VatStatus;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
@@ -39,7 +39,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
-public class SubscriptionDescriptor implements Purchasable {
+public class SubscriptionDescriptor implements PurchaseContext {
 
 
 
@@ -171,8 +171,8 @@ public class SubscriptionDescriptor implements Purchasable {
 
     @JsonIgnore
     @Override
-    public PurchasableType getType() {
-        return PurchasableType.subscription;
+    public PurchaseContextType getType() {
+        return PurchaseContextType.subscription;
     }
 
     @JsonIgnore

@@ -16,7 +16,7 @@
  */
 package alfio.controller.payment;
 
-import alfio.manager.PurchasableManager;
+import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.PayPalManager;
 import alfio.model.TicketReservation;
@@ -37,7 +37,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 @RequiredArgsConstructor
 public class PayPalCallbackController {
 
-    private final PurchasableManager purchasableManager;
+    private final PurchaseContextManager purchaseContextManager;
     private final TicketReservationManager ticketReservationManager;
     private final PayPalManager payPalManager;
 
@@ -47,17 +47,17 @@ public class PayPalCallbackController {
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
                                 @RequestParam(value = "hmac") String hmac) {
 
-        var optionalPurchasable = purchasableManager.findByReservationId(reservationId);
-        if(optionalPurchasable.isEmpty()) {
+        var optionalPurchaseContext = purchaseContextManager.findByReservationId(reservationId);
+        if(optionalPurchaseContext.isEmpty()) {
             return "redirect:/";
         }
 
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
 
-        var purchasable = optionalPurchasable.get();
+        var purchaseContext = optionalPurchaseContext.get();
 
         if(optionalReservation.isEmpty()) {
-            return "redirect:/"+purchasable.getType().getUrlComponent()+"/" + purchasable.getPublicIdentifier();
+            return "redirect:/"+purchaseContext.getType().getUrlComponent()+"/" + purchaseContext.getPublicIdentifier();
         }
 
         var res = optionalReservation.get();
@@ -65,8 +65,8 @@ public class PayPalCallbackController {
 
         if (isNotBlank(payPalPayerID) && isNotBlank(payPalPaymentId)) {
             var token = new PayPalToken(payPalPayerID, payPalPaymentId, hmac);
-            payPalManager.saveToken(res.getId(), purchasable, token);
-            return "redirect:/" + purchasable.getType().getUrlComponent() + "/" + purchasable.getPublicIdentifier() + "/reservation/" +res.getId() + "/overview";
+            payPalManager.saveToken(res.getId(), purchaseContext, token);
+            return "redirect:/" + purchaseContext.getType().getUrlComponent() + "/" + purchaseContext.getPublicIdentifier() + "/reservation/" +res.getId() + "/overview";
         } else {
             return payPalCancel(res.getId(), payPalPaymentId, hmac);
         }
@@ -77,19 +77,19 @@ public class PayPalCallbackController {
                                @RequestParam(value = "token", required = false) String payPalPaymentId,
                                @RequestParam(value = "hmac") String hmac) {
 
-        var optionalPurchasable = purchasableManager.findByReservationId(reservationId);
-        if(optionalPurchasable.isEmpty()) {
+        var optionalPurchaseContext = purchaseContextManager.findByReservationId(reservationId);
+        if(optionalPurchaseContext.isEmpty()) {
             return "redirect:/";
         }
-        var purchasable = optionalPurchasable.get();
+        var purchaseContext = optionalPurchaseContext.get();
 
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
 
         if(optionalReservation.isEmpty()) {
-            return "redirect:/" + purchasable.getType().getUrlComponent() + "/" + purchasable.getPublicIdentifier();
+            return "redirect:/" + purchaseContext.getType().getUrlComponent() + "/" + purchaseContext.getPublicIdentifier();
         }
 
         payPalManager.removeToken(optionalReservation.get(), payPalPaymentId);
-        return "redirect:/" + purchasable.getType().getUrlComponent() + "/" + purchasable.getPublicIdentifier() + "/reservation/" + optionalReservation.get().getId() + "/overview";
+        return "redirect:/" + purchaseContext.getType().getUrlComponent() + "/" + purchaseContext.getPublicIdentifier() + "/reservation/" + optionalReservation.get().getId() + "/overview";
     }
 }

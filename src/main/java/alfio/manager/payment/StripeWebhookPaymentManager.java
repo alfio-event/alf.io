@@ -95,7 +95,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         return transactionRepository.loadOptionalByReservationId(reservationId)
             .map(transaction -> {
                 if(transaction.getStatus() == Transaction.Status.PENDING) {
-                    return buildTokenFromTransaction(transaction, paymentSpecification.getPurchasable(), true);
+                    return buildTokenFromTransaction(transaction, paymentSpecification.getPurchaseContext(), true);
                 } else {
                     return errorToken("Reload reservation", true);
                 }
@@ -139,10 +139,10 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
-    public boolean discardTransaction(Transaction transaction, Purchasable purchasable) {
+    public boolean discardTransaction(Transaction transaction, PurchaseContext purchaseContext) {
         var paymentId = transaction.getPaymentId();
         try {
-            var requestOptions = baseStripeManager.options(purchasable).orElseThrow();
+            var requestOptions = baseStripeManager.options(purchaseContext).orElseThrow();
             var paymentIntent = PaymentIntent.retrieve(paymentId, requestOptions);
             if(cancellableStatuses.contains(paymentIntent.getStatus())) {
                 paymentIntent.cancel(requestOptions);
@@ -155,20 +155,20 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         return false;
     }
 
-    private TransactionInitializationToken buildTokenFromTransaction(Transaction transaction, Purchasable purchasable, boolean performRemoteVerification) {
+    private TransactionInitializationToken buildTokenFromTransaction(Transaction transaction, PurchaseContext purchaseContext, boolean performRemoteVerification) {
         String clientSecret = Optional.ofNullable(transaction.getMetadata()).map(m -> m.get(CLIENT_SECRET_METADATA)).orElse(null);
         String chargeId = transaction.getStatus() == Transaction.Status.COMPLETE ? transaction.getTransactionId() : null;
 
         if(performRemoteVerification && transaction.getStatus() == Transaction.Status.PENDING) {
             // try to retrieve PaymentIntent
             try {
-                var requestOptions = baseStripeManager.options(purchasable).orElseThrow();
+                var requestOptions = baseStripeManager.options(purchaseContext).orElseThrow();
                 var paymentIntent = PaymentIntent.retrieve(transaction.getPaymentId(), requestOptions);
                 var status = paymentIntent.getStatus();
                 if(status.equals("succeeded")) {
                     // the existing PaymentIntent succeeded, so we can confirm the reservation
                     log.info("marking reservation {} as paid, because PaymentIntent reports success", transaction.getReservationId());
-                    processSuccessfulPaymentIntent(transaction, paymentIntent, ticketReservationRepository.findReservationById(transaction.getReservationId()), purchasable);
+                    processSuccessfulPaymentIntent(transaction, paymentIntent, ticketReservationRepository.findReservationById(transaction.getReservationId()), purchaseContext);
                     return errorToken("Reservation status changed", true);
                 } else if(!status.equals("requires_payment_method")) {
                     return errorToken("Payment in process", true);
@@ -181,20 +181,20 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     private StripeSCACreditCardToken createNewToken(PaymentSpecification paymentSpecification) {
-        Map<String, String> baseMetadata = configurationManager.getFor(BASE_URL, paymentSpecification.getPurchasable().getConfigurationLevel()).getValue()
+        Map<String, String> baseMetadata = configurationManager.getFor(BASE_URL, paymentSpecification.getPurchaseContext().getConfigurationLevel()).getValue()
             .map(baseUrl -> Map.of("alfioBaseUrl", baseUrl))
             .orElse(Map.of());
         var paymentIntentParams = baseStripeManager.createParams(paymentSpecification, baseMetadata);
         paymentIntentParams.put("payment_method_types", List.of("card"));
         try {
-            var options = baseStripeManager.options(paymentSpecification.getPurchasable(), builder -> builder.setIdempotencyKey(paymentSpecification.getReservationId())).orElseThrow();
+            var options = baseStripeManager.options(paymentSpecification.getPurchaseContext(), builder -> builder.setIdempotencyKey(paymentSpecification.getReservationId())).orElseThrow();
             var intent = PaymentIntent.create(paymentIntentParams, options);
             var clientSecret = intent.getClientSecret();
             long platformFee = paymentIntentParams.containsKey("application_fee") ? (long) paymentIntentParams.get("application_fee") : 0L;
             PaymentManagerUtils.invalidateExistingTransactions(paymentSpecification.getReservationId(), transactionRepository);
             transactionRepository.insert(intent.getId(), intent.getId(),
-                paymentSpecification.getReservationId(), ZonedDateTime.now(clockProvider.withZone(paymentSpecification.getPurchasable().getZoneId())),
-                paymentSpecification.getPriceWithVAT(), paymentSpecification.getPurchasable().getCurrency(), "Payment Intent",
+                paymentSpecification.getReservationId(), ZonedDateTime.now(clockProvider.withZone(paymentSpecification.getPurchaseContext().getZoneId())),
+                paymentSpecification.getPriceWithVAT(), paymentSpecification.getPurchaseContext().getCurrency(), "Payment Intent",
                 PaymentProxy.STRIPE.name(), platformFee,0L, Transaction.Status.PENDING, Map.of(CLIENT_SECRET_METADATA, clientSecret, STRIPE_MANAGER_TYPE_KEY, STRIPE_MANAGER));
             return new StripeSCACreditCardToken(intent.getId(), null, clientSecret);
 
@@ -249,7 +249,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         }
 
         boolean live = Boolean.TRUE.equals(((PaymentIntent) payload.getPayload()).getLivemode());
-        if(!baseStripeManager.getSecretKey(paymentContext.getPurchasable()).startsWith(live ? "sk_live_" : "sk_test_")) {
+        if(!baseStripeManager.getSecretKey(paymentContext.getPurchaseContext()).startsWith(live ? "sk_live_" : "sk_test_")) {
             var description = live ? "live" : "test";
             log.warn("received a {} event of type {}, which is not compatible with the current configuration", description, payload.getType());
             return PaymentWebhookResult.notRelevant(description);
@@ -294,34 +294,34 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
      *
      * @param transaction transaction
      * @param reservation the TicketReservation this payment belongs to
-     * @param purchasable the event
+     * @param purchaseContext the event
      * @return a failed {@link PaymentWebhookResult}
      */
-    private PaymentWebhookResult processFailedPaymentIntent(Transaction transaction, TicketReservation reservation, Purchasable purchasable) {
+    private PaymentWebhookResult processFailedPaymentIntent(Transaction transaction, TicketReservation reservation, PurchaseContext purchaseContext) {
         List<Map<String, Object>> modifications = List.of(Map.of("paymentId", transaction.getPaymentId(), "paymentMethod", "stripe"));
-        auditingRepository.insert(reservation.getId(), null, purchasable, Audit.EventType.PAYMENT_FAILED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
+        auditingRepository.insert(reservation.getId(), null, purchaseContext, Audit.EventType.PAYMENT_FAILED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
         return PaymentWebhookResult.failed("Charge has been reset by Stripe. This is usually caused by a rejection from the customer's bank");
     }
 
-    private PaymentWebhookResult processSuccessfulPaymentIntent(Transaction transaction, PaymentIntent paymentIntent, TicketReservation reservation, Purchasable purchasable) {
+    private PaymentWebhookResult processSuccessfulPaymentIntent(Transaction transaction, PaymentIntent paymentIntent, TicketReservation reservation, PurchaseContext purchaseContext) {
         var charge = paymentIntent.getCharges().getData().get(0);
         var chargeId = charge.getId();
         long gtwFee = Optional.ofNullable(charge.getBalanceTransactionObject()).map(BalanceTransaction::getFee).orElse(0L);
         transactionRepository.lockByIdForUpdate(transaction.getId());// this serializes
         int affectedRows = transactionRepository.updateIfStatus(transaction.getId(), chargeId,
-            transaction.getPaymentId(), purchasable.now(clockProvider), transaction.getPlatformFee(), gtwFee,
+            transaction.getPaymentId(), purchaseContext.now(clockProvider), transaction.getPlatformFee(), gtwFee,
             Transaction.Status.COMPLETE, Map.of(), Transaction.Status.PENDING);
         List<Map<String, Object>> modifications = List.of(Map.of("paymentId", chargeId, "paymentMethod", "stripe"));
         if(affectedRows == 0) {
             // the transaction was already confirmed by someone else.
             // We can safely return the chargeId, but we write in the auditing that we skipped the confirmation
             auditingRepository.insert(reservation.getId(), null,
-                purchasable, Audit.EventType.PAYMENT_ALREADY_CONFIRMED,
+                    purchaseContext, Audit.EventType.PAYMENT_ALREADY_CONFIRMED,
                 new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
             return PaymentWebhookResult.successful(new StripeSCACreditCardToken(transaction.getPaymentId(), chargeId, null));
         }
         auditingRepository.insert(reservation.getId(), null,
-            purchasable, Audit.EventType.PAYMENT_CONFIRMED,
+                purchaseContext, Audit.EventType.PAYMENT_CONFIRMED,
             new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
         return PaymentWebhookResult.successful(new StripeSCACreditCardToken(transaction.getPaymentId(), chargeId, null));
     }
@@ -377,13 +377,13 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
-    public Optional<PaymentInformation> getInfo(Transaction transaction, Purchasable purchasable) {
-        return baseStripeManager.getInfo(transaction, purchasable);
+    public Optional<PaymentInformation> getInfo(Transaction transaction, PurchaseContext purchaseContext) {
+        return baseStripeManager.getInfo(transaction, purchaseContext);
     }
 
     @Override
-    public boolean refund(Transaction transaction, Purchasable purchasable, Integer amount) {
-        return baseStripeManager.refund(transaction, purchasable, amount);
+    public boolean refund(Transaction transaction, PurchaseContext purchaseContext, Integer amount) {
+        return baseStripeManager.refund(transaction, purchaseContext, amount);
     }
 
     @Override
@@ -406,8 +406,8 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     public PaymentWebhookResult forceTransactionCheck(TicketReservation reservation, Transaction transaction, PaymentContext paymentContext) {
         Validate.isTrue(transaction.getPaymentProxy() == PaymentProxy.STRIPE, "invalid transaction");
         try {
-            Purchasable purchasable = paymentContext.getPurchasable();
-            var options = baseStripeManager.options(purchasable, builder -> builder.setIdempotencyKey(reservation.getId())).orElseThrow();
+            PurchaseContext purchaseContext = paymentContext.getPurchaseContext();
+            var options = baseStripeManager.options(purchaseContext, builder -> builder.setIdempotencyKey(reservation.getId())).orElseThrow();
             var intent = PaymentIntent.retrieve(transaction.getPaymentId(), options);
             switch(intent.getStatus()) {
                 case "processing":
@@ -415,10 +415,10 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
                 case "requires_confirmation":
                     return PaymentWebhookResult.pending();
                 case "succeeded":
-                    return processSuccessfulPaymentIntent(transaction, intent, reservation, purchasable);
+                    return processSuccessfulPaymentIntent(transaction, intent, reservation, purchaseContext);
                 case "requires_payment_method":
                     //payment is failed.
-                    return processFailedPaymentIntent(transaction, reservation, purchasable);
+                    return processFailedPaymentIntent(transaction, reservation, purchaseContext);
             }
             return null;
         } catch(Exception ex) {

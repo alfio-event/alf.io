@@ -25,7 +25,7 @@ import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
 import alfio.manager.user.UserManager;
 import alfio.model.Configurable;
 import alfio.model.EventAndOrganizationId;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
@@ -567,7 +567,7 @@ public class ConfigurationManager {
         return res;
     }
 
-    public List<PaymentMethod> getBlacklistedMethodsForReservation(Purchasable p, Collection<Integer> categoryIds) {
+    public List<PaymentMethod> getBlacklistedMethodsForReservation(PurchaseContext p, Collection<Integer> categoryIds) {
         return p.event().map(e -> {
             if(categoryIds.size() > 1) {
                 Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);

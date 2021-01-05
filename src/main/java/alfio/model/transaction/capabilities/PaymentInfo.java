@@ -17,7 +17,7 @@
 package alfio.model.transaction.capabilities;
 
 import alfio.model.PaymentInformation;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.transaction.Capability;
 import alfio.model.transaction.Transaction;
 
@@ -25,6 +25,6 @@ import java.util.Optional;
 
 public interface PaymentInfo extends Capability {
 
-    Optional<PaymentInformation> getInfo(Transaction transaction, Purchasable purchasable);
+    Optional<PaymentInformation> getInfo(Transaction transaction, PurchaseContext purchaseContext);
 
 }

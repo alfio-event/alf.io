@@ -28,8 +28,8 @@ import java.util.Set;
 
 public class PaymentPageInitializeRequestBuilder {
     public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/saferpay/reservation/{reservationId}/success";
-    public static final String SUCCESS_URL_TEMPLATE = "/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}";
-    public static final String CANCEL_URL_TEMPLATE = "/{purchasableType}/{purchasableIdentifier}/reservation/{reservationId}/payment/saferpay/cancel";
+    public static final String SUCCESS_URL_TEMPLATE = "/{purchaseContextType}/{purchaseContextIdentifier}/reservation/{reservationId}";
+    public static final String CANCEL_URL_TEMPLATE = "/{purchaseContextType}/{purchaseContextIdentifier}/reservation/{reservationId}/payment/saferpay/cancel";
 
     static final Set<String> SUPPORTED_METHODS = Set.of(
         PaymentMethod.ALIPAY.name(),
@@ -65,12 +65,12 @@ public class PaymentPageInitializeRequestBuilder {
 
     public PaymentPageInitializeRequestBuilder(String baseUrl, PaymentSpecification paymentSpecification) {
         var cleanBaseUrl = StringUtils.removeEnd(baseUrl, "/");
-        var purchasableType = paymentSpecification.getPurchasable().getType().getUrlComponent();
-        var purchasableIdentifier = paymentSpecification.getPurchasable().getPublicIdentifier();
+        var purchaseContextType = paymentSpecification.getPurchaseContext().getType().getUrlComponent();
+        var purchaseContextIdentifier = paymentSpecification.getPurchaseContext().getPublicIdentifier();
         var reservationId = paymentSpecification.getReservationId();
-        var eventUrl = cleanBaseUrl + expandUriTemplate(SUCCESS_URL_TEMPLATE, purchasableType, purchasableIdentifier, reservationId);
+        var eventUrl = cleanBaseUrl + expandUriTemplate(SUCCESS_URL_TEMPLATE, purchaseContextType, purchaseContextIdentifier, reservationId);
         this.successURL = eventUrl + "/book";
-        this.failureURL = cleanBaseUrl + expandUriTemplate(CANCEL_URL_TEMPLATE, purchasableType, purchasableIdentifier, reservationId);
+        this.failureURL = cleanBaseUrl + expandUriTemplate(CANCEL_URL_TEMPLATE, purchaseContextType, purchaseContextIdentifier, reservationId);
         this.notifyURL  = cleanBaseUrl + expandUriTemplate(WEBHOOK_URL_TEMPLATE, reservationId);
     }
 
@@ -136,8 +136,8 @@ public class PaymentPageInitializeRequestBuilder {
         return UriComponentsBuilder.fromPath(template).buildAndExpand(reservationId).toUriString();
     }
 
-    private String expandUriTemplate(String template, String purchasableType, String purchasableIdentifier, String reservationId) {
-        return UriComponentsBuilder.fromPath(template).buildAndExpand(purchasableType, purchasableIdentifier, reservationId).toUriString();
+    private String expandUriTemplate(String template, String purchaseContextType, String purchaseContextIdentifier, String reservationId) {
+        return UriComponentsBuilder.fromPath(template).buildAndExpand(purchaseContextType, purchaseContextIdentifier, reservationId).toUriString();
     }
 
 }

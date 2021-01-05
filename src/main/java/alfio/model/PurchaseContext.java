@@ -23,7 +23,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface Purchasable extends Configurable, TimeZoneInfo, LocalizedContent {
+public interface PurchaseContext extends Configurable, TimeZoneInfo, LocalizedContent {
     BigDecimal getVat();
     PriceContainer.VatStatus getVatStatus();
     String getCurrency();
@@ -37,7 +37,7 @@ public interface Purchasable extends Configurable, TimeZoneInfo, LocalizedConten
     int getOrganizationId();
 
     //
-    PurchasableType getType();
+    PurchaseContextType getType();
     String getPublicIdentifier();
 
     boolean isFreeOfCharge();
@@ -51,20 +51,20 @@ public interface Purchasable extends Configurable, TimeZoneInfo, LocalizedConten
     ZonedDateTime getBegin();
 
 
-    enum PurchasableType {
+    enum PurchaseContextType {
         subscription("subscription"), event("event");
 
         private final String urlComponent;
 
-        PurchasableType(String urlComponent) {
+        PurchaseContextType(String urlComponent) {
             this.urlComponent = urlComponent;
         }
 
-        public static PurchasableType from(String purchasableType) {
-            switch (purchasableType) {
+        public static PurchaseContextType from(String purchaseContextType) {
+            switch (purchaseContextType) {
                 case "subscription": return subscription;
                 case "event": return event;
-                default: throw new IllegalStateException("Purchase type not supported:" + purchasableType);
+                default: throw new IllegalStateException("Purchase type not supported:" + purchaseContextType);
             }
         }
 

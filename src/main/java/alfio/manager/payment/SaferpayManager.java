@@ -22,7 +22,7 @@ import alfio.manager.support.PaymentWebhookResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -112,7 +112,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
 
     @Override
     public PaymentResult doPayment(PaymentSpecification spec) {
-        var event = spec.getPurchasable();
+        var event = spec.getPurchaseContext();
         var configuration = loadConfiguration(event);
         var reservationId = spec.getReservationId();
         var reservation = ticketReservationRepository.findReservationById(reservationId);
@@ -173,7 +173,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
 
     PaymentWebhookResult internalProcessWebhook(Transaction transaction, PaymentContext paymentContext) {
         int retryCount = Integer.parseInt(transaction.getMetadata().getOrDefault("retryCount", "0"));
-        var configuration = loadConfiguration(paymentContext.getPurchasable());
+        var configuration = loadConfiguration(paymentContext.getPurchaseContext());
         var paymentStatus = retrievePaymentStatus(configuration, transaction.getPaymentId(), transaction.getReservationId(), retryCount);
         if(paymentStatus.isEmpty()) {
             LOGGER.debug("Invalidating transaction with ID {}", transaction.getId());
@@ -204,8 +204,8 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     }
 
     @Override
-    public Optional<PaymentInformation> getInfo(Transaction transaction, Purchasable purchasable) {
-        var configuration = loadConfiguration(purchasable);
+    public Optional<PaymentInformation> getInfo(Transaction transaction, PurchaseContext purchaseContext) {
+        var configuration = loadConfiguration(purchaseContext);
         var requestBody = new TransactionInquireRequestBuilder(transaction.getTransactionId(), 0)
             .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), transaction.getReservationId())
             .build();
@@ -337,8 +337,8 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             .build();
     }
 
-    private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> loadConfiguration(Purchasable purchasable) {
-        return configurationManager.getFor(EnumSet.of(SAFERPAY_ENABLED, SAFERPAY_API_USERNAME, SAFERPAY_API_PASSWORD, SAFERPAY_CUSTOMER_ID, SAFERPAY_TERMINAL_ID, SAFERPAY_LIVE_MODE, BASE_URL, RESERVATION_TIMEOUT), purchasable.getConfigurationLevel());
+    private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> loadConfiguration(PurchaseContext purchaseContext) {
+        return configurationManager.getFor(EnumSet.of(SAFERPAY_ENABLED, SAFERPAY_API_USERNAME, SAFERPAY_API_PASSWORD, SAFERPAY_CUSTOMER_ID, SAFERPAY_TERMINAL_ID, SAFERPAY_LIVE_MODE, BASE_URL, RESERVATION_TIMEOUT), purchaseContext.getConfigurationLevel());
     }
 
     private String processPaymentInitializationResponse(HttpResponse<String> response, PaymentSpecification spec, int retryCount) {
@@ -352,8 +352,8 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
         ticketReservationRepository.updateValidity(reservationId, Date.from(expiration.toInstant()));
         invalidateExistingTransactions(reservationId, transactionRepository);
         transactionRepository.insert(paymentToken, paymentToken,
-            reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getPurchasable().getZoneId())),
-            spec.getPriceWithVAT(), spec.getPurchasable().getCurrency(), "Saferpay Payment",
+            reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getPurchaseContext().getZoneId())),
+            spec.getPriceWithVAT(), spec.getPurchaseContext().getCurrency(), "Saferpay Payment",
             PaymentProxy.SAFERPAY.name(), 0L,0L, Transaction.Status.PENDING, Map.of("retryCount", String.valueOf(retryCount)));
 
         return responseBody.get("RedirectUrl").getAsString();

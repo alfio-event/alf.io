@@ -256,8 +256,8 @@ public class NotificationManager {
         sendSimpleEmail(event, reservationId, recipient, cc, subject, textBuilder, Collections.emptyList());
     }
 
-    public List<String> getCCForEventOrganizer(Purchasable purchasable) {
-        var systemNotificationCC = configurationManager.getFor(ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC, purchasable.getConfigurationLevel()).getValueOrDefault("");
+    public List<String> getCCForEventOrganizer(PurchaseContext purchaseContext) {
+        var systemNotificationCC = configurationManager.getFor(ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC, purchaseContext.getConfigurationLevel()).getValueOrDefault("");
         return Stream.of(StringUtils.split(systemNotificationCC, ','))
             .filter(Objects::nonNull)
             .map(String::trim)

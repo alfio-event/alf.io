@@ -95,7 +95,7 @@ public class ReservationApiV2Controller {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final BillingDocumentManager billingDocumentManager;
-    private final PurchasableManager purchasableManager;
+    private final PurchaseContextManager purchaseContextManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -108,9 +108,9 @@ public class ReservationApiV2Controller {
     })
     public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("reservationId") String reservationId) {
 
-        Optional<ReservationInfo> res = purchasableManager.findByReservationId(reservationId).flatMap(purchasable -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+        Optional<ReservationInfo> res = purchaseContextManager.findByReservationId(reservationId).flatMap(purchaseContext -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
-            var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, purchasable);
+            var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, purchaseContext);
 
             var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
@@ -121,7 +121,7 @@ public class ReservationApiV2Controller {
             boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
             //
 
-            var ticketsInfo = purchasable.event().map(event -> {
+            var ticketsInfo = purchaseContext.event().map(event -> {
                 var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
                     .stream()
                     .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
@@ -152,16 +152,16 @@ public class ReservationApiV2Controller {
 
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
 
-            var shortReservationId =  ticketReservationManager.getShortReservationID(purchasable, reservation);
+            var shortReservationId =  ticketReservationManager.getShortReservationID(purchaseContext, reservation);
 
-            var formattedExpirationDate = reservation.getValidity() != null ? formatDateForLocales(purchasable, ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), purchasable.getZoneId()), "datetime.pattern") : null;
+            var formattedExpirationDate = reservation.getValidity() != null ? formatDateForLocales(purchaseContext, ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), purchaseContext.getZoneId()), "datetime.pattern") : null;
 
             var paymentToken = paymentManager.getPaymentToken(reservationId);
             boolean tokenAcquired = paymentToken.isPresent();
             PaymentProxy selectedPaymentProxy = paymentToken.map(PaymentToken::getPaymentProvider).orElse(null);
 
             //
-            var containsCategoriesLinkedToGroups = purchasable.event().map(event -> ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())).orElse(false);
+            var containsCategoriesLinkedToGroups = purchaseContext.event().map(event -> ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())).orElse(false);
             //
 
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
@@ -184,7 +184,7 @@ public class ReservationApiV2Controller {
                 additionalInfo.getBillingDetails(),
                 //
                 containsCategoriesLinkedToGroups,
-                getActivePaymentMethods(purchasable, ticketsByCategory.keySet(), orderSummary, reservationId)
+                getActivePaymentMethods(purchaseContext, ticketsByCategory.keySet(), orderSummary, reservationId)
                 ));
         }));
 
@@ -192,17 +192,17 @@ public class ReservationApiV2Controller {
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(Purchasable purchasable,
+    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
                                                                                    Collection<Integer> categoryIds,
                                                                                    OrderSummary orderSummary,
                                                                                    String reservationId) {
-        if(!purchasable.isFreeOfCharge()) {
-            var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(purchasable, categoryIds);
-            return paymentManager.getPaymentMethods(purchasable, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
+        if(!purchaseContext.isFreeOfCharge()) {
+            var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoryIds);
+            return paymentManager.getPaymentMethods(purchaseContext, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
                 .stream()
                 .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
-                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, purchasable, configurationManager))
-                .collect(toMap(PaymentManager.PaymentMethodDTO::getPaymentMethod, pm -> new PaymentProxyWithParameters(pm.getPaymentProxy(), paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchasable))));
+                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, purchaseContext, configurationManager))
+                .collect(toMap(PaymentManager.PaymentMethodDTO::getPaymentMethod, pm -> new PaymentProxyWithParameters(pm.getPaymentProxy(), paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchaseContext))));
         } else {
             return Map.of();
         }
@@ -460,10 +460,10 @@ public class ReservationApiV2Controller {
         }
     }
 
-    private Optional<Pair<Purchasable, TicketReservation>> getReservation(String reservationId) {
-        return purchasableManager.findByReservationId(reservationId)
-            .flatMap(purchasable -> ticketReservationManager.findById(reservationId)
-                .flatMap(reservation -> Optional.of(Pair.of(purchasable, reservation))));
+    private Optional<Pair<PurchaseContext, TicketReservation>> getReservation(String reservationId) {
+        return purchaseContextManager.findByReservationId(reservationId)
+            .flatMap(purchaseContext -> ticketReservationManager.findById(reservationId)
+                .flatMap(reservation -> Optional.of(Pair.of(purchaseContext, reservation))));
     }
 
     private Optional<TicketReservation> getReservationWithPendingStatus(String reservationId) {
@@ -607,8 +607,8 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(res);
     }
 
-    private Optional<Pair<Purchasable, TicketReservation>> getEventReservationPair(String reservationId) {
-        return purchasableManager.findByReservationId(reservationId)
+    private Optional<Pair<PurchaseContext, TicketReservation>> getEventReservationPair(String reservationId) {
+        return purchaseContextManager.findByReservationId(reservationId)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
             .filter(pair -> pair.getRight().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));
@@ -635,12 +635,12 @@ public class ReservationApiV2Controller {
     }
 
 
-    private Map<String, String> formatDateForLocales(Purchasable purchasable, ZonedDateTime date, String formattingCode) {
+    private Map<String, String> formatDateForLocales(PurchaseContext purchaseContext, ZonedDateTime date, String formattingCode) {
 
-        var messageSource = messageSourceManager.getMessageSourceFor(purchasable);
+        var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
 
         Map<String, String> res = new HashMap<>();
-        for (ContentLanguage cl : purchasable.getContentLanguages()) {
+        for (ContentLanguage cl : purchaseContext.getContentLanguages()) {
             var formatter = messageSource.getMessage(formattingCode, null, cl.getLocale());
             res.put(cl.getLocale().getLanguage(), DateTimeFormatter.ofPattern(formatter, cl.getLocale()).format(date));
         }

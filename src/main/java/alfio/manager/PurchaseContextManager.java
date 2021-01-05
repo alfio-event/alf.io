@@ -16,7 +16,7 @@
  */
 package alfio.manager;
 
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketReservationRepository;
@@ -28,31 +28,31 @@ import java.util.UUID;
 
 @Transactional(readOnly = true)
 @Component
-public class PurchasableManager {
+public class PurchaseContextManager {
 
     private final EventRepository eventRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final TicketReservationRepository ticketReservationRepository;
 
-    public PurchasableManager(EventRepository eventRepository,
-                              SubscriptionRepository subscriptionRepository,
-                              TicketReservationRepository ticketReservationRepository) {
+    public PurchaseContextManager(EventRepository eventRepository,
+                                  SubscriptionRepository subscriptionRepository,
+                                  TicketReservationRepository ticketReservationRepository) {
         this.eventRepository = eventRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.ticketReservationRepository = ticketReservationRepository;
     }
 
-    public Optional<? extends Purchasable> findBy(Purchasable.PurchasableType purchasableType, String publicIdentifier) {
-        switch (purchasableType) {
+    public Optional<? extends PurchaseContext> findBy(PurchaseContext.PurchaseContextType purchaseContextType, String publicIdentifier) {
+        switch (purchaseContextType) {
             case event: return eventRepository.findOptionalByShortName(publicIdentifier);
             case subscription: return subscriptionRepository.findOne(UUID.fromString(publicIdentifier));
-            default: throw new IllegalStateException("not a covered type " + purchasableType);
+            default: throw new IllegalStateException("not a covered type " + purchaseContextType);
         }
     }
 
-    public Optional<Purchasable> findByReservationId(String reservationId) {
+    public Optional<PurchaseContext> findByReservationId(String reservationId) {
         return ticketReservationRepository.findEventIdFor(reservationId).map(eventRepository::findById)
-            .map(Purchasable.class::cast)
+            .map(PurchaseContext.class::cast)
             .or(() -> subscriptionRepository.findDescriptorByReservationId(reservationId));
     }
 }

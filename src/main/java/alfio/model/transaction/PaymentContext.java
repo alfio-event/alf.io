@@ -18,13 +18,13 @@ package alfio.model.transaction;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.model.Event;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 
 import java.util.Optional;
 
 public class PaymentContext {
 
-    private final Purchasable purchasable;
+    private final PurchaseContext purchaseContext;
     private final String reservationId;
     private final ConfigurationLevel configurationLevel;
 
@@ -32,30 +32,30 @@ public class PaymentContext {
         this(null, ConfigurationLevel.system());
     }
 
-    public PaymentContext(Purchasable purchasable) {
-        this(purchasable, purchasable.getConfigurationLevel());
+    public PaymentContext(PurchaseContext purchaseContext) {
+        this(purchaseContext, purchaseContext.getConfigurationLevel());
     }
 
-    public PaymentContext(Purchasable purchasable, String reservationId) {
-        this(purchasable, purchasable.getConfigurationLevel(), reservationId);
+    public PaymentContext(PurchaseContext purchaseContext, String reservationId) {
+        this(purchaseContext, purchaseContext.getConfigurationLevel(), reservationId);
     }
 
-    public PaymentContext(Purchasable purchasable, ConfigurationLevel configurationLevel) {
-        this(purchasable, configurationLevel, null);
+    public PaymentContext(PurchaseContext purchaseContext, ConfigurationLevel configurationLevel) {
+        this(purchaseContext, configurationLevel, null);
     }
 
-    public PaymentContext(Purchasable purchasable, ConfigurationLevel configurationLevel, String reservationId) {
-        this.purchasable = purchasable;
+    public PaymentContext(PurchaseContext purchaseContext, ConfigurationLevel configurationLevel, String reservationId) {
+        this.purchaseContext = purchaseContext;
         this.configurationLevel = configurationLevel;
         this.reservationId = reservationId;
     }
 
     /**
-     * The {@link Purchasable} on which this configuration refers to
-     * @return Purchasable, or null
+     * The {@link PurchaseContext} on which this configuration refers to
+     * @return PurchaseContext, or null
      */
-    public Purchasable getPurchasable() {
-        return purchasable;
+    public PurchaseContext getPurchaseContext() {
+        return purchaseContext;
     }
 
     public Optional<String> getReservationId() {
@@ -67,6 +67,6 @@ public class PaymentContext {
     }
 
     public boolean isOnline() {
-        return (purchasable instanceof Event) ? ((Event) purchasable).isOnline() : true;
+        return (purchaseContext instanceof Event) ? ((Event) purchaseContext).isOnline() : true;
     }
 }

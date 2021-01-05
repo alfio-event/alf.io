@@ -17,10 +17,10 @@
 package alfio.controller.payment.api;
 
 import alfio.manager.PaymentManager;
-import alfio.manager.PurchasableManager;
+import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PaymentResult;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.TransactionInitializationToken;
@@ -38,7 +38,7 @@ public class PaymentApiController {
 
     private final PaymentManager paymentManager;
     private final TicketReservationManager ticketReservationManager;
-    private final PurchasableManager purchasableManager;
+    private final PurchaseContextManager purchaseContextManager;
 
     @PostMapping({"/api/reservation/{reservationId}/payment/{method}/init",
         "/api/events/{eventName}/reservation/{reservationId}/payment/{method}/init" //<-deprecated
@@ -58,8 +58,8 @@ public class PaymentApiController {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Optional<Pair<? extends Purchasable, TicketReservation>> getEventReservationPair(String reservationId) {
-        return purchasableManager.findByReservationId(reservationId)
+    private Optional<Pair<? extends PurchaseContext, TicketReservation>> getEventReservationPair(String reservationId) {
+        return purchaseContextManager.findByReservationId(reservationId)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
             .filter(pair -> pair.getRight().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));

@@ -55,14 +55,14 @@ public class DeferredBankTransferManager implements PaymentProvider {
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext, TransactionRequest transactionRequest) {
         var options = bankTransferManager.options(paymentContext);
-        return paymentContext.getPurchasable() != null
+        return paymentContext.getPurchaseContext() != null
             && bankTransferManager.bankTransferEnabledForMethod(paymentMethod, paymentContext, options)
             && bankTransferManager.isPaymentDeferredEnabled(options);
     }
 
     @Override
     public PaymentResult doPayment(PaymentSpecification spec) {
-        bankTransferManager.postponePayment(spec, DEFERRED_OFFLINE_PAYMENT, Objects.requireNonNull(spec.getPurchasable()).getBegin());
+        bankTransferManager.postponePayment(spec, DEFERRED_OFFLINE_PAYMENT, Objects.requireNonNull(spec.getPurchaseContext()).getBegin());
         bankTransferManager.overrideExistingTransactions(spec);
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }

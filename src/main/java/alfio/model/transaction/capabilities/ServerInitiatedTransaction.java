@@ -17,7 +17,7 @@
 package alfio.model.transaction.capabilities;
 
 import alfio.manager.payment.PaymentSpecification;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.transaction.Capability;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.TransactionInitializationToken;
@@ -31,5 +31,5 @@ public interface ServerInitiatedTransaction extends Capability {
 
     TransactionInitializationToken errorToken(String errorMessage, boolean reservationStatusChanged);
 
-    boolean discardTransaction(Transaction transaction, Purchasable purchasable);
+    boolean discardTransaction(Transaction transaction, PurchaseContext purchaseContext);
 }

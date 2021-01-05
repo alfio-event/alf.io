@@ -19,7 +19,7 @@ package alfio.manager.payment;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.PaymentInformation;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketReservationWithTransaction;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
@@ -163,7 +163,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         var reservation = reservationWithTransaction.getTicketReservation();
         var transaction = reservationWithTransaction.getTransaction();
         String reservationId = reservation.getId().toLowerCase();
-        var shortReservationId = configurationManager.getShortReservationID(context.getPurchasable(), reservation).toLowerCase();
+        var shortReservationId = configurationManager.getShortReservationID(context.getPurchaseContext(), reservation).toLowerCase();
         String[] terms;
         if(reservation.getHasInvoiceNumber()) {
             terms = new String[] {reservation.getInvoiceNumber().toLowerCase(), shortReservationId, reservationId};
@@ -231,7 +231,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
 
     @Override
-    public Optional<PaymentInformation> getInfo(Transaction transaction, Purchasable purchasable) {
+    public Optional<PaymentInformation> getInfo(Transaction transaction, PurchaseContext purchaseContext) {
         var metadata = transaction.getMetadata();
         if(metadata != null && metadata.containsKey("counterpartyAccountId")) {
             return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(transaction.getPriceInCents(), transaction.getCurrency()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));

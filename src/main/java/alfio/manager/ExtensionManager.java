@@ -120,7 +120,7 @@ public class ExtensionManager {
         return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
     }
 
-    void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, Purchasable purchasable) {
+    void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, PurchaseContext purchaseContext) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("billingDetails", billingDetails);
@@ -128,7 +128,7 @@ public class ExtensionManager {
         transactionRepository.loadOptionalByReservationId(reservation.getId())
             .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
-            purchasable,
+                purchaseContext,
             payload);
     }
 
@@ -230,7 +230,7 @@ public class ExtensionManager {
         payload.put("vatNr", billingDetails.getTaxId());
         payload.put("vatStatus", spec.getVatStatus());
 
-        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchasable(), payload, InvoiceGeneration.class));
+        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchaseContext(), payload, InvoiceGeneration.class));
     }
 
     public Optional<String> handleOnlineCheckInLink(String originalUrl, Ticket ticket, EventWithCheckInInfo event) {
@@ -271,7 +271,7 @@ public class ExtensionManager {
     }
 
     @Transactional(readOnly = true)
-    public void handleReservationValidation(Purchasable purchasable, TicketReservation reservation, Object clientForm, BindingResult bindingResult) {
+    public void handleReservationValidation(PurchaseContext purchaseContext, TicketReservation reservation, Object clientForm, BindingResult bindingResult) {
         Map<String, Object> payload = Map.of(
             "reservationId", reservation.getId(),
             "reservation", reservation,
@@ -280,7 +280,7 @@ public class ExtensionManager {
             "bindingResult", bindingResult
         );
 
-        syncCall(ExtensionEvent.RESERVATION_VALIDATION, purchasable, payload, Void.class);
+        syncCall(ExtensionEvent.RESERVATION_VALIDATION, purchaseContext, payload, Void.class);
     }
 
     void handleReservationsCreditNoteIssuedForEvent(Event event, List<String> reservationIds) {
@@ -291,12 +291,12 @@ public class ExtensionManager {
         syncCall(ExtensionEvent.RESERVATION_CREDIT_NOTE_ISSUED, event, payload, Boolean.class);
     }
 
-    void handleRefund(Purchasable purchasable, TicketReservation reservation, TransactionAndPaymentInfo info) {
+    void handleRefund(PurchaseContext purchaseContext, TicketReservation reservation, TransactionAndPaymentInfo info) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("transaction", info.getTransaction());
         payload.put("paymentInfo", info.getPaymentInformation());
-        asyncCall(ExtensionEvent.REFUND_ISSUED, purchasable, payload);
+        asyncCall(ExtensionEvent.REFUND_ISSUED, purchaseContext, payload);
     }
 
     public boolean handlePdfTransformation(String html, Event event, OutputStream outputStream) {
@@ -351,17 +351,17 @@ public class ExtensionManager {
     }
 
 
-    private void asyncCall(ExtensionEvent extensionEvent, Purchasable event, Map<String, Object> payload) {
+    private void asyncCall(ExtensionEvent extensionEvent, PurchaseContext event, Map<String, Object> payload) {
         extensionService.executeScriptAsync(extensionEvent.name(),
             toPath(event),
             fillWithBasicInfo(payload, event));
     }
 
-    private <T> T syncCall(ExtensionEvent extensionEvent, Purchasable purchasable, Map<String, Object> payload, Class<T> clazz) {
+    private <T> T syncCall(ExtensionEvent extensionEvent, PurchaseContext purchaseContext, Map<String, Object> payload, Class<T> clazz) {
         try {
             return extensionService.executeScriptsForEvent(extensionEvent.name(),
-                toPath(purchasable),
-                fillWithBasicInfo(payload, purchasable),
+                toPath(purchaseContext),
+                fillWithBasicInfo(payload, purchaseContext),
                 clazz);
         } catch(AlfioScriptingException ex) {
             log.warn("Unexpected exception while executing script:", ex);
@@ -369,15 +369,15 @@ public class ExtensionManager {
         }
     }
 
-    private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, Purchasable purchasable) {
+    private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, PurchaseContext purchaseContext) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
         //FIXME ugly
-        purchasable.event().ifPresent(event -> {
+        purchaseContext.event().ifPresent(event -> {
             payloadCopy.put("event", event);
             payloadCopy.put("eventId", event.getId());
         });
-        payloadCopy.put("purchasable", purchasable);
-        payloadCopy.put("organizationId", purchasable.getOrganizationId());
+        payloadCopy.put("purchaseContext", purchaseContext);
+        payloadCopy.put("organizationId", purchaseContext.getOrganizationId());
         return payloadCopy;
     }
 
@@ -385,10 +385,10 @@ public class ExtensionManager {
         return "-" + event.getOrganizationId() + "-" + event.getId();
     }
 
-    public static String toPath(Purchasable purchasable) {
-        int organizationId = purchasable.getOrganizationId();
-        if (purchasable instanceof EventAndOrganizationId) {
-            return toPath((EventAndOrganizationId) purchasable);
+    public static String toPath(PurchaseContext purchaseContext) {
+        int organizationId = purchaseContext.getOrganizationId();
+        if (purchaseContext instanceof EventAndOrganizationId) {
+            return toPath((EventAndOrganizationId) purchaseContext);
         } else {
             return "-" + organizationId;
         }

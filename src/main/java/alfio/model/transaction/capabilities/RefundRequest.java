@@ -16,7 +16,7 @@
  */
 package alfio.model.transaction.capabilities;
 
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.transaction.Capability;
 
 /**
@@ -24,6 +24,6 @@ import alfio.model.transaction.Capability;
  */
 public interface RefundRequest extends Capability {
 
-    boolean refund(alfio.model.transaction.Transaction transaction, Purchasable purchasable, Integer amount);
+    boolean refund(alfio.model.transaction.Transaction transaction, PurchaseContext purchaseContext, Integer amount);
 
 }

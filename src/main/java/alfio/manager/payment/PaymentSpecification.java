@@ -29,7 +29,7 @@ public class PaymentSpecification {
     private final String reservationId;
     private final PaymentToken gatewayToken;
     private final int priceWithVAT;
-    private final Purchasable purchasable;
+    private final PurchaseContext purchaseContext;
     private final String email;
     private final CustomerName customerName;
     private final String billingAddress;
@@ -47,7 +47,7 @@ public class PaymentSpecification {
     public PaymentSpecification( String reservationId,
                                  PaymentToken gatewayToken,
                                  int priceWithVAT,
-                                 Purchasable purchasable,
+                                 PurchaseContext purchaseContext,
                                  String email,
                                  CustomerName customerName,
                                  String billingAddress,
@@ -64,7 +64,7 @@ public class PaymentSpecification {
         this.reservationId = reservationId;
         this.gatewayToken = gatewayToken;
         this.priceWithVAT = priceWithVAT;
-        this.purchasable = purchasable;
+        this.purchaseContext = purchaseContext;
         this.email = email;
         this.customerName = customerName;
         this.billingAddress = billingAddress;
@@ -82,28 +82,28 @@ public class PaymentSpecification {
 
     public PaymentSpecification(TicketReservation reservation,
                                             TotalPrice totalPrice,
-                                            Purchasable purchasable,
+                                            PurchaseContext purchaseContext,
                                             PaymentToken gatewayToken,
                                             OrderSummary orderSummary,
                                             boolean tcAccepted,
                                             boolean privacyAccepted) {
         this(reservation.getId(), gatewayToken, totalPrice.getPriceWithVAT(),
-            purchasable, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), true),
+                purchaseContext, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), true),
             reservation.getBillingAddress(), reservation.getCustomerReference(), LocaleUtil.forLanguageTag(reservation.getUserLanguage()), reservation.isInvoiceRequested(),
             !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
             reservation.getVatNr(), reservation.getVatStatus(), tcAccepted, privacyAccepted);
     }
 
-    PaymentSpecification(String reservationId, PaymentToken gatewayToken, int priceWithVAT, Event purchasable, String email, CustomerName customerName ) {
-        this(reservationId, gatewayToken, priceWithVAT, purchasable, email, customerName, null, null, null, false, false, null, null, null, null, false, false);
+    PaymentSpecification(String reservationId, PaymentToken gatewayToken, int priceWithVAT, PurchaseContext purchaseContext, String email, CustomerName customerName ) {
+        this(reservationId, gatewayToken, priceWithVAT, purchaseContext, email, customerName, null, null, null, false, false, null, null, null, null, false, false);
     }
 
     public String getCurrencyCode() {
-        return purchasable.getCurrency();
+        return purchaseContext.getCurrency();
     }
 
     public PaymentContext getPaymentContext() {
-        return new PaymentContext(purchasable);
+        return new PaymentContext(purchaseContext);
     }
 
 }

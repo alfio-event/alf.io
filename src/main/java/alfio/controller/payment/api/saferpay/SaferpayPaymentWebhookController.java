@@ -16,10 +16,9 @@
  */
 package alfio.controller.payment.api.saferpay;
 
-import alfio.manager.PurchasableManager;
+import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.saferpay.PaymentPageInitializeRequestBuilder;
-import alfio.model.Purchasable;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
 import lombok.AllArgsConstructor;
@@ -35,14 +34,16 @@ import java.util.Map;
 @AllArgsConstructor
 public class SaferpayPaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
-    private final PurchasableManager purchasableManager;
+    private final PurchaseContextManager purchaseContextManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.WEBHOOK_URL_TEMPLATE)
     ResponseEntity<String> handleTransactionNotification(@PathVariable("reservationId") String reservationId) {
-        return purchasableManager.findByReservationId(reservationId)
-                .map(purchasable -> {
+        return purchaseContextManager.findByReservationId(reservationId)
+                .map(purchaseContext -> {
                     var result = ticketReservationManager.processTransactionWebhook("", null, PaymentProxy.SAFERPAY,
-                        Map.of("purchasableType", purchasable.getType().getUrlComponent(), "purchasableIdentifier", purchasable.getPublicIdentifier(), "reservationId", reservationId), new PaymentContext(purchasable, reservationId));
+                        Map.of("purchaseContextType", purchaseContext.getType().getUrlComponent(),
+                            "purchaseContextIdentifier", purchaseContext.getPublicIdentifier(),
+                            "reservationId", reservationId), new PaymentContext(purchaseContext, reservationId));
                     if(result.isSuccessful()) {
                         return ResponseEntity.ok("OK");
                     } else if(result.isError()) {

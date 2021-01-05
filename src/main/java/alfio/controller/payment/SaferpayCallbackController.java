@@ -16,10 +16,10 @@
  */
 package alfio.controller.payment;
 
-import alfio.manager.PurchasableManager;
+import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.saferpay.PaymentPageInitializeRequestBuilder;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,27 +31,27 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class SaferpayCallbackController {
 
     private final TicketReservationManager ticketReservationManager;
-    private final PurchasableManager purchasableManager;
+    private final PurchaseContextManager purchaseContextManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.CANCEL_URL_TEMPLATE)
-    public String saferpayCancel(@PathVariable("purchasableType") Purchasable.PurchasableType purchasableType,
-                                 @PathVariable("purchasableIdentifier") String purchasableIdentifier,
+    public String saferpayCancel(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
+                                 @PathVariable("purchaseContextIdentifier") String purchaseContextIdentifier,
                                  @PathVariable("reservationId") String reservationId) {
-        var maybePurchasable = purchasableManager.findBy(purchasableType, purchasableIdentifier);
-        if(maybePurchasable.isEmpty()) {
+        var maybePurchaseContext = purchaseContextManager.findBy(purchaseContextType, purchaseContextIdentifier);
+        if(maybePurchaseContext.isEmpty()) {
             return "redirect:/";
         }
-        var purchasable = maybePurchasable.get();
+        var purchaseContext = maybePurchaseContext.get();
         var optionalReservation = ticketReservationManager.findById(reservationId);
         if(optionalReservation.isEmpty()) {
-            return "redirect:/"+purchasable.getType().getUrlComponent()+"/"+purchasable.getPublicIdentifier();
+            return "redirect:/"+purchaseContext.getType().getUrlComponent()+"/"+purchaseContext.getPublicIdentifier();
         }
-        var optionalResult = ticketReservationManager.forceTransactionCheck(purchasable, optionalReservation.get());
+        var optionalResult = ticketReservationManager.forceTransactionCheck(purchaseContext, optionalReservation.get());
         if(optionalResult.isEmpty()) {
             // there's no transaction available.
-            return "redirect:/"+purchasable.getType().getUrlComponent()+"/"+purchasable.getPublicIdentifier();
+            return "redirect:/"+purchaseContext.getType().getUrlComponent()+"/"+purchaseContext.getPublicIdentifier();
         }
         return "redirect:" + UriComponentsBuilder.fromPath(PaymentPageInitializeRequestBuilder.SUCCESS_URL_TEMPLATE)
-            .buildAndExpand(purchasable.getType().getUrlComponent(), purchasable.getPublicIdentifier(), reservationId).toUriString();
+            .buildAndExpand(purchaseContext.getType().getUrlComponent(), purchaseContext.getPublicIdentifier(), reservationId).toUriString();
      }
 }

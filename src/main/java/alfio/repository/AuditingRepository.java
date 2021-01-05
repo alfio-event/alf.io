@@ -19,7 +19,7 @@ package alfio.repository;
 
 import alfio.model.Audit;
 import alfio.model.Event;
-import alfio.model.Purchasable;
+import alfio.model.PurchaseContext;
 import alfio.model.support.JSONData;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.Bind;
@@ -55,13 +55,13 @@ public interface AuditingRepository {
         return this.insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, modificationJson);
     }
 
-    default int insert(String reservationId, Integer userId, Purchasable p, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
+    default int insert(String reservationId, Integer userId, PurchaseContext p, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
                        String entityId) {
         var eventId = (p instanceof Event) ? ((Event) p).getId() : null; //FIXME, could be better
         return this.insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, (String) null);
     }
 
-    default int insert(String reservationId, Integer userId, Purchasable p, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
+    default int insert(String reservationId, Integer userId, PurchaseContext p, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
                        String entityId, List<Map<String, Object>> modifications) {
         var eventId = (p instanceof Event) ? ((Event) p).getId() : null; //FIXME, could be better
         return insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, modifications);
