@@ -67,6 +67,6 @@ public class PaymentContext {
     }
 
     public boolean isOnline() {
-        return (purchaseContext instanceof Event) ? ((Event) purchaseContext).isOnline() : true;
+        return purchaseContext.event().map(Event::isOnline).orElse(true);
     }
 }

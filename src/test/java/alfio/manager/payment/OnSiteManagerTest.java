@@ -24,6 +24,8 @@ import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static alfio.model.system.ConfigurationKeys.ON_SITE_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,6 +42,7 @@ class OnSiteManagerTest {
         var event = mock(Event.class);
         var cl = ConfigurationLevel.event(event);
         when(event.getConfigurationLevel()).thenReturn(cl);
+        when(event.event()).thenReturn(Optional.of(event));
         var configuration = mock(MaybeConfiguration.class);
         when(configurationManager.getFor(eq(ON_SITE_ENABLED), any(ConfigurationLevel.class))).thenReturn(configuration);
         when(configuration.getValueAsBooleanOrDefault()).thenReturn(true);

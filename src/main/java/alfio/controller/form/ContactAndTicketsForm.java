@@ -18,6 +18,7 @@ package alfio.controller.form;
 
 import alfio.manager.SameCountryValidator;
 import alfio.model.Event;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
@@ -83,10 +84,10 @@ public class ContactAndTicketsForm implements Serializable {
 
 
 
-    public void validate(BindingResult bindingResult, Event event,
+    public void validate(BindingResult bindingResult, PurchaseContext purchaseContext,
                          SameCountryValidator vatValidator,
                          Map<ConfigurationKeys, Boolean> formValidationParameters,
-                         Validator.TicketFieldsFilterer ticketFieldsFilterer) {
+                         Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer) {
 
 
         
@@ -101,15 +102,12 @@ public class ContactAndTicketsForm implements Serializable {
         ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", ErrorsCode.STEP_2_EMPTY_EMAIL);
         rejectIfOverLength(bindingResult, "email", ErrorsCode.STEP_2_MAX_LENGTH_EMAIL, email, 255);
 
-        if(event.mustUseFirstAndLastName()) {
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
-            rejectIfOverLength(bindingResult, "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME, fullName, 255);
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
-            rejectIfOverLength(bindingResult, "lastName", ErrorsCode.STEP_2_MAX_LENGTH_LASTNAME, fullName, 255);
-        } else {
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
-            rejectIfOverLength(bindingResult, "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, fullName, 255);
-        }
+
+        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
+        rejectIfOverLength(bindingResult, "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME, fullName, 255);
+        ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
+        rejectIfOverLength(bindingResult, "lastName", ErrorsCode.STEP_2_MAX_LENGTH_LASTNAME, fullName, 255);
+
 
 
 
@@ -173,23 +171,25 @@ public class ContactAndTicketsForm implements Serializable {
             bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL, new Object[] {}, null);
         }
 
-        if(!postponeAssignment) {
-            Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
-                .filter(m -> !m.isEmpty())
-                .map(m -> m.entrySet().stream().map(e -> {
-                    var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(e.getKey());
-                    return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator);
-                }))
-                .map(s -> s.collect(Collectors.toList()));
+        purchaseContext.event().ifPresent(event -> {
+            if(!postponeAssignment) {
+                Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
+                    .filter(m -> !m.isEmpty())
+                    .map(m -> m.entrySet().stream().map(e -> {
+                        var filteredForTicket = ticketFieldsFilterer.orElseThrow().getFieldsForTicket(e.getKey());
+                        return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator);
+                    }))
+                    .map(s -> s.collect(Collectors.toList()));
 
-            boolean success = validationResults
-                .filter(l -> l.stream().allMatch(ValidationResult::isSuccess))
-                .isPresent();
-            if(!success) {
-                String errorCode = validationResults.filter(this::containsVatValidationError).isPresent() ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
-                bindingResult.reject(errorCode);
+                boolean success = validationResults
+                    .filter(l -> l.stream().allMatch(ValidationResult::isSuccess))
+                    .isPresent();
+                if(!success) {
+                    String errorCode = validationResults.filter(this::containsVatValidationError).isPresent() ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
+                    bindingResult.reject(errorCode);
+                }
             }
-        }
+        });
     }
 
     private boolean containsVatValidationError(List<ValidationResult> l) {

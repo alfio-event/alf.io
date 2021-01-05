@@ -53,13 +53,9 @@ public class MessageSourceManager {
     }
 
     public Pair<MessageSource, Map<String, Map<String, String>>> getMessageSourceForPurchaseContextAndOverride(PurchaseContext purchaseContext) {
-        Map<String, Map<String, String>> override;
-        if (purchaseContext instanceof Event) {
-            var event = (Event) purchaseContext;
-             override = configurationRepository.getEventOverrideMessages(event.getOrganizationId(), event.getId());
-        } else {
-            override = configurationRepository.getOrganizationOverrideMessages(purchaseContext.getOrganizationId());
-        }
+        Map<String, Map<String, String>> override = purchaseContext.event()
+            .map(event -> configurationRepository.getEventOverrideMessages(event.getOrganizationId(), event.getId()))
+            .orElseGet(() -> configurationRepository.getOrganizationOverrideMessages(purchaseContext.getOrganizationId()));
         return Pair.of(new MessageSourceWithOverride(messageSource, override), override);
     }
 

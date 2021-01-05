@@ -17,10 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Audit;
-import alfio.model.Configurable;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.VatDetail;
+import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.AuditingRepository;
 import ch.digitalfondue.vatchecker.EUVatCheckResponse;
@@ -61,12 +58,12 @@ public class EuVatChecker {
         return reverseChargeEnabled(configurationManager, configurable);
     }
 
-    public Optional<VatDetail> checkVat(String vatNr, String countryCode, EventAndOrganizationId eventAndOrganizationId) {
-        Optional<VatDetail> res = performCheck(vatNr, countryCode, eventAndOrganizationId).apply(configurationManager, client);
+    public Optional<VatDetail> checkVat(String vatNr, String countryCode, PurchaseContext purchaseContext) {
+        Optional<VatDetail> res = performCheck(vatNr, countryCode, purchaseContext).apply(configurationManager, client);
         return res.map(detail -> {
            if(!detail.isValid()) {
-               String organizerCountry = organizerCountry(configurationManager, eventAndOrganizationId);
-               boolean valid = extensionManager.handleTaxIdValidation(eventAndOrganizationId.getId(), vatNr, organizerCountry);
+               String organizerCountry = organizerCountry(configurationManager, purchaseContext);
+               boolean valid = extensionManager.handleTaxIdValidation(purchaseContext, vatNr, organizerCountry);
                return new VatDetail(detail.getVatNr(), detail.getCountry(), valid, detail.getName(), detail.getAddress(), VatDetail.Type.FORMAL, false);
            } else {
                return detail;
@@ -105,7 +102,7 @@ public class EuVatChecker {
         };
     }
 
-    public void logSuccessfulValidation(VatDetail detail, String reservationId, int eventId) {
+    public void logSuccessfulValidation(VatDetail detail, String reservationId, Integer eventId) {
         List<Map<String, Object>> modifications = List.of(
             Map.of("vatNumber", detail.getVatNr(), "country", detail.getCountry(), "validationType", detail.getType())
         );

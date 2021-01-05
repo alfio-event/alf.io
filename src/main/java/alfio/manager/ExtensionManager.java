@@ -248,12 +248,11 @@ public class ExtensionManager {
     }
 
     // FIXME: should not depend only by event id!
-    boolean handleTaxIdValidation(int eventId, String taxIdNumber, String countryCode) {
-        Event event = eventRepository.findById(eventId);
+    boolean handleTaxIdValidation(PurchaseContext purchaseContext, String taxIdNumber, String countryCode) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("taxIdNumber", taxIdNumber);
         payload.put("countryCode", countryCode);
-        return Optional.ofNullable(syncCall(ExtensionEvent.TAX_ID_NUMBER_VALIDATION, event, payload, Boolean.class)).orElse(false);
+        return Optional.ofNullable(syncCall(ExtensionEvent.TAX_ID_NUMBER_VALIDATION, purchaseContext, payload, Boolean.class)).orElse(false);
     }
 
     void handleTicketCheckedIn(Ticket ticket) {
@@ -387,11 +386,7 @@ public class ExtensionManager {
 
     public static String toPath(PurchaseContext purchaseContext) {
         int organizationId = purchaseContext.getOrganizationId();
-        if (purchaseContext instanceof EventAndOrganizationId) {
-            return toPath((EventAndOrganizationId) purchaseContext);
-        } else {
-            return "-" + organizationId;
-        }
+        return purchaseContext.event().map(e -> toPath((EventAndOrganizationId) e)).orElseGet(() -> "-" + organizationId);
     }
 
 }

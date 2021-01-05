@@ -57,13 +57,13 @@ public interface AuditingRepository {
 
     default int insert(String reservationId, Integer userId, PurchaseContext p, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
                        String entityId) {
-        var eventId = (p instanceof Event) ? ((Event) p).getId() : null; //FIXME, could be better
+        var eventId = p.event().map(Event::getId).orElse(null);
         return this.insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, (String) null);
     }
 
     default int insert(String reservationId, Integer userId, PurchaseContext p, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
                        String entityId, List<Map<String, Object>> modifications) {
-        var eventId = (p instanceof Event) ? ((Event) p).getId() : null; //FIXME, could be better
+        var eventId = p.event().map(Event::getId).orElse(null);
         return insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, modifications);
     }
 
