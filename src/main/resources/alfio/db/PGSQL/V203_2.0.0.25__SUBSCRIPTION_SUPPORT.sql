@@ -66,15 +66,15 @@ create policy subscription_descriptor_access_policy on subscription_descriptor t
 
 create table subscription (
     id uuid primary key not null,
-    first_name text not null,
-    last_name text not null,
-    email_address text not null,
+    first_name text,
+    last_name text,
+    email_address text,
     code text not null constraint subscription_code_unique unique,
     subscription_descriptor_fk uuid not null constraint subscription_subscription_descriptor_fk references subscription_descriptor(id),
     reservation_id_fk character(36) not null constraint subscription_reservation_id_fk references tickets_reservation(id),
     usage_count integer not null,
     max_usage integer,
-    valid_from timestamp with time zone not null default now(),
+    valid_from timestamp with time zone default now(),
     valid_to timestamp with time zone,
     src_price_cts integer not null default 0,
     final_price_cts integer not null default 0,
@@ -85,6 +85,8 @@ create table subscription (
     update_ts timestamp with time zone,
     status ALLOCATION_STATUS not null default 'FREE'
 );
+
+--FIXME add check constraint of not null if allocation_status is 'TO_BE_PAID', 'ACQUIRED', 'CHECKED_IN'
 
 alter table subscription enable row level security;
 alter table subscription force row level security;

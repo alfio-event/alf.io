@@ -153,6 +153,8 @@ public class TicketReservationManager {
     private final Json json;
     private final BillingDocumentManager billingDocumentManager;
     private final ClockProvider clockProvider;
+    private final PurchaseContextManager purchaseContextManager;
+    private final SubscriptionRepository subscriptionRepository;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -203,7 +205,9 @@ public class TicketReservationManager {
                                     NamedParameterJdbcTemplate jdbcTemplate,
                                     Json json,
                                     BillingDocumentManager billingDocumentManager,
-                                    ClockProvider clockProvider) {
+                                    ClockProvider clockProvider,
+                                    PurchaseContextManager purchaseContextManager,
+                                    SubscriptionRepository subscriptionRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -239,25 +243,29 @@ public class TicketReservationManager {
         this.json = json;
         this.billingDocumentManager = billingDocumentManager;
         this.clockProvider = clockProvider;
+        this.purchaseContextManager = purchaseContextManager;
+        this.subscriptionRepository = subscriptionRepository;
     }
 
-    private String createReservation(PurchaseContext purchaseContext, Date reservationExpiration, Locale locale) throws CannotProceedWithPayment{
+    private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Date reservationExpiration, Locale locale) throws CannotProceedWithPayment{
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId,
-            purchaseContext.now(clockProvider),
+            subscriptionDescriptor.now(clockProvider),
             reservationExpiration, null,
             locale.getLanguage(),
-            purchaseContext.event().map(Event::getId).orElse(null),
-            purchaseContext.getVat(),
-            purchaseContext.getVatStatus() == PriceContainer.VatStatus.INCLUDED,
-            purchaseContext.getCurrency(),
-            purchaseContext.getOrganizationId());
+            subscriptionDescriptor.event().map(Event::getId).orElse(null),
+            subscriptionDescriptor.getVat(),
+            subscriptionDescriptor.getVatStatus() == PriceContainer.VatStatus.INCLUDED,
+            subscriptionDescriptor.getCurrency(),
+            subscriptionDescriptor.getOrganizationId());
+        subscriptionRepository.createSubscription(UUID.randomUUID(), "42", subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
+            subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getOrganizationId());
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
-        var vatStatus = purchaseContext.getVatStatus();
-        ticketReservationRepository.updateBillingData(purchaseContext.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), purchaseContext.getCurrency(), null, null, false, reservationId);
-        auditingRepository.insert(reservationId, null, purchaseContext.event().map(Event::getId).orElse(null), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
-        if (!canProceedWithPayment(purchaseContext, totalPrice, reservationId)) {
-            throw new CannotProceedWithPayment("No payment method applicable for purchase context  " + purchaseContext.getType() + " with public id " + purchaseContext.getPublicIdentifier());
+        var vatStatus = subscriptionDescriptor.getVatStatus();
+        ticketReservationRepository.updateBillingData(subscriptionDescriptor.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), subscriptionDescriptor.getCurrency(), null, null, false, reservationId);
+        auditingRepository.insert(reservationId, null, subscriptionDescriptor.event().map(Event::getId).orElse(null), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
+        if (!canProceedWithPayment(subscriptionDescriptor, totalPrice, reservationId)) {
+            throw new CannotProceedWithPayment("No payment method applicable for purchase context  " + subscriptionDescriptor.getType() + " with public id " + subscriptionDescriptor.getPublicIdentifier());
         }
         return reservationId;
     }
@@ -1299,13 +1307,13 @@ public class TicketReservationManager {
     }
 
     public Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(TicketReservation reservation) {
-        return totalReservationCostWithVAT(eventRepository.findByReservationId(reservation.getId()), reservation, ticketRepository.findTicketsInReservation(reservation.getId()));
+        return totalReservationCostWithVAT(purchaseContextManager.findByReservationId(reservation.getId()).orElseThrow(), reservation, ticketRepository.findTicketsInReservation(reservation.getId()));
     }
 
-    public Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(Event event, TicketReservation reservation, List<Ticket> tickets) {
+    private Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PurchaseContext purchaseContext, TicketReservation reservation, List<Ticket> tickets) {
         Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId())
             .map(promoCodeDiscountRepository::findById);
-        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation, tickets, collectAdditionalServiceItems(reservation.getId(), event));
+        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), purchaseContext, reservation, tickets, purchaseContext.event().map(event -> collectAdditionalServiceItems(reservation.getId(), event)).orElse(List.of()));
     }
 
     private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets, Locale locale, PurchaseContext purchaseContext) {
@@ -2265,7 +2273,7 @@ public class TicketReservationManager {
     public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Locale locale) {
         Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(subscriptionDescriptor));
         try {
-            return Optional.of(createReservation(subscriptionDescriptor, expiration, locale));
+            return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale));
         } catch (CannotProceedWithPayment cannotProceedWithPayment) {
             log.error("missing payment methods", cannotProceedWithPayment);
         }

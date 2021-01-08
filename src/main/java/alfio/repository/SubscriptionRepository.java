@@ -169,4 +169,13 @@ public interface SubscriptionRepository {
     @Query("delete from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
     int removeAllSubscriptionsForEvent(@Bind("eventId") int eventId,
                                        @Bind("organizationId") int organizationId);
+
+    @Query("insert into subscription(id, code, subscription_descriptor_fk, reservation_id_fk, max_usage, usage_count, " +
+        " valid_from, valid_to,  organization_id_fk, status) values (:id, :code, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, 'PENDING')")
+    int createSubscription(@Bind("id") UUID id, @Bind("code") String code,
+                           @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
+                           @Bind("reservationId") String reservationId,
+                           @Bind("maxUsage") int maxUsage,
+                           @Bind("validFrom") ZonedDateTime validFrom, @Bind("validTo") ZonedDateTime validTo,
+                           @Bind("organizationId") int organizationId);
 }
