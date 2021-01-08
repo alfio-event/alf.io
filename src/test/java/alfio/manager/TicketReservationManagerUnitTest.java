@@ -120,6 +120,8 @@ public class TicketReservationManagerUnitTest {
 
         when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
+        var purchaseContextManager = mock(PurchaseContextManager.class);
+        when(purchaseContextManager.findByReservationId(anyString())).thenReturn(Optional.of(event));
 
         manager = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -151,7 +153,9 @@ public class TicketReservationManagerUnitTest {
             mock(NamedParameterJdbcTemplate.class),
             json,
             mock(BillingDocumentManager.class),
-            TestUtil.clockProvider());
+            TestUtil.clockProvider(),
+            purchaseContextManager,
+            mock(SubscriptionRepository.class));
 
     }
 

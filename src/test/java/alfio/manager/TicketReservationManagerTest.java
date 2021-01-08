@@ -199,6 +199,9 @@ class TicketReservationManagerTest {
         when(configurationManager.getFor(eq(SEND_TICKETS_AUTOMATICALLY), any())).thenReturn(configuration);
         when(configuration.getValueAsBooleanOrDefault()).thenReturn(true);
 
+        var purchaseContextManager = mock(PurchaseContextManager.class);
+        when(purchaseContextManager.findByReservationId(anyString())).thenReturn(Optional.of(event));
+
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
@@ -229,7 +232,9 @@ class TicketReservationManagerTest {
             jdbcTemplate,
             json,
             mock(BillingDocumentManager.class),
-            TestUtil.clockProvider());
+            TestUtil.clockProvider(),
+            purchaseContextManager,
+            mock(SubscriptionRepository.class));
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -358,7 +363,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    void fallbackToCurrentLocale() throws IOException {
+    void fallbackToCurrentLocale() {
         final String ticketId = "abcde";
         final String originalEmail = "me@myaddress.com";
         final String originalName = "First Last";
