@@ -18,17 +18,19 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.v2.model.BasicSubscriptionInfo;
 import alfio.manager.SubscriptionManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.support.response.ValidatedResponse;
+import alfio.model.result.Result;
+import alfio.model.result.ValidationResult;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.util.ClockProvider;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,10 +40,12 @@ public class SubscriptionsApiController {
 
     private final SubscriptionManager subscriptionManager;
     private final I18nManager i18nManager;
+    private final TicketReservationManager reservationManager;
 
-    public SubscriptionsApiController(SubscriptionManager subscriptionManager, I18nManager i18nManager) {
+    public SubscriptionsApiController(SubscriptionManager subscriptionManager, I18nManager i18nManager, TicketReservationManager reservationManager) {
         this.subscriptionManager = subscriptionManager;
         this.i18nManager = i18nManager;
+        this.reservationManager = reservationManager;
     }
 
     @GetMapping("subscriptions")
@@ -68,6 +72,15 @@ public class SubscriptionsApiController {
         return res
             .map(SubscriptionsApiController::subscriptionDescriptorMapper)
             .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("subscription/{id}")
+    public ResponseEntity<ValidatedResponse<String>> reserveSubscription(@PathVariable("id") String id, Locale locale) {
+        return subscriptionManager.getSubscriptionById(UUID.fromString(id))
+            .map(subscriptionDescriptor -> reservationManager.createSubscriptionReservation(subscriptionDescriptor, locale)
+                .map(reservationId -> ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationId)))
+                .orElseGet(() -> ResponseEntity.unprocessableEntity().build()))
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

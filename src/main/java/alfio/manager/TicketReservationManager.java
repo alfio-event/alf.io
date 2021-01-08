@@ -47,6 +47,7 @@ import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
@@ -240,6 +241,27 @@ public class TicketReservationManager {
         this.clockProvider = clockProvider;
     }
 
+    private String createReservation(PurchaseContext purchaseContext, Date reservationExpiration, Locale locale) throws CannotProceedWithPayment{
+        String reservationId = UUID.randomUUID().toString();
+        ticketReservationRepository.createNewReservation(reservationId,
+            purchaseContext.now(clockProvider),
+            reservationExpiration, null,
+            locale.getLanguage(),
+            purchaseContext.event().map(Event::getId).orElse(null),
+            purchaseContext.getVat(),
+            purchaseContext.getVatStatus() == PriceContainer.VatStatus.INCLUDED,
+            purchaseContext.getCurrency(),
+            purchaseContext.getOrganizationId());
+        var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
+        var vatStatus = purchaseContext.getVatStatus();
+        ticketReservationRepository.updateBillingData(purchaseContext.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), purchaseContext.getCurrency(), null, null, false, reservationId);
+        auditingRepository.insert(reservationId, null, purchaseContext.event().map(Event::getId).orElse(null), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
+        if (!canProceedWithPayment(purchaseContext, totalPrice, reservationId)) {
+            throw new CannotProceedWithPayment("No payment method applicable for purchase context  " + purchaseContext.getType() + " with public id " + purchaseContext.getPublicIdentifier());
+        }
+        return reservationId;
+    }
+
     /**
      * Create a ticket reservation. It will create a reservation _only_ if it can find enough tickets. Note that it will not do date/validity validation. This must be ensured by the
      * caller.
@@ -258,7 +280,7 @@ public class TicketReservationManager {
                                           Locale locale,
                                           boolean forWaitingQueue) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String reservationId = UUID.randomUUID().toString();
-        
+
         Optional<PromoCodeDiscount> discount = promotionCodeDiscount
             .flatMap(promoCodeDiscount -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
 
@@ -273,6 +295,7 @@ public class TicketReservationManager {
             event.isVatIncluded(),
             event.getCurrency(),
             event.getOrganizationId());
+
         list.forEach(t -> reserveTicketsForCategory(event, reservationId, t, locale, forWaitingQueue, discount.orElse(null), dynamicDiscount.orElse(null)));
 
         int ticketCount = list
@@ -1871,8 +1894,8 @@ public class TicketReservationManager {
         }
     }
 
-    public int getReservationTimeout(EventAndOrganizationId event) {
-        return configurationManager.getFor(RESERVATION_TIMEOUT, ConfigurationLevel.event(event)).getValueAsIntOrDefault(25);
+    int getReservationTimeout(Configurable configurable) {
+        return configurationManager.getFor(RESERVATION_TIMEOUT, configurable.getConfigurationLevel()).getValueAsIntOrDefault(25);
     }
 
     public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount, String username) {
@@ -2239,6 +2262,16 @@ public class TicketReservationManager {
             .forEach(this::checkOfflinePaymentsForEvent);
     }
 
+    public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Locale locale) {
+        Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(subscriptionDescriptor));
+        try {
+            return Optional.of(createReservation(subscriptionDescriptor, expiration, locale));
+        } catch (CannotProceedWithPayment cannotProceedWithPayment) {
+            log.error("missing payment methods", cannotProceedWithPayment);
+        }
+        return Optional.empty();
+    }
+
     public Optional<String> createTicketReservation(Event event,
                                                     List<TicketReservationWithOptionalCodeModification> list,
                                                     List<ASReservationWithOptionalCodeModification> additionalServices,
@@ -2267,14 +2300,14 @@ public class TicketReservationManager {
         return Optional.empty();
     }
 
-    boolean canProceedWithPayment(Event event, TotalPrice totalPrice, String reservationId) {
+    boolean canProceedWithPayment(PurchaseContext purchaseContext, TotalPrice totalPrice, String reservationId) {
         if(!totalPrice.requiresPayment()) {
             return true;
         }
         var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
-        var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(event, categoriesInReservation);
+        var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoriesInReservation);
         var transactionRequest = new TransactionRequest(totalPrice, ticketReservationRepository.getBillingDetailsForReservation(reservationId));
-        var availableMethods = paymentManager.getPaymentMethods(event, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
+        var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
         if(availableMethods.size() == 0  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
             log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
             return false;
