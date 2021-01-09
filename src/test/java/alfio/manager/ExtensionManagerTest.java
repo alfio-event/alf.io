@@ -20,6 +20,7 @@ import alfio.extension.ExtensionService;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.repository.EventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,16 +55,18 @@ class ExtensionManagerTest {
     @Test
     void handleTicketAssignmentTicketConfirmed() {
         when(ticket.hasBeenSold()).thenReturn(true);
-        extensionManager.handleTicketAssignment(ticket, Map.of());
+        var event = mock(Event.class);
+        when(event.getId()).thenReturn(1);
+        when(eventRepository.getMetadataForEvent(eq(1))).thenReturn(AlfioMetadata.empty());
+        extensionManager.handleTicketAssignment(ticket, event, Map.of());
         verify(eventRepository, never()).findOrganizationIdByEventId(eq(1));
-        verify(eventRepository).findById(eq(1));
         verify(extensionService).executeScriptAsync(eq(TICKET_ASSIGNED.name()), anyString(), any());
     }
 
     @Test
     void handleTicketAssignmentTicketNotConfirmed() {
         when(ticket.hasBeenSold()).thenReturn(false);
-        extensionManager.handleTicketAssignment(ticket, Map.of());
+        extensionManager.handleTicketAssignment(ticket, mock(Event.class), Map.of());
         verify(eventRepository, never()).findOrganizationIdByEventId(eq(1));
         verify(eventRepository, never()).findById(eq(1));
         verify(extensionService, never()).executeScriptAsync(eq(TICKET_ASSIGNED.name()), anyString(), any());

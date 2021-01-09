@@ -1091,7 +1091,7 @@ public class TicketReservationManager {
                 Map<String, List<String>> additionalInfo = ticketFieldRepository.findNameAndValue(ticket.getId())
                     .stream()
                     .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
-                extensionManager.handleTicketAssignment(ticket, additionalInfo);
+                extensionManager.handleTicketAssignment(ticket, event, additionalInfo);
             });
         return assignedTickets;
     }
@@ -1593,9 +1593,8 @@ public class TicketReservationManager {
             log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
             ticketReservationRepository.updateAssignee(reservation.getId(), username);
         }
-        extensionManager.handleTicketAssignment(newTicket, updateTicketOwner.getAdditional());
 
-
+        extensionManager.handleTicketAssignment(newTicket, event, updateTicketOwner.getAdditional());
 
         Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
         Map<String, String> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));

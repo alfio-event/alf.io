@@ -134,16 +134,18 @@ public class ExtensionManager {
             payload);
     }
 
-    void handleTicketAssignment(Ticket ticket, Map<String, List<String>> additionalInfo) {
+    void handleTicketAssignment(Ticket ticket, Event event, Map<String, List<String>> additionalInfo) {
         if(!ticket.hasBeenSold()) {
             return; // ignore tickets if the reservation is not yet confirmed
         }
-        int eventId = ticket.getEventId();
-        //int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
-        Event event = eventRepository.findById(eventId);
+        var payload = Map.of(
+            "ticket", ticket,
+            "additionalInfo", additionalInfo,
+            "eventMetadata", eventRepository.getMetadataForEvent(event.getId())
+        );
         asyncCall(ExtensionEvent.TICKET_ASSIGNED,
             event,
-            Map.of("ticket", ticket, "additionalInfo", additionalInfo));
+            payload);
     }
 
     void handleWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
