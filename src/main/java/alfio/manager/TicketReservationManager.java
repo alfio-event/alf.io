@@ -258,7 +258,7 @@ public class TicketReservationManager {
             subscriptionDescriptor.getVatStatus() == PriceContainer.VatStatus.INCLUDED,
             subscriptionDescriptor.getCurrency(),
             subscriptionDescriptor.getOrganizationId());
-        subscriptionRepository.createSubscription(UUID.randomUUID(), "42", subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
+        subscriptionRepository.createSubscription(UUID.randomUUID(), UUID.randomUUID().toString() /*FIXME temporary*/, subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
             subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getOrganizationId());
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = subscriptionDescriptor.getVatStatus();
