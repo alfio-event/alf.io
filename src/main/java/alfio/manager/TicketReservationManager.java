@@ -1164,7 +1164,8 @@ public class TicketReservationManager {
         if(expiredReservationIds.isEmpty()) {
             return;
         }
-        
+
+        subscriptionRepository.deleteSubscriptionWithReservationId(expiredReservationIds);
         specialPriceRepository.resetToFreeAndCleanupForReservation(expiredReservationIds);
         ticketRepository.resetCategoryIdForUnboundedCategories(expiredReservationIds);
         ticketFieldRepository.deleteAllValuesForReservations(expiredReservationIds);

@@ -178,4 +178,7 @@ public interface SubscriptionRepository {
                            @Bind("maxUsage") int maxUsage,
                            @Bind("validFrom") ZonedDateTime validFrom, @Bind("validTo") ZonedDateTime validTo,
                            @Bind("organizationId") int organizationId);
+
+    @Query("delete from subscription where reservation_id_fk in (:expiredReservationIds)")
+    int deleteSubscriptionWithReservationId(@Bind("expiredReservationIds") List<String> expiredReservationIds);
 }
