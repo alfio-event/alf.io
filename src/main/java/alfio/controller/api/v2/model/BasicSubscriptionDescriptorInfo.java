@@ -26,7 +26,7 @@ import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
-public class BasicSubscriptionInfo {
+public class BasicSubscriptionDescriptorInfo {
     private final UUID id;
     private final Map<String, String> title;
     private final Map<String, String> description;

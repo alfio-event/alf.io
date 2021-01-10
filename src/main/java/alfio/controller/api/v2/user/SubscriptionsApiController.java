@@ -16,18 +16,22 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.controller.api.v2.model.BasicSubscriptionInfo;
+import alfio.controller.api.v2.model.AnalyticsConfiguration;
+import alfio.controller.api.v2.model.BasicSubscriptionDescriptorInfo;
+import alfio.controller.api.v2.model.SubscriptionDescriptorWithAdditionalInfo;
+import alfio.controller.api.v2.user.support.PurchaseContextInfoBuilder;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.model.result.Result;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.result.ValidationResult;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.util.ClockProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpSession;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -41,15 +45,18 @@ public class SubscriptionsApiController {
     private final SubscriptionManager subscriptionManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager reservationManager;
+    private final ConfigurationManager configurationManager;
 
-    public SubscriptionsApiController(SubscriptionManager subscriptionManager, I18nManager i18nManager, TicketReservationManager reservationManager) {
+    public SubscriptionsApiController(SubscriptionManager subscriptionManager, I18nManager i18nManager,
+                                      TicketReservationManager reservationManager, ConfigurationManager configurationManager) {
         this.subscriptionManager = subscriptionManager;
         this.i18nManager = i18nManager;
         this.reservationManager = reservationManager;
+        this.configurationManager = configurationManager;
     }
 
     @GetMapping("subscriptions")
-    public ResponseEntity<List<BasicSubscriptionInfo>> listSubscriptions(/* TODO search by: organizer, tag, subscription */) {
+    public ResponseEntity<List<BasicSubscriptionDescriptorInfo>> listSubscriptions(/* TODO search by: organizer, tag, subscription */) {
         var contentLanguages = i18nManager.getAvailableLanguages();
 
         var now = ZonedDateTime.now(ClockProvider.clock());
@@ -60,17 +67,22 @@ public class SubscriptionsApiController {
         return ResponseEntity.ok(activeSubscriptions);
     }
 
-    private static BasicSubscriptionInfo subscriptionDescriptorMapper(SubscriptionDescriptor s) {
-        return new BasicSubscriptionInfo(s.getId(), s.getTitle(), s.getDescription(),
+    private static BasicSubscriptionDescriptorInfo subscriptionDescriptorMapper(SubscriptionDescriptor s) {
+        return new BasicSubscriptionDescriptorInfo(s.getId(), s.getTitle(), s.getDescription(),
             s.getPrice(), s.getCurrency(), s.getVat(),
             s.getVatStatus());
     }
 
     @GetMapping("subscription/{id}")
-    public ResponseEntity<BasicSubscriptionInfo> getSubscriptionInfo(@PathVariable("id") String id) {
+    public ResponseEntity<SubscriptionDescriptorWithAdditionalInfo> getSubscriptionInfo(@PathVariable("id") String id, HttpSession session) {
         var res = subscriptionManager.getSubscriptionById(UUID.fromString(id));
         return res
-            .map(SubscriptionsApiController::subscriptionDescriptorMapper)
+            .map(s -> {
+                var configurationsValues = PurchaseContextInfoBuilder.configurationsValues(s, configurationManager);
+                var invoicingInfo = PurchaseContextInfoBuilder.invoicingInfo(configurationManager, configurationsValues);
+                var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
+                return new SubscriptionDescriptorWithAdditionalInfo(s, invoicingInfo, analyticsConf);
+            })
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
