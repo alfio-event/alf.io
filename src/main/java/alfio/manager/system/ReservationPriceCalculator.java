@@ -18,7 +18,9 @@ package alfio.manager.system;
 
 import alfio.model.*;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
+import alfio.model.decorator.SubscriptionPriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
+import alfio.model.subscription.Subscription;
 import alfio.util.MonetaryUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -38,10 +40,13 @@ public class ReservationPriceCalculator implements PriceContainer {
     final List<AdditionalServiceItem> additionalServiceItems;
     final List<AdditionalService> additionalServices;
     final PurchaseContext purchaseContext;
+    private final List<Subscription> subscriptions;
 
     @Override
     public int getSrcPriceCts() {
-        return tickets.stream().mapToInt(Ticket::getSrcPriceCts).sum() + additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getSrcPriceCts).sum();
+        return tickets.stream().mapToInt(Ticket::getSrcPriceCts).sum() +
+            additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getSrcPriceCts).sum() +
+            subscriptions.stream().mapToInt(Subscription::getSrcPriceCts).sum();
     }
 
     @Override
@@ -50,7 +55,9 @@ public class ReservationPriceCalculator implements PriceContainer {
             if (discount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION) {
                 return MonetaryUtil.centsToUnit(discount.getDiscountAmount(), reservation.getCurrencyCode());
             }
-            return MonetaryUtil.centsToUnit(tickets.stream().mapToInt(Ticket::getDiscountCts).sum() + additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getDiscountCts).sum(), reservation.getCurrencyCode());
+            return MonetaryUtil.centsToUnit(tickets.stream().mapToInt(Ticket::getDiscountCts).sum() +
+                    additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getDiscountCts).sum() +
+                    subscriptions.stream().mapToInt(Subscription::getDiscountCts).sum(), reservation.getCurrencyCode());
         }
         return BigDecimal.ZERO;
     }
@@ -83,7 +90,9 @@ public class ReservationPriceCalculator implements PriceContainer {
         var additionalServiceTaxablePrice = additionalServiceItems.stream()
             .map(asi -> AdditionalServiceItemPriceContainer.from(asi, additionalServices.stream().filter(as -> as.getId() == asi.getAdditionalServiceId()).findFirst().orElseThrow(), purchaseContext, discount).getTaxablePrice())
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        var totalTicketsAndAdditional = ticketsTaxablePrice.add(additionalServiceTaxablePrice);
+        var subscriptionsPrice = subscriptions.stream().map(s -> SubscriptionPriceContainer.from(s, purchaseContext, discount).getTaxablePrice())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        var totalTicketsAndAdditional = ticketsTaxablePrice.add(additionalServiceTaxablePrice).add(subscriptionsPrice);
         if(discount != null && discount.getDiscountType() != PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION) {
             // no need to add the discounted price here, since the single items are already taking it into account
             return totalTicketsAndAdditional;
@@ -91,10 +100,10 @@ public class ReservationPriceCalculator implements PriceContainer {
         return totalTicketsAndAdditional.subtract(getAppliedDiscount());
     }
 
-    public static ReservationPriceCalculator from(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, PurchaseContext purchaseContext, List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItemsByAdditionalService) {
+    public static ReservationPriceCalculator from(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, PurchaseContext purchaseContext, List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItemsByAdditionalService, List<Subscription> subscriptions) {
         var additionalServiceItems = additionalServiceItemsByAdditionalService.stream().flatMap(p -> p.getRight().stream()).collect(Collectors.toList());
         var additionalServices = additionalServiceItemsByAdditionalService.stream().map(Pair::getKey).collect(Collectors.toList());
-        return new ReservationPriceCalculator(reservation, discount, tickets, additionalServiceItems, additionalServices, purchaseContext);
+        return new ReservationPriceCalculator(reservation, discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions);
     }
 
 }

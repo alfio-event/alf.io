@@ -80,6 +80,7 @@ create table subscription (
     final_price_cts integer not null default 0,
     vat_cts integer not null default 0,
     discount_cts integer not null default 0,
+    currency text,
     organization_id_fk integer not null constraint subscription_organization_id_fk references organization(id),
     creation_ts timestamp with time zone not null default now(),
     update_ts timestamp with time zone,

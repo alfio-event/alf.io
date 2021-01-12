@@ -36,6 +36,10 @@ public class Subscription {
     private final int organizationId;
     private final ZonedDateTime creationTime;
     private final ZonedDateTime updateTime;
+    private final int srcPriceCts;
+    private final int discountCts;
+    private final String currency;
+
 
     public Subscription(@Column("id") UUID id,
                         @Column("first_name") String firstName,
@@ -47,7 +51,10 @@ public class Subscription {
                         @Column("usage_count") int usageCount,
                         @Column("organization_id_fk") int organizationId,
                         @Column("creation_ts") ZonedDateTime creationTime,
-                        @Column("update_ts") ZonedDateTime updateTime) {
+                        @Column("update_ts") ZonedDateTime updateTime,
+                        @Column("src_price_cts") int srcPriceCts,
+                        @Column("discount_cts") int discountCts,
+                        @Column("currency") String currency) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -59,5 +66,8 @@ public class Subscription {
         this.organizationId = organizationId;
         this.creationTime = creationTime;
         this.updateTime = updateTime;
+        this.srcPriceCts = srcPriceCts;
+        this.discountCts = discountCts;
+        this.currency = currency;
     }
 }

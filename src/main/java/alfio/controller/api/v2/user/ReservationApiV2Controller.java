@@ -96,6 +96,7 @@ public class ReservationApiV2Controller {
     private final AdditionalServiceRepository additionalServiceRepository;
     private final BillingDocumentManager billingDocumentManager;
     private final PurchaseContextManager purchaseContextManager;
+    private final SubscriptionRepository subscriptionRepository;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -454,7 +455,8 @@ public class ReservationApiV2Controller {
                     var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
                     var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
                     var additionalServices = purchaseContext.event().map(event -> additionalServiceRepository.loadAllForEvent(event.getId())).orElse(List.of());
-                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServices, purchaseContext);
+                    var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
+                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions);
                     ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
                         unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
                         reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
