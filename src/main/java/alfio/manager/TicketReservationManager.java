@@ -1513,9 +1513,12 @@ public class TicketReservationManager {
 
     private void cancelReservation(TicketReservation reservation, boolean expired, String username) {
         String reservationId = reservation.getId();
-        Event event = eventRepository.findByReservationId(reservationId);
-        cleanupReferencesToReservation(expired, username, reservationId, event);
-        removeReservation(event, reservation, expired, username);
+        purchaseContextManager.findByReservationId(reservationId).ifPresent(pc -> {
+            cleanupReferencesToReservation(expired, username, reservationId, pc);
+            removeReservation(pc, reservation, expired, username);
+        });
+
+
     }
 
     private void creditReservation(TicketReservation reservation, String username) {
@@ -1527,40 +1530,43 @@ public class TicketReservationManager {
         extensionManager.handleReservationsCreditNoteIssuedForEvent(event, Collections.singletonList(reservationId));
     }
 
-    private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, EventAndOrganizationId event) {
+    private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, PurchaseContext purchaseContext) {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         specialPriceRepository.resetToFreeAndCleanupForReservation(reservationIdsToRemove);
         groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
+        subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
-        int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
-            tickedId -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), tickedId, UUID.randomUUID().toString())
-        ).sum();
-        Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
+        purchaseContext.event().ifPresent(event -> {
+            int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
+                tickedId -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), tickedId, UUID.randomUUID().toString())
+            ).sum();
+            Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
+        });
         transactionRepository.deleteForReservations(List.of(reservationId));
         waitingQueueManager.fireReservationExpired(reservationId);
-        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
+        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), purchaseContext.event().map(Event::getId).orElse(null), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
-    private void removeReservation(Event event, TicketReservation reservation, boolean expired, String username) {
+    private void removeReservation(PurchaseContext purchaseContext, TicketReservation reservation, boolean expired, String username) {
         //handle removal of ticket
         String reservationIdToRemove = reservation.getId();
         List<String> wrappedReservationIdToRemove = Collections.singletonList(reservationIdToRemove);
         waitingQueueManager.cleanExpiredReservations(wrappedReservationIdToRemove);
-        int result = billingDocumentRepository.deleteForReservation(reservationIdToRemove, event.getId());
+        int result = billingDocumentRepository.deleteForReservation(reservationIdToRemove);
         if(result > 0) {
             log.warn("deleted {} documents for reservation id {}", result, reservationIdToRemove);
         }
         //
         if(expired) {
-            extensionManager.handleReservationsExpiredForEvent(event, wrappedReservationIdToRemove);
+            extensionManager.handleReservationsExpiredForEvent(purchaseContext, wrappedReservationIdToRemove);
         } else {
-            extensionManager.handleReservationsCancelledForEvent(event, wrappedReservationIdToRemove);
+            extensionManager.handleReservationsCancelledForEvent(purchaseContext, wrappedReservationIdToRemove);
         }
         int removedReservation = ticketReservationRepository.remove(wrappedReservationIdToRemove);
         Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
-        auditingRepository.insert(reservationIdToRemove, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationIdToRemove);
+        auditingRepository.insert(reservationIdToRemove, userRepository.nullSafeFindIdByUserName(username).orElse(null), purchaseContext.event().map(Event::getId).orElse(null), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationIdToRemove);
     }
 
     public Optional<SpecialPrice> getSpecialPriceByCode(String code) {

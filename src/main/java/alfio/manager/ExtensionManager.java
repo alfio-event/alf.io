@@ -151,12 +151,12 @@ public class ExtensionManager {
             Map.of("waitingQueueSubscription", waitingQueueSubscription, "additionalInfo", Map.of()));
     }
 
-    void handleReservationsExpiredForEvent(Event event, Collection<String> reservationIdsToRemove) {
-        handleReservationRemoval(event, reservationIdsToRemove, ExtensionEvent.RESERVATION_EXPIRED);
+    void handleReservationsExpiredForEvent(PurchaseContext purchaseContext, Collection<String> reservationIdsToRemove) {
+        handleReservationRemoval(purchaseContext, reservationIdsToRemove, ExtensionEvent.RESERVATION_EXPIRED);
     }
 
-    void handleReservationsCancelledForEvent(Event event, Collection<String> reservationIdsToRemove) {
-        handleReservationRemoval(event, reservationIdsToRemove, ExtensionEvent.RESERVATION_CANCELLED);
+    void handleReservationsCancelledForEvent(PurchaseContext purchaseContext, Collection<String> reservationIdsToRemove) {
+        handleReservationRemoval(purchaseContext, reservationIdsToRemove, ExtensionEvent.RESERVATION_CANCELLED);
     }
 
     void handleTicketCancelledForEvent(Event event, Collection<String> ticketUUIDs) {
@@ -207,12 +207,12 @@ public class ExtensionManager {
         }
     }
 
-    private void handleReservationRemoval(Event event, Collection<String> reservationIds, ExtensionEvent extensionEvent) {
+    private void handleReservationRemoval(PurchaseContext purchaseContext, Collection<String> reservationIds, ExtensionEvent extensionEvent) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservationIds", reservationIds);
         payload.put("reservations", ticketReservationRepository.findByIds(reservationIds));
 
-        syncCall(extensionEvent, event, payload, Boolean.class);
+        syncCall(extensionEvent, purchaseContext, payload, Boolean.class);
     }
 
     public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails) {

@@ -57,8 +57,8 @@ public interface BillingDocumentRepository {
         " on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk")
     List<BillingDocument> findAllOfTypeForEvent(@Bind("type") BillingDocument.Type type, @Bind("eventId") int eventId);
 
-    @Query("delete from billing_document where reservation_id_fk = :reservationId and event_id_fk = :eventId")
-    int deleteForReservation(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId);
+    @Query("delete from billing_document where reservation_id_fk = :reservationId")
+    int deleteForReservation(@Bind("reservationId") String reservationId);
 
     @Query("delete from billing_document where reservation_id_fk in (:reservationIds) and event_id_fk = :eventId")
     int deleteForReservations(@Bind("reservationIds") List<String> reservationIds, @Bind("eventId") int eventId);
