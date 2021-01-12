@@ -81,7 +81,8 @@ public class SubscriptionsApiController {
                 var configurationsValues = PurchaseContextInfoBuilder.configurationsValues(s, configurationManager);
                 var invoicingInfo = PurchaseContextInfoBuilder.invoicingInfo(configurationManager, configurationsValues);
                 var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
-                return new SubscriptionDescriptorWithAdditionalInfo(s, invoicingInfo, analyticsConf);
+                var captchaConf = PurchaseContextInfoBuilder.captchaConfiguration(configurationManager, configurationsValues);
+                return new SubscriptionDescriptorWithAdditionalInfo(s, invoicingInfo, analyticsConf, captchaConf);
             })
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());

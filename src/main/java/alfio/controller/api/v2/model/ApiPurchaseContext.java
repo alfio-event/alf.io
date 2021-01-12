@@ -16,9 +16,40 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.controller.api.support.CurrencyDescriptor;
+import alfio.model.PurchaseContext;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.joda.money.CurrencyUnit;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 public interface ApiPurchaseContext {
 
     EventWithAdditionalInfo.InvoicingConfiguration getInvoicingConfiguration();
     EventWithAdditionalInfo.AssignmentConfiguration getAssignmentConfiguration();
     AnalyticsConfiguration getAnalyticsConfiguration();
+    EventWithAdditionalInfo.CaptchaConfiguration getCaptchaConfiguration();
+    boolean isVatIncluded();
+    boolean isFree();
+    String getCurrency();
+    String getVat();
+
+    default List<Language> getContentLanguages() {
+        return purchaseContext().getContentLanguages()
+            .stream()
+            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
+            .collect(Collectors.toList());
+    }
+
+    default CurrencyDescriptor getCurrencyDescriptor() {
+        if(purchaseContext().isFreeOfCharge()) {
+            return null;
+        }
+        var currencyUnit = CurrencyUnit.of(getCurrency());
+        return new CurrencyDescriptor(currencyUnit.getCode(), currencyUnit.toCurrency().getDisplayName(), currencyUnit.getSymbol(), currencyUnit.getDecimalPlaces());
+    }
+
+    @JsonIgnore
+    PurchaseContext purchaseContext();
 }

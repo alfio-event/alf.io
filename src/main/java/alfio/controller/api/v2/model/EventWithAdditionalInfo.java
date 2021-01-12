@@ -16,17 +16,16 @@
  */
 package alfio.controller.api.v2.model;
 
-import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.model.Event;
 import alfio.model.Event.EventFormat;
+import alfio.model.PurchaseContext;
 import alfio.model.user.Organization;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.joda.money.CurrencyUnit;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext {
@@ -89,21 +88,6 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
 
     public Integer getAvailableTicketsCount() {
         return availableTicketsCount;
-    }
-
-    public CurrencyDescriptor getCurrencyDescriptor() {
-        if(event.isFreeOfCharge()) {
-            return null;
-        }
-        var currencyUnit = CurrencyUnit.of(event.getCurrency());
-        return new CurrencyDescriptor(currencyUnit.getCode(), currencyUnit.toCurrency().getDisplayName(), currencyUnit.getSymbol(), currencyUnit.getDecimalPlaces());
-    }
-
-    public List<Language> getContentLanguages() {
-        return event.getContentLanguages()
-            .stream()
-            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
-            .collect(Collectors.toList());
     }
 
     public String getMapUrl() {
@@ -259,4 +243,9 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         private final boolean usePartnerCode;
     }
 
+    @JsonIgnore
+    @Override
+    public PurchaseContext purchaseContext() {
+        return event;
+    }
 }

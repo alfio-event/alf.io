@@ -21,6 +21,7 @@ import alfio.manager.EuVatChecker;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.PurchaseContext;
 import alfio.model.system.ConfigurationKeys;
+import org.apache.commons.lang3.Validate;
 
 import java.util.List;
 import java.util.Map;
@@ -78,5 +79,22 @@ public class PurchaseContextInfoBuilder {
             euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
             customerReferenceEnabled, enabledItalyEInvoicing, vatNumberStrictlyRequired);
 
+    }
+
+    public static EventWithAdditionalInfo.CaptchaConfiguration captchaConfiguration(ConfigurationManager configurationManager, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationsValues) {
+        boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
+        String recaptchaApiKey = null;
+        if (captchaForTicketSelection) {
+            recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrNull();
+        }
+        //
+        boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurationsValues);
+        return new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentAndFreeEnabled, recaptchaApiKey);
+    }
+
+    public static boolean isRecaptchaForTicketSelectionEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_TICKET_SELECTION) && configurationValues.containsKey(RECAPTCHA_API_KEY));
+        return configurationValues.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault() &&
+            configurationValues.get(RECAPTCHA_API_KEY).getValueOrNull() != null;
     }
 }

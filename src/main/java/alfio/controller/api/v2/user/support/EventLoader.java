@@ -27,7 +27,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpSession;
@@ -65,14 +64,7 @@ public class EventLoader {
                 var locationDescriptor = LocationDescriptor.fromGeoData(event.getFormat(), event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
 
                 //
-                boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
-                String recaptchaApiKey = null;
-                if (captchaForTicketSelection) {
-                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrNull();
-                }
-                //
-                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurationsValues);
-                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentAndFreeEnabled, recaptchaApiKey);
+                var captchaConf = PurchaseContextInfoBuilder.captchaConfiguration(configurationManager, configurationsValues);
 
 
                 //
@@ -123,8 +115,6 @@ public class EventLoader {
     }
 
     public boolean isRecaptchaForTicketSelectionEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
-        Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_TICKET_SELECTION) && configurationValues.containsKey(RECAPTCHA_API_KEY));
-        return configurationValues.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault() &&
-            configurationValues.get(RECAPTCHA_API_KEY).getValueOrNull() != null;
+        return PurchaseContextInfoBuilder.isRecaptchaForTicketSelectionEnabled(configurationValues);
     }
 }

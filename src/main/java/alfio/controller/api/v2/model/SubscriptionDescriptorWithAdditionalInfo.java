@@ -16,7 +16,10 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.model.PriceContainer;
+import alfio.model.PurchaseContext;
 import alfio.model.subscription.SubscriptionDescriptor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
@@ -24,6 +27,7 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     private final SubscriptionDescriptor subscriptionDescriptor;
     private final EventWithAdditionalInfo.InvoicingConfiguration invoicingConfiguration;
     private final AnalyticsConfiguration analyticsConfiguration;
+    private final EventWithAdditionalInfo.CaptchaConfiguration captchaConfiguration;
 
     @Override
     public EventWithAdditionalInfo.InvoicingConfiguration getInvoicingConfiguration() {
@@ -38,5 +42,35 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     @Override
     public AnalyticsConfiguration getAnalyticsConfiguration() {
         return analyticsConfiguration;
+    }
+
+    @Override
+    public boolean isFree() {
+        return subscriptionDescriptor.isFreeOfCharge();
+    }
+
+    @Override
+    public String getCurrency() {
+        return subscriptionDescriptor.getCurrency();
+    }
+
+    public String getVat() {
+        return subscriptionDescriptor.getVat().toString();
+    }
+
+    @Override
+    @JsonIgnore
+    public PurchaseContext purchaseContext() {
+        return subscriptionDescriptor;
+    }
+
+    @Override
+    public EventWithAdditionalInfo.CaptchaConfiguration getCaptchaConfiguration() {
+        return captchaConfiguration;
+    }
+
+    @Override
+    public boolean isVatIncluded() {
+        return subscriptionDescriptor.getVatStatus() == PriceContainer.VatStatus.INCLUDED;
     }
 }
