@@ -73,4 +73,14 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     public boolean isVatIncluded() {
         return subscriptionDescriptor.getVatStatus() == PriceContainer.VatStatus.INCLUDED;
     }
+
+    @Override
+    public String getPrivacyPolicyUrl() {
+        return purchaseContext().getPrivacyPolicyLinkOrNull();
+    }
+
+    @Override
+    public String getTermsAndConditionsUrl() {
+        return purchaseContext().getTermsAndConditionsUrl();
+    }
 }

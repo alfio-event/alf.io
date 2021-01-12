@@ -50,6 +50,10 @@ public interface ApiPurchaseContext {
         return new CurrencyDescriptor(currencyUnit.getCode(), currencyUnit.toCurrency().getDisplayName(), currencyUnit.getSymbol(), currencyUnit.getDecimalPlaces());
     }
 
+    String getPrivacyPolicyUrl();
+
+    String getTermsAndConditionsUrl();
+
     @JsonIgnore
     PurchaseContext purchaseContext();
 }
