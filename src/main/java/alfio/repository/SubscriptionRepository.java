@@ -188,4 +188,7 @@ public interface SubscriptionRepository {
 
     @Query("select * from subscription where reservation_id_fk = :reservationId")
     List<Subscription> findSubscriptionsByReservationId(@Bind("reservationId") String reservationId);
+
+    @Query("select exists(select 1 from subscription_descriptor where id = :id)")
+    boolean existsById(@Bind("id") String subscriptionId);
 }

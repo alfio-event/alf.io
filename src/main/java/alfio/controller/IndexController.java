@@ -29,10 +29,7 @@ import alfio.model.FileBlobMetadata;
 import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.FileUploadRepository;
-import alfio.repository.TicketReservationRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MustacheCustomTag;
@@ -105,6 +102,7 @@ public class IndexController {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final OrganizationRepository organizationRepository;
     private final TicketReservationRepository ticketReservationRepository;
+    private final SubscriptionRepository subscriptionRepository;
     private final EventLoader eventLoader;
 
 
@@ -165,11 +163,23 @@ public class IndexController {
         "/event/{eventShortName}/ticket/{ticketId}/view",
         "/event/{eventShortName}/ticket/{ticketId}/update",
         //
+        // subscription
+        "/subscription/{subscriptionId}",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/book",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/overview",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/waitingPayment",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/waiting-payment",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/deferred-payment",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/processing-payment",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/success",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/not-found",
+        "/subscription/{subscriptionId}/reservation/{reservationId}/error",
         // poll
         "/event/{eventShortName}/poll",
         "/event/{eventShortName}/poll/{pollId}"
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
+                             @PathVariable(value = "subscriptionId", required = false) String subscriptionId,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
                              @RequestParam(value = "lang", required = false) String lang,
                              ServletWebRequest request,
@@ -210,13 +220,27 @@ public class IndexController {
     }
 
     @GetMapping("/event/{eventShortName}/reservation/{reservationId}")
-    public String redirectToReservation(@PathVariable(value = "eventShortName") String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
+    public String redirectEventToReservation(@PathVariable(value = "eventShortName") String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
         if (eventRepository.existsByShortName(eventShortName)) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
                 .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
 
             return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
                 .buildAndExpand(Map.of("eventShortName", eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
+                .toUriString();
+        } else {
+            return "redirect:/";
+        }
+    }
+
+    @GetMapping("/subscription/{subscriptionId}/reservation/{reservationId}")
+    public String redirectSubscriptionToReservation(@PathVariable(value = "subscriptionId") String subscriptionId, @PathVariable(value = "reservationId") String reservationId) {
+        if (subscriptionRepository.existsById(subscriptionId)) {
+            var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
+                .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
+
+            return "redirect:" + UriComponentsBuilder.fromPath("/subscription/{subscriptionId}/reservation/{reservationId}/{status}")
+                .buildAndExpand(Map.of("subscriptionId", subscriptionId, "reservationId", reservationId, "status",reservationStatusUrlSegment))
                 .toUriString();
         } else {
             return "redirect:/";

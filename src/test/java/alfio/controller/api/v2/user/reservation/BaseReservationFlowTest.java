@@ -330,13 +330,13 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         // check open graph & co
         {
             var res = new MockHttpServletResponse();
-            indexController.replyToIndex(context.event.getShortName(), "not a social share", "en", new ServletWebRequest(new MockHttpServletRequest()),res, new MockHttpSession());
+            indexController.replyToIndex(context.event.getShortName(), null, "not a social share", "en", new ServletWebRequest(new MockHttpServletRequest()),res, new MockHttpSession());
             var htmlParser = new Parser();
             var docWithoutOpenGraph = htmlParser.parse(new String(res.getContentAsByteArray(), StandardCharsets.UTF_8));
             assertTrue(docWithoutOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
 
             res = new MockHttpServletResponse();
-            indexController.replyToIndex(context.event.getShortName(), "Twitterbot/42", "en", new ServletWebRequest(new MockHttpServletRequest()), res, new MockHttpSession());
+            indexController.replyToIndex(context.event.getShortName(), null,"Twitterbot/42", "en", new ServletWebRequest(new MockHttpServletRequest()), res, new MockHttpSession());
             var docWithOpenGraph = htmlParser.parse(new String(res.getContentAsByteArray(), StandardCharsets.UTF_8));
             assertFalse(docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
 
