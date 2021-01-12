@@ -18,6 +18,7 @@ package alfio.repository;
 
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.subscription.EventSubscriptionLink;
+import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
@@ -171,14 +172,20 @@ public interface SubscriptionRepository {
                                        @Bind("organizationId") int organizationId);
 
     @Query("insert into subscription(id, code, subscription_descriptor_fk, reservation_id_fk, max_usage, usage_count, " +
-        " valid_from, valid_to,  organization_id_fk, status) values (:id, :code, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, 'PENDING')")
+        " valid_from, valid_to,  organization_id_fk, status, src_price_cts) values (:id, :code, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, 'PENDING', :srcPriceCts)")
     int createSubscription(@Bind("id") UUID id, @Bind("code") String code,
                            @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                            @Bind("reservationId") String reservationId,
                            @Bind("maxUsage") int maxUsage,
                            @Bind("validFrom") ZonedDateTime validFrom, @Bind("validTo") ZonedDateTime validTo,
+                           @Bind("srcPriceCts") int srcPriceCts,
+                           @Bind("currency") String currency, //FIXME save currency
                            @Bind("organizationId") int organizationId);
 
     @Query("delete from subscription where reservation_id_fk in (:expiredReservationIds)")
     int deleteSubscriptionWithReservationId(@Bind("expiredReservationIds") List<String> expiredReservationIds);
+
+
+    @Query("select * from subscription where reservation_id_fk = :reservationId")
+    List<Subscription> findSubscriptionsByReservationId(@Bind("reservationId") String reservationId);
 }

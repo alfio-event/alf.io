@@ -30,7 +30,7 @@ public class Subscription {
     private final String lastName;
     private final String email;
     private final String code;
-    private final long subscriptionDescriptorId;
+    private final UUID subscriptionDescriptorId;
     private final String reservationId;
     private final int usageCount;
     private final int organizationId;
@@ -40,9 +40,9 @@ public class Subscription {
     public Subscription(@Column("id") UUID id,
                         @Column("first_name") String firstName,
                         @Column("last_name") String lastName,
-                        @Column("email") String email,
+                        @Column("email_address") String email,
                         @Column("code") String code,
-                        @Column("subscription_descriptor_fk") long subscriptionDescriptorId,
+                        @Column("subscription_descriptor_fk") UUID subscriptionDescriptorId,
                         @Column("reservation_id_fk") String reservationId,
                         @Column("usage_count") int usageCount,
                         @Column("organization_id_fk") int organizationId,

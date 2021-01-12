@@ -259,7 +259,7 @@ public class TicketReservationManager {
             subscriptionDescriptor.getCurrency(),
             subscriptionDescriptor.getOrganizationId());
         subscriptionRepository.createSubscription(UUID.randomUUID(), UUID.randomUUID().toString() /*FIXME temporary*/, subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
-            subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getOrganizationId());
+            subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(), subscriptionDescriptor.getOrganizationId());
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = subscriptionDescriptor.getVatStatus();
         ticketReservationRepository.updateBillingData(subscriptionDescriptor.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), subscriptionDescriptor.getCurrency(), null, null, false, reservationId);
@@ -1312,8 +1312,8 @@ public class TicketReservationManager {
     }
 
     private Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PurchaseContext purchaseContext, TicketReservation reservation, List<Ticket> tickets) {
-        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId())
-            .map(promoCodeDiscountRepository::findById);
+        var promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
+        var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservation.getId());
         return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), purchaseContext, reservation, tickets, purchaseContext.event().map(event -> collectAdditionalServiceItems(reservation.getId(), event)).orElse(List.of()));
     }
 
