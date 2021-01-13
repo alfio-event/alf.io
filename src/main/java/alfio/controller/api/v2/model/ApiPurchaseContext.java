@@ -59,6 +59,9 @@ public interface ApiPurchaseContext {
 
     Map<String, String> getDescription();
 
+    String getBankAccount();
+    List<String> getBankAccountOwner();
+
     @JsonIgnore
     PurchaseContext purchaseContext();
 }

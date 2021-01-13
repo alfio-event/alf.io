@@ -22,6 +22,7 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -30,6 +31,11 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     private final EventWithAdditionalInfo.InvoicingConfiguration invoicingConfiguration;
     private final AnalyticsConfiguration analyticsConfiguration;
     private final EventWithAdditionalInfo.CaptchaConfiguration captchaConfiguration;
+
+    //payment related information
+    private final String bankAccount;
+    private final List<String> bankAccountOwner;
+    //
 
     @Override
     public EventWithAdditionalInfo.InvoicingConfiguration getInvoicingConfiguration() {
@@ -94,5 +100,15 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     @Override
     public Map<String, String> getDescription() {
         return subscriptionDescriptor.getDescription();
+    }
+
+    @Override
+    public String getBankAccount() {
+        return bankAccount;
+    }
+
+    @Override
+    public List<String> getBankAccountOwner() {
+        return bankAccountOwner;
     }
 }

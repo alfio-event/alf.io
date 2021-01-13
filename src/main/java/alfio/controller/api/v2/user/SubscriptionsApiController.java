@@ -33,10 +33,14 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
 
 @RestController
 @RequestMapping("/api/v2/public/")
@@ -82,7 +86,9 @@ public class SubscriptionsApiController {
                 var invoicingInfo = PurchaseContextInfoBuilder.invoicingInfo(configurationManager, configurationsValues);
                 var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
                 var captchaConf = PurchaseContextInfoBuilder.captchaConfiguration(configurationManager, configurationsValues);
-                return new SubscriptionDescriptorWithAdditionalInfo(s, invoicingInfo, analyticsConf, captchaConf);
+                var bankAccount = configurationsValues.get(BANK_ACCOUNT_NR).getValueOrDefault("");
+                var bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).getValueOrDefault("").split("\n"));
+                return new SubscriptionDescriptorWithAdditionalInfo(s, invoicingInfo, analyticsConf, captchaConf, bankAccount, bankAccountOwner);
             })
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
