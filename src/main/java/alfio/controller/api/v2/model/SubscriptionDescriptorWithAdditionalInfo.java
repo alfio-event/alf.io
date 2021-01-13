@@ -22,6 +22,8 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 
+import java.util.Map;
+
 @AllArgsConstructor
 public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseContext {
     private final SubscriptionDescriptor subscriptionDescriptor;
@@ -82,5 +84,15 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     @Override
     public String getTermsAndConditionsUrl() {
         return purchaseContext().getTermsAndConditionsUrl();
+    }
+
+    @Override
+    public String getFileBlobId() {
+        return subscriptionDescriptor.getFileBlobId();
+    }
+
+    @Override
+    public Map<String, String> getDescription() {
+        return subscriptionDescriptor.getDescription();
     }
 }

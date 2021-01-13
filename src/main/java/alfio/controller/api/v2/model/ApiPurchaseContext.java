@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.joda.money.CurrencyUnit;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public interface ApiPurchaseContext {
@@ -53,6 +54,10 @@ public interface ApiPurchaseContext {
     String getPrivacyPolicyUrl();
 
     String getTermsAndConditionsUrl();
+
+    String getFileBlobId();
+
+    Map<String, String> getDescription();
 
     @JsonIgnore
     PurchaseContext purchaseContext();

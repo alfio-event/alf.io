@@ -106,6 +106,7 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         return event.getLocation();
     }
 
+    @Override
     public Map<String, String> getDescription() {
         return description;
     }
