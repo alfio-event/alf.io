@@ -37,6 +37,8 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     private final List<String> bankAccountOwner;
     //
 
+    private final String organizationEmail;
+
     @Override
     public EventWithAdditionalInfo.InvoicingConfiguration getInvoicingConfiguration() {
         return invoicingConfiguration;
@@ -110,5 +112,10 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     @Override
     public List<String> getBankAccountOwner() {
         return bankAccountOwner;
+    }
+
+    @Override
+    public String getOrganizationEmail() {
+        return organizationEmail;
     }
 }

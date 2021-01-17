@@ -27,6 +27,7 @@ import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.result.ValidationResult;
 import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.ClockProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,13 +51,16 @@ public class SubscriptionsApiController {
     private final I18nManager i18nManager;
     private final TicketReservationManager reservationManager;
     private final ConfigurationManager configurationManager;
+    private final OrganizationRepository organizationRepository;
 
     public SubscriptionsApiController(SubscriptionManager subscriptionManager, I18nManager i18nManager,
-                                      TicketReservationManager reservationManager, ConfigurationManager configurationManager) {
+                                      TicketReservationManager reservationManager, ConfigurationManager configurationManager,
+                                      OrganizationRepository organizationRepository) {
         this.subscriptionManager = subscriptionManager;
         this.i18nManager = i18nManager;
         this.reservationManager = reservationManager;
         this.configurationManager = configurationManager;
+        this.organizationRepository = organizationRepository;
     }
 
     @GetMapping("subscriptions")
@@ -88,7 +92,8 @@ public class SubscriptionsApiController {
                 var captchaConf = PurchaseContextInfoBuilder.captchaConfiguration(configurationManager, configurationsValues);
                 var bankAccount = configurationsValues.get(BANK_ACCOUNT_NR).getValueOrDefault("");
                 var bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).getValueOrDefault("").split("\n"));
-                return new SubscriptionDescriptorWithAdditionalInfo(s, invoicingInfo, analyticsConf, captchaConf, bankAccount, bankAccountOwner);
+                var orgContact = organizationRepository.getContactById(s.getOrganizationId());
+                return new SubscriptionDescriptorWithAdditionalInfo(s, invoicingInfo, analyticsConf, captchaConf, bankAccount, bankAccountOwner, orgContact.getEmail());
             })
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());

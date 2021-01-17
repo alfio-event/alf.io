@@ -62,6 +62,9 @@ public interface ApiPurchaseContext {
     String getBankAccount();
     List<String> getBankAccountOwner();
 
+
+    String getOrganizationEmail();
+
     @JsonIgnore
     PurchaseContext purchaseContext();
 }
