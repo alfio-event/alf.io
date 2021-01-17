@@ -51,6 +51,6 @@ public class MockMailer implements Mailer {
             fromName,
             configurationManager.getFor(MAIL_REPLY_TO, ConfigurationLevel.event(event)).getValueOrDefault(""),
             to, cc, subject, text,
-            html.orElse("no html"), printedAttachments);
+            html.map(b -> "html").orElse("no html"), printedAttachments);
     }
 }
