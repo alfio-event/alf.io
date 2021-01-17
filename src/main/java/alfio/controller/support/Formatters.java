@@ -37,7 +37,10 @@ import java.util.function.BiConsumer;
 public class Formatters {
 
     public static Map<String, String> getFormattedDate(LocalizedContent localizedContent, ZonedDateTime date, String code, MessageSource messageSource) {
-        return getFormattedDate(localizedContent.getContentLanguages(), date, code, messageSource);
+        if(localizedContent != null && date != null) {
+            return getFormattedDate(localizedContent.getContentLanguages(), date, code, messageSource);
+        }
+        return null;
     }
 
     private static Map<String, String> getFormattedDate(List<ContentLanguage> languages, ZonedDateTime date, String code, MessageSource messageSource) {

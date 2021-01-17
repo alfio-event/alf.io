@@ -18,17 +18,22 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
 import alfio.controller.api.v2.model.BasicSubscriptionDescriptorInfo;
+import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
 import alfio.controller.api.v2.model.SubscriptionDescriptorWithAdditionalInfo;
 import alfio.controller.api.v2.user.support.PurchaseContextInfoBuilder;
+import alfio.controller.support.Formatters;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.result.ValidationResult;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ClockProvider;
+import alfio.util.MonetaryUtil;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,15 +57,20 @@ public class SubscriptionsApiController {
     private final TicketReservationManager reservationManager;
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
+    private final MessageSourceManager messageSourceManager;
 
-    public SubscriptionsApiController(SubscriptionManager subscriptionManager, I18nManager i18nManager,
-                                      TicketReservationManager reservationManager, ConfigurationManager configurationManager,
-                                      OrganizationRepository organizationRepository) {
+    public SubscriptionsApiController(SubscriptionManager subscriptionManager,
+                                      I18nManager i18nManager,
+                                      TicketReservationManager reservationManager,
+                                      ConfigurationManager configurationManager,
+                                      OrganizationRepository organizationRepository,
+                                      MessageSourceManager messageSourceManager) {
         this.subscriptionManager = subscriptionManager;
         this.i18nManager = i18nManager;
         this.reservationManager = reservationManager;
         this.configurationManager = configurationManager;
         this.organizationRepository = organizationRepository;
+        this.messageSourceManager = messageSourceManager;
     }
 
     @GetMapping("subscriptions")
@@ -70,15 +80,24 @@ public class SubscriptionsApiController {
         var now = ZonedDateTime.now(ClockProvider.clock());
         var activeSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(now)
             .stream()
-            .map(SubscriptionsApiController::subscriptionDescriptorMapper)
+            .map(s -> subscriptionDescriptorMapper(s, messageSourceManager.getMessageSourceFor(s)))
             .collect(Collectors.toList());
         return ResponseEntity.ok(activeSubscriptions);
     }
 
-    private static BasicSubscriptionDescriptorInfo subscriptionDescriptorMapper(SubscriptionDescriptor s) {
-        return new BasicSubscriptionDescriptorInfo(s.getId(), s.getTitle(), s.getDescription(),
-            s.getPrice(), s.getCurrency(), s.getVat(),
-            s.getVatStatus());
+    private static BasicSubscriptionDescriptorInfo subscriptionDescriptorMapper(SubscriptionDescriptor s, MessageSource messageSource) {
+        return new BasicSubscriptionDescriptorInfo(s.getId(),
+            s.getTitle(),
+            s.getDescription(),
+            s.getFileBlobId(),
+            MonetaryUtil.formatCents(s.getPrice(), s.getCurrency()),
+            s.getCurrency(),
+            s.getVat(),
+            s.getVatStatus(),
+            DatesWithTimeZoneOffset.fromDates(s.getOnSaleFrom(), s.getOnSaleTo()),
+            Formatters.getFormattedDate(s, s.getOnSaleFrom(), "common.event.date-format", messageSource),
+            Formatters.getFormattedDate(s, s.getOnSaleTo(), "common.event.date-format", messageSource)
+        );
     }
 
     @GetMapping("subscription/{id}")

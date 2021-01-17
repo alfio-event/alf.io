@@ -24,6 +24,7 @@ import alfio.model.PurchaseContext;
 import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
+import alfio.util.ClockProvider;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -200,7 +201,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
 
     @Override
     public ZonedDateTime getBegin() {
-        return validityFrom != null ? validityFrom : ZonedDateTime.now().plusMonths(3); //FIXME
+        return validityFrom != null ? validityFrom : ZonedDateTime.now(ClockProvider.clock());
     }
 
     @Override

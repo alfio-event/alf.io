@@ -30,12 +30,17 @@ public class BasicSubscriptionDescriptorInfo {
     private final UUID id;
     private final Map<String, String> title;
     private final Map<String, String> description;
+    private final String fileBlobId;
 
     //
-    private final int price;
+    private final String formattedPrice;
     private final String currency;
 
     //
     private final BigDecimal vat;
     private final PriceContainer.VatStatus vatStatus;
+
+    private final DatesWithTimeZoneOffset salePeriod;
+    private final Map<String, String> formattedOnSaleFrom;
+    private final Map<String, String> formattedOnSaleTo;
 }
