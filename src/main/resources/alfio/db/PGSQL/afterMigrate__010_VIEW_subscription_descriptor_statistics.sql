@@ -42,6 +42,7 @@ create view subscription_descriptor_statistics as (
             sd.file_blob_id_fk sd_file_blob_id_fk,
             sd.allowed_payment_proxies sd_allowed_payment_proxies,
             sd.private_key sd_private_key,
+            sd.time_zone sd_time_zone,
             (select count(id) from subscription where status between 'ACQUIRED' and 'CHECKED_IN' and subscription_descriptor_fk = sd.id) s_sold_count,
             (select count(event_id_fk) from subscription_event where subscription_descriptor_id_fk = sd.id) s_events_count
       from subscription_descriptor sd

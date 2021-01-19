@@ -65,6 +65,8 @@ public class SubscriptionDescriptorWithStatistics {
         @Column("sd_file_blob_id_fk") String fileBlobId,
         @Column("sd_allowed_payment_proxies") @Array List<String> paymentProxies,
         @Column("sd_private_key") String privateKey,
+        @Column("sd_time_zone") String timeZone,
+
 
         @Column("s_sold_count") int soldCount,
         @Column("s_events_count") int linkedEventsCount) {
@@ -94,7 +96,9 @@ public class SubscriptionDescriptorWithStatistics {
             termsAndConditionsUrl,
             privacyPolicyUrl,
             fileBlobId,
-            paymentProxies, privateKey);
+            paymentProxies,
+            privateKey,
+            timeZone);
     }
 
     public BigDecimal getUnitPrice() {

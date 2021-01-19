@@ -81,6 +81,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
     private final String fileBlobId;
     private final List<PaymentProxy> paymentProxies;
     private final String privateKey;
+    private final String timeZone;
 
     public SubscriptionDescriptor(@Column("id") UUID id,
                                   @Column("title") @JSONData Map<String, String> title,
@@ -108,7 +109,8 @@ public class SubscriptionDescriptor implements PurchaseContext {
                                   @Column("privacy_policy_url") String privacyPolicyUrl,
                                   @Column("file_blob_id_fk") String fileBlobId,
                                   @Column("allowed_payment_proxies") @Array List<String> paymentProxies,
-                                  @Column("private_key") String privateKey) {
+                                  @Column("private_key") String privateKey,
+                                  @Column("time_zone") String timeZone) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -137,6 +139,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
         this.paymentProxies = paymentProxies.stream().map(PaymentProxy::valueOf).collect(Collectors.toList());
 
         this.privateKey = privateKey;
+        this.timeZone = timeZone;
     }
 
     @Override
@@ -177,7 +180,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
     @JsonIgnore
     @Override
     public ZoneId getZoneId() {
-        return ZoneId.of("UTC");
+        return ZoneId.of(timeZone);
     }
 
     @Override
