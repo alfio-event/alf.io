@@ -94,10 +94,12 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         return mapUrl;
     }
 
+    @Override
     public String getOrganizationName() {
         return organization.getName();
     }
 
+    @Override
     public String getOrganizationEmail() {
         return organization.getEmail();
     }
@@ -111,60 +113,74 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         return description;
     }
 
+    @Override
     public String getPrivacyPolicyUrl() {
         return event.getPrivacyPolicyLinkOrNull();
     }
 
+    @Override
     public String getTermsAndConditionsUrl() {
         return event.getTermsAndConditionsUrl();
     }
 
+    @Override
     public String getCurrency() {
         return event.getCurrency();
     }
 
+    @Override
     public boolean isVatIncluded() {
         return event.isVatIncluded();
     }
 
+    @Override
     public String getVat() {
         return event.getVat().toString();
     }
 
+    @Override
     public boolean isFree() {
         return event.getFree();
     }
 
+    @Override
     public String getBankAccount() {
         return bankAccount;
     }
 
+    @Override
     public List<String> getBankAccountOwner() {
         return bankAccountOwner;
     }
 
 
     // date related fields
+    @Override
     public boolean isSameDay() {
         return event.getSameDay();
     }
 
+    @Override
     public Map<String, String> getFormattedBeginDate() {
         return formattedBeginDate;
     }
 
+    @Override
     public Map<String, String> getFormattedBeginTime() {
         return formattedBeginTime;
     }
 
+    @Override
     public Map<String, String> getFormattedEndDate() {
         return formattedEndDate;
     }
 
+    @Override
     public Map<String, String> getFormattedEndTime() {
         return formattedEndTime;
     }
 
+    @Override
     public String getTimeZone() {
         return event.getTimeZone();
     }
@@ -177,14 +193,17 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
     //
 
 
+    @Override
     public InvoicingConfiguration getInvoicingConfiguration() {
         return invoicingConfiguration;
     }
 
+    @Override
     public CaptchaConfiguration getCaptchaConfiguration() {
         return captchaConfiguration;
     }
 
+    @Override
     public AssignmentConfiguration getAssignmentConfiguration() {
         return assignmentConfiguration;
     }
@@ -193,6 +212,7 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         return promotionsConfiguration;
     }
 
+    @Override
     public AnalyticsConfiguration getAnalyticsConfiguration() {
         return analyticsConfiguration;
     }

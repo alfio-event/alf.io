@@ -42,8 +42,6 @@ import java.util.stream.Collectors;
 @Getter
 public class SubscriptionDescriptor implements PurchaseContext {
 
-
-
     public enum SubscriptionUsageType {
         ONCE_PER_EVENT, UNLIMITED
     }

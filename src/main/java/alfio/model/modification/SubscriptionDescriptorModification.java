@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,7 @@ public class SubscriptionDescriptorModification {
     private final String privacyPolicyUrl;
     private final String fileBlobId;
     private final List<PaymentProxy> paymentProxies;
+    private final ZoneId timeZone;
 
     public SubscriptionDescriptorModification(@JsonProperty("id") UUID id,
                                               @JsonProperty("title") Map<String, String> title,
@@ -82,7 +84,8 @@ public class SubscriptionDescriptorModification {
                                               @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
                                               @JsonProperty("privacyPolicyUrl") String privacyPolicyUrl,
                                               @JsonProperty("fileBlobId") String fileBlobId,
-                                              @JsonProperty("paymentProxies") List<PaymentProxy> paymentProxies) {
+                                              @JsonProperty("paymentProxies") List<PaymentProxy> paymentProxies,
+                                              @JsonProperty("timeZone") ZoneId timeZone) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -106,6 +109,7 @@ public class SubscriptionDescriptorModification {
         this.privacyPolicyUrl = privacyPolicyUrl;
         this.fileBlobId = fileBlobId;
         this.paymentProxies = paymentProxies;
+        this.timeZone = timeZone;
     }
 
     public int getPriceCts() {
@@ -152,6 +156,7 @@ public class SubscriptionDescriptorModification {
             subscriptionDescriptor.getTermsAndConditionsUrl(),
             subscriptionDescriptor.getPrivacyPolicyUrl(),
             subscriptionDescriptor.getFileBlobId(),
-            subscriptionDescriptor.getPaymentProxies());
+            subscriptionDescriptor.getPaymentProxies(),
+            subscriptionDescriptor.getZoneId());
     }
 }

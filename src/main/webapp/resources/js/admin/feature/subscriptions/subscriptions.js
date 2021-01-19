@@ -56,7 +56,7 @@
         }
     })
     .component('subscriptionsEdit', {
-        controller: ['$state', 'SubscriptionService', 'EventService', 'UtilsService', '$q', 'ImageTransformService', '$scope', 'PaymentProxyService', 'PAYMENT_PROXY_DESCRIPTIONS', 'NotificationHandler', 'ConfigurationService', SubscriptionsEditCtrl],
+        controller: ['$state', 'SubscriptionService', 'EventService', 'UtilsService', '$q', 'ImageTransformService', '$scope', 'PaymentProxyService', 'PAYMENT_PROXY_DESCRIPTIONS', 'NotificationHandler', 'ConfigurationService', 'LocationService', SubscriptionsEditCtrl],
         templateUrl: '../resources/js/admin/feature/subscriptions/edit.html',
         bindings: {
             organizationId: '<',
@@ -143,7 +143,8 @@
                                    PaymentProxyService,
                                    PAYMENT_PROXY_DESCRIPTIONS,
                                    NotificationHandler,
-                                   ConfigurationService) {
+                                   ConfigurationService,
+                                   LocationService) {
         var ctrl = this;
         ctrl.existing = false;
 
@@ -202,7 +203,8 @@
             var promises = [
                 EventService.getSupportedLanguages(),
                 UtilsService.getAvailableCurrencies(),
-                PaymentProxyService.getAllProxies(ctrl.organizationId)
+                PaymentProxyService.getAllProxies(ctrl.organizationId),
+                LocationService.getTimezones()
             ];
             if(ctrl.subscriptionId) {
                 ctrl.existing = true;
@@ -224,27 +226,48 @@
                 ctrl.subscription = res[0].data;
                 ctrl.languages = res[1].data;
                 ctrl.currencies = res[2].data;
+                ctrl.paymentMethods = getPaymentMethods(res[3].data);
+                ctrl.timeZones = res[4].data;
 
-                ctrl.paymentMethods = _.chain(res[3].data)
-                    .filter(function(p) { return p.status === 'ACTIVE'; })
-                    .map(function(p) {
-                        return {
-                            id: p.paymentProxy,
-                            description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider ('+p.paymentProxy+')  Please check configuration',
-                            onlyForCurrency: p.onlyForCurrency,
-                            selected: _.contains(ctrl.subscription.paymentProxies, p.paymentProxy)
-                        };
-                    })
-                    .uniq('description')
-                    .value();
                 if(ctrl.existing) {
                     initExistingSubscription();
                 } else {
                     ctrl.selectedLanguages = [ctrl.languages[0]]
                 }
                 refreshAvailableLanguages();
+                refreshTimeZone(ctrl);
+                if(ctrl.subscription.maxAvailable === -1) {
+                    delete ctrl.subscription.maxAvailable;
+                }
             });
         }
+
+        var getPaymentMethods = function(data) {
+            return _.chain(data)
+                .filter(function (p) {
+                    return p.status === 'ACTIVE';
+                })
+                .map(function (p) {
+                    return {
+                        id: p.paymentProxy,
+                        description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider (' + p.paymentProxy + ')  Please check configuration',
+                        onlyForCurrency: p.onlyForCurrency,
+                        selected: _.contains(ctrl.subscription.paymentProxies, p.paymentProxy)
+                    };
+                })
+                .uniq('description')
+                .value();
+        }
+
+        var refreshTimeZone = function() {
+            try {
+                if(!ctrl.subscription.timeZone) {
+                    ctrl.subscription.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                }
+            } catch (e) {
+                //necessary, as IE11 does not support Internationalization Apis
+            }
+        };
 
         ctrl.toggleVisibility = function() {
             SubscriptionService.toggleVisibility(ctrl.subscription).then(function(res) {

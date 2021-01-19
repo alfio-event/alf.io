@@ -19,6 +19,7 @@ package alfio.controller.api.v2.model;
 import alfio.model.PriceContainer;
 import alfio.model.PurchaseContext;
 import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 
@@ -38,6 +39,14 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     //
 
     private final String organizationEmail;
+    private final String organizationName;
+
+    private final DatesWithTimeZoneOffset salePeriod;
+    private final Map<String, String> formattedOnSaleFrom;
+    private final Map<String, String> formattedOnSaleTo;
+    private final String timeZone;
+    private final Map<String, String> formattedValidFrom;
+    private final Map<String, String> formattedValidTo;
 
     @Override
     public EventWithAdditionalInfo.InvoicingConfiguration getInvoicingConfiguration() {
@@ -117,5 +126,58 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     @Override
     public String getOrganizationEmail() {
         return organizationEmail;
+    }
+
+    @Override
+    public String getOrganizationName() {
+        return organizationName;
+    }
+
+    public String getFormattedPrice() {
+        return MonetaryUtil.formatCents(subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency());
+    }
+
+    public DatesWithTimeZoneOffset getSalePeriod() {
+        return salePeriod;
+    }
+
+    public Map<String, String> getFormattedOnSaleFrom() {
+        return formattedOnSaleFrom;
+    }
+
+    public Map<String, String> getFormattedOnSaleTo() {
+        return formattedOnSaleTo;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public SubscriptionDescriptor.SubscriptionValidityType getValidityType() {
+        return subscriptionDescriptor.getValidityType();
+    }
+
+    public SubscriptionDescriptor.SubscriptionUsageType getUsageType() {
+        return subscriptionDescriptor.getUsageType();
+    }
+
+    public SubscriptionDescriptor.SubscriptionTimeUnit getValidityTimeUnit() {
+        return subscriptionDescriptor.getValidityTimeUnit();
+    }
+
+    public Integer getValidityUnits() {
+        return subscriptionDescriptor.getValidityUnits();
+    }
+
+    public Map<String, String> getFormattedValidFrom() {
+        return formattedValidFrom;
+    }
+
+    public Map<String, String> getFormattedValidTo() {
+        return formattedValidTo;
+    }
+
+    public Integer getMaxEntries() {
+        return subscriptionDescriptor.getMaxEntries() > 0 ? subscriptionDescriptor.getMaxEntries() : null;
     }
 }

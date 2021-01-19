@@ -64,6 +64,7 @@ public interface ApiPurchaseContext {
 
 
     String getOrganizationEmail();
+    String getOrganizationName();
 
     @JsonIgnore
     PurchaseContext purchaseContext();

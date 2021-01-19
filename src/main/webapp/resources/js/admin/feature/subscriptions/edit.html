@@ -173,19 +173,25 @@
         </div>
         <hr>
         <div class="row">
-            <div class="col-sm-6 col-md-4">
+            <div class="col-sm-6 col-md-3">
                 <div class="form-group">
                     <label for="onSaleFrom">On Sale from</label>
                     <input id="onSaleFrom" autocomplete="off" single-date start-model="$ctrl.subscription.onSaleFromModel" ng-model="$ctrl.subscription.onSaleFromText" class="form-control">
                 </div>
             </div>
-            <div class="col-sm-6 col-md-4">
+            <div class="col-sm-6 col-md-3">
                 <div class="form-group">
                     <label for="onSaleTo"><span class="sr-only">On Sale </span>to (optional)</label>
                     <input id="onSaleTo" autocomplete="off" single-date start-model="$ctrl.subscription.onSaleToModel" no-init-date="true" ng-model="$ctrl.subscription.onSaleToText" class="form-control">
                 </div>
             </div>
-            <div class="col-sm-12 col-md-4">
+            <div class="col-sm-6 col-md-3">
+                <div class="form-group">
+                    <label for="timeZone">Time Zone</label>
+                    <select class="form-control" id="timeZone" name="timeZone" data-ng-model="$ctrl.subscription.timeZone" required ng-options="tz as tz for tz in $ctrl.timeZones"></select>
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-3">
                 <div class="form-group">
                     <label for="maxAvailable">Max Available (optional)</label>
                     <input id="maxAvailable" type="number" autocomplete="off" ng-model="$ctrl.subscription.maxAvailable" class="form-control">

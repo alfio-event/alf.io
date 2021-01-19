@@ -112,7 +112,21 @@ public class SubscriptionsApiController {
                 var bankAccount = configurationsValues.get(BANK_ACCOUNT_NR).getValueOrDefault("");
                 var bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).getValueOrDefault("").split("\n"));
                 var orgContact = organizationRepository.getContactById(s.getOrganizationId());
-                return new SubscriptionDescriptorWithAdditionalInfo(s, invoicingInfo, analyticsConf, captchaConf, bankAccount, bankAccountOwner, orgContact.getEmail());
+                var messageSource = messageSourceManager.getMessageSourceFor(s);
+                return new SubscriptionDescriptorWithAdditionalInfo(s,
+                    invoicingInfo,
+                    analyticsConf,
+                    captchaConf,
+                    bankAccount,
+                    bankAccountOwner,
+                    orgContact.getEmail(),
+                    orgContact.getName(),
+                    DatesWithTimeZoneOffset.fromDates(s.getOnSaleFrom(), s.getOnSaleTo()),
+                    Formatters.getFormattedDate(s, s.getOnSaleFrom(), "common.event.date-format", messageSource),
+                    Formatters.getFormattedDate(s, s.getOnSaleTo(), "common.event.date-format", messageSource),
+                    s.getZoneId().toString(),
+                    Formatters.getFormattedDate(s, s.getValidityFrom(), "common.event.date-format", messageSource),
+                    Formatters.getFormattedDate(s, s.getValidityTo(), "common.event.date-format", messageSource));
             })
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());

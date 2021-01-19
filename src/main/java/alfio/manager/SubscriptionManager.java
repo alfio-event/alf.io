@@ -72,7 +72,8 @@ public class SubscriptionManager {
             subscriptionDescriptor.getPrivacyPolicyUrl(),
             subscriptionDescriptor.getFileBlobId(),
             subscriptionDescriptor.getPaymentProxies(),
-            UUID.randomUUID());
+            UUID.randomUUID().toString(),
+            subscriptionDescriptor.getTimeZone().toString());
 
         return result == 1 ? Optional.of(id) : Optional.empty();
     }
@@ -104,7 +105,8 @@ public class SubscriptionManager {
             subscriptionDescriptor.getPaymentProxies(),
 
             subscriptionDescriptor.getId(),
-            subscriptionDescriptor.getOrganizationId()
+            subscriptionDescriptor.getOrganizationId(),
+            subscriptionDescriptor.getTimeZone().toString()
         );
         return result == 1 ? Optional.of(subscriptionDescriptor.getId()) : Optional.empty();
     }

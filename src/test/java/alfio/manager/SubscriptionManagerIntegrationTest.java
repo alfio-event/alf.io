@@ -50,6 +50,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -259,7 +260,8 @@ public class SubscriptionManagerIntegrationTest {
             "https://example.org",
             null,
             fileBlobId,
-            List.of(PaymentProxy.STRIPE));
+            List.of(PaymentProxy.STRIPE),
+            ZoneId.of("Europe/Zurich"));
     }
 
 }
