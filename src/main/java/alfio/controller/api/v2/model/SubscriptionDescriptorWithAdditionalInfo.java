@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.controller.support.Formatters;
 import alfio.model.PriceContainer;
 import alfio.model.PurchaseContext;
 import alfio.model.subscription.SubscriptionDescriptor;
@@ -110,7 +111,11 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
 
     @Override
     public Map<String, String> getDescription() {
-        return subscriptionDescriptor.getDescription();
+        return Formatters.applyCommonMark(subscriptionDescriptor.getDescription());
+    }
+
+    public Map<String, String> getTitle() {
+        return subscriptionDescriptor.getTitle();
     }
 
     @Override

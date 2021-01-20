@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
 import alfio.controller.api.v2.model.BasicSubscriptionDescriptorInfo;
 import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
@@ -33,6 +34,7 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
+import org.joda.money.CurrencyUnit;
 import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +47,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static alfio.model.PriceContainer.VatStatus.isVatIncluded;
 import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
 import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
 
@@ -86,17 +89,32 @@ public class SubscriptionsApiController {
     }
 
     private static BasicSubscriptionDescriptorInfo subscriptionDescriptorMapper(SubscriptionDescriptor s, MessageSource messageSource) {
+        var currencyUnit = CurrencyUnit.of(s.getCurrency());
+        var currencyDescriptor = new CurrencyDescriptor(currencyUnit.getCode(), currencyUnit.toCurrency().getDisplayName(), currencyUnit.getSymbol(), currencyUnit.getDecimalPlaces());
         return new BasicSubscriptionDescriptorInfo(s.getId(),
+            s.getFileBlobId(),
             s.getTitle(),
             s.getDescription(),
-            s.getFileBlobId(),
+            DatesWithTimeZoneOffset.fromDates(s.getOnSaleFrom(), s.getOnSaleTo()),
+            s.getValidityType(),
+            s.getUsageType(),
+            s.getZoneId(),
+            s.getValidityTimeUnit(),
+            s.getValidityUnits(),
+            s.getMaxEntries(),
+
+            null,
+            null,
+
             MonetaryUtil.formatCents(s.getPrice(), s.getCurrency()),
             s.getCurrency(),
+            currencyDescriptor,
             s.getVat(),
-            s.getVatStatus(),
-            DatesWithTimeZoneOffset.fromDates(s.getOnSaleFrom(), s.getOnSaleTo()),
+            isVatIncluded(s.getVatStatus()),
             Formatters.getFormattedDate(s, s.getOnSaleFrom(), "common.event.date-format", messageSource),
-            Formatters.getFormattedDate(s, s.getOnSaleTo(), "common.event.date-format", messageSource)
+            Formatters.getFormattedDate(s, s.getOnSaleTo(), "common.event.date-format", messageSource),
+            Formatters.getFormattedDate(s, s.getValidityFrom(), "common.event.date-format", messageSource),
+            Formatters.getFormattedDate(s, s.getValidityTo(), "common.event.date-format", messageSource)
         );
     }
 

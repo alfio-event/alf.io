@@ -111,13 +111,15 @@ public class SubscriptionDescriptor implements PurchaseContext {
                                   @Column("allowed_payment_proxies") @Array List<String> paymentProxies,
                                   @Column("private_key") String privateKey,
                                   @Column("time_zone") String timeZone) {
+        var zoneId = ZoneId.of(timeZone);
         this.id = id;
         this.title = title;
         this.description = description;
         this.maxAvailable = maxAvailable;
         this.creation = creation;
-        this.onSaleFrom = onSaleFrom;
-        this.onSaleTo = onSaleTo;
+        this.timeZone = timeZone;
+        this.onSaleFrom = atZone(onSaleFrom, zoneId);
+        this.onSaleTo = atZone(onSaleTo, zoneId);
         this.price = price;
         this.vat = vat;
         this.vatStatus = vatStatus;
@@ -129,8 +131,8 @@ public class SubscriptionDescriptor implements PurchaseContext {
         this.validityType = validityType;
         this.validityTimeUnit = validityTimeUnit;
         this.validityUnits = validityUnits;
-        this.validityFrom = validityFrom;
-        this.validityTo = validityTo;
+        this.validityFrom = atZone(validityFrom, zoneId);
+        this.validityTo = atZone(validityTo, zoneId);
         this.usageType = usageType;
 
         this.termsAndConditionsUrl = termsAndConditionsUrl;
@@ -139,7 +141,6 @@ public class SubscriptionDescriptor implements PurchaseContext {
         this.paymentProxies = paymentProxies.stream().map(PaymentProxy::valueOf).collect(Collectors.toList());
 
         this.privateKey = privateKey;
-        this.timeZone = timeZone;
     }
 
     @Override
@@ -208,5 +209,12 @@ public class SubscriptionDescriptor implements PurchaseContext {
     @Override
     public boolean isFreeOfCharge() {
         return false;
+    }
+
+    private static ZonedDateTime atZone(ZonedDateTime in, ZoneId zone) {
+        if(in != null) {
+            return in.withZoneSameInstant(zone);
+        }
+        return null;
     }
 }

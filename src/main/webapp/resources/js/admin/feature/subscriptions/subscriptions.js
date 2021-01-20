@@ -465,7 +465,8 @@
                     termsAndConditionsUrl: subscription.termsAndConditionsUrl,
                     privacyPolicyUrl: subscription.privacyPolicyUrl,
                     fileBlobId: subscription.fileBlobId,
-                    paymentProxies: subscription.paymentProxies
+                    paymentProxies: subscription.paymentProxies,
+                    timeZone: subscription.timeZone
                 };
             }
         };

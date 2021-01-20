@@ -16,11 +16,15 @@
  */
 package alfio.controller.api.v2.model;
 
-import alfio.model.PriceContainer;
+import alfio.controller.api.support.CurrencyDescriptor;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,19 +32,31 @@ import java.util.UUID;
 @AllArgsConstructor
 public class BasicSubscriptionDescriptorInfo {
     private final UUID id;
+    private final String fileBlobId;
     private final Map<String, String> title;
     private final Map<String, String> description;
-    private final String fileBlobId;
 
     //
+    private final DatesWithTimeZoneOffset salePeriod;
+    private final SubscriptionValidityType validityType;
+    private final SubscriptionUsageType usageType;
+    private final ZoneId timeZone;
+    private final SubscriptionTimeUnit validityTimeUnit;
+    private final Integer validityUnits;
+    private final Integer maxEntries;
+
+    private final String organizationEmail;
+    private final String organizationName;
+
     private final String formattedPrice;
     private final String currency;
-
-    //
+    private final CurrencyDescriptor currencyDescriptor;
     private final BigDecimal vat;
-    private final PriceContainer.VatStatus vatStatus;
+    private final boolean vatIncluded;
 
-    private final DatesWithTimeZoneOffset salePeriod;
     private final Map<String, String> formattedOnSaleFrom;
     private final Map<String, String> formattedOnSaleTo;
+
+    private final Map<String, String> formattedValidFrom;
+    private final Map<String, String> formattedValidTo;
 }
