@@ -121,11 +121,9 @@
                     backdrop: 'static',
                     controller: function($scope) {
                         var ctrl = this;
-                        ctrl.$onInit = function() {
-                            ctrl.links = links;
-                            ctrl.dismiss = function() {
-                                $scope.$dismiss('cancel');
-                            }
+                        ctrl.links = links;
+                        ctrl.dismiss = function() {
+                            $scope.$dismiss('cancel');
                         }
                     }
                 });
