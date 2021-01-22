@@ -108,7 +108,7 @@ alter table subscription_event add constraint "unique_subscription_event" unique
 
 alter table subscription_event enable row level security;
 alter table subscription_event force row level security;
-create policy subscription_event_access_policy on subscription to public
+create policy subscription_event_access_policy on subscription_event to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((organization_id_fk)));
 
