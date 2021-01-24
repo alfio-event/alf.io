@@ -39,7 +39,7 @@ jobs:
               run: |
                   echo "$DOCKER_CONFIG" > ~/.docker/config.json
                   docker build -t $DOCKER_REGISTRY/$DOCKER_REPO/alf.io:${{ steps.extract_branch.outputs.branch }} .
-                  docker push $DOCKER_REPO:${{ steps.extract_branch.outputs.branch }}
+                  docker push $DOCKER_REGISTRY/$DOCKER_REPO/alf.io:${{ steps.extract_branch.outputs.branch }}
               env:
                   DOCKER_CONFIG: ${{ secrets.DOCKER_CONFIG }}
                   DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
