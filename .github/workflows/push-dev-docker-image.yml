@@ -1,0 +1,46 @@
+name: push-dev-docker-image
+on:
+    workflow_run:
+        workflows: [build]
+        branches: [ master, 2.0-M3-maintenance, feature-subscription ]
+        types:
+            - completed
+jobs:
+    build:
+        if: github.repository == 'alfio-event/alf.io'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Extract branch name
+              shell: bash
+              run: echo "##[set-output name=branch;]${GITHUB_REF#refs/heads/}"
+              id: extract_branch
+
+            - uses: actions/checkout@v1
+            - uses: actions/cache@v1
+              with:
+                  path: ~/.gradle/caches
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradle-
+            - uses: actions/cache@v1
+              with:
+                  path: ~/.gradle/wrapper
+                  key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradlew-
+            - name: Set up JDK 11
+              uses: actions/setup-java@v1
+              with:
+                  java-version: 11
+            - name: Build with Gradle
+              run: ./gradlew build distribution -x test -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS
+            - name: Build Docker container
+              working-directory: ./build/dockerize
+              run: |
+                  echo "$DOCKER_CONFIG" > ~/.docker/config.json
+                  docker build -t $DOCKER_REGISTRY/$DOCKER_REPO/alf.io:${{ steps.extract_branch.outputs.branch }} .
+                  docker push $DOCKER_REPO:${{ steps.extract_branch.outputs.branch }}
+              env:
+                  DOCKER_CONFIG: ${{ secrets.DOCKER_CONFIG }}
+                  DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+                  DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
