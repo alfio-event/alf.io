@@ -203,7 +203,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
 
     @Override
     public ZonedDateTime getBegin() {
-        return validityFrom != null ? validityFrom : ZonedDateTime.now(ClockProvider.clock());
+        return validityFrom != null ? validityFrom : ZonedDateTime.now(ClockProvider.clock()).plusMonths(2);
     }
 
     @Override
