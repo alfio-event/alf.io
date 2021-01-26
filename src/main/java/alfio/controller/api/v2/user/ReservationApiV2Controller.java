@@ -25,6 +25,7 @@ import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
+import alfio.controller.form.ReservationCodeForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
@@ -616,6 +617,7 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(res);
     }
 
+    //FIXME: rename ->getPurchaseContextReservationPair
     private Optional<Pair<PurchaseContext, TicketReservation>> getEventReservationPair(String reservationId) {
         return purchaseContextManager.findByReservationId(reservationId)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
@@ -641,6 +643,27 @@ public class ReservationApiV2Controller {
             .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
             .map(pr -> ResponseEntity.ok(new ReservationPaymentResult(pr.isSuccessful(), pr.isRedirect(), pr.getRedirectUrl(), pr.isFailed(), pr.getGatewayIdOrNull())))
             .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/reservation/{reservationId}/apply-code")
+    public ResponseEntity<ValidatedResponse<Boolean>> applyCode(@PathVariable("reservationId") String reservationId, @RequestBody ReservationCodeForm reservationCodeForm, BindingResult bindingResult) {
+        boolean res;
+        switch (reservationCodeForm.getType()) {
+            case SUBSCRIPTION:
+                res = getEventReservationPair(reservationId).map(et -> {
+                    //TODO validate here
+                    return (bindingResult.hasErrors()) ? false : ticketReservationManager.applySubscriptionCode(et.getRight(), reservationCodeForm.getCode(), reservationCodeForm.getEmail(), reservationCodeForm.getAmount());
+                }).orElse(false);
+                break;
+            default: throw new IllegalStateException(reservationCodeForm.getType() + " not supported");
+        }
+        return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, res));
+    }
+
+    @DeleteMapping("/reservation/{reservationId}/remove-code")
+    public ResponseEntity<Boolean> removeCode() {
+        //FIXME
+        return ResponseEntity.ok(true);
     }
 
 

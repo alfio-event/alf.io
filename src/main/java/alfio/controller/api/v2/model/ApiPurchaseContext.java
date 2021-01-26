@@ -68,4 +68,6 @@ public interface ApiPurchaseContext {
 
     @JsonIgnore
     PurchaseContext purchaseContext();
+
+    boolean isCanApplySubscriptions();
 }

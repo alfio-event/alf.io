@@ -2442,4 +2442,12 @@ public class TicketReservationManager {
             return false;
         }
     }
+
+    public boolean applySubscriptionCode(TicketReservation reservation, String code, String email, int amount) {
+
+        //TODO:
+        // find subscription that match code, or code+email
+        //
+        return true;
+    }
 }

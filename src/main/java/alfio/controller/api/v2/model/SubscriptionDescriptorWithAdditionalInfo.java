@@ -185,4 +185,9 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     public Integer getMaxEntries() {
         return subscriptionDescriptor.getMaxEntries() > 0 ? subscriptionDescriptor.getMaxEntries() : null;
     }
+
+    @Override
+    public boolean isCanApplySubscriptions() {
+        return false;//cannot buy a subscription with another subscription
+    }
 }

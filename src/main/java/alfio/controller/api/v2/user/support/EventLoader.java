@@ -46,6 +46,7 @@ public class EventLoader {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     public Optional<EventWithAdditionalInfo> loadEventInfo(String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
@@ -105,12 +106,14 @@ public class EventLoader {
 
                 var customCss = configurationsValues.get(EVENT_CUSTOM_CSS).getValueOrNull();
 
+                var hasLinkedSubscription = subscriptionRepository.hasLinkedSubscription(event.getId());
+
                 return new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
-                    MessageSourceManager.convertPlaceholdersForEachLanguage(i18nOverride), availableTicketsCount, customCss);
+                    MessageSourceManager.convertPlaceholdersForEachLanguage(i18nOverride), availableTicketsCount, customCss, hasLinkedSubscription);
             });
     }
 

@@ -70,6 +70,8 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
 
     private final String customCss;
 
+    private final boolean canApplySubscriptions;
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -268,5 +270,10 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
     @Override
     public PurchaseContext purchaseContext() {
         return event;
+    }
+
+    @Override
+    public boolean isCanApplySubscriptions() {
+        return canApplySubscriptions;
     }
 }
