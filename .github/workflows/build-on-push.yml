@@ -33,14 +33,36 @@ jobs:
                   key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
                   restore-keys: |
                       ${{ runner.os }}-gradlew-
+            - name: Extract branch name
+              shell: bash
+              run: echo "##[set-output name=branch;]${GITHUB_REF#refs/heads/}"
+              id: extract_branch
             - name: Set up JDK 11
               uses: actions/setup-java@v1
               with:
                   java-version: 11
             - name: Build with Gradle
-              run: ./gradlew build jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
+              run: ./gradlew build distribution jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
             - name: upload-to-coveralls
               if: matrix.postgresql == '12' # run only once
               run: ./gradlew coveralls
               env:
                  COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+            -   name: Configure Docker
+                if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '12'}}
+                uses: docker/setup-buildx-action@v1
+            -   name: Login to Container Registry
+                if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '12'}}
+                uses: docker/login-action@v1
+                with:
+                    registry: ${{ secrets.DOCKER_REGISTRY }}
+                    username: ${{ secrets.DOCKER_USERNAME }}
+                    password: ${{ secrets.DOCKER_PASSWORD }}
+            -   name: Push Docker image
+                if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '12'}}
+                uses: docker/build-push-action@v2
+                with:
+                    context: ./build/dockerize
+                    tags: |
+                        ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPO }}/alf.io:${{ steps.extract_branch.outputs.branch }}
+                    push: true
