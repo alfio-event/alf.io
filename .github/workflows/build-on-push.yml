@@ -64,5 +64,5 @@ jobs:
                 with:
                     context: ./build/dockerize
                     tags: |
-                        ghcr.io/alfio-event/alf.io:${{ steps.extract_branch.outputs.branch }}
+                        ghcr.io/alfio-event/alf.io/${{ steps.extract_branch.outputs.branch }}:latest
                     push: true
