@@ -113,7 +113,7 @@ create policy subscription_event_access_policy on subscription_event to public
     with check (alfio_check_row_access((organization_id_fk)));
 
 alter table event add column tags text array not null default array[]::text[];
-alter table ticket add column subscription_id_fk uuid constraint ticket_subscription_id_fk references subscription(id);
+alter table tickets_reservation add column subscription_id_fk uuid constraint ticket_subscription_id_fk references subscription(id);
 
 
 alter table tickets_reservation alter column event_id_fk drop not null;
