@@ -1,4 +1,4 @@
-name: build
+name: tmp-feature-subscription-build
 
 on:
     push:
