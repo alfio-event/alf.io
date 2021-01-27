@@ -53,7 +53,7 @@ jobs:
                     retention-days: 5
     push_image:
         runs-on: ubuntu-latest
-        if: ${{ github.repository == 'alfio-event/alf.io' && github.event == 'push' }}
+        if: ${{ github.repository == 'alfio-event/alf.io' && github.event_name == 'push' }}
         needs: build
         name: Push dev image
         steps:
