@@ -16,6 +16,7 @@ RUN $JAVA_HOME/bin/jlink --compress=1 --strip-debug --no-header-files --no-man-p
     --output /jlinked
 
 FROM alpine:3.12
+LABEL org.opencontainers.image.source https://github.com/alfio-event/alf.io
 
 COPY --from=zulu /jlinked /opt/jdk/
 
