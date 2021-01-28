@@ -2445,8 +2445,23 @@ public class TicketReservationManager {
 
     public boolean applySubscriptionCode(TicketReservation reservation, String code, String email, int amount) {
 
-        //TODO:
-        // find subscription that match code, or code+email
+        if (ticketReservationRepository.hasSubscriptionApplied(reservation.getId())) {
+            return false;
+        }
+        Subscription subscription = subscriptionRepository.findSubscriptionByCodeAndEmailForUpdate(code, email);
+        var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
+
+        if (!subscription.isValid(subscriptionDescriptor)) {
+            return false;
+        }
+        //TODO check if it can be applied more than once for a given event
+
+        ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
+        subscriptionRepository.increaseUseBy(subscription.getId(), 1);
+        //
+
+        //TODO: recalc cost and save
+
         //
         return true;
     }

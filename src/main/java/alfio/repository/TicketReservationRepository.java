@@ -23,10 +23,7 @@ import ch.digitalfondue.npjt.QueryRepository;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @QueryRepository
 public interface TicketReservationRepository {
@@ -261,4 +258,10 @@ public interface TicketReservationRepository {
 
     @Query("select event_id_fk from tickets_reservation where id = :id")
     Optional<Integer> findEventIdFor(@Bind("id") String reservationId);
+
+    @Query("select exists (select * from tickets_reservation where id = :id and subscription_id_fk is not null)")
+    boolean hasSubscriptionApplied(@Bind("id") String id);
+
+    @Query("update tickets_reservation set subscription_id_fk = :subscriptionId where id = :reservationId")
+    int applySubscription(@Bind("reservationId") String reservationId, @Bind("subscriptionId") UUID subscriptionId);
 }

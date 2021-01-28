@@ -197,4 +197,10 @@ public interface SubscriptionRepository {
 
     @Query("select exists (select id from subscription_event where event_id_fk  = :eventId)")
     boolean hasLinkedSubscription(@Bind("eventId") int eventId);
+
+    @Query("select * from subscription where id = :code and email = :email for update")
+    Subscription findSubscriptionByCodeAndEmailForUpdate(String code, String email);
+
+    @Query("update subscription set usage_count = usage_count + :increment where id = :id")
+    int increaseUseBy(@Bind("id") UUID id, @Bind("increment") int increment);
 }

@@ -70,4 +70,12 @@ public class Subscription {
         this.discountCts = discountCts;
         this.currency = currency;
     }
+
+    public boolean isValid(SubscriptionDescriptor subscriptionDescriptor) {
+        if (subscriptionDescriptor.getMaxEntries() > 0) {
+            //TODO check max entries
+        }
+        //TODO check date range validity
+        return true;
+    }
 }
