@@ -59,6 +59,8 @@ public class ExtensionUtils {
     }
 
     public static String base64UrlSafe(String input) {
-        return Base64.getUrlEncoder().encodeToString(input.getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(input.getBytes(StandardCharsets.UTF_8));
     }
 }
