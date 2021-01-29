@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,7 +42,7 @@ public class ReservationPriceCalculator implements PriceContainer {
     final List<AdditionalService> additionalServices;
     final PurchaseContext purchaseContext;
     private final List<Subscription> subscriptions;
-    private final Optional<Subscription> subscription;
+    private final Optional<Subscription> appliedSubscription;
 
     @Override
     public int getSrcPriceCts() {
@@ -52,15 +53,19 @@ public class ReservationPriceCalculator implements PriceContainer {
 
     @Override
     public BigDecimal getAppliedDiscount() {
+
+        var subscriptionDiscount = appliedSubscription.flatMap(subscription -> tickets.stream().sorted(Comparator.comparing(Ticket::getFinalPriceCts)).findFirst()).map(Ticket::getFinalPriceCts).orElse(0);
+
+        //FIXME check how it should be applied in case of discount
         if(discount != null) {
             if (discount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION) {
-                return MonetaryUtil.centsToUnit(discount.getDiscountAmount(), reservation.getCurrencyCode());
+                return MonetaryUtil.centsToUnit(discount.getDiscountAmount() + subscriptionDiscount, reservation.getCurrencyCode());
             }
             return MonetaryUtil.centsToUnit(tickets.stream().mapToInt(Ticket::getDiscountCts).sum() +
                     additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getDiscountCts).sum() +
-                    subscriptions.stream().mapToInt(Subscription::getDiscountCts).sum(), reservation.getCurrencyCode());
+                    subscriptions.stream().mapToInt(Subscription::getDiscountCts).sum() + subscriptionDiscount, reservation.getCurrencyCode());
         }
-        return BigDecimal.ZERO;
+        return MonetaryUtil.centsToUnit(subscriptionDiscount, reservation.getCurrencyCode());
     }
 
     @Override
