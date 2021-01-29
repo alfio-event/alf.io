@@ -41,6 +41,7 @@ public class ReservationPriceCalculator implements PriceContainer {
     final List<AdditionalService> additionalServices;
     final PurchaseContext purchaseContext;
     private final List<Subscription> subscriptions;
+    private final Optional<Subscription> subscription;
 
     @Override
     public int getSrcPriceCts() {
@@ -100,10 +101,11 @@ public class ReservationPriceCalculator implements PriceContainer {
         return totalTicketsAndAdditional.subtract(getAppliedDiscount());
     }
 
-    public static ReservationPriceCalculator from(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, PurchaseContext purchaseContext, List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItemsByAdditionalService, List<Subscription> subscriptions) {
+    public static ReservationPriceCalculator from(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, PurchaseContext purchaseContext, List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItemsByAdditionalService,
+                                                  List<Subscription> subscriptions, Optional<Subscription> appliedSubscription) {
         var additionalServiceItems = additionalServiceItemsByAdditionalService.stream().flatMap(p -> p.getRight().stream()).collect(Collectors.toList());
         var additionalServices = additionalServiceItemsByAdditionalService.stream().map(Pair::getKey).collect(Collectors.toList());
-        return new ReservationPriceCalculator(reservation, discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions);
+        return new ReservationPriceCalculator(reservation, discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions, appliedSubscription);
     }
 
 }

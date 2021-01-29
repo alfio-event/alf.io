@@ -1293,7 +1293,7 @@ public class TicketReservationManager {
         if(discountAppliedCount == 0 && promoCodeDiscount != null && promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT_RESERVATION) {
             discountAppliedCount = 1;
         }
-        var reservationPriceCalculator = ReservationPriceCalculator.from(reservation, promoCodeDiscount, tickets, purchaseContext, additionalServiceItems, subscriptions);
+        var reservationPriceCalculator = ReservationPriceCalculator.from(reservation, promoCodeDiscount, tickets, purchaseContext, additionalServiceItems, subscriptions, appliedSubscription);
         var price = new TotalPrice(unitToCents(reservationPriceCalculator.getFinalPrice(), currencyCode),
             unitToCents(reservationPriceCalculator.getVAT(), currencyCode),
             -MonetaryUtil.unitToCents(reservationPriceCalculator.getAppliedDiscount(), currencyCode),

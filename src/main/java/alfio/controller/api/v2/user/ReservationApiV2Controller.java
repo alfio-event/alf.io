@@ -457,7 +457,8 @@ public class ReservationApiV2Controller {
                     var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
                     var additionalServices = purchaseContext.event().map(event -> additionalServiceRepository.loadAllForEvent(event.getId())).orElse(List.of());
                     var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
-                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions);
+                    var appliedSubscription = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId);
+                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions, appliedSubscription);
                     ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
                         unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
                         reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
