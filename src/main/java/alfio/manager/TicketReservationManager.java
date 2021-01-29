@@ -1186,6 +1186,7 @@ public class TicketReservationManager {
         reservationIdsByEvent.forEach((eventId, reservations) -> {
             Event event = eventRepository.findById(eventId);
             List<String> reservationIds = reservations.stream().map(ReservationIdAndEventId::getId).collect(toList());
+            subscriptionRepository.decrementUseForReservationExpiration(reservationIds);
             extensionManager.handleReservationsExpiredForEvent(event, reservationIds);
             billingDocumentRepository.deleteForReservations(reservationIds, eventId);
             transactionRepository.deleteForReservations(reservationIds);
@@ -1282,7 +1283,8 @@ public class TicketReservationManager {
                                                                                              TicketReservation reservation,
                                                                                              List<Ticket> tickets,
                                                                                              List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems,
-                                                                                             List<Subscription> subscriptions) {
+                                                                                             List<Subscription> subscriptions,
+                                                                                             Optional<Subscription> appliedSubscription) {
 
         String currencyCode = purchaseContext.getCurrency();
         List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), purchaseContext.getVat(), purchaseContext.getVatStatus(), promoCodeDiscount)).collect(toList());
@@ -1321,7 +1323,11 @@ public class TicketReservationManager {
     private Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PurchaseContext purchaseContext, TicketReservation reservation, List<Ticket> tickets) {
         var promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
         var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservation.getId());
-        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), purchaseContext, reservation, tickets, purchaseContext.event().map(event -> collectAdditionalServiceItems(reservation.getId(), event)).orElse(List.of()), subscriptions);
+        var appliedSubscription = subscriptionRepository.findAppliedSubscriptionByReservationId(reservation.getId());
+        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), purchaseContext, reservation, tickets,
+            purchaseContext.event().map(event -> collectAdditionalServiceItems(reservation.getId(), event)).orElse(List.of()),
+            subscriptions,
+            appliedSubscription);
     }
 
     private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets, Locale locale, PurchaseContext purchaseContext) {
@@ -1544,6 +1550,7 @@ public class TicketReservationManager {
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
+        subscriptionRepository.decrementUseForReservationExpiration(List.of(reservationId));
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
         purchaseContext.event().ifPresent(event -> {
             int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
@@ -2457,10 +2464,16 @@ public class TicketReservationManager {
         //TODO check if it can be applied more than once for a given event
 
         ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
-        subscriptionRepository.increaseUseBy(subscription.getId(), 1);
+        subscriptionRepository.increaseUse(subscription.getId());
         //
 
         //TODO: recalc cost and save
+
+        var totalPrice = totalReservationCostWithVAT(reservation.getId()).getLeft();
+
+        var purchaseContext = purchaseContextManager.findByReservationId(reservation.getId()).orElseThrow();
+        ticketReservationRepository.updateBillingData(purchaseContext.getVatStatus(), calculateSrcPrice(purchaseContext.getVatStatus(), totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), purchaseContext.getCurrency(), null
+            , reservation.getVatCountryCode(), reservation.isInvoiceRequested(), reservation.getId());
 
         //
         return true;
