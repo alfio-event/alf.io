@@ -25,6 +25,7 @@ import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ClockProvider;
+import alfio.util.LocaleUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -33,10 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
@@ -216,5 +214,10 @@ public class SubscriptionDescriptor implements PurchaseContext {
             return in.withZoneSameInstant(zone);
         }
         return null;
+    }
+
+    public String getLocalizedTitle(Locale locale) {
+        var fallbackLocale = title.keySet().stream().findFirst().orElse("en");
+        return title.getOrDefault(locale.toLanguageTag(), fallbackLocale);
     }
 }

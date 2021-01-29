@@ -1427,6 +1427,15 @@ public class TicketReservationManager {
                 formatCents(reservationCost.getDiscount(), currencyCode), formatCents(reservationCost.getDiscount(), currencyCode), reservationCost.getDiscount(),
                 promo.isDynamic() ? SummaryType.DYNAMIC_DISCOUNT : SummaryType.PROMOTION_CODE));
         });
+        //
+        subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId).ifPresent(subscription -> {
+
+            var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
+            //FIXME : discount & co
+            summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale), "", "", 1, "", "", 0, SummaryType.SUBSCRIPTION));
+        });
+
+        //
         return summary;
     }
 
