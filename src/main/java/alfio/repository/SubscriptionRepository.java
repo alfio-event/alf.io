@@ -208,5 +208,5 @@ public interface SubscriptionRepository {
     Optional<Subscription> findAppliedSubscriptionByReservationId(@Bind("reservationId") String id);
 
     @Query("update subscription set usage_count = (case when usage_count > 0 then usage_count - 1 else usage_count end) where id in (select subscription_id_fk from tickets_reservation where id in (:reservationIds) and subscription_id_fk is not null)")
-    int decrementUseForReservationExpiration(@Bind("reservationIds") List<String> reservationIds);
+    int decrementUse(@Bind("reservationIds") List<String> reservationIds);
 }

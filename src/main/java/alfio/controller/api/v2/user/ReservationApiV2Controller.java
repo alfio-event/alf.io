@@ -662,9 +662,12 @@ public class ReservationApiV2Controller {
     }
 
     @DeleteMapping("/reservation/{reservationId}/remove-code")
-    public ResponseEntity<Boolean> removeCode() {
-        //FIXME
-        return ResponseEntity.ok(true);
+    public ResponseEntity<Boolean> removeCode(@PathVariable("reservationId") String reservationId, @RequestParam("type") ReservationCodeForm.ReservationCodeType type) {
+        boolean res = false;
+        if (type == ReservationCodeForm.ReservationCodeType.SUBSCRIPTION) {
+            res = getEventReservationPair(reservationId).map(et -> ticketReservationManager.removeSubscription(et.getRight())).orElse(false);
+        }
+        return ResponseEntity.ok(res);
     }
 
 

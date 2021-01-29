@@ -1186,7 +1186,7 @@ public class TicketReservationManager {
         reservationIdsByEvent.forEach((eventId, reservations) -> {
             Event event = eventRepository.findById(eventId);
             List<String> reservationIds = reservations.stream().map(ReservationIdAndEventId::getId).collect(toList());
-            subscriptionRepository.decrementUseForReservationExpiration(reservationIds);
+            subscriptionRepository.decrementUse(reservationIds);
             extensionManager.handleReservationsExpiredForEvent(event, reservationIds);
             billingDocumentRepository.deleteForReservations(reservationIds, eventId);
             transactionRepository.deleteForReservations(reservationIds);
@@ -1559,7 +1559,7 @@ public class TicketReservationManager {
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
-        subscriptionRepository.decrementUseForReservationExpiration(List.of(reservationId));
+        subscriptionRepository.decrementUse(List.of(reservationId));
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
         purchaseContext.event().ifPresent(event -> {
             int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
@@ -2486,5 +2486,16 @@ public class TicketReservationManager {
 
         //
         return true;
+    }
+
+    public boolean removeSubscription(TicketReservation reservation) {
+        var reservationId = reservation.getId();
+        if (ticketReservationRepository.hasSubscriptionApplied(reservationId)) {
+            ticketReservationRepository.applySubscription(reservationId, null);
+            subscriptionRepository.decrementUse(List.of(reservationId));
+            return true;
+        } else {
+            return false;
+        }
     }
 }
