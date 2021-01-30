@@ -2491,8 +2491,8 @@ public class TicketReservationManager {
     public boolean removeSubscription(TicketReservation reservation) {
         var reservationId = reservation.getId();
         if (ticketReservationRepository.hasSubscriptionApplied(reservationId)) {
-            ticketReservationRepository.applySubscription(reservationId, null);
             subscriptionRepository.decrementUse(List.of(reservationId));
+            ticketReservationRepository.applySubscription(reservationId, null);
             return true;
         } else {
             return false;
