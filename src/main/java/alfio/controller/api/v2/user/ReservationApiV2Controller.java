@@ -653,7 +653,13 @@ public class ReservationApiV2Controller {
             case SUBSCRIPTION:
                 res = getEventReservationPair(reservationId).map(et -> {
                     //TODO validate here
-                    return (bindingResult.hasErrors()) ? false : ticketReservationManager.applySubscriptionCode(et.getRight(), reservationCodeForm.getCode(), reservationCodeForm.getEmail(), reservationCodeForm.getAmount());
+                    var code = reservationCodeForm.getCode();
+                    var email = reservationCodeForm.getEmail();
+                    if (!subscriptionRepository.existSubscriptionByCodeAndEmail(code, email)) {
+                        bindingResult.reject("subscription.code.not.found");
+                    }
+                    var subscriptionId = subscriptionRepository.getSubscriptionIdByCodeAndEmail(code, email);
+                    return (bindingResult.hasErrors()) ? false : ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
                 }).orElse(false);
                 break;
             default: throw new IllegalStateException(reservationCodeForm.getType() + " not supported");

@@ -198,8 +198,11 @@ public interface SubscriptionRepository {
     @Query("select exists (select id from subscription_event where event_id_fk  = :eventId)")
     boolean hasLinkedSubscription(@Bind("eventId") int eventId);
 
-    @Query("select * from subscription where code = :code and email_address = :email for update")
-    Subscription findSubscriptionByCodeAndEmailForUpdate(@Bind("code") String code, @Bind("email") String email);
+    @Query("select * from subscription where id = :id for update")
+    Subscription findSubscriptionByIDForUpdate(@Bind("id") UUID id);
+
+    @Query("select exists (select * from subscription where code = :code and email_address = :email)")
+    boolean existSubscriptionByCodeAndEmail(@Bind("code") String code, @Bind("email") String email);
 
     @Query("update subscription set usage_count = usage_count + 1 where id = :id")
     int increaseUse(@Bind("id") UUID id);
@@ -209,4 +212,7 @@ public interface SubscriptionRepository {
 
     @Query("update subscription set usage_count = (case when usage_count > 0 then usage_count - 1 else usage_count end) where id in (select subscription_id_fk from tickets_reservation where id in (:reservationIds) and subscription_id_fk is not null)")
     int decrementUse(@Bind("reservationIds") List<String> reservationIds);
+
+    @Query("select id from subscription where code = :code and email_address = :email")
+    UUID getSubscriptionIdByCodeAndEmail(@Bind("code") String code, @Bind("email") String email);
 }

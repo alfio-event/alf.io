@@ -2459,12 +2459,12 @@ public class TicketReservationManager {
         }
     }
 
-    public boolean applySubscriptionCode(TicketReservation reservation, String code, String email, int amount) {
+    public boolean applySubscriptionCode(TicketReservation reservation, UUID subscriptionId, int amount) {
 
         if (ticketReservationRepository.hasSubscriptionApplied(reservation.getId())) {
             return false;
         }
-        Subscription subscription = subscriptionRepository.findSubscriptionByCodeAndEmailForUpdate(code, email);
+        Subscription subscription = subscriptionRepository.findSubscriptionByIDForUpdate(subscriptionId);
         var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
 
         if (!subscription.isValid(subscriptionDescriptor)) {
