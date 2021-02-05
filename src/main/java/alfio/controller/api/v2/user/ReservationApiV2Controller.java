@@ -658,8 +658,14 @@ public class ReservationApiV2Controller {
                     if (!subscriptionRepository.existSubscriptionByCodeAndEmail(code, email)) {
                         bindingResult.reject("subscription.code.not.found");
                     }
+
+                    if (bindingResult.hasErrors()) {
+                        return false;
+                    }
+
                     var subscriptionId = subscriptionRepository.getSubscriptionIdByCodeAndEmail(code, email);
-                    return (bindingResult.hasErrors()) ? false : ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
+                    var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
+                    return ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
                 }).orElse(false);
                 break;
             default: throw new IllegalStateException(reservationCodeForm.getType() + " not supported");

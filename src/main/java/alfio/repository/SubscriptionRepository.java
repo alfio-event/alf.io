@@ -141,6 +141,9 @@ public interface SubscriptionRepository {
     @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where reservation_id_fk = :reservationId)")
     Optional<SubscriptionDescriptor> findDescriptorByReservationId(@Bind("reservationId") String reservationId);
 
+    @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where id = :id)")
+    SubscriptionDescriptor findDescriptorBySubscriptionId(@Bind("id") UUID subscriptionId);
+
     @Query("select * from subscription_descriptor_statistics where sd_organization_id_fk = :organizationId")
     List<SubscriptionDescriptorWithStatistics> findAllWithStatistics(@Bind("organizationId") int organizationId);
 
