@@ -23,6 +23,7 @@ import alfio.model.EventAndOrganizationId;
 import alfio.model.VatDetail;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.AuditingRepository;
+import alfio.util.ItalianTaxIdValidator;
 import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -66,7 +67,8 @@ public class EuVatChecker {
         return res.map(detail -> {
            if(!detail.isValid()) {
                String organizerCountry = organizerCountry(configurationManager, event);
-               boolean valid = extensionManager.handleTaxIdValidation(event.getId(), vatNr, organizerCountry);
+               boolean valid = ("IT".equals(organizerCountry) && "IT".equals(countryCode) && ItalianTaxIdValidator.validateVatId(vatNr))
+                   || extensionManager.handleTaxIdValidation(event.getId(), vatNr, organizerCountry);
                return new VatDetail(detail.getVatNr(), detail.getCountry(), valid, detail.getName(), detail.getAddress(), VatDetail.Type.FORMAL, false);
            } else {
                return detail;
@@ -162,6 +164,5 @@ public class EuVatChecker {
     static boolean validationEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
         return configurationManager.getFor(ConfigurationKeys.ENABLE_VIES_VALIDATION, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault();
     }
-
 
 }

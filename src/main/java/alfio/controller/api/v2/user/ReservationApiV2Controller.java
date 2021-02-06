@@ -70,6 +70,7 @@ import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.unitToCents;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RestController
 @AllArgsConstructor
@@ -148,7 +149,7 @@ public class ReservationApiV2Controller {
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
 
             var italianInvoicing = additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing() == null ?
-                new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(null, null, null, null) :
+                new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(null, null, null, null, false) :
                 additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing();
             //
 
@@ -357,13 +358,13 @@ public class ReservationApiV2Controller {
             ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), event.getVatStatus(),
                 reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
             if(contactAndTicketsForm.isBusiness()) {
-                checkAndApplyVATRules(eventName, reservationId, contactAndTicketsForm, bindingResult, event);
+                checkAndApplyVATRules(reservationId, contactAndTicketsForm, bindingResult, event);
             }
 
             //persist data
             ticketReservationManager.updateReservation(reservationId, customerName, contactAndTicketsForm.getEmail(),
                 contactAndTicketsForm.getBillingAddressCompany(), contactAndTicketsForm.getBillingAddressLine1(), contactAndTicketsForm.getBillingAddressLine2(),
-                contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getVatCountryCode(),
+                contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getBillingAddressState(), contactAndTicketsForm.getVatCountryCode(),
                 contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
                 contactAndTicketsForm.getAddCompanyBillingDetails(), contactAndTicketsForm.canSkipVatNrCheck(), false, locale);
 
@@ -405,7 +406,8 @@ public class ReservationApiV2Controller {
             return new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
                 contactAndTicketsForm.getItalyEInvoicingReferenceType(),
                 contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
-                contactAndTicketsForm.getItalyEInvoicingReferencePEC());
+                contactAndTicketsForm.getItalyEInvoicingReferencePEC(),
+                contactAndTicketsForm.isItalyEInvoicingSplitPayment());
         }
         return null;
     }
@@ -423,7 +425,7 @@ public class ReservationApiV2Controller {
         }
     }
 
-    private void checkAndApplyVATRules(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Event event) {
+    private void checkAndApplyVATRules(String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Event event) {
         // VAT handling
         String country = contactAndTicketsForm.getVatCountryCode();
 
@@ -433,34 +435,42 @@ public class ReservationApiV2Controller {
         }
 
         try {
-            Optional<VatDetail> vatDetail = eventRepository.findOptionalByShortName(eventName)
-                .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
-                .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(e.getKey().getVatStatus()))
-                .filter(e -> vatChecker.isReverseChargeEnabledFor(e.getKey()))
-                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, e.getKey()));
+            var optionalReservation = ticketReservationRepository.findOptionalReservationById(reservationId);
+            Optional<VatDetail> vatDetail = optionalReservation
+                .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(event.getVatStatus()))
+                .filter(e -> vatChecker.isReverseChargeEnabledFor(event))
+                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, event));
 
 
-            vatDetail.ifPresent(vatValidation -> {
+            if(vatDetail.isPresent()) {
+                var vatValidation = vatDetail.get();
                 if (!vatValidation.isValid()) {
                     bindingResult.rejectValue("vatNr", "error.STEP_2_INVALID_VAT");
                 } else {
-                    var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
-                    var currencyCode = reservation.getCurrencyCode();
+                    var reservation = optionalReservation.get();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
-                    var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
-                    var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
-                    var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
-                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(event.getId()), event);
-                    ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
-                        unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
-                        reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
-                        country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
+                    updateBillingData(contactAndTicketsForm, event, country, trimToNull(vatValidation.getVatNr()), reservation, vatStatus);
                     vatChecker.logSuccessfulValidation(vatValidation, reservationId, event.getId());
                 }
-            });
+            } else if(optionalReservation.isPresent() && contactAndTicketsForm.isItalyEInvoicingSplitPayment()) {
+                var reservation = optionalReservation.get();
+                var vatStatus = event.getVatStatus() == INCLUDED ? INCLUDED_NOT_CHARGED : NOT_INCLUDED_NOT_CHARGED;
+                updateBillingData(contactAndTicketsForm, event, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, vatStatus);
+            }
         } catch (IllegalStateException ise) {//vat checker failure
             bindingResult.rejectValue("vatNr", "error.vatVIESDown");
         }
+    }
+
+    private void updateBillingData(ContactAndTicketsForm contactAndTicketsForm, Event event, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
+        var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
+        var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservation.getId());
+        var tickets = ticketReservationManager.findTicketsInReservation(reservation.getId());
+        var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(event.getId()), event);
+        var currencyCode = reservation.getCurrencyCode();
+        ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
+            unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
+            currencyCode, vatNr, country, contactAndTicketsForm.isInvoiceRequested(), reservation.getId());
     }
 
     private Optional<Pair<Event, TicketReservation>> getReservation(String eventName, String reservationId) {

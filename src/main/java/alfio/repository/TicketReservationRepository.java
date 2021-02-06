@@ -190,6 +190,7 @@ public interface TicketReservationRepository {
         " billing_address_line2 = :billingAddressLine2, " +
         " billing_address_zip = :billingAddressZip, " +
         " billing_address_city = :billingAddressCity, " +
+        " billing_address_state = :billingAddressState, " +
         " add_company_billing_details = :addCompanyBillingDetails, " +
         " skip_vat_nr = :skipVatNr, " +
         " customer_reference = :customerReference, "+
@@ -205,6 +206,7 @@ public interface TicketReservationRepository {
                                               @Bind("billingAddressLine2") String billingAddressLine2,
                                               @Bind("billingAddressZip") String billingAddressZip,
                                               @Bind("billingAddressCity") String billingAddressCity,
+                                              @Bind("billingAddressState") String billingAddressState,
                                               @Bind("completeBillingAddress") String completeBillingAddress,
                                               @Bind("vatCountry") String vatCountry,
                                               @Bind("vatNr") String vatNr,
@@ -216,7 +218,7 @@ public interface TicketReservationRepository {
 
 
     @Query("select billing_address_company, billing_address_line1, billing_address_line2, " +
-        " billing_address_zip, billing_address_city, validated_for_overview, skip_vat_nr, " +
+        " billing_address_zip, billing_address_city, billing_address_state, validated_for_overview, skip_vat_nr, " +
         " add_company_billing_details, invoicing_additional_information, vat_country, vat_nr " +
         " from tickets_reservation where id = :id")
     TicketReservationAdditionalInfo getAdditionalInfo(@Bind("id") String reservationId);
@@ -252,7 +254,7 @@ public interface TicketReservationRepository {
     @Query("select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id")
     Integer countTicketsInReservationNoCategories(@Bind("reservationId") String reservationId);
 
-    @Query("select billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, vat_nr, vat_country, invoicing_additional_information from tickets_reservation where id = :reservationId")
+    @Query("select billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, billing_address_state, vat_nr, vat_country, invoicing_additional_information from tickets_reservation where id = :reservationId")
     BillingDetails getBillingDetailsForReservation(@Bind("reservationId") String reservationId);
 
     @Query("update tickets_reservation set invoicing_additional_information = :info::json where id = :id")

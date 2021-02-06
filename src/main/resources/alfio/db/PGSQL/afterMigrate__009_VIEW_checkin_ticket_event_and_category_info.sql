@@ -74,6 +74,7 @@ create view checkin_ticket_event_and_category_info as (
              tr.billing_address_line1 tr_billing_address_line1,
              tr.billing_address_line2 tr_billing_address_line2,
              tr.billing_address_city tr_billing_address_city,
+             tr.billing_address_state tr_billing_address_state,
              tr.billing_address_zip tr_billing_address_zip,
              tr.invoicing_additional_information tr_invoicing_additional_information,
 

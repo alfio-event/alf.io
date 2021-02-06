@@ -70,6 +70,7 @@ public class TicketReservationWithTransaction {
                                             @Column("tr_billing_address_line1") String billingAddressLine1,
                                             @Column("tr_billing_address_line2") String billingAddressLine2,
                                             @Column("tr_billing_address_city") String billingAddressCity,
+                                            @Column("tr_billing_address_state") String billingAddressState,
                                             @Column("tr_billing_address_zip") String billingAddressZip,
                                             @Column("tr_invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
 
@@ -105,7 +106,7 @@ public class TicketReservationWithTransaction {
             usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference,
             reservationRegistrationTimestamp, reservationSrcPriceCts, reservationFinalPriceCts, reservationVatCts, reservationDiscountCts, reservationCurrencyCode);
 
-        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr, invoicingAdditionalInfo);
+        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, billingAddressState, vatCountryCode, vatNr, invoicingAdditionalInfo);
 
         if(btId != null) {
             this.transaction = new Transaction(btId, transactionId, paymentId, reservationId,

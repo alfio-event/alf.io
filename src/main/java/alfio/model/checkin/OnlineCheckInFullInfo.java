@@ -93,6 +93,7 @@ public class OnlineCheckInFullInfo {
                                  @Column("tr_billing_address_line1") String billingAddressLine1,
                                  @Column("tr_billing_address_line2") String billingAddressLine2,
                                  @Column("tr_billing_address_city") String billingAddressCity,
+                                 @Column("tr_billing_address_state") String billingAddressState,
                                  @Column("tr_billing_address_zip") String billingAddressZip,
                                  @Column("tr_invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
 
@@ -144,7 +145,7 @@ public class OnlineCheckInFullInfo {
                 ticketValidityStart, ticketValidityEnd, currencyCode, ordinal, ticketCheckInStrategy, ticketAccessType);
 
         this.categoryMetadata = categoryMetadata;
-        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountry, vatNr, invoicingAdditionalInfo);
+        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, billingAddressState, vatCountry, vatNr, invoicingAdditionalInfo);
         this.eventWithCheckInInfo = new EventWithCheckInInfo(eventId, eventFormat, eventShortName, eventDisplayName, eventStartTs, eventEndTs, timezone, eventPrivateKey, eventOrgId, eventMetadata);
     }
 }

@@ -27,6 +27,7 @@ public class BillingDetails {
     private final String addressLine2;
     private final String zip;
     private final String city;
+    private final String state;
     private final String country;
     private final String taxId;
     private final TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo;
@@ -36,6 +37,7 @@ public class BillingDetails {
                           @Column("billing_address_line2") String addressLine2,
                           @Column("billing_address_zip") String zip,
                           @Column("billing_address_city") String city,
+                          @Column("billing_address_state") String state,
                           @Column("vat_country") String country,
                           @Column("vat_nr") String taxId,
                           @Column("invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo) {
@@ -45,6 +47,7 @@ public class BillingDetails {
         this.addressLine2 = addressLine2;
         this.zip = zip;
         this.city = city;
+        this.state = state;
         this.country = country;
         this.taxId = taxId;
         this.invoicingAdditionalInfo = invoicingAdditionalInfo;
