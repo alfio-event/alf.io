@@ -176,6 +176,9 @@
                     {{/orderSummary.displayVat}}
                 {{/orderSummary.free}}
                 <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}}</th><th class="text-right strong">{{event.currency}} {{orderSummary.totalPrice}}</th></tr>
+                {{#orderSummary.displaySplitPaymentNote}}
+                    <tr><th colspan="4" class="strong no-padding">{{#i18n}}invoice.vat-not-added [{{vatTranslation}}]{{/i18n}}</th></tr>
+                {{/orderSummary.displaySplitPaymentNote}}
             </tfoot>
         </table>
 
