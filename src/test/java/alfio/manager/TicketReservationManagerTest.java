@@ -255,7 +255,7 @@ class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
-        when(extensionManager.handleInvoiceGeneration(any(), any(), any())).thenReturn(Optional.empty());
+        when(extensionManager.handleInvoiceGeneration(any(), any(), any(), anyMap())).thenReturn(Optional.empty());
         when(messageSource.getMessage(eq("ticket-has-changed-owner-subject"), any(), any())).thenReturn("subject");
         when(messageSource.getMessage(eq("reminder.ticket-not-assigned.subject"), any(), any())).thenReturn("subject");
         when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(), anyString(), any(), anyInt())).thenReturn(new AffectedRowCountAndKey<>(1, 1L));
@@ -1229,9 +1229,9 @@ class TicketReservationManagerTest {
     @Test
     void testBuildCompleteBillingAddress() {
         CustomerName customerName = new CustomerName(null, "First", "Last", true);
-        assertEquals("First Last\nline1\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "   ", "line1", null, "zip", "city", "CH", Locale.ENGLISH));
-        assertEquals("Company\nFirst Last\nline1\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", null, "zip", "city", "CH", Locale.ENGLISH));
-        assertEquals("Company\nFirst Last\nline1\nline2\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", "line2", "zip", "city", "CH", Locale.ENGLISH));
+        assertEquals("First Last\nline1\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "   ", "line1", null, "zip", "city", "state", "CH", Locale.ENGLISH));
+        assertEquals("Company\nFirst Last\nline1\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", null, "zip", "city", "state", "CH", Locale.ENGLISH));
+        assertEquals("Company\nFirst Last\nline1\nline2\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", "line2", "zip", "city", "state", "CH", Locale.ENGLISH));
     }
 
     @Test
