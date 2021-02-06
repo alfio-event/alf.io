@@ -95,4 +95,8 @@ public class OrderSummary {
     public String getDescriptionForPayment() {
         return summary.stream().filter(r -> !r.isDiscount()).map(SummaryRow::getDescriptionForPayment).collect(Collectors.joining(", "));
     }
+
+    public boolean getDisplaySplitPaymentNote() {
+        return !free && (vatStatus == PriceContainer.VatStatus.INCLUDED_NOT_CHARGED || vatStatus == PriceContainer.VatStatus.NOT_INCLUDED_NOT_CHARGED);
+    }
 }
