@@ -50,6 +50,7 @@ public class TicketReservationInvoicingAdditionalInfo {
         private final ReferenceType referenceType;
         private final String addresseeCode;
         private final String pec;
+        private final boolean splitPayment;
 
         public String getReferenceTypeAsString() {
             return referenceType == null ? "" : referenceType.toString();

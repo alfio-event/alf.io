@@ -157,7 +157,9 @@ public class BillingDocumentManager {
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
         model.put("euBusiness", euBusiness);
         model.put("publicId", configurationManager.getPublicReservationID(event, reservation));
-        model.put("invoicingAdditionalInfo", ticketReservationRepository.getAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
+        var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservation.getId());
+        model.put("invoicingAdditionalInfo", additionalInfo.getInvoicingAdditionalInfo());
+        model.put("billingDetails", additionalInfo.getBillingDetails());
         return model;
     }
 }

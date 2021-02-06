@@ -626,7 +626,8 @@ public class TicketReservationManager {
         }
 
         String reservationId = spec.getReservationId();
-        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, ticketReservationRepository.getBillingDetailsForReservation(reservationId))
+        var billingDetails = ticketReservationRepository.getBillingDetailsForReservation(reservationId);
+        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, billingDetails, Map.of("organization", organizationRepository.getById(spec.getEvent().getOrganizationId())))
             .flatMap(invoiceGeneration -> Optional.ofNullable(trimToNull(invoiceGeneration.getInvoiceNumber())));
 
         optionalInvoiceNumber.ifPresent(invoiceNumber -> {
@@ -1923,7 +1924,7 @@ public class TicketReservationManager {
 
     public void updateReservation(String reservationId, CustomerName customerName, String email,
                                   String billingAddressCompany, String billingAddressLine1, String billingAddressLine2,
-                                  String billingAddressZip, String billingAddressCity, String vatCountryCode, String customerReference,
+                                  String billingAddressZip, String billingAddressCity, String billingAddressState, String vatCountryCode, String customerReference,
                                   String vatNr,
                                   boolean isInvoiceRequested,
                                   boolean addCompanyBillingDetails,
@@ -1938,13 +1939,14 @@ public class TicketReservationManager {
             billingAddressLine2,
             billingAddressZip,
             billingAddressCity,
+            billingAddressState,
             vatCountryCode,
             locale);
 
         ticketReservationRepository.updateTicketReservationWithValidation(reservationId,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(),
             email, billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip,
-            billingAddressCity, completeBillingAddress, vatCountryCode, vatNr, isInvoiceRequested, addCompanyBillingDetails, skipVatNr,
+            billingAddressCity, billingAddressState, completeBillingAddress, vatCountryCode, vatNr, isInvoiceRequested, addCompanyBillingDetails, skipVatNr,
             customerReference,
             validated);
     }
@@ -1955,6 +1957,7 @@ public class TicketReservationManager {
                                               String billingAddressLine2,
                                               String billingAddressZip,
                                               String billingAddressCity,
+                                              String billingAddressState,
                                               String countryCode,
                                               Locale locale) {
         String companyName = stripToNull(billingAddressCompany);
@@ -1971,7 +1974,7 @@ public class TicketReservationManager {
                 .orElse(null);
         }
 
-        return Arrays.stream(stripAll(defaultString(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity), stripToNull(country)))
+        return Arrays.stream(stripAll(defaultString(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity) + " " + stripToEmpty(billingAddressState), stripToNull(country)))
             .filter(Predicate.not(StringUtils::isEmpty))
             .collect(joining("\n"));
     }

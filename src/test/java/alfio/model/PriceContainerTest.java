@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,10 +47,10 @@ public class PriceContainerTest {
                 when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT, PromoCodeDiscount.DiscountType.PERCENTAGE);
 
                 vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("30.00"), vatStatus, promoCodeDiscount);
-                assertEquals(String.format("vatStatus: %s", vatStatus.name()), new BigDecimal("10.00"), vs.getFinalPrice());
+                assertEquals(new BigDecimal("10.00"), vs.getFinalPrice(), String.format("vatStatus: %s", vatStatus.name()));
 
                 vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), vatStatus, promoCodeDiscount);
-                assertEquals(String.format("vatStatus: %s", vatStatus.name()), new BigDecimal("9.00"), vs.getFinalPrice());
+                assertEquals(new BigDecimal("9.00"), vs.getFinalPrice(), String.format("vatStatus: %s", vatStatus.name()));
             });
     }
 
@@ -147,6 +147,17 @@ public class PriceContainerTest {
     void totalPriceZeroIfVatStatusIsNull() {
         PriceContainerImpl vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), null);
         assertEquals(BigDecimal.ZERO, vs.getFinalPrice());
+    }
+
+    @Test
+    void totalPriceDoesNotIncludeVatIfSplitPayment() {
+        PriceContainerImpl vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("10.00"), PriceContainer.VatStatus.INCLUDED_NOT_CHARGED);
+        assertEquals(new BigDecimal("10.00"), vs.getFinalPrice());
+        assertEquals(new BigDecimal("1.00"), vs.getVAT());
+
+        vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("10.00"), PriceContainer.VatStatus.NOT_INCLUDED_NOT_CHARGED);
+        assertEquals(new BigDecimal("10.00"), vs.getFinalPrice());
+        assertEquals(new BigDecimal("1.00"), vs.getVAT());
     }
 
     private Stream<Pair<Integer, PriceContainer>> generateTestStream(PriceContainer.VatStatus vatStatus) {

@@ -17,10 +17,10 @@
 package alfio.model;
 
 import alfio.model.support.JSONData;
-import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Getter
@@ -31,6 +31,7 @@ public class TicketReservationAdditionalInfo {
     private final String billingAddressLine2;
     private final String billingAddressZip;
     private final String billingAddressCity;
+    private final String billingAddressState;
     private final String billingAddressCountry;
     private final String vatNr;
     private final Boolean validated;
@@ -43,6 +44,7 @@ public class TicketReservationAdditionalInfo {
                                            @Column("billing_address_line2") String billingAddressLine2,
                                            @Column("billing_address_zip") String billingAddressZip,
                                            @Column("billing_address_city") String billingAddressCity,
+                                           @Column("billing_address_state") String billingAddressState,
                                            @Column("validated_for_overview") Boolean validated,
                                            @Column("skip_vat_nr") Boolean skipVatNr,
                                            @Column("add_company_billing_details") Boolean addCompanyBillingDetails,
@@ -54,10 +56,11 @@ public class TicketReservationAdditionalInfo {
         this.billingAddressLine2 = billingAddressLine2;
         this.billingAddressZip = billingAddressZip;
         this.billingAddressCity = billingAddressCity;
+        this.billingAddressState = billingAddressState;
         this.addCompanyBillingDetails = addCompanyBillingDetails;
         this.validated = validated;
         this.skipVatNr = skipVatNr;
-        this.invoicingAdditionalInfo = Optional.ofNullable(invoicingAdditionalInformation).orElseGet(() -> new TicketReservationInvoicingAdditionalInfo(null));
+        this.invoicingAdditionalInfo = Objects.requireNonNullElseGet(invoicingAdditionalInformation, () -> new TicketReservationInvoicingAdditionalInfo(null));
         this.billingAddressCountry = vatCountry;
         this.vatNr = vatNr;
     }
@@ -77,6 +80,7 @@ public class TicketReservationAdditionalInfo {
             billingAddressLine2,
             billingAddressZip,
             billingAddressCity,
+            billingAddressState,
             billingAddressCountry,
             vatNr,
             invoicingAdditionalInfo);

@@ -38,7 +38,11 @@ public interface PriceContainer {
         INCLUDED(includedVatExtractor, UnaryOperator.identity()),
         NOT_INCLUDED(notIncludedVatCalculator, UnaryOperator.identity()),
         INCLUDED_EXEMPT(includedVatExtractor, BigDecimal::negate),
-        NOT_INCLUDED_EXEMPT((price, vatPercentage) -> BigDecimal.ZERO, UnaryOperator.identity());
+        NOT_INCLUDED_EXEMPT((price, vatPercentage) -> BigDecimal.ZERO, UnaryOperator.identity()),
+        // The following two are dedicated for handling italian-specific cases, "split payment"
+        // VAT has to be shown on the invoice, but not charged
+        INCLUDED_NOT_CHARGED(includedVatExtractor, UnaryOperator.identity()),
+        NOT_INCLUDED_NOT_CHARGED(notIncludedVatCalculator, UnaryOperator.identity());
 
         private final UnaryOperator<BigDecimal> transformer;
         private final BinaryOperator<BigDecimal> extractor;
@@ -114,10 +118,14 @@ public interface PriceContainer {
         }
         final BigDecimal price = centsToUnit(getSrcPriceCts(), getCurrencyCode());
         BigDecimal discountedPrice = price.subtract(getAppliedDiscount());
-        if(vatStatus != VatStatus.INCLUDED) {
-            return discountedPrice.add(getVAT());
-        } else {
-            return discountedPrice;
+        switch(vatStatus) {
+            case INCLUDED:
+            case NOT_INCLUDED_NOT_CHARGED:
+                return discountedPrice;
+            case INCLUDED_NOT_CHARGED:
+                return discountedPrice.subtract(getVAT());
+            default:
+                return discountedPrice.add(getVAT());
         }
     }
 

@@ -22,6 +22,7 @@ import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.ErrorsCode;
+import alfio.util.ItalianTaxIdValidator;
 import alfio.util.Validator;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -62,6 +63,7 @@ public class ContactAndTicketsForm implements Serializable {
     private String billingAddressLine2;
     private String billingAddressZip;
     private String billingAddressCity;
+    private String billingAddressState;
 
     private Boolean addCompanyBillingDetails;
     private Boolean skipVatNr;
@@ -72,6 +74,8 @@ public class ContactAndTicketsForm implements Serializable {
     private ItalianEInvoicing.ReferenceType italyEInvoicingReferenceType;
     private String italyEInvoicingReferenceAddresseeCode;
     private String italyEInvoicingReferencePEC;
+    private boolean italyEInvoicingSplitPayment;
+
     //
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
@@ -165,6 +169,18 @@ public class ContactAndTicketsForm implements Serializable {
             }
             if (ItalianEInvoicing.ReferenceType.PEC == italyEInvoicingReferenceType) {
                 ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferencePEC", ErrorsCode.EMPTY_FIELD);
+            }
+
+            if(billingAddressState == null || billingAddressState.strip().length() != 2) {
+                bindingResult.rejectValue("billingAddressState", "error.length", new Object[] { 2 }, null);
+            }
+
+            if(StringUtils.isNotEmpty(vatNr) && ItalianTaxIdValidator.validateVatId(vatNr)) {
+                bindingResult.rejectValue("vatNr", "reservation-page.vat-validation-error");
+            }
+
+            if(!ItalianTaxIdValidator.validateFiscalCode(italyEInvoicingFiscalCode)) {
+                bindingResult.rejectValue("italyEInvoicingFiscalCode", "error.restrictedValue");
             }
 
         }
