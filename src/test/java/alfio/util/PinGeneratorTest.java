@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -37,6 +38,15 @@ class PinGeneratorTest {
         assertTrue(PinGenerator.isPinValid(pin));
         var partialUuid = PinGenerator.pinToPartialUuid(pin);
         assertTrue(uuid.indexOf(partialUuid) == 0);
+    }
+
+    @Test
+    void checkValue() {
+        assertEquals("CEURQ3", PinGenerator.uuidToPin("0cea7af7-899d-4de4-9ba1-414469b7d69c"));
+        assertEquals("U96U6T", PinGenerator.uuidToPin("c09644d4-3694-4183-ba85-77a7a5f77829"));
+        assertEquals("AAAAAA", PinGenerator.uuidToPin("00000000-0000-0000-0000-000000000000"));
+        assertEquals("4TM34T", PinGenerator.uuidToPin("ffffffff-3694-4183-ba85-77a7a5f77829"));
+        assertEquals("4TM34T", PinGenerator.uuidToPin("ffffffff-ffff-4183-ba85-77a7a5f77829"));
     }
 
     @ParameterizedTest
