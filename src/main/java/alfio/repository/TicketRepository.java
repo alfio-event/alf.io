@@ -167,9 +167,6 @@ public interface TicketRepository {
     @Query("select * from ticket where uuid = :uuid for update")
     Optional<Ticket> findByUUIDForUpdate(@Bind("uuid") String uuid);
 
-    @Query("select count(id) from ticket where event_id = :eventId and status = :status and uuid like ':uuid%'")
-    Integer countByEventIdPartialUUIDAndStatus(@Bind("eventId") int eventId, @Bind("uuid") String partialUUID, @Bind("status") Ticket.TicketStatus status);
-
     @Query("select * from ticket where event_id = :eventId and status = :status and uuid like :uuid for update")
     List<Ticket> findByEventIdAndPartialUUIDForUpdate(@Bind("eventId") int eventId, @Bind("uuid") String partialUUID, @Bind("status") Ticket.TicketStatus status);
 
