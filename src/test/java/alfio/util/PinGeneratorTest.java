@@ -19,7 +19,6 @@ package alfio.util;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static alfio.util.PinGenerator.UUID_PORTION_LENGTH;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PinGeneratorTest {
@@ -37,7 +36,7 @@ class PinGeneratorTest {
         var pin = PinGenerator.uuidToPin(uuid);
         assertTrue(PinGenerator.isPinValid(pin));
         var partialUuid = PinGenerator.pinToPartialUuid(pin);
-        assertEquals(uuid.substring(0,UUID_PORTION_LENGTH), partialUuid);
+        assertTrue(uuid.indexOf(partialUuid) == 0);
     }
 
     @ParameterizedTest

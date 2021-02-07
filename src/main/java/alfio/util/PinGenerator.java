@@ -29,7 +29,6 @@ public class PinGenerator {
 
     private static final String ALLOWED_CHARS = "ACDEFGHJKLMNPQRTUVWXY34679";
     private static final Pattern VALIDATION_PATTERN = Pattern.compile("^["+ALLOWED_CHARS+"]+$");
-    static final int UUID_PORTION_LENGTH = 7;
     private static final int PIN_LENGTH = 6;
 
 
@@ -70,38 +69,15 @@ public class PinGenerator {
     }
 
     public static String uuidToPin(String uuid) {
-        long src = Long.parseLong(uuid.replace("-", "").substring(0, UUID_PORTION_LENGTH), 16);
-        long chars = ALLOWED_CHARS.length();
-        var pin = new StringBuilder();
-        do {
-            long remainder = src % chars;
-            pin.append(ALLOWED_CHARS.charAt((int)remainder));
-            src /= chars;
-        } while (src != 0);
-
-        while(pin.length() < PIN_LENGTH) {
-            pin.append(ALLOWED_CHARS.charAt(0));
-        }
-
-        return pin.reverse().toString();
+        return uuidToPin(uuid, PIN_LENGTH);
     }
 
     public static String pinToPartialUuid(String pin) {
-        Assert.isTrue(isPinValid(pin), "the given PIN is not valid");
-        var uppercasePin = Objects.requireNonNull(pin).strip().toUpperCase();
-        long base = ALLOWED_CHARS.length();
-        long num = 0;
-        for (int i = 0; i < pin.length(); i++) {
-            char c = uppercasePin.charAt(pin.length() - 1 - i);
-            num += (long) ALLOWED_CHARS.indexOf(c) * (long) Math.pow(base, i);
-        }
-        return StringUtils.leftPad(Long.toHexString(num), UUID_PORTION_LENGTH, '0');
+        return pinToPartialUuid(pin, PIN_LENGTH);
     }
 
     public static boolean isPinValid(String pin) {
-        return pin != null
-            && pin.strip().length() == PIN_LENGTH
-            && VALIDATION_PATTERN.matcher(pin.toUpperCase()).matches();
+        return isPinValid(pin, PIN_LENGTH);
     }
 
 }
