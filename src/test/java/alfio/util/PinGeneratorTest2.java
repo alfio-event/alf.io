@@ -19,10 +19,9 @@ package alfio.util;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static alfio.util.PinGenerator.UUID_PORTION_LENGTH;
 import static org.junit.jupiter.api.Assertions.*;
 
-class PinGeneratorTest {
+public class PinGeneratorTest2 {
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -30,14 +29,17 @@ class PinGeneratorTest {
         "c09644d4-3694-4183-ba85-77a7a5f77829",
         "00000000-0000-0000-0000-000000000000",
         "ffffffff-3694-4183-ba85-77a7a5f77829",
-        "ffffffff-ffff-4183-ba85-77a7a5f77829"
+        "ffffffff-ffff-4183-ba85-77a7a5f77829",
+        "ffffffff-ffff-ffff-ffff-ffffffffffff"
     })
     void uuidToPinAndBack(String uuid) {
-        // we convert the first 7 characters
-        var pin = PinGenerator.uuidToPin(uuid);
-        assertTrue(PinGenerator.isPinValid(pin));
-        var partialUuid = PinGenerator.pinToPartialUuid(pin);
-        assertEquals(uuid.substring(0,UUID_PORTION_LENGTH), partialUuid);
+        for (int pinLength = 1; pinLength < 32; pinLength++) {
+            uuid = uuid.replace("-", "");
+            var pin = PinGenerator.uuidToPin(uuid, pinLength);
+            assertTrue(PinGenerator.isPinValid(pin, pinLength));
+            var partialUuid = PinGenerator.pinToPartialUuid(pin, pinLength);
+            assertTrue(uuid.indexOf(partialUuid) == 0);
+        }
     }
 
     @ParameterizedTest
