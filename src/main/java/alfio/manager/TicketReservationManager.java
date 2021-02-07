@@ -869,18 +869,26 @@ public class TicketReservationManager {
 
     @Transactional
     public void issueCreditNoteForReservation(Event event, String reservationId, String username) {
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        issueCreditNoteForReservation(event, ticketReservationRepository.findReservationById(reservationId), username, true);
+    }
+
+    @Transactional
+    public void issueCreditNoteForReservation(Event event, TicketReservation reservation, String username, boolean sendEmail) {
+        var reservationId = reservation.getId();
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CREDIT_NOTE_ISSUED.toString());
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
         Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
         BillingDocument billingDocument = billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummaryForReservation(reservation, event));
-        notificationManager.sendSimpleEmail(event,
-            reservationId,
-            reservation.getEmail(),
-            getReservationEmailSubject(event, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
-            () -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
-            generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), billingDocument.getModel(), CREDIT_NOTE)
-        );
+
+        if(sendEmail) {
+            notificationManager.sendSimpleEmail(event,
+                reservationId,
+                reservation.getEmail(),
+                getReservationEmailSubject(event, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
+                () -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
+                generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), billingDocument.getModel(), CREDIT_NOTE)
+            );
+        }
     }
 
     @Transactional(readOnly = true)

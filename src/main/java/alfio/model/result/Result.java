@@ -97,11 +97,20 @@ public class Result<T> {
         }
 
         public Result<T> build(Supplier<T> valueSupplier) {
-            Optional<Pair<ConditionValidator, ErrorCode>> validationError = this.validators.stream()
-                .filter(p -> !p.getLeft().isValid())
-                .findFirst();
+            Optional<Pair<ConditionValidator, ErrorCode>> validationError = performValidation();
             return validationError.map(p -> Result.<T>error(Collections.singletonList(p.getRight())))
                 .orElseGet(() -> Result.success(valueSupplier.get()));
+        }
+
+        public Result<T> buildAndEvaluate(Supplier<Result<T>> resultSupplier) {
+            return performValidation().map(p -> Result.<T>error(Collections.singletonList(p.getRight())))
+                .orElseGet(resultSupplier);
+        }
+
+        private Optional<Pair<ConditionValidator, ErrorCode>> performValidation() {
+            return this.validators.stream()
+                .filter(p -> !p.getLeft().isValid())
+                .findFirst();
         }
 
     }
