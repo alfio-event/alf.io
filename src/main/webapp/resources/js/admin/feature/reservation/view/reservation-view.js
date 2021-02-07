@@ -62,10 +62,7 @@
             'CREDIT_NOTE': 'Credit note'
         };
 
-        ctrl.$onInit = function() {
-            EventService.getAllLanguages().then(function(allLangs) {
-               ctrl.allLanguages = allLangs.data;
-            });
+        var initReservationData = function() {
             var src = ctrl.reservationDescriptor.reservation;
             ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'BASE_URL').then(function(resp) {
                 var baseUrl = resp.data;
@@ -159,7 +156,13 @@
                     }
                 };
             }
+        };
 
+        ctrl.$onInit = function() {
+            EventService.getAllLanguages().then(function(allLangs) {
+               ctrl.allLanguages = allLangs.data;
+            });
+            initReservationData();
         };
 
         function regenerateBillingDocument() {
@@ -354,7 +357,15 @@
 
         ctrl.cancelReservationModal = function(credit) {
             EventService.cancelReservationModal(ctrl.event, ctrl.reservation.id, credit).then(function() {
-                $window.location.reload();
+                AdminReservationService.load(ctrl.event.shortName, ctrl.reservation.id).then(function(res) {
+                    ctrl.reservationDescriptor = res.data.data;
+                    initReservationData();
+                    var message = credit ? 'Credit note generated.' : 'Reservation has been cancelled.';
+                    if(!credit && ctrl.reservationDescriptor.reservation.status === 'CREDIT_NOTE_ISSUED') {
+                        message += ' A credit note has been generated. Please check the Billing Documents tab.';
+                    }
+                    NotificationHandler.showSuccess(message);
+                });
             });
         };
 
