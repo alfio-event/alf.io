@@ -878,6 +878,8 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
         Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
         BillingDocument billingDocument = billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummaryForReservation(reservation, event));
+        var organization = organizationRepository.getById(event.getOrganizationId());
+        extensionManager.handleCreditNoteGenerated(reservation, event, ((OrderSummary) model.get("orderSummary")).getOriginalTotalPrice(), billingDocument.getId(), Map.of("organization", organization));
 
         if(sendEmail) {
             notificationManager.sendSimpleEmail(event,
@@ -897,7 +899,10 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
         Map<String, Object> model = prepareModelForPartialCreditNote(event, reservation, ticketRepository.findByIds(ticketsId));
         log.trace("model for partial credit note created");
-        billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, (OrderSummary) model.get("orderSummary"));
+        var orderSummary = (OrderSummary) model.get("orderSummary");
+        var billingDocument = billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummary);
+        var organization = organizationRepository.getById(event.getOrganizationId());
+        extensionManager.handleCreditNoteGenerated(reservation, event, orderSummary.getOriginalTotalPrice(), billingDocument.getId(), Map.of("organization", organization));
     }
 
     @Transactional
@@ -907,8 +912,9 @@ public class TicketReservationManager {
         var summaryRowTitle = messageSourceManager.getMessageSourceForEvent(event).getMessage("invoice.refund.line-item", null, Locale.forLanguageTag(reservation.getUserLanguage()));
         var formattedPriceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
         var formattedAmount = formatUnit(refundAmount, currencyCode);
+        var cost = new TotalPrice(priceContainer.getSrcPriceCts(), unitToCents(priceContainer.getVAT(), currencyCode), 0, 0, currencyCode);
         var orderSummary = new OrderSummary(
-            new TotalPrice(priceContainer.getSrcPriceCts(), unitToCents(priceContainer.getVAT(), currencyCode), 0, 0, currencyCode),
+            cost,
             List.of(new SummaryRow(summaryRowTitle, formattedAmount, formattedPriceBeforeVat, 1, formattedAmount, formattedPriceBeforeVat, unitToCents(refundAmount, currencyCode), SummaryType.TICKET)),
             false,
             formattedAmount,
@@ -921,7 +927,9 @@ public class TicketReservationManager {
             formattedAmount
         );
         log.trace("model for partial credit note created");
-        billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummary);
+        var billingDocument = billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummary);
+        var organization = organizationRepository.getById(event.getOrganizationId());
+        extensionManager.handleCreditNoteGenerated(reservation, event, cost, billingDocument.getId(), Map.of("organization", organization));
     }
 
     private Map<String, Object> prepareModelForReservationEmail(Event event,
