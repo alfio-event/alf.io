@@ -51,6 +51,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
@@ -660,6 +661,10 @@ public class ReservationApiV2Controller {
                         bindingResult.reject("subscription.code.invalid.pin.format");
                         return false;
                     }
+
+                    //ensure pin length, as we will do a like concat(pin,'%'), it could be dangerous to have an empty string...
+                    Assert.isTrue(pin.length() >= Subscription.PIN_LENGTH, "Pin must have a length of at least 8 characters");
+
                     var partialUuid = !isUUID ? PinGenerator.pinToPartialUuid(pin, Subscription.PIN_LENGTH) : pin;
                     var email = reservationCodeForm.getEmail();
                     int count = isUUID ? subscriptionRepository.countSubscriptionById(UUID.fromString(pin)) : subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
