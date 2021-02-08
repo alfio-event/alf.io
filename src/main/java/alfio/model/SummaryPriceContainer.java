@@ -21,28 +21,15 @@ import alfio.util.MonetaryUtil;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static alfio.util.MonetaryUtil.centsToUnit;
-
 public interface SummaryPriceContainer extends PriceContainer {
 
     Integer getFinalPriceCts();
 
-    static int getSummaryPriceBeforeVatCts(List<? extends SummaryPriceContainer> elements) {
+    static int getSummaryPriceBeforeVatCts(List<? extends PriceContainer> elements) {
         var currencyCode = !elements.isEmpty() ? elements.get(0).getCurrencyCode() : null;
-        return elements.stream().map(item -> {
-            PriceContainer.VatStatus vatStatus = item.getVatStatus();
-            if(vatStatus == PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT) {
-                return MonetaryUtil.centsToUnit(item.getSrcPriceCts(), currencyCode);
-            } else if(vatStatus == PriceContainer.VatStatus.INCLUDED_EXEMPT) {
-            	var rawVat = vatStatus.extractRawVAT(centsToUnit(item.getSrcPriceCts(), item.getCurrencyCode()), item.getVatPercentageOrZero());
-                return MonetaryUtil.centsToUnit(item.getSrcPriceCts(), currencyCode).add(rawVat);
-            } else if(vatStatus == PriceContainer.VatStatus.INCLUDED) {
-            	var rawVat = vatStatus.extractRawVAT(centsToUnit(item.getSrcPriceCts(), item.getCurrencyCode()), item.getVatPercentageOrZero());
-            	return MonetaryUtil.centsToUnit(item.getSrcPriceCts(), currencyCode).subtract(rawVat);
-            } else {
-            	return MonetaryUtil.centsToUnit(item.getSrcPriceCts(), currencyCode);
-            }
-           
-        }).reduce(BigDecimal::add).map(p -> MonetaryUtil.unitToCents(p, currencyCode)).orElse(0);
+        return elements.stream().map(PriceContainer::getNetPrice)
+            .reduce(BigDecimal::add)
+            .map(p -> MonetaryUtil.unitToCents(p, currencyCode))
+            .orElse(0);
     }
 }

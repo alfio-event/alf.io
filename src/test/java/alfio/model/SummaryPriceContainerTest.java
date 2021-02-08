@@ -16,20 +16,19 @@
  */
 package alfio.model;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import alfio.model.decorator.TicketPriceContainer;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.Test;
-
-import alfio.model.decorator.TicketPriceContainer;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SummaryPriceContainerTest {
 
@@ -56,6 +55,7 @@ public class SummaryPriceContainerTest {
 	private TicketPriceContainer vatIncludedPriceContainer() {
 		var ticket = createPriceContainer();
 		when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED);
+		when(ticket.getNetPrice()).thenCallRealMethod();
 		
 		return ticket;
 	}
@@ -63,6 +63,7 @@ public class SummaryPriceContainerTest {
 	private TicketPriceContainer vatExcludedPriceContainer() {
 		var ticket = createPriceContainer();
 		when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
+        when(ticket.getNetPrice()).thenCallRealMethod();
 		
 		return ticket;
 	}

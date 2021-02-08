@@ -166,6 +166,25 @@ public interface PriceContainer {
             }).orElse(BigDecimal.ZERO);
     }
 
+    /**
+     * @return the net price, or the price before taxes
+     */
+    default BigDecimal getNetPrice() {
+        var vatStatus = getVatStatus();
+        var currencyCode = getCurrencyCode();
+        if(vatStatus == VatStatus.NOT_INCLUDED_EXEMPT) {
+            return MonetaryUtil.centsToUnit(getSrcPriceCts(), currencyCode);
+        } else if(vatStatus == VatStatus.INCLUDED_EXEMPT) {
+            var rawVat = vatStatus.extractRawVAT(centsToUnit(getSrcPriceCts(), getCurrencyCode()), getVatPercentageOrZero());
+            return MonetaryUtil.centsToUnit(getSrcPriceCts(), currencyCode).add(rawVat);
+        } else if(vatStatus == VatStatus.INCLUDED || vatStatus == VatStatus.INCLUDED_NOT_CHARGED) {
+            var rawVat = vatStatus.extractRawVAT(centsToUnit(getSrcPriceCts(), getCurrencyCode()), getVatPercentageOrZero());
+            return MonetaryUtil.centsToUnit(getSrcPriceCts(), currencyCode).subtract(rawVat);
+        } else {
+            return MonetaryUtil.centsToUnit(getSrcPriceCts(), currencyCode);
+        }
+    }
+
     static BigDecimal getVAT(BigDecimal price, VatStatus vatStatus, BigDecimal vatPercentage) {
         return vatStatus.extractVat(price, vatPercentage);
     }

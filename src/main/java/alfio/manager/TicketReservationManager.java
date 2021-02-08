@@ -98,8 +98,7 @@ import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.util.MonetaryUtil.formatCents;
-import static alfio.util.MonetaryUtil.unitToCents;
+import static alfio.util.MonetaryUtil.*;
 import static alfio.util.Wrappers.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -899,6 +898,30 @@ public class TicketReservationManager {
         Map<String, Object> model = prepareModelForPartialCreditNote(event, reservation, ticketRepository.findByIds(ticketsId));
         log.trace("model for partial credit note created");
         billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, (OrderSummary) model.get("orderSummary"));
+    }
+
+    @Transactional
+    void issueCreditNoteForRefund(Event event, TicketReservation reservation, BigDecimal refundAmount, String username) {
+        var currencyCode = reservation.getCurrencyCode();
+        var priceContainer = new RefundPriceContainer(unitToCents(refundAmount, currencyCode), currencyCode, reservation.getVatStatus(), reservation.getVatPercentageOrZero());
+        var summaryRowTitle = messageSourceManager.getMessageSourceForEvent(event).getMessage("invoice.refund.line-item", null, Locale.forLanguageTag(reservation.getUserLanguage()));
+        var formattedPriceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
+        var formattedAmount = formatUnit(refundAmount, currencyCode);
+        var orderSummary = new OrderSummary(
+            new TotalPrice(priceContainer.getSrcPriceCts(), unitToCents(priceContainer.getVAT(), currencyCode), 0, 0, currencyCode),
+            List.of(new SummaryRow(summaryRowTitle, formattedAmount, formattedPriceBeforeVat, 1, formattedAmount, formattedPriceBeforeVat, unitToCents(refundAmount, currencyCode), SummaryType.TICKET)),
+            false,
+            formattedAmount,
+            formatUnit(priceContainer.getVAT(), currencyCode),
+            false,
+            false,
+            false,
+            priceContainer.getVatPercentageOrZero().toPlainString(),
+            priceContainer.getVatStatus(),
+            formattedAmount
+        );
+        log.trace("model for partial credit note created");
+        billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummary);
     }
 
     private Map<String, Object> prepareModelForReservationEmail(Event event,
