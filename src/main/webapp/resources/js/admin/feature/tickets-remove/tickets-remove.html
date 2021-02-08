@@ -26,8 +26,8 @@
         <div ng-if="$ctrl.paymentInfo.supportRefund" class="checkbox">
             <label><input type="checkbox" ng-model="$ctrl.toRefund[$ctrl.ticketId]"> refund {{$ctrl.ticket.formattedFinalPrice | money:$ctrl.ticket.currencyCode}}</label>
         </div>
-        <div ng-if="$ctrl.paymentInfo.supportRefund && $ctrl.toRefund[$ctrl.ticketId]" class="checkbox">
-            <label><input type="checkbox" ng-model="$ctrl.updateInvoice"> Update invoice</label>
+        <div ng-if="!$ctrl.paymentInfo.supportRefund && $ctrl.canGenerateCreditNote" class="checkbox">
+            <label><input type="checkbox" ng-model="$ctrl.issueCreditNote"> Issue Credit Note for {{$ctrl.ticket.formattedFinalPrice | money:$ctrl.ticket.currencyCode}}</label>
         </div>
         <div class="checkbox">
             <label><input type="checkbox" ng-model="$ctrl.notify"> notify ticket owner</label>

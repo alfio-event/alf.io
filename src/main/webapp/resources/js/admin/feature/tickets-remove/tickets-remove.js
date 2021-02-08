@@ -8,6 +8,7 @@
             event: '<',
             reservationId: '<',
             ticketId:'<',
+            canGenerateCreditNote: '<',
             onSuccess: '&',
             onCancel:'&'
         }
@@ -22,7 +23,7 @@
         ctrl.$onInit = function() {
             ctrl.toRefund = {};
             ctrl.notify = false;
-            ctrl.updateInvoice = false;
+            ctrl.issueCreditNote = ctrl.canGenerateCreditNote;
             AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationId).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
             });
@@ -34,8 +35,8 @@
 
         function confirmRemove() {
             ctrl.submitted = true;
-            return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, [ctrl.ticketId], ctrl.toRefund, ctrl.notify, ctrl.updateInvoice).then(function() {
-                ctrl.onSuccess();
+            return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, [ctrl.ticketId], ctrl.toRefund, ctrl.notify, ctrl.issueCreditNote).then(function() {
+                ctrl.onSuccess({ result: ctrl.issueCreditNote });
             }).finally(function() {
                 ctrl.submitted = false;
             });

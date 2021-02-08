@@ -313,17 +313,18 @@
                 });
             },
 
-            cancelReservationModal: function(event, reservationId, credit) {
+            cancelReservationModal: function(event, reservation, credit) {
                 var deferred = $q.defer();
                 var promise = deferred.promise;
 
                 var modal = $uibModal.open({
                     size:'lg',
-                    template:'<reservation-cancel event="event" reservation-id="reservationId" on-success="success()" on-cancel="close()" credit="credit"></reservation-cancel>',
+                    template:'<reservation-cancel event="event" reservation-id="reservationId" can-generate-credit-note="invoiceRequested" on-success="success()" on-cancel="close()" credit="credit"></reservation-cancel>',
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.event = event;
-                        $scope.reservationId = reservationId;
+                        $scope.reservationId = reservation.id;
+                        $scope.invoiceRequested = reservation.customerData.invoiceRequested;
                         $scope.credit = credit;
                         $scope.close = function() {
                             $scope.$close(false);
@@ -339,42 +340,44 @@
                 return promise;
             },
 
-            removeTicketModal: function(event, reservationId, ticketId) {
-                var deferred = $q.defer();
-                var promise = deferred.promise;
-
+            removeTicketModal: function(event, reservationId, ticketId, invoiceRequested) {
                 var modal = $uibModal.open({
                     size:'lg',
-                    template:'<tickets-remove event="event" reservation-id="reservationId" ticket-id="ticketId" on-success="success()" on-cancel="close()"></tickets-remove>',
+                    template:'<tickets-remove event="event" can-generate-credit-note="invoiceRequested" reservation-id="reservationId" ticket-id="ticketId" on-success="success(result)" on-cancel="close()"></tickets-remove>',
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.event = event;
                         $scope.ticketId = ticketId;
                         $scope.reservationId = reservationId;
+                        $scope.invoiceRequested = invoiceRequested;
                         $scope.close = function() {
                             $scope.$close(false);
-                            deferred.reject();
                         };
 
-                        $scope.success = function () {
-                            $scope.$close(false);
-                            deferred.resolve();
+                        $scope.success = function (result) {
+                            $scope.$close(result);
                         }
                     }
                 });
-                return promise;
+                return modal.result;
             },
 
-            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund, notify, updateInvoice) {
-                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {ticketIds: ticketIds, refundTo: ticketIdsToRefund, notify : notify, forceInvoiceUpdate: updateInvoice});
+            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund, notify, issueCreditNote) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {
+                    ticketIds: ticketIds,
+                    refundTo: ticketIdsToRefund,
+                    notify : notify,
+                    issueCreditNote: issueCreditNote
+                });
             },
 
-            cancelReservation: function(eventName, reservationId, refund, notify, credit) {
+            cancelReservation: function(eventName, reservationId, refund, notify, credit, issueCreditNote) {
                 var operation = credit ? 'credit' : 'cancel';
                 return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/'+operation, null, {
                     params: {
                         refund: refund,
-                        notify: notify
+                        notify: notify,
+                        issueCreditNote: issueCreditNote
                     }
                 });
             },

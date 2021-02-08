@@ -72,7 +72,7 @@
         }
 
         function removeTicket(event, ticket) {
-            EventService.removeTicketModal(event, ticket.ticketReservation.id, ticket.id).then(function() {
+            EventService.removeTicketModal(event, ticket.ticketReservation.id, ticket.id, ticket.ticketReservation.invoiceRequested).then(function() {
                 loadData();
             });
         }

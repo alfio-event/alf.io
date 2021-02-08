@@ -571,7 +571,7 @@ public class AdminReservationManager {
     }
 
     @Transactional
-    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean forceInvoiceReceiptUpdate, String username) {
+    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean issueCreditNote, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
@@ -583,11 +583,11 @@ public class AdminReservationManager {
             Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
             //
 
-            boolean removeReservation = tickets.size() - ticketIds.size() <= 0;
-            removeTicketsFromReservation(reservation, e, ticketIds, notify, username, removeReservation, forceInvoiceReceiptUpdate);
-            //
-
             handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
+
+            boolean removeReservation = tickets.size() - ticketIds.size() <= 0;
+            removeTicketsFromReservation(reservation, e, ticketIds, notify, username, removeReservation, issueCreditNote);
+            //
 
             if(removeReservation) {
                 markAsCancelled(reservation, username, e.getId());
@@ -655,7 +655,7 @@ public class AdminReservationManager {
     }
 
     @Transactional
-    public Result<Boolean> removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
+    public Result<Boolean> removeReservation(String eventName, String reservationId, boolean refund, boolean notify, boolean creditNoteRequested, String username) {
         return loadReservation(eventName, reservationId, username)
             .flatMap(result -> new Result.Builder<Pair<Event, TicketReservation>>()
                 .checkPrecondition(() -> ticketsStatusIsCompatibleWithCancellation(result.getMiddle()), ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS)
@@ -665,7 +665,7 @@ public class AdminReservationManager {
                     if(refundErrorCode != null) {
                         return Result.error(refundErrorCode);
                     }
-                    if(reservation.getHasInvoiceNumber()) {
+                    if(creditNoteRequested && reservation.getHasInvoiceNumber()) {
                         ticketReservationManager.issueCreditNoteForReservation(result.getRight(), reservation, username, false);
                     }
                     // setting refund to false because we've already done it
@@ -674,7 +674,7 @@ public class AdminReservationManager {
             .map(pair -> {
                 var event = pair.getLeft();
                 var ticketReservation = pair.getRight();
-                if(!ticketReservation.getHasInvoiceNumber()) {
+                if(!creditNoteRequested || !ticketReservation.getHasInvoiceNumber()) {
                     markAsCancelled(ticketReservation, username, event.getId());
                 }
                 return true;
@@ -755,8 +755,17 @@ public class AdminReservationManager {
             .map(res -> notificationManager.loadAllMessagesForReservationId(res.getRight().getId(), reservationId));
     }
 
-    private void removeTicketsFromReservation(TicketReservation reservation, Event event, List<Integer> ticketIds, boolean notify, String username, boolean removeReservation, boolean forceInvoiceReceiptUpdate) {
+    private void removeTicketsFromReservation(TicketReservation reservation,
+                                              Event event,
+                                              List<Integer> ticketIds,
+                                              boolean notify,
+                                              String username,
+                                              boolean removeReservation,
+                                              boolean issueCreditNote) {
         String reservationId = reservation.getId();
+        if(!ticketIds.isEmpty() && issueCreditNote && reservation.getHasInvoiceNumber()) {
+            ticketReservationManager.issuePartialCreditNoteForReservation(event, reservation, username, ticketIds);
+        }
         if(notify && !ticketIds.isEmpty()) {
             Organization o = eventManager.loadOrganizer(event, username);
             ticketRepository.findByIds(ticketIds).forEach(t -> {
@@ -766,7 +775,9 @@ public class AdminReservationManager {
             });
         }
 
-        billingDocumentManager.ensureBillingDocumentIsPresent(event, reservation, username, () -> ticketReservationManager.orderSummaryForReservation(reservation, event));
+        if(!issueCreditNote || !reservation.getHasInvoiceNumber()) {
+            billingDocumentManager.ensureBillingDocumentIsPresent(event, reservation, username, () -> ticketReservationManager.orderSummaryForReservation(reservation, event));
+        }
 
         Integer userId = userRepository.findIdByUserName(username).orElse(null);
         Date date = new Date();
@@ -786,12 +797,6 @@ public class AdminReservationManager {
         } else {
             extensionManager.handleReservationsCancelledForEvent(event, reservationIds);
         }
-    }
-
-    private void internalRegenerateBillingDocument(Event event, String reservationId, String username) {
-        ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, null);
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        billingDocumentManager.createBillingDocument(event, reservation, username, ticketReservationManager.orderSummaryForReservation(reservation, event));
     }
 
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {

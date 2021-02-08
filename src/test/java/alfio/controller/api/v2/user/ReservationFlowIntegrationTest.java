@@ -642,7 +642,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
-            adminReservationManager.removeReservation(event.getShortName(), reservationId, false, false, user);
+            adminReservationManager.removeReservation(event.getShortName(), reservationId, false, false, false, user);
 
             assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 

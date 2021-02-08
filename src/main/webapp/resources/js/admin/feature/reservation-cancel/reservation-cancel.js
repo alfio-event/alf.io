@@ -7,6 +7,7 @@
         bindings: {
             event: '<',
             reservationId: '<',
+            canGenerateCreditNote: '<',
             credit: '<',
             onSuccess: '&',
             onCancel:'&'
@@ -23,6 +24,7 @@
         ctrl.$onInit = function() {
             ctrl.refund = true;
             ctrl.notify = false;
+            ctrl.issueCreditNote = ctrl.canGenerateCreditNote;
             AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationId).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
             }).catch(function() {
@@ -32,7 +34,11 @@
 
         function confirmRemove() {
             ctrl.submitted = true;
-            return EventService.cancelReservation(ctrl.event.shortName, ctrl.reservationId, ctrl.refund, ctrl.notify, ctrl.credit).then(function(response) {
+            if(ctrl.paymentInfo.supportRefund && !ctrl.refund) {
+                // don't issue a credit note if there's nothing to credit
+                ctrl.issueCreditNote = false;
+            }
+            return EventService.cancelReservation(ctrl.event.shortName, ctrl.reservationId, ctrl.refund, ctrl.notify, ctrl.credit, ctrl.issueCreditNote).then(function(response) {
                 if(response.data.success) {
                     ctrl.onSuccess();
                 } else {
