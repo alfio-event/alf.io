@@ -36,6 +36,7 @@ import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
+import alfio.model.subscription.Subscription;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
@@ -653,17 +654,27 @@ public class ReservationApiV2Controller {
             case SUBSCRIPTION:
                 res = getEventReservationPair(reservationId).map(et -> {
                     //TODO validate here
-                    var code = reservationCodeForm.getCode();
+                    var isUUID = reservationCodeForm.isCodeUUID();
+                    var pin = reservationCodeForm.getCode();
+                    if (!isUUID && !PinGenerator.isPinValid(pin, Subscription.PIN_LENGTH)) {
+                        bindingResult.reject("subscription.code.invalid.pin.format");
+                        return false;
+                    }
+                    var partialUuid = !isUUID ? PinGenerator.pinToPartialUuid(pin, Subscription.PIN_LENGTH) : pin;
                     var email = reservationCodeForm.getEmail();
-                    if (!subscriptionRepository.existSubscriptionByCodeAndEmail(code, email)) {
+                    int count = isUUID ? subscriptionRepository.countSubscriptionById(UUID.fromString(pin)) : subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
+                    if (count == 0) {
                         bindingResult.reject("subscription.code.not.found");
+                    }
+                    if (count > 1) {
+                        bindingResult.reject("subscription.code.insert.full");
                     }
 
                     if (bindingResult.hasErrors()) {
                         return false;
                     }
 
-                    var subscriptionId = subscriptionRepository.getSubscriptionIdByCodeAndEmail(code, email);
+                    var subscriptionId = isUUID ? UUID.fromString(pin) : subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email);
                     var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
                     return ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
                 }).orElse(false);

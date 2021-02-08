@@ -177,9 +177,9 @@ public interface SubscriptionRepository {
     int removeAllSubscriptionsForEvent(@Bind("eventId") int eventId,
                                        @Bind("organizationId") int organizationId);
 
-    @Query("insert into subscription(id, code, subscription_descriptor_fk, reservation_id_fk, max_usage, usage_count, " +
+    @Query("insert into subscription(id, subscription_descriptor_fk, reservation_id_fk, max_usage, usage_count, " +
         " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency) values (:id, :code, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, 'PENDING', :srcPriceCts, :currency)")
-    int createSubscription(@Bind("id") UUID id, @Bind("code") String code,
+    int createSubscription(@Bind("id") UUID id,
                            @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                            @Bind("reservationId") String reservationId,
                            @Bind("maxUsage") int maxUsage,
@@ -204,8 +204,8 @@ public interface SubscriptionRepository {
     @Query("select * from subscription where id = :id for update")
     Subscription findSubscriptionByIDForUpdate(@Bind("id") UUID id);
 
-    @Query("select exists (select * from subscription where code = :code and email_address = :email)")
-    boolean existSubscriptionByCodeAndEmail(@Bind("code") String code, @Bind("email") String email);
+    @Query("select count(*) from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%') and email_address = :email")
+    int countSubscriptionByPartialUuidAndEmail(@Bind("partialUuid") String partialUuid, @Bind("email") String email);
 
     @Query("update subscription set usage_count = usage_count + 1 where id = :id")
     int increaseUse(@Bind("id") UUID id);
@@ -216,6 +216,9 @@ public interface SubscriptionRepository {
     @Query("update subscription set usage_count = (case when usage_count > 0 then usage_count - 1 else usage_count end) where id in (select subscription_id_fk from tickets_reservation where id in (:reservationIds) and subscription_id_fk is not null)")
     int decrementUse(@Bind("reservationIds") List<String> reservationIds);
 
-    @Query("select id from subscription where code = :code and email_address = :email")
-    UUID getSubscriptionIdByCodeAndEmail(@Bind("code") String code, @Bind("email") String email);
+    @Query("select id from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%') and email_address = :email")
+    UUID getSubscriptionIdByPartialUuidAndEmail(@Bind("partialUuid") String partialUuid, @Bind("email") String email);
+
+    @Query("select count(*) from subscription where id = :id")
+    int countSubscriptionById(@Bind("id") UUID fromString);
 }

@@ -16,6 +16,7 @@
  */
 package alfio.model.subscription;
 
+import alfio.util.PinGenerator;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
@@ -29,7 +30,6 @@ public class Subscription {
     private final String firstName;
     private final String lastName;
     private final String email;
-    private final String code;
     private final UUID subscriptionDescriptorId;
     private final String reservationId;
     private final int usageCount;
@@ -40,12 +40,13 @@ public class Subscription {
     private final int discountCts;
     private final String currency;
 
+    public static final int PIN_LENGTH = 8;
+
 
     public Subscription(@Column("id") UUID id,
                         @Column("first_name") String firstName,
                         @Column("last_name") String lastName,
                         @Column("email_address") String email,
-                        @Column("code") String code,
                         @Column("subscription_descriptor_fk") UUID subscriptionDescriptorId,
                         @Column("reservation_id_fk") String reservationId,
                         @Column("usage_count") int usageCount,
@@ -59,7 +60,6 @@ public class Subscription {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.code = code;
         this.subscriptionDescriptorId = subscriptionDescriptorId;
         this.reservationId = reservationId;
         this.usageCount = usageCount;
@@ -77,5 +77,9 @@ public class Subscription {
         }
         //TODO check date range validity
         return true;
+    }
+
+    public String getPin() {
+        return PinGenerator.pinToPartialUuid(id.toString(), PIN_LENGTH);
     }
 }

@@ -19,6 +19,7 @@ package alfio.controller.form;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @Data
 public class ReservationCodeForm implements Serializable {
@@ -31,5 +32,14 @@ public class ReservationCodeForm implements Serializable {
 
     public enum ReservationCodeType {
         SUBSCRIPTION
+    }
+
+    public boolean isCodeUUID() {
+        try {
+            UUID.fromString(code);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
