@@ -891,8 +891,22 @@ public class TicketReservationManager {
         }
     }
 
-    @Transactional(readOnly = true)
-    public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation, Optional<String> vat, OrderSummary summary) {
+    @Transactional
+    void issuePartialCreditNoteForReservation(Event event, TicketReservation reservation, String username, List<Integer> ticketsId) {
+        log.trace("about to issue a partial credit note for reservation {}", reservation.getId());
+        var reservationId = reservation.getId();
+        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
+        Map<String, Object> model = prepareModelForPartialCreditNote(event, reservation, ticketRepository.findByIds(ticketsId));
+        log.trace("model for partial credit note created");
+        billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, (OrderSummary) model.get("orderSummary"));
+    }
+
+    private Map<String, Object> prepareModelForReservationEmail(Event event,
+                                                                TicketReservation reservation,
+                                                                Optional<String> vat,
+                                                                OrderSummary summary,
+                                                                List<Ticket> ticketsToInclude,
+                                                                Map<String, Object> initialOptions) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String baseUrl = baseUrl(event);
         String reservationUrl = reservationUrl(reservation.getId());
@@ -903,7 +917,7 @@ public class TicketReservationManager {
         Optional<String> bankAccountNr = bankingInfo.get(BANK_ACCOUNT_NR).getValue();
         Optional<String> bankAccountOwner = bankingInfo.get(BANK_ACCOUNT_OWNER).getValue();
 
-        Map<Integer, List<Ticket>> ticketsByCategory = ticketRepository.findTicketsInReservation(reservation.getId())
+        Map<Integer, List<Ticket>> ticketsByCategory = ticketsToInclude
             .stream()
             .collect(groupingBy(Ticket::getCategoryId));
         final List<TicketWithCategory> ticketsWithCategory;
@@ -915,9 +929,6 @@ public class TicketReservationManager {
         } else {
             ticketsWithCategory = Collections.emptyList();
         }
-        var initialOptions = extensionManager.handleReservationEmailCustomText(event, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
-            .map(CustomEmailText::toMap)
-            .orElse(Map.of());
         Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, baseUrl, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner, initialOptions);
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
             && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
@@ -926,6 +937,15 @@ public class TicketReservationManager {
         model.put("publicId", configurationManager.getPublicReservationID(event, reservation));
         model.put("invoicingAdditionalInfo", loadAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
         return model;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation, Optional<String> vat, OrderSummary summary) {
+
+        var initialOptions = extensionManager.handleReservationEmailCustomText(event, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
+            .map(CustomEmailText::toMap)
+            .orElse(Map.of());
+        return prepareModelForReservationEmail(event, reservation, vat, summary, ticketRepository.findTicketsInReservation(reservation.getId()), initialOptions);
     }
 
     public TicketReservationAdditionalInfo loadAdditionalInfo(String reservationId) {
@@ -937,6 +957,12 @@ public class TicketReservationManager {
         Optional<String> vat = getVAT(event);
         OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event);
         return prepareModelForReservationEmail(event, reservation, vat, summary);
+    }
+
+    private Map<String, Object> prepareModelForPartialCreditNote(Event event, TicketReservation reservation, List<Ticket> removedTickets) {
+        var orderSummary = orderSummaryForCreditNote(reservation, event, removedTickets);
+        var optionalVat = getVAT(event);
+        return prepareModelForReservationEmail(event, reservation, optionalVat, orderSummary, removedTickets, Map.of());
     }
 
     private void transitionToInPayment(PaymentSpecification spec) {
@@ -1345,12 +1371,37 @@ public class TicketReservationManager {
             reservation.getVatStatus(),
             refundedAmount);
     }
-    
-    List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
-                                    Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
+
+    private OrderSummary orderSummaryForCreditNote(TicketReservation reservation, Event event, List<Ticket> removedTickets) {
+        var totalPriceAndDiscount = totalReservationCostWithVAT(null, event, reservation, removedTickets, List.of());
+        TotalPrice reservationCost = totalPriceAndDiscount.getLeft();
+        //
+        boolean free = reservationCost.getPriceWithVAT() == 0;
+
+        var currencyCode = reservation.getCurrencyCode();
+        return new OrderSummary(reservationCost,
+            extractSummary(reservation.getVatStatus(), event, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), null, reservationCost, removedTickets, Stream.empty()),
+            free,
+            formatCents(reservationCost.getPriceWithVAT(), currencyCode),
+            formatCents(reservationCost.getVAT(), currencyCode),
+            reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
+            reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
+            reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
+            Optional.ofNullable(event.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),
+            reservation.getVatStatus(),
+            null);
+    }
+
+    private List<SummaryRow> extractSummary(PriceContainer.VatStatus reservationVatStatus,
+                                            Event event,
+                                            Locale locale,
+                                            PromoCodeDiscount promoCodeDiscount,
+                                            TotalPrice reservationCost,
+                                            List<Ticket> ticketsToInclude,
+                                            Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServicesToInclude) {
         List<SummaryRow> summary = new ArrayList<>();
         var currencyCode = reservationCost.getCurrencyCode();
-        List<TicketPriceContainer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream()
+        List<TicketPriceContainer> tickets = ticketsToInclude.stream()
             .map(t -> TicketPriceContainer.from(t, reservationVatStatus, event.getVat(), event.getVatStatus(), promoCodeDiscount)).collect(toList());
         tickets.stream()
             .collect(Collectors.groupingBy(TicketPriceContainer::getCategoryId))
@@ -1364,7 +1415,7 @@ public class TicketReservationManager {
                 summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts, currencyCode), formatCents(priceBeforeVat, currencyCode), ticketsByCategory.size(), formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET));
             });
 
-        summary.addAll(streamAdditionalServiceItems(reservationId, event)
+        summary.addAll(additionalServicesToInclude
             .map(entry -> {
                 String language = locale.getLanguage();
                 AdditionalServiceText title = additionalServiceTextRepository.findBestMatchByLocaleAndType(entry.getKey().getId(), language, AdditionalServiceText.TextType.TITLE);
@@ -1380,7 +1431,7 @@ public class TicketReservationManager {
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
             String formattedSingleAmount = "-" + (DiscountType.isFixedAmount(promo.getDiscountType())  ? formatCents(promo.getDiscountAmount(), currencyCode) : (promo.getDiscountAmount()+"%"));
-            summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId), locale, event),
+            summary.add(new SummaryRow(formatPromoCode(promo, ticketsToInclude, locale, event),
                 formattedSingleAmount,
                 formattedSingleAmount,
                 reservationCost.getDiscountAppliedCount(),
@@ -1388,6 +1439,11 @@ public class TicketReservationManager {
                 promo.isDynamic() ? SummaryType.DYNAMIC_DISCOUNT : SummaryType.PROMOTION_CODE));
         });
         return summary;
+    }
+    
+    List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
+                                    Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
+        return extractSummary(reservationVatStatus, event, locale, promoCodeDiscount, reservationCost, ticketRepository.findTicketsInReservation(reservationId), streamAdditionalServiceItems(reservationId, event));
     }
 
     private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> streamAdditionalServiceItems(String reservationId, Event event) {

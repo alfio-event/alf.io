@@ -23,6 +23,11 @@
                 <label><input type="checkbox" ng-model="$ctrl.refund"> Refund {{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</label>
             </div>
         </div>
+        <div class="form-group" ng-if="!$ctrl.credit && $ctrl.canGenerateCreditNote && !$ctrl.paymentInfo.supportRefund">
+            <div class="col-sm-offset-4 col-sm-8 checkbox">
+                <label><input type="checkbox" ng-model="$ctrl.issueCreditNote"> Issue Credit note for {{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</label>
+            </div>
+        </div>
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8 checkbox">
                 <label><input type="checkbox" ng-model="$ctrl.notify"> Notify ticket owner</label>

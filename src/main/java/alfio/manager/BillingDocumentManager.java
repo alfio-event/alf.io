@@ -30,6 +30,7 @@ import alfio.util.Json;
 import alfio.util.TemplateResource;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,7 @@ import static java.util.stream.Collectors.toList;
 
 @Component
 @AllArgsConstructor
+@Log4j2
 public class BillingDocumentManager {
     private final BillingDocumentRepository billingDocumentRepository;
     private final Json json;
@@ -118,6 +120,7 @@ public class BillingDocumentManager {
         Map<String, Object> model = prepareModelForBillingDocument(event, reservation, orderSummary);
         String number = reservation.getHasInvoiceNumber() ? reservation.getInvoiceNumber() : UUID.randomUUID().toString();
         AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, json.asJsonString(model), event.now(clockProvider), event.getOrganizationId());
+        log.trace("billing document #{} created", doc.getKey());
         auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
         return billingDocumentRepository.findByIdAndReservationId(doc.getKey(), reservation.getId()).orElseThrow(IllegalStateException::new);
     }

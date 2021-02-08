@@ -27,7 +27,6 @@ import alfio.model.result.Result;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.ResponseEntity;
@@ -173,15 +172,17 @@ public class AdminReservationApiController {
 
 
     @PostMapping("/event/{eventName}/{reservationId}/remove-tickets")
-    public Result<Boolean> removeTickets(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
-                                             @RequestBody RemoveTicketsModification toRemove, Principal principal) {
+    public Result<Boolean> removeTickets(@PathVariable("eventName") String eventName,
+                                         @PathVariable("reservationId") String reservationId,
+                                         @RequestBody RemoveTicketsModification toRemove,
+                                         Principal principal) {
 
         List<Integer> toRefund = toRemove.getRefundTo().entrySet().stream()
             .filter(Map.Entry::getValue)
             .map(Map.Entry::getKey)
             .collect(Collectors.toList());
 
-        adminReservationManager.removeTickets(eventName, reservationId, toRemove.getTicketIds(), toRefund, toRemove.getNotify(), toRemove.getForceInvoiceUpdate(), principal.getName());
+        adminReservationManager.removeTickets(eventName, reservationId, toRemove.getTicketIds(), toRefund, toRemove.getNotify(), toRemove.getIssueCreditNote(), principal.getName());
         return Result.success(true);
     }
 
@@ -191,10 +192,13 @@ public class AdminReservationApiController {
     }
 
     @PostMapping("/event/{eventName}/{reservationId}/cancel")
-    public Result<Boolean> removeReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestParam("refund") boolean refund,
+    public Result<Boolean> removeReservation(@PathVariable("eventName") String eventName,
+                                             @PathVariable("reservationId") String reservationId,
+                                             @RequestParam("refund") boolean refund,
                                              @RequestParam(value = "notify", defaultValue = "false") boolean notify,
+                                             @RequestParam(value = "issueCreditNote", defaultValue = "false") boolean issueCreditNote,
                                              Principal principal) {
-        return adminReservationManager.removeReservation(eventName, reservationId, refund, notify, principal.getName());
+        return adminReservationManager.removeReservation(eventName, reservationId, refund, notify, issueCreditNote, principal.getName());
     }
 
     @PostMapping("/event/{eventName}/{reservationId}/credit")
@@ -245,14 +249,14 @@ public class AdminReservationApiController {
         private final List<Integer> ticketIds;
         private Map<Integer, Boolean> refundTo;
         private final Boolean notify;
-        private final Boolean forceInvoiceUpdate;
+        private final Boolean issueCreditNote;
 
         public Boolean getNotify() {
-            return ObjectUtils.firstNonNull(notify, Boolean.FALSE);
+            return Boolean.TRUE.equals(notify);
         }
 
-        public Boolean getForceInvoiceUpdate() {
-            return ObjectUtils.firstNonNull(forceInvoiceUpdate, Boolean.FALSE);
+        public Boolean getIssueCreditNote() {
+            return Boolean.TRUE.equals(issueCreditNote);
         }
     }
 
