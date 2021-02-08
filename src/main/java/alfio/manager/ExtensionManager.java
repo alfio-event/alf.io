@@ -77,6 +77,7 @@ public class ExtensionManager {
         TICKET_ASSIGNED,
         WAITING_QUEUE_SUBSCRIBED,
         INVOICE_GENERATION,
+        CREDIT_NOTE_GENERATED,
         TAX_ID_NUMBER_VALIDATION,
         RESERVATION_VALIDATION,
         EVENT_METADATA_UPDATE,
@@ -215,6 +216,16 @@ public class ExtensionManager {
         payload.put("reservations", ticketReservationRepository.findByIds(reservationIds));
 
         syncCall(extensionEvent, event, payload, Boolean.class);
+    }
+
+    public void handleCreditNoteGenerated(TicketReservation reservation, Event event, TotalPrice cost, Long billingDocumentId, Map<String, Object> contextData) {
+        Map<String, Object> payload = new HashMap<>(contextData);
+        payload.put("reservationId", reservation.getId());
+        payload.put("reservation", reservation);
+        payload.put("billingDetails", ticketReservationRepository.getBillingDetailsForReservation(reservation.getId()));
+        payload.put("reservationCost", cost);
+        payload.put("billingDocumentId", billingDocumentId);
+        asyncCall(ExtensionEvent.CREDIT_NOTE_GENERATED, event, payload);
     }
 
     public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails, Map<String, Object> contextData) {
