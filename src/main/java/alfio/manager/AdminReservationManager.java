@@ -733,6 +733,9 @@ public class AdminReservationManager {
         return loadReservation(eventName, reservationId, username).map(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
+            if(reservation.getHasInvoiceNumber()) {
+                ticketReservationManager.issueCreditNoteForRefund(e, reservation, refundAmount, username);
+            }
             return reservation.getPaymentMethod() != null
                 && reservation.getPaymentMethod().isSupportRefund()
                 && paymentManager.refund(reservation, e, unitToCents(refundAmount, reservation.getCurrencyCode()), username);

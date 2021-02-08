@@ -357,29 +357,21 @@
 
         ctrl.cancelReservationModal = function(credit) {
             EventService.cancelReservationModal(ctrl.event, ctrl.reservation, credit).then(function() {
-                AdminReservationService.load(ctrl.event.shortName, ctrl.reservation.id).then(function(res) {
-                    ctrl.reservationDescriptor = res.data.data;
-                    initReservationData();
-                    var message = credit ? 'Credit note generated.' : 'Reservation has been cancelled.';
-                    if(!credit && ctrl.reservationDescriptor.reservation.status === 'CREDIT_NOTE_ISSUED') {
-                        message += ' A credit note has been generated. Please check the Billing Documents tab.';
-                    }
-                    NotificationHandler.showSuccess(message);
-                });
+                var message = credit ? 'Credit note generated.' : 'Reservation has been cancelled.';
+                if(!credit && ctrl.reservationDescriptor.reservation.status === 'CREDIT_NOTE_ISSUED') {
+                    message += ' A credit note has been generated. Please check the Billing Documents tab.';
+                }
+                reloadReservation(message);
             });
         };
 
         ctrl.removeTicket = function(ticket) {
             EventService.removeTicketModal(ctrl.event, ctrl.reservation.id, ticket.ticketId, ctrl.reservation.customerData.invoiceRequested).then(function(billingDocumentRequested) {
-                AdminReservationService.load(ctrl.event.shortName, ctrl.reservation.id).then(function(res) {
-                    ctrl.reservationDescriptor = res.data.data;
-                    initReservationData();
-                    var message = 'Ticket has been cancelled.';
-                    if(billingDocumentRequested) {
-                        message += ' A credit note has been generated. Please check the Billing Documents tab.';
-                    }
-                    NotificationHandler.showSuccess(message);
-                });
+                var message = 'Ticket has been cancelled.';
+                if(billingDocumentRequested) {
+                    message += ' A credit note has been generated. Please check the Billing Documents tab.';
+                }
+                reloadReservation(message);
             });
         };
 
@@ -390,11 +382,22 @@
                     AdminReservationService.refund(ctrl.event.shortName, ctrl.reservation.id, ctrl.amountToRefund).then(function () {
                         ctrl.amountToRefund = null;
                         ctrl.refundInProgress = false;
-                        loadPaymentInfo();
-                        loadAudit();
+                        var message = 'Refund successful.';
+                        if(ctrl.reservation.customerData.invoiceRequested) {
+                            message += ' A credit note has been generated. Please check the Billing Documents tab.';
+                        }
+                        reloadReservation(message);
                     })
                 }
             }
+        }
+
+        function reloadReservation(message) {
+            AdminReservationService.load(ctrl.event.shortName, ctrl.reservation.id).then(function(res) {
+                ctrl.reservationDescriptor = res.data.data;
+                initReservationData();
+                NotificationHandler.showSuccess(message);
+            });
         }
     }
 
