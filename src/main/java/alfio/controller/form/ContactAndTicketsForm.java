@@ -175,8 +175,8 @@ public class ContactAndTicketsForm implements Serializable {
                 bindingResult.rejectValue("billingAddressState", "error.length", new Object[] { 2 }, null);
             }
 
-            if(StringUtils.isNotEmpty(vatNr) && ItalianTaxIdValidator.validateVatId(vatNr)) {
-                bindingResult.rejectValue("vatNr", "reservation-page.vat-validation-error");
+            if(StringUtils.isNotEmpty(vatNr) && !ItalianTaxIdValidator.validateVatId(vatNr)) {
+                bindingResult.rejectValue("vatNr", "error.STEP_2_INVALID_VAT");
             }
 
             if(!ItalianTaxIdValidator.validateFiscalCode(italyEInvoicingFiscalCode)) {
