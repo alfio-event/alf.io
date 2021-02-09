@@ -178,7 +178,7 @@ public interface SubscriptionRepository {
                                        @Bind("organizationId") int organizationId);
 
     @Query("insert into subscription(id, subscription_descriptor_fk, reservation_id_fk, max_usage, usage_count, " +
-        " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency) values (:id, :code, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, 'PENDING', :srcPriceCts, :currency)")
+        " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency) values (:id, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, 'PENDING', :srcPriceCts, :currency)")
     int createSubscription(@Bind("id") UUID id,
                            @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                            @Bind("reservationId") String reservationId,
