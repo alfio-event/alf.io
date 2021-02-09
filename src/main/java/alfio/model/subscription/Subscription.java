@@ -80,6 +80,6 @@ public class Subscription {
     }
 
     public String getPin() {
-        return PinGenerator.pinToPartialUuid(id.toString(), PIN_LENGTH);
+        return PinGenerator.uuidToPin(id.toString(), PIN_LENGTH);
     }
 }

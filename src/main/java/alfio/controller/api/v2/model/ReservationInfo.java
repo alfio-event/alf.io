@@ -28,6 +28,7 @@ import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -72,6 +73,8 @@ public class ReservationInfo {
     //
 
     private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
+
+    private final List<SubscriptionInfo> subscriptionInfos;
 
 
     @AllArgsConstructor
@@ -223,5 +226,12 @@ public class ReservationInfo {
         private final String price;
         private final String subTotal;
         private final SummaryType type;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class SubscriptionInfo {
+        private final UUID id;
+        private final String pin;
     }
 }

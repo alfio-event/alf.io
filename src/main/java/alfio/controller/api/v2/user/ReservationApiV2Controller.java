@@ -167,6 +167,10 @@ public class ReservationApiV2Controller {
             //
             var containsCategoriesLinkedToGroups = purchaseContext.event().map(event -> ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())).orElse(false);
             //
+            List<ReservationInfo.SubscriptionInfo> subscriptionInfos = null;
+            if (purchaseContext.getType() == PurchaseContext.PurchaseContextType.subscription) {
+                subscriptionInfos = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().map(s -> new ReservationInfo.SubscriptionInfo(s.getId(), s.getPin())).collect(Collectors.toList());
+            }
 
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
                 reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
@@ -188,7 +192,8 @@ public class ReservationApiV2Controller {
                 additionalInfo.getBillingDetails(),
                 //
                 containsCategoriesLinkedToGroups,
-                getActivePaymentMethods(purchaseContext, ticketsByCategory.keySet(), orderSummary, reservationId)
+                getActivePaymentMethods(purchaseContext, ticketsByCategory.keySet(), orderSummary, reservationId),
+                subscriptionInfos
                 ));
         }));
 
