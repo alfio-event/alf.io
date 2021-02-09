@@ -19,8 +19,10 @@ package alfio.model.subscription;
 import alfio.util.PinGenerator;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import org.springframework.validation.BindingResult;
 
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Getter
@@ -71,12 +73,13 @@ public class Subscription {
         this.currency = currency;
     }
 
-    public boolean isValid(SubscriptionDescriptor subscriptionDescriptor) {
-        if (subscriptionDescriptor.getMaxEntries() > 0) {
-            //TODO check max entries
-        }
-        //TODO check date range validity
+    public boolean isValid(SubscriptionDescriptor subscriptionDescriptor, Optional<BindingResult> bindingResult) {
+        //FIXME implement validation rules
         return true;
+    }
+
+    public boolean isValid(SubscriptionDescriptor subscriptionDescriptor) {
+        return isValid(subscriptionDescriptor, Optional.empty());
     }
 
     public String getPin() {

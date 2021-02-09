@@ -202,7 +202,10 @@ public interface SubscriptionRepository {
     boolean hasLinkedSubscription(@Bind("eventId") int eventId);
 
     @Query("select * from subscription where id = :id for update")
-    Subscription findSubscriptionByIDForUpdate(@Bind("id") UUID id);
+    Subscription findSubscriptionByIdForUpdate(@Bind("id") UUID id);
+
+    @Query("select * from subscription where id = :id")
+    Subscription findSubscriptionById(@Bind("id") UUID id);
 
     @Query("select count(*) from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%') and email_address = :email")
     int countSubscriptionByPartialUuidAndEmail(@Bind("partialUuid") String partialUuid, @Bind("email") String email);

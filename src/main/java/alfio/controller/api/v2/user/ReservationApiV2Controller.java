@@ -659,7 +659,6 @@ public class ReservationApiV2Controller {
         switch (reservationCodeForm.getType()) {
             case SUBSCRIPTION:
                 res = getEventReservationPair(reservationId).map(et -> {
-                    //TODO validate here
                     var isUUID = reservationCodeForm.isCodeUUID();
                     var pin = reservationCodeForm.getCode();
                     if (!isUUID && !PinGenerator.isPinValid(pin, Subscription.PIN_LENGTH)) {
@@ -686,6 +685,11 @@ public class ReservationApiV2Controller {
 
                     var subscriptionId = isUUID ? UUID.fromString(pin) : subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email);
                     var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
+                    var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+                    subscription.isValid(subscriptionDescriptor, Optional.of(bindingResult));
+                    if (bindingResult.hasErrors()) {
+                        return false;
+                    }
                     return ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
                 }).orElse(false);
                 break;

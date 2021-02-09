@@ -2464,7 +2464,7 @@ public class TicketReservationManager {
         if (ticketReservationRepository.hasSubscriptionApplied(reservation.getId())) {
             return false;
         }
-        Subscription subscription = subscriptionRepository.findSubscriptionByIDForUpdate(subscriptionId);
+        Subscription subscription = subscriptionRepository.findSubscriptionByIdForUpdate(subscriptionId);
         var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
 
         if (!subscription.isValid(subscriptionDescriptor)) {
