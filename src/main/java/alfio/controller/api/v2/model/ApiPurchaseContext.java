@@ -57,6 +57,7 @@ public interface ApiPurchaseContext {
 
     String getFileBlobId();
 
+    Map<String, String> getTitle();
     Map<String, String> getDescription();
 
     String getBankAccount();

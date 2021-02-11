@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.config.Initializer;
+import alfio.controller.form.EventSearchOptions;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -969,8 +970,10 @@ public class EventManager {
         return ticketRepository.findAllConfirmedForCSV(event.getId());
     }
 
-    public List<Event> getPublishedEvents() {
-        return getActiveEventsStream().filter(e -> e.getStatus() == Event.Status.PUBLIC).collect(toList());
+    public List<Event> getPublishedEvents(EventSearchOptions searchOptions) {
+        return eventRepository.findVisibleBySearchOptions(searchOptions.getSubscriptionCodeUUIDOrNull(),
+            searchOptions.getOrganizer(),
+            searchOptions.getTags());
     }
 
     public List<Event> getActiveEvents() {

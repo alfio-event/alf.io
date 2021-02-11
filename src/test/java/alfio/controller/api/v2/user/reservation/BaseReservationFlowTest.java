@@ -195,7 +195,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
             extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
         }
-        List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
+        List<BasicEventInfo> body = eventApiV2Controller.listEvents(EventSearchOptions.empty()).getBody();
         assertNotNull(body);
         assertTrue(body.isEmpty());
 
@@ -251,7 +251,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         //
 
 
-        assertTrue(Objects.requireNonNull(eventApiV2Controller.listEvents().getBody()).isEmpty());
+        assertTrue(Objects.requireNonNull(eventApiV2Controller.listEvents(EventSearchOptions.empty()).getBody()).isEmpty());
 
 
         //
@@ -272,8 +272,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         eventManager.toggleActiveFlag(context.event.getId(), context.userId, true);
         //
 
-        var resListEvents = eventApiV2Controller.listEvents();
-        var events = eventApiV2Controller.listEvents().getBody();
+        var resListEvents = eventApiV2Controller.listEvents(EventSearchOptions.empty());
+        var events = resListEvents.getBody();
 
         assertEquals(HttpStatus.OK, resListEvents.getStatusCode());
         assertNotNull(events);

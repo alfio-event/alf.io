@@ -231,6 +231,11 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         return customCss;
     }
 
+    @Override
+    public Map<String, String> getTitle() {
+        return event.getTitle();
+    }
+
     @AllArgsConstructor
     @Getter
     public static class InvoicingConfiguration {

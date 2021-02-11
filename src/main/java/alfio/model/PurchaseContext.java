@@ -21,9 +21,13 @@ import alfio.model.transaction.PaymentProxy;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface PurchaseContext extends Configurable, TimeZoneInfo, LocalizedContent {
+
+    Map<String, String> getTitle();
+
     BigDecimal getVat();
     PriceContainer.VatStatus getVatStatus();
     String getCurrency();

@@ -49,6 +49,7 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.subscription.SubscriptionPriceContainer;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
@@ -100,8 +101,7 @@ import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.util.MonetaryUtil.formatCents;
-import static alfio.util.MonetaryUtil.unitToCents;
+import static alfio.util.MonetaryUtil.*;
 import static alfio.util.Wrappers.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -1358,7 +1358,7 @@ public class TicketReservationManager {
         return orderSummaryForReservation(reservation, purchaseContext);
     }
 
-    public OrderSummary orderSummaryForReservation(TicketReservation reservation, PurchaseContext event) {
+    public OrderSummary orderSummaryForReservation(TicketReservation reservation, PurchaseContext context) {
         var totalPriceAndDiscount = totalReservationCostWithVAT(reservation);
         TotalPrice reservationCost = totalPriceAndDiscount.getLeft();
         PromoCodeDiscount discount = totalPriceAndDiscount.getRight().orElse(null);
@@ -1369,19 +1369,19 @@ public class TicketReservationManager {
         boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservation.getId(), Audit.EventType.REFUND) > 0;
 
         if(hasRefund) {
-            refundedAmount = paymentManager.getInfo(reservation, event).getPaymentInformation().getRefundedAmount();
+            refundedAmount = paymentManager.getInfo(reservation, context).getPaymentInformation().getRefundedAmount();
         }
 
         var currencyCode = reservation.getCurrencyCode();
         return new OrderSummary(reservationCost,
-            extractSummary(reservation.getId(), reservation.getVatStatus(), event, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost),
+            extractSummary(reservation.getId(), reservation.getVatStatus(), context, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost),
             free,
             formatCents(reservationCost.getPriceWithVAT(), currencyCode),
             formatCents(reservationCost.getVAT(), currencyCode),
             reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
             reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
             reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
-            Optional.ofNullable(event.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),
+            Optional.ofNullable(context.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),
             reservation.getVatStatus(),
             refundedAmount);
     }
@@ -1428,12 +1428,31 @@ public class TicketReservationManager {
                 promo.isDynamic() ? SummaryType.DYNAMIC_DISCOUNT : SummaryType.PROMOTION_CODE));
         });
         //
-        subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId).ifPresent(subscription -> {
-
-            var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
-            //FIXME : discount & co
-            summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale), "", "", 1, "", "", 0, SummaryType.SUBSCRIPTION));
-        });
+        if(purchaseContext instanceof SubscriptionDescriptor) {
+            var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
+            if(!subscriptions.isEmpty()) {
+                var subscription = subscriptions.get(0);
+                var priceContainer = new SubscriptionPriceContainer(subscription, promoCodeDiscount, (SubscriptionDescriptor) purchaseContext);
+                var finalPrice = formatUnit(priceContainer.getFinalPrice(), currencyCode);
+                var priceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
+                // new SummaryRow( formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET)
+                summary.add(new SummaryRow(purchaseContext.getTitle().get(locale.getLanguage()),
+                    formatCents(priceContainer.getSummarySrcPriceCts(), currencyCode),
+                    priceBeforeVat,
+                    subscriptions.size(),
+                    formatCents(priceContainer.getSummarySrcPriceCts() * subscriptions.size(), currencyCode),
+                    formatUnit(priceContainer.getNetPrice().multiply(new BigDecimal(subscriptions.size())), currencyCode),
+                    priceContainer.getSummarySrcPriceCts(),
+                    SummaryType.SUBSCRIPTION
+                ));
+            }
+        } else {
+            subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId).ifPresent(subscription -> {
+                var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
+                //FIXME : discount & co
+                summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale), "", "", 1, "", "", 0, SummaryType.SUBSCRIPTION));
+            });
+        }
 
         //
         return summary;

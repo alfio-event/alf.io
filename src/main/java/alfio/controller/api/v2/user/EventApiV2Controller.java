@@ -23,6 +23,7 @@ import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
+import alfio.controller.form.EventSearchOptions;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
@@ -94,16 +95,16 @@ public class EventApiV2Controller {
 
 
     @GetMapping("events")
-    public ResponseEntity<List<BasicEventInfo>> listEvents(/* TODO search by: organizer, tag, subscription */) {
+    public ResponseEntity<List<BasicEventInfo>> listEvents(EventSearchOptions eventSearchOptions) {
 
         var contentLanguages = i18nManager.getAvailableLanguages();
 
-        var events = eventManager.getPublishedEvents()
+        var events = eventManager.getPublishedEvents(eventSearchOptions)
             .stream()
             .map(e -> {
                 var messageSource = messageSourceManager.getMessageSourceFor(e);
                 var formattedDates = Formatters.getFormattedDates(e, messageSource, contentLanguages);
-                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getFormat(), e.getLocation(),
+                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getTitle(), e.getFormat(), e.getLocation(),
                     e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime);
             })

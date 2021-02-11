@@ -31,10 +31,7 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
@@ -144,6 +141,16 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         this.srcPriceCts = srcPriceInCents;
         this.version = version;
         this.status = status;
+    }
+
+    @Override
+    public Map<String, String> getTitle() {
+        return buildTitle(displayName, locales);
+    }
+
+    static Map<String, String> buildTitle(String displayName, int locales) {
+        return ContentLanguage.findAllFor(locales).stream()
+            .collect(Collectors.toMap(cl -> cl.getLocale().getLanguage(), cl -> displayName));
     }
 
     public BigDecimal getRegularPrice() {
