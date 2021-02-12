@@ -662,7 +662,7 @@ public class ReservationApiV2Controller {
                     var isUUID = reservationCodeForm.isCodeUUID();
                     var pin = reservationCodeForm.getCode();
                     if (!isUUID && !PinGenerator.isPinValid(pin, Subscription.PIN_LENGTH)) {
-                        bindingResult.reject("subscription.code.invalid.pin.format");
+                        bindingResult.reject("error.restrictedValue");
                         return false;
                     }
 
