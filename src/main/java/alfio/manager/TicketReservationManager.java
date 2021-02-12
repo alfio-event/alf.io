@@ -1433,9 +1433,7 @@ public class TicketReservationManager {
             if(!subscriptions.isEmpty()) {
                 var subscription = subscriptions.get(0);
                 var priceContainer = new SubscriptionPriceContainer(subscription, promoCodeDiscount, (SubscriptionDescriptor) purchaseContext);
-                var finalPrice = formatUnit(priceContainer.getFinalPrice(), currencyCode);
                 var priceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
-                // new SummaryRow( formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET)
                 summary.add(new SummaryRow(purchaseContext.getTitle().get(locale.getLanguage()),
                     formatCents(priceContainer.getSummarySrcPriceCts(), currencyCode),
                     priceBeforeVat,
@@ -1447,10 +1445,20 @@ public class TicketReservationManager {
                 ));
             }
         } else {
-            subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId).ifPresent(subscription -> {
-                var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
-                //FIXME : discount & co
-                summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale), "", "", 1, "", "", 0, SummaryType.SUBSCRIPTION));
+            subscriptionRepository.findDescriptorForAppliedSubscription(reservationId).ifPresent(subscriptionDescriptor -> {
+                // find the least expensive ticket
+                var ticket = tickets.stream().min(Comparator.comparing(TicketPriceContainer::getFinalPriceCts)).orElseThrow();
+                final int ticketPriceCts = ticket.getSummarySrcPriceCts();
+                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(ticket));
+                summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale),
+                    "-" + formatCents(ticketPriceCts, currencyCode),
+                    "-" + formatCents(priceBeforeVat, currencyCode),
+                    1,
+                    "-" + formatCents(ticketPriceCts, currencyCode),
+                    "-" + formatCents(priceBeforeVat, currencyCode),
+                    ticketPriceCts,
+                    SummaryType.SUBSCRIPTION
+                ));
             });
         }
 
@@ -1466,7 +1474,7 @@ public class TicketReservationManager {
             .entrySet()
             .stream()
             .map(entry -> Pair.of(additionalServiceRepository.getById(entry.getKey(), event.getId()), entry.getValue()));
-        }).orElse(List.<Pair<AdditionalService, List<AdditionalServiceItem>>>of().stream());
+        }).orElse(Stream.empty());
     }
     private List<Pair<AdditionalService, List<AdditionalServiceItem>>> collectAdditionalServiceItems(String reservationId, Event event) {
         return streamAdditionalServiceItems(reservationId, event).collect(Collectors.toList());

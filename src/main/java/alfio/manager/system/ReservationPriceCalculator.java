@@ -54,7 +54,10 @@ public class ReservationPriceCalculator implements PriceContainer {
     @Override
     public BigDecimal getAppliedDiscount() {
 
-        var subscriptionDiscount = appliedSubscription.flatMap(subscription -> tickets.stream().sorted(Comparator.comparing(Ticket::getFinalPriceCts)).findFirst()).map(Ticket::getFinalPriceCts).orElse(0);
+        int subscriptionDiscount = appliedSubscription.flatMap(subscription -> tickets.stream()
+                .min(Comparator.comparing(Ticket::getFinalPriceCts)))
+                .map(Ticket::getSrcPriceCts)
+                .orElse(0);
 
         //FIXME check how it should be applied in case of discount
         if(discount != null) {

@@ -216,6 +216,12 @@ public interface SubscriptionRepository {
     @Query("select * from subscription where id = (select subscription_id_fk from tickets_reservation where id = :reservationId)")
     Optional<Subscription> findAppliedSubscriptionByReservationId(@Bind("reservationId") String id);
 
+    @Query("select sd.* from subscription_descriptor sd" +
+        " join subscription s on s.subscription_descriptor_fk = sd.id" +
+        " join tickets_reservation tr on tr.subscription_id_fk = s.id" +
+        " where tr.id = :reservationId")
+    Optional<SubscriptionDescriptor> findDescriptorForAppliedSubscription(@Bind("reservationId") String reservationId);
+
     @Query("update subscription set usage_count = (case when usage_count > 0 then usage_count - 1 else usage_count end) where id in (select subscription_id_fk from tickets_reservation where id in (:reservationIds) and subscription_id_fk is not null)")
     int decrementUse(@Bind("reservationIds") List<String> reservationIds);
 
