@@ -1082,32 +1082,17 @@ public class TicketReservationManager {
 
     private List<Ticket> acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
                               String userLanguage, String billingAddress, String customerReference, PurchaseContext purchaseContext, boolean sendTickets) {
-
-        TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
-
-
-        AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
-
-        purchaseContext.event().ifPresent(event -> {
-            Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
-            int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
-            if(!configurationManager.getFor(ENABLE_TICKET_TRANSFER, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault()) {
-                //automatically lock assignment
-                int locked = ticketRepository.forbidReassignment(preUpdateTicket.keySet());
-                Validate.isTrue(updatedTickets == locked, "Expected to lock "+updatedTickets+" tickets, locked "+ locked);
-                Map<Integer, Ticket> postUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
-
-                postUpdateTicket.forEach((id, ticket) -> {
-                    auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId());
-                });
+        switch (purchaseContext.getType()) {
+            case event: {
+                purchaseContext.event().ifPresent(event -> acquireEventTickets(paymentProxy, reservationId, purchaseContext, event));
+                break;
             }
-            List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
-            Map<Integer, Ticket> postUpdateTicket = ticketsInReservation.stream().collect(toMap(Ticket::getId, Function.identity()));
-            postUpdateTicket.forEach((id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId()));
-            int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
-            Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
-        });
-
+            case subscription: {
+                acquireSubscription(paymentProxy, reservationId, customerName, email);
+                break;
+            }
+            default: throw new IllegalStateException("not supported purchase context");
+        }
 
         specialPriceRepository.updateStatusForReservation(singletonList(reservationId), Status.TAKEN.toString());
         ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
@@ -1135,6 +1120,35 @@ public class TicketReservationManager {
                 extensionManager.handleTicketAssignment(ticket, additionalInfo);
             });
         return assignedTickets;
+    }
+
+    private void acquireSubscription(PaymentProxy paymentProxy, String reservationId, CustomerName customerName, String email) {
+        var status = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
+        var updatedSubscriptions = subscriptionRepository.updateSubscriptionStatus(reservationId, status, customerName.getFirstName(), customerName.getLastName(), email);
+        //FIXME add auditing here too?
+        Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
+    }
+
+    private void acquireEventTickets(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, Event event) {
+        TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
+        AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
+        Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
+        int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
+        if(!configurationManager.getFor(ENABLE_TICKET_TRANSFER, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault()) {
+            //automatically lock assignment
+            int locked = ticketRepository.forbidReassignment(preUpdateTicket.keySet());
+            Validate.isTrue(updatedTickets == locked, "Expected to lock "+updatedTickets+" tickets, locked "+ locked);
+            Map<Integer, Ticket> postUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
+
+            postUpdateTicket.forEach((id, ticket) -> {
+                auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId());
+            });
+        }
+        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
+        Map<Integer, Ticket> postUpdateTicket = ticketsInReservation.stream().collect(toMap(Ticket::getId, Function.identity()));
+        postUpdateTicket.forEach((id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId()));
+        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
+        Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
     }
 
     public PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation ticketReservation, Locale ticketLanguage) {
