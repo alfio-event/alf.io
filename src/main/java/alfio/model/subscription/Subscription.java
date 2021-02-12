@@ -16,9 +16,11 @@
  */
 package alfio.model.subscription;
 
+import alfio.model.AllocationStatus;
 import alfio.util.PinGenerator;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.validation.BindingResult;
 
 import java.time.ZonedDateTime;
@@ -41,6 +43,7 @@ public class Subscription {
     private final int srcPriceCts;
     private final int discountCts;
     private final String currency;
+    private final AllocationStatus status;
 
     public static final int PIN_LENGTH = 8;
 
@@ -57,7 +60,8 @@ public class Subscription {
                         @Column("update_ts") ZonedDateTime updateTime,
                         @Column("src_price_cts") int srcPriceCts,
                         @Column("discount_cts") int discountCts,
-                        @Column("currency") String currency) {
+                        @Column("currency") String currency,
+                        @Column("status") AllocationStatus status) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -71,10 +75,12 @@ public class Subscription {
         this.srcPriceCts = srcPriceCts;
         this.discountCts = discountCts;
         this.currency = currency;
+        this.status = status;
     }
 
     public boolean isValid(SubscriptionDescriptor subscriptionDescriptor, Optional<BindingResult> bindingResult) {
         //FIXME implement validation rules
+        // FIXME check status! -> can be only acquired
         return true;
     }
 

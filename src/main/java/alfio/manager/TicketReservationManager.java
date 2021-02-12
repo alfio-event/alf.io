@@ -1123,7 +1123,7 @@ public class TicketReservationManager {
     }
 
     private void acquireSubscription(PaymentProxy paymentProxy, String reservationId, CustomerName customerName, String email) {
-        var status = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
+        var status = paymentProxy.isDeskPaymentRequired() ? AllocationStatus.TO_BE_PAID : AllocationStatus.ACQUIRED;
         var updatedSubscriptions = subscriptionRepository.updateSubscriptionStatus(reservationId, status, customerName.getFirstName(), customerName.getLastName(), email);
         //FIXME add auditing here too?
         Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
