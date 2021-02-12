@@ -210,6 +210,15 @@ public interface SubscriptionRepository {
     @Query("select count(*) from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%') and email_address = :email")
     int countSubscriptionByPartialUuidAndEmail(@Bind("partialUuid") String partialUuid, @Bind("email") String email);
 
+    @Query("select count(*) from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%')")
+    int countSubscriptionByPartialUuid(@Bind("partialUuid") String partialUuid);
+
+    @Query("select id from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%') and email_address = :email")
+    UUID getSubscriptionIdByPartialUuidAndEmail(@Bind("partialUuid") String partialUuid, @Bind("email") String email);
+
+    @Query("select id from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%')")
+    UUID getSubscriptionIdByPartialUuid(@Bind("partialUuid") String partialUuid);
+
     @Query("update subscription set usage_count = usage_count + 1 where id = :id")
     int increaseUse(@Bind("id") UUID id);
 
@@ -224,9 +233,6 @@ public interface SubscriptionRepository {
 
     @Query("update subscription set usage_count = (case when usage_count > 0 then usage_count - 1 else usage_count end) where id in (select subscription_id_fk from tickets_reservation where id in (:reservationIds) and subscription_id_fk is not null)")
     int decrementUse(@Bind("reservationIds") List<String> reservationIds);
-
-    @Query("select id from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%') and email_address = :email")
-    UUID getSubscriptionIdByPartialUuidAndEmail(@Bind("partialUuid") String partialUuid, @Bind("email") String email);
 
     @Query("select count(*) from subscription where id = :id")
     int countSubscriptionById(@Bind("id") UUID fromString);

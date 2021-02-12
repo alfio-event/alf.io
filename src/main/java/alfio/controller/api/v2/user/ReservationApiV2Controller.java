@@ -671,7 +671,17 @@ public class ReservationApiV2Controller {
 
                     var partialUuid = !isUUID ? PinGenerator.pinToPartialUuid(pin, Subscription.PIN_LENGTH) : pin;
                     var email = reservationCodeForm.getEmail();
-                    int count = isUUID ? subscriptionRepository.countSubscriptionById(UUID.fromString(pin)) : subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
+                    var requireEmail = false;
+                    int count;
+                    if (isUUID) {
+                        count = subscriptionRepository.countSubscriptionById(UUID.fromString(pin));
+                    } else {
+                        count = subscriptionRepository.countSubscriptionByPartialUuid(partialUuid);
+                        if (count > 1) {
+                            count = subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
+                            requireEmail = true;
+                        }
+                    }
                     if (count == 0) {
                         bindingResult.reject("subscription.code.not.found");
                     }
@@ -683,7 +693,7 @@ public class ReservationApiV2Controller {
                         return false;
                     }
 
-                    var subscriptionId = isUUID ? UUID.fromString(pin) : subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email);
+                    var subscriptionId = isUUID ? UUID.fromString(pin) : requireEmail ? subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email) : subscriptionRepository.getSubscriptionIdByPartialUuid(partialUuid);
                     var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
                     var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
                     subscription.isValid(subscriptionDescriptor, Optional.of(bindingResult));
