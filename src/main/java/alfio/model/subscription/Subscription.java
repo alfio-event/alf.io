@@ -79,8 +79,15 @@ public class Subscription {
     }
 
     public boolean isValid(SubscriptionDescriptor subscriptionDescriptor, Optional<BindingResult> bindingResult) {
+        if (status != AllocationStatus.ACQUIRED) {
+            bindingResult.ifPresent(b -> b.reject("subscription.not.acquired"));
+            return false;
+        }
+        if (!subscriptionDescriptor.isUnlimitedAccess() && this.usageCount >= subscriptionDescriptor.getMaxEntries()) {
+            bindingResult.ifPresent(b -> b.reject("subscription.max-usage-reached"));
+            return false;
+        }
         //FIXME implement validation rules
-        // FIXME check status! -> can be only acquired
         return true;
     }
 

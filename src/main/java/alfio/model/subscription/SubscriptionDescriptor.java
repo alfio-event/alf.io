@@ -204,6 +204,11 @@ public class SubscriptionDescriptor implements PurchaseContext {
         return validityFrom != null ? validityFrom : ZonedDateTime.now(ClockProvider.clock()).plusMonths(2);
     }
 
+    @JsonIgnore
+    public boolean isUnlimitedAccess() {
+        return maxEntries == -1;
+    }
+
     @Override
     public boolean isFreeOfCharge() {
         return false;
