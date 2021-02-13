@@ -79,8 +79,8 @@
                 </div>
             </div>
             <div class="col-xs-11">
-                <h4>{{getFirstTranslation(subscription.title)}}</h4>
-                <small>{{getFirstTranslation(subscription.description)}}</small>
+                <h4>{{getFirstTranslation(subscription.titleAsText)}}</h4>
+                <small>{{getFirstTranslation(subscription.descriptionAsText) | ellipsisAfterFirstRow}}</small>
             </div>
         </div>
     </div>

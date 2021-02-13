@@ -25,7 +25,7 @@ import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ClockProvider;
-import alfio.util.LocaleUtil;
+import alfio.util.MustacheCustomTag;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -223,6 +223,20 @@ public class SubscriptionDescriptor implements PurchaseContext {
 
     public String getLocalizedTitle(Locale locale) {
         var fallbackLocale = title.keySet().stream().findFirst().orElse("en");
-        return title.getOrDefault(locale.toLanguageTag(), fallbackLocale);
+        return MustacheCustomTag.renderToTextCommonmark(title.getOrDefault(locale.toLanguageTag(), fallbackLocale));
+    }
+
+    public Map<String, String> getTitleAsText() {
+        return renderTextCommonMark(title);
+    }
+
+    public Map<String, String> getDescriptionAsText() {
+        return renderTextCommonMark(description);
+    }
+
+    private Map<String, String> renderTextCommonMark(Map<String, String> original) {
+        return original.entrySet().stream()
+            .map(entry -> Map.entry(entry.getKey(), MustacheCustomTag.renderToTextCommonmark(entry.getValue())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

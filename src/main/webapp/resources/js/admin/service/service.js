@@ -832,6 +832,13 @@
             },
             logout: function() {
                 return $http.post("/logout", {}).error(HttpErrorHandler.handle);
+            },
+            getFirstTranslation: function(localized) {
+                var keys = Object.keys(localized);
+                if(keys.length > 0) {
+                    return localized[keys[0]];
+                }
+                return null;
             }
         };
     }]);

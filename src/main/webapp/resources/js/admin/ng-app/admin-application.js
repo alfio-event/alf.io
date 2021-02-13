@@ -1017,7 +1017,8 @@
                                                         $timeout,
                                                         TicketCategoryEditorService,
                                                         GroupService,
-                                                        ConfigurationService) {
+                                                        ConfigurationService,
+                                                        SubscriptionService) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -1078,7 +1079,7 @@
                 expired: $scope.event.ticketCategories.filter(function(tc) { return tc.containingOrphans; }).length > 0,
                 freeText: ''
             };
-            $q.all([GroupService.loadActiveLinks($state.params.eventName), GroupService.loadGroups($scope.event.organizationId)])
+            $q.all([GroupService.loadActiveLinks($state.params.eventName), GroupService.loadGroups($scope.event.organizationId), SubscriptionService.loadSubscriptionsDescriptors($scope.event.organizationId)])
                 .then(function(results) {
                     var confResult = results[0];
                     var lists = results[1].data;
@@ -1096,6 +1097,9 @@
                             }
                         });
                     }
+                    $scope.event.subscriptionDescriptors = _.map(_.filter(results[2].data, function(s) {
+                        return _.contains($scope.event.linkedSubscriptions, s.descriptor.id);
+                    }), 'descriptor');
 
                 });
         });

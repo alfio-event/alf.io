@@ -612,13 +612,7 @@
                     }, true);
                 });
 
-                $scope.getFirstTranslation = function(localized) {
-                    var keys = Object.keys(localized);
-                    if(keys.length > 0) {
-                        return localized[keys[0]];
-                    }
-                    return null;
-                };
+                $scope.getFirstTranslation = UtilsService.getFirstTranslation;
             }
         }
     }]);
@@ -628,10 +622,11 @@
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/prices.html',
             transclude:true,
-            controller: function ViewPricesController($scope, PriceCalculator) {
+            controller: function ViewPricesController($scope, PriceCalculator, UtilsService) {
                 $scope.calculateTotalPrice = function(event) {
                     return PriceCalculator.calculateTotalPrice(event, true);
                 };
+                $scope.getFirstTranslation = UtilsService.getFirstTranslation;
             }
         };
     });

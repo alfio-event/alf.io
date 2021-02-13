@@ -5,7 +5,7 @@
             <div class="panel-title">
                 <div class="row">
                     <div class="col-xs-9 col-md-3">
-                        <div class="category-name">{{$ctrl.firstTranslation(subscription.descriptor.title)}}</div>
+                        <div class="category-name">{{$ctrl.firstTranslation(subscription.descriptor.titleAsText)}}</div>
                     </div>
                     <div class="hidden-xs hidden-sm col-md-4">
                         <uib-progress ng-if="subscription.descriptor.maxAvailable > 0" max="subscription.descriptor.maxAvailable" tooltip-popup-close-delay="500">
