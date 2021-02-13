@@ -87,7 +87,11 @@ public class Subscription {
             bindingResult.ifPresent(b -> b.reject("subscription.max-usage-reached"));
             return false;
         }
-        //FIXME implement validation rules
+        //FIXME implement validation rules:
+        // date -> can be validFrom/validTo
+        //      -> can be valid X {day, weeks, months} from the acquired date
+        // usage check: once or more per event
+        // max available -> this we need to pre-generate
         return true;
     }
 
