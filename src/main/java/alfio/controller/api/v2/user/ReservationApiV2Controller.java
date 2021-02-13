@@ -683,7 +683,7 @@ public class ReservationApiV2Controller {
                         }
                     }
                     if (count == 0) {
-                        bindingResult.reject("subscription.code.not.found");
+                        bindingResult.reject(isUUID ? "subscription.uuid.not.found" : "subscription.pin.not.found");
                     }
                     if (count > 1) {
                         bindingResult.reject("subscription.code.insert.full");
