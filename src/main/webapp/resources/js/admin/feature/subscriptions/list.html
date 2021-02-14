@@ -9,7 +9,7 @@
                     </div>
                     <div class="hidden-xs hidden-sm col-md-4">
                         <uib-progress ng-if="subscription.descriptor.maxAvailable > 0" max="subscription.descriptor.maxAvailable" tooltip-popup-close-delay="500">
-                            <uib-bar value="subscription.soldCount" type="success"><span>{{descriptor.soldCount}}</span></uib-bar>
+                            <uib-bar value="subscription.soldCount" type="success"><span>{{subscription.soldCount}}</span></uib-bar>
                         </uib-progress>
                         <div ng-if="subscription.descriptor.maxAvailable == -1" class="category-name">
                             sold: {{subscription.soldCount}}
@@ -69,7 +69,10 @@
         </div>
         <div class="panel-footer bg-white">
             <div class="row">
-                <div class="col-md-2 col-md-push-10 col-xs-12">
+                <div class="col-md-2 col-md-offset-8 col-xs-12" data-ng-if="subscription.reservationsCount > 0">
+                    <a class="btn btn-default btn-block" data-ui-sref="^.single.reservationsList({ organizationId: subscription.descriptor.organizationId, subscriptionId: subscription.descriptor.id})">Reservations</a>
+                </div>
+                <div class="col-md-2 col-xs-12" data-ng-class="{'col-md-offset-10': subscription.reservationsCount === 0 }">
                     <a type="button" class="btn btn-warning btn-block" ui-sref="^.edit({ organizationId: subscription.descriptor.organizationId, subscriptionId: subscription.descriptor.id})" >Edit</a>
                 </div>
             </div>

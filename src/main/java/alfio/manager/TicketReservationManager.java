@@ -1075,11 +1075,11 @@ public class TicketReservationManager {
                               String userLanguage, String billingAddress, String customerReference, PurchaseContext purchaseContext, boolean sendTickets) {
         switch (purchaseContext.getType()) {
             case event: {
-                purchaseContext.event().ifPresent(event -> acquireEventTickets(paymentProxy, reservationId, purchaseContext, event));
+                acquireEventTickets(paymentProxy, reservationId, purchaseContext, purchaseContext.event().orElseThrow());
                 break;
             }
             case subscription: {
-                acquireSubscription(paymentProxy, reservationId, customerName, email);
+                acquireSubscription(paymentProxy, reservationId, purchaseContext, customerName, email);
                 break;
             }
             default: throw new IllegalStateException("not supported purchase context");
@@ -1113,10 +1113,11 @@ public class TicketReservationManager {
         return assignedTickets;
     }
 
-    private void acquireSubscription(PaymentProxy paymentProxy, String reservationId, CustomerName customerName, String email) {
+    private void acquireSubscription(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, CustomerName customerName, String email) {
         var status = paymentProxy.isDeskPaymentRequired() ? AllocationStatus.TO_BE_PAID : AllocationStatus.ACQUIRED;
         var updatedSubscriptions = subscriptionRepository.updateSubscriptionStatus(reservationId, status, customerName.getFirstName(), customerName.getLastName(), email);
-        //FIXME add auditing here too?
+        subscriptionRepository.findSubscriptionsByReservationId(reservationId) // at the moment it's safe because there can be only one subscription per reservation
+            .forEach(subscriptionId -> auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString()));
         Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
     }
 

@@ -147,7 +147,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div data-ng-if="event.format !== 'IN_PERSON' && ticketCategory.ticketAccessType === 'ONLINE'">
+                        <div data-ng-if="event.format === 'ONLINE' || ticketCategory.ticketAccessType === 'ONLINE'">
                             <metadata-viewer event="event" parent-id="ticketCategory.id" metadata="ticketCategory.metadata" available-languages="event.contentLanguages" level="'category'">
                                 <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
                             </metadata-viewer>

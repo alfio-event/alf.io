@@ -34,6 +34,7 @@ public class SubscriptionDescriptorWithStatistics {
 
     private final int soldCount;
     private final int linkedEventsCount;
+    private final int reservationsCount;
     private final SubscriptionDescriptor descriptor;
 
     public SubscriptionDescriptorWithStatistics(
@@ -69,10 +70,12 @@ public class SubscriptionDescriptorWithStatistics {
 
 
         @Column("s_sold_count") int soldCount,
+        @Column("s_reservations_count") int reservationsCount,
         @Column("s_events_count") int linkedEventsCount) {
 
         this.soldCount = soldCount;
         this.linkedEventsCount = linkedEventsCount;
+        this.reservationsCount = reservationsCount;
         this.descriptor = new SubscriptionDescriptor(id,
             title,
             description,

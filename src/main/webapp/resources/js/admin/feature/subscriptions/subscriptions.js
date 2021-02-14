@@ -25,16 +25,29 @@
                 this.organizationId = $stateParams.organizationId;
             }]
         })
+        .state('subscriptions.single', {
+            url: '/:organizationId/:subscriptionId',
+            template: '<single-subscription-container organization-id="ctrl.organizationId" subscription-descriptor="ctrl.subscription"></single-subscription-container>',
+            controller: ['loadSubscription', '$stateParams', function(loadSubscription, $stateParams) {
+                this.subscription = loadSubscription.data;
+                this.organizationId = $stateParams.organizationId;
+            }],
+            abstract: true,
+            controllerAs: 'ctrl',
+            resolve: {
+                'loadSubscription': function(SubscriptionService, $stateParams) {
+                    return SubscriptionService.loadDescriptor($stateParams.organizationId, $stateParams.subscriptionId);
+                }
+            }
+        })
         .state('subscriptions.single.reservationsList', {
-            url: '/:organizationId/:name/reservations/?search',
-            template: '<reservations-list purchase-context-id="ctrl.subscriptionDescriptor.id" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
-            controller: function(SubscriptionService, $stateParams) {
+            url: '/reservations/?search',
+            template: '<reservations-list purchase-context="ctrl.subscriptionDescriptor" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
+            controller: ['loadSubscription', function(loadSubscription) {
                 var ctrl = this;
-                SubscriptionService.loadDescriptor($stateParams.organizationId, $stateParams.name).then(function(result) {
-                    ctrl.subscriptionDescriptor = result.data;
-                    ctrl.purchaseContextType = 'subscription';
-                });
-            },
+                ctrl.subscriptionDescriptor = loadSubscription.data;
+                ctrl.purchaseContextType = 'subscription';
+            }],
             controllerAs: 'ctrl'
         })
         .state('subscriptions.new', {
@@ -65,6 +78,14 @@
         templateUrl: '../resources/js/admin/feature/subscriptions/list.html',
         bindings: {
             organizationId: '<'
+        }
+    })
+    .component('singleSubscriptionContainer', {
+        controller: ['$stateParams', '$state', '$scope', function($stateParams, $state, $scope) {}],
+        templateUrl: '../resources/js/admin/feature/subscriptions/detail.html',
+        bindings: {
+            organizationId: '<',
+            subscriptionDescriptor: '<'
         }
     })
     .component('subscriptionsEdit', {

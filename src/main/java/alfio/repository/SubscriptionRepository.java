@@ -18,7 +18,6 @@ package alfio.repository;
 
 import alfio.model.AllocationStatus;
 import alfio.model.PriceContainer.VatStatus;
-import alfio.model.Ticket;
 import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionDescriptor;
@@ -239,6 +238,6 @@ public interface SubscriptionRepository {
     @Query("select count(*) from subscription where id = :id")
     int countSubscriptionById(@Bind("id") UUID fromString);
 
-    @Query("update subscription set status = :status, first_name = :firstName, last_name = :lastName, email_address = :email where reservation_id_fk = :reservationId")
-    int updateSubscriptionStatus(@Bind("id") String reservationId, @Bind("status") AllocationStatus status, @Bind("firstName") String firstName, @Bind("lastName") String lastName, @Bind("email") String email);
+    @Query("update subscription set status = :status::allocation_status, first_name = :firstName, last_name = :lastName, email_address = :email where reservation_id_fk = :reservationId")
+    int updateSubscriptionStatus(@Bind("reservationId") String reservationId, @Bind("status") AllocationStatus status, @Bind("firstName") String firstName, @Bind("lastName") String lastName, @Bind("email") String email);
 }

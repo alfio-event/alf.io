@@ -132,6 +132,10 @@ public class SubscriptionDescriptorModification {
         return DateTimeModification.fromZonedDateTime(onSaleTo);
     }
 
+    public String getPublicIdentifier() {
+        return getId().toString();
+    }
+
     public static SubscriptionDescriptorModification fromModel(SubscriptionDescriptor subscriptionDescriptor) {
         return new SubscriptionDescriptorModification(
             subscriptionDescriptor.getId(),

@@ -32,10 +32,10 @@
 <hr>
 
 <div class="row">
-    <div class="col-md-2 col-xs-12" data-ng-class="{'col-md-offset-10': !$ctrl.categoryLevel, 'col-md-offset-8': $ctrl.categoryLevel}">
+    <div class="col-xs-12" data-ng-class="{'col-md-offset-10 col-md-2': !$ctrl.categoryLevel, 'col-md-offset-6 col-md-3': $ctrl.categoryLevel}">
         <button type="button" class="btn btn-block" data-ng-click="$ctrl.edit()" data-ng-class="{'btn-warning': !$ctrl.categoryLevel, 'btn-default': $ctrl.categoryLevel}">Edit<span data-ng-if="$ctrl.categoryLevel"> Online settings</span></button>
     </div>
-    <div class="col-md-2 col-xs-12" data-ng-if="$ctrl.categoryLevel">
+    <div class="col-md-3 col-xs-12" data-ng-if="$ctrl.categoryLevel">
         <div data-ng-transclude=""></div>
     </div>
 </div>

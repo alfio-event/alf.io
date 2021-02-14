@@ -131,7 +131,7 @@
                             <ul class="nav navbar-nav">
                                 <li data-ui-sref-active="active"><a data-ui-sref="index" ng-click="ctrl.menuCollapsed = true">Events</a></li>
                                 {{#isOwner}}
-                                <li data-ui-sref-active="active"><a data-ui-sref="subscriptions" ui-sref-opts="{reload: true, notify: true}" ng-click="ctrl.menuCollapsed = true">Subscriptions</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="subscriptions" ui-sref-opts="{reload: true, notify: true}" ng-click="ctrl.menuCollapsed = true">Subscriptions <span class="label label-xs label-default">beta</span></a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="organizations" ng-click="ctrl.menuCollapsed = true">Organizations</a></li>
                                 {{#isDBAuthentication}}
                                 <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>

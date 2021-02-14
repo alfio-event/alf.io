@@ -41,7 +41,6 @@ create view reservation_and_subscription_and_tx as (select
     tickets_reservation.invoice_requested tr_invoice_requested,
     tickets_reservation.used_vat_percent tr_used_vat_percent,
     tickets_reservation.vat_included tr_vat_included,
-    tickets_reservation.subscription_id_fk tr_subscription_id,
     tickets_reservation.creation_ts tr_creation_ts,
     tickets_reservation.customer_reference tr_customer_reference,
     tickets_reservation.billing_address_company tr_billing_address_company,
@@ -94,7 +93,7 @@ create view reservation_and_subscription_and_tx as (select
     promo_code.promo_code as promo_code
 
 from tickets_reservation
-left outer join subscription on tickets_reservation.subscription_id_fk = subscription.id
+join subscription on subscription.reservation_id_fk = tickets_reservation.id
 left outer join b_transaction on tickets_reservation.id = b_transaction.reservation_id and b_transaction.status <> 'INVALID'
 left outer join promo_code on tickets_reservation.promo_code_id_fk = promo_code.id
 );
