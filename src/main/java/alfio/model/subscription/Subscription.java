@@ -79,11 +79,11 @@ public class Subscription {
 
     public boolean isValid(SubscriptionDescriptor subscriptionDescriptor, Optional<BindingResult> bindingResult) {
         if (status != AllocationStatus.ACQUIRED) {
-            bindingResult.ifPresent(b -> b.reject("subscription.not.acquired"));
+            reject(bindingResult, "subscription.not.acquired");
             return false;
         }
         if (!subscriptionDescriptor.isUnlimitedAccess() && this.usageCount >= subscriptionDescriptor.getMaxEntries()) {
-            bindingResult.ifPresent(b -> b.reject("subscription.max-usage-reached"));
+            reject(bindingResult, "subscription.max-usage-reached");
             return false;
         }
         //FIXME implement validation rules:
@@ -92,6 +92,10 @@ public class Subscription {
         // usage check: once or more per event
         // max available -> this we need to pre-generate
         return true;
+    }
+
+    private static void reject(Optional<BindingResult> bindingResult, String errorCode) {
+        bindingResult.ifPresent(b -> b.reject(errorCode));
     }
 
     public boolean isValid(SubscriptionDescriptor subscriptionDescriptor) {
