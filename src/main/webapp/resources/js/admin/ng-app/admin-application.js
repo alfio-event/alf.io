@@ -215,7 +215,7 @@
             })
             .state('events.single.reservationsList', {
                 url: '/reservations/?search',
-                template: '<reservations-list purchase-context-id="ctrl.event.shortName" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
+                template: '<reservations-list purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
                     this.purchaseContextType = 'event';

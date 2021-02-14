@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('reservationsList', {
         bindings: {
-            purchaseContextId: '<',
+            purchaseContext: '<',
             purchaseContextType: '<'
         },
         controller: ['PurchaseContextService', '$filter', '$location', '$stateParams', ReservationsListCtrl],
@@ -47,42 +47,42 @@
             });
 
             if(loadPartially.completed) {
-                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContextId, ctrl.currentPage - 1, ctrl.toSearch, ['COMPLETE']).then(function (res) {
+                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.currentPage - 1, ctrl.toSearch, ['COMPLETE']).then(function (res) {
                     ctrl.reservations = res.data.left;
                     ctrl.foundReservations = res.data.right;
                 });
             }
 
             if(loadPartially.paymentPending) {
-                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContextId, ctrl.currentPagePendingPayment - 1, ctrl.toSearch, ['IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'WAITING_EXTERNAL_CONFIRMATION', 'OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT']).then(function (res) {
+                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.currentPagePendingPayment - 1, ctrl.toSearch, ['IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'WAITING_EXTERNAL_CONFIRMATION', 'OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT']).then(function (res) {
                     ctrl.paymentPendingReservations = res.data.left;
                     ctrl.paymentPendingFoundReservations = res.data.right;
                 });
             }
 
             if(loadPartially.pending) {
-                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContextId, ctrl.currentPagePending -1, ctrl.toSearch, ['PENDING']).then(function(res) {
+                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.currentPagePending -1, ctrl.toSearch, ['PENDING']).then(function(res) {
                     ctrl.pendingReservations = res.data.left;
                     ctrl.foundPendingReservations = res.data.right;
                 });
             }
 
             if(loadPartially.cancelled) {
-                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContextId, ctrl.currentPageCancelled -1, ctrl.toSearch, ['CANCELLED']).then(function(res) {
+                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.currentPageCancelled -1, ctrl.toSearch, ['CANCELLED']).then(function(res) {
                     ctrl.cancelledReservations = res.data.left;
                     ctrl.foundCancelledReservations = res.data.right;
                 });
             }
 
             if(loadPartially.stuck) {
-                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContextId, 0, ctrl.toSearch, ['STUCK']).then(function(res) {
+                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, 0, ctrl.toSearch, ['STUCK']).then(function(res) {
                     ctrl.stuckReservations = res.data.left;
                     ctrl.foundStuckReservations = res.data.right;
                 });
             }
 
             if(loadPartially.credited) {
-                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContextId, 0, ctrl.toSearch, ['CREDIT_NOTE_ISSUED']).then(function(res) {
+                PurchaseContextService.findAllReservations(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, 0, ctrl.toSearch, ['CREDIT_NOTE_ISSUED']).then(function(res) {
                     ctrl.creditedReservations = res.data.left;
                     ctrl.foundCreditedReservations = res.data.right;
                 });
