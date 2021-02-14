@@ -34,6 +34,18 @@
         };
     });
 
+    baseServices.service('PurchaseContextService', function(EventService, SubscriptionService) {
+        return {
+            findAllReservations: function(type, contextName, page, search, status) {
+                if(type === 'event') {
+                    return EventService.findAllReservations(contextName, page, search, status);
+                } else {
+                    return SubscriptionService.findAllReservations(contextName, page, search, status);
+                }
+            }
+        };
+    })
+
     baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q, LocationService, $timeout) {
 
         function copyGeoLocation(event) {

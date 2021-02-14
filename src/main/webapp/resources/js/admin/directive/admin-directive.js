@@ -638,7 +638,7 @@
             controller: function($scope, ConfigurationService) {
 
                 if($scope.event.id !== undefined) {
-                    ConfigurationService.loadSingleConfigForEvent($scope.event.id, 'CHECK_IN_COLOR_CONFIGURATION').then(function(result) {
+                    ConfigurationService.loadSingleConfigForEvent($scope.event.shortName, 'CHECK_IN_COLOR_CONFIGURATION').then(function(result) {
                         var data = {};
                         if(result.data && result.data.length > 0) {
                             try {
@@ -1144,7 +1144,7 @@
                 var loadEventData = function() {
                     if(ctrl.displayEventData && $state.params.eventName) {
                         EventService.getEvent($state.params.eventName).success(function(event) {
-                            ConfigurationService.loadSingleConfigForEvent(event.event.id, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
+                            ConfigurationService.loadSingleConfigForEvent(event.event.shortName, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
                                 .then(function(result) {
                                     ctrl.promoCodeDescription = (result.data === 'true') ? 'Partner' : 'Promo';
                                 });

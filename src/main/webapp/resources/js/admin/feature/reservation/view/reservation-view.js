@@ -67,7 +67,7 @@
                ctrl.allLanguages = allLangs.data;
             });
             var src = ctrl.reservationDescriptor.reservation;
-            ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'BASE_URL').then(function(resp) {
+            ConfigurationService.loadSingleConfigForEvent(ctrl.event.shortName, 'BASE_URL').then(function(resp) {
                 var baseUrl = resp.data;
                 var cleanUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
                 ctrl.reservationUrl = cleanUrl + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage;

@@ -372,15 +372,6 @@ public class TicketReservationManager {
             + Math.abs(totalPrice.getDiscount());
     }
 
-    public Pair<List<TicketReservation>, Integer> findAllReservationsInEvent(int eventId, Integer page, String search, List<TicketReservationStatus> status) {
-        final int pageSize = 50;
-        int offset = page == null ? 0 : page * pageSize;
-        String toSearch = StringUtils.trimToNull(search);
-        toSearch = toSearch == null ? null : ("%" + toSearch + "%");
-        List<String> toFilter = (status == null || status.isEmpty() ? Arrays.asList(TicketReservationStatus.values()) : status).stream().map(TicketReservationStatus::toString).collect(toList());
-        List<TicketReservation> reservationsForEvent = ticketSearchRepository.findReservationsForEvent(eventId, offset, pageSize, toSearch, toFilter);
-        return Pair.of(reservationsForEvent, ticketSearchRepository.countReservationsForEvent(eventId, toSearch, toFilter));
-    }
 
     void reserveTicketsForCategory(Event event,
                                    String reservationId,

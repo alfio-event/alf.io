@@ -215,9 +215,10 @@
             })
             .state('events.single.reservationsList', {
                 url: '/reservations/?search',
-                template: '<reservations-list event="ctrl.event"></reservations-list>',
+                template: '<reservations-list purchase-context-id="ctrl.event.shortName" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
+                    this.purchaseContextType = 'event';
                 },
                 controllerAs: 'ctrl'
             })
@@ -1030,7 +1031,7 @@
                 $scope.event = result.event;
                 $scope.loading = false;
 
-                ConfigurationService.loadSingleConfigForEvent(result.event.id, 'BASE_URL').then(function(res) {
+                ConfigurationService.loadSingleConfigForEvent(result.event.shortName, 'BASE_URL').then(function(res) {
                     $scope.eventPublicURL = res.data + '/event/' + result.event.shortName;
                 });
 

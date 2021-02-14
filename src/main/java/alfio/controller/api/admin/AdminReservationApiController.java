@@ -17,9 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.api.support.PageAndContent;
-import alfio.manager.AdminReservationManager;
-import alfio.manager.EventManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.model.*;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.ErrorCode;
@@ -50,6 +48,8 @@ public class AdminReservationApiController {
 
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
+    private final PurchaseContextManager purchaseContextManager;
+    private final PurchaseContextSearchManager purchaseContextSearchManager;
     private final TicketReservationManager ticketReservationManager;
 
     @PostMapping("/event/{eventName}/new")
@@ -63,15 +63,16 @@ public class AdminReservationApiController {
         return TicketReservation.TicketReservationStatus.values();
     }
 
-    @GetMapping("/event/{eventName}/reservations/list")
-    public PageAndContent<List<TicketReservation>> findAll(@PathVariable("eventName") String eventName,
-                                                          @RequestParam(value = "page", required = false) Integer page,
-                                                          @RequestParam(value = "search", required = false) String search,
-                                                          @RequestParam(value = "status", required = false) List<TicketReservation.TicketReservationStatus> status,
-                                                          Principal principal) {
-        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .map(event -> {
-                Pair<List<TicketReservation>, Integer> res = ticketReservationManager.findAllReservationsInEvent(event.getId(), page, search, status);
+    @GetMapping("/{type}/{name}/reservations/list")
+    public PageAndContent<List<TicketReservation>> findAll(@PathVariable("type") PurchaseContext.PurchaseContextType purchaseContextType,
+                                                           @PathVariable("name") String name,
+                                                           @RequestParam(value = "page", required = false) Integer page,
+                                                           @RequestParam(value = "search", required = false) String search,
+                                                           @RequestParam(value = "status", required = false) List<TicketReservation.TicketReservationStatus> status) {
+
+        return purchaseContextManager.findBy(purchaseContextType, name)
+            .map(purchaseContext -> {
+                Pair<List<TicketReservation>, Integer> res = purchaseContextSearchManager.findAllReservationsFor(purchaseContext, page, search, status);
                 return new PageAndContent<>(res.getLeft(), res.getRight());
             }).orElseGet(() -> new PageAndContent<>(Collections.emptyList(), 0));
     }

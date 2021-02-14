@@ -25,6 +25,18 @@
                 this.organizationId = $stateParams.organizationId;
             }]
         })
+        .state('subscriptions.single.reservationsList', {
+            url: '/:organizationId/:name/reservations/?search',
+            template: '<reservations-list purchase-context-id="ctrl.subscriptionDescriptor.id" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
+            controller: function(SubscriptionService, $stateParams) {
+                var ctrl = this;
+                SubscriptionService.loadDescriptor($stateParams.organizationId, $stateParams.name).then(function(result) {
+                    ctrl.subscriptionDescriptor = result.data;
+                    ctrl.purchaseContextType = 'subscription';
+                });
+            },
+            controllerAs: 'ctrl'
+        })
         .state('subscriptions.new', {
             url: '/:organizationId/create',
             template: '<subscriptions-edit organization-id="ctrl.organizationId"></subscriptions-edit>',
@@ -369,6 +381,9 @@
 
     function SubscriptionService($http, HttpErrorHandler, $q, NotificationHandler) {
         var self = {
+            findAllReservations: function(name, page, search, status) {
+                return $http.get('/admin/api/reservation/subscription/'+name+'/reservations/list', {params: {page: page, search: search, status: status}});
+            },
             loadSubscriptionsDescriptors: function(organizationId) {
                 return $http.get('/admin/api/organization/'+organizationId+'/subscription/list')
                     .error(HttpErrorHandler.handle);

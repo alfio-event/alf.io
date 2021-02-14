@@ -27,17 +27,23 @@ import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @QueryRepository
 public interface TicketSearchRepository {
     String APPLY_FILTER = " (:search is null or (lower(tr_id) like lower(:search) or lower(t_uuid) like lower(:search) or lower(t_full_name) like lower(:search) or lower(t_first_name) like lower(:search) or lower(t_last_name) like lower(:search) or lower(t_email_address) like lower(:search) or " +
         "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search) or lower(promo_code) like lower(:search) or lower(special_price_token) like lower(:search))) ";
 
+    String APPLY_FILTER_SUBSCRIPTION = " (:search is null or (lower(tr_id) like lower(:search) or lower(s_id::text) like lower(:search) or lower(s_first_name) like lower(:search) or lower(s_last_name) like lower(:search) or lower(s_email_address) like lower(:search) " +
+        "  or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search) or lower(promo_code) like lower(:search) )) ";
+
     String FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION = "select * from reservation_and_ticket_and_tx where t_id is not null and t_status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and t_category_id = :categoryId and t_event_id = :eventId and " + APPLY_FILTER;
 
     String FIND_ALL_CONFIRMED_TICKETS_FOR_EVENT = "select * from reservation_and_ticket_and_tx where t_id is not null and t_status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t_event_id = :eventId and " + APPLY_FILTER;
 
     String FIND_ALL_TICKETS_INCLUDING_NEW = "select * from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status in (:status) and " + APPLY_FILTER;
+
+    String FIND_ALL_SUBSCRIPTION_INCLUDING_NEW = "select * from reservation_and_subscription_and_tx where s_descriptor_id = :subscriptionDescriptorId::uuid and tr_id is not null and tr_status in (:status) and " + APPLY_FILTER_SUBSCRIPTION;
 
     String RESERVATION_FIELDS = "tr_id id, tr_validity validity, tr_status status, tr_full_name full_name, tr_first_name first_name, tr_last_name last_name, tr_email_address email_address," +
         "tr_billing_address billing_address, tr_confirmation_ts confirmation_ts, tr_latest_reminder_ts latest_reminder_ts, tr_payment_method payment_method," +
@@ -83,6 +89,13 @@ public interface TicketSearchRepository {
                                                      @Bind("search") String search,
                                                      @Bind("status") List<String> toFilter);
 
+    @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_SUBSCRIPTION_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity limit :pageSize offset :page")
+    List<TicketReservation> findReservationsForSubscription(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
+                                                            @Bind("page") int page,
+                                                            @Bind("pageSize") int pageSize,
+                                                            @Bind("search") String search,
+                                                            @Bind("status") List<String> toFilter);
+
     @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status = 'OFFLINE_PAYMENT' and bt_reservation_id is not null and bt_status = 'PENDING'")
     List<TicketReservationWithTransaction> findOfflineReservationsWithPendingTransaction(@Bind("eventId") int eventId);
 
@@ -96,6 +109,11 @@ public interface TicketSearchRepository {
     Integer countReservationsForEvent(@Bind("eventId") int eventId,
                                       @Bind("search") String search,
                                       @Bind("status") List<String> toFilter);
+
+    @Query("select count(distinct tr_id) from (" + FIND_ALL_SUBSCRIPTION_INCLUDING_NEW +" ) as d_tbl")
+    Integer countReservationsForSubscription(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
+                                             @Bind("search") String search,
+                                             @Bind("status") List<String> toFilter);
 
     @Query("select * from reservation_and_ticket_and_tx where tr_event_id = :eventId and tickets_count > 0 and tr_id in (:reservationIds)")
     List<TicketWithReservationAndTransaction> loadAllReservationsWithTickets(@Bind("eventId") int eventId, @Bind("reservationIds") Collection<String> reservationIds);
