@@ -2516,16 +2516,12 @@ public class TicketReservationManager {
         ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
         subscriptionRepository.increaseUse(subscription.getId());
         //
-
-        //TODO: recalc cost and save
-
         var totalPrice = totalReservationCostWithVAT(reservation.getId()).getLeft();
 
         var purchaseContext = purchaseContextManager.findByReservationId(reservation.getId()).orElseThrow();
         ticketReservationRepository.updateBillingData(purchaseContext.getVatStatus(), calculateSrcPrice(purchaseContext.getVatStatus(), totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), purchaseContext.getCurrency(), null
             , reservation.getVatCountryCode(), reservation.isInvoiceRequested(), reservation.getId());
 
-        //
         return true;
     }
 
