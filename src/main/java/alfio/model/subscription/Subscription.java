@@ -20,7 +20,6 @@ import alfio.model.AllocationStatus;
 import alfio.util.PinGenerator;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.validation.BindingResult;
 
 import java.time.ZonedDateTime;
