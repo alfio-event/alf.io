@@ -403,7 +403,8 @@ public class ReservationApiV2Controller {
 
     private TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing getItalianInvoicingInfo(ContactAndTicketsForm contactAndTicketsForm) {
         if("IT".equalsIgnoreCase(contactAndTicketsForm.getVatCountryCode())) {
-            return new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
+            return new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(
+                StringUtils.upperCase(contactAndTicketsForm.getItalyEInvoicingFiscalCode()),
                 contactAndTicketsForm.getItalyEInvoicingReferenceType(),
                 contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
                 contactAndTicketsForm.getItalyEInvoicingReferencePEC(),
