@@ -69,7 +69,7 @@ public class ItalianTaxIdValidator {
     );
 
     public static boolean validateFiscalCode(String fiscalCode) {
-        var code = trimToNull(fiscalCode);
+        var code = StringUtils.upperCase(trimToNull(fiscalCode));
         int length = length(code);
         if(length == 11) {
             // when length is 11 the fiscal code is equal to the VAT Number
