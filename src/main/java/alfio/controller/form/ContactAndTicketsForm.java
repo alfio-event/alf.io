@@ -173,6 +173,8 @@ public class ContactAndTicketsForm implements Serializable {
 
             if(billingAddressState == null || billingAddressState.strip().length() != 2) {
                 bindingResult.rejectValue("billingAddressState", "error.length", new Object[] { 2 }, null);
+            } else if(!StringUtils.isAlpha(billingAddressState)) {
+                bindingResult.rejectValue("billingAddressState", "error.restrictedValue");
             }
 
             if(StringUtils.isNotEmpty(vatNr) && !ItalianTaxIdValidator.validateVatId(vatNr)) {
@@ -181,6 +183,12 @@ public class ContactAndTicketsForm implements Serializable {
 
             if(!ItalianTaxIdValidator.validateFiscalCode(italyEInvoicingFiscalCode)) {
                 bindingResult.rejectValue("italyEInvoicingFiscalCode", "error.restrictedValue");
+            }
+
+            if(StringUtils.length(StringUtils.trimToNull(billingAddressZip)) != 5) {
+                bindingResult.rejectValue("billingAddressZip", "error.length", new Object[] { 5 }, null);
+            } else if(!StringUtils.isNumeric(billingAddressZip)) {
+                bindingResult.rejectValue("billingAddressZip", "error.restrictedValue");
             }
 
         }
