@@ -173,7 +173,7 @@ public class CustomMessageManager {
         return new Mailer.Attachment(CALENDAR_ICS.fileName(""), null, CALENDAR_ICS.contentType(""), model, CALENDAR_ICS);
     }
 
-    private static String renderResource(String template, EventAndOrganizationId event, Model model, Locale locale, TemplateManager templateManager) {
-        return templateManager.renderString(event, template, model.asMap(), locale, TemplateManager.TemplateOutput.TEXT);
+    private static String renderResource(String template, PurchaseContext purchaseContext, Model model, Locale locale, TemplateManager templateManager) {
+        return templateManager.renderString(purchaseContext, template, model.asMap(), locale, TemplateManager.TemplateOutput.TEXT);
     }
 }

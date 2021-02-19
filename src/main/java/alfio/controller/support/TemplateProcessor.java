@@ -100,9 +100,9 @@ public final class TemplateProcessor {
         renderToPdf(page, os, extensionManager, event);
     }
 
-    public static void renderToPdf(String page, OutputStream os, ExtensionManager extensionManager, Event event) throws IOException {
+    public static void renderToPdf(String page, OutputStream os, ExtensionManager extensionManager, PurchaseContext purchaseContext) throws IOException {
 
-        if(extensionManager.handlePdfTransformation(page, event, os)) {
+        if(extensionManager.handlePdfTransformation(page, purchaseContext, os)) {
             return;
         }
         PdfRendererBuilder builder = new PdfRendererBuilder();
@@ -163,9 +163,9 @@ public final class TemplateProcessor {
         }
     }
 
-    public static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
-        if(event.getFileBlobIdIsPresent()) {
-            return fileUploadManager.findMetadata(event.getFileBlobId()).map(metadata -> {
+    public static Optional<TemplateResource.ImageData> extractImageModel(PurchaseContext purchaseContext, FileUploadManager fileUploadManager) {
+        if(purchaseContext.getFileBlobIdIsPresent()) {
+            return fileUploadManager.findMetadata(purchaseContext.getFileBlobId()).map(metadata -> {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 fileUploadManager.outputFile(metadata.getId(), baos);
                 return TemplateResource.fillWithImageData(metadata, baos.toByteArray());
@@ -175,7 +175,7 @@ public final class TemplateProcessor {
         }
     }
 
-    public static boolean buildReceiptOrInvoicePdf(Event event,
+    public static boolean buildReceiptOrInvoicePdf(PurchaseContext purchaseContext,
                                                    FileUploadManager fileUploadManager,
                                                    Locale language,
                                                    TemplateManager templateManager,
@@ -184,37 +184,37 @@ public final class TemplateProcessor {
                                                    ExtensionManager extensionManager,
                                                    OutputStream os) {
         try {
-            String html = renderReceiptOrInvoicePdfTemplate(event, fileUploadManager, language, templateManager, model, templateResource);
-            renderToPdf(html, os, extensionManager, event);
+            String html = renderReceiptOrInvoicePdfTemplate(purchaseContext, fileUploadManager, language, templateManager, model, templateResource);
+            renderToPdf(html, os, extensionManager, purchaseContext);
             return true;
         } catch (IOException ioe) {
             return false;
         }
     }
 
-    public static String renderReceiptOrInvoicePdfTemplate(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
-        extractImageModel(event, fileUploadManager).ifPresent(imageData -> {
+    public static String renderReceiptOrInvoicePdfTemplate(PurchaseContext purchaseContext, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
+        extractImageModel(purchaseContext, fileUploadManager).ifPresent(imageData -> {
             model.put("eventImage", imageData.getEventImage());
             model.put("imageWidth", imageData.getImageWidth());
             model.put("imageHeight", imageData.getImageHeight());
         });
-        return templateManager.renderTemplate(event, templateResource, model, language).getTextPart();
+        return templateManager.renderTemplate(purchaseContext, templateResource, model, language).getTextPart();
     }
 
-    public static Optional<byte[]> buildBillingDocumentPdf(BillingDocument.Type documentType, Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, ExtensionManager extensionManager) {
+    public static Optional<byte[]> buildBillingDocumentPdf(BillingDocument.Type documentType, PurchaseContext purchaseContext, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, ExtensionManager extensionManager) {
         switch (documentType) {
             case INVOICE:
-                return buildInvoicePdf(event, fileUploadManager, language, templateManager, model, extensionManager);
+                return buildInvoicePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
             case RECEIPT:
-                return buildReceiptPdf(event, fileUploadManager, language, templateManager, model, extensionManager);
+                return buildReceiptPdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
             case CREDIT_NOTE:
-                return buildCreditNotePdf(event, fileUploadManager, language, templateManager, model, extensionManager);
+                return buildCreditNotePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
             default:
                 throw new IllegalStateException(documentType + " not supported");
         }
     }
 
-    private static Optional<byte[]> buildFrom(Event event,
+    private static Optional<byte[]> buildFrom(PurchaseContext purchaseContext,
                                               FileUploadManager fileUploadManager,
                                               Locale language,
                                               TemplateManager templateManager,
@@ -222,34 +222,34 @@ public final class TemplateProcessor {
                                               TemplateResource templateResource,
                                               ExtensionManager extensionManager) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        boolean res = buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, templateResource, extensionManager, baos);
+        boolean res = buildReceiptOrInvoicePdf(purchaseContext, fileUploadManager, language, templateManager, model, templateResource, extensionManager, baos);
         return res ? Optional.of(baos.toByteArray()) : Optional.empty();
     }
 
-    public static Optional<byte[]> buildReceiptPdf(Event event,
+    public static Optional<byte[]> buildReceiptPdf(PurchaseContext purchaseContext,
                                                    FileUploadManager fileUploadManager,
                                                    Locale language,
                                                    TemplateManager templateManager,
                                                    Map<String, Object> model,
                                                    ExtensionManager extensionManager) {
-        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF, extensionManager);
+        return buildFrom(purchaseContext, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF, extensionManager);
     }
 
-    public static Optional<byte[]> buildInvoicePdf(Event event,
+    public static Optional<byte[]> buildInvoicePdf(PurchaseContext purchaseContext,
                                                    FileUploadManager fileUploadManager,
                                                    Locale language,
                                                    TemplateManager templateManager,
                                                    Map<String, Object> model,
                                                    ExtensionManager extensionManager) {
-        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF, extensionManager);
+        return buildFrom(purchaseContext, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF, extensionManager);
     }
 
-    public static Optional<byte[]> buildCreditNotePdf(Event event,
+    public static Optional<byte[]> buildCreditNotePdf(PurchaseContext purchaseContext,
                                                       FileUploadManager fileUploadManager,
                                                       Locale language,
                                                       TemplateManager templateManager,
                                                       Map<String, Object> model,
                                                       ExtensionManager extensionManager) {
-        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.CREDIT_NOTE_PDF, extensionManager);
+        return buildFrom(purchaseContext, fileUploadManager, language, templateManager, model, TemplateResource.CREDIT_NOTE_PDF, extensionManager);
     }
 }

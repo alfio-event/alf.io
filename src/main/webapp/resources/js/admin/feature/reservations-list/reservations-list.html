@@ -39,7 +39,8 @@
             </thead>
             <tbody>
             <tr ng-repeat="r in $ctrl.stuckReservations">
-                <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
                 <td ng-bind="$ctrl.formatFullName(r)"></td>
                 <td ng-bind="r.email"></td>
                 <td ng-bind="r.paymentMethod"></td>
@@ -68,7 +69,8 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.reservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
@@ -100,7 +102,8 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.paymentPendingReservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.purchaseContext.publicIdentifier, reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
@@ -131,7 +134,8 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.pendingReservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
@@ -162,7 +166,8 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.creditedReservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
@@ -193,7 +198,8 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.cancelledReservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName: $ctrl.purchaseContext.publicIdentifier,reservationId:r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ eventName : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ subscriptionId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>

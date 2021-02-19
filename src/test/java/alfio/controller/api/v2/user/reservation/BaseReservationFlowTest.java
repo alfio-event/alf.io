@@ -38,6 +38,7 @@ import alfio.manager.ExtensionManager.ExtensionEvent;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.model.*;
+import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.audit.ScanAudit;
 import alfio.model.modification.*;
 import alfio.model.system.ConfigurationKeys;
@@ -545,7 +546,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
-            adminReservationManager.removeReservation(context.event.getShortName(), reservationId, false, false, context.userId);
+            adminReservationManager.removeReservation(PurchaseContextType.event, context.event.getShortName(), reservationId, false, false, context.userId);
 
             assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 

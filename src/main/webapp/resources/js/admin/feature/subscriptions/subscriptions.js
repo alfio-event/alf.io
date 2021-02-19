@@ -50,6 +50,21 @@
             }],
             controllerAs: 'ctrl'
         })
+        .state('subscriptions.single.view-reservation', {
+            url:'/reservation/:reservationId?fromCreation',
+            template: '<reservation-view purchase-context="ctrl.subscriptionDescriptor" purchase-context-type="ctrl.purchaseContextType" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
+            controller: function(loadSubscription, getReservationDescriptor) {
+                this.subscriptionDescriptor = loadSubscription.data;
+                this.purchaseContextType = 'subscription';
+                this.reservationDescriptor = getReservationDescriptor.data.data;
+            },
+            controllerAs: 'ctrl',
+            resolve: {
+                'getReservationDescriptor': function(AdminReservationService, $stateParams) {
+                    return AdminReservationService.load('subscription', $stateParams.subscriptionId, $stateParams.reservationId);
+                }
+            }
+        })
         .state('subscriptions.new', {
             url: '/:organizationId/create',
             template: '<subscriptions-edit organization-id="ctrl.organizationId"></subscriptions-edit>',

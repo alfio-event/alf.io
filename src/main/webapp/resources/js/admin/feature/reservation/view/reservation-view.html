@@ -1,7 +1,7 @@
 <div class="container" container-fluid-responsive="">
     <form role="form" name="viewReservation" ng-submit="$ctrl.update(viewReservation)" error-sensitive="viewReservation" novalidate>
         <div class="page-header">
-            <h1>View reservation for {{$ctrl.event.displayName}}</h1>
+            <h1>View reservation for {{$ctrl.purchaseContext.title['en']}}</h1>
             <small>Reservation ID: {{$ctrl.reservation.id}}</small>
             <small ng-if="$ctrl.reservationDescriptor.reservation.hasInvoiceNumber">Invoice number: {{$ctrl.reservationDescriptor.reservation.invoiceNumber}}</small>
         </div>
@@ -65,7 +65,7 @@
                                 <dt>Timestamp</dt>
                                 <dd ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
                                 <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
-                                <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+                                <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.purchaseContext.currencyCode}}</dd>
                             </dl>
                             <div class="text-left">
                                 <button type="button" class="btn btn-sm btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()"><i class="fa fa-check"></i> Confirm</button>
@@ -106,7 +106,7 @@
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
-                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.purchaseContext.currencyCode}}</dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
                                     <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">
@@ -180,7 +180,7 @@
                                 <select class="form-control"
                                         ng-if="$ctrl.reservation.updateContactData"
                                         ng-model="$ctrl.reservation.customerData.userLanguage"
-                                        data-ng-options="lang.locale as lang.locale for lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales"></select>
+                                        data-ng-options="lang.locale as lang.locale for lang in $ctrl.allLanguages | selectedLanguages:$ctrl.purchaseContext.locales"></select>
                             </div>
                         </div>
                     </div>
@@ -430,7 +430,7 @@
                             <td ng-bind="doc.number"></td>
                             <td ng-bind="doc.generationTimestamp | formatDate"></td>
                             <td class="text-right">
-                              <a class="btn btn-sm btn-default" ng-href="/admin/api/reservation/event/{{$ctrl.event.shortName}}/{{$ctrl.reservation.id}}/billing-document/{{doc.id}}" target="_blank"><i class="fa fa-download"></i> Download</a>
+                              <a class="btn btn-sm btn-default" ng-href="/admin/api/reservation/{{$ctrl.purchaseContextType}}/{{$ctrl.purchaseContext.publicIdentifier}}/{{$ctrl.reservation.id}}/billing-document/{{doc.id}}" target="_blank"><i class="fa fa-download"></i> Download</a>
                               <button type="button" class="btn btn-sm btn-danger" ng-click="$ctrl.invalidateDocument(doc.id)"><i class="fa fa-ban"></i> Invalidate</button>
                             </td>
                         </tr>
@@ -462,7 +462,7 @@
                             <td ng-bind="doc.number"></td>
                             <td ng-bind="doc.generationTimestamp | formatDate"></td>
                             <td class="text-right">
-                                <a class="btn btn-sm btn-default" ng-href="/admin/api/reservation/event/{{$ctrl.event.shortName}}/{{$ctrl.reservation.id}}/billing-document/{{doc.id}}" target="_blank"><i class="fa fa-download"></i> Download</a>
+                                <a class="btn btn-sm btn-default" ng-href="/admin/api/reservation/{{$ctrl.purchaseContextType}}/{{$ctrl.purchaseContext.publicIdentifier}}/{{$ctrl.reservation.id}}/billing-document/{{doc.id}}" target="_blank"><i class="fa fa-download"></i> Download</a>
                                 <button type="button" class="btn btn-sm btn-warning" ng-click="$ctrl.restoreDocument(doc.id)"><i class="fa fa-redo"></i> Restore</button>
                             </td>
                         </tr>
@@ -488,7 +488,7 @@
                         <tr data-ng-repeat="email in $ctrl.emails" data-ng-class="{'text-success': email.status === 'SENT', 'text-danger': email.status === 'ERROR', 'text-warning': email.status === 'RETRY'}">
                             <td data-ng-class-even="'active'" class="cell-wrap">{{::email.recipient}}</td>
                             <td data-ng-class-even="'active'" class="cell-wrap">{{::email.subject | truncateString}}</td>
-                            <td data-ng-class-even="'active'" class="cell-wrap"><a href="#" target="_blank" data-ui-sref="events.single.email-log-detail({eventName: $ctrl.event.shortName, messageId: email.id})">{{::email.message | truncateString:100}}</a></td>
+                            <td data-ng-class-even="'active'" class="cell-wrap"><a href="#" target="_blank" data-ui-sref="events.single.email-log-detail({eventName: $ctrl.purchaseContext.publicIdentifier, messageId: email.id})">{{::email.message | truncateString:100}}</a></td>
                             <td data-ng-class-even="'active'" class="cell-wrap">{{::email.status}}</td>
                             <td data-ng-class-even="'active'" class="cell-wrap">{{::email.checksum | truncateString:10}}</td>
                             <td data-ng-class-even="'active'" class="cell-wrap">{{::email.requestTimestamp | formatDate}}</td>

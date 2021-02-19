@@ -44,6 +44,8 @@ public interface PurchaseContext extends Configurable, TimeZoneInfo, LocalizedCo
     PurchaseContextType getType();
     String getPublicIdentifier();
 
+    String getFileBlobId();
+
     boolean isFreeOfCharge();
 
 
@@ -78,4 +80,12 @@ public interface PurchaseContext extends Configurable, TimeZoneInfo, LocalizedCo
     }
 
     String getPrivateKey();
+
+    default boolean mustUseFirstAndLastName() {
+        return true;
+    }
+
+    default boolean getFileBlobIdIsPresent() {
+        return true;
+    }
 }

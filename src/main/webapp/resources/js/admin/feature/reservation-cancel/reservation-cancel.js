@@ -5,7 +5,8 @@
         controller: ['AdminReservationService', 'EventService', 'NotificationHandler', ReservationCancelCtrl],
         templateUrl: '../resources/js/admin/feature/reservation-cancel/reservation-cancel.html',
         bindings: {
-            event: '<',
+            purchaseContext: '<',
+            purchaseContextType: '<',
             reservationId: '<',
             credit: '<',
             onSuccess: '&',
@@ -23,7 +24,7 @@
         ctrl.$onInit = function() {
             ctrl.refund = true;
             ctrl.notify = false;
-            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationId).then(function(res) {
+            AdminReservationService.paymentInfo(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservationId).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
             }).catch(function() {
                 ctrl.paymentInfo = {};

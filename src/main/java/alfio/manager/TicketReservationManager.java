@@ -787,32 +787,32 @@ public class TicketReservationManager {
     }
 
 
-    public void sendConfirmationEmail(Event event, TicketReservation ticketReservation, Locale language, String username) {
+    public void sendConfirmationEmail(PurchaseContext purchaseContext, TicketReservation ticketReservation, Locale language, String username) {
         String reservationId = ticketReservation.getId();
 
-        OrderSummary summary = orderSummaryForReservationId(reservationId, event);
+        OrderSummary summary = orderSummaryForReservationId(reservationId, purchaseContext);
 
-        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
+        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation);
         List<Mailer.Attachment> attachments = Collections.emptyList();
 
-        if (configurationManager.canGenerateReceiptOrInvoiceToCustomer(event)) { // https://github.com/alfio-event/alf.io/issues/573
-            attachments = generateAttachmentForConfirmationEmail(event, ticketReservation, language, summary, username);
+        if (configurationManager.canGenerateReceiptOrInvoiceToCustomer(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
+            attachments = generateAttachmentForConfirmationEmail(purchaseContext, ticketReservation, language, summary, username);
         }
 
-        notificationManager.sendSimpleEmail(event, ticketReservation.getId(), ticketReservation.getEmail(), messageSourceManager.getMessageSourceFor(event).getMessage("reservation-email-subject",
-                new Object[]{getShortReservationID(event, ticketReservation), event.getDisplayName()}, language),
-           () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
+        notificationManager.sendSimpleEmail(purchaseContext, ticketReservation.getId(), ticketReservation.getEmail(), messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("reservation-email-subject",
+                new Object[]{getShortReservationID(purchaseContext, ticketReservation), purchaseContext.getDisplayName()}, language),
+           () -> templateManager.renderTemplate(purchaseContext, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
             attachments);
     }
 
-    private List<Mailer.Attachment> generateAttachmentForConfirmationEmail(Event event,
+    private List<Mailer.Attachment> generateAttachmentForConfirmationEmail(PurchaseContext purchaseContext,
                                                                            TicketReservation ticketReservation,
                                                                            Locale language,
                                                                            OrderSummary summary,
                                                                            String username) {
         if(mustGenerateBillingDocument(summary, ticketReservation)) { //#459 - include PDF invoice in reservation email
             BillingDocument.Type type = ticketReservation.getHasInvoiceNumber() ? INVOICE : RECEIPT;
-            return billingDocumentManager.generateBillingDocumentAttachment(event, ticketReservation, language, type, username, summary);
+            return billingDocumentManager.generateBillingDocumentAttachment(purchaseContext, ticketReservation, language, type, username, summary);
         }
         return List.of();
     }
@@ -843,14 +843,14 @@ public class TicketReservationManager {
         return !summary.getFree() && (!summary.getNotYetPaid() || (summary.getWaitingForPayment() && ticketReservation.isInvoiceRequested()));
     }
 
-    private List<Mailer.Attachment> generateBillingDocumentAttachment(EventAndOrganizationId event,
+    private List<Mailer.Attachment> generateBillingDocumentAttachment(PurchaseContext purchaseContext,
                                                                              TicketReservation ticketReservation,
                                                                              Locale language,
                                                                              Map<String, Object> billingDocumentModel,
                                                                              BillingDocument.Type documentType) {
         Map<String, String> model = new HashMap<>();
         model.put("reservationId", ticketReservation.getId());
-        model.put("eventId", Integer.toString(event.getId()));
+        purchaseContext.event().map(event -> model.put("eventId", Integer.toString(event.getId())));
         model.put("language", json.asJsonString(language));
         model.put("reservationEmailModel", json.asJsonString(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
         switch (documentType) {
@@ -886,34 +886,35 @@ public class TicketReservationManager {
         }
     }
 
-    private String getReservationEmailSubject(Event event, Locale reservationLanguage, String key, String id) {
-        return messageSourceManager.getMessageSourceFor(event).getMessage(key, new Object[]{id, event.getDisplayName()}, reservationLanguage);
+    private String getReservationEmailSubject(PurchaseContext purchaseContext, Locale reservationLanguage, String key, String id) {
+        return messageSourceManager.getMessageSourceFor(purchaseContext)
+            .getMessage(key, new Object[]{id, purchaseContext.getDisplayName()}, reservationLanguage);
     }
 
     @Transactional
-    public void issueCreditNoteForReservation(Event event, String reservationId, String username) {
+    public void issueCreditNoteForReservation(PurchaseContext purchaseContext, String reservationId, String username) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CREDIT_NOTE_ISSUED.toString());
-        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
-        Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
-        BillingDocument billingDocument = billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummaryForReservation(reservation, event));
-        notificationManager.sendSimpleEmail(event,
+        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), purchaseContext, Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
+        Map<String, Object> model = prepareModelForReservationEmail(purchaseContext, reservation);
+        BillingDocument billingDocument = billingDocumentManager.createBillingDocument(purchaseContext, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummaryForReservation(reservation, purchaseContext));
+        notificationManager.sendSimpleEmail(purchaseContext,
             reservationId,
             reservation.getEmail(),
-            getReservationEmailSubject(event, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
-            () -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
-            generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), billingDocument.getModel(), CREDIT_NOTE)
+            getReservationEmailSubject(purchaseContext, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
+            () -> templateManager.renderTemplate(purchaseContext, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
+            generateBillingDocumentAttachment(purchaseContext, reservation, getReservationLocale(reservation), billingDocument.getModel(), CREDIT_NOTE)
         );
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation, Optional<String> vat, OrderSummary summary) {
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
-        String baseUrl = baseUrl(event);
+    public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext, TicketReservation reservation, Optional<String> vat, OrderSummary summary) {
+        Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
+        String baseUrl = baseUrl(purchaseContext);
         String reservationUrl = reservationUrl(reservation.getId());
-        String reservationShortID = getShortReservationID(event, reservation);
+        String reservationShortID = getShortReservationID(purchaseContext, reservation);
 
-        var bankingInfo = configurationManager.getFor(Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), ConfigurationLevel.event(event));
+        var bankingInfo = configurationManager.getFor(Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), ConfigurationLevel.purchaseContext(purchaseContext));
         Optional<String> invoiceAddress = bankingInfo.get(INVOICE_ADDRESS).getValue();
         Optional<String> bankAccountNr = bankingInfo.get(BANK_ACCOUNT_NR).getValue();
         Optional<String> bankAccountOwner = bankingInfo.get(BANK_ACCOUNT_OWNER).getValue();
@@ -930,15 +931,15 @@ public class TicketReservationManager {
         } else {
             ticketsWithCategory = Collections.emptyList();
         }
-        var initialOptions = extensionManager.handleReservationEmailCustomText(event, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
+        var initialOptions = extensionManager.handleReservationEmailCustomText(purchaseContext, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
             .map(CustomEmailText::toMap)
             .orElse(Map.of());
-        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, baseUrl, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner, initialOptions);
+        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, purchaseContext, reservation, vat, ticketsWithCategory, summary, baseUrl, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner, initialOptions);
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
             && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
         model.put("euBusiness", euBusiness);
-        model.put("publicId", configurationManager.getPublicReservationID(event, reservation));
+        model.put("publicId", configurationManager.getPublicReservationID(purchaseContext, reservation));
         model.put("invoicingAdditionalInfo", loadAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
         return model;
     }
@@ -948,10 +949,10 @@ public class TicketReservationManager {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
-        Optional<String> vat = getVAT(event);
-        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event);
-        return prepareModelForReservationEmail(event, reservation, vat, summary);
+    public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext, TicketReservation reservation) {
+        Optional<String> vat = getVAT(purchaseContext);
+        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), purchaseContext);
+        return prepareModelForReservationEmail(purchaseContext, reservation, vat, summary);
     }
 
     private void transitionToInPayment(PaymentSpecification spec) {
@@ -1494,8 +1495,10 @@ public class TicketReservationManager {
         return reservationUrl(ticketReservationRepository.findReservationById(reservationId), event);
     }
     
-    String baseUrl(Event event) {
-    	return StringUtils.removeEnd(configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue(), "/");
+    String baseUrl(PurchaseContext purchaseContext) {
+        var configurationLevel = purchaseContext.event().map(ConfigurationLevel::event)
+            .orElseGet(() -> ConfigurationLevel.organization(purchaseContext.getOrganizationId()));
+    	return StringUtils.removeEnd(configurationManager.getFor(BASE_URL, configurationLevel).getRequiredValue(), "/");
     }
 
     String reservationUrl(TicketReservation reservation, Event event) {

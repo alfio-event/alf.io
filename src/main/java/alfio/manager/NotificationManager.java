@@ -252,8 +252,8 @@ public class NotificationManager {
         });
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder) {
-        sendSimpleEmail(event, reservationId, recipient, cc, subject, textBuilder, Collections.emptyList());
+    public void sendSimpleEmail(PurchaseContext purchaseContext, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder) {
+        sendSimpleEmail(purchaseContext, reservationId, recipient, cc, subject, textBuilder, Collections.emptyList());
     }
 
     public List<String> getCCForEventOrganizer(PurchaseContext purchaseContext) {
@@ -265,16 +265,21 @@ public class NotificationManager {
             .collect(Collectors.toList());
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TemplateGenerator textBuilder) {
+    public void sendSimpleEmail(PurchaseContext event, String reservationId, String recipient, String subject, TemplateGenerator textBuilder) {
         sendSimpleEmail(event, reservationId, recipient, Collections.emptyList(), subject, textBuilder);
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
-        sendSimpleEmail(event, reservationId, recipient, Collections.emptyList(), subject, textBuilder, attachments);
+    public void sendSimpleEmail(PurchaseContext purchaseContext, String reservationId, String recipient, String subject, TemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+        sendSimpleEmail(purchaseContext, reservationId, recipient, Collections.emptyList(), subject, textBuilder, attachments);
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+    public void sendSimpleEmail(PurchaseContext purchaseContext, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
+        if(purchaseContext.getType() != PurchaseContext.PurchaseContextType.event) {
+            // FIXME rewrite queries to support PurchaseContext
+            throw new UnsupportedOperationException("not yet implemented");
+        }
+        var event = purchaseContext.event().orElseThrow();
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String encodedCC = Json.toJson(cc);
 
@@ -298,8 +303,12 @@ public class NotificationManager {
         return Pair.of(emailMessageRepository.countFindByEventId(eventId, toSearch), emailMessageRepository.findByEventId(eventId, offset, pageSize, toSearch));
     }
 
-    public List<LightweightMailMessage> loadAllMessagesForReservationId(int eventId, String reservationId) {
-        return emailMessageRepository.findByEventIdAndReservationId(eventId, reservationId);
+    public List<LightweightMailMessage> loadAllMessagesForReservationId(PurchaseContext purchaseContext, String reservationId) {
+        // FIXME handle PurchaseContext
+        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+            return emailMessageRepository.findByEventIdAndReservationId(purchaseContext.event().orElseThrow().getId(), reservationId);
+        }
+        return List.of();
     }
 
     public Optional<EmailMessage> loadSingleMessageForEvent(int eventId, int messageId) {

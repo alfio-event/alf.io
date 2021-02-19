@@ -17,6 +17,7 @@
 package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
+import alfio.model.PurchaseContext;
 import alfio.model.system.ConfigurationPathLevel;
 
 import java.util.OptionalInt;
@@ -47,6 +48,13 @@ public interface ConfigurationLevel {
 
     static ConfigurationLevel event(EventAndOrganizationId eventAndOrganizationId) {
         return new ConfigurationLevels.EventLevel(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId());
+    }
+
+    static ConfigurationLevel purchaseContext(PurchaseContext purchaseContext) {
+        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+            return event(purchaseContext.event().orElseThrow());
+        }
+        return organization(purchaseContext.getOrganizationId());
     }
 
     static ConfigurationLevel organization(int organizationId) {

@@ -23,7 +23,7 @@
             ctrl.toRefund = {};
             ctrl.notify = false;
             ctrl.updateInvoice = false;
-            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationId).then(function(res) {
+            AdminReservationService.paymentInfo('event', ctrl.event.shortName, ctrl.reservationId).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
             });
 

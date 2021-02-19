@@ -178,14 +178,14 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.STUCK_RESERVATIONS, event, payload);
     }
 
-    Optional<CustomEmailText> handleReservationEmailCustomText(Event event, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
+    Optional<CustomEmailText> handleReservationEmailCustomText(PurchaseContext purchaseContext, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
         Map<String, Object> payload = Map.of(
             "reservation", reservation,
-            "event", event,
+            "purchaseContext", purchaseContext,
             "billingData", additionalInfo
         );
         try {
-            return Optional.ofNullable(syncCall(ExtensionEvent.CONFIRMATION_MAIL_CUSTOM_TEXT, event, payload, CustomEmailText.class));
+            return Optional.ofNullable(syncCall(ExtensionEvent.CONFIRMATION_MAIL_CUSTOM_TEXT, purchaseContext, payload, CustomEmailText.class));
         } catch(Exception ex) {
             log.warn("Cannot get confirmation mail additional text", ex);
             return Optional.empty();
@@ -298,11 +298,11 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.REFUND_ISSUED, purchaseContext, payload);
     }
 
-    public boolean handlePdfTransformation(String html, Event event, OutputStream outputStream) {
+    public boolean handlePdfTransformation(String html, PurchaseContext purchaseContext, OutputStream outputStream) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("html", html);
         try {
-            PdfGenerationResult response = syncCall(ExtensionEvent.PDF_GENERATION, event, payload, PdfGenerationResult.class);
+            PdfGenerationResult response = syncCall(ExtensionEvent.PDF_GENERATION, purchaseContext, payload, PdfGenerationResult.class);
             if(response == null || response.isEmpty()) {
                 return false;
             }
