@@ -1070,6 +1070,28 @@
                         loadData();
                     })
                 };
+                $q.all([GroupService.loadActiveLinks($state.params.eventName), GroupService.loadGroups($scope.event.organizationId), SubscriptionService.loadSubscriptionsDescriptors($scope.event.organizationId)])
+                    .then(function(results) {
+                        var confResult = results[0];
+                        var lists = results[1].data;
+                        if(confResult.status === 200) {
+                            _.forEach(confResult.data, function(list) {
+                                var group = _.find(lists, function(l) { return l.id === list.groupId});
+                                list.groupName = group ? group.name : "";
+                                if(list.ticketCategoryId != null) {
+                                    var category = _.find($scope.event.ticketCategories, function(c) { return c.id === list.ticketCategoryId;});
+                                    if(category) {
+                                        category.attendeesList = list;
+                                    }
+                                } else {
+                                    $scope.event.attendeesList = list;
+                                }
+                            });
+                        }
+                        $scope.event.subscriptionDescriptors = _.map(_.filter(results[2].data, function(s) {
+                            return _.contains($scope.event.linkedSubscriptions, s.descriptor.id);
+                        }), 'descriptor');
+                    });
             });
         };
         $scope.baseUrl = window.location.origin;
@@ -1080,29 +1102,6 @@
                 expired: $scope.event.ticketCategories.filter(function(tc) { return tc.containingOrphans; }).length > 0,
                 freeText: ''
             };
-            $q.all([GroupService.loadActiveLinks($state.params.eventName), GroupService.loadGroups($scope.event.organizationId), SubscriptionService.loadSubscriptionsDescriptors($scope.event.organizationId)])
-                .then(function(results) {
-                    var confResult = results[0];
-                    var lists = results[1].data;
-                    if(confResult.status === 200) {
-                        _.forEach(confResult.data, function(list) {
-                            var group = _.find(lists, function(l) { return l.id === list.groupId});
-                            list.groupName = group ? group.name : "";
-                            if(list.ticketCategoryId != null) {
-                                var category = _.find($scope.event.ticketCategories, function(c) { return c.id === list.ticketCategoryId;});
-                                if(category) {
-                                    category.attendeesList = list;
-                                }
-                            } else {
-                                $scope.event.attendeesList = list;
-                            }
-                        });
-                    }
-                    $scope.event.subscriptionDescriptors = _.map(_.filter(results[2].data, function(s) {
-                        return _.contains($scope.event.linkedSubscriptions, s.descriptor.id);
-                    }), 'descriptor');
-
-                });
         });
         $scope.allocationStrategyRadioClass = 'radio';
         $scope.evaluateCategoryStatusClass = function(index, category) {
