@@ -203,7 +203,7 @@ public interface EventRepository {
     @Query("update event set metadata = :metadata::jsonb where id = :eventId")
     int updateMetadata(@Bind("metadata") @JSONData AlfioMetadata metadata, @Bind("eventId") int eventId);
 
-    @Query("select * from basic_event_with_optional_subscription where status = 'PUBLIC'" +
+    @Query("select * from basic_event_with_optional_subscription where end_ts > now() and status = 'PUBLIC'" +
         " and (:subscriptionId::uuid is null or subscription_id = :subscriptionId::uuid)" +
         " and (:organizer::integer is null or org_id = :organizer)" +
         " and (:tags::text[] is null or tags @> ARRAY[ :tags ]::text[])")
