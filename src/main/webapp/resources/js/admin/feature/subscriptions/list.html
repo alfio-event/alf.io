@@ -1,4 +1,7 @@
 <div>
+    <div class="text-right wMarginBottom30px" data-ng-if="$ctrl.subscriptions.length > 1">
+        <a class="btn btn-success" ui-sref="^.new({organizationId: $ctrl.organizationId})"><i class="fa fa-plus"></i> add new</a>
+    </div>
     <div class="panel panel-default" data-ng-repeat="subscription in $ctrl.subscriptions"
          id="subscription-{{subscription.descriptor.id}}">
         <div class="panel-heading">
