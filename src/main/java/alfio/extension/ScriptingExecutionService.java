@@ -49,7 +49,6 @@ import java.util.function.Supplier;
 @Log4j2
 public class ScriptingExecutionService {
 
-    private final SimpleHttpClient simpleHttpClient;
     private final Supplier<Executor> executorSupplier;
     private final ScriptableObject sealedScope;
 
@@ -67,7 +66,7 @@ public class ScriptingExecutionService {
     }
 
     public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
-        this.simpleHttpClient = new SimpleHttpClient(httpClient);
+        var simpleHttpClient = new SimpleHttpClient(httpClient);
         this.executorSupplier = executorSupplier;
         Context cx = ContextFactory.getGlobal().enterContext();
         try {

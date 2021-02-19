@@ -39,7 +39,7 @@ import static org.mockito.ArgumentMatchers.eq;
 public class ScriptingExecutionServiceTest {
 
     private static ScriptingExecutionService scriptingExecutionService;
-    private ExtensionLogger extensionLogger = Mockito.mock(ExtensionLogger.class);
+    private final ExtensionLogger extensionLogger = Mockito.mock(ExtensionLogger.class);
 
     @BeforeAll
     public static void init() {
@@ -70,7 +70,7 @@ public class ScriptingExecutionServiceTest {
 
     @Test
     void testExecutionTimeout() {
-        assertTimeoutPreemptively(Duration.ofSeconds(11L), () -> {
+        assertTimeoutPreemptively(Duration.ofSeconds(16L), () -> {
             try {
                 String concatenation = getScriptContent("timeout.js");
                 scriptingExecutionService.executeScript("name", concatenation, Map.of("extensionEvent", "test"), Void.class, extensionLogger);

@@ -29,8 +29,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collection;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ExtensionUtils {
@@ -72,13 +70,8 @@ public class ExtensionUtils {
      * @return
      */
     public static boolean needsJsonSerialization(Object returnObject) {
-        return returnObject != null && !(
-            returnObject instanceof Number
-            || returnObject instanceof Collection<?>
-            || returnObject instanceof Map<?, ?>
-            || returnObject instanceof CharSequence
-            || returnObject instanceof Boolean
-            || returnObject instanceof Character
-        );
+        return returnObject != null
+            // everything that is not included in the java.* package should be JSON-Serialized
+            && !returnObject.getClass().getPackage().getName().startsWith("java.");
     }
 }
