@@ -230,7 +230,7 @@ public class ExtensionService {
 
             if(params.getLeft().isEmpty()) {
                 res = scriptingExecutionService.executeScript(name, activePath.getHash(),
-                    () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz, extLogger);
+                    () -> getScript(path, name)+"\n;var res = executeScript(extensionEvent); if(ExtensionUtils.needsJsonSerialization(res)) { res = GSON.fromJson(JSON.stringify(res), returnClass); }; res;", input, clazz, extLogger);
                 input.put("output", res);
             } else {
                 extLogger.logInfo("script not run, missing parameters: " + params.getLeft());

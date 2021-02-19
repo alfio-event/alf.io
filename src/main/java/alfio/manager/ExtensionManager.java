@@ -319,10 +319,15 @@ public class ExtensionManager {
     }
 
     public Optional<String> generateOAuth2StateParam(int organizationId) {
-        return Optional.ofNullable(extensionService.executeScriptsForEvent(ExtensionEvent.OAUTH2_STATE_GENERATION.name(),
-            "-" + organizationId,
-            Map.of("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organizationId)).getRequiredValue(), "organizationId", organizationId),
-            String.class));
+        try {
+            return Optional.ofNullable(extensionService.executeScriptsForEvent(ExtensionEvent.OAUTH2_STATE_GENERATION.name(),
+                "-" + organizationId,
+                Map.of("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organizationId)).getRequiredValue(), "organizationId", organizationId),
+                String.class));
+        } catch (Exception ex) {
+            log.error("got exception while generating OAuth2 State Param", ex);
+            throw new IllegalStateException(ex);
+        }
     }
 
     public Optional<PromoCodeDiscount> handleDynamicDiscount(Event event, Map<Integer, Long> quantityByCategory, String reservationId) {
