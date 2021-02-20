@@ -197,7 +197,7 @@ public interface SubscriptionRepository {
     List<Subscription> findSubscriptionsByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("select exists(select 1 from subscription_descriptor where id = :id)")
-    boolean existsById(@Bind("id") String subscriptionId);
+    boolean existsById(@Bind("id") UUID subscriptionId);
 
     @Query("select exists (select id from subscription_event where event_id_fk  = :eventId)")
     boolean hasLinkedSubscription(@Bind("eventId") int eventId);
