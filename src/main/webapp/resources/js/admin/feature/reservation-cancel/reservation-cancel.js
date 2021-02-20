@@ -1,21 +1,56 @@
 (function() {
     'use strict';
 
-    angular.module('adminApplication').component('reservationCancel', {
-        controller: ['AdminReservationService', 'EventService', 'NotificationHandler', ReservationCancelCtrl],
-        templateUrl: '../resources/js/admin/feature/reservation-cancel/reservation-cancel.html',
-        bindings: {
-            purchaseContext: '<',
-            purchaseContextType: '<',
-            reservationId: '<',
-            credit: '<',
-            onSuccess: '&',
-            onCancel:'&'
-        }
-    });
+    angular.module('adminApplication')
+        .component('reservationCancel', {
+            controller: ['AdminReservationService', 'ReservationCancelService', 'NotificationHandler', ReservationCancelCtrl],
+            templateUrl: '../resources/js/admin/feature/reservation-cancel/reservation-cancel.html',
+            bindings: {
+                purchaseContext: '<',
+                purchaseContextType: '<',
+                reservationId: '<',
+                credit: '<',
+                onSuccess: '&',
+                onCancel:'&'
+            }
+        }).service('ReservationCancelService', ['$q', '$uibModal', '$http', function($q, $uibModal, $http) {
+            return {
+                cancelReservation: function(purchaseContextType, publicIdentifier, reservationId, refund, notify, credit) {
+                    var operation = credit ? 'credit' : 'cancel';
+                    return $http.post('/admin/api/reservation/'+purchaseContextType+'/'+publicIdentifier+'/'+reservationId+'/'+operation, null, {
+                        params: {
+                            refund: refund,
+                            notify: notify
+                        }
+                    });
+                },
+
+                cancelReservationModal: function(purchaseContextType, purchaseContext, reservationId, credit) {
+                    var modal = $uibModal.open({
+                        size:'lg',
+                        template:'<reservation-cancel purchase-context-type="purchaseContextType" purchase-context="purchaseContext" reservation-id="reservationId" on-success="success()" on-cancel="close()" credit="credit"></reservation-cancel>',
+                        backdrop: 'static',
+                        controller: function($scope) {
+                            $scope.purchaseContext = purchaseContext;
+                            $scope.purchaseContextType = purchaseContextType;
+                            $scope.reservationId = reservationId;
+                            $scope.credit = credit;
+                            $scope.close = function() {
+                                $scope.$dismiss(false);
+                            };
+
+                            $scope.success = function () {
+                                $scope.$close(false);
+                            }
+                        }
+                    });
+                    return modal.result;
+                }
+            }
+    }]);
 
 
-    function ReservationCancelCtrl(AdminReservationService, EventService, NotificationHandler) {
+    function ReservationCancelCtrl(AdminReservationService, ReservationCancelService, NotificationHandler) {
         var ctrl = this;
 
         ctrl.confirmRemove = confirmRemove;
@@ -33,7 +68,7 @@
 
         function confirmRemove() {
             ctrl.submitted = true;
-            return EventService.cancelReservation(ctrl.event.shortName, ctrl.reservationId, ctrl.refund, ctrl.notify, ctrl.credit).then(function(response) {
+            return ReservationCancelService.cancelReservation(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservationId, ctrl.refund, ctrl.notify, ctrl.credit).then(function(response) {
                 if(response.data.success) {
                     ctrl.onSuccess();
                 } else {

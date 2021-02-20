@@ -10,12 +10,12 @@
             onClose: '<',
             onConfirm: '<'
         },
-        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', 'ConfigurationService', ReservationViewCtrl],
+        controller: ['AdminReservationService', 'EventService', 'ReservationCancelService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', 'ConfigurationService', ReservationViewCtrl],
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal, ConfigurationService) {
+    function ReservationViewCtrl(AdminReservationService, EventService, ReservationCancelService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal, ConfigurationService) {
         var ctrl = this;
         ctrl.displayPotentialMatch = false;
 
@@ -360,7 +360,7 @@
         };
 
         ctrl.cancelReservationModal = function(credit) {
-            EventService.cancelReservationModal(ctrl.event, ctrl.reservation.id, credit).then(function() {
+            ReservationCancelService.cancelReservationModal(ctrl.purchaseContextType, ctrl.purchaseContext, ctrl.reservation.id, credit).then(function() {
                 $window.location.reload();
             });
         };
