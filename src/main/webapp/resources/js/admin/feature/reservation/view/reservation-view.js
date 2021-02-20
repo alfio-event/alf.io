@@ -68,7 +68,13 @@
                ctrl.allLanguages = allLangs.data;
             });
             var src = ctrl.reservationDescriptor.reservation;
-            ConfigurationService.loadSingleConfigForEvent(ctrl.purchaseContext.publicIdentifier, 'BASE_URL').then(function(resp) {
+            var configurationPromise;
+            if(ctrl.purchaseContextType === 'event') {
+                configurationPromise = ConfigurationService.loadSingleConfigForEvent(ctrl.purchaseContext.publicIdentifier, 'BASE_URL')
+            } else {
+                configurationPromise = ConfigurationService.loadSingleConfigForOrganization(ctrl.purchaseContext.organizationId, 'BASE_URL')
+            }
+            configurationPromise.then(function(resp) {
                 var baseUrl = resp.data;
                 var cleanUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
                 ctrl.reservationUrl = cleanUrl + '/'+ctrl.purchaseContextType+'/'+ ctrl.purchaseContext.publicIdentifier + '/reservation/' + src.id+'?lang='+src.userLanguage;
@@ -135,7 +141,7 @@
             });
 
 
-            if(ctrl.purchaseContext.visibleForCurrentUser) {
+            if(ctrl.purchaseContextType !== 'event' || ctrl.purchaseContext.visibleForCurrentUser) {
                 loadEmails();
                 loadPaymentInfo();
                 loadAudit();
