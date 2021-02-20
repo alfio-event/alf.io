@@ -234,8 +234,8 @@ public class IndexController {
     }
 
     @GetMapping("/subscription/{subscriptionId}/reservation/{reservationId}")
-    public String redirectSubscriptionToReservation(@PathVariable(value = "subscriptionId") String subscriptionId, @PathVariable(value = "reservationId") String reservationId) {
-        if (subscriptionRepository.existsById(subscriptionId)) {
+    public String redirectSubscriptionToReservation(@PathVariable("subscriptionId") String subscriptionId, @PathVariable("reservationId") String reservationId) {
+        if (subscriptionRepository.existsById(UUID.fromString(subscriptionId))) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
                 .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
 
