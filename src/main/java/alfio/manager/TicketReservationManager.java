@@ -817,25 +817,25 @@ public class TicketReservationManager {
         return List.of();
     }
 
-    public void sendReservationCompleteEmailToOrganizer(Event event, TicketReservation ticketReservation, Locale language, String username) {
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
-        List<String> cc = notificationManager.getCCForEventOrganizer(event);
+    public void sendReservationCompleteEmailToOrganizer(PurchaseContext purchaseContext, TicketReservation ticketReservation, Locale language, String username) {
+        Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
+        List<String> cc = notificationManager.getCCForEventOrganizer(purchaseContext);
 
-        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
+        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation);
 
         String reservationId = ticketReservation.getId();
-        OrderSummary summary = orderSummaryForReservationId(reservationId, event);
+        OrderSummary summary = orderSummaryForReservationId(reservationId, purchaseContext);
 
         List<Mailer.Attachment> attachments = Collections.emptyList();
 
-        if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) || configurationManager.isInvoiceOnly(event)) { // https://github.com/alfio-event/alf.io/issues/573
-            attachments = generateAttachmentForConfirmationEmail(event, ticketReservation, language, summary, username);
+        if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(purchaseContext) || configurationManager.isInvoiceOnly(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
+            attachments = generateAttachmentForConfirmationEmail(purchaseContext, ticketReservation, language, summary, username);
         }
 
 
-        String shortReservationID = configurationManager.getShortReservationID(event, ticketReservation);
-        notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, "Reservation complete " + shortReservationID,
-        	() -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
+        String shortReservationID = configurationManager.getShortReservationID(purchaseContext, ticketReservation);
+        notificationManager.sendSimpleEmail(purchaseContext, null, organization.getEmail(), cc, "Reservation complete " + shortReservationID,
+        	() -> templateManager.renderTemplate(purchaseContext, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
             attachments);
     }
 
@@ -1045,10 +1045,9 @@ public class TicketReservationManager {
         if(sendReservationConfirmationEmail) {
             TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
             var t = tickets;
-            spec.getPurchaseContext().event().ifPresent(event -> {
-                sendConfirmationEmailIfNecessary(updatedReservation, t, event, locale, username);
-                sendReservationCompleteEmailToOrganizer(event, updatedReservation, locale, username);
-            });
+            // TODO send confirmation for subscription
+            spec.getPurchaseContext().event().ifPresent(event -> sendConfirmationEmailIfNecessary(updatedReservation, t, event, locale, username));
+            sendReservationCompleteEmailToOrganizer(spec.getPurchaseContext(), updatedReservation, locale, username);
         }
     }
 
