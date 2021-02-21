@@ -60,6 +60,12 @@ public enum TemplateResource {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
+    CONFIRMATION_EMAIL_SUBSCRIPTION("/alfio/templates/confirmation-email-subscription", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
     OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
@@ -349,6 +355,7 @@ public enum TemplateResource {
         model.put("organization", organization);
         model.put("event", purchaseContext.event().orElse(null));
         model.put("purchaseContext", purchaseContext);
+        model.put("purchaseContextTitle", purchaseContext.getTitle().get(reservation.getUserLanguage()));
         model.put("ticketReservation", reservation);
         model.put("hasVat", vat.isPresent());
         model.put("vatNr", vat.orElse(""));

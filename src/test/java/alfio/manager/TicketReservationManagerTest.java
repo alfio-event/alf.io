@@ -58,7 +58,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.io.IOException;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -1087,7 +1086,8 @@ class TicketReservationManagerTest {
     void reservationURLGeneration() {
         String shortName = "shortName";
         String ticketId = "ticketId";
-        when(event.getShortName()).thenReturn(shortName);
+        when(event.getType()).thenReturn(PurchaseContext.PurchaseContextType.event);
+        when(event.getPublicIdentifier()).thenReturn(shortName);
         when(ticketReservation.getUserLanguage()).thenReturn("en");
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
@@ -1099,6 +1099,9 @@ class TicketReservationManagerTest {
         assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID, event));
         //generate the reservationUrl from reservation and event
         assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(ticketReservation, event));
+
+        when(event.getShortName()).thenReturn(shortName);
+
         //generate the ticket URL
         assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
         //generate the ticket update URL

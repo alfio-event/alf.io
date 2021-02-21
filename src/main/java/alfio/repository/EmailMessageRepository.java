@@ -48,7 +48,8 @@ public interface EmailMessageRepository {
         }
     }
 
-    @Query("insert into email_message (event_id, reservation_id, status, recipient, subject, message, html_message, attachments, checksum, request_ts, email_cc) values(:eventId, :reservationId, 'WAITING', :recipient, :subject, :message, :htmlMessage, :attachments, :checksum, :timestamp, :emailCC)")
+    @Query("insert into email_message (event_id, organization_id_fk, subscription_descriptor_id_fk, reservation_id, status, recipient, subject, message, html_message, attachments, checksum, request_ts, email_cc)" +
+        " values(:eventId, :organizationId, :subscriptionDescriptorId, :reservationId, 'WAITING', :recipient, :subject, :message, :htmlMessage, :attachments, :checksum, :timestamp, :emailCC)")
     int insert(@Bind("eventId") Integer eventId,
                @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                @Bind("reservationId") String reservationId,
@@ -60,7 +61,7 @@ public interface EmailMessageRepository {
                @Bind("attachments") String attachments,
                @Bind("checksum") String checksum,
                @Bind("timestamp") ZonedDateTime requestTimestamp,
-               @Bind("organization_id_fk") int organizationId);
+               @Bind("organizationId") int organizationId);
 
 
     @Query("update email_message set status = :status where id = :id and checksum = :checksum and status in (:expectedStatuses)")
@@ -84,8 +85,8 @@ public interface EmailMessageRepository {
                 ") and (status = 'WAITING' or status = 'RETRY') limit 100 for update skip locked")
     List<EmailMessage> loadAllWaitingForProcessing();
 
-    @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp, html_message = null where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
-    int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
+    @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp, html_message = null where id = :id and checksum = :checksum and status in (:expectedStatuses)")
+    int updateStatusToSent(@Bind("id") int id, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
 
     String FIND_MAILS = "select id, event_id, subscription_descriptor_id_fk, status, recipient, subject, message, checksum, request_ts, sent_ts, attempts, email_cc, organization_id_fk from email_message where event_id = :eventId and " +
         " (:search is null or (recipient like :search or subject like :search or message like :search)) order by sent_ts desc, id ";

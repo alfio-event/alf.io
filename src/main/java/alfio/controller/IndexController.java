@@ -150,6 +150,7 @@ public class IndexController {
      */
     @GetMapping({
         "/",
+        "/events-all",
         "/event/{eventShortName}",
         "/event/{eventShortName}/reservation/{reservationId}/book",
         "/event/{eventShortName}/reservation/{reservationId}/overview",
@@ -164,6 +165,7 @@ public class IndexController {
         "/event/{eventShortName}/ticket/{ticketId}/update",
         //
         // subscription
+        "/subscriptions-all",
         "/subscription/{subscriptionId}",
         "/subscription/{subscriptionId}/reservation/{reservationId}/book",
         "/subscription/{subscriptionId}/reservation/{reservationId}/overview",

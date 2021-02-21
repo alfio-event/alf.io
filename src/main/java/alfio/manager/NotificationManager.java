@@ -79,7 +79,7 @@ public class NotificationManager {
     private final Gson gson;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ClockProvider clockProvider;
-    private final SubscriptionRepository subscriptionRepository;
+    private final PurchaseContextManager purchaseContextManager;
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
@@ -102,7 +102,7 @@ public class NotificationManager {
                                AdditionalServiceItemRepository additionalServiceItemRepository,
                                ExtensionManager extensionManager,
                                ClockProvider clockProvider,
-                               SubscriptionRepository subscriptionRepository) {
+                               PurchaseContextManager purchaseContextManager) {
         this.messageSourceManager = messageSourceManager;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
@@ -116,14 +116,14 @@ public class NotificationManager {
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
         this.gson = builder.create();
         this.clockProvider = clockProvider;
-        this.subscriptionRepository = subscriptionRepository;
+        this.purchaseContextManager = purchaseContextManager;
         attachmentTransformer = new EnumMap<>(Mailer.AttachmentIdentifier.class);
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository, organizationRepository, messageSourceManager));
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(eventRepository,
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(purchaseContextManager, eventRepository,
             payload -> TemplateProcessor.buildReceiptPdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(eventRepository,
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(purchaseContextManager, eventRepository,
             payload -> TemplateProcessor.buildInvoicePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF, receiptOrInvoiceFactory(eventRepository,
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF, receiptOrInvoiceFactory(purchaseContextManager, eventRepository,
             payload -> TemplateProcessor.buildCreditNotePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passKitManager::getPass);
         Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
@@ -198,17 +198,25 @@ public class NotificationManager {
         return buildOnlineCheckInInformation(messageSource).apply(model, locale);
     }
 
-    private static Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(EventRepository eventRepository, Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {
+    private static Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(PurchaseContextManager purchaseContextManager, EventRepository eventRepository, Function<Triple<PurchaseContext, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {
         return model -> {
             String reservationId = model.get("reservationId");
-            Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+            PurchaseContext purchaseContext;
+            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), new TypeReference<>() {});
+            if (reservationEmailModel.get("purchaseContext") != null) {
+                @SuppressWarnings("unchecked")
+                var purchaseContextModel = (Map<String, String>) reservationEmailModel.get("purchaseContext");
+                // FIXME hack
+                var purchaseContextType = model.get("eventId") != null ? PurchaseContextType.event : PurchaseContextType.subscription;
+                purchaseContext = purchaseContextManager.findBy(purchaseContextType, purchaseContextModel.get("publicIdentifier")).orElseThrow();
+            } else {
+                purchaseContext = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+            }
             Locale language = Json.fromJson(model.get("language"), Locale.class);
 
-            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), new TypeReference<>() {
-            });
+            Optional<byte[]> receipt = pdfGenerator.apply(Triple.of(purchaseContext, language, reservationEmailModel));
             //FIXME hack: reservationEmailModel should be a minimal and typed container
-            reservationEmailModel.put("event", event);
-            Optional<byte[]> receipt = pdfGenerator.apply(Triple.of(event, language, reservationEmailModel));
+            reservationEmailModel.put("event", purchaseContext);
 
             if(receipt.isEmpty()) {
                 log.warn("was not able to generate the receipt for reservation id " + reservationId + " for locale " + language);
@@ -329,12 +337,7 @@ public class NotificationManager {
             .entrySet().stream()
             .flatMapToInt(entry -> {
                 var splitKey = entry.getKey().split("//");
-                PurchaseContext purchaseContext;
-                if(PurchaseContextType.from(splitKey[0]) == PurchaseContextType.event) {
-                    purchaseContext = eventRepository.findById(Integer.parseInt(splitKey[1]));
-                } else {
-                    purchaseContext = subscriptionRepository.findOne(UUID.fromString(splitKey[1])).orElseThrow();
-                }
+                PurchaseContext purchaseContext = purchaseContextManager.findBy(PurchaseContextType.from(splitKey[0]), splitKey[1]).orElseThrow();
                 // TODO we can try to send emails in batches, if the provider supports it.
                 return entry.getValue().stream().mapToInt(message -> processMessage(message, purchaseContext));
             }).sum();
@@ -369,7 +372,7 @@ public class NotificationManager {
     private void sendMessage(PurchaseContext purchaseContext, EmailMessage message) {
         // FIXME save the locale of the message, so that we can retrieve its title
         mailer.send(purchaseContext, purchaseContext.getDisplayName(), message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.ofNullable(message.getHtmlMessage()), decodeAttachments(message.getAttachments()));
-        emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(clockProvider.getClock()), Collections.singletonList(IN_PROCESS.name()));
+        emailMessageRepository.updateStatusToSent(message.getId(), message.getChecksum(), ZonedDateTime.now(clockProvider.getClock()), Collections.singletonList(IN_PROCESS.name()));
     }
 
     private String encodeAttachments(Mailer.Attachment... files) {

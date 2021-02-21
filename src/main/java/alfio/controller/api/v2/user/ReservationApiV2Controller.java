@@ -36,6 +36,7 @@ import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
+import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.subscription.Subscription;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -168,7 +169,7 @@ public class ReservationApiV2Controller {
             var containsCategoriesLinkedToGroups = purchaseContext.event().map(event -> ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())).orElse(false);
             //
             List<ReservationInfo.SubscriptionInfo> subscriptionInfos = null;
-            if (purchaseContext.getType() == PurchaseContext.PurchaseContextType.subscription) {
+            if (purchaseContext.getType() == PurchaseContextType.subscription) {
                 subscriptionInfos = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().map(s -> new ReservationInfo.SubscriptionInfo(s.getId(), s.getPin())).collect(Collectors.toList());
             }
 
@@ -495,22 +496,20 @@ public class ReservationApiV2Controller {
                 .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
     }
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
-    public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
+    @PostMapping("/{purchaseContextType}/{publicIdentifier}/reservation/{reservationId}/re-send-email")
+    public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
+                                                                      @PathVariable("publicIdentifier") String publicIdentifier,
                                                                       @PathVariable("reservationId") String reservationId,
                                                                       @RequestParam("lang") String lang,
                                                                       Principal principal) {
 
 
-
-        var res = eventRepository.findOptionalByShortName(eventName).map(event ->
-            ticketReservationManager.findById(reservationId).map(ticketReservation -> {
-                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event), principal != null ? principal.getName() : null);
-                return true;
-            }).orElse(false)
-        ).orElse(false);
-
-        return ResponseEntity.ok(res);
+        return ResponseEntity.of(purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
+            .map(purchaseContext -> ticketReservationManager.findById(reservationId)
+                .map(ticketReservation -> {
+                    ticketReservationManager.sendConfirmationEmail(purchaseContext, ticketReservation, LocaleUtil.forLanguageTag(lang, purchaseContext), principal != null ? principal.getName() : null);
+                    return true;
+                }).orElse(false)));
     }
 
 

@@ -792,7 +792,18 @@ public class TicketReservationManager {
 
         OrderSummary summary = orderSummaryForReservationId(reservationId, purchaseContext);
 
-        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation);
+        Map<String, Object> initialModel;
+        TemplateResource templateResource;
+        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.subscription) {
+            var firstSubscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
+            initialModel = Map.of("pin", firstSubscription.getPin(), "subscriptionId", firstSubscription.getId());
+            templateResource = TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION;
+        } else {
+            initialModel = Map.of();
+            templateResource = TemplateResource.CONFIRMATION_EMAIL;
+        }
+
+        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation, getVAT(purchaseContext), summary, initialModel);
         List<Mailer.Attachment> attachments = Collections.emptyList();
 
         if (configurationManager.canGenerateReceiptOrInvoiceToCustomer(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
@@ -801,7 +812,7 @@ public class TicketReservationManager {
 
         notificationManager.sendSimpleEmail(purchaseContext, ticketReservation.getId(), ticketReservation.getEmail(), messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("reservation-email-subject",
                 new Object[]{getShortReservationID(purchaseContext, ticketReservation), purchaseContext.getDisplayName()}, language),
-           () -> templateManager.renderTemplate(purchaseContext, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
+           () -> templateManager.renderTemplate(purchaseContext, templateResource, reservationEmailModel, language),
             attachments);
     }
 
@@ -908,7 +919,7 @@ public class TicketReservationManager {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext, TicketReservation reservation, Optional<String> vat, OrderSummary summary) {
+    public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext, TicketReservation reservation, Optional<String> vat, OrderSummary summary, Map<String, Object> initialOptions) {
         Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
         String baseUrl = baseUrl(purchaseContext);
         String reservationUrl = reservationUrl(reservation.getId());
@@ -931,10 +942,12 @@ public class TicketReservationManager {
         } else {
             ticketsWithCategory = Collections.emptyList();
         }
-        var initialOptions = extensionManager.handleReservationEmailCustomText(purchaseContext, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
+        Map<String, Object> baseModel = new HashMap<>();
+        baseModel.putAll(initialOptions);
+        baseModel.putAll(extensionManager.handleReservationEmailCustomText(purchaseContext, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
             .map(CustomEmailText::toMap)
-            .orElse(Map.of());
-        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, purchaseContext, reservation, vat, ticketsWithCategory, summary, baseUrl, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner, initialOptions);
+            .orElse(Map.of()));
+        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, purchaseContext, reservation, vat, ticketsWithCategory, summary, baseUrl, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner, baseModel);
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
             && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
@@ -952,7 +965,7 @@ public class TicketReservationManager {
     public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext, TicketReservation reservation) {
         Optional<String> vat = getVAT(purchaseContext);
         OrderSummary summary = orderSummaryForReservationId(reservation.getId(), purchaseContext);
-        return prepareModelForReservationEmail(purchaseContext, reservation, vat, summary);
+        return prepareModelForReservationEmail(purchaseContext, reservation, vat, summary, Map.of());
     }
 
     private void transitionToInPayment(PaymentSpecification spec) {
@@ -1045,25 +1058,28 @@ public class TicketReservationManager {
         if(sendReservationConfirmationEmail) {
             TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
             var t = tickets;
-            // TODO send confirmation for subscription
-            spec.getPurchaseContext().event().ifPresent(event -> sendConfirmationEmailIfNecessary(updatedReservation, t, event, locale, username));
+            sendConfirmationEmailIfNecessary(updatedReservation, t, purchaseContext, locale, username);
             sendReservationCompleteEmailToOrganizer(spec.getPurchaseContext(), updatedReservation, locale, username);
         }
     }
 
     void sendConfirmationEmailIfNecessary(TicketReservation ticketReservation,
                                           List<Ticket> tickets,
-                                          Event event,
+                                          PurchaseContext purchaseContext,
                                           Locale locale,
                                           String username) {
-        var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), ConfigurationLevel.event(event));
-        if(ticketReservation.getSrcPriceCts() > 0
-            || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
-            || !tickets.get(0).getEmail().equals(ticketReservation.getEmail())
-            || !config.get(SEND_RESERVATION_EMAIL_IF_NECESSARY).getValueAsBooleanOrDefault()
-            || !config.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault()
-            ) {
-            sendConfirmationEmail(event, ticketReservation, locale, username);
+        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+            var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), purchaseContext.getConfigurationLevel());
+            if(ticketReservation.getSrcPriceCts() > 0
+                || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
+                || !tickets.get(0).getEmail().equals(ticketReservation.getEmail())
+                || !config.get(SEND_RESERVATION_EMAIL_IF_NECESSARY).getValueAsBooleanOrDefault()
+                || !config.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault()
+                ) {
+                sendConfirmationEmail(purchaseContext, ticketReservation, locale, username);
+            }
+        } else {
+            sendConfirmationEmail(purchaseContext, ticketReservation, locale, username);
         }
     }
 
@@ -1487,11 +1503,13 @@ public class TicketReservationManager {
     }
 
     String reservationUrl(String reservationId) {
-        return reservationUrl(reservationId, eventRepository.findByReservationId(reservationId));
+        return purchaseContextManager.findByReservationId(reservationId)
+            .map(pc -> reservationUrl(reservationId, pc))
+            .orElse("");
     }
 
-    public String reservationUrl(String reservationId, Event event) {
-        return reservationUrl(ticketReservationRepository.findReservationById(reservationId), event);
+    public String reservationUrl(String reservationId, PurchaseContext purchaseContext) {
+        return reservationUrl(ticketReservationRepository.findReservationById(reservationId), purchaseContext);
     }
     
     String baseUrl(PurchaseContext purchaseContext) {
@@ -1500,8 +1518,8 @@ public class TicketReservationManager {
     	return StringUtils.removeEnd(configurationManager.getFor(BASE_URL, configurationLevel).getRequiredValue(), "/");
     }
 
-    String reservationUrl(TicketReservation reservation, Event event) {
-        return baseUrl(event) + "/event/" + event.getShortName() + "/reservation/" + reservation.getId() + "?lang="+reservation.getUserLanguage();
+    String reservationUrl(TicketReservation reservation, PurchaseContext purchaseContext) {
+        return baseUrl(purchaseContext) + "/"+purchaseContext.getType()+ "/" + purchaseContext.getPublicIdentifier() + "/reservation/" + reservation.getId() + "?lang="+reservation.getUserLanguage();
     }
 
     String ticketUrl(Event event, String ticketId) {
@@ -2193,7 +2211,7 @@ public class TicketReservationManager {
                 int slackTime = configurationManager.getFor(RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT, paymentContext.getConfigurationLevel()).getValueAsIntOrDefault(10);
                 PaymentMethod paymentMethodForTransaction = paymentProvider.getPaymentMethodForTransaction(transaction);
                 if(expiration.before(now)) {
-                    purchaseContext.event().ifPresent(event -> sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, true)); //FIXME
+                    sendTransactionFailedEmail(purchaseContext, reservation, paymentMethodForTransaction, paymentWebhookResult, true);
                     cancelReservation(reservation, false, null);
                     break;
                 } else if(DateUtils.addMinutes(expiration, -slackTime).before(now)) {
@@ -2262,30 +2280,30 @@ public class TicketReservationManager {
         return status != EXTERNAL_PROCESSING_PAYMENT && status != WAITING_EXTERNAL_CONFIRMATION;
     }
 
-    private void sendTransactionFailedEmail(Event event, TicketReservation reservation, PaymentMethod paymentMethod, PaymentWebhookResult paymentWebhookResult, boolean cancelReservation) {
-        var shortReservationID = getShortReservationID(event, reservation);
-        var messageSource = messageSourceManager.getMessageSourceFor(event);
+    private void sendTransactionFailedEmail(PurchaseContext purchaseContext, TicketReservation reservation, PaymentMethod paymentMethod, PaymentWebhookResult paymentWebhookResult, boolean cancelReservation) {
+        var shortReservationID = getShortReservationID(purchaseContext, reservation);
+        var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
         Map<String, Object> model = Map.of(
-        "organization", organizationRepository.getById(event.getOrganizationId()),
+        "organization", organizationRepository.getById(purchaseContext.getOrganizationId()),
         "reservationCancelled", cancelReservation,
         "reservation", reservation,
         "reservationId", shortReservationID,
-        "eventName", event.getDisplayName(),
+        "eventName", purchaseContext.getDisplayName(),
         "provider", Objects.requireNonNullElse(paymentMethod.name(), ""),
         "reason", paymentWebhookResult.getReason(),
-        "reservationUrl", reservationUrl(reservation, event));
+        "reservationUrl", reservationUrl(reservation, purchaseContext));
 
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
-        if(cancelReservation || configurationManager.getFor(NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
-            notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
-                new Object[]{shortReservationID, event.getDisplayName()}, locale),
-            	() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER, model, locale),
+        if(cancelReservation || configurationManager.getFor(NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault()) {
+            notificationManager.sendSimpleEmail(purchaseContext, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
+                new Object[]{shortReservationID, purchaseContext.getDisplayName()}, locale),
+            	() -> templateManager.renderTemplate(purchaseContext, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER, model, locale),
                 List.of());
         }
 
-        notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
-            new Object[]{shortReservationID, event.getDisplayName()}, locale),
-        	() -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL, model, locale),
+        notificationManager.sendSimpleEmail(purchaseContext, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
+            new Object[]{shortReservationID, purchaseContext.getDisplayName()}, locale),
+        	() -> templateManager.renderTemplate(purchaseContext, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL, model, locale),
             List.of());
 
     }
