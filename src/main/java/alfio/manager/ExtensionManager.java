@@ -256,10 +256,14 @@ public class ExtensionManager {
         return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getEvent(), payload, InvoiceGeneration.class));
     }
 
-    public Optional<CreditNoteGeneration> handleCreditNoteGeneration(Event event, String reservationId, String invoiceNumber) {
+    public Optional<CreditNoteGeneration> handleCreditNoteGeneration(Event event,
+                                                                     String reservationId,
+                                                                     String invoiceNumber,
+                                                                     Organization organization) {
         return Optional.ofNullable(syncCall(ExtensionEvent.CREDIT_NOTE_GENERATION, event, Map.of(
             "reservationId", reservationId,
-            "invoiceNumber", invoiceNumber
+            "invoiceNumber", invoiceNumber,
+            "organization", organization
         ), CreditNoteGeneration.class));
     }
 

@@ -148,7 +148,7 @@ public class BillingDocumentManager {
         String creditNoteNumber = reservation.getInvoiceNumber();
         if(type == CREDIT_NOTE) {
             // override credit note number
-            creditNoteNumber = extensionManager.handleCreditNoteGeneration(event, reservation.getId(), reservation.getInvoiceNumber())
+            creditNoteNumber = extensionManager.handleCreditNoteGeneration(event, reservation.getId(), reservation.getInvoiceNumber(), organizationRepository.getById(event.getOrganizationId()))
                 .map(CreditNoteGeneration::getCreditNoteNumber).orElse(creditNoteNumber);
         }
 
