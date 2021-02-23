@@ -25,10 +25,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.PromoCodeDiscount.CodeType;
 import alfio.model.checkin.EventWithCheckInInfo;
-import alfio.model.extension.CustomEmailText;
-import alfio.model.extension.DynamicDiscount;
-import alfio.model.extension.InvoiceGeneration;
-import alfio.model.extension.PdfGenerationResult;
+import alfio.model.extension.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -77,6 +74,7 @@ public class ExtensionManager {
         TICKET_ASSIGNED,
         WAITING_QUEUE_SUBSCRIBED,
         INVOICE_GENERATION,
+        CREDIT_NOTE_GENERATION,
         CREDIT_NOTE_GENERATED,
         TAX_ID_NUMBER_VALIDATION,
         RESERVATION_VALIDATION,
@@ -244,6 +242,13 @@ public class ExtensionManager {
         payload.put("vatStatus", spec.getVatStatus());
 
         return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getEvent(), payload, InvoiceGeneration.class));
+    }
+
+    public Optional<CreditNoteGeneration> handleCreditNoteGeneration(Event event, String reservationId, String invoiceNumber) {
+        return Optional.ofNullable(syncCall(ExtensionEvent.CREDIT_NOTE_GENERATION, event, Map.of(
+            "reservationId", reservationId,
+            "invoiceNumber", invoiceNumber
+        ), CreditNoteGeneration.class));
     }
 
     public Optional<String> handleOnlineCheckInLink(String originalUrl, Ticket ticket, EventWithCheckInInfo event) {

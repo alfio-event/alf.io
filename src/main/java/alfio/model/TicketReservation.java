@@ -17,7 +17,6 @@
 package alfio.model;
 
 import alfio.model.transaction.PaymentProxy;
-import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -198,7 +197,6 @@ public class TicketReservation implements PriceContainer {
         return status == TicketReservationStatus.CANCELLED;
     }
 
-    @JsonIgnore
     public String getPaidAmount() {
         if(finalPriceCts > 0) {
             return MonetaryUtil.formatCents(finalPriceCts, currencyCode);

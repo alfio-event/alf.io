@@ -45,6 +45,7 @@ import com.opencsv.exceptions.CsvException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -615,7 +616,7 @@ public class EventApiController {
             .orElse(0);
     }
 
-    @GetMapping("/events/{eventName}/all-invoices")
+    @GetMapping("/events/{eventName}/all-documents")
     public void getAllInvoices(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
         Event event = loadEvent(eventName, principal);
 
@@ -623,19 +624,62 @@ public class EventApiController {
         response.setHeader("Content-Disposition", "attachment; filename=" + event.getShortName() + "-invoices.zip");
 
         try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
-            for (Pair<TicketReservation, BillingDocument> pair : ticketReservationManager.findAllInvoices(event.getId())) {
-                TicketReservation reservation = pair.getLeft();
-                BillingDocument document = pair.getRight();
-                Map<String, Object> reservationModel = document.getModel();
-                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
-
-                if(pdf.isPresent()) {
-                    String fileName = FileUtil.getBillingDocumentFileName(event.getShortName(), reservation.getId(), document);
-                    zipOS.putNextEntry(new ZipEntry(fileName));
-                    StreamUtils.copy(pdf.get(), zipOS);
-                }
-            }
+            ticketReservationManager.streamAllDocumentsFor(event.getId())
+                .forEach(pair -> {
+                    TicketReservation reservation = pair.getLeft();
+                    for (BillingDocument document : pair.getRight()) {
+                        addPdfToZip(event, zipOS, reservation, document);
+                    }
+                });
         }
+    }
+
+    @SneakyThrows
+    private void addPdfToZip(Event event, ZipOutputStream zipOS, TicketReservation reservation, BillingDocument document) {
+        Map<String, Object> reservationModel = document.getModel();
+        Optional<byte[]> pdf;
+        var language = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
+
+        switch(document.getType()) {
+            case CREDIT_NOTE:
+                pdf = TemplateProcessor.buildCreditNotePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+                break;
+            case RECEIPT:
+                pdf = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+                break;
+            default:
+                pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+        }
+
+        if (pdf.isPresent()) {
+            String fileName = FileUtil.getBillingDocumentFileName(event.getShortName(), reservation.getId(), document);
+            var entry = new ZipEntry(fileName);
+            entry.setTimeLocal(document.getGenerationTimestamp().withZoneSameInstant(event.getZoneId()).toLocalDateTime());
+            zipOS.putNextEntry(entry);
+            StreamUtils.copy(pdf.get(), zipOS);
+        }
+    }
+
+    @GetMapping("/events/{eventName}/all-documents-xls")
+    public void getAllDocumentsXls(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
+        Event event = loadEvent(eventName, principal);
+        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String[] header = new String[] { "Reservation ID", "Type", "Number", "To", "Total", "Currency", "Generated on" };
+        ExportUtils.exportExcel(event.getShortName() + "-billing-documents.xls", "Documents", header,
+            ticketReservationManager.streamAllDocumentsFor(event.getId())
+                .flatMap(entry -> {
+                    var reservation = entry.getKey();
+                    return entry.getValue().stream().map(bd -> new String[] {
+                        reservation.getId(),
+                        bd.getType().name(),
+                        bd.getNumber(),
+                        reservation.getLineSplittedBillingAddress().stream().findFirst().orElse(""),
+                        String.valueOf(((Map<?,?>)bd.getModel().get("orderSummary")).get("totalPrice")),
+                        reservation.getCurrencyCode(),
+                        bd.getGenerationTimestamp().withZoneSameInstant(event.getZoneId()).format(formatter)
+                    });
+                })
+            , response);
     }
 
     @GetMapping("/events-all-languages")

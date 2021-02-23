@@ -745,7 +745,10 @@ public class AdminReservationManager {
         return loadReservation(eventName, reservationId, username).map(res -> {
             var event = res.getRight();
             var reservation = res.getLeft();
-            billingDocumentManager.createBillingDocument(event, reservation, username, ticketReservationManager.orderSummaryForReservation(reservation, event));
+            var billingDocument = billingDocumentManager.createBillingDocument(event, reservation, username, ticketReservationManager.orderSummaryForReservation(reservation, event));
+            if(billingDocument.getType() != BillingDocument.Type.CREDIT_NOTE) {
+                billingDocumentRepository.invalidateAllPreviousDocumentsOfType(billingDocument.getType(), billingDocument.getId(), reservationId);
+            }
             return true;
         });
     }
