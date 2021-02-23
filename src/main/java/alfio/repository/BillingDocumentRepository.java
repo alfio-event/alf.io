@@ -38,6 +38,11 @@ public interface BillingDocumentRepository {
     @Query("update billing_document set status = :status where reservation_id_fk = :reservationId and id = :id")
     int updateStatus(@Bind("id") long documentId, @Bind("status") BillingDocument.Status status, @Bind("reservationId") String reservationId);
 
+    @Query("update billing_document set status = 'NOT_VALID' where type = :type and id < :currentId and reservation_id_fk = :reservationId")
+    int invalidateAllPreviousDocumentsOfType(@Bind("type") BillingDocument.Type type,
+                                             @Bind("currentId") Long currentId,
+                                             @Bind("reservationId") String reservationId);
+
     @Query("select * from billing_document where reservation_id_fk = :reservationId order by generation_ts desc")
     List<BillingDocument> findAllByReservationId(@Bind("reservationId") String reservationId);
 
@@ -56,6 +61,15 @@ public interface BillingDocumentRepository {
         "(select max(generation_ts) as time,reservation_id_fk from billing_document where status = 'VALID' and type = :type and event_id_fk = :eventId group by reservation_id_fk) b" +
         " on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk")
     List<BillingDocument> findAllOfTypeForEvent(@Bind("type") BillingDocument.Type type, @Bind("eventId") int eventId);
+
+    @Query(
+        "select a.* from billing_document a inner join " +
+            "(select max(generation_ts) as time,reservation_id_fk from billing_document where status = 'VALID' and type = 'INVOICE' and event_id_fk = :eventId group by reservation_id_fk) b" +
+        " on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk" +
+        " union select * from billing_document where status = 'VALID' and event_id_fk = :eventId and type <> 'INVOICE'" +
+        " order by reservation_id_fk, generation_ts"
+    )
+    List<BillingDocument> findAllForEvent(@Bind("eventId") int eventId);
 
     @Query("delete from billing_document where reservation_id_fk = :reservationId and event_id_fk = :eventId")
     int deleteForReservation(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId);

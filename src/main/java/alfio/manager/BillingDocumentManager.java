@@ -20,6 +20,7 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
+import alfio.model.extension.CreditNoteGeneration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -38,8 +39,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static alfio.model.BillingDocument.Type.INVOICE;
-import static alfio.model.BillingDocument.Type.RECEIPT;
+import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.TicketReservation.TicketReservationStatus.CANCELLED;
 import static alfio.model.TicketReservation.TicketReservationStatus.PENDING;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -52,6 +52,7 @@ import static java.util.stream.Collectors.toList;
 @AllArgsConstructor
 @Log4j2
 public class BillingDocumentManager {
+    private static final String CREDIT_NOTE_NUMBER = "creditNoteNumber";
     private final BillingDocumentRepository billingDocumentRepository;
     private final Json json;
     private final ConfigurationManager configurationManager;
@@ -61,6 +62,7 @@ public class BillingDocumentManager {
     private final UserRepository userRepository;
     private final AuditingRepository auditingRepository;
     private final TicketReservationRepository ticketReservationRepository;
+    private final ExtensionManager extensionManager;
 
 
     public Optional<ZonedDateTime> findFirstInvoiceDate(int eventId) {
@@ -115,8 +117,15 @@ public class BillingDocumentManager {
     }
 
     BillingDocument createBillingDocument(Event event, TicketReservation reservation, String username, BillingDocument.Type type, OrderSummary orderSummary) {
-        Map<String, Object> model = prepareModelForBillingDocument(event, reservation, orderSummary);
-        String number = reservation.getHasInvoiceNumber() ? reservation.getInvoiceNumber() : UUID.randomUUID().toString();
+        Map<String, Object> model = prepareModelForBillingDocument(event, reservation, orderSummary, type);
+        String number;
+        if(type == INVOICE) {
+            number = reservation.getInvoiceNumber();
+        } else if (type == CREDIT_NOTE) {
+            number = (String) model.get(CREDIT_NOTE_NUMBER);
+        } else {
+            number = UUID.randomUUID().toString();
+        }
         AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, json.asJsonString(model), ZonedDateTime.now(event.getZoneId()), event.getOrganizationId());
         log.trace("billing document #{} created", doc.getKey());
         auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
@@ -133,8 +142,15 @@ public class BillingDocumentManager {
         return billingDocumentRepository.findById(id);
     }
 
-    private Map<String, Object> prepareModelForBillingDocument(Event event, TicketReservation reservation, OrderSummary summary) {
+    private Map<String, Object> prepareModelForBillingDocument(Event event, TicketReservation reservation, OrderSummary summary, BillingDocument.Type type) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
+
+        String creditNoteNumber = reservation.getInvoiceNumber();
+        if(type == CREDIT_NOTE) {
+            // override credit note number
+            creditNoteNumber = extensionManager.handleCreditNoteGeneration(event, reservation.getId(), reservation.getInvoiceNumber())
+                .map(CreditNoteGeneration::getCreditNoteNumber).orElse(creditNoteNumber);
+        }
 
         var bankingInfo = configurationManager.getFor(Set.of(VAT_NR, INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), ConfigurationLevel.event(event));
         Optional<String> invoiceAddress = bankingInfo.get(INVOICE_ADDRESS).getValue();
@@ -163,6 +179,9 @@ public class BillingDocumentManager {
         var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservation.getId());
         model.put("invoicingAdditionalInfo", additionalInfo.getInvoicingAdditionalInfo());
         model.put("billingDetails", additionalInfo.getBillingDetails());
+        if(type == CREDIT_NOTE) {
+            model.put(CREDIT_NOTE_NUMBER, creditNoteNumber);
+        }
         return model;
     }
 }

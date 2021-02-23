@@ -896,7 +896,7 @@
                         }
                     });
                 };
-                ctrl.downloadInvoices = function() {
+                ctrl.downloadInvoices = function(type) {
                     EventService.countInvoices(ctrl.event.shortName).then(function (res) {
                         var count = res.data;
                         if(count > 0) {
@@ -904,7 +904,11 @@
                             if(!pathName.endsWith("/")) {
                                 pathName = pathName + "/";
                             }
-                            $window.open(pathName+"api/events/"+ctrl.event.shortName+"/all-invoices");
+                            var suffix = '';
+                            if(type === 'xls') {
+                                suffix = '-xls';
+                            }
+                            $window.open(pathName+"api/events/"+ctrl.event.shortName+"/all-documents"+suffix);
                         } else {
                             NotificationHandler.showInfo("No invoices have been found.");
                         }

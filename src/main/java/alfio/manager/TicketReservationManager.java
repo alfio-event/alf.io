@@ -1992,6 +1992,15 @@ public class TicketReservationManager {
             .collect(toList());
     }
 
+    public Stream<Pair<TicketReservation, List<BillingDocument>>> streamAllDocumentsFor(int eventId) {
+        var documentsByReservationId = billingDocumentRepository.findAllForEvent(eventId).stream()
+            .collect(groupingBy(BillingDocument::getReservationId));
+        var reservations = ticketReservationRepository.findByIds(documentsByReservationId.keySet()).stream()
+            .collect(toMap(TicketReservation::getId, Function.identity()));
+        return documentsByReservationId.entrySet().stream()
+            .map(entry -> Pair.of(reservations.get(entry.getKey()), entry.getValue()));
+    }
+
     public Integer countInvoices(int eventId) {
         return ticketReservationRepository.countInvoices(eventId);
     }

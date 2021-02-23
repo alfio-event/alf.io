@@ -117,6 +117,7 @@
                 <td colspan="2" style="text-align: left" class="small">
                     <p>{{invoiceAddress}}</p>
                     <p>{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}} {{vatNr}}</p>
+                    {{#creditNoteNumber?}}<p class="strong">{{#i18n}}invoice.credit-note.number{{/i18n}} {{creditNoteNumber}}</p>{{/creditNoteNumber?}}
                     <p class="strong">{{#i18n}}invoice.number{{/i18n}} {{ticketReservation.invoiceNumber}}</p>
                     <p>{{#i18n}}invoice.date{{/i18n}} {{#format-date}}{{now}} dd/MM/yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</p>
                     {{#hasCustomerReference}}<p><strong>{{#i18n}}common.customer-reference{{/i18n}}</strong>: {{ticketReservation.customerReference}}</p>{{/hasCustomerReference}}

@@ -32,8 +32,9 @@
             <tr>
                 <th width="10%">Id</th>
                 <th width="30%">Customer's name</th>
-                <th width="30%">Customer's email</th>
+                <th width="20%">Customer's email</th>
                 <th width="10%">Payment</th>
+                <th width="10%">Amount</th>
                 <th width="20%">Confirmation</th>
             </tr>
             </thead>
@@ -43,6 +44,7 @@
                 <td ng-bind="$ctrl.formatFullName(r)"></td>
                 <td ng-bind="r.email"></td>
                 <td ng-bind="r.paymentMethod"></td>
+                <td ng-bind="r.paidAmount | money:r.currencyCode"></td>
                 <td ng-bind="r.confirmationTimestamp | formatDate"></td>
             </tr>
             </tbody>
@@ -61,8 +63,9 @@
                     <tr>
                         <th width="10%">Id</th>
                         <th width="30%">Customer's name</th>
-                        <th width="30%">Customer's email</th>
+                        <th width="20%">Customer's email</th>
                         <th width="10%">Payment</th>
+                        <th width="10%">Amount</th>
                         <th width="20%">Confirmation</th>
                     </tr>
                     </thead>
@@ -72,6 +75,8 @@
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
+                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
+                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
                         <td ng-bind="r.confirmationTimestamp | formatDate"></td>
                     </tr>
                     </tbody>
@@ -91,11 +96,11 @@
                     <thead>
                     <tr>
                         <th width="10%">Id</th>
-                        <th width="20%">Customer's name</th>
+                        <th width="30%">Customer's name</th>
                         <th width="20%">Customer's email</th>
                         <th width="10%">Payment</th>
-                        <th width="20%">Creation</th>
-                        <th width="20%">Expiration</th>
+                        <th width="10%">Amount</th>
+                        <th width="20%">Confirmation</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -105,6 +110,8 @@
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
                         <td ng-bind="r.creationTimestamp | formatDate"></td>
+                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
+                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
                         <td ng-bind="r.validity | formatDate"></td>
                     </tr>
                     </tbody>
@@ -124,9 +131,10 @@
                     <tr>
                         <th width="10%">Id</th>
                         <th width="30%">Customer's name</th>
-                        <th width="30%">Customer's email</th>
+                        <th width="20%">Customer's email</th>
                         <th width="10%">Payment</th>
-                        <th width="20%">Expiration</th>
+                        <th width="10%">Amount</th>
+                        <th width="20%">Confirmation</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -135,6 +143,8 @@
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
+                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
+                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
                         <td ng-bind="r.validity | formatDate"></td>
                     </tr>
                     </tbody>
@@ -155,9 +165,10 @@
                     <tr>
                         <th width="10%">Id</th>
                         <th width="30%">Customer's name</th>
-                        <th width="30%">Customer's email</th>
+                        <th width="20%">Customer's email</th>
                         <th width="10%">Payment</th>
-                        <th width="20%">Expiration</th>
+                        <th width="10%">Amount</th>
+                        <th width="20%">Confirmation</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -166,6 +177,8 @@
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
+                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
+                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
                         <td ng-bind="r.validity | formatDate"></td>
                     </tr>
                     </tbody>
@@ -186,9 +199,10 @@
                     <tr>
                         <th width="10%">Id</th>
                         <th width="30%">Customer's name</th>
-                        <th width="30%">Customer's email</th>
+                        <th width="20%">Customer's email</th>
                         <th width="10%">Payment</th>
-                        <th width="20%">Expiration</th>
+                        <th width="10%">Amount</th>
+                        <th width="20%">Confirmation</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -197,6 +211,8 @@
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
+                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
+                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
                         <td ng-bind="r.validity | formatDate"></td>
                     </tr>
                     </tbody>

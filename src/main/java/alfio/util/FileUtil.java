@@ -45,16 +45,17 @@ public class FileUtil {
     }
 
     public static String getBillingDocumentFileName(String eventShortName, String reservationId, BillingDocument document) {
-        if(document.getType() == BillingDocument.Type.INVOICE) {
+        if(document.getType() != BillingDocument.Type.RECEIPT) {
             Map<String, Object> reservationModel = document.getModel();
             ZonedDateTime invoiceDate = ZonedDateTime.parse((String) reservationModel.get("confirmationDate"));
             String formattedDate = invoiceDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss"));
-            return new StringBuilder(eventShortName)
-                .append("-").append(formattedDate)
-                .append("-").append(document.getNumber())
-                .append(".pdf").toString();
+            return eventShortName +
+                "-" + formattedDate +
+                "-" + document.getNumber() +
+                "-" + document.getId()+
+                ".pdf";
         } else {
-            return new StringBuilder("receipt-").append(eventShortName).append("-").append(reservationId).toString();
+            return "receipt-" + eventShortName + "-" + reservationId + ".pdf";
         }
     }
 
