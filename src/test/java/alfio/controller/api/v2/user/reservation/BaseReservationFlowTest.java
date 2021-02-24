@@ -123,6 +123,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     private final ExtensionService extensionService;
     private final PollRepository pollRepository;
     private final ClockProvider clockProvider;
+    private final NotificationManager notificationManager;
 
     private Integer additionalServiceId;
 
@@ -869,6 +870,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertNotNull(confRes.getBody());
             assertTrue(confRes.getBody());
 
+            // trigger email processing
+            int result = notificationManager.sendWaitingMessages();
+            assertTrue(result > 0);
+
             var ticket = reservation.getTicketsByCategory().stream().findFirst().orElseThrow().getTickets().get(0);
             assertEquals("tickettest@test.com", ticket.getEmail());
             assertEquals("ticketfull", ticket.getFirstName());
@@ -890,6 +895,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, sendTicketByEmailRes.getStatusCode());
             assertNotNull(sendTicketByEmailRes.getBody());
             assertTrue(sendTicketByEmailRes.getBody());
+
+            // trigger email processing
+            result = notificationManager.sendWaitingMessages();
+            assertTrue(result > 0);
 
             //update ticket
             var updateTicketOwnerForm = new UpdateTicketOwnerForm();

@@ -105,7 +105,8 @@ public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFl
                                                      NamedParameterJdbcTemplate jdbcTemplate,
                                                      ExtensionLogRepository extensionLogRepository,
                                                      ExtensionService extensionService,
-                                                     PollRepository pollRepository) {
+                                                     PollRepository pollRepository,
+                                                     NotificationManager notificationManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -135,7 +136,8 @@ public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFl
             extensionLogRepository,
             extensionService,
             pollRepository,
-            clockProvider);
+            clockProvider,
+            notificationManager);
         this.organizationRepository = organizationRepository;
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;

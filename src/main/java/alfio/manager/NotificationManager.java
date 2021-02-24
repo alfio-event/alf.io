@@ -337,7 +337,7 @@ public class NotificationManager {
             .entrySet().stream()
             .flatMapToInt(entry -> {
                 var splitKey = entry.getKey().split("//");
-                PurchaseContext purchaseContext = purchaseContextManager.findBy(PurchaseContextType.from(splitKey[0]), splitKey[1]).orElseThrow();
+                PurchaseContext purchaseContext = purchaseContextManager.findById(PurchaseContextType.from(splitKey[0]), splitKey[1]).orElseThrow();
                 // TODO we can try to send emails in batches, if the provider supports it.
                 return entry.getValue().stream().mapToInt(message -> processMessage(message, purchaseContext));
             }).sum();

@@ -50,6 +50,14 @@ public class PurchaseContextManager {
         }
     }
 
+    Optional<? extends PurchaseContext> findById(PurchaseContext.PurchaseContextType purchaseContextType, String idAsString) {
+        switch (purchaseContextType) {
+            case event: return eventRepository.findOptionalById(Integer.parseInt(idAsString));
+            case subscription: return subscriptionRepository.findOne(UUID.fromString(idAsString));
+            default: throw new IllegalStateException("not a covered type " + purchaseContextType);
+        }
+    }
+
     public Optional<PurchaseContext> findByReservationId(String reservationId) {
         return ticketReservationRepository.findEventIdFor(reservationId).map(eventRepository::findById)
             .map(PurchaseContext.class::cast)
