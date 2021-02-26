@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
+import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -157,6 +158,7 @@ public class BillingDocumentManager {
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
             && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
+        model.put("isEvent", purchaseContext.getType() == PurchaseContextType.event);
         model.put("euBusiness", euBusiness);
         model.put("publicId", configurationManager.getPublicReservationID(purchaseContext, reservation));
         model.put("invoicingAdditionalInfo", ticketReservationRepository.getAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());

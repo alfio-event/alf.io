@@ -27,7 +27,7 @@
 		<mj-section background-color="white">
 			<mj-column width="100%">
 				<mj-text align="center" font-size="15px" color="#000" padding="30px">
-					{{ticketReservation.fullName}}<{{ticketReservation.email}}> has completed the reservation {{reservationShortID}} for event {{event.displayName}}
+					{{ticketReservation.fullName}}<{{ticketReservation.email}}> has completed the reservation {{reservationShortID}} for {{purchaseContext.displayName}}
 				</mj-text>
 				<mj-table padding="0 15px">
 					<tr style="border-bottom:1px solid #ecedee;text-align:center;">
@@ -41,7 +41,7 @@
 						<td>{{name}}</td>
 						<td>{{amount}}</td>
 						<td>{{ticketReservation.paymentMethod}}</td>
-						<td style="text-align:right">{{subTotal}} {{event.currency}}</td>
+						<td style="text-align:right">{{subTotal}} {{purchaseContext.currency}}</td>
 					</tr>
 					{{/orderSummary.summary}}
 					<tr>
@@ -51,13 +51,13 @@
 					<tr style="border-top:1px solid #ecedee;text-align:right;padding: 0 15px;">
 						<td style="font-weight: bold" colspan="3">VAT
 							{{ticketReservation.usedVatPercent}}%</td>
-						<td>{{orderSummary.totalVAT}} {{event.currency}}</td>
+						<td>{{orderSummary.totalVAT}} {{purchaseContext.currency}}</td>
 					</tr>
 					{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
 					<tr style="border-top:1px solid #ecedee;text-align:right;padding: 0 15px;">
 						<td style="font-weight: bold;text-align:right;" colspan="3">Total
 						</td>
-						<td>{{orderSummary.totalPrice}} {{event.currency}}
+						<td>{{orderSummary.totalPrice}} {{purchaseContext.currency}}
 							{{^orderSummary.displayVat}}(Vat
 							Exempt){{/orderSummary.displayVat}}</td>
 					</tr>
@@ -65,7 +65,7 @@
 					<tr style="border-top:1px solid #ecedee;text-align:right">
 						<td style="font-weight: bold" colspan="3">VAT INCL
 							{{ticketReservation.usedVatPercent}}%</td>
-						<td>{{orderSummary.totalVAT}} {{event.currency}}</td>
+						<td>{{orderSummary.totalVAT}} {{purchaseContext.currency}}</td>
 					</tr>
 					{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
 				</mj-table>

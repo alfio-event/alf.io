@@ -286,13 +286,16 @@ public class WebSecurityConfig {
                 ADMIN_API + "/overridable-template/",
                 ADMIN_API + "/events/*/promo-code",
                 ADMIN_API + "/reservation/event/*/reservations/list",
-                ADMIN_API + "/events/*/email/",
+                ADMIN_API + "/event/*/email/",
                 ADMIN_API + "/event/*/waiting-queue/load",
                 ADMIN_API + "/events/*/pending-payments",
                 ADMIN_API + "/events/*/export",
                 ADMIN_API + "/events/*/sponsor-scan/export",
                 ADMIN_API + "/events/*/invoices/**",
-                ADMIN_API + "/reservation/event/*/*/audit"
+                ADMIN_API + "/reservation/*/*/*/audit",
+                ADMIN_API + "/subscription/*/email/",
+                ADMIN_API + "/organization/*/subscription/**",
+                ADMIN_API + "/reservation/subscription/**"
             };
 
             configurer.csrfTokenRepository(csrfTokenRepository)

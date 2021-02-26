@@ -20,7 +20,10 @@ import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.*;
+import alfio.model.Configurable;
+import alfio.model.PaymentInformation;
+import alfio.model.PurchaseContext;
+import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentContext;
@@ -150,14 +153,14 @@ class BaseStripeManager {
         int tickets = ticketRepository.countTicketsInReservation(spec.getReservationId());
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", spec.getPriceWithVAT());
-        FeeCalculator.getCalculator(spec.getPurchaseContext(), configurationManager, spec.getCurrencyCode())
+        var purchaseContext = spec.getPurchaseContext();
+        FeeCalculator.getCalculator(purchaseContext, configurationManager, spec.getCurrencyCode())
             .apply(tickets, (long) spec.getPriceWithVAT())
             .filter(l -> l > 0)
             .ifPresent(fee -> chargeParams.put("application_fee_amount", fee));
-        chargeParams.put("currency", spec.getPurchaseContext().getCurrency());
-
-        chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, spec.getPurchaseContext().getDisplayName()));
-
+        chargeParams.put("currency", purchaseContext.getCurrency());
+        var description = purchaseContext.getType() == PurchaseContextType.event ? "ticket(s) for event" : "x subscription";
+        chargeParams.put("description", String.format("%d %s %s", tickets, description, purchaseContext.getDisplayName()));
         chargeParams.put("metadata", MetadataBuilder.buildMetadata(spec, baseMetadata));
         return chargeParams;
     }

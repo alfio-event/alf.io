@@ -141,19 +141,19 @@
         </table>
 
 
-        <h3><span class="strong">{{purchaseContext.displayName}}</span>,
+        <h3><span class="strong">{{purchaseContext.displayName}}</span>{{#isEvent}},
             <i>
-                {{#event.event.sameDay}}{{#i18n}}event-days.same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}] {{/i18n}}{{/event.sameDay}}
-                {{^event.sameDay}}{{#i18n}}event-days.not-same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]{{/i18n}} - {{#i18n}}event-days.not-same-day [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]{{/i18n}} {{/event.sameDay}}
-            </i>
+                {{#purchaseContext.sameDay}}{{#i18n}}event-days.same-day [{{#format-date}}{{purchaseContext.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{purchaseContext.begin}} HH:mm{{/format-date}}] [{{#format-date}}{{purchaseContext.end}} HH:mm (z){{/format-date}}] {{/i18n}}{{/purchaseContext.sameDay}}
+                {{^purchaseContext.sameDay}}{{#i18n}}event-days.not-same-day [{{#format-date}}{{purchaseContext.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{purchaseContext.begin}} HH:mm{{/format-date}}]{{/i18n}} - {{#i18n}}event-days.not-same-day [{{#format-date}}{{purchaseContext.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{purchaseContext.end}} HH:mm (z){{/format-date}}]{{/i18n}} {{/purchaseContext.sameDay}}
+            </i>{{/isEvent}}
         </h3>
         <table style="width:100%;" class="summary">
             <thead>
                 <tr>
                     <th class="text-center" style="width:10%">{{#i18n}}reservation-page.amount{{/i18n}}</th>
                     <th class="text-center" style="width:60%">{{#i18n}}reservation-page.category{{/i18n}}</th>
-                    <th class="text-center" style="width:15%">{{#i18n}}reservation-page.price{{/i18n}} ({{event.currency}})</th>
-                    <th class="text-center" style="width:15%">{{#i18n}}reservation-page.subtotal{{/i18n}} ({{event.currency}})</th>
+                    <th class="text-center" style="width:15%">{{#i18n}}reservation-page.price{{/i18n}} ({{purchaseContext.currency}})</th>
+                    <th class="text-center" style="width:15%">{{#i18n}}reservation-page.subtotal{{/i18n}} ({{purchaseContext.currency}})</th>
                 </tr>
             </thead>
             <tbody>
@@ -175,7 +175,7 @@
                         <tr><th colspan="4" class="no-padding">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</th></tr>
                     {{/orderSummary.displayVat}}
                 {{/orderSummary.free}}
-                <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}} {{event.currency}}</th><th class="text-right strong">- {{orderSummary.totalPrice}}</th></tr>
+                <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}} {{purchaseContext.currency}}</th><th class="text-right strong">- {{orderSummary.totalPrice}}</th></tr>
             </tfoot>
         </table>
 

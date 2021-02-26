@@ -810,8 +810,11 @@ public class TicketReservationManager {
             attachments = generateAttachmentForConfirmationEmail(purchaseContext, ticketReservation, language, summary, username);
         }
 
-        notificationManager.sendSimpleEmail(purchaseContext, ticketReservation.getId(), ticketReservation.getEmail(), messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("reservation-email-subject",
-                new Object[]{getShortReservationID(purchaseContext, ticketReservation), purchaseContext.getDisplayName()}, language),
+
+        var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
+        var localizedType = messageSource.getMessage("purchase-context."+purchaseContext.getType(), null, language);
+        notificationManager.sendSimpleEmail(purchaseContext, ticketReservation.getId(), ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+                new Object[]{getShortReservationID(purchaseContext, ticketReservation), purchaseContext.getTitle().get(language.getLanguage()), localizedType}, language),
            () -> templateManager.renderTemplate(purchaseContext, templateResource, reservationEmailModel, language),
             attachments);
     }

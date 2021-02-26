@@ -313,20 +313,30 @@ public class NotificationManager {
         }
     }
 
-    public Pair<Integer, List<LightweightMailMessage>> loadAllMessagesForEvent(int eventId, Integer page, String search) {
+    public Pair<Integer, List<LightweightMailMessage>> loadAllMessagesForPurchaseContext(PurchaseContext purchaseContext, Integer page, String search) {
         final int pageSize = 50;
         int offset = page == null ? 0 : page * pageSize;
         String toSearch = StringUtils.trimToNull(search);
         toSearch = toSearch == null ? null : ("%" + toSearch + "%");
-        return Pair.of(emailMessageRepository.countFindByEventId(eventId, toSearch), emailMessageRepository.findByEventId(eventId, offset, pageSize, toSearch));
+        if(purchaseContext.getType() == PurchaseContextType.event) {
+            int eventId = ((Event) purchaseContext).getId();
+            return Pair.of(emailMessageRepository.countFindByEventId(eventId, toSearch), emailMessageRepository.findByEventId(eventId, offset, pageSize, toSearch));
+        } else {
+            var subscriptionDescriptorId = ((SubscriptionDescriptor)purchaseContext).getId();
+            return Pair.of(emailMessageRepository.countFindBySubscriptionDescriptorId(subscriptionDescriptorId, toSearch), emailMessageRepository.findBySubscriptionDescriptorId(subscriptionDescriptorId, offset, pageSize, toSearch));
+        }
     }
 
     public List<LightweightMailMessage> loadAllMessagesForReservationId(PurchaseContext purchaseContext, String reservationId) {
         return emailMessageRepository.findByPurchaseContextAndReservationId(purchaseContext, reservationId);
     }
 
-    public Optional<EmailMessage> loadSingleMessageForEvent(int eventId, int messageId) {
-        return emailMessageRepository.findByEventIdAndMessageId(eventId, messageId);
+    public Optional<LightweightMailMessage> loadSingleMessageForPurchaseContext(PurchaseContext purchaseContext, int messageId) {
+        if(purchaseContext.getType() == PurchaseContextType.event) {
+            return emailMessageRepository.findByEventIdAndMessageId(((Event)purchaseContext).getId(), messageId);
+        } else {
+            return emailMessageRepository.findBySubscriptionDescriptorIdAndMessageId(((SubscriptionDescriptor)purchaseContext).getId(), messageId);
+        }
     }
 
     @Transactional
