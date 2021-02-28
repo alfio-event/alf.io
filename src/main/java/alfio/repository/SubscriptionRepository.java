@@ -52,6 +52,9 @@ public interface SubscriptionRepository {
     String INSERT_SUBSCRIPTION_LINK = "insert into subscription_event(event_id_fk, subscription_descriptor_id_fk, price_per_ticket, organization_id_fk)" +
         " values(:eventId, :subscriptionId, :pricePerTicket, :organizationId) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket";
 
+    String INSERT_SUBSCRIPTION = "insert into subscription(id, subscription_descriptor_fk, reservation_id_fk, max_usage, usage_count, " +
+        " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency) values (:id, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, :status::ALLOCATION_STATUS, :srcPriceCts, :currency)";
+
     @Query("insert into subscription_descriptor (" +
         "id, title, description, max_available, on_sale_from, on_sale_to, price_cts, vat, vat_status, currency, is_public, organization_id_fk, " +
         " max_entries, validity_type, validity_time_unit, validity_units, validity_from, validity_to, usage_type, terms_conditions_url, privacy_policy_url," +
@@ -178,16 +181,26 @@ public interface SubscriptionRepository {
     int removeAllSubscriptionsForEvent(@Bind("eventId") int eventId,
                                        @Bind("organizationId") int organizationId);
 
-    @Query("insert into subscription(id, subscription_descriptor_fk, reservation_id_fk, max_usage, usage_count, " +
-        " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency) values (:id, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, 'PENDING', :srcPriceCts, :currency)")
+    @Query(type = QueryType.TEMPLATE, value = INSERT_SUBSCRIPTION)
+    String batchCreateSubscription();
+
+    @Query(INSERT_SUBSCRIPTION)
     int createSubscription(@Bind("id") UUID id,
                            @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                            @Bind("reservationId") String reservationId,
                            @Bind("maxUsage") int maxUsage,
-                           @Bind("validFrom") ZonedDateTime validFrom, @Bind("validTo") ZonedDateTime validTo,
+                           @Bind("validFrom") ZonedDateTime validFrom,
+                           @Bind("validTo") ZonedDateTime validTo,
                            @Bind("srcPriceCts") int srcPriceCts,
                            @Bind("currency") String currency,
-                           @Bind("organizationId") int organizationId);
+                           @Bind("organizationId") int organizationId,
+                           @Bind("status") AllocationStatus status);
+
+    @Query("select id from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit 1 for update skip locked")
+    Optional<UUID> selectFreeSubscription(@Bind("descriptorId") UUID subscriptionDescriptorId);
+
+    @Query("update subscription set reservation_id_fk = :reservationId, status = :status::allocation_status where id = :subscriptionId")
+    int bindSubscriptionToReservation(@Bind("reservationId") String reservationId, @Bind("status") AllocationStatus allocationStatus, @Bind("subscriptionId") UUID subscriptionId);
 
     @Query("delete from subscription where reservation_id_fk in (:expiredReservationIds)")
     int deleteSubscriptionWithReservationId(@Bind("expiredReservationIds") List<String> expiredReservationIds);
@@ -240,4 +253,7 @@ public interface SubscriptionRepository {
 
     @Query("update subscription set status = :status::allocation_status, first_name = :firstName, last_name = :lastName, email_address = :email where reservation_id_fk = :reservationId")
     int updateSubscriptionStatus(@Bind("reservationId") String reservationId, @Bind("status") AllocationStatus status, @Bind("firstName") String firstName, @Bind("lastName") String lastName, @Bind("email") String email);
+
+    @Query("update subscription set status = 'INVALIDATED' where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit :amount")
+    int invalidateSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("amount") int amount);
 }

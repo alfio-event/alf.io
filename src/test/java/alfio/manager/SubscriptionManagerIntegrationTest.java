@@ -43,6 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,6 +100,9 @@ public class SubscriptionManagerIntegrationTest {
     @Autowired
     SubscriptionRepository subscriptionRepository;
 
+    @Autowired
+    NamedParameterJdbcTemplate jdbcTemplate;
+
     private String fileBlobId;
     private Event event;
     private String username;
@@ -134,7 +138,12 @@ public class SubscriptionManagerIntegrationTest {
     void testCreateRead() {
         int orgId = event.getOrganizationId();
         assertTrue(subscriptionManager.findAll(orgId).isEmpty());
-        subscriptionManager.createSubscriptionDescriptor(buildSubscriptionDescriptor(orgId, null, new BigDecimal("100")));
+        var optionalDescriptorId = subscriptionManager.createSubscriptionDescriptor(buildSubscriptionDescriptor(orgId, null, new BigDecimal("100")));
+        assertTrue(optionalDescriptorId.isPresent());
+        var descriptorId = optionalDescriptorId.get();
+        var count = jdbcTemplate.queryForObject("select count(*) from subscription where subscription_descriptor_fk = :descriptorId", Map.of("descriptorId", descriptorId), Integer.class);
+        assertNotNull(count);
+        assertEquals(42, count);
         var res = subscriptionManager.findAll(orgId);
         assertEquals(1, res.size());
         var descriptor = res.get(0);

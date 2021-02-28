@@ -61,6 +61,7 @@ import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 import com.opencsv.CSVReader;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.mockito.Mockito;
@@ -91,6 +92,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 @RequiredArgsConstructor
+@Log4j2
 public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     private final ConfigurationRepository configurationRepository;
@@ -871,8 +873,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertTrue(confRes.getBody());
 
             // trigger email processing
-            int result = notificationManager.sendWaitingMessages();
-            assertTrue(result > 0);
+            triggerEmailProcessingAndCheck(context, reservationId);
 
             var ticket = reservation.getTicketsByCategory().stream().findFirst().orElseThrow().getTickets().get(0);
             assertEquals("tickettest@test.com", ticket.getEmail());
@@ -897,8 +898,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertTrue(sendTicketByEmailRes.getBody());
 
             // trigger email processing
-            result = notificationManager.sendWaitingMessages();
-            assertTrue(result > 0);
+            triggerEmailProcessingAndCheck(context, reservationId);
 
             //update ticket
             var updateTicketOwnerForm = new UpdateTicketOwnerForm();
@@ -1166,6 +1166,99 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         }
         assertEquals(TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT.name(), jsonPayload.get("categoryCheckInStrategy"));
         return ticketwc;
+    }
+
+    protected void testAddSubscription(ReservationFlowContext context) {
+        var form = new ReservationForm();
+        var ticketReservation = new TicketReservationModification();
+        ticketReservation.setAmount(1);
+        var categoriesResponse = eventApiV2Controller.getTicketCategories(context.event.getShortName(), null);
+        assertTrue(categoriesResponse.getStatusCode().is2xxSuccessful());
+        assertNotNull(categoriesResponse.getBody());
+        ticketReservation.setTicketCategoryId(categoriesResponse.getBody().getTicketCategories().get(0).getId());
+        form.setReservation(Collections.singletonList(ticketReservation));
+        var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        var resBody = res.getBody();
+        assertNotNull(resBody);
+        assertTrue(resBody.isSuccess());
+        assertEquals(0, resBody.getErrorCount());
+        var reservationId = resBody.getValue();
+
+        checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING, context);
+
+        var resInfoRes = reservationApiV2Controller.getReservationInfo(reservationId);
+        assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
+        var reservation = resInfoRes.getBody();
+        assertNotNull(reservation);
+        assertEquals(reservationId, reservation.getId());
+        assertEquals(1, reservation.getTicketsByCategory().size());
+        assertEquals(1, reservation.getTicketsByCategory().get(0).getTickets().size());
+
+        var contactForm = new ContactAndTicketsForm();
+
+        // move to overview status
+        contactForm = new ContactAndTicketsForm();
+        contactForm.setEmail("test@test.com");
+        contactForm.setBillingAddress("my billing address");
+        contactForm.setFirstName("full");
+        contactForm.setLastName("name");
+
+        var ticketForm = new UpdateTicketOwnerForm();
+        ticketForm.setFirstName("ticketfull");
+        ticketForm.setLastName("ticketname");
+        ticketForm.setEmail("tickettest@test.com");
+        contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).getTickets().get(0).getUuid(), ticketForm));
+        ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+
+        var overviewRes = reservationApiV2Controller.validateToOverview(reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
+        assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);
+
+        var reservationCodeForm = new ReservationCodeForm();
+        reservationCodeForm.setCode(Objects.requireNonNullElseGet(context.subscriptionPin, context.subscriptionId::toString));
+        reservationCodeForm.setType(ReservationCodeForm.ReservationCodeType.SUBSCRIPTION);
+        var bindingResult = new BeanPropertyBindingResult(reservationCodeForm, "reservationCodeForm");
+        var codeApplicationResult = reservationApiV2Controller.applyCode(reservationId, reservationCodeForm, bindingResult);
+
+        assertTrue(codeApplicationResult.getStatusCode().is2xxSuccessful());
+        var codeApplicationResponse = codeApplicationResult.getBody();
+        assertNotNull(codeApplicationResponse);
+        assertTrue(codeApplicationResponse.isSuccess());
+
+        // reload reservation, and assert it is now free of charge
+        resInfoRes = reservationApiV2Controller.getReservationInfo(reservationId);
+        assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
+        reservation = resInfoRes.getBody();
+        assertNotNull(reservation);
+        assertTrue(reservation.getOrderSummary().isFree());
+
+        // assert that there is a row in the summary for the subscription
+        assertTrue(reservation.getOrderSummary().getSummary().stream().anyMatch(r -> r.getType() == SummaryRow.SummaryType.SUBSCRIPTION));
+
+        // proceed with the confirmation
+        var paymentForm = new PaymentForm();
+        paymentForm.setPrivacyPolicyAccepted(true);
+        paymentForm.setTermAndConditionsAccepted(true);
+        paymentForm.setSelectedPaymentMethod(PaymentMethod.NONE);
+
+        var propertyBindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");
+        var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, propertyBindingResult, new MockHttpServletRequest());
+
+        log.warn("received {}", propertyBindingResult);
+
+        assertEquals(HttpStatus.OK, handleRes.getStatusCode());
+
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
+
+        // trigger email processing
+        triggerEmailProcessingAndCheck(context, reservationId);
+    }
+
+    private void triggerEmailProcessingAndCheck(ReservationFlowContext context, String reservationId) {
+        int result = notificationManager.sendWaitingMessages();
+        assertTrue(result > 0);
+        assertTrue(notificationManager.loadAllMessagesForReservationId(context.event, reservationId).stream().allMatch(m -> m.getStatus() == EmailMessage.Status.SENT));
     }
 
     private void cleanupExtensionLog() {

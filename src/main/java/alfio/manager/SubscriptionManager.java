@@ -16,29 +16,34 @@
  */
 package alfio.manager;
 
+import alfio.model.AllocationStatus;
 import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.repository.SubscriptionRepository;
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Stream;
 
 @Component
 @Transactional
+@AllArgsConstructor
+@Log4j2
 public class SubscriptionManager {
 
     private final SubscriptionRepository subscriptionRepository;
-
-    public SubscriptionManager(SubscriptionRepository subscriptionRepository) {
-        this.subscriptionRepository = subscriptionRepository;
-    }
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public List<SubscriptionDescriptor> findAll(int organizationId) {
         return subscriptionRepository.findAllByOrganizationIds(organizationId);
@@ -46,6 +51,7 @@ public class SubscriptionManager {
 
     public Optional<UUID> createSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
         var id = UUID.randomUUID();
+        int maxEntries = Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1);
         int result = subscriptionRepository.createSubscriptionDescriptor(
             id,
             subscriptionDescriptor.getTitle(),
@@ -60,7 +66,7 @@ public class SubscriptionManager {
             Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
             subscriptionDescriptor.getOrganizationId(),
 
-            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
+            maxEntries,
             subscriptionDescriptor.getValidityType(),
             subscriptionDescriptor.getValidityTimeUnit(),
             subscriptionDescriptor.getValidityUnits(),
@@ -75,40 +81,90 @@ public class SubscriptionManager {
             UUID.randomUUID().toString(),
             subscriptionDescriptor.getTimeZone().toString());
 
-        return result == 1 ? Optional.of(id) : Optional.empty();
+        if(result != 1) {
+            return Optional.empty();
+        }
+
+        // pre-generate subscriptions if descriptor has a limited quantity
+        if(maxEntries > 0) {
+            preGenerateSubscriptions(subscriptionDescriptor, id, maxEntries);
+        }
+
+        return Optional.of(id);
+    }
+
+    private void preGenerateSubscriptions(SubscriptionDescriptorModification subscriptionDescriptor, UUID subscriptionDescriptorId, int quantity) {
+        var results = jdbcTemplate.batchUpdate(subscriptionRepository.batchCreateSubscription(), Stream.generate(UUID::randomUUID)
+            .limit(quantity)
+            .map(subscriptionId -> new MapSqlParameterSource("id", subscriptionId)
+                .addValue("subscriptionDescriptorId", subscriptionDescriptorId)
+                .addValue("maxUsage", subscriptionDescriptor.getMaxEntries())
+                .addValue("validFrom", toOffsetDateTime(subscriptionDescriptor.getValidityFrom()))
+                .addValue("validTo", toOffsetDateTime(subscriptionDescriptor.getValidityTo()))
+                .addValue("srcPriceCts", subscriptionDescriptor.getPriceCts())
+                .addValue("currency", subscriptionDescriptor.getCurrency())
+                .addValue("organizationId", subscriptionDescriptor.getOrganizationId())
+                .addValue("status", AllocationStatus.FREE.name())
+                .addValue("reservationId", null)
+            ).toArray(MapSqlParameterSource[]::new));
+        var added = Arrays.stream(results).sum();
+        if(added != quantity) {
+            log.warn("wanted to generate {} subscriptions, got {} instead", quantity, added);
+            throw new IllegalStateException("Cannot set max availability");
+        }
+    }
+
+    private static OffsetDateTime toOffsetDateTime(ZonedDateTime in) {
+        if(in == null) {
+            return null;
+        }
+        return in.withZoneSameInstant(ZoneId.of("UTC")).toOffsetDateTime();
     }
 
     public Optional<UUID> updateSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
-        int result = subscriptionRepository.updateSubscriptionDescriptor(
-            subscriptionDescriptor.getTitle(),
-            subscriptionDescriptor.getDescription(),
-            Objects.requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1),
-            subscriptionDescriptor.getOnSaleFrom(),
-            subscriptionDescriptor.getOnSaleTo(),
-            subscriptionDescriptor.getPriceCts(),
-            subscriptionDescriptor.getVat(),
-            subscriptionDescriptor.getVatStatus(),
-            subscriptionDescriptor.getCurrency(),
-            Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
 
-            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
-            subscriptionDescriptor.getValidityType(),
-            subscriptionDescriptor.getValidityTimeUnit(),
-            subscriptionDescriptor.getValidityUnits(),
-            subscriptionDescriptor.getValidityFrom(),
-            subscriptionDescriptor.getValidityTo(),
-            subscriptionDescriptor.getUsageType(),
+        return subscriptionRepository.findOne(subscriptionDescriptor.getId(), subscriptionDescriptor.getOrganizationId())
+            .flatMap(original -> {
+                var maxAvailable = subscriptionDescriptor.getMaxAvailable();
+                int result = subscriptionRepository.updateSubscriptionDescriptor(
+                    subscriptionDescriptor.getTitle(),
+                    subscriptionDescriptor.getDescription(),
+                    Objects.requireNonNullElse(maxAvailable, -1),
+                    subscriptionDescriptor.getOnSaleFrom(),
+                    subscriptionDescriptor.getOnSaleTo(),
+                    subscriptionDescriptor.getPriceCts(),
+                    subscriptionDescriptor.getVat(),
+                    subscriptionDescriptor.getVatStatus(),
+                    subscriptionDescriptor.getCurrency(),
+                    Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
 
-            subscriptionDescriptor.getTermsAndConditionsUrl(),
-            subscriptionDescriptor.getPrivacyPolicyUrl(),
-            subscriptionDescriptor.getFileBlobId(),
-            subscriptionDescriptor.getPaymentProxies(),
+                    Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
+                    subscriptionDescriptor.getValidityType(),
+                    subscriptionDescriptor.getValidityTimeUnit(),
+                    subscriptionDescriptor.getValidityUnits(),
+                    subscriptionDescriptor.getValidityFrom(),
+                    subscriptionDescriptor.getValidityTo(),
+                    subscriptionDescriptor.getUsageType(),
 
-            subscriptionDescriptor.getId(),
-            subscriptionDescriptor.getOrganizationId(),
-            subscriptionDescriptor.getTimeZone().toString()
-        );
-        return result == 1 ? Optional.of(subscriptionDescriptor.getId()) : Optional.empty();
+                    subscriptionDescriptor.getTermsAndConditionsUrl(),
+                    subscriptionDescriptor.getPrivacyPolicyUrl(),
+                    subscriptionDescriptor.getFileBlobId(),
+                    subscriptionDescriptor.getPaymentProxies(),
+
+                    subscriptionDescriptor.getId(),
+                    original.getOrganizationId(),
+                    subscriptionDescriptor.getTimeZone().toString()
+                );
+
+                if(maxAvailable > 0 && maxAvailable > original.getMaxAvailable()) {
+                    preGenerateSubscriptions(subscriptionDescriptor, subscriptionDescriptor.getId(), maxAvailable - original.getMaxAvailable());
+                } else if(maxAvailable < original.getMaxAvailable()) {
+                    int amount = original.getMaxAvailable() - Math.max(maxAvailable, 0);
+                    int invalidated = subscriptionRepository.invalidateSubscriptions(subscriptionDescriptor.getId(), amount);
+                    Validate.isTrue(amount == invalidated, "Cannot invalidate existing subscriptions. (wanted: %d got: %d)", amount, invalidated);
+                }
+                return result == 1 ? Optional.of(subscriptionDescriptor.getId()) : Optional.empty();
+            });
     }
 
     public Optional<SubscriptionDescriptor> findOne(UUID id, int organizationId) {

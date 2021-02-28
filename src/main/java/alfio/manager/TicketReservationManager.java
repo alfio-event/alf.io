@@ -248,7 +248,7 @@ public class TicketReservationManager {
         this.subscriptionRepository = subscriptionRepository;
     }
 
-    private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Date reservationExpiration, Locale locale) throws CannotProceedWithPayment{
+    private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Date reservationExpiration, Locale locale) throws CannotProceedWithPayment, NotEnoughTicketsException {
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId,
             subscriptionDescriptor.now(clockProvider),
@@ -259,8 +259,16 @@ public class TicketReservationManager {
             subscriptionDescriptor.getVatStatus() == PriceContainer.VatStatus.INCLUDED,
             subscriptionDescriptor.getCurrency(),
             subscriptionDescriptor.getOrganizationId());
-        subscriptionRepository.createSubscription(UUID.randomUUID(), subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
-            subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(), subscriptionDescriptor.getOrganizationId());
+        if(subscriptionDescriptor.getMaxAvailable() > 0) {
+            var optionalSubscription = subscriptionRepository.selectFreeSubscription(subscriptionDescriptor.getId());
+            if(optionalSubscription.isEmpty()) {
+                throw new NotEnoughTicketsException();
+            }
+            subscriptionRepository.bindSubscriptionToReservation(reservationId, AllocationStatus.PENDING, optionalSubscription.get());
+        } else {
+            subscriptionRepository.createSubscription(UUID.randomUUID(), subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
+                subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(), subscriptionDescriptor.getOrganizationId(), AllocationStatus.PENDING);
+        }
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = subscriptionDescriptor.getVatStatus();
         ticketReservationRepository.updateBillingData(subscriptionDescriptor.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), subscriptionDescriptor.getCurrency(), null, null, false, reservationId);
@@ -2362,6 +2370,8 @@ public class TicketReservationManager {
             return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale));
         } catch (CannotProceedWithPayment cannotProceedWithPayment) {
             log.error("missing payment methods", cannotProceedWithPayment);
+        } catch (NotEnoughTicketsException nex) {
+            log.error("cannot acquire subscription", nex);
         }
         return Optional.empty();
     }

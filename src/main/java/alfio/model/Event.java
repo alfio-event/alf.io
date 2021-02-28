@@ -284,7 +284,6 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         return format == EventFormat.ONLINE;
     }
 
-    @JsonIgnore
     @Override
     public String getPublicIdentifier() {
         return getShortName();

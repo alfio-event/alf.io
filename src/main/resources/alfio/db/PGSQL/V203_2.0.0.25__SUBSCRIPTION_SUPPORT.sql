@@ -88,8 +88,6 @@ create table subscription (
     status ALLOCATION_STATUS not null default 'FREE'
 );
 
---FIXME add check constraint of not null if allocation_status is 'TO_BE_PAID', 'ACQUIRED', 'CHECKED_IN'
-
 alter table subscription enable row level security;
 alter table subscription force row level security;
 create policy subscription_access_policy on subscription to public
