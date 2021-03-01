@@ -33,7 +33,6 @@ import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.model.transaction.capabilities.WebhookHandler;
 import alfio.model.transaction.token.MollieToken;
 import alfio.model.transaction.webhook.MollieWebhookPayload;
-import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
@@ -113,7 +112,6 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
     private final TicketReservationRepository ticketReservationRepository;
-    private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final TransactionRepository transactionRepository;
     private final MollieConnectManager mollieConnectManager;
@@ -249,8 +247,8 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
     private PaymentResult getPaymentResult(PaymentSpecification spec) {
         try {
-            var event = spec.getPurchaseContext();
-            var configuration = getConfiguration(event.getConfigurationLevel());
+            var purchaseContext = spec.getPurchaseContext();
+            var configuration = getConfiguration(purchaseContext.getConfigurationLevel());
             var reservationId = spec.getReservationId();
             var reservation = ticketReservationRepository.findReservationById(reservationId);
             String baseUrl = StringUtils.removeEnd(configuration.get(BASE_URL).getRequiredValue(), "/");
@@ -301,10 +299,17 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         var publicIdentifier = purchaseContext.getPublicIdentifier();
         var reservationId = reservation.getId();
         String bookUrl = baseUrl + "/" + purchaseContextUrlComponent + "/" + publicIdentifier + "/reservation/" + reservationId + "/book";
-        int tickets = ticketRepository.countTicketsInReservation(reservation.getId());
+        final int items;
+        if(spec.getPurchaseContext().getType() == PurchaseContext.PurchaseContextType.event) {
+            items = ticketRepository.countTicketsInReservation(spec.getReservationId());
+        } else {
+            items = 1;
+        }
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("amount", Map.of("value", spec.getOrderSummary().getTotalPrice(), "currency", spec.getPurchaseContext().getCurrency()));
-        payload.put("description", String.format("%s - %d ticket(s) for event %s", configurationManager.getShortReservationID(spec.getPurchaseContext(), reservation), tickets, spec.getPurchaseContext().getDisplayName()));
+        var description = purchaseContext.getType() == PurchaseContext.PurchaseContextType.event ? "ticket(s) for event" : "x subscription";
+        payload.put("description", String.format("%s - %d %s %s", configurationManager.getShortReservationID(spec.getPurchaseContext(), reservation), items, description, spec.getPurchaseContext().getDisplayName()));
         payload.put("redirectUrl", bookUrl);
         payload.put("webhookUrl", baseUrl + UriComponentsBuilder.fromPath(WEBHOOK_URL_TEMPLATE).buildAndExpand(reservationId).toUriString());
         payload.put("metadata", MetadataBuilder.buildMetadata(spec, Map.of()));
@@ -313,7 +318,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             payload.put("profileId", configuration.get(MOLLIE_CONNECT_PROFILE_ID).getRequiredValue());
             payload.put("testmode", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault());
             String currencyCode = spec.getCurrencyCode();
-            FeeCalculator.getCalculator(spec.getPurchaseContext(), configurationManager, currencyCode).apply(tickets, (long) spec.getPriceWithVAT())
+            FeeCalculator.getCalculator(spec.getPurchaseContext(), configurationManager, currencyCode).apply(items, (long) spec.getPriceWithVAT())
                 .filter(fee -> fee > 1L) //minimum fee for Mollie is 0.01
                 .map(fee -> MonetaryUtil.formatCents(fee, currencyCode))
                 .ifPresent(fee -> payload.put("applicationFee", Map.of("amount", Map.of("currency", currencyCode, "value", fee), "description", "Reservation" + reservationId)));
@@ -411,12 +416,12 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
         var molliePayload = (MollieWebhookPayload)payload;
         var paymentId = molliePayload.getPaymentId();
-        var optionalEvent = purchaseContextManager.findBy(molliePayload.getPurchaseContextType(), molliePayload.getPurchaseContextIdentifier());
-        if(optionalEvent.isEmpty()) {
+        var optionalPurchaseContext = purchaseContextManager.findBy(molliePayload.getPurchaseContextType(), molliePayload.getPurchaseContextIdentifier());
+        if(optionalPurchaseContext.isEmpty()) {
             return PaymentWebhookResult.notRelevant("event");
         }
-        var event = optionalEvent.get();
-        return validateRemotePayment(transaction, paymentContext, paymentId, event);
+        var purchaseContext = optionalPurchaseContext.get();
+        return validateRemotePayment(transaction, paymentContext, paymentId, purchaseContext);
     }
 
     private PaymentWebhookResult validateRemotePayment(Transaction transaction, PaymentContext paymentContext, String paymentId, PurchaseContext purchaseContext) {

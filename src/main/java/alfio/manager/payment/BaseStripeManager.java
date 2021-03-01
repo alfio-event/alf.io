@@ -150,17 +150,22 @@ class BaseStripeManager {
     }
 
     protected Map<String, Object> createParams(PaymentSpecification spec, Map<String, String> baseMetadata) {
-        int tickets = ticketRepository.countTicketsInReservation(spec.getReservationId());
+        final int items;
+        if(spec.getPurchaseContext().getType() == PurchaseContextType.event) {
+            items = ticketRepository.countTicketsInReservation(spec.getReservationId());
+        } else {
+            items = 1;
+        }
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", spec.getPriceWithVAT());
         var purchaseContext = spec.getPurchaseContext();
         FeeCalculator.getCalculator(purchaseContext, configurationManager, spec.getCurrencyCode())
-            .apply(tickets, (long) spec.getPriceWithVAT())
+            .apply(items, (long) spec.getPriceWithVAT())
             .filter(l -> l > 0)
             .ifPresent(fee -> chargeParams.put("application_fee_amount", fee));
         chargeParams.put("currency", purchaseContext.getCurrency());
         var description = purchaseContext.getType() == PurchaseContextType.event ? "ticket(s) for event" : "x subscription";
-        chargeParams.put("description", String.format("%d %s %s", tickets, description, purchaseContext.getDisplayName()));
+        chargeParams.put("description", String.format("%d %s %s", items, description, purchaseContext.getDisplayName()));
         chargeParams.put("metadata", MetadataBuilder.buildMetadata(spec, baseMetadata));
         return chargeParams;
     }

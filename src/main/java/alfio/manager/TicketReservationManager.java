@@ -2157,15 +2157,14 @@ public class TicketReservationManager {
         }
 
 
-        //FIXME in some cases the reload is redundant
         //reload the payment provider, this time within a more sensible context
-        var paymentContextReloaded = new PaymentContext(eventRepository.findByReservationId(reservation.getId()));
+        var purchaseContext = purchaseContextManager.findByReservationId(reservation.getId()).orElseThrow();
+        var paymentContextReloaded = new PaymentContext(purchaseContext);
         return paymentManager.lookupProviderByTransactionAndCapabilities(transaction, List.of(WebhookHandler.class))
             .map(provider -> {
                 var paymentWebhookResult = ((WebhookHandler)provider).processWebhook(transactionPayload, transaction, paymentContextReloaded);
-                var event = eventRepository.findByReservationId(reservation.getId());
                 String operationType = transactionPayload.getType();
-                return handlePaymentWebhookResult(event, paymentProvider, paymentWebhookResult, reservation, transaction, paymentContextReloaded, operationType, true);
+                return handlePaymentWebhookResult(purchaseContext, paymentProvider, paymentWebhookResult, reservation, transaction, paymentContextReloaded, operationType, true);
             })
             .orElseGet(() -> PaymentWebhookResult.error("payment provider not found"));
     }

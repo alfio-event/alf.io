@@ -19,7 +19,10 @@ package alfio.manager.payment;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.PaymentWebhookResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.*;
+import alfio.model.Audit;
+import alfio.model.PaymentInformation;
+import alfio.model.PurchaseContext;
+import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.*;
@@ -266,16 +269,16 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
                 return PaymentWebhookResult.error("reservation not found");
             }
             var reservation = optionalReservation.get();
-            var event = eventRepository.findByReservationId(reservation.getId());
+            var purchaseContext = paymentContext.getPurchaseContext();
             switch(payload.getType()) {
                 case PAYMENT_INTENT_CREATED: {
-                    return PaymentWebhookResult.processStarted(buildTokenFromTransaction(transaction, event, false));
+                    return PaymentWebhookResult.processStarted(buildTokenFromTransaction(transaction, purchaseContext, false));
                 }
                 case PAYMENT_INTENT_SUCCEEDED: {
-                    return processSuccessfulPaymentIntent(transaction, paymentIntent, reservation, event);
+                    return processSuccessfulPaymentIntent(transaction, paymentIntent, reservation, purchaseContext);
                 }
                 case PAYMENT_INTENT_PAYMENT_FAILED: {
-                    return processFailedPaymentIntent(transaction, reservation, event);
+                    return processFailedPaymentIntent(transaction, reservation, purchaseContext);
                 }
             }
 
