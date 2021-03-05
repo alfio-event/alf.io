@@ -27,6 +27,7 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -809,6 +810,41 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
     }
 
+    @Test
+    public void updateEventFormat() {
+        var categories = List.of(
+            new TicketCategoryModification(null, "first", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2, null, null, AlfioMetadata.empty()));
+
+        var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        var event = eventAndUsername.getLeft();
+
+        // add ON_SITE payment method
+        var withOnSite = List.of(PaymentProxy.OFFLINE, PaymentProxy.ON_SITE);
+        var onSitePaymentMethodModification = createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.IN_PERSON, withOnSite);
+        var username = eventAndUsername.getRight();
+        eventManager.updateEventPrices(event, onSitePaymentMethodModification, username);
+
+        event = eventRepository.findById(event.getId());
+        assertEquals(withOnSite, event.getAllowedPaymentProxies());
+
+        try {
+            eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, withOnSite), username);
+            fail();
+        } catch(IllegalArgumentException ex) {
+            assertEquals(EventManager.ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE, ex.getMessage());
+        }
+
+        event = eventRepository.findById(event.getId());
+        // update header and remove ON_SITE
+        eventManager.updateEventPrices(event, createEventModification(AVAILABLE_SEATS, event, event.getFormat(), List.of(PaymentProxy.OFFLINE)), username);
+        // retry
+        event = eventRepository.findById(event.getId());
+        eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, event.getAllowedPaymentProxies()), username);
+    }
+
     private Pair<Event, String> generateAndEditEvent(int newEventSize) {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
@@ -819,9 +855,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         Event event = pair.getKey();
         if(newEventSize != AVAILABLE_SEATS) {
-            EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
-                null, event.getZoneId().toString(), Collections.emptyMap(), DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-                event.getRegularPrice(), event.getCurrency(), newEventSize, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty());
+            EventModification update = createEventModification(newEventSize, event);
             eventManager.updateEventPrices(event, update, pair.getValue());
         }
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
@@ -833,5 +867,15 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         }
         assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() != null).count());
         return Pair.of(eventRepository.findById(event.getId()), pair.getRight());
+    }
+
+    private EventModification createEventModification(int availableSeats, Event event) {
+        return createEventModification(availableSeats, event, Event.EventFormat.IN_PERSON, event.getAllowedPaymentProxies());
+    }
+
+    private EventModification createEventModification(int availableSeats, Event event, Event.EventFormat format, List<PaymentProxy> allowedPaymentProxies) {
+        return new EventModification(event.getId(), format, "http://website-url", null, "http://website-url/tc", null, null, null, null, null, event.getOrganizationId(), null, null,
+            null, event.getZoneId().toString(), Collections.emptyMap(), DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
+            event.getRegularPrice(), event.getCurrency(), availableSeats, event.getVat(), event.isVatIncluded(), allowedPaymentProxies, null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty());
     }
 }
