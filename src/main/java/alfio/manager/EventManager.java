@@ -90,6 +90,7 @@ import static java.util.stream.Collectors.*;
 public class EventManager {
 
     private static final Predicate<TicketCategory> IS_CATEGORY_BOUNDED = TicketCategory::isBounded;
+    static final String ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE = "Cannot switch to Online. Please remove On-Site payment method first.";
     private final UserManager userManager;
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
@@ -315,6 +316,10 @@ public class EventManager {
         Validate.isTrue(ownershipChecker.test(original.getOrganizationId()) && (sameOrganization || ownershipChecker.test(em.getOrganizationId())), "Invalid organizationId");
         int eventId = original.getId();
         Validate.isTrue(sameOrganization || groupRepository.countByEventId(eventId) == 0, "Cannot change organization because there is a group linked to this event.");
+
+        if(em.getFormat() == Event.EventFormat.ONLINE && em.getFormat() != original.getFormat()) {
+            Validate.isTrue(original.getAllowedPaymentProxies().stream().allMatch(p -> p != PaymentProxy.ON_SITE), ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE);
+        }
 
         String timeZone = ObjectUtils.firstNonNull(em.getZoneId(), em.getGeolocation() != null ? em.getGeolocation().getTimeZone() : null);
         String latitude = ObjectUtils.firstNonNull(em.getLatitude(), em.getGeolocation() != null ? em.getGeolocation().getLatitude() : null);
