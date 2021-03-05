@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @UtilityClass
 class MetadataBuilder {
@@ -34,7 +35,7 @@ class MetadataBuilder {
         initialMetadata.put("email", spec.getEmail());
         initialMetadata.put("fullName", spec.getCustomerName().getFullName());
         if (StringUtils.isNotBlank(spec.getBillingAddress())) {
-            initialMetadata.put("billingAddress", spec.getBillingAddress());
+            initialMetadata.put("billingAddress", spec.getBillingAddress().lines().collect(Collectors.joining(",")));
         }
         return initialMetadata;
     }

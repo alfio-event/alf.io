@@ -625,7 +625,7 @@ public class EventApiController {
         try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
             ticketReservationManager.streamAllDocumentsFor(event.getId())
                 .forEach(pair -> {
-                    TicketReservation reservation = pair.getLeft();
+                    var reservation = pair.getLeft().getTicketReservation();
                     for (BillingDocument document : pair.getRight()) {
                         addPdfToZip(event, zipOS, reservation, document);
                     }
@@ -663,19 +663,58 @@ public class EventApiController {
     public void getAllDocumentsXls(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
         Event event = loadEvent(eventName, principal);
         var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        String[] header = new String[] { "Reservation ID", "Type", "Number", "To", "Total", "Currency", "Generated on" };
-        ExportUtils.exportExcel(event.getShortName() + "-billing-documents.xls", "Documents", header,
+        boolean italianEInvoicingEnabled = configurationManager.isItalianEInvoicingEnabled(event);
+        var header = new ArrayList<String>();
+
+        header.add("Reservation ID");
+        header.add("Type");
+        header.add("Number");
+        header.add("To");
+        header.add("Tax ID");
+
+        if(italianEInvoicingEnabled) {
+            header.add("Fiscal Code");
+            header.add("Reference Type");
+            header.add("Reference");
+            header.add("Split Payment");
+        }
+
+        header.add("Total Before Tax");
+        header.add("Tax");
+        header.add("Total");
+        header.add("Currency");
+        header.add("Payment Method");
+        header.add("Generated on");
+
+        ExportUtils.exportExcel(event.getShortName() + "-billing-documents.xlsx", "Documents", header.toArray(String[]::new),
             ticketReservationManager.streamAllDocumentsFor(event.getId())
                 .flatMap(entry -> {
-                    var reservation = entry.getKey();
-                    return entry.getValue().stream().map(bd -> new String[] {
-                        reservation.getId(),
-                        bd.getType().name(),
-                        bd.getNumber(),
-                        reservation.getLineSplittedBillingAddress().stream().findFirst().orElse(""),
-                        String.valueOf(((Map<?,?>)bd.getModel().get("orderSummary")).get("totalPrice")),
-                        reservation.getCurrencyCode(),
-                        bd.getGenerationTimestamp().withZoneSameInstant(event.getZoneId()).format(formatter)
+                    var reservationWithTransaction = entry.getKey();
+                    var reservation = reservationWithTransaction.getTicketReservation();
+                    return entry.getValue().stream().map(bd -> {
+                        Map<?, ?> orderSummary = (Map<?, ?>) bd.getModel().get("orderSummary");
+                        var fields = new ArrayList<String>();
+                        fields.add(reservation.getId());
+                        fields.add(bd.getType().name());
+                        fields.add(bd.getNumber());
+                        fields.add(reservation.getLineSplittedBillingAddress().stream().findFirst().orElse(""));
+                        fields.add(reservation.getVatNr());
+                        if(italianEInvoicingEnabled) {
+                            var additionalInfo = reservationWithTransaction.getBillingDetails().getInvoicingAdditionalInfo();
+                            boolean hasEInvoicingInfo = !additionalInfo.isEmpty();
+                            var eInvoicingInfo = additionalInfo.getItalianEInvoicing();
+                            fields.add(hasEInvoicingInfo ? eInvoicingInfo.getFiscalCode() : "");
+                            fields.add(hasEInvoicingInfo ? eInvoicingInfo.getReferenceTypeAsString() : "");
+                            fields.add(hasEInvoicingInfo ? eInvoicingInfo.getReference() : "");
+                            fields.add(hasEInvoicingInfo ? Boolean.toString(eInvoicingInfo.isSplitPayment()) : "");
+                        }
+                        fields.add(StringUtils.trimToEmpty((String) orderSummary.get("totalNetPrice")));
+                        fields.add(StringUtils.trimToEmpty((String) orderSummary.get("totalVAT")));
+                        fields.add(StringUtils.trimToEmpty((String) orderSummary.get("totalPrice")));
+                        fields.add(reservation.getCurrencyCode());
+                        fields.add(reservation.getPaymentMethod().name());
+                        fields.add(bd.getGenerationTimestamp().withZoneSameInstant(event.getZoneId()).format(formatter));
+                        return fields.toArray(String[]::new);
                     });
                 })
             , response);
