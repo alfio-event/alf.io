@@ -16,7 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.model.EventAndOrganizationId;
+import alfio.model.Configurable;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
 import lombok.extern.log4j.Log4j2;
@@ -45,9 +45,9 @@ public class MailjetMailer implements Mailer  {
     }
 
     @Override
-    public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
+    public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
 
-        var conf = configurationManager.getFor(Set.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO), ConfigurationLevel.event(event));
+        var conf = configurationManager.getFor(Set.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO), configurable.getConfigurationLevel());
 
 
         String apiKeyPublic = conf.get(MAILJET_APIKEY_PUBLIC).getRequiredValue();

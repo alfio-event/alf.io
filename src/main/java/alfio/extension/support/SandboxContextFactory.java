@@ -17,7 +17,10 @@
 package alfio.extension.support;
 
 import alfio.extension.exception.ExecutionTimeoutException;
-import org.mozilla.javascript.*;
+import org.mozilla.javascript.Callable;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.Scriptable;
 
 // source: https://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
 //         https://www-archive.mozilla.org/rhino/apidocs/org/mozilla/javascript/contextfactory
@@ -49,8 +52,8 @@ public class SandboxContextFactory extends ContextFactory {
         MyContext mcx = (MyContext)cx;
         long currentTime = System.currentTimeMillis();
         long executionTime = currentTime - mcx.startTime;
-        if (executionTime > 5*1000) {
-            // More than 5 seconds from Context creation time:
+        if (executionTime > 15*1000) {
+            // More than 15 seconds from Context creation time:
             // it is time to stop the script.
             // Throw Error instance to ensure that script will never
             // get control back through catch or finally.

@@ -10,7 +10,7 @@
     
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
         'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic',
-        'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group', angularDragula(angular)]);
+        'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group', 'subscriptions', angularDragula(angular)]);
 
     var loadEvent = {
         'loadEvent': function($stateParams, EventService) {
@@ -215,9 +215,10 @@
             })
             .state('events.single.reservationsList', {
                 url: '/reservations/?search',
-                template: '<reservations-list event="ctrl.event"></reservations-list>',
+                template: '<reservations-list purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
+                    this.purchaseContextType = 'event';
                 },
                 controllerAs: 'ctrl'
             })
@@ -301,9 +302,10 @@
                 }
             }).state('events.single.view-reservation', {
                 url:'/reservation/:reservationId?fromCreation',
-                template: '<reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
+                template: '<reservation-view purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
                 controller: function(getEvent, getReservationDescriptor) {
                     this.event = getEvent.data.event;
+                    this.purchaseContextType = 'event';
                     this.reservationDescriptor = getReservationDescriptor.data.data;
                 },
                 controllerAs: 'ctrl',
@@ -312,7 +314,7 @@
                 },
                 resolve: {
                     'getReservationDescriptor': function(AdminReservationService, $stateParams) {
-                        return AdminReservationService.load($stateParams.eventName, $stateParams.reservationId);
+                        return AdminReservationService.load('event', $stateParams.eventName, $stateParams.reservationId);
                     }
                 }
             }).state('events.single.polls-list', {
@@ -1016,7 +1018,9 @@
                                                         NotificationHandler,
                                                         $timeout,
                                                         TicketCategoryEditorService,
-                                                        GroupService) {
+                                                        GroupService,
+                                                        ConfigurationService,
+                                                        SubscriptionService) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -1027,8 +1031,11 @@
                 }
                 $scope.event = result.event;
                 $scope.loading = false;
-                var href = $window.location.href;
-                $scope.eventPublicURL = href.substring(0, href.indexOf('/admin/')) + '/event/' + result.event.shortName;
+
+                ConfigurationService.loadSingleConfigForEvent(result.event.shortName, 'BASE_URL').then(function(res) {
+                    $scope.eventPublicURL = res.data + '/event/' + result.event.shortName;
+                });
+
                 $scope.organization = result.organization;
                 $scope.validCategories = _.filter(result.event.ticketCategories, function(tc) {
                     return !tc.expired && tc.bounded;
@@ -1064,6 +1071,28 @@
                         loadData();
                     })
                 };
+                $q.all([GroupService.loadActiveLinks($state.params.eventName), GroupService.loadGroups($scope.event.organizationId), SubscriptionService.loadSubscriptionsDescriptors($scope.event.organizationId)])
+                    .then(function(results) {
+                        var confResult = results[0];
+                        var lists = results[1].data;
+                        if(confResult.status === 200) {
+                            _.forEach(confResult.data, function(list) {
+                                var group = _.find(lists, function(l) { return l.id === list.groupId});
+                                list.groupName = group ? group.name : "";
+                                if(list.ticketCategoryId != null) {
+                                    var category = _.find($scope.event.ticketCategories, function(c) { return c.id === list.ticketCategoryId;});
+                                    if(category) {
+                                        category.attendeesList = list;
+                                    }
+                                } else {
+                                    $scope.event.attendeesList = list;
+                                }
+                            });
+                        }
+                        $scope.event.subscriptionDescriptors = _.map(_.filter(results[2].data, function(s) {
+                            return _.contains($scope.event.linkedSubscriptions, s.descriptor.id);
+                        }), 'descriptor');
+                    });
             });
         };
         $scope.baseUrl = window.location.origin;
@@ -1074,26 +1103,6 @@
                 expired: $scope.event.ticketCategories.filter(function(tc) { return tc.containingOrphans; }).length > 0,
                 freeText: ''
             };
-            $q.all([GroupService.loadActiveLinks($state.params.eventName), GroupService.loadGroups($scope.event.organizationId)])
-                .then(function(results) {
-                    var confResult = results[0];
-                    var lists = results[1].data;
-                    if(confResult.status === 200) {
-                        _.forEach(confResult.data, function(list) {
-                            var group = _.find(lists, function(l) { return l.id === list.groupId});
-                            list.groupName = group ? group.name : "";
-                            if(list.ticketCategoryId != null) {
-                                var category = _.find($scope.event.ticketCategories, function(c) { return c.id === list.ticketCategoryId;});
-                                if(category) {
-                                    category.attendeesList = list;
-                                }
-                            } else {
-                                $scope.event.attendeesList = list;
-                            }
-                        });
-                    }
-
-                });
         });
         $scope.allocationStrategyRadioClass = 'radio';
         $scope.evaluateCategoryStatusClass = function(index, category) {
@@ -1603,10 +1612,11 @@
                 controller: function($scope) {
                     var ctrl = this;
                     ctrl.event = event;
+                    ctrl.purchaseContextType = 'event';
                     ctrl.resetReservationView = false;
                     ctrl.showReservation = false;
                     var reservationInfo = {eventName: event.shortName, reservationId: ticket.ticketsReservationId}
-                    AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                    AdminReservationService.load('event', reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
                         ctrl.reservationDescriptor = reservationDescriptor.data.data;
                         ctrl.showReservation = true;
                     });
@@ -1618,7 +1628,7 @@
                     ctrl.onUpdate = function(reservationInfo) {
                         ctrl.resetReservationView = true;
                         reloadTickets();
-                        AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                        AdminReservationService.load('event', reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
                             ctrl.reservationDescriptor = reservationDescriptor.data.data;
                             ctrl.resetReservationView = false;
                         })
@@ -1640,14 +1650,15 @@
                     ctrl.resetReservationView = false;
                     ctrl.showReservation = false;
                     ctrl.event = event;
+                    ctrl.purchaseContextType = 'event';
                     ctrl.close = function() {
                         modal.close();
                     };
                     ctrl.onCreation = function(reservationInfo) {
-                        AdminReservationService.confirm(reservationInfo.eventName, reservationInfo.reservationId).then(function(reservationDescriptor) {
+                        AdminReservationService.confirm('event', reservationInfo.eventName, reservationInfo.reservationId).then(function(reservationDescriptor) {
                             ctrl.onConfirm(reservationInfo);
                         }, function(err) {
-                            AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                            AdminReservationService.load('event', reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
                                 ctrl.reservationDescriptor = reservationDescriptor.data.data;
                                 ctrl.showReservation = true;
                             });
@@ -1655,7 +1666,7 @@
                     };
                     ctrl.onUpdate = function(reservationInfo) {
                         ctrl.resetReservationView = true;
-                        AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                        AdminReservationService.load('event', reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
                             ctrl.reservationDescriptor = reservationDescriptor.data.data;
                             ctrl.resetReservationView = false;
                         })

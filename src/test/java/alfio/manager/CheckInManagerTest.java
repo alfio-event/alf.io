@@ -56,6 +56,8 @@ public class CheckInManagerTest {
         OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
         event = mock(Event.class);
         Organization organization = mock(Organization.class);
+        ConfigurationLevel cl = ConfigurationLevel.event(event);
+        when(event.getConfigurationLevel()).thenReturn(cl);
         when(eventRepository.findOptionalByShortName(EVENT_NAME)).thenReturn(Optional.of(event));
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORG_ID);

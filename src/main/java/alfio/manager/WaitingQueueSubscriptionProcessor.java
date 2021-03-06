@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
@@ -109,12 +108,12 @@ public class WaitingQueueSubscriptionProcessor {
     }
 
     private boolean isWaitingListFormEnabled(EventAndOrganizationId event) {
-        var res = configurationManager.getFor(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION), ConfigurationLevel.event(event));
+        var res = configurationManager.getFor(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION), event.getConfigurationLevel());
         return res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault() || res.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault();
     }
 
     public void distributeAvailableSeats(Event event) {
-        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+        var messageSource = messageSourceManager.getMessageSourceFor(event);
         waitingQueueManager.distributeSeats(event).forEach(triple -> {
             WaitingQueueSubscription subscription = triple.getLeft();
             Locale locale = subscription.getLocale();

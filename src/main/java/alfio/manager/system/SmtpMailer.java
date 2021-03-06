@@ -16,7 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.model.EventAndOrganizationId;
+import alfio.model.Configurable;
 import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -49,12 +49,12 @@ class SmtpMailer implements Mailer {
     private final ConfigurationManager configurationManager;
 
     @Override
-    public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
+    public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachments) {
 
         var conf = configurationManager.getFor(Set.of(SMTP_FROM_EMAIL, MAIL_REPLY_TO,
             SMTP_HOST, SMTP_PORT, SMTP_PROTOCOL,
-            SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES), ConfigurationLevel.event(event));
+            SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES), configurable.getConfigurationLevel());
 
         MimeMessagePreparator preparator = mimeMessage -> {
 

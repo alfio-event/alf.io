@@ -10,7 +10,19 @@
                     controller: EmailLogController,
                     controllerAs: 'ctrl'
                 })
+                .state('subscriptions.single.email-log', {
+                    url: '/email-log',
+                    templateUrl: '/resources/angular-templates/admin/partials/email/log.html',
+                    controller: EmailLogController,
+                    controllerAs: 'ctrl'
+                })
                 .state('events.single.email-log-detail', {
+                    url: '/email-log/:messageId',
+                    templateUrl: '/resources/angular-templates/admin/partials/email/entry-detail.html',
+                    controller: EmailDetailController,
+                    controllerAs: 'detailCtrl'
+                })
+                .state('subscriptions.single.email-log-detail', {
                     url: '/email-log/:messageId',
                     templateUrl: '/resources/angular-templates/admin/partials/email/entry-detail.html',
                     controller: EmailDetailController,
@@ -29,7 +41,7 @@
         });
 
 
-    function EmailLogController(EmailService, $location, getEvent) {
+    function EmailLogController(EmailService, $location, $stateParams) {
         var ctrl = this;
 
         var currentSearch = $location.search();
@@ -37,7 +49,8 @@
         ctrl.toSearch = currentSearch.search || '';
 
         ctrl.emailMessages = [];
-        ctrl.eventName = getEvent.data.event.shortName;
+        ctrl.publicIdentifier = $stateParams.eventName || $stateParams.subscriptionId;
+        ctrl.contextType = $stateParams.eventName ? 'event' : 'subscription';
         ctrl.itemsPerPage = 50;
         ctrl.loadData = loadData();
         ctrl.updateFilteredData = function() {
@@ -48,7 +61,7 @@
 
         function loadData() {
             $location.search({page: ctrl.currentPage, search: ctrl.toSearch});
-            EmailService.loadEmailLog(ctrl.eventName, ctrl.currentPage - 1, ctrl.toSearch).success(function(results) {
+            EmailService.loadEmailLog(ctrl.contextType, ctrl.publicIdentifier, ctrl.currentPage - 1, ctrl.toSearch).success(function(results) {
                 ctrl.emailMessages = results.left;
                 ctrl.totalItems = results.right;
             });
@@ -57,27 +70,27 @@
 
     }
 
-    EmailLogController.prototype.$inject = ['EmailService', '$location', 'EventService'];
+    EmailLogController.prototype.$inject = ['EmailService', '$location', '$stateParams'];
 
-    function EmailDetailController(EmailService, $stateParams, getEvent) {
+    function EmailDetailController(EmailService, $stateParams) {
         var self = this;
-        var shortName = getEvent.data.event.shortName;
-        EmailService.loadEmailDetail(shortName, $stateParams.messageId).success(function(result) {
+        self.publicIdentifier = $stateParams.eventName || $stateParams.subscriptionId;
+        self.contextType = $stateParams.eventName ? 'event' : 'subscription';
+        EmailService.loadEmailDetail(self.contextType, self.publicIdentifier, $stateParams.messageId).success(function(result) {
             self.message = result;
         });
-        this.eventName = shortName;
     }
 
     EmailDetailController.prototype.$inject = ['EmailService', '$stateParams'];
 
     function EmailService($http, HttpErrorHandler) {
 
-        this.loadEmailLog = function(eventName, page, search) {
-            return $http.get('/admin/api/events/'+eventName+'/email/', {params: {page: page, search: search}}).error(HttpErrorHandler.handle);
+        this.loadEmailLog = function(type, publicIdentifier, page, search) {
+            return $http.get('/admin/api/'+type+'/'+publicIdentifier+'/email/', {params: {page: page, search: search}}).error(HttpErrorHandler.handle);
         };
 
-        this.loadEmailDetail = function(eventName, messageId) {
-            return $http.get('/admin/api/events/'+eventName+'/email/'+messageId).error(HttpErrorHandler.handle);
+        this.loadEmailDetail = function(type, publicIdentifier, messageId) {
+            return $http.get('/admin/api/'+type+'/'+publicIdentifier+'/email/'+messageId).error(HttpErrorHandler.handle);
         }
     }
 

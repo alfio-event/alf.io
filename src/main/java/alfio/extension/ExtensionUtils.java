@@ -61,4 +61,17 @@ public class ExtensionUtils {
     public static String base64UrlSafe(String input) {
         return Base64.getUrlEncoder().encodeToString(input.getBytes(StandardCharsets.UTF_8));
     }
+
+    /**
+     * Checks whether or not the object needs to be JSON-serialized
+     * in order to be returned as result
+     *
+     * @param returnObject the Object result
+     * @return
+     */
+    public static boolean needsJsonSerialization(Object returnObject) {
+        return returnObject != null
+            // everything that is not included in the java.* package should be JSON-Serialized
+            && !returnObject.getClass().getPackage().getName().startsWith("java.");
+    }
 }

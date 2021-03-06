@@ -17,10 +17,23 @@
 package alfio.controller.api.v2.user.reservation;
 
 import alfio.model.Event;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
+import java.util.UUID;
+
 class ReservationFlowContext {
     final Event event;
     final String userId;
+    final UUID subscriptionId;
+    final String subscriptionPin;
+
+    ReservationFlowContext(Event event, String userId) {
+        this(event, userId, null, null);
+    }
+
+    ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin) {
+        this.event = event;
+        this.userId = userId;
+        this.subscriptionId = subscriptionId;
+        this.subscriptionPin = subscriptionPin;
+    }
 }

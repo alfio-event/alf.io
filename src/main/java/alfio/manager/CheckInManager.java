@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.manager.support.*;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
@@ -470,7 +469,7 @@ public class CheckInManager {
     }
 
     static CheckInOutputColorConfiguration getOutputColorConfiguration(EventAndOrganizationId event, ConfigurationManager configurationManager) {
-        return configurationManager.getFor(CHECK_IN_COLOR_CONFIGURATION, ConfigurationLevel.event(event)).getValue()
+        return configurationManager.getFor(CHECK_IN_COLOR_CONFIGURATION, event.getConfigurationLevel()).getValue()
             .flatMap(str -> optionally(() -> Json.fromJson(str, CheckInOutputColorConfiguration.class)))
             .orElse(null);
     }
@@ -523,7 +522,7 @@ public class CheckInManager {
     }
 
     private boolean areStatsEnabled(EventAndOrganizationId event) {
-        return configurationManager.getFor(CHECK_IN_STATS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+        return configurationManager.getFor(CHECK_IN_STATS, event.getConfigurationLevel()).getValueAsBooleanOrDefault();
     }
 
 }

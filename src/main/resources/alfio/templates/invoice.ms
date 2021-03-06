@@ -105,7 +105,7 @@
         <table style="width:100%">
             <tr>
                 {{#eventImage}}<td style="width:{{imageWidth}}px; height:{{imageHeight}}px"><img style="margin:auto; width:{{imageWidth}}px; height:{{imageHeight}}px" src="{{eventImage}}"/></td>{{/eventImage}}
-                {{^eventImage}}<td style="text-align: center; vertical-align: middle;"><h1>{{event.displayName}}</h1></td>{{/eventImage}}
+                {{^eventImage}}<td style="text-align: center; vertical-align: middle;"><h1>{{purchaseContext.displayName}}</h1></td>{{/eventImage}}
                 <td style="text-align: center; vertical-align: middle;"><h1>{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}</h1></td>
             </tr>
         </table>
@@ -141,19 +141,19 @@
         </table>
 
 
-        <h3><span class="strong">{{event.displayName}}</span>,
+        <h3><span class="strong">{{purchaseContext.displayName}}</span>{{#isEvent}},
             <i>
-                {{#event.sameDay}}{{#i18n}}event-days.same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}] {{/i18n}}{{/event.sameDay}}
-                {{^event.sameDay}}{{#i18n}}event-days.not-same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]{{/i18n}} - {{#i18n}}event-days.not-same-day [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]{{/i18n}} {{/event.sameDay}}
-            </i>
+                {{#purchaseContext.sameDay}}{{#i18n}}event-days.same-day [{{#format-date}}{{purchaseContext.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{purchaseContext.begin}} HH:mm{{/format-date}}] [{{#format-date}}{{purchaseContext.end}} HH:mm (z){{/format-date}}] {{/i18n}}{{/purchaseContext.sameDay}}
+                {{^purchaseContext.sameDay}}{{#i18n}}event-days.not-same-day [{{#format-date}}{{purchaseContext.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{purchaseContext.begin}} HH:mm{{/format-date}}]{{/i18n}} - {{#i18n}}event-days.not-same-day [{{#format-date}}{{purchaseContext.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{purchaseContext.end}} HH:mm (z){{/format-date}}]{{/i18n}} {{/purchaseContext.sameDay}}
+            </i>{{/isEvent}}
         </h3>
         <table style="width:100%;" class="summary">
             <thead>
                 <tr>
                     <th class="text-center" style="width:10%">{{#i18n}}reservation-page.amount{{/i18n}}</th>
                     <th class="text-center" style="width:60%">{{#i18n}}reservation-page.category{{/i18n}}</th>
-                    <th class="text-center" style="width:15%">{{#i18n}}reservation-page.price{{/i18n}} ({{event.currency}})</th>
-                    <th class="text-center" style="width:15%">{{#i18n}}reservation-page.subtotal{{/i18n}} ({{event.currency}})</th>
+                    <th class="text-center" style="width:15%">{{#i18n}}reservation-page.price{{/i18n}} ({{purchaseContext.currency}})</th>
+                    <th class="text-center" style="width:15%">{{#i18n}}reservation-page.subtotal{{/i18n}} ({{purchaseContext.currency}})</th>
                 </tr>
             </thead>
             <tbody>
@@ -175,7 +175,7 @@
                         <tr><th colspan="4" class="no-padding">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</th></tr>
                     {{/orderSummary.displayVat}}
                 {{/orderSummary.free}}
-                <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}}</th><th class="text-right strong">{{event.currency}} {{orderSummary.totalPrice}}</th></tr>
+                <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}}</th><th class="text-right strong">{{purchaseContext.currency}} {{orderSummary.totalPrice}}</th></tr>
                 {{#orderSummary.displaySplitPaymentNote}}
                     <tr><th colspan="4" class="strong no-padding">{{#i18n}}invoice.vat-not-added [{{vatTranslation}}]{{/i18n}}</th></tr>
                 {{/orderSummary.displaySplitPaymentNote}}
@@ -187,7 +187,7 @@
             <p>{{ticketReservation.id}}</p>
             <p>{{#i18n}}invoice.buyer{{/i18n}} {{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</p>
             {{#hasRefund}}
-            <p class="strong">{{#i18n}}invoice.refund [{{event.currency}} {{orderSummary.refundedAmount}}]{{/i18n}}</p>
+            <p class="strong">{{#i18n}}invoice.refund [{{purchaseContext.currency}} {{orderSummary.refundedAmount}}]{{/i18n}}</p>
             {{/hasRefund}}
         </div>
 

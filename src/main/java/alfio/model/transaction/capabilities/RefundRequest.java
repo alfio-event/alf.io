@@ -16,7 +16,7 @@
  */
 package alfio.model.transaction.capabilities;
 
-import alfio.model.Event;
+import alfio.model.PurchaseContext;
 import alfio.model.transaction.Capability;
 
 /**
@@ -24,6 +24,6 @@ import alfio.model.transaction.Capability;
  */
 public interface RefundRequest extends Capability {
 
-    boolean refund(alfio.model.transaction.Transaction transaction, Event event, Integer amount);
+    boolean refund(alfio.model.transaction.Transaction transaction, PurchaseContext purchaseContext, Integer amount);
 
 }

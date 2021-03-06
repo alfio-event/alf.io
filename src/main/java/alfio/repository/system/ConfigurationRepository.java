@@ -170,6 +170,11 @@ public interface ConfigurationRepository {
     @Query("select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1")
     @JSONData Map<String, Map<String, String>> getSystemOverrideMessages();
 
+    @Query("select coalesce(jsonb_recursive_merge(a.c_value, b.c_value), '{}'::jsonb) from "+
+        "(select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) a, "+
+        "(select c_value::jsonb from configuration_organization where organization_id_fk = :orgId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) b")
+    @JSONData Map<String, Map<String, String>> getOrganizationOverrideMessages(@Bind("orgId") int orgId);
+
     @Query("select coalesce(jsonb_recursive_merge(jsonb_recursive_merge(a.c_value, b.c_value), c.c_value), '{}'::jsonb) from "+
         "(select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) a, "+
         "(select c_value::jsonb from configuration_organization where organization_id_fk = :orgId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) b,"+

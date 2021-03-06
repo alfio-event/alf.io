@@ -17,7 +17,6 @@
 package alfio.controller.payment.api.stripe;
 
 import alfio.manager.TicketReservationManager;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;

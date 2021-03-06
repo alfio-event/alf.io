@@ -779,7 +779,7 @@ span.path {
     border: 0;
 }
 
-div.preformatted {
+.preformatted {
     word-wrap: break-word;
     white-space: pre-wrap;
 }

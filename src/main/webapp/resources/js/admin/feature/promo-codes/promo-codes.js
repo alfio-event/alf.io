@@ -47,7 +47,7 @@
             var loader = ctrl.forEvent ? function () {return PromoCodeService.list(ctrl.event.id)} : function() {return PromoCodeService.listOrganization(ctrl.organizationId)};
 
             if(ctrl.forEvent) {
-                ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
+                ConfigurationService.loadSingleConfigForEvent(ctrl.event.shortName, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
                     .then(function(result) {
                         ctrl.promoCodeDescription = (result.data === 'true') ? 'Partner' : 'Promo';
                     });

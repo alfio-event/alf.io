@@ -161,6 +161,16 @@
                 return method.proxy.id !== 'ON_SITE' || event.format !== 'ONLINE';
             });
         }
-    })
+    });
+
+    filters.filter('ellipsisAfterFirstRow', function() {
+        return function(str) {
+            var split = str.split(/\n/g, 2);
+            if (split.length > 1) {
+                return split[0] + '...';
+            }
+            return str;
+        }
+    });
 
 })();

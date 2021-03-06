@@ -16,10 +16,10 @@
  */
 package alfio.manager;
 
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
+import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.extension.CreditNoteGeneration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -79,7 +79,7 @@ public class BillingDocumentManager {
         return !summary.getFree() && (!summary.getNotYetPaid() || (summary.getWaitingForPayment() && ticketReservation.isInvoiceRequested()));
     }
 
-    List<Mailer.Attachment> generateBillingDocumentAttachment(Event event,
+    List<Mailer.Attachment> generateBillingDocumentAttachment(PurchaseContext purchaseContext,
                                                               TicketReservation ticketReservation,
                                                               Locale language,
                                                               BillingDocument.Type documentType,
@@ -87,9 +87,9 @@ public class BillingDocumentManager {
                                                               OrderSummary orderSummary) {
         Map<String, String> model = new HashMap<>();
         model.put("reservationId", ticketReservation.getId());
-        model.put("eventId", Integer.toString(event.getId()));
+        model.put("eventId", purchaseContext.event().map(ev -> Integer.toString(ev.getId())).orElse(null));
         model.put("language", json.asJsonString(language));
-        model.put("reservationEmailModel", json.asJsonString(getOrCreateBillingDocument(event, ticketReservation, username, orderSummary).getModel()));
+        model.put("reservationEmailModel", json.asJsonString(getOrCreateBillingDocument(purchaseContext, ticketReservation, username, orderSummary).getModel()));
         switch (documentType) {
             case INVOICE:
                 return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
@@ -103,23 +103,23 @@ public class BillingDocumentManager {
     }
 
     @Transactional
-    public void ensureBillingDocumentIsPresent(Event event, TicketReservation reservation, String username, Supplier<OrderSummary> orderSummarySupplier) {
+    public void ensureBillingDocumentIsPresent(PurchaseContext purchaseContext, TicketReservation reservation, String username, Supplier<OrderSummary> orderSummarySupplier) {
         if(reservation.getStatus() == PENDING || reservation.getStatus() == CANCELLED) {
             return;
         }
         var orderSummary = orderSummarySupplier.get();
         if(mustGenerateBillingDocument(orderSummary, reservation)) {
-            getOrCreateBillingDocument(event, reservation, username, orderSummary);
+            getOrCreateBillingDocument(purchaseContext, reservation, username, orderSummary);
         }
     }
 
     @Transactional
-    public BillingDocument createBillingDocument(Event event, TicketReservation reservation, String username, OrderSummary orderSummary) {
-        return createBillingDocument(event, reservation, username, reservation.getHasInvoiceNumber() ? INVOICE : RECEIPT, orderSummary);
+    public BillingDocument createBillingDocument(PurchaseContext purchaseContext, TicketReservation reservation, String username, OrderSummary orderSummary) {
+        return createBillingDocument(purchaseContext, reservation, username, reservation.getHasInvoiceNumber() ? INVOICE : RECEIPT, orderSummary);
     }
 
-    BillingDocument createBillingDocument(Event event, TicketReservation reservation, String username, BillingDocument.Type type, OrderSummary orderSummary) {
-        Map<String, Object> model = prepareModelForBillingDocument(event, reservation, orderSummary, type);
+    BillingDocument createBillingDocument(PurchaseContext purchaseContext, TicketReservation reservation, String username, BillingDocument.Type type, OrderSummary orderSummary) {
+        Map<String, Object> model = prepareModelForBillingDocument(purchaseContext, reservation, orderSummary, type);
         String number;
         if(type == INVOICE) {
             number = reservation.getInvoiceNumber();
@@ -128,24 +128,25 @@ public class BillingDocumentManager {
         } else {
             number = UUID.randomUUID().toString();
         }
-        AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, json.asJsonString(model), event.now(clockProvider), event.getOrganizationId());
+        var eventId = purchaseContext.event().map(Event::getId).orElse(null);
+        AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(eventId, reservation.getId(), number, type, json.asJsonString(model), purchaseContext.now(clockProvider), purchaseContext.getOrganizationId());
         log.trace("billing document #{} created", doc.getKey());
-        auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
+        auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), purchaseContext, Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
         return billingDocumentRepository.findByIdAndReservationId(doc.getKey(), reservation.getId()).orElseThrow(IllegalStateException::new);
     }
 
     @Transactional
-    public BillingDocument getOrCreateBillingDocument(Event event, TicketReservation reservation, String username, OrderSummary orderSummary) {
+    public BillingDocument getOrCreateBillingDocument(PurchaseContext purchaseContext, TicketReservation reservation, String username, OrderSummary orderSummary) {
         Optional<BillingDocument> existing = billingDocumentRepository.findLatestByReservationId(reservation.getId());
-        return existing.orElseGet(() -> createBillingDocument(event, reservation, username, orderSummary));
+        return existing.orElseGet(() -> createBillingDocument(purchaseContext, reservation, username, orderSummary));
     }
 
     public Optional<BillingDocument> getDocumentById(long id) {
         return billingDocumentRepository.findById(id);
     }
 
-    private Map<String, Object> prepareModelForBillingDocument(Event event, TicketReservation reservation, OrderSummary summary, BillingDocument.Type type) {
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
+    private Map<String, Object> prepareModelForBillingDocument(PurchaseContext purchaseContext, TicketReservation reservation, OrderSummary summary, BillingDocument.Type type) {
+        Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
 
         String creditNoteNumber = reservation.getInvoiceNumber();
         if(type == CREDIT_NOTE) {
@@ -154,7 +155,7 @@ public class BillingDocumentManager {
                 .map(CreditNoteGeneration::getCreditNoteNumber).orElse(creditNoteNumber);
         }
 
-        var bankingInfo = configurationManager.getFor(Set.of(VAT_NR, INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), ConfigurationLevel.event(event));
+        var bankingInfo = configurationManager.getFor(Set.of(VAT_NR, INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), purchaseContext.getConfigurationLevel());
         Optional<String> invoiceAddress = bankingInfo.get(INVOICE_ADDRESS).getValue();
         Optional<String> bankAccountNr = bankingInfo.get(BANK_ACCOUNT_NR).getValue();
         Optional<String> bankAccountOwner = bankingInfo.get(BANK_ACCOUNT_OWNER).getValue();
@@ -172,12 +173,13 @@ public class BillingDocumentManager {
         } else {
             ticketsWithCategory = Collections.emptyList();
         }
-        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, "", "", "", invoiceAddress, bankAccountNr, bankAccountOwner, Map.of());
+        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, purchaseContext, reservation, vat, ticketsWithCategory, summary, "", "", "", invoiceAddress, bankAccountNr, bankAccountOwner, Map.of());
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
             && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
+        model.put("isEvent", purchaseContext.getType() == PurchaseContextType.event);
         model.put("euBusiness", euBusiness);
-        model.put("publicId", configurationManager.getPublicReservationID(event, reservation));
+        model.put("publicId", configurationManager.getPublicReservationID(purchaseContext, reservation));
         var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservation.getId());
         model.put("invoicingAdditionalInfo", additionalInfo.getInvoicingAdditionalInfo());
         model.put("billingDetails", additionalInfo.getBillingDetails());

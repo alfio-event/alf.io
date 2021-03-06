@@ -107,6 +107,9 @@ public interface EventDeleterRepository {
     @Query("delete from poll where event_id_fk = :eventId")
     int deletePolls(@Bind("eventId") int eventId);
 
+    @Query("delete from subscription_event where event_id_fk = :eventId")
+    int deleteSubscriptionLinks(@Bind("eventId") int eventId);
+
     default void deleteAllForEvent(int eventId) {
         deletePolls(eventId);
         deleteWaitingQueue(eventId);
@@ -135,6 +138,7 @@ public interface EventDeleterRepository {
         deleteEventDescription(eventId);
         deleteResources(eventId);
         deleteScanAudit(eventId);
+        deleteSubscriptionLinks(eventId);
         deleteEvent(eventId);
     }
 

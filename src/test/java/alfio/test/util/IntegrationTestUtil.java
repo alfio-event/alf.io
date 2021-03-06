@@ -115,7 +115,7 @@ public class IntegrationTestUtil {
                 "muh location", "0.0", "0.0", ClockProvider.clock().getZone().getId(), desc,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
-                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty());
+                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty(), List.of());
         eventManager.createEvent(em, username);
         Event event = eventManager.getSingleEvent(eventName, username);
         Assert.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
@@ -129,6 +129,6 @@ public class IntegrationTestUtil {
 
     public static void removeAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
         authorityRepository.revokeAll(UserManager.ADMIN_USERNAME);
-        userRepository.deleteUser(userRepository.findIdByUserName(UserManager.ADMIN_USERNAME).get());
+        userRepository.deleteUser(userRepository.findIdByUserName(UserManager.ADMIN_USERNAME).orElseThrow());
     }
 }

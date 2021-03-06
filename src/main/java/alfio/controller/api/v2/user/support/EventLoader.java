@@ -19,9 +19,7 @@ package alfio.controller.api.v2.user.support;
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
 import alfio.controller.support.Formatters;
-import alfio.manager.EuVatChecker;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.modification.support.LocationDescriptor;
@@ -29,7 +27,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpSession;
@@ -49,12 +46,13 @@ public class EventLoader {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     public Optional<EventWithAdditionalInfo> loadEventInfo(String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
                 //
-                var messageSourceAndOverride = messageSourceManager.getMessageSourceForEventAndOverride(event);
+                var messageSourceAndOverride = messageSourceManager.getMessageSourceForPurchaseContextAndOverride(event);
                 var messageSource = messageSourceAndOverride.getLeft();
                 var i18nOverride = messageSourceAndOverride.getRight();
 
@@ -62,51 +60,12 @@ public class EventLoader {
 
                 var organization = organizationRepository.getContactById(event.getOrganizationId());
 
-                var configurationsValues = configurationManager.getFor(List.of(
-                    MAPS_PROVIDER,
-                    MAPS_CLIENT_API_KEY,
-                    MAPS_HERE_API_KEY,
-                    RECAPTCHA_API_KEY,
-                    BANK_ACCOUNT_NR,
-                    BANK_ACCOUNT_OWNER,
-                    ENABLE_CUSTOMER_REFERENCE,
-                    ENABLE_ITALY_E_INVOICING,
-                    VAT_NUMBER_IS_REQUIRED,
-                    FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION,
-                    ENABLE_ATTENDEE_AUTOCOMPLETE,
-                    ENABLE_TICKET_TRANSFER,
-                    DISPLAY_DISCOUNT_CODE_BOX,
-                    USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL,
-                    GOOGLE_ANALYTICS_KEY,
-                    GOOGLE_ANALYTICS_ANONYMOUS_MODE,
-                    // captcha
-                    ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
-                    RECAPTCHA_API_KEY,
-                    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS,
-                    //
-                    GENERATE_ONLY_INVOICE,
-                    //
-                    INVOICE_ADDRESS,
-                    VAT_NR,
-                    // required by EuVatChecker.reverseChargeEnabled
-                    ENABLE_EU_VAT_DIRECTIVE,
-                    COUNTRY_OF_BUSINESS,
-
-                    DISPLAY_TICKETS_LEFT_INDICATOR,
-                    EVENT_CUSTOM_CSS
-                ), ConfigurationLevel.event(event));
+                var configurationsValues = PurchaseContextInfoBuilder.configurationsValues(event, configurationManager);
 
                 var locationDescriptor = LocationDescriptor.fromGeoData(event.getFormat(), event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
 
                 //
-                boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
-                String recaptchaApiKey = null;
-                if (captchaForTicketSelection) {
-                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrNull();
-                }
-                //
-                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurationsValues);
-                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentAndFreeEnabled, recaptchaApiKey);
+                var captchaConf = PurchaseContextInfoBuilder.captchaConfiguration(configurationManager, configurationsValues);
 
 
                 //
@@ -117,17 +76,7 @@ public class EventLoader {
                 var formattedDates = Formatters.getFormattedDates(event, messageSource, event.getContentLanguages());
 
                 //invoicing information
-                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurationsValues);
-                boolean euVatCheckingEnabled = EuVatChecker.reverseChargeEnabled(configurationsValues);
-                boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(configurationsValues);
-                boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(configurationsValues);
-                boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBooleanOrDefault();
-                boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault();
-                boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).getValueAsBooleanOrDefault();
-
-                var invoicingConf = new EventWithAdditionalInfo.InvoicingConfiguration(canGenerateReceiptOrInvoiceToCustomer,
-                    euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
-                    customerReferenceEnabled, enabledItalyEInvoicing, vatNumberStrictlyRequired);
+                var invoicingConf = PurchaseContextInfoBuilder.invoicingInfo(configurationManager, configurationsValues);
                 //
 
                 //
@@ -157,18 +106,18 @@ public class EventLoader {
 
                 var customCss = configurationsValues.get(EVENT_CUSTOM_CSS).getValueOrNull();
 
+                var hasLinkedSubscription = subscriptionRepository.hasLinkedSubscription(event.getId());
+
                 return new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
-                    MessageSourceManager.convertPlaceholdersForEachLanguage(i18nOverride), availableTicketsCount, customCss);
+                    MessageSourceManager.convertPlaceholdersForEachLanguage(i18nOverride), availableTicketsCount, customCss, hasLinkedSubscription);
             });
     }
 
     public boolean isRecaptchaForTicketSelectionEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
-        Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_TICKET_SELECTION) && configurationValues.containsKey(RECAPTCHA_API_KEY));
-        return configurationValues.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault() &&
-            configurationValues.get(RECAPTCHA_API_KEY).getValueOrNull() != null;
+        return PurchaseContextInfoBuilder.isRecaptchaForTicketSelectionEnabled(configurationValues);
     }
 }

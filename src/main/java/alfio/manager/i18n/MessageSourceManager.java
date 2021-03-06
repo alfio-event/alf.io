@@ -16,7 +16,8 @@
  */
 package alfio.manager.i18n;
 
-import alfio.model.EventAndOrganizationId;
+import alfio.model.Event;
+import alfio.model.PurchaseContext;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.LocaleUtil;
@@ -51,13 +52,20 @@ public class MessageSourceManager {
         return messageSource.getKeys(basename, locale);
     }
 
-    public Pair<MessageSource, Map<String, Map<String, String>>> getMessageSourceForEventAndOverride(EventAndOrganizationId eventAndOrganizationId) {
-        var override = configurationRepository.getEventOverrideMessages(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId());
+    public Pair<MessageSource, Map<String, Map<String, String>>> getMessageSourceForPurchaseContextAndOverride(PurchaseContext purchaseContext) {
+        Map<String, Map<String, String>> override = purchaseContext.event()
+            .map(event -> configurationRepository.getEventOverrideMessages(event.getOrganizationId(), event.getId()))
+            .orElseGet(() -> configurationRepository.getOrganizationOverrideMessages(purchaseContext.getOrganizationId()));
         return Pair.of(new MessageSourceWithOverride(messageSource, override), override);
     }
 
-    public MessageSource getMessageSourceForEvent(EventAndOrganizationId eventAndOrganizationId) {
-        return getMessageSourceForEventAndOverride(eventAndOrganizationId).getLeft();
+    public MessageSource getMessageSourceFor(PurchaseContext purchaseContext) {
+        return getMessageSourceForPurchaseContextAndOverride(purchaseContext).getLeft();
+    }
+
+    public MessageSource getMessageSourceFor(int orgId, int eventId) {
+        var override = configurationRepository.getEventOverrideMessages(orgId, eventId);
+        return new MessageSourceWithOverride(messageSource, override);
     }
 
     public MessageSource getRootMessageSource() {

@@ -16,21 +16,8 @@
  */
 package alfio.model;
 
-import alfio.util.ClockProvider;
+import java.util.List;
 
-import java.time.Clock;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-
-interface EventTimeZoneInfo {
-
-    ZoneId getZoneId();
-
-    default ZonedDateTime now(ClockProvider clockProvider) {
-        return ZonedDateTime.now(clockProvider.withZone(getZoneId()));
-    }
-
-    default ZonedDateTime now(Clock clock) {
-        return ZonedDateTime.now(clock.withZone(getZoneId()));
-    }
+public interface LocalizedContent {
+    List<ContentLanguage> getContentLanguages();
 }

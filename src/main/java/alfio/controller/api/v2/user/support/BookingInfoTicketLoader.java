@@ -72,7 +72,7 @@ public class BookingInfoTicketLoader {
                 .map(link -> link.getValidFrom().atZone(event.getZoneId()))
                 .orElse(event.getBegin());
             formattedDates = Formatters.getFormattedDate(event, checkInDate, "common.ticket-category.date-format",
-                messageSourceManager.getMessageSourceForEvent(event));
+                messageSourceManager.getMessageSourceFor(event));
             onlineEventStarted = event.now(clockProvider).isAfter(checkInDate);
         }
 

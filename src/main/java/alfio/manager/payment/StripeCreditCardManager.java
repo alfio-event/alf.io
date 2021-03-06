@@ -19,8 +19,8 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
 import alfio.model.PaymentInformation;
+import alfio.model.PurchaseContext;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ClientServerTokenRequest;
@@ -88,14 +88,14 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     }
 
     @Override
-    public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
-        return baseStripeManager.getInfo(transaction, event);
+    public Optional<PaymentInformation> getInfo(Transaction transaction, PurchaseContext purchaseContext) {
+        return baseStripeManager.getInfo(transaction, purchaseContext);
     }
 
     // https://stripe.com/docs/api#create_refund
     @Override
-    public boolean refund(Transaction transaction, Event event, Integer amountToRefund) {
-        return baseStripeManager.refund(transaction, event, amountToRefund);
+    public boolean refund(Transaction transaction, PurchaseContext purchaseContext, Integer amountToRefund) {
+        return baseStripeManager.refund(transaction, purchaseContext, amountToRefund);
     }
 
     @Override
@@ -158,7 +158,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
                 PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
                 transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
-                    ZonedDateTime.now(clockProvider.withZone(spec.getEvent().getZoneId())), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
+                    ZonedDateTime.now(clockProvider.withZone(spec.getPurchaseContext().getZoneId())), spec.getPriceWithVAT(), spec.getPurchaseContext().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
                     fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of(STRIPE_MANAGER_TYPE_KEY, STRIPE_MANAGER));
                 return PaymentResult.successful(charge.getId());
             }).orElseGet(() -> PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION"));

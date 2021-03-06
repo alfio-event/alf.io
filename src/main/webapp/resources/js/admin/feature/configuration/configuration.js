@@ -102,6 +102,9 @@
             loadSingleConfigForEvent: function(eventId, key) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/single/'+key).error(HttpErrorHandler.handle)
             },
+            loadSingleConfigForOrganization: function(organizationId, key) {
+                return $http.get('/admin/api/configuration/organizations/'+organizationId+'/single/'+key).error(HttpErrorHandler.handle)
+            },
             loadInstanceSettings: function() {
                 return $http.get('/admin/api/configuration/instance-settings').error(HttpErrorHandler.handle)
             },

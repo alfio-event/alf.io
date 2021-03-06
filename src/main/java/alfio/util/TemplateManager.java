@@ -18,9 +18,9 @@ package alfio.util;
 
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.EventAndOrganizationId;
+import alfio.model.Event;
+import alfio.model.PurchaseContext;
 import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
@@ -97,30 +97,30 @@ public class TemplateManager {
     }
 
     
-    private RenderedTemplate renderMultipartTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
-    	var enrichedModel = modelEnricher(model, Optional.of(event), locale);
+    private RenderedTemplate renderMultipartTemplate(PurchaseContext purchaseContext, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+    	var enrichedModel = modelEnricher(model, purchaseContext, locale);
     	var isMultipart = templateResource.isMultipart();
     	
-        var textRender = render(new ClassPathResource(templateResource.classPath()), enrichedModel, locale, event, isMultipart ? TemplateOutput.TEXT : templateResource.getTemplateOutput());
+        var textRender = render(new ClassPathResource(templateResource.classPath()), enrichedModel, locale, purchaseContext, isMultipart ? TemplateOutput.TEXT : templateResource.getTemplateOutput());
         
-        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
         
         var htmlRender = isMultipart && htmlEnabled ? 
-        		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, event, TemplateOutput.HTML) :
+        		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, purchaseContext, TemplateOutput.HTML) :
         		null;
         		
     	return RenderedTemplate.multipart(textRender, htmlRender);
     }
 
-    public RenderedTemplate renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
-        Map<String, Object> updatedModel = modelEnricher(model, Optional.of(event), locale);
-        return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
-            .map(resource -> RenderedTemplate.plaintext(render(new ByteArrayResource(resource), updatedModel, locale, event, templateResource.getTemplateOutput())))
-            .orElseGet(() -> renderMultipartTemplate(event, templateResource, updatedModel, locale));
+    public RenderedTemplate renderTemplate(PurchaseContext purchaseContext, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+        Map<String, Object> updatedModel = modelEnricher(model, purchaseContext, locale);
+        return uploadedResourceManager.findCascading(purchaseContext.getOrganizationId(), purchaseContext.event().map(Event::getId).orElse(null), templateResource.getSavedName(locale))
+            .map(resource -> RenderedTemplate.plaintext(render(new ByteArrayResource(resource), updatedModel, locale, purchaseContext, templateResource.getTemplateOutput())))
+            .orElseGet(() -> renderMultipartTemplate(purchaseContext, templateResource, updatedModel, locale));
     }
 
-    public String renderString(EventAndOrganizationId event, String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), modelEnricher(model, Optional.ofNullable(event), locale), locale, event, templateOutput);
+    public String renderString(PurchaseContext purchaseContext, String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), modelEnricher(model, purchaseContext, locale), locale, purchaseContext, templateOutput);
     }
 
     public void renderHtml(Resource resource, Map<String, Object> model, OutputStream os) {
@@ -131,19 +131,19 @@ public class TemplateManager {
         }
     }
 
-    private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<? extends EventAndOrganizationId> event, Locale locale) {
+    private Map<String, Object> modelEnricher(Map<String, Object> model, PurchaseContext purchaseContext, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
-        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, messageSourceManager.getMessageSourceForEvent(ev).getMessage("common.vat", null, locale)));
+        toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("common.vat", null, locale));
         return toEnrich;
     }
 
-    private String render(Resource resource, Map<String, Object> model, Locale locale, EventAndOrganizationId eventAndOrganizationId, TemplateOutput templateOutput) {
+    private String render(Resource resource, Map<String, Object> model, Locale locale, PurchaseContext purchaseContext, TemplateOutput templateOutput) {
         try {
             ModelAndView mv = new ModelAndView((String) null, model);
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
             mv.addObject("country-name", COUNTRY_NAME);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
-            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceForEvent(eventAndOrganizationId)).createTranslator());
+            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceFor(purchaseContext)).createTranslator());
             var updatedModel = mv.getModel();
             updatedModel.putIfAbsent("custom-header-text", "");
             updatedModel.putIfAbsent("custom-body-text", "");

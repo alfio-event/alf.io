@@ -17,16 +17,16 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.api.support.PageAndContent;
-import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
+import alfio.manager.PurchaseContextManager;
 import alfio.model.EmailMessage;
-import alfio.model.Event;
 import alfio.model.LightweightMailMessage;
+import alfio.model.PurchaseContext;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -36,36 +36,35 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @RestController
-@RequestMapping("/admin/api/events/{eventName}/email")
+@RequestMapping("/admin/api/{purchaseContextType}/{publicIdentifier}/email")
 public class EmailMessageApiController {
 
     private final NotificationManager notificationManager;
-    private final EventManager eventManager;
-
-    @Autowired
-    public EmailMessageApiController(NotificationManager notificationManager, EventManager eventManager) {
-        this.notificationManager = notificationManager;
-        this.eventManager = eventManager;
-    }
+    private final PurchaseContextManager purchaseContextManager;
 
     @GetMapping("/")
-    public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("eventName") String eventName,
-                                                                                    @RequestParam(value = "page", required = false) Integer page,
-                                                                                    @RequestParam(value = "search", required = false) String search,
-                                                                                    Principal principal) {
-        Event event = eventManager.getSingleEvent(eventName, principal.getName());
-        ZoneId zoneId = event.getZoneId();
-        Pair<Integer, List<LightweightMailMessage>> found = notificationManager.loadAllMessagesForEvent(event.getId(), page, search);
+    public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
+                                                                           @PathVariable("publicIdentifier") String publicIdentifier,
+                                                                           @RequestParam(value = "page", required = false) Integer page,
+                                                                           @RequestParam(value = "search", required = false) String search,
+                                                                           Principal principal) {
+        var purchaseContext = purchaseContextManager.findBy(purchaseContextType, publicIdentifier).orElseThrow();
+        ZoneId zoneId = purchaseContext.getZoneId();
+        Pair<Integer, List<LightweightMailMessage>> found = notificationManager.loadAllMessagesForPurchaseContext(purchaseContext, page, search);
         return new PageAndContent<>(found.getRight().stream()
             .map(m -> new LightweightEmailMessage(m, zoneId, true))
             .collect(Collectors.toList()), found.getLeft());
     }
 
     @GetMapping("/{messageId}")
-    public LightweightEmailMessage loadEmailMessage(@PathVariable("eventName") String eventName, @PathVariable("messageId") int messageId, Principal principal) {
-        Event event = eventManager.getSingleEvent(eventName, principal.getName());
-        return notificationManager.loadSingleMessageForEvent(event.getId(), messageId).map(m -> new LightweightEmailMessage(m, event.getZoneId(), false)).orElseThrow(IllegalArgumentException::new);
+    public LightweightEmailMessage loadEmailMessage(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
+                                                    @PathVariable("publicIdentifier") String publicIdentifier,
+                                                    @PathVariable("messageId") int messageId,
+                                                    Principal principal) {
+        var purchaseContext = purchaseContextManager.findBy(purchaseContextType, publicIdentifier).orElseThrow();
+        return notificationManager.loadSingleMessageForPurchaseContext(purchaseContext, messageId).map(m -> new LightweightEmailMessage(m, purchaseContext.getZoneId(), false)).orElseThrow(IllegalArgumentException::new);
     }
 
     @AllArgsConstructor

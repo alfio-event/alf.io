@@ -16,9 +16,8 @@
  */
 package alfio.manager.support;
 
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.EventAndOrganizationId;
+import alfio.model.Configurable;
 import alfio.util.MonetaryUtil;
 
 import java.math.BigDecimal;
@@ -58,10 +57,10 @@ public class FeeCalculator {
         return min(maxFee, max(percentage + fixed, minFee));
     }
 
-    public static BiFunction<Integer, Long, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager, String currencyCode) {
+    public static BiFunction<Integer, Long, Optional<Long>> getCalculator(Configurable configurable, ConfigurationManager configurationManager, String currencyCode) {
         return (numTickets, amountInCent) -> {
-            if(isPlatformModeEnabled(event, configurationManager)) {
-                var fees = configurationManager.getFor(Set.of(PLATFORM_FIXED_FEE, PLATFORM_PERCENTAGE_FEE, PLATFORM_MINIMUM_FEE, PLATFORM_MAXIMUM_FEE), ConfigurationLevel.event(event));
+            if(isPlatformModeEnabled(configurable, configurationManager)) {
+                var fees = configurationManager.getFor(Set.of(PLATFORM_FIXED_FEE, PLATFORM_PERCENTAGE_FEE, PLATFORM_MINIMUM_FEE, PLATFORM_MAXIMUM_FEE), configurable.getConfigurationLevel());
                 String fixedFee = fees.get(PLATFORM_FIXED_FEE).getValueOrDefault("0");
                 String percentageFee = fees.get(PLATFORM_PERCENTAGE_FEE).getValueOrDefault("0");
                 String minimumFee = fees.get(PLATFORM_MINIMUM_FEE).getValueOrDefault("0");
@@ -72,7 +71,7 @@ public class FeeCalculator {
         };
     }
 
-    private static boolean isPlatformModeEnabled(EventAndOrganizationId event, ConfigurationManager configurationManager) {
-        return configurationManager.getFor(PLATFORM_MODE_ENABLED, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+    private static boolean isPlatformModeEnabled(Configurable configurable, ConfigurationManager configurationManager) {
+        return configurationManager.getFor(PLATFORM_MODE_ENABLED, configurable.getConfigurationLevel()).getValueAsBooleanOrDefault();
     }
 }

@@ -79,9 +79,7 @@ class SaferpayManagerTest {
         when(configurationManager.getFor(eq(EnumSet.of(SAFERPAY_ENABLED, SAFERPAY_API_USERNAME, SAFERPAY_API_PASSWORD, SAFERPAY_CUSTOMER_ID, SAFERPAY_TERMINAL_ID, SAFERPAY_LIVE_MODE, BASE_URL, RESERVATION_TIMEOUT)), any())).thenReturn(configuration);
         when(maybeConfiguration.getRequiredValue()).thenReturn("");
         when(configuration.get(any(ConfigurationKeys.class))).thenReturn(maybeConfiguration);
-        when(event.getOrganizationId()).thenReturn(1);
-        when(event.getId()).thenReturn(5);
-        when(paymentContext.getEvent()).thenReturn(event);
+        when(paymentContext.getPurchaseContext()).thenReturn(event);
         manager = new SaferpayManager(configurationManager, httpClient, ticketReservationRepository, transactionRepository, ticketRepository, TestUtil.clockProvider());
     }
 

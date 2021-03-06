@@ -17,7 +17,6 @@
 package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.metadata.CallLink;
@@ -81,7 +80,7 @@ public final class EventUtil {
         .toFormatter(Locale.ROOT);
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
-        var confVal = configurationManager.getFor(List.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), ConfigurationLevel.event(event));
+        var confVal = configurationManager.getFor(List.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), event.getConfigurationLevel());
         return !confVal.get(STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault()
             && checkWaitingQueuePreconditions(event, categories, noTicketsAvailable, confVal);
     }
@@ -99,7 +98,7 @@ public final class EventUtil {
     }
 
     public static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
-        var confVal = configurationManager.getFor(List.of(ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), ConfigurationLevel.event(event));
+        var confVal = configurationManager.getFor(List.of(ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), event.getConfigurationLevel());
         return checkWaitingQueuePreconditions(event, categories, noTicketsAvailable, confVal);
     }
 

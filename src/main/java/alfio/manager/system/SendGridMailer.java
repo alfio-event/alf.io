@@ -16,7 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.model.EventAndOrganizationId;
+import alfio.model.Configurable;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
@@ -44,8 +44,8 @@ public class SendGridMailer implements Mailer {
     private final ConfigurationManager configurationManager;
 
     @Override
-    public void send(final EventAndOrganizationId event, final String fromName, final String to, final List<String> cc, final String subject, final String text, final Optional<String> html, final Attachment... attachment) {
-        final var config = configurationManager.getFor(Set.of(ConfigurationKeys.SENDGRID_API_KEY, ConfigurationKeys.SENDGRID_FROM, ConfigurationKeys.MAIL_REPLY_TO), ConfigurationLevel.event(event));
+    public void send(Configurable configurable, final String fromName, final String to, final List<String> cc, final String subject, final String text, final Optional<String> html, final Attachment... attachment) {
+        final var config = configurationManager.getFor(Set.of(ConfigurationKeys.SENDGRID_API_KEY, ConfigurationKeys.SENDGRID_FROM, ConfigurationKeys.MAIL_REPLY_TO), configurable.getConfigurationLevel());
         final var from = config.get(ConfigurationKeys.SENDGRID_FROM).getRequiredValue();
         final var personalizations = createPersonalizations(to, cc, subject);
         final var contents = createContents(text, html);

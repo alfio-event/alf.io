@@ -21,6 +21,8 @@ import lombok.Data;
 
 import java.time.ZonedDateTime;
 
+import static java.time.temporal.ChronoField.OFFSET_SECONDS;
+
 @Data
 public class DatesWithTimeZoneOffset {
     private final long startDateTime;
@@ -33,8 +35,22 @@ public class DatesWithTimeZoneOffset {
             event.getBeginTimeZoneOffset(), toEpochMilli(event.getEnd()), event.getEndTimeZoneOffset());
     }
 
+    public static DatesWithTimeZoneOffset fromDates(ZonedDateTime start, ZonedDateTime end) {
+        return new DatesWithTimeZoneOffset(toEpochMilli(start), getOffset(start), toEpochMilli(end), getOffset(end));
+    }
+
     private static long toEpochMilli(ZonedDateTime in) {
-        return in.toInstant().toEpochMilli();
+        if(in != null) {
+            return in.toInstant().toEpochMilli();
+        }
+        return 0;
+    }
+
+    private static int getOffset(ZonedDateTime in) {
+        if(in != null) {
+            return in.getOffset().get(OFFSET_SECONDS);
+        }
+        return 0;
     }
 }
 

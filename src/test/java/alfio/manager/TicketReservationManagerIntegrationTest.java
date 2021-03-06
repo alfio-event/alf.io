@@ -102,6 +102,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     private SpecialPriceTokenGenerator specialPriceTokenGenerator;
     @Autowired
     private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
+    @Autowired
+    private PurchaseContextSearchManager purchaseContextSearchManager;
 
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
@@ -168,7 +170,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketReservationWithOptionalCodeModification mod2 = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, List.of(mod, mod2), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
 
-        List<TicketReservation> reservations = ticketReservationManager.findAllReservationsInEvent(event.getId(), 0, null, null).getKey();
+        List<TicketReservation> reservations = purchaseContextSearchManager.findAllReservationsFor(event, 0, null, null).getKey();
         assertEquals(1, reservations.size());
         assertEquals(reservationId, reservations.get(0).getId());
 

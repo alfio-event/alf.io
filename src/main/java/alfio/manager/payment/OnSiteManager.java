@@ -72,7 +72,7 @@ public class OnSiteManager implements PaymentProvider {
     @Override
     public boolean isActive(PaymentContext paymentContext) {
         return configurationManager.getFor(ON_SITE_ENABLED, paymentContext.getConfigurationLevel()).getValueAsBooleanOrDefault()
-            && (paymentContext.getConfigurationLevel().getPathLevel() != ConfigurationPathLevel.EVENT || !paymentContext.getEvent().isOnline());
+            && (paymentContext.getConfigurationLevel().getPathLevel() != ConfigurationPathLevel.EVENT || !paymentContext.isOnline());
     }
 
     @Override

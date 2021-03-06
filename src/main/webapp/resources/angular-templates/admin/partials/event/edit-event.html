@@ -14,10 +14,16 @@
     <form role="form" name="editEvent" data-ng-submit="save(editEvent, event)" data-error-sensitive="editEventHeader,editPrices" novalidate>
         <edit-event-header data-target-obj="event" data-organizations="organizations" data-full-edit-mode="true" data-show-existing-errors="showExistingErrors" data-all-languages="allLanguages" data-all-languages-mapping="allLanguagesMapping"></edit-event-header>
 
-        <div>
+        <div class="alert alert-warning" ng-if="event && !event.organizationId">
+            <i class="fa fa-warning"></i>
+            <span>Please select an Organizer to continue</span>
+        </div>
+
+        <div ng-if="event && event.organizationId">
             <div class="page-header">
                 <h3>Seats and payment info</h3>
             </div>
+
             <edit-prices data-target-obj="event" data-full-edit-mode="true" data-allowed-payment-proxies="allowedPaymentProxies" data-show-existing-errors="showExistingErrors"></edit-prices>
 
             <div class="page-header">
@@ -60,13 +66,15 @@
                 </div>
             </div>
 
-        <hr class="wMarginTop30px"/>
-        <div class="row">
-            <div class="col-xs-12 col-md-10 col-md-push-2">
-                <control-buttons data-form-obj="editEvent" data-disable-submit="submitting"></control-buttons>
-            </div>
-            <div class="col-xs-12 col-md-2 col-md-pull-10">
-                <button class="btn btn-lg btn-block btn-default" ng-click="reset()" type="button">Reset values</button>
+            <hr class="wMarginTop30px"/>
+
+            <div class="row">
+                <div class="col-xs-12 col-md-10 col-md-push-2">
+                    <control-buttons data-form-obj="editEvent" data-disable-submit="submitting"></control-buttons>
+                </div>
+                <div class="col-xs-12 col-md-2 col-md-pull-10">
+                    <button class="btn btn-lg btn-block btn-default" ng-click="reset()" type="button">Reset values</button>
+                </div>
             </div>
         </div>
     </form>

@@ -325,7 +325,7 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService) {
+            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService, ImageTransformService) {
 
                 ConfigurationService.loadInstanceSettings().then(function(result) {
                     var data = result.data;
@@ -531,75 +531,14 @@
                 });
 
                 $scope.imageDropped = function(files) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        $scope.$applyAsync(function() {
-                            var imageBase64 = e.target.result;
-                            var fileType = files[0].type;
-                            var fileName = files[0].name;
-                            var fileContent = imageBase64.substring(imageBase64.indexOf('base64,') + 7);
-                            $scope.imageBase64 = imageBase64;
-                            if (fileType=== 'image/svg+xml') {
-                                var img = new Image();
-                                var fromSvgToPng = function(image) {
-                                    var cnv = document.createElement('canvas');
-                                    cnv.width = image.width;
-                                    cnv.height = image.height;
-                                    var canvasCtx = cnv.getContext('2d');
-                                    canvasCtx.drawImage(image, 0, 0);
-                                    var imgData = cnv.toDataURL('image/png');
-                                    img.remove();
-                                    fileType = "image/png";
-                                    fileName = fileName+".png";
-                                    fileContent = imgData.substring(imgData.indexOf('base64,') + 7);
-                                    $scope.$applyAsync(function() {
-                                        FileUploadService.uploadImageWithResize({file : fileContent, type : fileType, name : fileName}).success(function(imageId) {
-                                            $scope.obj.fileBlobId = imageId;
-                                        });
-                                    });
-                                }
-                                var parser = new DOMParser();
-                                var svgRoot = parser.parseFromString(atob(fileContent), 'text/xml').getElementsByTagName("svg")[0];
-                                if (svgRoot.hasAttribute('height')) {
-                                    img.height = svgRoot.getAttribute('height');
-                                    img.width = svgRoot.getAttribute('width');
-                                } else {
-                                    img.height = 500;
-                                }
-                                img.setAttribute('aria-hidden', 'true');
-                                img.style.position = 'absolute';
-                                img.style.top = '-10000px';
-                                img.style.left = '-10000px';
-                                img.onload = function() {
-                                    // see FF limitation https://stackoverflow.com/a/61195034
-                                    // we need to set in a explicit way the size _inside_ the svg
-                                    svgRoot.setAttribute('width', img.width+'px');
-                                    svgRoot.setAttribute('height', img.height+'px');
-                                    var serializedSvg = new XMLSerializer().serializeToString(svgRoot);
-                                    img.onload = function() {
-                                        fromSvgToPng(img);
-                                    }
-                                    img.src = 'data:image/svg+xml;base64,'+btoa(serializedSvg);
-                                };
-                                window.document.body.appendChild(img);
-                                img.src = imageBase64;
-                            } else {
-                                FileUploadService.uploadImageWithResize({file : fileContent, type : fileType, name : fileName}).success(function(imageId) {
-                                    $scope.obj.fileBlobId = imageId;
-                                });
-                            }
-                        })
-
-                    };
-                    if (files.length <= 0) {
-                		alert('Your image not uploaded correctly.Please upload the image again');
-	                } else if (!((files[0].type === 'image/png') || (files[0].type === 'image/jpeg') || (files[0].type === 'image/gif') || (files[0].type === 'image/svg+xml'))) {
-	                	alert('Only PNG, JPG, GIF or SVG image files are accepted');
-	                } else if (files[0].size > (1024 * 200)) {
-	                	alert('Image size exceeds the allowable limit 200KB');
-	                } else {
-	                	reader.readAsDataURL(files[0]);
-	                }
+                    ImageTransformService.transformAndUploadImages(files).then(function(result) {
+                        $scope.obj.fileBlobId = result.fileBlobId;
+                        $scope.imageBase64 = result.imageBase64;
+                    }, function(err) {
+                        if(err != null) {
+                            alert(err);
+                        }
+                    });
                 };
 
                 $scope.isObjectEmpty = function(obj) {
@@ -609,7 +548,7 @@
         }
     });
 
-    directives.directive('editPrices', ['UtilsService', '$filter', function(UtilsService, $filter) {
+    directives.directive('editPrices', ['UtilsService', '$filter', 'SubscriptionService', function(UtilsService, $filter, SubscriptionService) {
         return {
             scope: {
                 obj: '=targetObj',
@@ -624,7 +563,7 @@
             controller: function EditPricesController($scope, PriceCalculator) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','freeOfCharge', 'allowedPaymentProxies', 'availableSeats',
-                        'regularPrice', 'currency', 'vatPercentage', 'vatIncluded', 'organizationId']);
+                        'regularPrice', 'currency', 'vatPercentage', 'vatIncluded', 'organizationId', 'linkedSubscriptions']);
                     angular.extend($scope.obj, source);
                 }
 
@@ -659,6 +598,21 @@
                         initPaymentProxies();
                     }, true);
                 }
+
+                SubscriptionService.loadSubscriptionsDescriptors($scope.obj.organizationId).then(function(res) {
+                    $scope.subscriptionDescriptors = res.data.map(function(r) {
+                        var descriptor = r.descriptor;
+                        descriptor.selected = ($scope.obj && $scope.obj.linkedSubscriptions && _.contains($scope.obj.linkedSubscriptions, descriptor.id));
+                        return descriptor;
+                    });
+                    $scope.$watch('subscriptionDescriptors', function(newVal) {
+                        $scope.obj.linkedSubscriptions = newVal
+                            .filter(function(sub) { return sub.selected; })
+                            .map(function(sub) { return sub.id; });
+                    }, true);
+                });
+
+                $scope.getFirstTranslation = UtilsService.getFirstTranslation;
             }
         }
     }]);
@@ -668,10 +622,11 @@
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/prices.html',
             transclude:true,
-            controller: function ViewPricesController($scope, PriceCalculator) {
+            controller: function ViewPricesController($scope, PriceCalculator, UtilsService) {
                 $scope.calculateTotalPrice = function(event) {
                     return PriceCalculator.calculateTotalPrice(event, true);
                 };
+                $scope.getFirstTranslation = UtilsService.getFirstTranslation;
             }
         };
     });
@@ -683,7 +638,7 @@
             controller: function($scope, ConfigurationService) {
 
                 if($scope.event.id !== undefined) {
-                    ConfigurationService.loadSingleConfigForEvent($scope.event.id, 'CHECK_IN_COLOR_CONFIGURATION').then(function(result) {
+                    ConfigurationService.loadSingleConfigForEvent($scope.event.shortName, 'CHECK_IN_COLOR_CONFIGURATION').then(function(result) {
                         var data = {};
                         if(result.data && result.data.length > 0) {
                             try {
@@ -1189,7 +1144,7 @@
                 var loadEventData = function() {
                     if(ctrl.displayEventData && $state.params.eventName) {
                         EventService.getEvent($state.params.eventName).success(function(event) {
-                            ConfigurationService.loadSingleConfigForEvent(event.event.id, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
+                            ConfigurationService.loadSingleConfigForEvent(event.event.shortName, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
                                 .then(function(result) {
                                     ctrl.promoCodeDescription = (result.data === 'true') ? 'Partner' : 'Promo';
                                 });

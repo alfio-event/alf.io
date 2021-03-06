@@ -27,7 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,9 +153,9 @@ public class UploadedResourceManager {
         }
     }
 
-    public Optional<byte[]> findCascading(int organizationId, int eventId, String savedName) {
+    public Optional<byte[]> findCascading(int organizationId, Integer eventId, String savedName) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        if(hasResource(organizationId, eventId, savedName)) {
+        if(eventId != null && hasResource(organizationId, eventId, savedName)) {
             outputResource(organizationId, eventId, savedName, baos);
             return Optional.of(baos.toByteArray());
         } else if (hasResource(organizationId, savedName)) {

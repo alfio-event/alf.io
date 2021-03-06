@@ -159,7 +159,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
-            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty());
+            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty(), List.of());
         eventManager.updateEventPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -178,7 +178,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
-            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty());
+            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty(), List.of());
         eventManager.updateEventPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket, but it won't be linked to any category, so the following call won't have any effect
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -224,7 +224,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         assertEquals(boundedCategorySize, boundedReserved.size());
         List<Integer> reserved = new ArrayList<>(boundedReserved);
         String reservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(ClockProvider.clock()), DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(ClockProvider.clock()), DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId());
         List<Integer> reservedForUpdate = withUnboundedCategory ? reserved.subList(0, 19) : reserved;
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, bounded.getId(), Locale.ITALIAN.getLanguage(), 0, "CHF");
         if(withUnboundedCategory) {

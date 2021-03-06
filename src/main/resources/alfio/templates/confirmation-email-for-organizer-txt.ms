@@ -1,13 +1,13 @@
-{{ticketReservation.fullName}}<{{ticketReservation.email}}> has completed the reservation {{reservationShortID}} for event {{event.displayName}}
+{{ticketReservation.fullName}}<{{ticketReservation.email}}> has completed the reservation {{reservationShortID}} for {{purchaseContext.displayName}}
 
 {{#orderSummary.summary}}
-Category: {{name}}, Quantity: {{amount}}, Subtotal: {{subTotal}} {{event.currency}}, Payment Method: {{ticketReservation.paymentMethod}}{{/orderSummary.summary}}
+Category: {{name}}, Quantity: {{amount}}, Subtotal: {{subTotal}} {{purchaseContext.currency}}, Payment Method: {{ticketReservation.paymentMethod}}{{/orderSummary.summary}}
 
-{{^orderSummary.free}}{{^ticketReservation.vatIncluded}}VAT {{ticketReservation.usedVatPercent}}%: {{orderSummary.totalVAT}} {{event.currency}}{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
+{{^orderSummary.free}}{{^ticketReservation.vatIncluded}}VAT {{ticketReservation.usedVatPercent}}%: {{orderSummary.totalVAT}} {{purchaseContext.currency}}{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
 
-Total: {{orderSummary.totalPrice}} {{event.currency}} {{^orderSummary.displayVat}}(Vat Exempt){{/orderSummary.displayVat}}
+Total: {{orderSummary.totalPrice}} {{purchaseContext.currency}} {{^orderSummary.displayVat}}(Vat Exempt){{/orderSummary.displayVat}}
 
-{{^orderSummary.free}}{{#ticketReservation.vatIncluded}}VAT INCL {{ticketReservation.usedVatPercent}}%: {{orderSummary.totalVAT}} {{event.currency}}{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
+{{^orderSummary.free}}{{#ticketReservation.vatIncluded}}VAT INCL {{ticketReservation.usedVatPercent}}%: {{orderSummary.totalVAT}} {{purchaseContext.currency}}{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
 
 Reservation id: {{publicId}}.
 

@@ -25,6 +25,7 @@ import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
+import alfio.controller.form.ReservationCodeForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
@@ -32,10 +33,11 @@ import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
+import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.subscription.Subscription;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
@@ -50,6 +52,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
@@ -97,74 +100,84 @@ public class ReservationApiV2Controller {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final BillingDocumentManager billingDocumentManager;
+    private final PurchaseContextManager purchaseContextManager;
+    private final SubscriptionRepository subscriptionRepository;
 
     /**
      * Note: now it will return for any states of the reservation.
      *
-     * @param eventName
      * @param reservationId
      * @return
      */
-    @GetMapping("/event/{eventName}/reservation/{reservationId}")
-    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("eventName") String eventName,
-                                                              @PathVariable("reservationId") String reservationId) {
+    @GetMapping({"/reservation/{reservationId}",
+        "/event/{eventName}/reservation/{reservationId}" //<-deprecated
+    })
+    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("reservationId") String reservationId) {
 
-        Optional<ReservationInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+        Optional<ReservationInfo> res = purchaseContextManager.findByReservationId(reservationId).flatMap(purchaseContext -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
-            var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
+            var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, purchaseContext);
 
             var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
             var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
 
-            var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
-                .stream()
-                .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
-
-            var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
-                .stream()
-                .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
 
             // check if the user can cancel ticket
             boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
             //
 
-            var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
+            var ticketsInfo = purchaseContext.event().map(event -> {
+                var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
 
-            var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
-            //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
-            var ticketsInReservation = ticketsByCategory
-                .entrySet()
-                .stream()
-                .map(e -> {
-                    var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
-                    var ts = e.getValue().stream()
-                        .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false))
-                        .collect(Collectors.toList());
-                    return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
-                })
-                .collect(Collectors.toList());
+                var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
+                    .stream()
+                    .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
 
-            //
+                var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
+                var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
+                //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
+                var ticketsInReservation = ticketsByCategory
+                    .entrySet()
+                    .stream()
+                    .map(e -> {
+                        var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
+                        var ts = e.getValue().stream()
+                            .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false))
+                            .collect(Collectors.toList());
+                        return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
+                    })
+                    .collect(Collectors.toList());
+                return Pair.of(ticketsByCategory, ticketsInReservation);
+            });
+            var ticketsByCategory = ticketsInfo.map(Pair::getLeft).orElse(Map.of());
+            var ticketsInReservation = ticketsInfo.map(Pair::getRight).orElse(List.of());
+
+
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
 
+            var shortReservationId =  ticketReservationManager.getShortReservationID(purchaseContext, reservation);
             var italianInvoicing = additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing() == null ?
                 new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(null, null, null, null, false) :
                 additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing();
             //
 
 
-            var shortReservationId =  ticketReservationManager.getShortReservationID(event, reservation);
-
-            var formattedExpirationDate = reservation.getValidity() != null ? formatDateForLocales(event, ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()), "datetime.pattern") : null;
+            var formattedExpirationDate = reservation.getValidity() != null ? formatDateForLocales(purchaseContext, ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), purchaseContext.getZoneId()), "datetime.pattern") : null;
 
             var paymentToken = paymentManager.getPaymentToken(reservationId);
             boolean tokenAcquired = paymentToken.isPresent();
             PaymentProxy selectedPaymentProxy = paymentToken.map(PaymentToken::getPaymentProvider).orElse(null);
 
             //
-            var containsCategoriesLinkedToGroups = ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId());
+            var containsCategoriesLinkedToGroups = purchaseContext.event().map(event -> ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())).orElse(false);
             //
+            List<ReservationInfo.SubscriptionInfo> subscriptionInfos = null;
+            if (purchaseContext.getType() == PurchaseContextType.subscription) {
+                subscriptionInfos = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().map(s -> new ReservationInfo.SubscriptionInfo(s.getId(), s.getPin())).collect(Collectors.toList());
+            }
 
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
                 reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
@@ -186,7 +199,8 @@ public class ReservationApiV2Controller {
                 additionalInfo.getBillingDetails(),
                 //
                 containsCategoriesLinkedToGroups,
-                getActivePaymentMethods(event, ticketsByCategory.keySet(), orderSummary, reservationId)
+                getActivePaymentMethods(purchaseContext, ticketsByCategory.keySet(), orderSummary, reservationId),
+                subscriptionInfos
                 ));
         }));
 
@@ -194,71 +208,69 @@ public class ReservationApiV2Controller {
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(Event event,
+    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
                                                                                    Collection<Integer> categoryIds,
                                                                                    OrderSummary orderSummary,
                                                                                    String reservationId) {
-        if(!event.isFreeOfCharge()) {
-            var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(event, categoryIds);
-            return paymentManager.getPaymentMethods(event, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
+        if(!purchaseContext.isFreeOfCharge()) {
+            var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoryIds);
+            return paymentManager.getPaymentMethods(purchaseContext, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
                 .stream()
                 .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
-                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
-                .collect(toMap(PaymentManager.PaymentMethodDTO::getPaymentMethod, pm -> new PaymentProxyWithParameters(pm.getPaymentProxy(), paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), event))));
+                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, purchaseContext, configurationManager))
+                .collect(toMap(PaymentManager.PaymentMethodDTO::getPaymentMethod, pm -> new PaymentProxyWithParameters(pm.getPaymentProxy(), paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), purchaseContext))));
         } else {
             return Map.of();
         }
     }
 
-    @GetMapping("/event/{eventName}/reservation/{reservationId}/status")
-    public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable("eventName") String eventName,
-                                                                      @PathVariable("reservationId") String reservationId) {
+    @GetMapping({
+        "/reservation/{reservationId}/status",
+        "/event/{eventName}/reservation/{reservationId}/status" //<- deprecated
+    })
+    public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable("reservationId") String reservationId) {
 
-        Optional<ReservationStatusInfo> res = Optional.empty();
-        if (eventRepository.existsByShortName(eventName)) {
-            res = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
-                .map(status -> new ReservationStatusInfo(status.getStatus(), Boolean.TRUE.equals(status.getValidated())));
-        }
-
+        Optional<ReservationStatusInfo> res = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
+            .map(status -> new ReservationStatusInfo(status.getStatus(), Boolean.TRUE.equals(status.getValidated())));
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
-    @DeleteMapping("/event/{eventName}/reservation/{reservationId}")
-    public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable("eventName") String eventName,
-                                                            @PathVariable("reservationId") String reservationId) {
-
-        getReservationWithPendingStatus(eventName, reservationId)
-            .ifPresent(er -> ticketReservationManager.cancelPendingReservation(reservationId, false, null));
+    @DeleteMapping({
+        "/reservation/{reservationId}",
+        "/event/{eventName}/reservation/{reservationId}" //<- deprecated
+    })
+    public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable("reservationId") String reservationId) {
+        getReservationWithPendingStatus(reservationId).ifPresent(er -> ticketReservationManager.cancelPendingReservation(reservationId, false, null));
         return ResponseEntity.ok(true);
     }
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}/back-to-booking")
-    public ResponseEntity<Boolean> backToBooking(@PathVariable("eventName") String eventName,
-                                                 @PathVariable("reservationId") String reservationId) {
-
-        getReservationWithPendingStatus(eventName, reservationId)
-            .ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
-
-
+    @PostMapping({
+        "/reservation/{reservationId}/back-to-booking",
+        "/event/{eventName}/reservation/{reservationId}/back-to-booking" //<- deprecated
+    })
+    public ResponseEntity<Boolean> backToBooking(@PathVariable("reservationId") String reservationId) {
+        getReservationWithPendingStatus(reservationId).ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
         return ResponseEntity.ok(true);
     }
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}")
-    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable("eventName") String eventName,
-                                                                                       @PathVariable("reservationId") String reservationId,
+    @PostMapping({
+        "/reservation/{reservationId}",
+        "/event/{eventName}/reservation/{reservationId}"// <- deprecated
+    })
+    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable("reservationId") String reservationId,
                                                                                        @RequestParam("lang") String lang,
                                                                                        @RequestBody  PaymentForm paymentForm,
                                                                                        BindingResult bindingResult,
                                                                                        HttpServletRequest request) {
 
-        return getReservation(eventName, reservationId).map(er -> {
+        return getReservation(reservationId).map(er -> {
 
            var event = er.getLeft();
-           var ticketReservation = er.getRight();
+           var reservation = er.getRight();
            var locale = LocaleUtil.forLanguageTag(lang, event);
 
-            if (!ticketReservation.getValidity().after(new Date())) {
+            if (!reservation.getValidity().after(new Date())) {
                 bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
             }
 
@@ -276,14 +288,14 @@ public class ReservationApiV2Controller {
             }
 
             if(!bindingResult.hasErrors()) {
-                extensionManager.handleReservationValidation(event, ticketReservation, paymentForm, bindingResult);
+                extensionManager.handleReservationValidation(event, reservation, paymentForm, bindingResult);
             }
 
             if (bindingResult.hasErrors()) {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
+            CustomerName customerName = new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), true);
 
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
@@ -293,9 +305,9 @@ public class ReservationApiV2Controller {
                     new PaymentContext(event, reservationId));
             }
             PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
-                event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
-                locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
-                orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
+                event, reservation.getEmail(), customerName, reservation.getBillingAddress(), reservation.getCustomerReference(),
+                locale, reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(),
+                orderSummary, reservation.getVatCountryCode(), reservation.getVatNr(), reservation.getVatStatus(),
                 Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
             final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, paymentForm.getPaymentProxy(), paymentForm.getSelectedPaymentMethod());
@@ -309,7 +321,7 @@ public class ReservationApiV2Controller {
             if (!status.isSuccessful()) {
                 String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
                 MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
-                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSourceManager.getMessageSourceForEvent(event).getMessage(message, locale)}, null);
+                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSourceManager.getMessageSourceFor(event).getMessage(message, locale)}, null);
                 return buildReservationPaymentStatus(bindingResult);
             }
 
@@ -324,26 +336,30 @@ public class ReservationApiV2Controller {
         return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
     }
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}/validate-to-overview")
-    public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable("eventName") String eventName,
-                                                                         @PathVariable("reservationId") String reservationId,
+    @PostMapping({
+        "/reservation/{reservationId}/validate-to-overview",
+        "/event/{eventName}/reservation/{reservationId}/validate-to-overview" //<-deprecated
+    })
+    public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable("reservationId") String reservationId,
                                                                          @RequestParam("lang") String lang,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
                                                                          BindingResult bindingResult) {
 
 
-        return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
-            var event = er.getLeft();
+        return getPurchaseContextAndReservationWithPendingStatus(reservationId).map(er -> {
+            var purchaseContext = er.getLeft();
             var reservation = er.getRight();
-            var locale = LocaleUtil.forLanguageTag(lang, event);
-            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus())).getLeft();
-            boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+            var locale = LocaleUtil.forLanguageTag(lang, purchaseContext);
+            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(purchaseContext.getVatStatus())).getLeft();
+            boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
 
-            if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
-                contactAndTicketsForm.setPostponeAssignment(false);
-            }
+            purchaseContext.event().ifPresent(event -> {
+                if (forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
+                    contactAndTicketsForm.setPostponeAssignment(false);
+                }
+            });
 
-            boolean invoiceOnly = configurationManager.isInvoiceOnly(event);
+            boolean invoiceOnly = configurationManager.isInvoiceOnly(purchaseContext);
 
             if(invoiceOnly && reservationCost.getPriceWithVAT() > 0) {
                 //override, that's why we save it
@@ -352,13 +368,13 @@ public class ReservationApiV2Controller {
                 contactAndTicketsForm.setInvoiceRequested(false);
             }
 
-            CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event.mustUseFirstAndLastName(), false);
+            CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), true, false);
 
 
-            ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), event.getVatStatus(),
+            ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), purchaseContext.getVatStatus(),
                 reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
             if(contactAndTicketsForm.isBusiness()) {
-                checkAndApplyVATRules(reservationId, contactAndTicketsForm, bindingResult, event);
+                checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
             }
 
             //persist data
@@ -368,28 +384,30 @@ public class ReservationApiV2Controller {
                 contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
                 contactAndTicketsForm.getAddCompanyBillingDetails(), contactAndTicketsForm.canSkipVatNrCheck(), false, locale);
 
-            boolean italyEInvoicing = configurationManager.getFor(ENABLE_ITALY_E_INVOICING, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
+            boolean italyEInvoicing = configurationManager.getFor(ENABLE_ITALY_E_INVOICING, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
 
             if(italyEInvoicing) {
-                ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId, event,
+                ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId, purchaseContext,
                     new TicketReservationInvoicingAdditionalInfo(getItalianInvoicingInfo(contactAndTicketsForm))
                 );
             }
 
-            assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
+            purchaseContext.event().ifPresent(event -> {
+                assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
+            });
             //
 
             Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
 
-            var ticketFieldFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
+            var ticketFieldFilterer = purchaseContext.event().map(event -> bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event));
+
             //
-            contactAndTicketsForm.validate(bindingResult, event,
-                new SameCountryValidator(configurationManager, extensionManager, event, reservationId, vatChecker),
+            contactAndTicketsForm.validate(bindingResult, purchaseContext, new SameCountryValidator(configurationManager, extensionManager, purchaseContext, reservationId, vatChecker),
                 formValidationParameters, ticketFieldFilterer);
             //
 
             if(!bindingResult.hasErrors()) {
-                extensionManager.handleReservationValidation(event, reservation, contactAndTicketsForm, bindingResult);
+                extensionManager.handleReservationValidation(purchaseContext, reservation, contactAndTicketsForm, bindingResult);
             }
 
             if(!bindingResult.hasErrors()) {
@@ -426,21 +444,21 @@ public class ReservationApiV2Controller {
         }
     }
 
-    private void checkAndApplyVATRules(String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Event event) {
+    private void checkAndApplyVATRules(PurchaseContext purchaseContext, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult) {
         // VAT handling
         String country = contactAndTicketsForm.getVatCountryCode();
 
         // validate VAT presence if EU mode is enabled
-        if (vatChecker.isReverseChargeEnabledFor(event) && (country == null || isEUCountry(country))) {
+        if (vatChecker.isReverseChargeEnabledFor(purchaseContext) && (country == null || isEUCountry(country))) {
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
         }
 
         try {
             var optionalReservation = ticketReservationRepository.findOptionalReservationById(reservationId);
             Optional<VatDetail> vatDetail = optionalReservation
-                .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(event.getVatStatus()))
-                .filter(e -> vatChecker.isReverseChargeEnabledFor(event))
-                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, event));
+                .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(purchaseContext.getVatStatus()))
+                .filter(e -> vatChecker.isReverseChargeEnabledFor(purchaseContext))
+                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, purchaseContext));
 
 
             if(vatDetail.isPresent()) {
@@ -448,61 +466,68 @@ public class ReservationApiV2Controller {
                 if (!vatValidation.isValid()) {
                     bindingResult.rejectValue("vatNr", "error.STEP_2_INVALID_VAT");
                 } else {
-                    var reservation = optionalReservation.get();
-                    PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
-                    updateBillingData(contactAndTicketsForm, event, country, trimToNull(vatValidation.getVatNr()), reservation, vatStatus);
-                    vatChecker.logSuccessfulValidation(vatValidation, reservationId, event.getId());
+                    var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+                    var currencyCode = reservation.getCurrencyCode();
+                    PriceContainer.VatStatus vatStatus = determineVatStatus(purchaseContext.getVatStatus(), vatValidation.isVatExempt());
+                    updateBillingData(contactAndTicketsForm, purchaseContext, country, trimToNull(vatValidation.getVatNr()), reservation, vatStatus);
+                    vatChecker.logSuccessfulValidation(vatValidation, reservationId, purchaseContext.event().map(Event::getId).orElse(null));
                 }
             } else if(optionalReservation.isPresent() && contactAndTicketsForm.isItalyEInvoicingSplitPayment()) {
                 var reservation = optionalReservation.get();
-                var vatStatus = event.getVatStatus() == INCLUDED ? INCLUDED_NOT_CHARGED : NOT_INCLUDED_NOT_CHARGED;
-                updateBillingData(contactAndTicketsForm, event, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, vatStatus);
+                var vatStatus = purchaseContext.getVatStatus() == INCLUDED ? INCLUDED_NOT_CHARGED : NOT_INCLUDED_NOT_CHARGED;
+                updateBillingData(contactAndTicketsForm, purchaseContext, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, vatStatus);
             }
         } catch (IllegalStateException ise) {//vat checker failure
             bindingResult.rejectValue("vatNr", "error.vatVIESDown");
         }
     }
 
-    private void updateBillingData(ContactAndTicketsForm contactAndTicketsForm, Event event, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
+    private void updateBillingData(ContactAndTicketsForm contactAndTicketsForm, PurchaseContext purchaseContext, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
         var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
         var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservation.getId());
         var tickets = ticketReservationManager.findTicketsInReservation(reservation.getId());
+        var additionalServices = purchaseContext.event().map(event -> additionalServiceRepository.loadAllForEvent(event.getId())).orElse(List.of());
+        var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
+        var appliedSubscription = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId);
         var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(event.getId()), event);
         var currencyCode = reservation.getCurrencyCode();
         ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
             unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
-            currencyCode, vatNr, country, contactAndTicketsForm.isInvoiceRequested(), reservation.getId());
+            reservation.getCurrencyCode(), vatNr,
+            country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
     }
 
-    private Optional<Pair<Event, TicketReservation>> getReservation(String eventName, String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
-            .flatMap(event -> ticketReservationManager.findById(reservationId)
-                .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
+    private Optional<Pair<PurchaseContext, TicketReservation>> getReservation(String reservationId) {
+        return purchaseContextManager.findByReservationId(reservationId)
+            .flatMap(purchaseContext -> ticketReservationManager.findById(reservationId)
+                .flatMap(reservation -> Optional.of(Pair.of(purchaseContext, reservation))));
     }
 
-    private Optional<Pair<Event, TicketReservation>> getReservationWithPendingStatus(String eventName, String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
+    private Optional<TicketReservation> getReservationWithPendingStatus(String reservationId) {
+        return ticketReservationManager.findById(reservationId).filter(reservation -> reservation.getStatus() == TicketReservation.TicketReservationStatus.PENDING);
+    }
+
+    private Optional<Pair<PurchaseContext, TicketReservation>> getPurchaseContextAndReservationWithPendingStatus(String reservationId) {
+        return purchaseContextManager.findByReservationId(reservationId)
             .flatMap(event -> ticketReservationManager.findById(reservationId)
                 .filter(reservation -> reservation.getStatus() == TicketReservation.TicketReservationStatus.PENDING)
                 .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
     }
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
-    public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
+    @PostMapping("/{purchaseContextType}/{publicIdentifier}/reservation/{reservationId}/re-send-email")
+    public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
+                                                                      @PathVariable("publicIdentifier") String publicIdentifier,
                                                                       @PathVariable("reservationId") String reservationId,
                                                                       @RequestParam("lang") String lang,
                                                                       Principal principal) {
 
 
-
-        var res = eventRepository.findOptionalByShortName(eventName).map(event ->
-            ticketReservationManager.findById(reservationId).map(ticketReservation -> {
-                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event), principal != null ? principal.getName() : null);
-                return true;
-            }).orElse(false)
-        ).orElse(false);
-
-        return ResponseEntity.ok(res);
+        return ResponseEntity.of(purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
+            .map(purchaseContext -> ticketReservationManager.findById(reservationId)
+                .map(ticketReservation -> {
+                    ticketReservationManager.sendConfirmationEmail(purchaseContext, ticketReservation, LocaleUtil.forLanguageTag(lang, purchaseContext), principal != null ? principal.getName() : null);
+                    return true;
+                }).orElse(false)));
     }
 
 
@@ -541,8 +566,8 @@ public class ReservationApiV2Controller {
         ).orElse(notFound);
     }
 
-    private boolean canAccessReceiptOrInvoice(EventAndOrganizationId event, Authentication authentication) {
-        return configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) || !isAnonymous(authentication);
+    private boolean canAccessReceiptOrInvoice(Configurable configurable, Authentication authentication) {
+        return configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurable) || !isAnonymous(authentication);
     }
 
 
@@ -573,9 +598,11 @@ public class ReservationApiV2Controller {
     //----------------
 
 
-    @PostMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/init")
-    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("eventName") String eventName,
-                                                                          @PathVariable("reservationId") String reservationId,
+    @PostMapping({
+        "/reservation/{reservationId}/payment/{method}/init",
+        "/event/{eventName}/reservation/{reservationId}/payment/{method}/init" //<-deprecated
+    })
+    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("reservationId") String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
         var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
@@ -584,7 +611,7 @@ public class ReservationApiV2Controller {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(eventName, reservationId)
+        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(reservationId)
             .map(pair -> {
                 var event = pair.getLeft();
                 return ticketReservationManager.initTransaction(event, reservationId, paymentMethod, allParams)
@@ -594,31 +621,40 @@ public class ReservationApiV2Controller {
         return responseEntity.orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
-    @DeleteMapping("/event/{eventName}/reservation/{reservationId}/payment/token")
+    @DeleteMapping({
+        "/reservation/{reservationId}/payment/token",
+        "/event/{eventName}/reservation/{reservationId}/payment/token" //<-deprecated
+    })
     public ResponseEntity<Boolean> removeToken(@PathVariable("eventName") String eventName,
                                                @PathVariable("reservationId") String reservationId) {
 
-        var res = getEventReservationPair(eventName, reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
+        var res = getEventReservationPair(reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
         return ResponseEntity.ok(res);
     }
 
-    @DeleteMapping("/event/{eventName}/reservation/{reservationId}/payment")
-    public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable("eventName") String eventName,
-                                                        @PathVariable("reservationId") String reservationId) {
+    @DeleteMapping({
+        "/reservation/{reservationId}/payment",
+        "/event/{eventName}/reservation/{reservationId}/payment" //<-deprecated
+    })
+    public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable("reservationId") String reservationId) {
 
-        var res = getEventReservationPair(eventName, reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
+        var res = getEventReservationPair(reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
         return ResponseEntity.ok(res);
     }
 
-    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(String eventName, String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
+    //FIXME: rename ->getPurchaseContextReservationPair
+    private Optional<Pair<PurchaseContext, TicketReservation>> getEventReservationPair(String reservationId) {
+        return purchaseContextManager.findByReservationId(reservationId)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
             .filter(pair -> pair.getRight().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));
     }
 
-    @GetMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/status")
-    public ResponseEntity<ReservationPaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
+    @GetMapping({
+        "/reservation/{reservationId}/payment/{method}/status",
+        "/event/{eventName}/reservation/{reservationId}/payment/{method}/status" //<-deprecated
+    })
+    public ResponseEntity<ReservationPaymentResult> getTransactionStatus(
                                                               @PathVariable("reservationId") String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
 
@@ -628,19 +664,83 @@ public class ReservationApiV2Controller {
             return ResponseEntity.badRequest().build();
         }
 
-        return getEventReservationPair(eventName, reservationId)
+        return getEventReservationPair(reservationId)
             .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
             .map(pr -> ResponseEntity.ok(new ReservationPaymentResult(pr.isSuccessful(), pr.isRedirect(), pr.getRedirectUrl(), pr.isFailed(), pr.getGatewayIdOrNull())))
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/reservation/{reservationId}/apply-code")
+    public ResponseEntity<ValidatedResponse<Boolean>> applyCode(@PathVariable("reservationId") String reservationId, @RequestBody ReservationCodeForm reservationCodeForm, BindingResult bindingResult) {
+        boolean res;
+        switch (reservationCodeForm.getType()) {
+            case SUBSCRIPTION:
+                res = getEventReservationPair(reservationId).map(et -> {
+                    var isUUID = reservationCodeForm.isCodeUUID();
+                    var pin = reservationCodeForm.getCode();
+                    if (!isUUID && !PinGenerator.isPinValid(pin, Subscription.PIN_LENGTH)) {
+                        bindingResult.reject("error.restrictedValue");
+                        return false;
+                    }
 
-    private Map<String, String> formatDateForLocales(Event event, ZonedDateTime date, String formattingCode) {
+                    //ensure pin length, as we will do a like concat(pin,'%'), it could be dangerous to have an empty string...
+                    Assert.isTrue(pin.length() >= Subscription.PIN_LENGTH, "Pin must have a length of at least 8 characters");
 
-        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+                    var partialUuid = !isUUID ? PinGenerator.pinToPartialUuid(pin, Subscription.PIN_LENGTH) : pin;
+                    var email = reservationCodeForm.getEmail();
+                    var requireEmail = false;
+                    int count;
+                    if (isUUID) {
+                        count = subscriptionRepository.countSubscriptionById(UUID.fromString(pin));
+                    } else {
+                        count = subscriptionRepository.countSubscriptionByPartialUuid(partialUuid);
+                        if (count > 1) {
+                            count = subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
+                            requireEmail = true;
+                        }
+                    }
+                    if (count == 0) {
+                        bindingResult.reject(isUUID ? "subscription.uuid.not.found" : "subscription.pin.not.found");
+                    }
+                    if (count > 1) {
+                        bindingResult.reject("subscription.code.insert.full");
+                    }
+
+                    if (bindingResult.hasErrors()) {
+                        return false;
+                    }
+
+                    var subscriptionId = isUUID ? UUID.fromString(pin) : requireEmail ? subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email) : subscriptionRepository.getSubscriptionIdByPartialUuid(partialUuid);
+                    var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
+                    var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+                    subscription.isValid(subscriptionDescriptor, Optional.of(bindingResult));
+                    if (bindingResult.hasErrors()) {
+                        return false;
+                    }
+                    return ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
+                }).orElse(false);
+                break;
+            default: throw new IllegalStateException(reservationCodeForm.getType() + " not supported");
+        }
+        return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, res));
+    }
+
+    @DeleteMapping("/reservation/{reservationId}/remove-code")
+    public ResponseEntity<Boolean> removeCode(@PathVariable("reservationId") String reservationId, @RequestParam("type") ReservationCodeForm.ReservationCodeType type) {
+        boolean res = false;
+        if (type == ReservationCodeForm.ReservationCodeType.SUBSCRIPTION) {
+            res = getEventReservationPair(reservationId).map(et -> ticketReservationManager.removeSubscription(et.getRight())).orElse(false);
+        }
+        return ResponseEntity.ok(res);
+    }
+
+
+    private Map<String, String> formatDateForLocales(PurchaseContext purchaseContext, ZonedDateTime date, String formattingCode) {
+
+        var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
 
         Map<String, String> res = new HashMap<>();
-        for (ContentLanguage cl : event.getContentLanguages()) {
+        for (ContentLanguage cl : purchaseContext.getContentLanguages()) {
             var formatter = messageSource.getMessage(formattingCode, null, cl.getLocale());
             res.put(cl.getLocale().getLanguage(), DateTimeFormatter.ofPattern(formatter, cl.getLocale()).format(date));
         }
@@ -659,9 +759,9 @@ public class ReservationApiV2Controller {
     }
 
 
-    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
+    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, String recaptchaResponse, HttpServletRequest request, Configurable configurable) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
-            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel.event(event))
+            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurable.getConfigurationLevel())
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 }

@@ -23,24 +23,22 @@ import ch.digitalfondue.npjt.QueryRepository;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @QueryRepository
 public interface TicketReservationRepository {
 
-    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code)" +
-        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :eventVat, :vatIncluded, :currencyCode)")
+    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code, organization_id_fk)" +
+        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :vatPercentage, :vatIncluded, :currencyCode, :organizationId)")
     int createNewReservation(@Bind("id") String id,
                              @Bind("creationTimestamp") ZonedDateTime creationTimestamp,
                              @Bind("validity") Date validity,
                              @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId, @Bind("userLanguage") String userLanguage,
-                             @Bind("eventId") int eventId,
-                             @Bind("eventVat") BigDecimal eventVat,
+                             @Bind("eventId") Integer eventId, // <- optional
+                             @Bind("vatPercentage") BigDecimal vatPercentage,
                              @Bind("vatIncluded") Boolean vatIncluded,
-                             @Bind("currencyCode") String currencyCode);
+                             @Bind("currencyCode") String currencyCode,
+                             @Bind("organizationId") int organizationId);
 
     @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email," +
         " user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId")
@@ -176,7 +174,7 @@ public interface TicketReservationRepository {
 
 
 
-    @Query("select id, event_id_fk from tickets_reservation where id in (:ids)")
+    @Query("select id, event_id_fk from tickets_reservation where id in (:ids) and event_id_fk is not null")
     List<ReservationIdAndEventId> getReservationIdAndEventId(@Bind("ids") Collection<String> ids);
 
     @Query("select * from tickets_reservation where id in (:ids)")
@@ -259,4 +257,13 @@ public interface TicketReservationRepository {
 
     @Query("update tickets_reservation set invoicing_additional_information = :info::json where id = :id")
     int updateInvoicingAdditionalInformation(@Bind("id") String reservationId, @Bind("info") String info);
+
+    @Query("select event_id_fk from tickets_reservation where id = :id")
+    Optional<Integer> findEventIdFor(@Bind("id") String reservationId);
+
+    @Query("select exists (select * from tickets_reservation where id = :id and subscription_id_fk is not null)")
+    boolean hasSubscriptionApplied(@Bind("id") String id);
+
+    @Query("update tickets_reservation set subscription_id_fk = :subscriptionId where id = :reservationId")
+    int applySubscription(@Bind("reservationId") String reservationId, @Bind("subscriptionId") UUID subscriptionId);
 }

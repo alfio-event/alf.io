@@ -58,7 +58,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.io.IOException;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -192,12 +191,15 @@ class TicketReservationManagerTest {
         when(ticketCategory.getCurrencyCode()).thenReturn(CATEGORY_CURRENCY);
         when(configurationManager.getFor(eq(VAT_NR), any())).thenReturn(new MaybeConfiguration(VAT_NR));
 
-        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
 
         MaybeConfiguration configuration = mock(MaybeConfiguration.class);
         when(configurationManager.getFor(eq(SEND_TICKETS_AUTOMATICALLY), any())).thenReturn(configuration);
         when(configuration.getValueAsBooleanOrDefault()).thenReturn(true);
+
+        var purchaseContextManager = mock(PurchaseContextManager.class);
+        when(purchaseContextManager.findByReservationId(anyString())).thenReturn(Optional.of(event));
 
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -229,7 +231,9 @@ class TicketReservationManagerTest {
             jdbcTemplate,
             json,
             mock(BillingDocumentManager.class),
-            TestUtil.clockProvider());
+            TestUtil.clockProvider(),
+            purchaseContextManager,
+            mock(SubscriptionRepository.class));
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -237,6 +241,8 @@ class TicketReservationManagerTest {
         when(event.getCurrency()).thenReturn(EVENT_CURRENCY);
         when(event.now(any(ClockProvider.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
         when(event.now(any(Clock.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
+        when(event.event()).thenReturn(Optional.of(event));
+        when(event.getType()).thenReturn(PurchaseContext.PurchaseContextType.event);
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(specialPrice.getCode()).thenReturn(SPECIAL_PRICE_CODE);
         when(specialPrice.getId()).thenReturn(SPECIAL_PRICE_ID);
@@ -357,7 +363,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    void fallbackToCurrentLocale() throws IOException {
+    void fallbackToCurrentLocale() {
         final String ticketId = "abcde";
         final String originalEmail = "me@myaddress.com";
         final String originalName = "First Last";
@@ -1080,7 +1086,8 @@ class TicketReservationManagerTest {
     void reservationURLGeneration() {
         String shortName = "shortName";
         String ticketId = "ticketId";
-        when(event.getShortName()).thenReturn(shortName);
+        when(event.getType()).thenReturn(PurchaseContext.PurchaseContextType.event);
+        when(event.getPublicIdentifier()).thenReturn(shortName);
         when(ticketReservation.getUserLanguage()).thenReturn("en");
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
@@ -1092,6 +1099,9 @@ class TicketReservationManagerTest {
         assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID, event));
         //generate the reservationUrl from reservation and event
         assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(ticketReservation, event));
+
+        when(event.getShortName()).thenReturn(shortName);
+
         //generate the ticket URL
         assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
         //generate the ticket update URL

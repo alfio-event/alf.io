@@ -110,7 +110,8 @@ public class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                           NamedParameterJdbcTemplate jdbcTemplate,
                                           ExtensionLogRepository extensionLogRepository,
                                           ExtensionService extensionService,
-                                          PollRepository pollRepository) {
+                                          PollRepository pollRepository,
+                                          NotificationManager notificationManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -140,7 +141,8 @@ public class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
             extensionLogRepository,
             extensionService,
             pollRepository,
-            clockProvider);
+            clockProvider,
+            notificationManager);
         this.organizationRepository = organizationRepository;
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;
