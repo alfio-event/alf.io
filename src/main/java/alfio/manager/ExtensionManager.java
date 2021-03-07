@@ -214,14 +214,14 @@ public class ExtensionManager {
         syncCall(extensionEvent, purchaseContext, payload, Boolean.class);
     }
 
-    public void handleCreditNoteGenerated(TicketReservation reservation, Event event, TotalPrice cost, Long billingDocumentId, Map<String, Object> contextData) {
+    public void handleCreditNoteGenerated(TicketReservation reservation, PurchaseContext purchaseContext, TotalPrice cost, Long billingDocumentId, Map<String, Object> contextData) {
         Map<String, Object> payload = new HashMap<>(contextData);
         payload.put("reservationId", reservation.getId());
         payload.put("reservation", reservation);
         payload.put("billingDetails", ticketReservationRepository.getBillingDetailsForReservation(reservation.getId()));
         payload.put("reservationCost", cost);
         payload.put("billingDocumentId", billingDocumentId);
-        asyncCall(ExtensionEvent.CREDIT_NOTE_GENERATED, event, payload);
+        asyncCall(ExtensionEvent.CREDIT_NOTE_GENERATED, purchaseContext, payload);
     }
 
     public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails, Map<String, Object> contextData) {
@@ -242,11 +242,11 @@ public class ExtensionManager {
         return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchaseContext(), payload, InvoiceGeneration.class));
     }
 
-    public Optional<CreditNoteGeneration> handleCreditNoteGeneration(Event event,
+    public Optional<CreditNoteGeneration> handleCreditNoteGeneration(PurchaseContext purchaseContext,
                                                                      String reservationId,
                                                                      String invoiceNumber,
                                                                      Organization organization) {
-        return Optional.ofNullable(syncCall(ExtensionEvent.CREDIT_NOTE_GENERATION, event, Map.of(
+        return Optional.ofNullable(syncCall(ExtensionEvent.CREDIT_NOTE_GENERATION, purchaseContext, Map.of(
             "reservationId", reservationId,
             "invoiceNumber", invoiceNumber,
             "organization", organization

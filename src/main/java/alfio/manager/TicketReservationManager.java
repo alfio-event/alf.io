@@ -659,7 +659,7 @@ public class TicketReservationManager {
 
         String reservationId = spec.getReservationId();
         var billingDetails = ticketReservationRepository.getBillingDetailsForReservation(reservationId);
-        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, billingDetails, Map.of("organization", organizationRepository.getById(spec.getEvent().getOrganizationId())))
+        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, billingDetails, Map.of("organization", organizationRepository.getById(spec.getPurchaseContext().getOrganizationId())))
             .flatMap(invoiceGeneration -> Optional.ofNullable(trimToNull(invoiceGeneration.getInvoiceNumber())));
 
         optionalInvoiceNumber.ifPresent(invoiceNumber -> {
@@ -812,7 +812,7 @@ public class TicketReservationManager {
             templateResource = TemplateResource.CONFIRMATION_EMAIL;
         }
 
-        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation, getVAT(purchaseContext), summary, initialModel);
+        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation, getVAT(purchaseContext), summary, ticketRepository.findTicketsInReservation(ticketReservation.getId()), initialModel);
         List<Mailer.Attachment> attachments = Collections.emptyList();
 
         if (configurationManager.canGenerateReceiptOrInvoiceToCustomer(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
@@ -916,18 +916,18 @@ public class TicketReservationManager {
 
     @Transactional
     public void issueCreditNoteForReservation(PurchaseContext purchaseContext, String reservationId, String username) {
-        issueCreditNoteForReservation(event, ticketReservationRepository.findReservationById(reservationId), username, true);
+        issueCreditNoteForReservation(purchaseContext, ticketReservationRepository.findReservationById(reservationId), username, true);
     }
 
     @Transactional
-    public void issueCreditNoteForReservation(Event event, TicketReservation reservation, String username, boolean sendEmail) {
+    public void issueCreditNoteForReservation(PurchaseContext purchaseContext, TicketReservation reservation, String username, boolean sendEmail) {
         var reservationId = reservation.getId();
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CREDIT_NOTE_ISSUED.toString());
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), purchaseContext, Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
         Map<String, Object> model = prepareModelForReservationEmail(purchaseContext, reservation);
         BillingDocument billingDocument = billingDocumentManager.createBillingDocument(purchaseContext, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummaryForReservation(reservation, purchaseContext));
-        var organization = organizationRepository.getById(event.getOrganizationId());
-        extensionManager.handleCreditNoteGenerated(reservation, event, ((OrderSummary) model.get("orderSummary")).getOriginalTotalPrice(), billingDocument.getId(), Map.of("organization", organization));
+        var organization = organizationRepository.getById(purchaseContext.getOrganizationId());
+        extensionManager.handleCreditNoteGenerated(reservation, purchaseContext, ((OrderSummary) model.get("orderSummary")).getOriginalTotalPrice(), billingDocument.getId(), Map.of("organization", organization));
 
         if(sendEmail) {
             notificationManager.sendSimpleEmail(purchaseContext,
@@ -954,10 +954,10 @@ public class TicketReservationManager {
     }
 
     @Transactional
-    void issueCreditNoteForRefund(Event event, TicketReservation reservation, BigDecimal refundAmount, String username) {
+    void issueCreditNoteForRefund(PurchaseContext purchaseContext, TicketReservation reservation, BigDecimal refundAmount, String username) {
         var currencyCode = reservation.getCurrencyCode();
         var priceContainer = new RefundPriceContainer(unitToCents(refundAmount, currencyCode), currencyCode, reservation.getVatStatus(), reservation.getVatPercentageOrZero());
-        var summaryRowTitle = messageSourceManager.getMessageSourceForEvent(event).getMessage("invoice.refund.line-item", null, Locale.forLanguageTag(reservation.getUserLanguage()));
+        var summaryRowTitle = messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("invoice.refund.line-item", null, Locale.forLanguageTag(reservation.getUserLanguage()));
         var formattedPriceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
         var formattedAmount = formatUnit(refundAmount, currencyCode);
         var cost = new TotalPrice(priceContainer.getSrcPriceCts(), unitToCents(priceContainer.getVAT(), currencyCode), 0, 0, currencyCode);
@@ -975,13 +975,18 @@ public class TicketReservationManager {
             formattedAmount
         );
         log.trace("model for partial credit note created");
-        var billingDocument = billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummary);
-        var organization = organizationRepository.getById(event.getOrganizationId());
-        extensionManager.handleCreditNoteGenerated(reservation, event, cost, billingDocument.getId(), Map.of("organization", organization));
+        var billingDocument = billingDocumentManager.createBillingDocument(purchaseContext, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummary);
+        var organization = organizationRepository.getById(purchaseContext.getOrganizationId());
+        extensionManager.handleCreditNoteGenerated(reservation, purchaseContext, cost, billingDocument.getId(), Map.of("organization", organization));
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext, TicketReservation reservation, Optional<String> vat, OrderSummary summary, Map<String, Object> initialOptions) {
+    public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext,
+                                                               TicketReservation reservation,
+                                                               Optional<String> vat,
+                                                               OrderSummary summary,
+                                                               List<Ticket> ticketsToInclude,
+                                                               Map<String, Object> initialOptions) {
         Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
         String baseUrl = baseUrl(purchaseContext);
         String reservationUrl = reservationUrl(reservation.getId());
@@ -1036,7 +1041,7 @@ public class TicketReservationManager {
     public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext, TicketReservation reservation) {
         Optional<String> vat = getVAT(purchaseContext);
         OrderSummary summary = orderSummaryForReservationId(reservation.getId(), purchaseContext);
-        return prepareModelForReservationEmail(purchaseContext, reservation, vat, summary, Map.of());
+        return prepareModelForReservationEmail(purchaseContext, reservation, vat, summary, ticketRepository.findTicketsInReservation(reservation.getId()), Map.of());
     }
 
     private Map<String, Object> prepareModelForPartialCreditNote(Event event, TicketReservation reservation, List<Ticket> removedTickets) {
@@ -1485,14 +1490,14 @@ public class TicketReservationManager {
             refundedAmount);
     }
     private OrderSummary orderSummaryForCreditNote(TicketReservation reservation, PurchaseContext purchaseContext, List<Ticket> removedTickets) {
-        var totalPriceAndDiscount = totalReservationCostWithVAT(null, purchaseContext, reservation, removedTickets, List.of());
+        var totalPriceAndDiscount = totalReservationCostWithVAT(null, purchaseContext, reservation, removedTickets, List.of(), List.of(), Optional.empty());
         TotalPrice reservationCost = totalPriceAndDiscount.getLeft();
         //
         boolean free = reservationCost.getPriceWithVAT() == 0;
 
         var currencyCode = reservation.getCurrencyCode();
         return new OrderSummary(reservationCost,
-            extractSummary(reservation.getVatStatus(), event, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), null, reservationCost, removedTickets, Stream.empty()),
+            extractSummary(reservation.getVatStatus(), purchaseContext, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), null, reservationCost, removedTickets, Stream.empty(), subscriptionRepository.findSubscriptionsByReservationId(reservation.getId())),
             free,
             formatCents(reservationCost.getPriceWithVAT(), currencyCode),
             formatCents(reservationCost.getVAT(), currencyCode),
@@ -1510,7 +1515,9 @@ public class TicketReservationManager {
                                     PromoCodeDiscount promoCodeDiscount,
                                     TotalPrice reservationCost,
                                     List<Ticket> ticketsToInclude,
-                                    Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServicesToInclude) {
+                                    Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServicesToInclude,
+                                    List<Subscription> subscriptionsToInclude) {
+        log.trace("extract summary subscriptionsToInclude {}", subscriptionsToInclude);
         List<SummaryRow> summary = new ArrayList<>();
         var currencyCode = reservationCost.getCurrencyCode();
         List<TicketPriceContainer> tickets = ticketsToInclude.stream()
@@ -1552,23 +1559,25 @@ public class TicketReservationManager {
         });
         //
         if(purchaseContext instanceof SubscriptionDescriptor) {
-            var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
-            if(!subscriptions.isEmpty()) {
-                var subscription = subscriptions.get(0);
+            if(!subscriptionsToInclude.isEmpty()) {
+                var subscription = subscriptionsToInclude.get(0);
                 var priceContainer = new SubscriptionPriceContainer(subscription, promoCodeDiscount, (SubscriptionDescriptor) purchaseContext);
                 var priceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
                 summary.add(new SummaryRow(purchaseContext.getTitle().get(locale.getLanguage()),
                     formatCents(priceContainer.getSummarySrcPriceCts(), currencyCode),
                     priceBeforeVat,
-                    subscriptions.size(),
-                    formatCents(priceContainer.getSummarySrcPriceCts() * subscriptions.size(), currencyCode),
-                    formatUnit(priceContainer.getNetPrice().multiply(new BigDecimal(subscriptions.size())), currencyCode),
+                    subscriptionsToInclude.size(),
+                    formatCents(priceContainer.getSummarySrcPriceCts() * subscriptionsToInclude.size(), currencyCode),
+                    formatUnit(priceContainer.getNetPrice().multiply(new BigDecimal(subscriptionsToInclude.size())), currencyCode),
                     priceContainer.getSummarySrcPriceCts(),
                     SummaryType.SUBSCRIPTION
                 ));
             }
-        } else {
-            subscriptionRepository.findDescriptorForAppliedSubscription(reservationId).ifPresent(subscriptionDescriptor -> {
+        } else if(CollectionUtils.isNotEmpty(subscriptionsToInclude)) {
+            log.trace("subscriptions to include is not empty");
+            var subscription = subscriptionsToInclude.get(0);
+            subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId(), subscription.getOrganizationId()).ifPresent(subscriptionDescriptor -> {
+                log.trace("found subscriptionDescriptor with ID {}", subscriptionDescriptor.getId());
                 // find the least expensive ticket
                 var ticket = tickets.stream().min(Comparator.comparing(TicketPriceContainer::getFinalPriceCts)).orElseThrow();
                 final int ticketPriceCts = ticket.getSummarySrcPriceCts();
@@ -1590,8 +1599,15 @@ public class TicketReservationManager {
     }
 
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
-                                    Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
-        return extractSummary(reservationVatStatus, event, locale, promoCodeDiscount, reservationCost, ticketRepository.findTicketsInReservation(reservationId), streamAdditionalServiceItems(reservationId, event));
+                                    PurchaseContext purchaseContext, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
+        return extractSummary(reservationVatStatus,
+            purchaseContext,
+            locale,
+            promoCodeDiscount,
+            reservationCost,
+            ticketRepository.findTicketsInReservation(reservationId),
+            streamAdditionalServiceItems(reservationId, purchaseContext),
+            subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId).map(List::of).orElse(List.of()));
     }
 
     private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> streamAdditionalServiceItems(String reservationId, PurchaseContext purchaseContext) {
@@ -2632,6 +2648,8 @@ public class TicketReservationManager {
 
     public boolean applySubscriptionCode(TicketReservation reservation, UUID subscriptionId, int amount) {
 
+        log.trace("entering applySubscription {}", subscriptionId);
+
         if (ticketReservationRepository.hasSubscriptionApplied(reservation.getId())) {
             return false;
         }
@@ -2643,15 +2661,24 @@ public class TicketReservationManager {
         }
         //TODO check if it can be applied more than once for a given event
 
+        log.trace("applying subscription {} to reservation {}", subscriptionId, reservation.getId());
         ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
         subscriptionRepository.increaseUse(subscription.getId());
         //
         var totalPrice = totalReservationCostWithVAT(reservation.getId()).getLeft();
 
         var purchaseContext = purchaseContextManager.findByReservationId(reservation.getId()).orElseThrow();
-        ticketReservationRepository.updateBillingData(purchaseContext.getVatStatus(), calculateSrcPrice(purchaseContext.getVatStatus(), totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), purchaseContext.getCurrency(), null
-            , reservation.getVatCountryCode(), reservation.isInvoiceRequested(), reservation.getId());
-
+        ticketReservationRepository.updateBillingData(reservation.getVatStatus(),
+            calculateSrcPrice(purchaseContext.getVatStatus(), totalPrice),
+            totalPrice.getPriceWithVAT(),
+            totalPrice.getVAT(),
+            Math.abs(totalPrice.getDiscount()),
+            purchaseContext.getCurrency(),
+            reservation.getVatNr(),
+            reservation.getVatCountryCode(),
+            reservation.isInvoiceRequested(),
+            reservation.getId());
+        log.trace("subscription applied. totalPrice is {}", totalPrice.getPriceWithVAT());
         return true;
     }
 

@@ -651,7 +651,7 @@ public class AdminReservationManager {
     @Transactional
     public Result<Boolean> removeReservation(PurchaseContextType purchaseContextType, String eventName, String reservationId, boolean refund, boolean notify, boolean creditNoteRequested, String username) {
         return loadReservation(purchaseContextType, eventName, reservationId, username)
-            .flatMap(result -> new Result.Builder<Pair<Event, TicketReservation>>()
+            .flatMap(result -> new Result.Builder<Pair<PurchaseContext, TicketReservation>>()
                 .checkPrecondition(() -> ticketsStatusIsCompatibleWithCancellation(result.getMiddle()), ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS)
                 .buildAndEvaluate(() -> {
                     var reservation = result.getLeft();
@@ -681,12 +681,12 @@ public class AdminReservationManager {
             .ifSuccess(pair -> ticketReservationManager.issueCreditNoteForReservation(pair.getLeft(), pair.getRight().getId(), username));
     }
 
-    private Result<Pair<Event, TicketReservation>> removeReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, boolean refund, boolean notify, String username, boolean removeReservation) {
+    private Result<Pair<PurchaseContext, TicketReservation>> removeReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, boolean refund, boolean notify, String username, boolean removeReservation) {
         return loadReservation(purchaseContextType, publicIdentifier, reservationId, username).flatMap(res -> removeReservation(res, refund, notify, username, removeReservation));
     }
 
     private Result<Pair<PurchaseContext, TicketReservation>> removeReservation(Triple<TicketReservation, List<Ticket>, PurchaseContext> triple, boolean refund, boolean notify, String username, boolean removeReservation) {
-        new Result.Builder<Pair<TicketReservation, PurchaseContext>>()
+        return new Result.Builder<Triple<TicketReservation, List<Ticket>, PurchaseContext>>()
             .checkPrecondition(() -> ticketsStatusIsCompatibleWithCancellation(triple.getMiddle()), ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS)
             .buildAndEvaluate(() -> {
                 var pc = triple.getRight();
@@ -701,44 +701,18 @@ public class AdminReservationManager {
                 TicketReservation reservation = t.getLeft();
                 List<Ticket> tickets = t.getMiddle();
                 specialPriceRepository.resetToFreeAndCleanupForReservation(List.of(reservation.getId()));
-                removeTicketsFromReservation(reservation, purchaseContext, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, false);
+                if(purchaseContext.getType() == PurchaseContextType.event) {
+                    removeTicketsFromReservation(reservation, (Event) purchaseContext, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, false);
+                }
                 additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
                 return Pair.of(purchaseContext, reservation);
             });
-        return loadReservation(purchaseContextType, publicIdentifier, reservationId, username).flatMap(res -> {
-            var purchaseContext = res.getRight();
-            TicketReservation reservation = res.getLeft();
-            List<Ticket> tickets = res.getMiddle();
-
-            var checkedInTicketsCount = tickets.stream().filter(c -> c.getStatus() == Ticket.TicketStatus.CHECKED_IN).count();
-            if (checkedInTicketsCount > 0) {
-                return Result.error(ErrorCode.custom("remove-reservation.failed", checkedInTicketsCount +" tickets are already checked-in for this reservation!! Unable to cancel the reservation."));
-            }
-
-            if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
-                //fully refund
-                boolean refundResult = paymentManager.refund(reservation, purchaseContext, null, username);
-                if(!refundResult) {
-                    return Result.error(ErrorCode.custom("refund.failed", "Cannot perform refund"));
-                }
-            }
-
-            specialPriceRepository.resetToFreeAndCleanupForReservation(List.of(reservationId));
-
-            if(purchaseContext.getType() == PurchaseContextType.event) {
-                removeTicketsFromReservation(reservation, purchaseContext.event().orElseThrow(), tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, false);
-            }
-
-            additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
-
-            return Result.success(Pair.of(purchaseContext, reservation));
-        });
     }
 
-    private ErrorCode refundIfRequested(TicketReservation reservation, Event event, String username, boolean requested) {
+    private ErrorCode refundIfRequested(TicketReservation reservation, PurchaseContext purchaseContext, String username, boolean requested) {
         if(requested && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
             //fully refund
-            boolean refundResult = paymentManager.refund(reservation, event, null, username);
+            boolean refundResult = paymentManager.refund(reservation, purchaseContext, null, username);
             if(!refundResult) {
                 return ErrorCode.custom("refund.failed", "Cannot perform refund");
             }
@@ -753,13 +727,14 @@ public class AdminReservationManager {
     @Transactional
     public Result<Boolean> refund(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, BigDecimal refundAmount, String username) {
         return loadReservation(purchaseContextType, publicIdentifier, reservationId, username).map(res -> {
-            TicketReservation reservation = res.getLeft();
+            var reservation = res.getLeft();
+            var purchaseContext = res.getRight();
             if(reservation.getHasInvoiceNumber()) {
-                ticketReservationManager.issueCreditNoteForRefund(e, reservation, refundAmount, username);
+                ticketReservationManager.issueCreditNoteForRefund(purchaseContext, reservation, refundAmount, username);
             }
             return reservation.getPaymentMethod() != null
                 && reservation.getPaymentMethod().isSupportRefund()
-                && paymentManager.refund(reservation, res.getRight(), unitToCents(refundAmount, reservation.getCurrencyCode()), username);
+                && paymentManager.refund(reservation, purchaseContext, unitToCents(refundAmount, reservation.getCurrencyCode()), username);
         });
     }
 
@@ -783,7 +758,7 @@ public class AdminReservationManager {
     }
 
     private void removeTicketsFromReservation(TicketReservation reservation,
-                                              Event event,
+                                              Event purchaseContext,
                                               List<Integer> ticketIds,
                                               boolean notify,
                                               String username,
@@ -791,25 +766,25 @@ public class AdminReservationManager {
                                               boolean issueCreditNote) {
         String reservationId = reservation.getId();
         if(!ticketIds.isEmpty() && issueCreditNote && reservation.getHasInvoiceNumber()) {
-            ticketReservationManager.issuePartialCreditNoteForReservation(event, reservation, username, ticketIds);
+            ticketReservationManager.issuePartialCreditNoteForReservation(purchaseContext, reservation, username, ticketIds);
         }
         if(notify && !ticketIds.isEmpty()) {
-            Organization o = eventManager.loadOrganizer(event, username);
+            Organization o = eventManager.loadOrganizer(purchaseContext, username);
             ticketRepository.findByIds(ticketIds).forEach(t -> {
                 if(StringUtils.isNotBlank(t.getEmail())) {
-                    sendTicketHasBeenRemoved(event, o, t);
+                    sendTicketHasBeenRemoved(purchaseContext, o, t);
                 }
             });
         }
 
         if(!issueCreditNote || !reservation.getHasInvoiceNumber()) {
-            billingDocumentManager.ensureBillingDocumentIsPresent(event, reservation, username, () -> ticketReservationManager.orderSummaryForReservation(reservation, event));
+            billingDocumentManager.ensureBillingDocumentIsPresent(purchaseContext, reservation, username, () -> ticketReservationManager.orderSummaryForReservation(reservation, purchaseContext));
         }
 
         Integer userId = userRepository.findIdByUserName(username).orElse(null);
         Date date = new Date();
 
-        ticketIds.forEach(id -> auditingRepository.insert(reservationId, userId, event.getId(), CANCEL_TICKET, date, TICKET, id.toString()));
+        ticketIds.forEach(id -> auditingRepository.insert(reservationId, userId, purchaseContext.getId(), CANCEL_TICKET, date, TICKET, id.toString()));
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
         ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
@@ -817,12 +792,12 @@ public class AdminReservationManager {
 
         List<String> reservationIds = ticketRepository.findReservationIds(ticketIds);
         List<String> ticketUUIDs = ticketRepository.findUUIDs(ticketIds);
-        int[] results = ticketRepository.batchReleaseTickets(reservationId, ticketIds, event);
+        int[] results = ticketRepository.batchReleaseTickets(reservationId, ticketIds, purchaseContext);
         Validate.isTrue(Arrays.stream(results).sum() == ticketIds.size(), "Failed to update tickets");
         if(!removeReservation) {
-            extensionManager.handleTicketCancelledForEvent(event, ticketUUIDs);
+            extensionManager.handleTicketCancelledForEvent(purchaseContext, ticketUUIDs);
         } else {
-            extensionManager.handleReservationsCancelledForEvent(event, reservationIds);
+            extensionManager.handleReservationsCancelledForEvent(purchaseContext, reservationIds);
         }
     }
 

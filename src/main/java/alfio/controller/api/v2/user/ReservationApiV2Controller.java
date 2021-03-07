@@ -469,27 +469,27 @@ public class ReservationApiV2Controller {
                     var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
                     var currencyCode = reservation.getCurrencyCode();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(purchaseContext.getVatStatus(), vatValidation.isVatExempt());
-                    updateBillingData(contactAndTicketsForm, purchaseContext, country, trimToNull(vatValidation.getVatNr()), reservation, vatStatus);
+                    updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, country, trimToNull(vatValidation.getVatNr()), reservation, vatStatus);
                     vatChecker.logSuccessfulValidation(vatValidation, reservationId, purchaseContext.event().map(Event::getId).orElse(null));
                 }
             } else if(optionalReservation.isPresent() && contactAndTicketsForm.isItalyEInvoicingSplitPayment()) {
                 var reservation = optionalReservation.get();
                 var vatStatus = purchaseContext.getVatStatus() == INCLUDED ? INCLUDED_NOT_CHARGED : NOT_INCLUDED_NOT_CHARGED;
-                updateBillingData(contactAndTicketsForm, purchaseContext, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, vatStatus);
+                updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, vatStatus);
             }
         } catch (IllegalStateException ise) {//vat checker failure
             bindingResult.rejectValue("vatNr", "error.vatVIESDown");
         }
     }
 
-    private void updateBillingData(ContactAndTicketsForm contactAndTicketsForm, PurchaseContext purchaseContext, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
+    private void updateBillingData(String reservationId, ContactAndTicketsForm contactAndTicketsForm, PurchaseContext purchaseContext, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
         var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
         var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservation.getId());
         var tickets = ticketReservationManager.findTicketsInReservation(reservation.getId());
         var additionalServices = purchaseContext.event().map(event -> additionalServiceRepository.loadAllForEvent(event.getId())).orElse(List.of());
         var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
         var appliedSubscription = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId);
-        var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(event.getId()), event);
+        var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions, appliedSubscription);
         var currencyCode = reservation.getCurrencyCode();
         ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
             unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
@@ -672,56 +672,55 @@ public class ReservationApiV2Controller {
 
     @PostMapping("/reservation/{reservationId}/apply-code")
     public ResponseEntity<ValidatedResponse<Boolean>> applyCode(@PathVariable("reservationId") String reservationId, @RequestBody ReservationCodeForm reservationCodeForm, BindingResult bindingResult) {
-        boolean res;
-        switch (reservationCodeForm.getType()) {
-            case SUBSCRIPTION:
-                res = getEventReservationPair(reservationId).map(et -> {
-                    var isUUID = reservationCodeForm.isCodeUUID();
-                    var pin = reservationCodeForm.getCode();
-                    if (!isUUID && !PinGenerator.isPinValid(pin, Subscription.PIN_LENGTH)) {
-                        bindingResult.reject("error.restrictedValue");
-                        return false;
-                    }
-
-                    //ensure pin length, as we will do a like concat(pin,'%'), it could be dangerous to have an empty string...
-                    Assert.isTrue(pin.length() >= Subscription.PIN_LENGTH, "Pin must have a length of at least 8 characters");
-
-                    var partialUuid = !isUUID ? PinGenerator.pinToPartialUuid(pin, Subscription.PIN_LENGTH) : pin;
-                    var email = reservationCodeForm.getEmail();
-                    var requireEmail = false;
-                    int count;
-                    if (isUUID) {
-                        count = subscriptionRepository.countSubscriptionById(UUID.fromString(pin));
-                    } else {
-                        count = subscriptionRepository.countSubscriptionByPartialUuid(partialUuid);
-                        if (count > 1) {
-                            count = subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
-                            requireEmail = true;
-                        }
-                    }
-                    if (count == 0) {
-                        bindingResult.reject(isUUID ? "subscription.uuid.not.found" : "subscription.pin.not.found");
-                    }
-                    if (count > 1) {
-                        bindingResult.reject("subscription.code.insert.full");
-                    }
-
-                    if (bindingResult.hasErrors()) {
-                        return false;
-                    }
-
-                    var subscriptionId = isUUID ? UUID.fromString(pin) : requireEmail ? subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email) : subscriptionRepository.getSubscriptionIdByPartialUuid(partialUuid);
-                    var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
-                    var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
-                    subscription.isValid(subscriptionDescriptor, Optional.of(bindingResult));
-                    if (bindingResult.hasErrors()) {
-                        return false;
-                    }
-                    return ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
-                }).orElse(false);
-                break;
-            default: throw new IllegalStateException(reservationCodeForm.getType() + " not supported");
+        if(reservationCodeForm.getType() != ReservationCodeForm.ReservationCodeType.SUBSCRIPTION) {
+            throw new IllegalStateException(reservationCodeForm.getType() + " not supported");
         }
+        boolean res = getEventReservationPair(reservationId).map(et -> {
+            boolean isUUID = reservationCodeForm.isCodeUUID();
+            log.trace("is code UUID {}", isUUID);
+            var pin = reservationCodeForm.getCode();
+            if (!isUUID && !PinGenerator.isPinValid(pin, Subscription.PIN_LENGTH)) {
+                bindingResult.reject("error.restrictedValue");
+                return false;
+            }
+
+            //ensure pin length, as we will do a like concat(pin,'%'), it could be dangerous to have an empty string...
+            Assert.isTrue(pin.length() >= Subscription.PIN_LENGTH, "Pin must have a length of at least 8 characters");
+
+            var partialUuid = !isUUID ? PinGenerator.pinToPartialUuid(pin, Subscription.PIN_LENGTH) : pin;
+            var email = reservationCodeForm.getEmail();
+            var requireEmail = false;
+            int count;
+            if (isUUID) {
+                count = subscriptionRepository.countSubscriptionById(UUID.fromString(pin));
+            } else {
+                count = subscriptionRepository.countSubscriptionByPartialUuid(partialUuid);
+                if (count > 1) {
+                    count = subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
+                    requireEmail = true;
+                }
+            }
+            log.trace("code count is {}", count);
+            if (count == 0) {
+                bindingResult.reject(isUUID ? "subscription.uuid.not.found" : "subscription.pin.not.found");
+            }
+            if (count > 1) {
+                bindingResult.reject("subscription.code.insert.full");
+            }
+
+            if (bindingResult.hasErrors()) {
+                return false;
+            }
+
+            var subscriptionId = isUUID ? UUID.fromString(pin) : requireEmail ? subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email) : subscriptionRepository.getSubscriptionIdByPartialUuid(partialUuid);
+            var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
+            var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+            subscription.isValid(subscriptionDescriptor, Optional.of(bindingResult));
+            if (bindingResult.hasErrors()) {
+                return false;
+            }
+            return ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
+        }).orElse(false);
         return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, res));
     }
 

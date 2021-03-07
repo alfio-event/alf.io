@@ -19,15 +19,16 @@ package alfio.extension.support;
 import alfio.extension.exception.OutOfBoundariesException;
 import org.mozilla.javascript.NativeJavaMap;
 import org.mozilla.javascript.Scriptable;
+
 import java.util.Map;
 
 public class SandboxNativeJavaMap extends NativeJavaMap {
 
-    private final Map<Object, Object> map;
+    private final Map<?, ?> map;
 
     public SandboxNativeJavaMap(Scriptable scope, Object map) {
         super(scope, map);
-        this.map = (Map<Object, Object>) map;
+        this.map = (Map<?, ?>) map;
     }
 
     @Override

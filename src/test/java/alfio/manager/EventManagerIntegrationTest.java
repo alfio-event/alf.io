@@ -877,6 +877,6 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
     private EventModification createEventModification(int availableSeats, Event event, Event.EventFormat format, List<PaymentProxy> allowedPaymentProxies) {
         return new EventModification(event.getId(), format, "http://website-url", null, "http://website-url/tc", null, null, null, null, null, event.getOrganizationId(), null, null,
             null, event.getZoneId().toString(), Collections.emptyMap(), DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
-            event.getRegularPrice(), event.getCurrency(), availableSeats, event.getVat(), event.isVatIncluded(), allowedPaymentProxies, null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty());
+            event.getRegularPrice(), event.getCurrency(), availableSeats, event.getVat(), event.isVatIncluded(), allowedPaymentProxies, null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty(), List.of());
     }
 }

@@ -1225,6 +1225,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         var codeApplicationResponse = codeApplicationResult.getBody();
         assertNotNull(codeApplicationResponse);
         assertTrue(codeApplicationResponse.isSuccess());
+        assertFalse(bindingResult.hasErrors(), bindingResult::toString);
+        assertEquals(true, codeApplicationResponse.getValue());
 
         // reload reservation, and assert it is now free of charge
         resInfoRes = reservationApiV2Controller.getReservationInfo(reservationId);
