@@ -20,7 +20,6 @@ import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -76,11 +75,11 @@ public class CustomMessageManager {
         preview(event, input, username);//dry run for checking the syntax
         Organization organization = eventManager.loadOrganizer(event, username);
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
-        var baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
+        var baseUrl = configurationManager.getFor(BASE_URL, event.getConfigurationLevel()).getRequiredValue();
         var eventMetadata = Optional.ofNullable(eventManager.getMetadataForEvent(event).getRequirementsDescriptions());
 
         sendMessagesExecutor.execute(() -> {
-            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+            var messageSource = messageSourceManager.getMessageSourceFor(event);
             categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
                 .orElseGet(() -> ticketRepository.findAllConfirmed(event.getId()))
                 .stream()
@@ -174,7 +173,7 @@ public class CustomMessageManager {
         return new Mailer.Attachment(CALENDAR_ICS.fileName(""), null, CALENDAR_ICS.contentType(""), model, CALENDAR_ICS);
     }
 
-    private static String renderResource(String template, EventAndOrganizationId event, Model model, Locale locale, TemplateManager templateManager) {
-        return templateManager.renderString(event, template, model.asMap(), locale, TemplateManager.TemplateOutput.TEXT);
+    private static String renderResource(String template, PurchaseContext purchaseContext, Model model, Locale locale, TemplateManager templateManager) {
+        return templateManager.renderString(purchaseContext, template, model.asMap(), locale, TemplateManager.TemplateOutput.TEXT);
     }
 }

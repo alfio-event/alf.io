@@ -18,6 +18,7 @@ package alfio.controller.support;
 
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
+import alfio.model.LocalizedContent;
 import alfio.util.MustacheCustomTag;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
@@ -30,14 +31,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 @UtilityClass
 @Log4j2
 public class Formatters {
 
-    public static Map<String, String> getFormattedDate(Event event, ZonedDateTime date, String code, MessageSource messageSource) {
-        return getFormattedDate(event.getContentLanguages(), date, code, messageSource);
+    public static Map<String, String> getFormattedDate(LocalizedContent localizedContent, ZonedDateTime date, String code, MessageSource messageSource) {
+        if(localizedContent != null && date != null) {
+            return getFormattedDate(localizedContent.getContentLanguages(), date, code, messageSource);
+        }
+        return null;
     }
 
     private static Map<String, String> getFormattedDate(List<ContentLanguage> languages, ZonedDateTime date, String code, MessageSource messageSource) {

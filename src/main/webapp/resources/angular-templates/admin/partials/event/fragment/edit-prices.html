@@ -64,4 +64,24 @@
         <span class="help-block" data-ng-if="(obj.allowedPaymentProxies === undefined || obj.allowedPaymentProxies.length == 0) && (obj.organizationId === null || obj.organizationId === undefined)"><i class="fa fa-warning"></i> Please select an organization in order to load the payment methods</span>
         <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
     </div>
+
+    <div ng-if="!obj.freeOfCharge && subscriptionDescriptors.length > 0">
+        <div class="page-header">
+            <h3>Subscriptions</h3>
+            <small class="text-muted">Select the subscriptions that can be used for this event.</small>
+        </div>
+        <div class="row" ng-repeat="subscription in subscriptionDescriptors">
+            <div class="col-xs-1">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" ng-model="subscription.selected" ng-click="subscriptionSelectionChanged()">
+                    </label>
+                </div>
+            </div>
+            <div class="col-xs-11">
+                <h4>{{getFirstTranslation(subscription.titleAsText)}}</h4>
+                <small>{{getFirstTranslation(subscription.descriptionAsText) | ellipsisAfterFirstRow}}</small>
+            </div>
+        </div>
+    </div>
 </div>

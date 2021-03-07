@@ -82,7 +82,7 @@ public class WaitingQueueSubscriptionProcessorTest {
         when(event.getId()).thenReturn(eventId);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(eventManager.getActiveEvents()).thenReturn(Collections.singletonList(event));
-        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
         processor = new WaitingQueueSubscriptionProcessor(eventManager,
             ticketReservationManager,

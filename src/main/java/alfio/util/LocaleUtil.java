@@ -17,7 +17,7 @@
 package alfio.util;
 
 import alfio.model.ContentLanguage;
-import alfio.model.Event;
+import alfio.model.LocalizedContent;
 import alfio.model.Ticket;
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,15 +42,15 @@ public final class LocaleUtil {
         }
     }
 
-    public static Locale forLanguageTag(String lang, Event event) {
+    public static Locale forLanguageTag(String lang, LocalizedContent localizedContent) {
         String cleanedUpLang = StringUtils.trimToEmpty(lang).toLowerCase(Locale.ENGLISH);
-        var filteredLang = event.getContentLanguages()
+        var filteredLang = localizedContent.getContentLanguages()
             .stream()
             .filter(l -> cleanedUpLang.equalsIgnoreCase(l.getLanguage()))
             .findFirst()
             .map(ContentLanguage::getLanguage)
             //vvv fallback
-            .orElseGet(() -> event.getContentLanguages().stream().findFirst().map(ContentLanguage::getLanguage).orElse("en"));
+            .orElseGet(() -> localizedContent.getContentLanguages().stream().findFirst().map(ContentLanguage::getLanguage).orElse("en"));
         return forLanguageTag(filteredLang);
     }
 }

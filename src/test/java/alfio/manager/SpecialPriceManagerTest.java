@@ -81,7 +81,7 @@ public class SpecialPriceManagerTest {
         configurationManager = mock(ConfigurationManager.class);
 
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
-        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("text");
         when(eventManager.getSingleEvent(anyString(), anyString())).thenReturn(event);

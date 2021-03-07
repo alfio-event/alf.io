@@ -29,7 +29,7 @@ import java.util.Map;
 public class Audit {
 
     public enum EntityType {
-        EVENT, TICKET, RESERVATION
+        EVENT, TICKET, RESERVATION, SUBSCRIPTION
     }
 
     public enum EventType {
@@ -74,7 +74,8 @@ public class Audit {
         MATCHING_PAYMENT_DISCARDED,
         AUTOMATIC_PAYMENT_CONFIRMATION,
         AUTOMATIC_PAYMENT_CONFIRMATION_FAILED,
-        DYNAMIC_DISCOUNT_CODE_CREATED
+        DYNAMIC_DISCOUNT_CODE_CREATED,
+        SUBSCRIPTION_ACQUIRED
 
     }
 

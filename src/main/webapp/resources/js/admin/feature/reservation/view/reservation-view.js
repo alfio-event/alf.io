@@ -3,18 +3,19 @@
 
     angular.module('adminApplication').component('reservationView', {
         bindings: {
-            event:'<',
+            purchaseContext:'<',
+            purchaseContextType: '<',
             reservationDescriptor: '<',
             onUpdate: '<',
             onClose: '<',
             onConfirm: '<'
         },
-        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', 'ConfigurationService', ReservationViewCtrl],
+        controller: ['AdminReservationService', 'EventService', 'ReservationCancelService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', 'ConfigurationService', ReservationViewCtrl],
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal, ConfigurationService) {
+    function ReservationViewCtrl(AdminReservationService, EventService, ReservationCancelService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal, ConfigurationService) {
         var ctrl = this;
         ctrl.displayPotentialMatch = false;
 
@@ -64,13 +65,19 @@
 
         var initReservationData = function() {
             var src = ctrl.reservationDescriptor.reservation;
-            ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'BASE_URL').then(function(resp) {
+            var configurationPromise;
+            if(ctrl.purchaseContextType === 'event') {
+                configurationPromise = ConfigurationService.loadSingleConfigForEvent(ctrl.purchaseContext.publicIdentifier, 'BASE_URL')
+            } else {
+                configurationPromise = ConfigurationService.loadSingleConfigForOrganization(ctrl.purchaseContext.organizationId, 'BASE_URL')
+            }
+            configurationPromise.then(function(resp) {
                 var baseUrl = resp.data;
                 var cleanUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
-                ctrl.reservationUrl = cleanUrl + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage;
+                ctrl.reservationUrl = cleanUrl + '/'+ctrl.purchaseContextType+'/'+ ctrl.purchaseContext.publicIdentifier + '/reservation/' + src.id+'?lang='+src.userLanguage;
             }, function() {
                 var currentURL = $window.location.href;
-                ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage);
+                ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/'+ctrl.purchaseContextType+'/'+ ctrl.purchaseContext.publicIdentifier + '/reservation/' + src.id+'?lang='+src.userLanguage);
             })
             var vatApplied = null;
             if(['INCLUDED', 'NOT_INCLUDED'].indexOf(src.vatStatus) > -1) {
@@ -131,24 +138,24 @@
             });
 
 
-            if(ctrl.event.visibleForCurrentUser) {
+            if(ctrl.purchaseContextType !== 'event' || ctrl.purchaseContext.visibleForCurrentUser) {
                 loadEmails();
                 loadPaymentInfo();
                 loadAudit();
                 loadBillingDocuments();
                 ctrl.invalidateDocument = function(id) {
-                    AdminReservationService.invalidateDocument(ctrl.event.shortName, ctrl.reservation.id, id).then(function() {
+                    AdminReservationService.invalidateDocument(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id, id).then(function() {
                         loadBillingDocuments();
                     });
                 };
                 ctrl.restoreDocument = function(id) {
-                    AdminReservationService.restoreDocument(ctrl.event.shortName, ctrl.reservation.id, id).then(function() {
+                    AdminReservationService.restoreDocument(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id, id).then(function() {
                         loadBillingDocuments();
                     });
                 };
                 ctrl.deleteTransaction = function() {
                     if($window.confirm('About to flag a potential match as not valid. Are you sure?')) {
-                        EventService.cancelMatchingPayment(ctrl.event.shortName, ctrl.reservation.id, ctrl.paymentInfo.transaction.id).then(function() {
+                        EventService.cancelMatchingPayment(ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id, ctrl.paymentInfo.transaction.id).then(function() {
                             NotificationHandler.showSuccess("Payment discarded");
                             loadPaymentInfo();
                             loadAudit();
@@ -166,10 +173,10 @@
         };
 
         function regenerateBillingDocument() {
-            var eventName = ctrl.event.shortName;
+            var purchaseContextId = ctrl.purchaseContext.publicIdentifier;
             var reservation = ctrl.reservationDescriptor.reservation;
             var reservationId = reservation.id;
-            AdminReservationService.regenerateBillingDocument(eventName, reservationId).then(function(res) {
+            AdminReservationService.regenerateBillingDocument(ctrl.purchaseContextType, purchaseContextId, reservationId).then(function(res) {
                 NotificationHandler.showSuccess("Billing Document regeneration succeeded");
                 loadBillingDocuments();
             });
@@ -190,7 +197,7 @@
         function loadAudit() {
             ctrl.audit = [];
             ctrl.checkInLog = {};
-            AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+            AdminReservationService.getAudit(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservationDescriptor.reservation.id).then(function(res) {
                 ctrl.audit = res.data.data;
                 ctrl.checkInLog = _.groupBy(loadCheckInLog(), 'entityId');
             });
@@ -198,7 +205,7 @@
 
         function loadPaymentInfo() {
             ctrl.loadingPaymentInfo = true;
-            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+            AdminReservationService.paymentInfo(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservationDescriptor.reservation.id).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
                 ctrl.displayPotentialMatch = ctrl.paymentInfo.transaction && ctrl.paymentInfo.transaction.potentialMatch;
                 ctrl.loadingPaymentInfo = false;
@@ -213,7 +220,7 @@
                 valid: [],
                 notValid: []
             };
-            AdminReservationService.loadAllBillingDocuments(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+            AdminReservationService.loadAllBillingDocuments(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservationDescriptor.reservation.id).then(function(res) {
                 ctrl.billingDocuments = {
                     count: res.data.data.length,
                     valid: res.data.data.filter(function(x) { return x.status === 'VALID'; }),
@@ -223,15 +230,15 @@
         }
 
         function loadEmails() {
-            AdminReservationService.emailList(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+            AdminReservationService.emailList(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservationDescriptor.reservation.id).then(function(res) {
                 ctrl.emails = res.data.data;
             });
         }
 
         ctrl.update = function(frm) {
             if(frm.$valid) {
-                AdminReservationService.updateReservation(ctrl.event.shortName, ctrl.reservation.id, ctrl.reservation).then(function() {
-                    if(ctrl.onUpdate) {ctrl.onUpdate({eventName: ctrl.event.shortName, reservationId: ctrl.reservation.id});} else {$window.location.reload();}
+                AdminReservationService.updateReservation(ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id, ctrl.reservation).then(function() {
+                    if(ctrl.onUpdate) {ctrl.onUpdate({eventName: ctrl.purchaseContext.publicIdentifier, reservationId: ctrl.reservation.id});} else {$window.location.reload();}
                 })
             }
         };
@@ -255,7 +262,7 @@
 
         var notify = function(customer) {
             ctrl.loading = true;
-            AdminReservationService.notify(ctrl.event.shortName, ctrl.reservation.id, {notification: {customer: customer, attendees:(!customer)}}).then(evaluateNotificationResponse, function() {
+            AdminReservationService.notify(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id, {notification: {customer: customer, attendees:(!customer)}}).then(evaluateNotificationResponse, function() {
                 notifyError();
             });
         };
@@ -332,7 +339,7 @@
             });
             m.result.then(function(ids) {
                 if(ids.length > 0) {
-                    AdminReservationService.notifyAttendees(ctrl.event.shortName, ctrl.reservation.id, ids).then(evaluateNotificationResponse, function() {
+                    AdminReservationService.notifyAttendees(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id, ids).then(evaluateNotificationResponse, function() {
                         notifyError();
                     });
                 }
@@ -342,13 +349,13 @@
         ctrl.confirm = function() {
             var promise;
             if(ctrl.reservation.status === 'OFFLINE_PAYMENT') {
-                promise = EventService.registerPayment(ctrl.event.shortName, ctrl.reservation.id);
+                promise = EventService.registerPayment(ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id);
             } else {
-                promise = AdminReservationService.confirm(ctrl.event.shortName, ctrl.reservation.id);
+                promise = AdminReservationService.confirm(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id);
             }
             promise.then(function() {
                 if(ctrl.onConfirm) {
-                    ctrl.onConfirm({eventName: ctrl.event.shortName, reservationId: ctrl.reservation.id})
+                    ctrl.onConfirm({eventName: ctrl.purchaseContext.publicIdentifier, reservationId: ctrl.reservation.id})
                 } else {
                     $window.location.reload();
                 }
@@ -356,7 +363,7 @@
         };
 
         ctrl.cancelReservationModal = function(credit) {
-            EventService.cancelReservationModal(ctrl.event, ctrl.reservation, credit).then(function() {
+            ReservationCancelService.cancelReservationModal(ctrl.purchaseContextType, ctrl.purchaseContext, ctrl.reservation, credit).then(function() {
                 var message = credit ? 'Credit note generated.' : 'Reservation has been cancelled.';
                 if(!credit && ctrl.reservationDescriptor.reservation.status === 'CREDIT_NOTE_ISSUED') {
                     message += ' A credit note has been generated. Please check the Billing Documents tab.';
@@ -379,7 +386,7 @@
             if(ctrl.amountToRefund != null && ctrl.amountToRefund > 0) {
                 if ($window.confirm('Are you sure to refund ' + ctrl.amountToRefund + ctrl.paymentInfo.transaction.currency + ' ?')) {
                     ctrl.refundInProgress = true;
-                    AdminReservationService.refund(ctrl.event.shortName, ctrl.reservation.id, ctrl.amountToRefund).then(function () {
+                    AdminReservationService.refund(ctrl.purchaseContextType, ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id, ctrl.amountToRefund).then(function () {
                         ctrl.amountToRefund = null;
                         ctrl.refundInProgress = false;
                         var message = 'Refund successful.';

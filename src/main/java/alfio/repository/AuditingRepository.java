@@ -18,6 +18,8 @@ package alfio.repository;
 
 
 import alfio.model.Audit;
+import alfio.model.Event;
+import alfio.model.PurchaseContext;
 import alfio.model.support.JSONData;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.Bind;
@@ -36,21 +38,33 @@ public interface AuditingRepository {
     @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
         " values (:reservationId, :userId, :eventId, :eventType, :eventTime, :entityType, :entityId, :modifications)")
     int insert(@Bind("reservationId") String reservationId, @Bind("userId") Integer userId,
-               @Bind("eventId") int eventId,
+               @Bind("eventId") Integer eventId,
                @Bind("eventType") Audit.EventType eventType, @Bind("eventTime") Date eventTime,
                @Bind("entityType") Audit.EntityType entityType, @Bind("entityId") String entityId,
                @Bind("modifications") String modifications);
 
 
-    default int insert(String reservationId, Integer userId, int eventId, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
+    default int insert(String reservationId, Integer userId, Integer eventId, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
                        String entityId) {
         return this.insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, (String) null);
     }
 
-    default int insert(String reservationId, Integer userId, int eventId, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
+    default int insert(String reservationId, Integer userId, Integer eventId, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
                        String entityId, List<Map<String, Object>> modifications) {
         String modificationJson = modifications == null ? null : Json.toJson(modifications);
         return this.insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, modificationJson);
+    }
+
+    default int insert(String reservationId, Integer userId, PurchaseContext p, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
+                       String entityId) {
+        var eventId = p.event().map(Event::getId).orElse(null);
+        return this.insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, (String) null);
+    }
+
+    default int insert(String reservationId, Integer userId, PurchaseContext p, Audit.EventType eventType, Date eventTime, Audit.EntityType entityType,
+                       String entityId, List<Map<String, Object>> modifications) {
+        var eventId = p.event().map(Event::getId).orElse(null);
+        return insert(reservationId, userId, eventId, eventType, eventTime, entityType, entityId, modifications);
     }
 
 

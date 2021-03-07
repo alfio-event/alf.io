@@ -60,6 +60,12 @@ public enum TemplateResource {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
+    CONFIRMATION_EMAIL_SUBSCRIPTION("/alfio/templates/confirmation-email-subscription", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
     OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
@@ -333,7 +339,7 @@ public enum TemplateResource {
     // - RECEIPT_PDF + ImageData
     // - INVOICE_PDF + ImageData
     public static Map<String, Object> prepareModelForConfirmationEmail(Organization organization,
-                                                                       Event event,
+                                                                       PurchaseContext purchaseContext,
                                                                        TicketReservation reservation,
                                                                        Optional<String> vat,
                                                                        List<TicketWithCategory> tickets,
@@ -347,7 +353,9 @@ public enum TemplateResource {
                                                                        Map<String, Object> additionalModelObjects) {
         Map<String, Object> model = new HashMap<>(additionalModelObjects);
         model.put("organization", organization);
-        model.put("event", event);
+        model.put("event", purchaseContext.event().orElse(null));
+        model.put("purchaseContext", purchaseContext);
+        model.put("purchaseContextTitle", purchaseContext.getTitle().get(reservation.getUserLanguage()));
         model.put("ticketReservation", reservation);
         model.put("hasVat", vat.isPresent());
         model.put("vatNr", vat.orElse(""));
@@ -359,13 +367,14 @@ public enum TemplateResource {
 
         model.put("hasRefund", StringUtils.isNotEmpty(orderSummary.getRefundedAmount()));
 
-        var clock = ClockProvider.clock().withZone(event.getZoneId());
+        var zoneId = purchaseContext.getZoneId();
+        var clock = ClockProvider.clock().withZone(zoneId);
         ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getRegistrationTimestamp(), reservation.getConfirmationTimestamp(), reservation.getCreationTimestamp(), ZonedDateTime.now(clock));
-        model.put("confirmationDate", creationTimestamp.withZoneSameInstant(event.getZoneId()));
+        model.put("confirmationDate", creationTimestamp.withZoneSameInstant(zoneId));
         model.put("now", ZonedDateTime.now(clock));
 
         if (reservation.getValidity() != null) {
-            model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
+            model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), zoneId));
         }
 
         model.put("reservationShortID", reservationShortID);
@@ -381,7 +390,7 @@ public enum TemplateResource {
 
         model.put("isOfflinePayment", reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
         model.put("hasCustomerReference", StringUtils.isNotBlank(reservation.getCustomerReference()));
-        model.put("paymentReason", event.getShortName() + " " + reservationShortID);
+        model.put("paymentReason", reservationShortID);
         model.put("hasBankAccountOnwer", bankAccountOwner.isPresent());
         bankAccountOwner.ifPresent(owner -> {
             model.put("bankAccountOnwer", StringUtils.replace(owner, "\n", ", "));

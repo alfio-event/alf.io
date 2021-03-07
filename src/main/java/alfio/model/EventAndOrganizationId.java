@@ -16,11 +16,13 @@
  */
 package alfio.model;
 
+import alfio.manager.system.ConfigurationLevel;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 
 @Getter
-public class EventAndOrganizationId {
+public class EventAndOrganizationId implements Configurable {
     protected final int id;
     protected final int organizationId;
 
@@ -28,5 +30,11 @@ public class EventAndOrganizationId {
                                   @Column("org_id") int organizationId) {
         this.id = id;
         this.organizationId = organizationId;
+    }
+
+    @JsonIgnore
+    @Override
+    public ConfigurationLevel getConfigurationLevel() {
+        return ConfigurationLevel.event(this);
     }
 }

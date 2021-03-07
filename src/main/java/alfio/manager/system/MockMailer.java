@@ -16,7 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.model.EventAndOrganizationId;
+import alfio.model.Configurable;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
@@ -37,7 +37,7 @@ public class MockMailer implements Mailer {
     private final Environment environment;
 
     @Override
-    public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachments) {
+    public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachments) {
 
         subject = decorateSubjectIfDemo(subject, environment);
 
@@ -49,7 +49,7 @@ public class MockMailer implements Mailer {
 
         log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}",
             fromName,
-            configurationManager.getFor(MAIL_REPLY_TO, ConfigurationLevel.event(event)).getValueOrDefault(""),
+            configurationManager.getFor(MAIL_REPLY_TO, configurable.getConfigurationLevel()).getValueOrDefault(""),
             to, cc, subject, text,
             html.orElse("no html"), printedAttachments);
     }

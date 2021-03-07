@@ -103,7 +103,8 @@ public class EventCreationRequest{
             locales,
             toAdditionalFields(orEmpty(additionalInfo)),
             emptyList(),  // TODO improve API,
-            AlfioMetadata.empty()
+            AlfioMetadata.empty(),
+            List.of()
         );
     }
 
@@ -155,7 +156,8 @@ public class EventCreationRequest{
             locales,
             toAdditionalFields(orEmpty(additionalInfo)),
             emptyList(),  // TODO improve API
-            AlfioMetadata.empty()
+            AlfioMetadata.empty(),
+            List.of()
         );
     }
 

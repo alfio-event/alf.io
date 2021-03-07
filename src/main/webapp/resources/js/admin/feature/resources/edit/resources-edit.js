@@ -150,7 +150,6 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
 
                 metadataLoader.then(function(res) {
                     ctrl.resourcesMetadata[locale] = res.data;
-                    console.log(res.data);
                     var resourceLoader;
                     if(ctrl.forOrganization) {
                         resourceLoader = ResourceService.getOrganizationResource(getOrgId(), getFileName(locale));

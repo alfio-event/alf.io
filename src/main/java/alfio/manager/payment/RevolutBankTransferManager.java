@@ -18,8 +18,8 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
 import alfio.model.PaymentInformation;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketReservationWithTransaction;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
@@ -48,7 +48,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
@@ -64,7 +63,6 @@ import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
 @AllArgsConstructor
 public class RevolutBankTransferManager implements PaymentProvider, OfflineProcessor, PaymentInfo {
 
-    private static final ZoneId UTC = ZoneId.of("UTC");
     private final BankTransferManager bankTransferManager;
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
@@ -165,7 +163,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         var reservation = reservationWithTransaction.getTicketReservation();
         var transaction = reservationWithTransaction.getTransaction();
         String reservationId = reservation.getId().toLowerCase();
-        var shortReservationId = configurationManager.getShortReservationID(context.getEvent(), reservation).toLowerCase();
+        var shortReservationId = configurationManager.getShortReservationID(context.getPurchaseContext(), reservation).toLowerCase();
         String[] terms;
         if(reservation.getHasInvoiceNumber()) {
             terms = new String[] {reservation.getInvoiceNumber().toLowerCase(), shortReservationId, reservationId};
@@ -233,7 +231,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
 
     @Override
-    public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
+    public Optional<PaymentInformation> getInfo(Transaction transaction, PurchaseContext purchaseContext) {
         var metadata = transaction.getMetadata();
         if(metadata != null && metadata.containsKey("counterpartyAccountId")) {
             return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(transaction.getPriceInCents(), transaction.getCurrency()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));

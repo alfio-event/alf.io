@@ -23,6 +23,7 @@ import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
+import alfio.controller.form.EventSearchOptions;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
@@ -30,7 +31,6 @@ import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
@@ -95,16 +95,16 @@ public class EventApiV2Controller {
 
 
     @GetMapping("events")
-    public ResponseEntity<List<BasicEventInfo>> listEvents() {
+    public ResponseEntity<List<BasicEventInfo>> listEvents(EventSearchOptions eventSearchOptions) {
 
         var contentLanguages = i18nManager.getAvailableLanguages();
 
-        var events = eventManager.getPublishedEvents()
+        var events = eventManager.getPublishedEvents(eventSearchOptions)
             .stream()
             .map(e -> {
-                var messageSource = messageSourceManager.getMessageSourceForEvent(e);
+                var messageSource = messageSourceManager.getMessageSourceFor(e);
                 var formattedDates = Formatters.getFormattedDates(e, messageSource, contentLanguages);
-                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getFormat(), e.getLocation(),
+                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getTitle(), e.getFormat(), e.getLocation(),
                     e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime);
             })
@@ -142,9 +142,9 @@ public class EventApiV2Controller {
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
 
-            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), ConfigurationLevel.event(event));
+            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), event.getConfigurationLevel());
             var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
-            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+            var messageSource = messageSourceManager.getMessageSourceFor(event);
             var appliedPromoCode = promoCodeRequestManager.checkCode(event, code);
 
 
@@ -312,7 +312,7 @@ public class EventApiV2Controller {
             Optional<String> promoCodeDiscount = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getRight).map(PromoCodeDiscount::getPromoCode);
             var configurationValues = configurationManager.getFor(List.of(
                 ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
-                RECAPTCHA_API_KEY), ConfigurationLevel.event(event));
+                RECAPTCHA_API_KEY), event.getConfigurationLevel());
 
             if (isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), configurationValues)) {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
@@ -445,7 +445,7 @@ public class EventApiV2Controller {
 
     private Map<String, String> formatDynamicCodeMessage(Event event, PromoCodeDiscount promoCodeDiscount) {
         Validate.isTrue(promoCodeDiscount != null && promoCodeDiscount.getDiscountType() != PromoCodeDiscount.DiscountType.NONE);
-        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+        var messageSource = messageSourceManager.getMessageSourceFor(event);
         Map<String, String> res = new HashMap<>();
         String code;
         String amount;

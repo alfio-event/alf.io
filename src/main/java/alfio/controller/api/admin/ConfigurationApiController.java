@@ -95,16 +95,35 @@ public class ConfigurationApiController {
         return configurationManager.loadEventConfig(eventId, principal.getName());
     }
 
-    @GetMapping("/events/{eventId}/single/{key}")
-    public ResponseEntity<String> getSingleConfigForEvent(@PathVariable("eventId") int eventId,
+    @GetMapping("/events/{eventName}/single/{key}")
+    public ResponseEntity<String> getSingleConfigForEvent(@PathVariable("eventName") String eventShortName,
                                                          @PathVariable("key") String key,
                                                          Principal principal) {
 
-        String singleConfigForEvent = configurationManager.getSingleConfigForEvent(eventId, key, principal.getName());
+        var optionalEvent = eventManager.getOptionalByName(eventShortName, principal.getName());
+
+        if(optionalEvent.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        var event = optionalEvent.get();
+        String singleConfigForEvent = configurationManager.getSingleConfigForEvent(event.getId(), key, principal.getName());
         if(singleConfigForEvent == null) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(singleConfigForEvent);
+    }
+
+    @GetMapping("/organizations/{organizationId}/single/{key}")
+    public ResponseEntity<String> getSingleConfigForOrganization(@PathVariable("organizationId") int organizationId,
+                                                                 @PathVariable("key") String key,
+                                                                 Principal principal) {
+
+        String config = configurationManager.getSingleConfigForOrganization(organizationId, key, principal.getName());
+        if(config == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(config);
     }
 
     @PostMapping(value = "/organizations/{organizationId}/events/{eventId}/update")

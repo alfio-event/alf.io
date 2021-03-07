@@ -16,9 +16,10 @@
  */
 package alfio.controller.payment;
 
+import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.saferpay.PaymentPageInitializeRequestBuilder;
-import alfio.repository.EventRepository;
+import alfio.model.PurchaseContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,26 +31,27 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class SaferpayCallbackController {
 
     private final TicketReservationManager ticketReservationManager;
-    private final EventRepository eventRepository;
+    private final PurchaseContextManager purchaseContextManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.CANCEL_URL_TEMPLATE)
-    public String saferpayCancel(@PathVariable("eventName") String eventName,
+    public String saferpayCancel(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
+                                 @PathVariable("purchaseContextIdentifier") String purchaseContextIdentifier,
                                  @PathVariable("reservationId") String reservationId) {
-        var optionalEvent = eventRepository.findOptionalByShortName(eventName);
-        if(optionalEvent.isEmpty()) {
+        var maybePurchaseContext = purchaseContextManager.findBy(purchaseContextType, purchaseContextIdentifier);
+        if(maybePurchaseContext.isEmpty()) {
             return "redirect:/";
         }
-        var event = optionalEvent.get();
-        var optionalReservation = ticketReservationManager.findByIdForEvent(reservationId, event.getId());
+        var purchaseContext = maybePurchaseContext.get();
+        var optionalReservation = ticketReservationManager.findById(reservationId);
         if(optionalReservation.isEmpty()) {
-            return "redirect:/event/"+eventName;
+            return "redirect:/"+purchaseContext.getType().getUrlComponent()+"/"+purchaseContext.getPublicIdentifier();
         }
-        var optionalResult = ticketReservationManager.forceTransactionCheck(event, optionalReservation.get());
+        var optionalResult = ticketReservationManager.forceTransactionCheck(purchaseContext, optionalReservation.get());
         if(optionalResult.isEmpty()) {
             // there's no transaction available.
-            return "redirect:/event/"+eventName;
+            return "redirect:/"+purchaseContext.getType().getUrlComponent()+"/"+purchaseContext.getPublicIdentifier();
         }
         return "redirect:" + UriComponentsBuilder.fromPath(PaymentPageInitializeRequestBuilder.SUCCESS_URL_TEMPLATE)
-            .buildAndExpand(eventName, reservationId).toUriString();
+            .buildAndExpand(purchaseContext.getType().getUrlComponent(), purchaseContext.getPublicIdentifier(), reservationId).toUriString();
      }
 }

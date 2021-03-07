@@ -23,7 +23,9 @@ import alfio.manager.system.ConfigurationLevels.CategoryLevel;
 import alfio.manager.system.ConfigurationLevels.EventLevel;
 import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
 import alfio.manager.user.UserManager;
+import alfio.model.Configurable;
 import alfio.model.EventAndOrganizationId;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
@@ -288,6 +290,15 @@ public class ConfigurationManager {
         }
     }
 
+    public String getSingleConfigForOrganization(int organizationId, String keyAsString, String username) {
+        User user = userManager.findUserByUsername(username);
+        if(!userManager.isOwnerOfOrganization(user, organizationId)) {
+            return null;
+        }
+        var key = safeValueOf(keyAsString);
+        return getFirstConfigurationResult(configurationRepository.findByOrganizationAndKey(organizationId, key.name()), keyAsString);
+    }
+
     public String getSingleConfigForEvent(int eventId, String keyAsString, String username) {
         User user = userManager.findUserByUsername(username);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
@@ -296,8 +307,11 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        return configurationRepository.findByEventAndKey(organizationId, eventId, key.name())
-            .stream()
+        return getFirstConfigurationResult(configurationRepository.findByEventAndKey(organizationId, eventId, key.name()), keyAsString);
+    }
+
+    private String getFirstConfigurationResult(List<Configuration> results, String keyAsString) {
+        return Objects.requireNonNull(results).stream()
             .findFirst()
             .map(Configuration::getValue)
             .or(() -> externalConfiguration.getSingle(keyAsString).map(Configuration::getValue))
@@ -318,7 +332,7 @@ public class ConfigurationManager {
     }
 
     public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
-        return event -> getFor(Set.of(keys), ConfigurationLevel.event(event)).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault());
+        return event -> getFor(Set.of(keys), event.getConfigurationLevel()).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault());
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
@@ -427,23 +441,23 @@ public class ConfigurationManager {
             .collect(groupByCategory());
     }
 
-    public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        var conf = getFor(Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH), ConfigurationLevel.event(event));
+    public String getShortReservationID(Configurable configurable, TicketReservation reservation) {
+        var conf = getFor(Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH), configurable.getConfigurationLevel());
         if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault() && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return StringUtils.substring(reservation.getId(), 0, conf.get(PARTIAL_RESERVATION_ID_LENGTH).getValueAsIntOrDefault(8)).toUpperCase();
     }
 
-    public String getPublicReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getFor(USE_INVOICE_NUMBER_AS_ID, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault() && reservation.getHasInvoiceNumber()) {
+    public String getPublicReservationID(Configurable configurable, TicketReservation reservation) {
+        if(getFor(USE_INVOICE_NUMBER_AS_ID, configurable.getConfigurationLevel()).getValueAsBooleanOrDefault() && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return reservation.getId();
     }
 
-    public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
-        var r = getFor(Set.of(INVOICE_ADDRESS, VAT_NR), ConfigurationLevel.event(event));
+    public boolean hasAllConfigurationsForInvoice(Configurable configurable) {
+        var r = getFor(Set.of(INVOICE_ADDRESS, VAT_NR), configurable.getConfigurationLevel());
         return hasAllConfigurationsForInvoice(r);
     }
 
@@ -468,16 +482,16 @@ public class ConfigurationManager {
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
-    public boolean canGenerateReceiptOrInvoiceToCustomer(EventAndOrganizationId event) {
-        return !isItalianEInvoicingEnabled(event);
+    public boolean canGenerateReceiptOrInvoiceToCustomer(Configurable configurable) {
+        return !isItalianEInvoicingEnabled(configurable);
     }
 
     public boolean canGenerateReceiptOrInvoiceToCustomer(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
         return !isItalianEInvoicingEnabled(configurationValues);
     }
 
-    public boolean isInvoiceOnly(EventAndOrganizationId event) {
-        var res = getFor(Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
+    public boolean isInvoiceOnly(Configurable configurable) {
+        var res = getFor(Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING), configurable.getConfigurationLevel());
         return isInvoiceOnly(res);
     }
 
@@ -490,8 +504,8 @@ public class ConfigurationManager {
         return configurationValues.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault() || configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault();
     }
 
-    public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
-        var res = getFor(List.of(ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
+    public boolean isItalianEInvoicingEnabled(Configurable configurable) {
+        var res = getFor(List.of(ENABLE_ITALY_E_INVOICING), configurable.getConfigurationLevel());
         return isItalianEInvoicingEnabled(res);
     }
 
@@ -553,20 +567,23 @@ public class ConfigurationManager {
         return res;
     }
 
-    public List<PaymentMethod> getBlacklistedMethodsForReservation(EventAndOrganizationId e, Collection<Integer> categoryIds) {
-        if(categoryIds.size() > 1) {
-            Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
-            return categoryIds.stream()
-                .filter(blacklistForCategories::containsKey)
-                .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
-                .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
-                .collect(toList());
-        } else if (categoryIds.size() > 0) {
-            return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
-                .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
-                .orElse(List.of());
-        }
-        return List.of();
+    public List<PaymentMethod> getBlacklistedMethodsForReservation(PurchaseContext p, Collection<Integer> categoryIds) {
+        return p.event().map(e -> {
+            if(categoryIds.size() > 1) {
+                Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
+                return categoryIds.stream()
+                    .filter(blacklistForCategories::containsKey)
+                    .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
+                    .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
+                    .collect(toList());
+            } else if (categoryIds.size() > 0) {
+                    return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
+                        .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
+                        .orElse(List.of());
+            } else {
+                return List.<PaymentMethod>of();
+            }
+        }).orElse(List.of());
     }
 
     private static boolean toBeSaved(ConfigurationModification c) {

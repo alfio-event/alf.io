@@ -64,6 +64,10 @@ public interface PriceContainer {
         public static boolean isVatExempt(VatStatus vatStatus) {
             return vatStatus == INCLUDED_EXEMPT || vatStatus == NOT_INCLUDED_EXEMPT;
         }
+
+        public static boolean isVatIncluded(VatStatus vatStatus) {
+            return vatStatus == INCLUDED || vatStatus == INCLUDED_EXEMPT;
+        }
     }
 
     /**

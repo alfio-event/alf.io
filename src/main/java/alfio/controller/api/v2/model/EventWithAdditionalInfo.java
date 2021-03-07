@@ -16,20 +16,19 @@
  */
 package alfio.controller.api.v2.model;
 
-import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.model.Event;
 import alfio.model.Event.EventFormat;
+import alfio.model.PurchaseContext;
 import alfio.model.user.Organization;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.joda.money.CurrencyUnit;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
-public class EventWithAdditionalInfo implements DateValidity {
+public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext {
     private final Event event;
     private final String mapUrl;
     private final Organization.OrganizationContact organization;
@@ -71,6 +70,8 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     private final String customCss;
 
+    private final boolean canApplySubscriptions;
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -91,29 +92,16 @@ public class EventWithAdditionalInfo implements DateValidity {
         return availableTicketsCount;
     }
 
-    public CurrencyDescriptor getCurrencyDescriptor() {
-        if(event.isFreeOfCharge()) {
-            return null;
-        }
-        var currencyUnit = CurrencyUnit.of(event.getCurrency());
-        return new CurrencyDescriptor(currencyUnit.getCode(), currencyUnit.toCurrency().getDisplayName(), currencyUnit.getSymbol(), currencyUnit.getDecimalPlaces());
-    }
-
-    public List<Language> getContentLanguages() {
-        return event.getContentLanguages()
-            .stream()
-            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
-            .collect(Collectors.toList());
-    }
-
     public String getMapUrl() {
         return mapUrl;
     }
 
+    @Override
     public String getOrganizationName() {
         return organization.getName();
     }
 
+    @Override
     public String getOrganizationEmail() {
         return organization.getEmail();
     }
@@ -122,64 +110,79 @@ public class EventWithAdditionalInfo implements DateValidity {
         return event.getLocation();
     }
 
+    @Override
     public Map<String, String> getDescription() {
         return description;
     }
 
+    @Override
     public String getPrivacyPolicyUrl() {
         return event.getPrivacyPolicyLinkOrNull();
     }
 
+    @Override
     public String getTermsAndConditionsUrl() {
         return event.getTermsAndConditionsUrl();
     }
 
+    @Override
     public String getCurrency() {
         return event.getCurrency();
     }
 
+    @Override
     public boolean isVatIncluded() {
         return event.isVatIncluded();
     }
 
+    @Override
     public String getVat() {
         return event.getVat().toString();
     }
 
+    @Override
     public boolean isFree() {
         return event.getFree();
     }
 
+    @Override
     public String getBankAccount() {
         return bankAccount;
     }
 
+    @Override
     public List<String> getBankAccountOwner() {
         return bankAccountOwner;
     }
 
 
     // date related fields
+    @Override
     public boolean isSameDay() {
         return event.getSameDay();
     }
 
+    @Override
     public Map<String, String> getFormattedBeginDate() {
         return formattedBeginDate;
     }
 
+    @Override
     public Map<String, String> getFormattedBeginTime() {
         return formattedBeginTime;
     }
 
+    @Override
     public Map<String, String> getFormattedEndDate() {
         return formattedEndDate;
     }
 
+    @Override
     public Map<String, String> getFormattedEndTime() {
         return formattedEndTime;
     }
 
+    @Override
     public String getTimeZone() {
         return event.getTimeZone();
     }
@@ -192,14 +195,17 @@ public class EventWithAdditionalInfo implements DateValidity {
     //
 
 
+    @Override
     public InvoicingConfiguration getInvoicingConfiguration() {
         return invoicingConfiguration;
     }
 
+    @Override
     public CaptchaConfiguration getCaptchaConfiguration() {
         return captchaConfiguration;
     }
 
+    @Override
     public AssignmentConfiguration getAssignmentConfiguration() {
         return assignmentConfiguration;
     }
@@ -208,6 +214,7 @@ public class EventWithAdditionalInfo implements DateValidity {
         return promotionsConfiguration;
     }
 
+    @Override
     public AnalyticsConfiguration getAnalyticsConfiguration() {
         return analyticsConfiguration;
     }
@@ -222,6 +229,11 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     public String getCustomCss() {
         return customCss;
+    }
+
+    @Override
+    public Map<String, String> getTitle() {
+        return event.getTitle();
     }
 
     @AllArgsConstructor
@@ -259,4 +271,14 @@ public class EventWithAdditionalInfo implements DateValidity {
         private final boolean usePartnerCode;
     }
 
+    @JsonIgnore
+    @Override
+    public PurchaseContext purchaseContext() {
+        return event;
+    }
+
+    @Override
+    public boolean isCanApplySubscriptions() {
+        return canApplySubscriptions;
+    }
 }

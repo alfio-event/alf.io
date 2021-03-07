@@ -112,17 +112,17 @@ public class MessageSourceManagerIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testEventOverride() {
         ensureConfiguration();
-        assertEquals("VAT", messageSourceManager.getMessageSourceForEvent(event).getMessage("common.vat", null, Locale.ENGLISH));
+        assertEquals("VAT", messageSourceManager.getMessageSourceFor(event).getMessage("common.vat", null, Locale.ENGLISH));
 
         configurationRepository.insert("TRANSLATION_OVERRIDE", json.asJsonString(Map.of("en", Map.of("common.vat", "SYSTEM.vat"))), "");
-        assertEquals("SYSTEM.vat", messageSourceManager.getMessageSourceForEvent(event).getMessage("common.vat", null, Locale.ENGLISH));
+        assertEquals("SYSTEM.vat", messageSourceManager.getMessageSourceFor(event).getMessage("common.vat", null, Locale.ENGLISH));
 
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), "TRANSLATION_OVERRIDE", json.asJsonString(Map.of("en", Map.of("common.vat", "ORG.vat {0}"))), "");
-        assertEquals("ORG.vat 42", messageSourceManager.getMessageSourceForEvent(event).getMessage("common.vat", new String[] {"42"}, Locale.ENGLISH));
+        assertEquals("ORG.vat 42", messageSourceManager.getMessageSourceFor(event).getMessage("common.vat", new String[] {"42"}, Locale.ENGLISH));
 
 
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", json.asJsonString(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
-        assertEquals("EVENT.vat", messageSourceManager.getMessageSourceForEvent(event).getMessage("common.vat", null, Locale.ENGLISH));
+        assertEquals("EVENT.vat", messageSourceManager.getMessageSourceFor(event).getMessage("common.vat", null, Locale.ENGLISH));
     }
 
 

@@ -19,10 +19,12 @@ package alfio.model;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 public class LightweightMailMessage extends EmailMessage {
     public LightweightMailMessage(@Column("id") int id,
-                        @Column("event_id") int eventId,
+                        @Column("event_id") Integer eventId,
+                        @Column("subscription_descriptor_id_fk") UUID subscriptionDescriptorId,
                         @Column("status") String status,
                         @Column("recipient") String recipient,
                         @Column("subject") String subject,
@@ -31,7 +33,22 @@ public class LightweightMailMessage extends EmailMessage {
                         @Column("request_ts") ZonedDateTime requestTimestamp,
                         @Column("sent_ts") ZonedDateTime sentTimestamp,
                         @Column("attempts") int attempts,
-                        @Column("email_cc") String cc) {
-        super(id, eventId, status, recipient, subject, message, null, null, checksum, requestTimestamp, sentTimestamp, attempts, cc);
+                        @Column("email_cc") String cc,
+                        @Column("organization_id_fk") int organizationId) {
+        super(id,
+            eventId,
+            subscriptionDescriptorId,
+            status,
+            recipient,
+            subject,
+            message,
+            null,
+            null,
+            checksum,
+            requestTimestamp,
+            sentTimestamp,
+            attempts,
+            cc,
+            organizationId);
     }
 }

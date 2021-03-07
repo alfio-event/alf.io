@@ -113,7 +113,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock()).plusHours(1)),
-                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, List.of(PaymentProxy.ON_SITE), categories, false, new LocationDescriptor("","","",""), 7, null, null, AlfioMetadata.empty());
+                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, List.of(PaymentProxy.ON_SITE), categories, false, new LocationDescriptor("","","",""), 7, null, null, AlfioMetadata.empty(), List.of());
         eventManager.createEvent(em, username);
         return Pair.of(eventManager.getSingleEvent(eventName, username), username);
     }

@@ -20,6 +20,7 @@ import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Assert;
 
+import java.math.BigInteger;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -28,42 +29,55 @@ public class PinGenerator {
 
     private static final String ALLOWED_CHARS = "ACDEFGHJKLMNPQRTUVWXY34679";
     private static final Pattern VALIDATION_PATTERN = Pattern.compile("^["+ALLOWED_CHARS+"]+$");
-    static final int UUID_PORTION_LENGTH = 7;
     private static final int PIN_LENGTH = 6;
 
-    public static String uuidToPin(String uuid) {
-        long src = Long.parseLong(uuid.replace("-", "").substring(0, UUID_PORTION_LENGTH), 16);
-        long chars = ALLOWED_CHARS.length();
+
+    public static String uuidToPin(String uuid, int pinLength) {
+        var src = new BigInteger(uuid.replace("-", "").substring(0, pinLength+1), 16);
+        var chars = BigInteger.valueOf(ALLOWED_CHARS.length());
         var pin = new StringBuilder();
         do {
-            long remainder = src % chars;
-            pin.append(ALLOWED_CHARS.charAt((int)remainder));
-            src /= chars;
-        } while (src != 0);
+            var remainder = src.mod(chars);
+            pin.append(ALLOWED_CHARS.charAt(remainder.intValue()));
+            src = src.divide(chars);
+        } while (!src.equals(BigInteger.ZERO));
 
-        while(pin.length() < PIN_LENGTH) {
+        while(pin.length() < pinLength) {
             pin.append(ALLOWED_CHARS.charAt(0));
         }
 
         return pin.reverse().toString();
     }
 
-    public static String pinToPartialUuid(String pin) {
-        Assert.isTrue(isPinValid(pin), "the given PIN is not valid");
+    public static String pinToPartialUuid(String pin, int pinLength) {
+        Assert.isTrue(isPinValid(pin, pinLength), "the given PIN is not valid");
         var uppercasePin = Objects.requireNonNull(pin).strip().toUpperCase();
-        long base = ALLOWED_CHARS.length();
-        long num = 0;
+        var base = BigInteger.valueOf(ALLOWED_CHARS.length());
+        var num = BigInteger.ZERO;
         for (int i = 0; i < pin.length(); i++) {
             char c = uppercasePin.charAt(pin.length() - 1 - i);
-            num += (long) ALLOWED_CHARS.indexOf(c) * (long) Math.pow(base, i);
+            var toAdd = BigInteger.valueOf(ALLOWED_CHARS.indexOf(c)).multiply(base.pow(i));
+            num = num.add(toAdd);
         }
-        return StringUtils.leftPad(Long.toHexString(num), UUID_PORTION_LENGTH, '0');
+        return StringUtils.leftPad(num.toString(16), pinLength+1, '0');
+    }
+
+    public static boolean isPinValid(String pin, int pinLength) {
+        return pin != null
+            && (pin.strip().length() == pinLength || pin.strip().length() == pinLength + 1)
+            && VALIDATION_PATTERN.matcher(pin.toUpperCase()).matches();
+    }
+
+    public static String uuidToPin(String uuid) {
+        return uuidToPin(uuid, PIN_LENGTH);
+    }
+
+    public static String pinToPartialUuid(String pin) {
+        return pinToPartialUuid(pin, PIN_LENGTH);
     }
 
     public static boolean isPinValid(String pin) {
-        return pin != null
-            && pin.strip().length() == PIN_LENGTH
-            && VALIDATION_PATTERN.matcher(pin.toUpperCase()).matches();
+        return isPinValid(pin, PIN_LENGTH);
     }
 
 }

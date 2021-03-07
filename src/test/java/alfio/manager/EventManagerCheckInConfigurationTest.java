@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.repository.SubscriptionRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,7 @@ class EventManagerCheckInConfigurationTest {
         when(event.getOrganizationId()).thenReturn(1);
         configurationManager = mock(ConfigurationManager.class);
         configurationRepository = mock(ConfigurationRepository.class);
-        eventManager = new EventManager(null, null, null, null, null, null, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, null, configurationRepository, null, TestUtil.clockProvider());
+        eventManager = new EventManager(null, null, null, null, null, null, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, null, configurationRepository, null, TestUtil.clockProvider(), mock(SubscriptionRepository.class));
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         configuration = mock(ConfigurationManager.MaybeConfiguration.class);
         when(configurationManager.getFor(eq(CHECK_IN_COLOR_CONFIGURATION), any())).thenReturn(configuration);

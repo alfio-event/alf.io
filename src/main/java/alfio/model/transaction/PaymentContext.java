@@ -17,15 +17,14 @@
 package alfio.model.transaction;
 
 import alfio.manager.system.ConfigurationLevel;
-import alfio.model.BillingDetails;
 import alfio.model.Event;
-import lombok.Data;
+import alfio.model.PurchaseContext;
 
 import java.util.Optional;
 
 public class PaymentContext {
 
-    private final Event event;
+    private final PurchaseContext purchaseContext;
     private final String reservationId;
     private final ConfigurationLevel configurationLevel;
 
@@ -33,30 +32,30 @@ public class PaymentContext {
         this(null, ConfigurationLevel.system());
     }
 
-    public PaymentContext(Event event) {
-        this(event, ConfigurationLevel.event(event));
+    public PaymentContext(PurchaseContext purchaseContext) {
+        this(purchaseContext, purchaseContext.getConfigurationLevel());
     }
 
-    public PaymentContext(Event event, String reservationId) {
-        this(event, ConfigurationLevel.event(event), reservationId);
+    public PaymentContext(PurchaseContext purchaseContext, String reservationId) {
+        this(purchaseContext, purchaseContext.getConfigurationLevel(), reservationId);
     }
 
-    public PaymentContext(Event event, ConfigurationLevel configurationLevel) {
-        this(event, configurationLevel, null);
+    public PaymentContext(PurchaseContext purchaseContext, ConfigurationLevel configurationLevel) {
+        this(purchaseContext, configurationLevel, null);
     }
 
-    public PaymentContext(Event event, ConfigurationLevel configurationLevel, String reservationId) {
-        this.event = event;
+    public PaymentContext(PurchaseContext purchaseContext, ConfigurationLevel configurationLevel, String reservationId) {
+        this.purchaseContext = purchaseContext;
         this.configurationLevel = configurationLevel;
         this.reservationId = reservationId;
     }
 
     /**
-     * The {@link Event} on which this configuration refers to
-     * @return Event, or null
+     * The {@link PurchaseContext} on which this configuration refers to
+     * @return PurchaseContext, or null
      */
-    public Event getEvent() {
-        return event;
+    public PurchaseContext getPurchaseContext() {
+        return purchaseContext;
     }
 
     public Optional<String> getReservationId() {
@@ -65,5 +64,9 @@ public class PaymentContext {
 
     public ConfigurationLevel getConfigurationLevel() {
         return configurationLevel;
+    }
+
+    public boolean isOnline() {
+        return purchaseContext.event().map(Event::isOnline).orElse(true);
     }
 }

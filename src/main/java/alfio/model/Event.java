@@ -31,17 +31,14 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 
 @Getter
 @Log4j2
-public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo, EventTimeZoneInfo {
+public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo, PurchaseContext {
 
     private static final String VERSION_FOR_FIRST_AND_LAST_NAME = "15.1.8.8";
 
@@ -146,6 +143,16 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         this.status = status;
     }
 
+    @Override
+    public Map<String, String> getTitle() {
+        return buildTitle(displayName, locales);
+    }
+
+    static Map<String, String> buildTitle(String displayName, int locales) {
+        return ContentLanguage.findAllFor(locales).stream()
+            .collect(Collectors.toMap(cl -> cl.getLocale().getLanguage(), cl -> displayName));
+    }
+
     public BigDecimal getRegularPrice() {
         return MonetaryUtil.centsToUnit(srcPriceCts, currency);
     }
@@ -197,6 +204,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         return timeZone;
     }
 
+    @Override
     public boolean isFreeOfCharge() {
         return srcPriceCts == 0;
     }
@@ -274,5 +282,21 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
 
     public boolean getIsOnline() {
         return format == EventFormat.ONLINE;
+    }
+
+    @Override
+    public String getPublicIdentifier() {
+        return getShortName();
+    }
+
+    @Override
+    public PurchaseContextType getType() {
+        return PurchaseContextType.event;
+    }
+
+    @Override
+    @JsonIgnore
+    public Optional<Event> event() {
+        return Optional.of(this);
     }
 }

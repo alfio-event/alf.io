@@ -18,6 +18,7 @@ package alfio.manager.payment.saferpay;
 
 import alfio.manager.payment.PaymentSpecification;
 import alfio.model.Event;
+import alfio.model.PurchaseContext;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,9 +42,10 @@ class PaymentPageInitializeBuilderTest {
     @BeforeEach
     public void init() {
         System.out.println("init");
-        when(paymentSpecification.getEvent()).thenReturn(event);
+        when(paymentSpecification.getPurchaseContext()).thenReturn(event);
         when(paymentSpecification.getReservationId()).thenReturn("reservationId");
-        when(event.getShortName()).thenReturn("shortName");
+        when(event.getPublicIdentifier()).thenReturn("shortName");
+        when(event.getType()).thenReturn(PurchaseContext.PurchaseContextType.event);
     }
 
     @Test
@@ -76,7 +78,7 @@ class PaymentPageInitializeBuilderTest {
         // Notifications
         var notification = parsedJson.get("Notification").getAsJsonObject();
         assertNotNull(notification);
-        assertEquals("http://localhost/api/payment/webhook/saferpay/event/shortName/reservation/reservationId/success", notification.get("NotifyUrl").getAsString());
+        assertEquals("http://localhost/api/payment/webhook/saferpay/reservation/reservationId/success", notification.get("NotifyUrl").getAsString());
 
         // payment methods
         var paymentMethods = parsedJson.get("PaymentMethods").getAsJsonArray();

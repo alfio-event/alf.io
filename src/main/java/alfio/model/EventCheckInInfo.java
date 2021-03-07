@@ -18,7 +18,7 @@ package alfio.model;
 
 import java.time.ZonedDateTime;
 
-public interface EventCheckInInfo extends EventTimeZoneInfo {
+public interface EventCheckInInfo extends TimeZoneInfo {
 
     int getId();
     String getPrivateKey();

@@ -20,6 +20,7 @@ import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.repository.EventRepository;
+import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketCategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,7 @@ public class EventManagerCategoriesTest {
         EventRepository eventRepository = mock(EventRepository.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(eventId);
-        eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, clockProvider());
+        eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, clockProvider(), mock(SubscriptionRepository.class));
         when(eventRepository.countExistingTickets(0)).thenReturn(availableSeats);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
     }

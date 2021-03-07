@@ -17,8 +17,8 @@
 package alfio.manager;
 
 import alfio.config.Initializer;
+import alfio.controller.form.EventSearchOptions;
 import alfio.manager.support.CategoryEvaluator;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -115,6 +115,7 @@ public class EventManager {
     private final ConfigurationRepository configurationRepository;
     private final PaymentManager paymentManager;
     private final ClockProvider clockProvider;
+    private final SubscriptionRepository subscriptionRepository;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -196,10 +197,24 @@ public class EventManager {
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
+        createSubscriptionLinks(eventId, organization.getId(), em);
         extensionManager.handleEventCreation(event);
         var eventMetadata = extensionManager.handleMetadataUpdate(event, organization, AlfioMetadata.empty());
         if(eventMetadata != null) {
             eventRepository.updateMetadata(eventMetadata, eventId);
+        }
+    }
+
+    private void createSubscriptionLinks(int eventId, int organizationId, EventModification em) {
+        if(CollectionUtils.isNotEmpty(em.getLinkedSubscriptions())) {
+            var parameters = em.getLinkedSubscriptions().stream()
+                .map(id -> new MapSqlParameterSource("eventId", eventId)
+                    .addValue("subscriptionId", id)
+                    .addValue("pricePerTicket", 0)
+                    .addValue("organizationId", organizationId))
+                .toArray(MapSqlParameterSource[]::new);
+            var result = jdbcTemplate.batchUpdate(SubscriptionRepository.INSERT_SUBSCRIPTION_LINK, parameters);
+            Validate.isTrue(Arrays.stream(result).allMatch(r -> r == 1), "Cannot link subscription");
         }
     }
 
@@ -371,6 +386,16 @@ public class EventManager {
                 int invalidatedTickets = ticketRepository.invalidateTickets(ids);
                 Validate.isTrue(ids.size() == invalidatedTickets, String.format("error during ticket invalidation: expected %d, got %d", ids.size(), invalidatedTickets));
             }
+        }
+        int organizationId = original.getOrganizationId();
+        if(CollectionUtils.isNotEmpty(em.getLinkedSubscriptions())) {
+            int removed = subscriptionRepository.removeStaleSubscriptions(eventId, organizationId, em.getLinkedSubscriptions());
+            log.trace("removed {} subscription links", removed);
+            createSubscriptionLinks(eventId, organizationId, em);
+        } else if (em.getLinkedSubscriptions() != null) {
+            // the user removed all the subscriptions
+            int removed = subscriptionRepository.removeAllSubscriptionsForEvent(eventId, organizationId);
+            log.trace("removed all subscription links ({}) for event {}", removed, eventId);
         }
     }
 
@@ -940,7 +965,7 @@ public class EventManager {
     }
 
     public String getEventUrl(Event event) {
-        var baseUrl = configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
+        var baseUrl = configurationManager.getFor(ConfigurationKeys.BASE_URL, event.getConfigurationLevel()).getRequiredValue();
         return StringUtils.removeEnd(baseUrl, "/") + "/event/" + event.getShortName() + "/";
     }
 
@@ -950,8 +975,10 @@ public class EventManager {
         return ticketRepository.findAllConfirmedForCSV(event.getId());
     }
 
-    public List<Event> getPublishedEvents() {
-        return getActiveEventsStream().filter(e -> e.getStatus() == Event.Status.PUBLIC).collect(toList());
+    public List<Event> getPublishedEvents(EventSearchOptions searchOptions) {
+        return eventRepository.findVisibleBySearchOptions(searchOptions.getSubscriptionCodeUUIDOrNull(),
+            searchOptions.getOrganizer(),
+            searchOptions.getTags());
     }
 
     public List<Event> getActiveEvents() {

@@ -90,7 +90,7 @@ public class WaitingQueueManagerTest {
         when(event.getId()).thenReturn(eventId);
         when(event.now(any(ClockProvider.class))).thenCallRealMethod();
         manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, notificationManager, templateManager, messageSourceManager, organizationRepository, eventRepository, extensionManager, TestUtil.clockProvider());
-        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
     }
 

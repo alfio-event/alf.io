@@ -36,7 +36,7 @@ public class BillingDocument {
     }
 
     private final long id;
-    private final int eventId;
+    private final Integer eventId;
     private final String number;
     private final String reservationId;
     private final Type type;
@@ -46,7 +46,7 @@ public class BillingDocument {
     private final String externalId;
 
     public BillingDocument(@Column("id") long id,
-                           @Column("event_id_fk") int eventId,
+                           @Column("event_id_fk") Integer eventId,
                            @Column("reservation_id_fk") String reservationId,
                            @Column("number") String number,
                            @Column("type") Type type,
