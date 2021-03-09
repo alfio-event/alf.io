@@ -133,6 +133,10 @@ public class TemplateManager {
 
     private Map<String, Object> modelEnricher(Map<String, Object> model, PurchaseContext purchaseContext, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
+        if(!toEnrich.containsKey("purchaseContext")) {
+            // this is necessary to support older model format
+            toEnrich.put("purchaseContext", purchaseContext);
+        }
         toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("common.vat", null, locale));
         return toEnrich;
     }

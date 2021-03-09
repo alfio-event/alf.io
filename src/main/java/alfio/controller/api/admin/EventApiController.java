@@ -31,6 +31,7 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -713,7 +714,7 @@ public class EventApiController {
                         fields.add(StringUtils.trimToEmpty((String) orderSummary.get("totalVAT")));
                         fields.add(StringUtils.trimToEmpty((String) orderSummary.get("totalPrice")));
                         fields.add(reservation.getCurrencyCode());
-                        fields.add(reservation.getPaymentMethod().name());
+                        fields.add(Objects.requireNonNullElse(reservation.getPaymentMethod(), PaymentProxy.NONE).name());
                         fields.add(bd.getGenerationTimestamp().withZoneSameInstant(event.getZoneId()).format(formatter));
                         return fields.toArray(String[]::new);
                     });
