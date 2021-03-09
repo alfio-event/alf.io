@@ -204,7 +204,7 @@ public final class EventUtil {
             .queryParam("ctz", event.getTimeZone())
             .queryParam("text", event.getDisplayName())
             .queryParam("location", event.getLocation())
-            .queryParam("detail", description)
+            .queryParam("details", description)
             .toUriString();
     }
 
