@@ -33,6 +33,7 @@ import java.util.UUID;
 public class SubscriptionDescriptorWithStatistics {
 
     private final int soldCount;
+    private final int pendingCount;
     private final int linkedEventsCount;
     private final int reservationsCount;
     private final SubscriptionDescriptor descriptor;
@@ -69,10 +70,12 @@ public class SubscriptionDescriptorWithStatistics {
         @Column("sd_time_zone") String timeZone,
 
 
+        @Column("s_pending_count") int pendingCount,
         @Column("s_sold_count") int soldCount,
         @Column("s_reservations_count") int reservationsCount,
         @Column("s_events_count") int linkedEventsCount) {
 
+        this.pendingCount = pendingCount;
         this.soldCount = soldCount;
         this.linkedEventsCount = linkedEventsCount;
         this.reservationsCount = reservationsCount;
@@ -106,5 +109,12 @@ public class SubscriptionDescriptorWithStatistics {
 
     public BigDecimal getUnitPrice() {
         return MonetaryUtil.centsToUnit(descriptor.getPrice(), descriptor.getCurrency());
+    }
+
+    public int getAvailableCount() {
+        if(descriptor.getMaxAvailable() > 0) {
+            return Math.max(0, descriptor.getMaxAvailable() - soldCount - pendingCount);
+        }
+        return 0;
     }
 }

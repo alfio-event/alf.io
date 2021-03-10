@@ -2,6 +2,13 @@
     <div class="text-right wMarginBottom30px" data-ng-if="$ctrl.subscriptions.length > 1">
         <a class="btn btn-success" ui-sref="^.new({organizationId: $ctrl.organizationId})"><i class="fa fa-plus"></i> add new</a>
     </div>
+    <script type="text/ng-template" id="subscriptionStats.html">
+        <ul class="list-unstyled">
+            <li ng-if="subscription.soldCount > 0"><span class="text-left">Sold</span><span class="text-right pull-right" style="margin-left: 10px">{{subscription.soldCount}}</span></li>
+            <li ng-if="subscription.pendingCount > 0"><span class="text-left">Pending</span><span class="text-right pull-right" style="margin-left: 10px">{{subscription.pendingCount}}</span></li>
+            <li ng-if="subscription.availableCount > 0"><span class="text-left">Still Available</span><span class="text-right pull-right" style="margin-left: 10px">{{subscription.availableCount}}</span></li>
+        </ul>
+    </script>
     <div class="panel panel-default" data-ng-repeat="subscription in $ctrl.subscriptions"
          id="subscription-{{subscription.descriptor.id}}">
         <div class="panel-heading">
@@ -11,8 +18,10 @@
                         <div class="category-name">{{$ctrl.firstTranslation(subscription.descriptor.titleAsText)}}</div>
                     </div>
                     <div class="hidden-xs hidden-sm col-md-4">
-                        <uib-progress ng-if="subscription.descriptor.maxAvailable > 0" max="subscription.descriptor.maxAvailable" tooltip-popup-close-delay="500">
+                        <uib-progress ng-if="subscription.descriptor.maxAvailable > 0" max="subscription.descriptor.maxAvailable" uib-tooltip-template="'subscriptionStats.html'">
                             <uib-bar value="subscription.soldCount" type="success"><span>{{subscription.soldCount}}</span></uib-bar>
+                            <uib-bar ng-if="subscription.pendingCount > 0" value="subscription.pendingCount" type="warning"><span>{{subscription.pendingCount}}</span></uib-bar>
+                            <uib-bar value="subscription.availableCount" type="primary"><span>{{subscription.availableCount}}</span></uib-bar>
                         </uib-progress>
                         <div ng-if="subscription.descriptor.maxAvailable == -1" class="category-name">
                             sold: {{subscription.soldCount}}
