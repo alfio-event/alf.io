@@ -719,7 +719,7 @@ public class ReservationApiV2Controller {
             if (bindingResult.hasErrors()) {
                 return false;
             }
-            return ticketReservationManager.applySubscriptionCode(et.getRight(), subscriptionId, reservationCodeForm.getAmount());
+            return ticketReservationManager.applySubscriptionCode(((Event)et.getLeft()).getId(), et.getRight(), subscriptionDescriptor, subscriptionId);
         }).orElse(false);
         return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, res));
     }

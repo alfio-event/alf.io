@@ -99,6 +99,7 @@ import static alfio.model.Audit.EventType.*;
 import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
+import static alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.*;
 import static alfio.util.Wrappers.optionally;
@@ -2644,15 +2645,18 @@ public class TicketReservationManager {
         }
     }
 
-    public boolean applySubscriptionCode(TicketReservation reservation, UUID subscriptionId, int amount) throws SubscriptionUsageExceeded, SubscriptionUsageExceededForEvent {
+    public boolean applySubscriptionCode(int eventId,
+                                         TicketReservation reservation,
+                                         SubscriptionDescriptor subscriptionDescriptor,
+                                         UUID subscriptionId) throws SubscriptionUsageExceeded, SubscriptionUsageExceededForEvent {
 
         log.trace("entering applySubscription {}", subscriptionId);
 
         if (ticketReservationRepository.hasSubscriptionApplied(reservation.getId())) {
             return false;
         }
+        // reload and lock subscription
         Subscription subscription = subscriptionRepository.findSubscriptionByIdForUpdate(subscriptionId);
-        var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
 
         if (!subscription.isValid(subscriptionDescriptor)) {
             return false;
@@ -2660,6 +2664,24 @@ public class TicketReservationManager {
         try {
             log.trace("applying subscription {} to reservation {}", subscriptionId, reservation.getId());
             ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
+            // subscription has been applied at reservation level, we now have to find how many tickets we can update
+            int limit;
+            Integer eventIdToFilter = null;
+            if(subscriptionDescriptor.getUsageType() == ONCE_PER_EVENT) {
+                limit = 1;
+                eventIdToFilter = eventId;
+            } else if(subscription.getMaxEntries() > -1) {
+                limit = subscription.getMaxEntries();
+            } else {
+                // otherwise the sky's the limit
+                limit = Integer.MAX_VALUE;
+            }
+            int countExisting = ticketRepository.countSubscriptionUsage(subscriptionId, eventIdToFilter);
+            if(countExisting >= limit) {
+                return false;
+            }
+            int count = ticketRepository.applySubscriptionToTicketsInReservation(reservation.getId(), subscriptionId, limit - countExisting);
+            log.trace("Applied subscription {} to {} tickets for reservation {}", subscriptionId, count, reservation.getId());
         } catch(UncategorizedSQLException sqlException) {
             log.trace("got exception while trying to apply SubscriptionID {} to ReservationID {}", subscriptionId, reservation.getId());
             throw SqlUtils.findServerError(sqlException)

@@ -15,6 +15,7 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
+-- add max entries per subscription
 alter table subscription
     add column max_entries integer not null default -1,
     drop column usage_count;
@@ -22,6 +23,20 @@ alter table subscription
 with sd as (select id, max_entries from subscription_descriptor)
 update subscription set max_entries = sd.max_entries from sd where status > 'FREE' and subscription_descriptor_fk = sd.id;
 
+-- add subscription_id_fk at ticket level as well, so that we can understand which tickets have been acquired using a subscription
+alter table ticket add column subscription_id_fk uuid constraint ticket_subscription_applied references subscription(id);
+create index idx_ticket_subscription_id_fk on ticket(subscription_id_fk) where ticket.subscription_id_fk is not null;
+
+-- migrate existing subscription applications to tickets
+with cheaper_ticket_per_reservation as (
+    select (select id from ticket where ticket.tickets_reservation_id = tr.id order by ticket.final_price_cts limit 1) as id, tr.subscription_id_fk
+        from ticket t
+        join tickets_reservation tr on t.tickets_reservation_id = tr.id
+    where tr.subscription_id_fk is not null
+)
+update ticket set subscription_id_fk = cheaper_ticket_per_reservation.subscription_id_fk from cheaper_ticket_per_reservation where ticket.id = cheaper_ticket_per_reservation.id;
+
+-- add validation when applying subscription
 CREATE OR REPLACE FUNCTION trf_check_subscription_usage()
     RETURNS TRIGGER AS
 $body$
@@ -39,19 +54,19 @@ BEGIN
         single_entry_for_event = definition.single_entry;
         IF (max_allowed > 0 or definition.single_entry) THEN
             -- serialize by locking all reservations for the same subscription
-            PERFORM * from tickets_reservation where subscription_id_fk = NEW.subscription_id_fk for update;
+            PERFORM * from ticket where subscription_id_fk = NEW.subscription_id_fk for update;
             IF (max_allowed > 0) THEN
                 -- subscription has a max_entries limit. Check if the max number has been reached
-                r_count = (select count(*) from tickets_reservation where subscription_id_fk = NEW.subscription_id_fk);
+                r_count = (select count(*) from ticket where subscription_id_fk = NEW.subscription_id_fk);
                 IF (r_count > max_allowed) THEN
                     raise 'MAX_ENTRIES_OVERAGE' USING DETAIL = ('{ "allowed": ' || max_allowed || ', "requested": '|| r_count || '}');
                 END IF;
             END IF;
             IF single_entry_for_event THEN
                 -- subscription can be used only once per event
-                r_count = (select count(*) from tickets_reservation
+                r_count = (select count(*) from ticket
                     where subscription_id_fk = NEW.subscription_id_fk
-                    and event_id_fk = NEW.event_id_fk and status <> 'CANCELLED');
+                    and event_id = NEW.event_id);
                 IF (r_count > 1) THEN
                     raise 'ONCE_PER_EVENT_OVERAGE' USING DETAIL = ('{ "allowed": 1, "requested": '|| r_count || '}');
                 END IF;
@@ -64,6 +79,6 @@ $body$
     LANGUAGE plpgsql;
 
 CREATE TRIGGER tr_check_subscription_usage
-    AFTER UPDATE OF subscription_id_fk ON tickets_reservation
+    AFTER UPDATE OF subscription_id_fk ON ticket
     FOR EACH ROW EXECUTE PROCEDURE trf_check_subscription_usage();
 

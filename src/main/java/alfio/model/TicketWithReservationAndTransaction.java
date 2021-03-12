@@ -25,10 +25,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Getter
 public class TicketWithReservationAndTransaction {
@@ -62,6 +59,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("t_ext_reference") String extReference,
                                                @Column("t_currency_code") String currencyCode,
                                                @Column("t_tags") @Array List<String> ticketTags,
+                                               @Column("t_subscription_id") UUID ticketSubscriptionId,
                                                //
                                                @Column("tr_id") String trId,
                                                @Column("tr_event_id") int eventId,
@@ -127,7 +125,7 @@ public class TicketWithReservationAndTransaction {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
             fullName, firstName, lastName, email, lockedAssignment, userLanguage,
-            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode, ticketTags) : null;
+            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode, ticketTags, ticketSubscriptionId) : null;
 
 
         this.ticketReservation = new TicketReservation(trId, validity, trStatus,

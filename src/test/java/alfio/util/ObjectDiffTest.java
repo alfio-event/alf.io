@@ -33,12 +33,12 @@ public class ObjectDiffTest {
     Ticket preUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.ACQUIRED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",
         false, "en",
-        0,  0, 0, 0, null, null, List.of());
+        0,  0, 0, 0, null, null, List.of(), null);
 
     Ticket postUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.CANCELLED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",
         false, "en",
-        0,  0, 0, 0, null, null, List.of());
+        0,  0, 0, 0, null, null, List.of(), null);
 
     @Test
     public void diffMapTest() {

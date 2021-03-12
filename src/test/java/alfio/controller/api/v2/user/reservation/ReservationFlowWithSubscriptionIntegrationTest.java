@@ -43,6 +43,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.UploadBase64FileModification;
+import alfio.model.subscription.MaxEntriesOverageDetails;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionUsageExceeded;
 import alfio.model.subscription.SubscriptionUsageExceededForEvent;
@@ -53,12 +54,15 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
+import alfio.util.Json;
+import alfio.util.SqlUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -233,33 +237,54 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     @Test
     public void inPersonEventWithSubscriptionUsingID() {
         var modifiedContext = new ReservationFlowContext(context.event, context.userId, context.subscriptionId, null);
-        super.testAddSubscription(modifiedContext);
+        super.testAddSubscription(modifiedContext, 1);
     }
 
     @Test
     public void inPersonEventWithSubscriptionUsingPin() {
-        super.testAddSubscription(context);
+        super.testAddSubscription(context, 1);
     }
 
     @Test
     public void triggerMaxSubscriptionPerEvent() {
-        super.testAddSubscription(context);
+        super.testAddSubscription(context, 1);
         var params = Map.of("subscriptionId", context.subscriptionId, "eventId", context.event.getId());
         assertEquals(1, jdbcTemplate.queryForObject("select count(*) from tickets_reservation where subscription_id_fk = :subscriptionId and event_id_fk = :eventId", params, Integer.class));
-        var exception = assertThrows(SubscriptionUsageExceededForEvent.class, () -> super.testAddSubscription(context));
-        assertEquals(1, exception.getAllowed());
-        assertEquals(2, exception.getRequested());
+        int ticketId = ticketRepository.findFreeByEventId(context.event.getId()).get(0).getId();
+        var exception = assertThrows(UncategorizedSQLException.class, () -> jdbcTemplate.update("update ticket set subscription_id_fk = :subscriptionId where id = :id", Map.of("subscriptionId", context.subscriptionId, "id", ticketId)));
+        var serverError = SqlUtils.findServerError(exception);
+        assertTrue(serverError.isPresent());
+        assertEquals(SubscriptionUsageExceededForEvent.ERROR, serverError.get().getMessage());
+        assertNotNull(serverError.get().getDetail());
+        var detail = Json.fromJson(serverError.get().getDetail(), MaxEntriesOverageDetails.class);
+        assertEquals(1, detail.getAllowed());
+        assertEquals(2, detail.getRequested());
     }
 
     @Test
     public void triggerMaxUsage() {
         assertEquals(2, subscriptionRepository.findSubscriptionById(context.subscriptionId).getMaxEntries());
         jdbcTemplate.update("update subscription set max_entries = 1 where id = :id::uuid", Map.of("id", context.subscriptionId));
-        super.testAddSubscription(context);
+        super.testAddSubscription(context, 1);
         var params = Map.of("subscriptionId", context.subscriptionId, "eventId", context.event.getId());
         assertEquals(1, jdbcTemplate.queryForObject("select count(*) from tickets_reservation where subscription_id_fk = :subscriptionId and event_id_fk = :eventId", params, Integer.class));
-        var exception = assertThrows(SubscriptionUsageExceeded.class, () -> super.testAddSubscription(context));
-        assertEquals(1, exception.getAllowed());
-        assertEquals(2, exception.getRequested());
+        int ticketId = ticketRepository.findFreeByEventId(context.event.getId()).get(0).getId();
+        var exception = assertThrows(UncategorizedSQLException.class, () -> jdbcTemplate.update("update ticket set subscription_id_fk = :subscriptionId where id = :id", Map.of("subscriptionId", context.subscriptionId, "id", ticketId)));
+        var serverError = SqlUtils.findServerError(exception);
+        assertTrue(serverError.isPresent());
+        assertEquals(SubscriptionUsageExceeded.ERROR, serverError.get().getMessage());
+        assertNotNull(serverError.get().getDetail());
+        var detail = Json.fromJson(serverError.get().getDetail(), MaxEntriesOverageDetails.class);
+        assertEquals(1, detail.getAllowed());
+        assertEquals(2, detail.getRequested());
+    }
+
+    @Test
+    void useSubscriptionToBuyMultipleTickets() {
+        var subscriptionById = subscriptionRepository.findDescriptorBySubscriptionId(context.subscriptionId);
+        assertEquals(2, subscriptionById.getMaxEntries());
+        assertEquals(SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT, subscriptionById.getUsageType());
+        jdbcTemplate.update("update subscription_descriptor set usage_type = 'UNLIMITED' where id = :id", Map.of("id", subscriptionById.getId()));
+        super.testAddSubscription(context, 2);
     }
 }

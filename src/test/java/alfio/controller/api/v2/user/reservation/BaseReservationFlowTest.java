@@ -1168,10 +1168,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         return ticketwc;
     }
 
-    protected void testAddSubscription(ReservationFlowContext context) {
+    protected void testAddSubscription(ReservationFlowContext context, int numberOfTickets) {
         var form = new ReservationForm();
         var ticketReservation = new TicketReservationModification();
-        ticketReservation.setAmount(1);
+        ticketReservation.setAmount(numberOfTickets);
         var categoriesResponse = eventApiV2Controller.getTicketCategories(context.event.getShortName(), null);
         assertTrue(categoriesResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(categoriesResponse.getBody());
@@ -1193,7 +1193,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertNotNull(reservation);
         assertEquals(reservationId, reservation.getId());
         assertEquals(1, reservation.getTicketsByCategory().size());
-        assertEquals(1, reservation.getTicketsByCategory().get(0).getTickets().size());
+        assertEquals(numberOfTickets, reservation.getTicketsByCategory().get(0).getTickets().size());
 
         var contactForm = new ContactAndTicketsForm();
 
@@ -1204,13 +1204,18 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         contactForm.setFirstName("full");
         contactForm.setLastName("name");
 
-        var ticketForm = new UpdateTicketOwnerForm();
-        ticketForm.setFirstName("ticketfull");
-        ticketForm.setLastName("ticketname");
-        ticketForm.setEmail("tickettest@test.com");
-        contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).getTickets().get(0).getUuid(), ticketForm));
-        ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+        var tickets = reservation.getTicketsByCategory().get(0).getTickets().stream()
+            .map(t -> {
+                var ticketForm = new UpdateTicketOwnerForm();
+                ticketForm.setFirstName("ticketfull");
+                ticketForm.setLastName("ticketname");
+                ticketForm.setEmail("tickettest@test.com");
+                ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+                return Map.entry(t.getUuid(), ticketForm);
+            })
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        contactForm.setTickets(tickets);
         var overviewRes = reservationApiV2Controller.validateToOverview(reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
         assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);

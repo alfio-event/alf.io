@@ -292,7 +292,7 @@ public enum TemplateResource {
     private static Ticket sampleTicket(String firstName, String lastName, String email, ZoneId zoneId) {
         return new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)), 0, "ACQUIRED", 0,
             "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", firstName + " " + lastName, firstName, lastName, email, false, "en",
-            1000, 1000, 80, 0, null, "CHF", List.of());
+            1000, 1000, 80, 0, null, "CHF", List.of(), null);
     }
 
     private static TicketReservation sampleTicketReservation(ZoneId zoneId) {

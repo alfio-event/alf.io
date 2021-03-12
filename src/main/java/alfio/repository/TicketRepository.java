@@ -213,7 +213,7 @@ public interface TicketRepository {
         " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
         " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
         " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
-        " t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, t.tags t_tags, " +
+        " t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, t.tags t_tags, t.subscription_id_fk t_subscription_id, " +
         " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
         " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, " +
         " tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, " +
@@ -356,4 +356,13 @@ public interface TicketRepository {
     @Query("update ticket set tags = array_remove(tags, :tag::text) where id in (:ticketIds) and event_id = :eventId")
     int untagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
 
+    @Query("update ticket set subscription_id_fk = :subscriptionId from " +
+        " (select id from ticket where tickets_reservation_id = :reservationId order by final_price_cts limit :limit) t" +
+        " where ticket.id = t.id")
+    int applySubscriptionToTicketsInReservation(@Bind("reservationId") String reservationId,
+                                                @Bind("subscriptionId") UUID subscriptionId,
+                                                @Bind("limit") int limit);
+
+    @Query("select count(*) from ticket where subscription_id_fk = :subscriptionId and (:eventId is null or event_id = :eventId)")
+    Integer countSubscriptionUsage(@Bind("subscriptionId") UUID subscriptionId, @Bind("eventId") Integer eventId);
 }
