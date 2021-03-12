@@ -61,7 +61,7 @@ create view reservation_and_subscription_and_tx as (select
     subscription.first_name s_first_name,
     subscription.last_name s_last_name,
     subscription.email_address s_email_address,
-    subscription.usage_count s_usage_count,
+    (select count(*) from tickets_reservation tr where tr.subscription_id_fk = subscription.id) s_usage_count,
     subscription.max_usage s_max_usage,
     subscription.valid_from s_valid_from,
     subscription.valid_to s_valid_to,

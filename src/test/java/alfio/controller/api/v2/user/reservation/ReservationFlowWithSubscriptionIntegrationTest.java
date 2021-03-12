@@ -44,6 +44,8 @@ import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.subscription.SubscriptionUsageExceeded;
+import alfio.model.subscription.SubscriptionUsageExceededForEvent;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -63,15 +65,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
@@ -80,14 +79,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
-    private final EventManager eventManager;
-    private final EventRepository eventRepository;
     private final UserManager userManager;
-    private final ClockProvider clockProvider;
     private final SubscriptionManager subscriptionManager;
     private final SubscriptionRepository subscriptionRepository;
     private final FileUploadManager fileUploadManager;
-    private final TicketReservationRepository ticketReservationRepository;
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
 
@@ -162,14 +157,10 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
             clockProvider,
             notificationManager);
         this.organizationRepository = organizationRepository;
-        this.eventManager = eventManager;
-        this.eventRepository = eventRepository;
         this.userManager = userManager;
-        this.clockProvider = clockProvider;
         this.subscriptionManager = subscriptionManager;
         this.subscriptionRepository = subscriptionRepository;
         this.fileUploadManager = fileUploadManager;
-        this.ticketReservationRepository = ticketReservationRepository;
     }
 
     @BeforeEach
@@ -207,7 +198,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
             "CHF",
             false,
             event.getOrganizationId(),
-            42,
+            2,
             SubscriptionDescriptor.SubscriptionValidityType.CUSTOM,
             null,
             null,
@@ -223,7 +214,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         var descriptorId = subscriptionManager.createSubscriptionDescriptor(subscriptionModification).orElseThrow();
         var subscriptionId = subscriptionRepository.selectFreeSubscription(descriptorId).orElseThrow();
         var subscriptionReservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(clockProvider.getClock()), new Date(), null, "en", null, new BigDecimal("7.7"), true, "CHF", event.getOrganizationId());
+        ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(clockProvider.getClock()), Date.from(Instant.now(clockProvider.getClock())), null, "en", null, new BigDecimal("7.7"), true, "CHF", event.getOrganizationId());
         subscriptionRepository.bindSubscriptionToReservation(subscriptionReservationId, AllocationStatus.PENDING, subscriptionId);
         subscriptionRepository.updateSubscriptionStatus(subscriptionReservationId, AllocationStatus.ACQUIRED, "Test", "Mc Test", "tickettest@test.com");
         var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
@@ -232,7 +223,11 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
 
     @AfterEach
     void deleteEvent() {
-        eventManager.deleteEvent(context.event.getId(), context.userId);
+        try {
+            eventManager.deleteEvent(context.event.getId(), context.userId);
+        } catch(Exception ex) {
+            //ignore exception because the transaction might be aborted
+        }
     }
 
     @Test
@@ -244,5 +239,27 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     @Test
     public void inPersonEventWithSubscriptionUsingPin() {
         super.testAddSubscription(context);
+    }
+
+    @Test
+    public void triggerMaxSubscriptionPerEvent() {
+        super.testAddSubscription(context);
+        var params = Map.of("subscriptionId", context.subscriptionId, "eventId", context.event.getId());
+        assertEquals(1, jdbcTemplate.queryForObject("select count(*) from tickets_reservation where subscription_id_fk = :subscriptionId and event_id_fk = :eventId", params, Integer.class));
+        var exception = assertThrows(SubscriptionUsageExceededForEvent.class, () -> super.testAddSubscription(context));
+        assertEquals(1, exception.getAllowed());
+        assertEquals(2, exception.getRequested());
+    }
+
+    @Test
+    public void triggerMaxUsage() {
+        assertEquals(2, subscriptionRepository.findSubscriptionById(context.subscriptionId).getMaxEntries());
+        jdbcTemplate.update("update subscription set max_entries = 1 where id = :id::uuid", Map.of("id", context.subscriptionId));
+        super.testAddSubscription(context);
+        var params = Map.of("subscriptionId", context.subscriptionId, "eventId", context.event.getId());
+        assertEquals(1, jdbcTemplate.queryForObject("select count(*) from tickets_reservation where subscription_id_fk = :subscriptionId and event_id_fk = :eventId", params, Integer.class));
+        var exception = assertThrows(SubscriptionUsageExceeded.class, () -> super.testAddSubscription(context));
+        assertEquals(1, exception.getAllowed());
+        assertEquals(2, exception.getRequested());
     }
 }
