@@ -47,9 +47,7 @@ import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import alfio.model.subscription.Subscription;
-import alfio.model.subscription.SubscriptionDescriptor;
-import alfio.model.subscription.SubscriptionPriceContainer;
+import alfio.model.subscription.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
@@ -70,6 +68,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -100,6 +99,7 @@ import static alfio.model.Audit.EventType.*;
 import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
+import static alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.*;
 import static alfio.util.Wrappers.optionally;
@@ -267,7 +267,8 @@ public class TicketReservationManager {
             Validate.isTrue(subscriptionRepository.bindSubscriptionToReservation(reservationId, AllocationStatus.PENDING, optionalSubscription.get()) == 1);
         } else {
             subscriptionRepository.createSubscription(UUID.randomUUID(), subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
-                subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(), subscriptionDescriptor.getOrganizationId(), AllocationStatus.PENDING);
+                subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(),
+                subscriptionDescriptor.getOrganizationId(), AllocationStatus.PENDING, subscriptionDescriptor.getMaxEntries());
         }
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = subscriptionDescriptor.getVatStatus();
@@ -1290,7 +1291,6 @@ public class TicketReservationManager {
         reservationIdsByEvent.forEach((eventId, reservations) -> {
             Event event = eventRepository.findById(eventId);
             List<String> reservationIds = reservations.stream().map(ReservationIdAndEventId::getId).collect(toList());
-            subscriptionRepository.decrementUse(reservationIds);
             extensionManager.handleReservationsExpiredForEvent(event, reservationIds);
             billingDocumentRepository.deleteForReservations(reservationIds, eventId);
             transactionRepository.deleteForReservations(reservationIds);
@@ -1578,14 +1578,14 @@ public class TicketReservationManager {
             var subscription = subscriptionsToInclude.get(0);
             subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId(), subscription.getOrganizationId()).ifPresent(subscriptionDescriptor -> {
                 log.trace("found subscriptionDescriptor with ID {}", subscriptionDescriptor.getId());
-                // find the least expensive ticket
-                var ticket = tickets.stream().min(Comparator.comparing(TicketPriceContainer::getFinalPriceCts)).orElseThrow();
-                final int ticketPriceCts = ticket.getSummarySrcPriceCts();
-                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(ticket));
+                // find tickets with subscription applied
+                var ticketsSubscription = tickets.stream().filter(t -> Objects.equals(subscription.getId(), t.getSubscriptionId())).collect(toList());
+                final int ticketPriceCts = ticketsSubscription.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
+                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(ticketsSubscription);
                 summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale),
                     "-" + formatCents(ticketPriceCts, currencyCode),
                     "-" + formatCents(priceBeforeVat, currencyCode),
-                    1,
+                    ticketsSubscription.size(),
                     "-" + formatCents(ticketPriceCts, currencyCode),
                     "-" + formatCents(priceBeforeVat, currencyCode),
                     ticketPriceCts,
@@ -1734,7 +1734,6 @@ public class TicketReservationManager {
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
-        subscriptionRepository.decrementUse(List.of(reservationId));
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
         purchaseContext.event().ifPresent(event -> {
             int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
@@ -2646,24 +2645,59 @@ public class TicketReservationManager {
         }
     }
 
-    public boolean applySubscriptionCode(TicketReservation reservation, UUID subscriptionId, int amount) {
+    public boolean applySubscriptionCode(int eventId,
+                                         TicketReservation reservation,
+                                         SubscriptionDescriptor subscriptionDescriptor,
+                                         UUID subscriptionId) throws SubscriptionUsageExceeded, SubscriptionUsageExceededForEvent {
 
         log.trace("entering applySubscription {}", subscriptionId);
 
         if (ticketReservationRepository.hasSubscriptionApplied(reservation.getId())) {
             return false;
         }
+        // reload and lock subscription
         Subscription subscription = subscriptionRepository.findSubscriptionByIdForUpdate(subscriptionId);
-        var subscriptionDescriptor = subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId()).orElseThrow();
 
         if (!subscription.isValid(subscriptionDescriptor)) {
             return false;
         }
-        //TODO check if it can be applied more than once for a given event
-
-        log.trace("applying subscription {} to reservation {}", subscriptionId, reservation.getId());
-        ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
-        subscriptionRepository.increaseUse(subscription.getId());
+        try {
+            log.trace("applying subscription {} to reservation {}", subscriptionId, reservation.getId());
+            ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
+            // subscription has been applied at reservation level, we now have to find how many tickets we can update
+            int limit;
+            Integer eventIdToFilter = null;
+            if(subscriptionDescriptor.getUsageType() == ONCE_PER_EVENT) {
+                limit = 1;
+                eventIdToFilter = eventId;
+            } else if(subscription.getMaxEntries() > -1) {
+                limit = subscription.getMaxEntries();
+            } else {
+                // otherwise the sky's the limit
+                limit = Integer.MAX_VALUE;
+            }
+            int countExisting = ticketRepository.countSubscriptionUsage(subscriptionId, eventIdToFilter);
+            if(countExisting >= limit) {
+                return false;
+            }
+            int count = ticketRepository.applySubscriptionToTicketsInReservation(reservation.getId(), subscriptionId, limit - countExisting);
+            log.trace("Applied subscription {} to {} tickets for reservation {}", subscriptionId, count, reservation.getId());
+        } catch(UncategorizedSQLException sqlException) {
+            log.trace("got exception while trying to apply SubscriptionID {} to ReservationID {}", subscriptionId, reservation.getId());
+            throw SqlUtils.findServerError(sqlException)
+                .map(serverError -> {
+                    if(serverError.getMessage() == null || serverError.getDetail() == null) {
+                        log.warn("Cannot retrieve ErrorDetails for SubscriptionID {} and ReservationID {}", subscriptionId, reservation.getId());
+                        return sqlException;
+                    }
+                    var errorDetails = json.fromJsonString(serverError.getDetail(), MaxEntriesOverageDetails.class);
+                    if(Objects.equals(serverError.getMessage(), SubscriptionUsageExceeded.ERROR)) {
+                        return new SubscriptionUsageExceeded(errorDetails.getAllowed(),errorDetails.getRequested());
+                    }
+                    return new SubscriptionUsageExceededForEvent(errorDetails.getAllowed(),errorDetails.getRequested());
+                })
+                .orElse(sqlException);
+        }
         //
         var totalPrice = totalReservationCostWithVAT(reservation.getId()).getLeft();
 
@@ -2685,7 +2719,6 @@ public class TicketReservationManager {
     public boolean removeSubscription(TicketReservation reservation) {
         var reservationId = reservation.getId();
         if (ticketReservationRepository.hasSubscriptionApplied(reservationId)) {
-            subscriptionRepository.decrementUse(List.of(reservationId));
             ticketReservationRepository.applySubscription(reservationId, null);
             return true;
         } else {

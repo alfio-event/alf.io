@@ -95,37 +95,37 @@ import static org.mockito.Mockito.mock;
 @Log4j2
 public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
-    private final ConfigurationRepository configurationRepository;
-    private final EventManager eventManager;
-    private final EventRepository eventRepository;
-    private final EventStatisticsManager eventStatisticsManager;
-    private final TicketCategoryRepository ticketCategoryRepository;
-    private final TicketReservationRepository ticketReservationRepository;
-    private final EventApiController eventApiController;
-    private final TicketRepository ticketRepository;
-    private final TicketFieldRepository ticketFieldRepository;
-    private final AdditionalServiceApiController additionalServiceApiController;
-    private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
-    private final SpecialPriceRepository specialPriceRepository;
-    private final CheckInApiController checkInApiController;
-    private final AttendeeApiController attendeeApiController;
-    private final UsersApiController usersApiController;
-    private final ScanAuditRepository scanAuditRepository;
-    private final AuditingRepository auditingRepository;
-    private final AdminReservationManager adminReservationManager;
-    private final TicketReservationManager ticketReservationManager;
-    private final InfoApiController infoApiController;
-    private final TranslationsApiController translationsApiController;
-    private final EventApiV2Controller eventApiV2Controller;
-    private final ReservationApiV2Controller reservationApiV2Controller;
-    private final TicketApiV2Controller ticketApiV2Controller;
-    private final IndexController indexController;
-    private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final ExtensionLogRepository extensionLogRepository;
-    private final ExtensionService extensionService;
-    private final PollRepository pollRepository;
-    private final ClockProvider clockProvider;
-    private final NotificationManager notificationManager;
+    protected final ConfigurationRepository configurationRepository;
+    protected final EventManager eventManager;
+    protected final EventRepository eventRepository;
+    protected final EventStatisticsManager eventStatisticsManager;
+    protected final TicketCategoryRepository ticketCategoryRepository;
+    protected final TicketReservationRepository ticketReservationRepository;
+    protected final EventApiController eventApiController;
+    protected final TicketRepository ticketRepository;
+    protected final TicketFieldRepository ticketFieldRepository;
+    protected final AdditionalServiceApiController additionalServiceApiController;
+    protected final SpecialPriceTokenGenerator specialPriceTokenGenerator;
+    protected final SpecialPriceRepository specialPriceRepository;
+    protected final CheckInApiController checkInApiController;
+    protected final AttendeeApiController attendeeApiController;
+    protected final UsersApiController usersApiController;
+    protected final ScanAuditRepository scanAuditRepository;
+    protected final AuditingRepository auditingRepository;
+    protected final AdminReservationManager adminReservationManager;
+    protected final TicketReservationManager ticketReservationManager;
+    protected final InfoApiController infoApiController;
+    protected final TranslationsApiController translationsApiController;
+    protected final EventApiV2Controller eventApiV2Controller;
+    protected final ReservationApiV2Controller reservationApiV2Controller;
+    protected final TicketApiV2Controller ticketApiV2Controller;
+    protected final IndexController indexController;
+    protected final NamedParameterJdbcTemplate jdbcTemplate;
+    protected final ExtensionLogRepository extensionLogRepository;
+    protected final ExtensionService extensionService;
+    protected final PollRepository pollRepository;
+    protected final ClockProvider clockProvider;
+    protected final NotificationManager notificationManager;
 
     private Integer additionalServiceId;
 
@@ -1168,10 +1168,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         return ticketwc;
     }
 
-    protected void testAddSubscription(ReservationFlowContext context) {
+    protected void testAddSubscription(ReservationFlowContext context, int numberOfTickets) {
         var form = new ReservationForm();
         var ticketReservation = new TicketReservationModification();
-        ticketReservation.setAmount(1);
+        ticketReservation.setAmount(numberOfTickets);
         var categoriesResponse = eventApiV2Controller.getTicketCategories(context.event.getShortName(), null);
         assertTrue(categoriesResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(categoriesResponse.getBody());
@@ -1193,7 +1193,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertNotNull(reservation);
         assertEquals(reservationId, reservation.getId());
         assertEquals(1, reservation.getTicketsByCategory().size());
-        assertEquals(1, reservation.getTicketsByCategory().get(0).getTickets().size());
+        assertEquals(numberOfTickets, reservation.getTicketsByCategory().get(0).getTickets().size());
 
         var contactForm = new ContactAndTicketsForm();
 
@@ -1204,13 +1204,18 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         contactForm.setFirstName("full");
         contactForm.setLastName("name");
 
-        var ticketForm = new UpdateTicketOwnerForm();
-        ticketForm.setFirstName("ticketfull");
-        ticketForm.setLastName("ticketname");
-        ticketForm.setEmail("tickettest@test.com");
-        contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).getTickets().get(0).getUuid(), ticketForm));
-        ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+        var tickets = reservation.getTicketsByCategory().get(0).getTickets().stream()
+            .map(t -> {
+                var ticketForm = new UpdateTicketOwnerForm();
+                ticketForm.setFirstName("ticketfull");
+                ticketForm.setLastName("ticketname");
+                ticketForm.setEmail("tickettest@test.com");
+                ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+                return Map.entry(t.getUuid(), ticketForm);
+            })
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        contactForm.setTickets(tickets);
         var overviewRes = reservationApiV2Controller.validateToOverview(reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
         assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);
@@ -1236,7 +1241,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertTrue(reservation.getOrderSummary().isFree());
 
         // assert that there is a row in the summary for the subscription
-        assertTrue(reservation.getOrderSummary().getSummary().stream().anyMatch(r -> r.getType() == SummaryRow.SummaryType.SUBSCRIPTION));
+        var summaryRowSubscription = reservation.getOrderSummary().getSummary().stream().filter(r -> r.getType() == SummaryRow.SummaryType.SUBSCRIPTION).findFirst();
+        assertTrue(summaryRowSubscription.isPresent());
+        assertEquals(numberOfTickets, summaryRowSubscription.get().getAmount());
 
         // proceed with the confirmation
         var paymentForm = new PaymentForm();

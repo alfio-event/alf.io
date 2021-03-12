@@ -52,8 +52,10 @@ public interface SubscriptionRepository {
     String INSERT_SUBSCRIPTION_LINK = "insert into subscription_event(event_id_fk, subscription_descriptor_id_fk, price_per_ticket, organization_id_fk)" +
         " values(:eventId, :subscriptionId, :pricePerTicket, :organizationId) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket";
 
-    String INSERT_SUBSCRIPTION = "insert into subscription(id, subscription_descriptor_fk, reservation_id_fk, max_usage, usage_count, " +
-        " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency) values (:id, :subscriptionDescriptorId, :reservationId, :maxUsage, 0, :validFrom, :validTo, :organizationId, :status::ALLOCATION_STATUS, :srcPriceCts, :currency)";
+    String INSERT_SUBSCRIPTION = "insert into subscription(id, subscription_descriptor_fk, reservation_id_fk, max_usage, " +
+        " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency, max_entries) " +
+        " values (:id, :subscriptionDescriptorId, :reservationId, :maxUsage, :validFrom, :validTo, :organizationId, :status::ALLOCATION_STATUS, " +
+        " :srcPriceCts, :currency, :maxEntries)";
 
     @Query("insert into subscription_descriptor (" +
         "id, title, description, max_available, on_sale_from, on_sale_to, price_cts, vat, vat_status, currency, is_public, organization_id_fk, " +
@@ -194,7 +196,8 @@ public interface SubscriptionRepository {
                            @Bind("srcPriceCts") int srcPriceCts,
                            @Bind("currency") String currency,
                            @Bind("organizationId") int organizationId,
-                           @Bind("status") AllocationStatus status);
+                           @Bind("status") AllocationStatus status,
+                           @Bind("maxEntries") int maxEntries);
 
     @Query("select id from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit 1 for update skip locked")
     Optional<UUID> selectFreeSubscription(@Bind("descriptorId") UUID subscriptionDescriptorId);
@@ -233,9 +236,6 @@ public interface SubscriptionRepository {
     @Query("select id from subscription where substring(replace(id::text,'-',''), 0, 11) like concat(:partialUuid, '%')")
     UUID getSubscriptionIdByPartialUuid(@Bind("partialUuid") String partialUuid);
 
-    @Query("update subscription set usage_count = usage_count + 1 where id = :id")
-    int increaseUse(@Bind("id") UUID id);
-
     @Query("select * from subscription where id = (select subscription_id_fk from tickets_reservation where id = :reservationId)")
     Optional<Subscription> findAppliedSubscriptionByReservationId(@Bind("reservationId") String id);
 
@@ -244,9 +244,6 @@ public interface SubscriptionRepository {
         " join tickets_reservation tr on tr.subscription_id_fk = s.id" +
         " where tr.id = :reservationId")
     Optional<SubscriptionDescriptor> findDescriptorForAppliedSubscription(@Bind("reservationId") String reservationId);
-
-    @Query("update subscription set usage_count = (case when usage_count > 0 then usage_count - 1 else usage_count end) where id in (select subscription_id_fk from tickets_reservation where id in (:reservationIds) and subscription_id_fk is not null)")
-    int decrementUse(@Bind("reservationIds") List<String> reservationIds);
 
     @Query("select count(*) from subscription where id = :id")
     int countSubscriptionById(@Bind("id") UUID fromString);

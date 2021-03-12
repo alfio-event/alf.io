@@ -35,7 +35,6 @@ public class Subscription {
     private final String email;
     private final UUID subscriptionDescriptorId;
     private final String reservationId;
-    private final int usageCount;
     private final int organizationId;
     private final ZonedDateTime creationTime;
     private final ZonedDateTime updateTime;
@@ -43,6 +42,7 @@ public class Subscription {
     private final int discountCts;
     private final String currency;
     private final AllocationStatus status;
+    private final int maxEntries;
 
     public static final int PIN_LENGTH = 8;
 
@@ -53,21 +53,20 @@ public class Subscription {
                         @Column("email_address") String email,
                         @Column("subscription_descriptor_fk") UUID subscriptionDescriptorId,
                         @Column("reservation_id_fk") String reservationId,
-                        @Column("usage_count") int usageCount,
                         @Column("organization_id_fk") int organizationId,
                         @Column("creation_ts") ZonedDateTime creationTime,
                         @Column("update_ts") ZonedDateTime updateTime,
                         @Column("src_price_cts") int srcPriceCts,
                         @Column("discount_cts") int discountCts,
                         @Column("currency") String currency,
-                        @Column("status") AllocationStatus status) {
+                        @Column("status") AllocationStatus status,
+                        @Column("max_entries") int maxEntries) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.subscriptionDescriptorId = subscriptionDescriptorId;
         this.reservationId = reservationId;
-        this.usageCount = usageCount;
         this.organizationId = organizationId;
         this.creationTime = creationTime;
         this.updateTime = updateTime;
@@ -75,15 +74,12 @@ public class Subscription {
         this.discountCts = discountCts;
         this.currency = currency;
         this.status = status;
+        this.maxEntries = maxEntries;
     }
 
     public boolean isValid(SubscriptionDescriptor subscriptionDescriptor, Optional<BindingResult> bindingResult) {
         if (status != AllocationStatus.ACQUIRED) {
             reject(bindingResult, "subscription.not.acquired");
-            return false;
-        }
-        if (!subscriptionDescriptor.isUnlimitedAccess() && this.usageCount >= subscriptionDescriptor.getMaxEntries()) {
-            reject(bindingResult, "subscription.max-usage-reached");
             return false;
         }
         //FIXME implement validation rules:

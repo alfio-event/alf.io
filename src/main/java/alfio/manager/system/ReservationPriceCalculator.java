@@ -26,8 +26,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -54,12 +54,10 @@ public class ReservationPriceCalculator implements PriceContainer {
     @Override
     public BigDecimal getAppliedDiscount() {
 
-        int subscriptionDiscount = appliedSubscription.flatMap(subscription -> tickets.stream()
-                .min(Comparator.comparing(Ticket::getFinalPriceCts)))
-                .map(Ticket::getSrcPriceCts)
-                .orElse(0);
+        int subscriptionDiscount = appliedSubscription
+            .map(subscription -> tickets.stream().filter(t -> Objects.equals(t.getSubscriptionId(), subscription.getId())).mapToInt(Ticket::getSrcPriceCts).sum())
+            .orElse(0);
 
-        //FIXME check how it should be applied in case of discount
         if(discount != null) {
             if (discount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION) {
                 return MonetaryUtil.centsToUnit(discount.getDiscountAmount() + subscriptionDiscount, reservation.getCurrencyCode());

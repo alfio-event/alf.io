@@ -105,6 +105,7 @@ public class SubscriptionManager {
                 .addValue("currency", subscriptionDescriptor.getCurrency())
                 .addValue("organizationId", subscriptionDescriptor.getOrganizationId())
                 .addValue("status", AllocationStatus.FREE.name())
+                .addValue("maxEntries", subscriptionDescriptor.getMaxEntries())
                 .addValue("reservationId", null)
             ).toArray(MapSqlParameterSource[]::new));
         var added = Arrays.stream(results).sum();
