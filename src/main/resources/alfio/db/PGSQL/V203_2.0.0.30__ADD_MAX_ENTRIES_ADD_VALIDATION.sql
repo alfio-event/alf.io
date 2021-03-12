@@ -16,6 +16,8 @@
 --
 
 -- add max entries per subscription
+drop view if exists subscription_descriptor_statistics;
+drop view if exists reservation_and_subscription_and_tx;
 alter table subscription
     add column max_entries integer not null default -1,
     drop column usage_count;

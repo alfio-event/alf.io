@@ -238,6 +238,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     public void inPersonEventWithSubscriptionUsingID() {
         var modifiedContext = new ReservationFlowContext(context.event, context.userId, context.subscriptionId, null);
         super.testAddSubscription(modifiedContext, 1);
+        var eventInfo = eventStatisticsManager.getEventWithAdditionalInfo(context.event.getShortName(), context.userId);
+        assertEquals(BigDecimal.ZERO, eventInfo.getGrossIncome());
     }
 
     @Test

@@ -1578,14 +1578,14 @@ public class TicketReservationManager {
             var subscription = subscriptionsToInclude.get(0);
             subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId(), subscription.getOrganizationId()).ifPresent(subscriptionDescriptor -> {
                 log.trace("found subscriptionDescriptor with ID {}", subscriptionDescriptor.getId());
-                // find the least expensive ticket
-                var ticket = tickets.stream().min(Comparator.comparing(TicketPriceContainer::getFinalPriceCts)).orElseThrow();
-                final int ticketPriceCts = ticket.getSummarySrcPriceCts();
-                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(ticket));
+                // find tickets with subscription applied
+                var ticketsSubscription = tickets.stream().filter(t -> Objects.equals(subscription.getId(), t.getSubscriptionId())).collect(toList());
+                final int ticketPriceCts = ticketsSubscription.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
+                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(ticketsSubscription);
                 summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale),
                     "-" + formatCents(ticketPriceCts, currencyCode),
                     "-" + formatCents(priceBeforeVat, currencyCode),
-                    1,
+                    ticketsSubscription.size(),
                     "-" + formatCents(ticketPriceCts, currencyCode),
                     "-" + formatCents(priceBeforeVat, currencyCode),
                     ticketPriceCts,

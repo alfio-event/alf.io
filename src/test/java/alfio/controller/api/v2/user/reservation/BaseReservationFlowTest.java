@@ -1241,7 +1241,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertTrue(reservation.getOrderSummary().isFree());
 
         // assert that there is a row in the summary for the subscription
-        assertTrue(reservation.getOrderSummary().getSummary().stream().anyMatch(r -> r.getType() == SummaryRow.SummaryType.SUBSCRIPTION));
+        var summaryRowSubscription = reservation.getOrderSummary().getSummary().stream().filter(r -> r.getType() == SummaryRow.SummaryType.SUBSCRIPTION).findFirst();
+        assertTrue(summaryRowSubscription.isPresent());
+        assertEquals(numberOfTickets, summaryRowSubscription.get().getAmount());
 
         // proceed with the confirmation
         var paymentForm = new PaymentForm();
