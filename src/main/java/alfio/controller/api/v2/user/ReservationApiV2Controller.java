@@ -38,6 +38,7 @@ import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.subscription.Subscription;
+import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
@@ -181,9 +182,7 @@ public class ReservationApiV2Controller {
                     .limit(1) // since we support only one subscription for now, it make sense to limit the result to avoid N+1
                     .map(s -> {
                         int usageCount = ticketRepository.countSubscriptionUsage(s.getId(), null);
-                        int maxEntries = Math.max(s.getMaxEntries(), 0);
-                        var usageDetails = new ReservationInfo.UsageDetails(maxEntries == 0 ? null : maxEntries, usageCount, maxEntries == 0 ? null : maxEntries - usageCount);
-                        return new ReservationInfo.SubscriptionInfo(s.getId(), s.getPin(), usageDetails);
+                        return new ReservationInfo.SubscriptionInfo(s.getId(), s.getPin(), UsageDetails.fromSubscription(s, usageCount));
                     })
                     .collect(Collectors.toList());
             }

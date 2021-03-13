@@ -266,4 +266,7 @@ public interface TicketReservationRepository {
 
     @Query("update tickets_reservation set subscription_id_fk = :subscriptionId where id = :reservationId")
     int applySubscription(@Bind("reservationId") String reservationId, @Bind("subscriptionId") UUID subscriptionId);
+
+    @Query("select tr.*, e.short_name from tickets_reservation tr join event e on e.id = tr.event_id_fk where tr.subscription_id_fk = :subscriptionId and tr.status = 'COMPLETE'")
+    List<TicketReservationWithEventIdentifier> findConfirmedReservationsBySubscriptionId(@Bind("subscriptionId") UUID subscriptionId);
 }

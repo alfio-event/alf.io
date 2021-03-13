@@ -2725,4 +2725,17 @@ public class TicketReservationManager {
             return false;
         }
     }
+
+    public Optional<SubscriptionWithUsageDetails> findSubscriptionDetails(TicketReservation reservation) {
+        return subscriptionRepository.findSubscriptionsByReservationId(reservation.getId())
+            .stream()
+            .findFirst()
+            .map(s -> {
+                int usageCount = ticketRepository.countSubscriptionUsage(s.getId(), null);
+                return new SubscriptionWithUsageDetails(s,
+                    UsageDetails.fromSubscription(s, usageCount),
+                    ticketReservationRepository.findConfirmedReservationsBySubscriptionId(s.getId()));
+            });
+
+    }
 }

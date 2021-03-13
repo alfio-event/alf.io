@@ -27,29 +27,9 @@
         <div class="panel-body">
             Please check your payment provider's data and confirm or cancel the following reservations
         </div>
-        <table class="table table-striped">
-            <thead>
-            <tr>
-                <th width="10%">Id</th>
-                <th width="30%">Customer's name</th>
-                <th width="20%">Customer's email</th>
-                <th width="10%">Payment</th>
-                <th width="10%">Amount</th>
-                <th width="20%">Confirmation</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr ng-repeat="r in $ctrl.stuckReservations">
-                <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                <td ng-bind="$ctrl.formatFullName(r)"></td>
-                <td ng-bind="r.email"></td>
-                <td ng-bind="r.paymentMethod"></td>
-                <td ng-bind="r.paidAmount | money:r.currencyCode"></td>
-                <td ng-bind="r.confirmationTimestamp | formatDate"></td>
-            </tr>
-            </tbody>
-        </table>
+        <reservations-list-table purchase-context="$ctrl.purchaseContext"
+                                 purchase-context-type="$ctrl.purchaseContextType"
+                                 reservations="$ctrl.stuckReservations"></reservations-list-table>
     </div>
 
     <uib-tabset active="$ctrl.selectedTab" justified="true">
@@ -59,30 +39,9 @@
             </uib-tab-heading>
             <div class="alert alert-info text-center wMarginTop10px" ng-if="$ctrl.foundReservations == 0"><i class="fa fa-info-circle"></i> No completed reservations have been found</div>
             <div class="table-responsive" ng-if="$ctrl.foundReservations > 0">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th width="10%">Id</th>
-                        <th width="30%">Customer's name</th>
-                        <th width="20%">Customer's email</th>
-                        <th width="10%">Payment</th>
-                        <th width="10%">Amount</th>
-                        <th width="20%">Confirmation</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr ng-repeat="r in $ctrl.reservations">
-                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td ng-bind="$ctrl.formatFullName(r)"></td>
-                        <td ng-bind="r.email"></td>
-                        <td ng-bind="r.paymentMethod"></td>
-                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
-                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
-                        <td ng-bind="r.confirmationTimestamp | formatDate"></td>
-                    </tr>
-                    </tbody>
-                </table>
+                <reservations-list-table purchase-context="$ctrl.purchaseContext"
+                                         purchase-context-type="$ctrl.purchaseContextType"
+                                         reservations="$ctrl.reservations"></reservations-list-table>
                 <div class="text-center wMarginBottom">
                     <uib-pagination ng-change="$ctrl.updateFilteredData({completed:true})" total-items="$ctrl.foundReservations" ng-model="$ctrl.currentPage" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
                 </div>
@@ -94,31 +53,9 @@
             </uib-tab-heading>
             <div class="alert alert-info text-center wMarginTop10px" ng-if="$ctrl.paymentPendingFoundReservations == 0"><i class="fa fa-info-circle"></i> No Reservations pending payment have been found</div>
             <div class="table-responsive" ng-if="$ctrl.paymentPendingFoundReservations > 0">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th width="10%">Id</th>
-                        <th width="30%">Customer's name</th>
-                        <th width="20%">Customer's email</th>
-                        <th width="10%">Payment</th>
-                        <th width="10%">Amount</th>
-                        <th width="20%">Confirmation</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr ng-repeat="r in $ctrl.paymentPendingReservations">
-                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td ng-bind="$ctrl.formatFullName(r)"></td>
-                        <td ng-bind="r.email"></td>
-                        <td ng-bind="r.paymentMethod"></td>
-                        <td ng-bind="r.creationTimestamp | formatDate"></td>
-                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
-                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
-                        <td ng-bind="r.validity | formatDate"></td>
-                    </tr>
-                    </tbody>
-                </table>
+                <reservations-list-table purchase-context="$ctrl.purchaseContext"
+                                         purchase-context-type="$ctrl.purchaseContextType"
+                                         reservations="$ctrl.paymentPendingReservations"></reservations-list-table>
                 <div class="text-center wMarginBottom">
                     <uib-pagination ng-change="$ctrl.updateFilteredData({paymentPending:true})" total-items="$ctrl.paymentPendingFoundReservations" ng-model="$ctrl.currentPagePendingPayment" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
                 </div>
@@ -129,30 +66,9 @@
                 <i class="fa fa-shopping-cart"></i> In Process <span class="badge">{{$ctrl.foundPendingReservations}}</span>
             </uib-tab-heading>
             <div class="table-responsive" ng-if="$ctrl.foundPendingReservations > 0">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th width="10%">Id</th>
-                        <th width="30%">Customer's name</th>
-                        <th width="20%">Customer's email</th>
-                        <th width="10%">Payment</th>
-                        <th width="10%">Amount</th>
-                        <th width="20%">Confirmation</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr ng-repeat="r in $ctrl.pendingReservations">
-                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td ng-bind="$ctrl.formatFullName(r)"></td>
-                        <td ng-bind="r.email"></td>
-                        <td ng-bind="r.paymentMethod"></td>
-                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
-                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
-                        <td ng-bind="r.validity | formatDate"></td>
-                    </tr>
-                    </tbody>
-                </table>
+                <reservations-list-table purchase-context="$ctrl.purchaseContext"
+                                         purchase-context-type="$ctrl.purchaseContextType"
+                                         reservations="$ctrl.pendingReservations"></reservations-list-table>
                 <div class="text-center wMarginBottom">
                     <uib-pagination ng-change="$ctrl.updateFilteredData({pending:true})" total-items="$ctrl.foundPendingReservations" ng-model="$ctrl.currentPagePending" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
                 </div>
@@ -164,30 +80,9 @@
                 <i class="fa fa-undo"></i> Credit Note issued <span class="badge">{{$ctrl.foundCreditedReservations}}</span>
             </uib-tab-heading>
             <div class="table-responsive" ng-if="$ctrl.foundCreditedReservations > 0">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th width="10%">Id</th>
-                        <th width="30%">Customer's name</th>
-                        <th width="20%">Customer's email</th>
-                        <th width="10%">Payment</th>
-                        <th width="10%">Amount</th>
-                        <th width="20%">Confirmation</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr ng-repeat="r in $ctrl.creditedReservations">
-                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ purchaseContextId : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td ng-bind="$ctrl.formatFullName(r)"></td>
-                        <td ng-bind="r.email"></td>
-                        <td ng-bind="r.paymentMethod"></td>
-                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
-                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
-                        <td ng-bind="r.validity | formatDate"></td>
-                    </tr>
-                    </tbody>
-                </table>
+                <reservations-list-table purchase-context="$ctrl.purchaseContext"
+                                         purchase-context-type="$ctrl.purchaseContextType"
+                                         reservations="$ctrl.creditedReservations"></reservations-list-table>
                 <div class="text-center wMarginBottom">
                     <uib-pagination ng-change="$ctrl.updateFilteredData({credited:true})" total-items="$ctrl.foundCreditedReservations" ng-model="$ctrl.currentPageCredited" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
                 </div>
@@ -199,30 +94,9 @@
                 <i class="fa fa-ban"></i> Cancelled <span class="badge">{{$ctrl.foundCancelledReservations}}</span>
             </uib-tab-heading>
             <div class="table-responsive" ng-if="$ctrl.foundCancelledReservations > 0">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th width="10%">Id</th>
-                        <th width="30%">Customer's name</th>
-                        <th width="20%">Customer's email</th>
-                        <th width="10%">Payment</th>
-                        <th width="10%">Amount</th>
-                        <th width="20%">Confirmation</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr ng-repeat="r in $ctrl.cancelledReservations">
-                        <td data-ng-if="$ctrl.purchaseContextType === 'event'"><a ui-sref="events.single.view-reservation({ eventName : $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td data-ng-if="$ctrl.purchaseContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ subscriptionId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
-                        <td ng-bind="$ctrl.formatFullName(r)"></td>
-                        <td ng-bind="r.email"></td>
-                        <td ng-bind="r.paymentMethod"></td>
-                        <td ng-bind="r.paidAmount | money:r.currencyCode" data-ng-if="r.finalPriceCts > 0"></td>
-                        <td data-ng-if="r.finalPriceCts == 0">&nbsp;</td>
-                        <td ng-bind="r.validity | formatDate"></td>
-                    </tr>
-                    </tbody>
-                </table>
+                <reservations-list-table purchase-context="$ctrl.purchaseContext"
+                                         purchase-context-type="$ctrl.purchaseContextType"
+                                         reservations="$ctrl.cancelledReservations"></reservations-list-table>
                 <div class="text-center wMarginBottom">
                     <uib-pagination ng-change="$ctrl.updateFilteredData({cancelled:true})" total-items="$ctrl.foundCancelledReservations" ng-model="$ctrl.currentPageCancelled" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
                 </div>

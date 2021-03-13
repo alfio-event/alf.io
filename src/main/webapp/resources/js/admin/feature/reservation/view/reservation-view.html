@@ -73,6 +73,14 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-xs-6" data-ng-if="$ctrl.purchaseContextType === 'subscription' && $ctrl.reservation.status === 'COMPLETE'">
+                        <h5><strong>Subscription Details</strong></h5>
+                        <div class="h4">PIN: <span class="text-success">{{$ctrl.subscriptionDetails.subscription.pin}}</span></div>
+                        <div class="h4 wMarginBottom">
+                            Usage count: {{$ctrl.subscriptionDetails.usageDetails.used}}
+                            <span data-ng-if="$ctrl.subscriptionDetails.usageDetails.total > 0"> / {{$ctrl.subscriptionDetails.usageDetails.total}}</span>
+                        </div>
+                    </div>
                     <div class="col-xs-3" ng-if="$ctrl.reservation.status !== 'COMPLETE' && $ctrl.reservation.status !== 'CANCELLED'">
                         <div class="form-group">
                             <label for="expiration">Expiration</label>
@@ -331,18 +339,32 @@
                         </div>
                     </div>
                     <hr>
-                    <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
-                        <div class="panel-heading">
-                            <div class="panel-title">Attendees for Category {{ticketInfo.category.name}}</div>
-                        </div>
-                        <div class="panel-body">
-                            <div class="checkbox">
-                                <label><input type="checkbox" ng-model="ticketInfo.updateAttendees"> Edit attendees</label>
+                    <div data-ng-if="$ctrl.purchaseContextType === 'subscription'">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <div class="panel-title">Reservation Completed using this Subscription</div>
+                            </div>
+                            <div class="table-responsive">
+                                <reservations-list-table purchase-context="$ctrl.purchaseContext"
+                                                         purchase-context-type="$ctrl.purchaseContextType"
+                                                         target-context-type="'event'"
+                                                         reservations="$ctrl.subscriptionDetails.reservations"></reservations-list-table>
                             </div>
                         </div>
-                        <div class="table-responsive wMarginTop10px">
-                            <table class="table table-striped">
-                                <thead>
+                    </div>
+                    <div data-ng-if="$ctrl.purchaseContextType === 'event'">
+                        <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
+                            <div class="panel-heading">
+                                <div class="panel-title">Attendees for Category {{ticketInfo.category.name}}</div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="checkbox">
+                                    <label><input type="checkbox" ng-model="ticketInfo.updateAttendees"> Edit attendees</label>
+                                </div>
+                            </div>
+                            <div class="table-responsive wMarginTop10px">
+                                <table class="table table-striped">
+                                    <thead>
                                     <tr>
                                         <th>#</th>
                                         <th>First name</th>
@@ -351,8 +373,8 @@
                                         <th>Check-in</th>
                                         <th><span class="hidden-xs hidden-sm">Actions</span></th>
                                     </tr>
-                                </thead>
-                                <tbody>
+                                    </thead>
+                                    <tbody>
                                     <tr  ng-repeat="attendee in ticketInfo.attendees">
                                         <td><div class="form-control-static">{{$index + 1}}</div></td>
                                         <td>
@@ -379,14 +401,15 @@
                                             <button type="button" class="btn btn-sm btn-danger" ng-click="$ctrl.removeTicket(attendee)"><i class="fa fa-trash"></i> <span class="hidden-xs hidden-sm">Remove</span></button>
                                         </td>
                                     </tr>
-                                </tbody>
-                            </table>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-xs-12">
                             <button class="btn btn-sm btn-default btn-block-xs" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyCustomer()"><i class="fa fa-envelope-o"></i> Send reservation via email</button>
-                            <button class="btn btn-sm btn-default btn-block-xs" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
+                            <button class="btn btn-sm btn-default btn-block-xs" ng-if="$ctrl.reservation.status === 'COMPLETE' && $ctrl.purchaseContextType === 'event'" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
                         </div>
                     </div>
                     <div class="clearfix wMarginBottom"></div>

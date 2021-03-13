@@ -23,6 +23,7 @@ import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.subscription.SubscriptionWithUsageDetails;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -250,7 +251,17 @@ public class AdminReservationApiController {
         TicketReservation reservation = triple.getLeft();
         return new TicketReservationDescriptor(reservation,
             ticketReservationManager.loadAdditionalInfo(reservationId),
-            ticketReservationManager.orderSummaryForReservationId(reservationId, triple.getRight()), tickets);
+            ticketReservationManager.orderSummaryForReservationId(reservationId, triple.getRight()),
+            tickets,
+            buildSubscriptionDetails(triple.getRight(), reservation));
+    }
+
+    private SubscriptionWithUsageDetails buildSubscriptionDetails(PurchaseContext purchaseContext, TicketReservation reservation) {
+        if(purchaseContext.getType() == PurchaseContextType.subscription) {
+            // load statistics
+            return ticketReservationManager.findSubscriptionDetails(reservation).orElse(null);
+        }
+        return null;
     }
 
     @RequiredArgsConstructor
@@ -260,6 +271,7 @@ public class AdminReservationApiController {
         private final TicketReservationAdditionalInfo additionalInfo;
         private final OrderSummary orderSummary;
         private final List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory;
+        private final SubscriptionWithUsageDetails subscriptionDetails;
     }
 
     @RequiredArgsConstructor

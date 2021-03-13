@@ -8,6 +8,31 @@
         },
         controller: ['PurchaseContextService', '$filter', '$location', '$stateParams', ReservationsListCtrl],
         templateUrl: '../resources/js/admin/feature/reservations-list/reservations-list.html'
+    }).component('reservationsListTable', {
+        bindings: {
+            purchaseContext: '<',
+            purchaseContextType: '<',
+            targetContextType: '<',
+            reservations: '<'
+        },
+        controller: function() {
+
+            var ctrl = this;
+            ctrl.$onInit = function() {
+                ctrl.formatFullName = function(r) {
+                    if(r.firstName && r.lastName) {
+                        return r.firstName + ' ' + r.lastName;
+                    } else {
+                        return r.fullName;
+                    }
+                };
+                if(!ctrl.targetContextType) {
+                    ctrl.targetContextType = ctrl.purchaseContextType;
+                }
+            }
+
+        },
+        templateUrl: '../resources/js/admin/feature/reservations-list/reservations-list-table.html'
     });
     
     

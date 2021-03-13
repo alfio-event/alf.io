@@ -162,6 +162,10 @@
                         });
                     }
                 };
+                if(ctrl.purchaseContextType === 'subscription') {
+                    ctrl.subscriptionDetails = ctrl.reservationDescriptor.subscriptionDetails;
+                }
+                ctrl.subscriptionDetails
             }
         };
 

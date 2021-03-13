@@ -21,6 +21,7 @@ import alfio.model.OrderSummary;
 import alfio.model.SummaryRow.SummaryType;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.subscription.UsageDetails;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import lombok.AllArgsConstructor;
@@ -236,11 +237,4 @@ public class ReservationInfo {
         private final UsageDetails usageDetails;
     }
 
-    @AllArgsConstructor
-    @Getter
-    public static class UsageDetails {
-        private final Integer total;
-        private final Integer used;
-        private final Integer available;
-    }
 }
