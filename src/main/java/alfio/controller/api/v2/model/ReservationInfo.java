@@ -233,5 +233,14 @@ public class ReservationInfo {
     public static class SubscriptionInfo {
         private final UUID id;
         private final String pin;
+        private final UsageDetails usageDetails;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class UsageDetails {
+        private final Integer total;
+        private final Integer used;
+        private final Integer available;
     }
 }

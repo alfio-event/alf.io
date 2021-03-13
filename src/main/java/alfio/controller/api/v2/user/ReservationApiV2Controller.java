@@ -102,6 +102,7 @@ public class ReservationApiV2Controller {
     private final BillingDocumentManager billingDocumentManager;
     private final PurchaseContextManager purchaseContextManager;
     private final SubscriptionRepository subscriptionRepository;
+    private final TicketRepository ticketRepository;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -176,7 +177,15 @@ public class ReservationApiV2Controller {
             //
             List<ReservationInfo.SubscriptionInfo> subscriptionInfos = null;
             if (purchaseContext.getType() == PurchaseContextType.subscription) {
-                subscriptionInfos = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().map(s -> new ReservationInfo.SubscriptionInfo(s.getId(), s.getPin())).collect(Collectors.toList());
+                subscriptionInfos = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream()
+                    .limit(1) // since we support only one subscription for now, it make sense to limit the result to avoid N+1
+                    .map(s -> {
+                        int usageCount = ticketRepository.countSubscriptionUsage(s.getId(), null);
+                        int maxEntries = Math.max(s.getMaxEntries(), 0);
+                        var usageDetails = new ReservationInfo.UsageDetails(maxEntries == 0 ? null : maxEntries, usageCount, maxEntries == 0 ? null : maxEntries - usageCount);
+                        return new ReservationInfo.SubscriptionInfo(s.getId(), s.getPin(), usageDetails);
+                    })
+                    .collect(Collectors.toList());
             }
 
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
