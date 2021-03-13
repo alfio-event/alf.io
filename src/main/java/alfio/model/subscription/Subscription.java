@@ -17,17 +17,23 @@
 package alfio.model.subscription;
 
 import alfio.model.AllocationStatus;
+import alfio.model.TimeZoneInfo;
+import alfio.util.ClockProvider;
 import alfio.util.PinGenerator;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import org.springframework.validation.BindingResult;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import static alfio.model.subscription.SubscriptionDescriptor.atZone;
+
 @Getter
-public class Subscription {
+public class Subscription implements TimeZoneInfo {
 
     private final UUID id;
     private final String firstName;
@@ -43,6 +49,10 @@ public class Subscription {
     private final String currency;
     private final AllocationStatus status;
     private final int maxEntries;
+    private final ZonedDateTime validityFrom;
+    private final ZonedDateTime validityTo;
+    private final ZonedDateTime confirmationTimestamp;
+    private final ZoneId zoneId;
 
     public static final int PIN_LENGTH = 8;
 
@@ -60,7 +70,11 @@ public class Subscription {
                         @Column("discount_cts") int discountCts,
                         @Column("currency") String currency,
                         @Column("status") AllocationStatus status,
-                        @Column("max_entries") int maxEntries) {
+                        @Column("max_entries") int maxEntries,
+                        @Column("validity_from") ZonedDateTime validityFrom,
+                        @Column("validity_to") ZonedDateTime validityTo,
+                        @Column("confirmation_ts") ZonedDateTime confirmationTimestamp,
+                        @Column("time_zone") String timeZone) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -75,17 +89,26 @@ public class Subscription {
         this.currency = currency;
         this.status = status;
         this.maxEntries = maxEntries;
+        var zoneId = ZoneId.of(timeZone);
+        this.zoneId = zoneId;
+        this.validityFrom = atZone(validityFrom, zoneId);
+        this.validityTo = atZone(validityTo, zoneId);
+        this.confirmationTimestamp = atZone(confirmationTimestamp, zoneId);
     }
 
-    public boolean isValid(SubscriptionDescriptor subscriptionDescriptor, Optional<BindingResult> bindingResult) {
+    public boolean isValid(Optional<BindingResult> bindingResult) {
         if (status != AllocationStatus.ACQUIRED) {
             reject(bindingResult, "subscription.not.acquired");
             return false;
         }
-        //FIXME implement validation rules:
-        // date -> can be validFrom/validTo
-        //      -> can be valid X {day, weeks, months} from the acquired date
-        // usage check: once or more per event
+        var now = now(ClockProvider.clock());
+        if(validityFrom != null && validityFrom.isAfter(now)) {
+            reject(bindingResult, "subscription.not.valid");
+            return false;
+        } else if(validityTo != null && validityTo.isBefore(now)) {
+            reject(bindingResult, "subscription.expired");
+            return false;
+        }
         return true;
     }
 
@@ -93,11 +116,16 @@ public class Subscription {
         bindingResult.ifPresent(b -> b.reject(errorCode));
     }
 
-    public boolean isValid(SubscriptionDescriptor subscriptionDescriptor) {
-        return isValid(subscriptionDescriptor, Optional.empty());
+    public boolean isValid() {
+        return isValid(Optional.empty());
     }
 
     public String getPin() {
         return PinGenerator.uuidToPin(id.toString(), PIN_LENGTH);
+    }
+
+    @JsonIgnore
+    public ZoneId getZoneId() {
+        return zoneId;
     }
 }

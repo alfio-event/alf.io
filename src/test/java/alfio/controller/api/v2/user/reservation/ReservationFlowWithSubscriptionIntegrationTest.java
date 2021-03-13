@@ -69,11 +69,15 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static java.util.Objects.requireNonNullElse;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -190,6 +194,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         // create subscription descriptor
 
         var event = eventAndUser.getLeft();
+        var zoneId = clockProvider.getClock().getZone();
         var subscriptionModification = new SubscriptionDescriptorModification(null,
             Map.of("en", "title"),
             Map.of("en", "description"),
@@ -213,14 +218,16 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
             null,
             fileBlobId,
             List.of(PaymentProxy.STRIPE),
-            ZoneId.of("Europe/Zurich"));
+            zoneId);
 
         var descriptorId = subscriptionManager.createSubscriptionDescriptor(subscriptionModification).orElseThrow();
         var subscriptionId = subscriptionRepository.selectFreeSubscription(descriptorId).orElseThrow();
         var subscriptionReservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(clockProvider.getClock()), Date.from(Instant.now(clockProvider.getClock())), null, "en", null, new BigDecimal("7.7"), true, "CHF", event.getOrganizationId());
         subscriptionRepository.bindSubscriptionToReservation(subscriptionReservationId, AllocationStatus.PENDING, subscriptionId);
-        subscriptionRepository.updateSubscriptionStatus(subscriptionReservationId, AllocationStatus.ACQUIRED, "Test", "Mc Test", "tickettest@test.com");
+        subscriptionRepository.confirmSubscription(subscriptionReservationId, AllocationStatus.ACQUIRED,
+            "Test", "Mc Test", "tickettest@test.com", requireNonNullElse(subscriptionModification.getMaxEntries(), -1),
+            null, null, ZonedDateTime.now(clockProvider.getClock()), zoneId.toString());
         var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
         this.context = new ReservationFlowContext(event, eventAndUser.getRight() + "_owner", subscriptionId, subscription.getPin());
     }

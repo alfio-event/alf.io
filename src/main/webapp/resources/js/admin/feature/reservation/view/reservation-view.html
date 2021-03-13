@@ -344,7 +344,10 @@
                             <div class="panel-heading">
                                 <div class="panel-title">Reservation Completed using this Subscription</div>
                             </div>
-                            <div class="table-responsive">
+                            <div class="panel-body" data-ng-if="$ctrl.subscriptionDetails.reservations.length === 0">
+                                No Reservations completed so far
+                            </div>
+                            <div class="table-responsive" data-ng-if="$ctrl.subscriptionDetails.reservations.length > 0">
                                 <reservations-list-table purchase-context="$ctrl.purchaseContext"
                                                          purchase-context-type="$ctrl.purchaseContextType"
                                                          target-context-type="'event'"

@@ -723,7 +723,7 @@ public class ReservationApiV2Controller {
             var subscriptionId = isUUID ? UUID.fromString(pin) : requireEmail ? subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email) : subscriptionRepository.getSubscriptionIdByPartialUuid(partialUuid);
             var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
             var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
-            subscription.isValid(subscriptionDescriptor, Optional.of(bindingResult));
+            subscription.isValid(Optional.of(bindingResult));
             if (bindingResult.hasErrors()) {
                 return false;
             }

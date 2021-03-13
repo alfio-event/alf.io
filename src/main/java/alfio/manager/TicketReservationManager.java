@@ -48,6 +48,7 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.*;
+import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
@@ -85,6 +86,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1214,7 +1216,24 @@ public class TicketReservationManager {
 
     private void acquireSubscription(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, CustomerName customerName, String email) {
         var status = paymentProxy.isDeskPaymentRequired() ? AllocationStatus.TO_BE_PAID : AllocationStatus.ACQUIRED;
-        var updatedSubscriptions = subscriptionRepository.updateSubscriptionStatus(reservationId, status, customerName.getFirstName(), customerName.getLastName(), email);
+        var subscriptionDescriptor = (SubscriptionDescriptor) purchaseContext;
+        ZonedDateTime validityFrom = null;
+        ZonedDateTime validityTo = null;
+        var confirmationTimestamp = subscriptionDescriptor.now(clockProvider);
+        if(subscriptionDescriptor.getValidityFrom() != null) {
+            validityFrom = subscriptionDescriptor.getValidityFrom();
+            validityTo   = subscriptionDescriptor.getValidityTo();
+        } else if(subscriptionDescriptor.getValidityUnits() != null) {
+            validityFrom = confirmationTimestamp;
+            var temporalUnit = Objects.requireNonNullElse(subscriptionDescriptor.getValidityTimeUnit(), SubscriptionTimeUnit.DAYS).getTemporalUnit();
+            validityTo = confirmationTimestamp.plus(subscriptionDescriptor.getValidityUnits(), temporalUnit)
+                .with(ChronoField.HOUR_OF_DAY, 23)
+                .with(ChronoField.MINUTE_OF_HOUR, 59)
+                .with(ChronoField.SECOND_OF_MINUTE, 59);
+        }
+
+        var updatedSubscriptions = subscriptionRepository.confirmSubscription(reservationId, status, customerName.getFirstName(), customerName.getLastName(),
+            email, subscriptionDescriptor.getMaxEntries(), validityFrom, validityTo, confirmationTimestamp, subscriptionDescriptor.getTimeZone());
         subscriptionRepository.findSubscriptionsByReservationId(reservationId) // at the moment it's safe because there can be only one subscription per reservation
             .forEach(subscriptionId -> auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString()));
         Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
@@ -1589,7 +1608,7 @@ public class TicketReservationManager {
                     "-" + formatCents(ticketPriceCts, currencyCode),
                     "-" + formatCents(priceBeforeVat, currencyCode),
                     ticketPriceCts,
-                    SummaryType.SUBSCRIPTION
+                    SummaryType.APPLIED_SUBSCRIPTION
                 ));
             });
         }
@@ -1600,6 +1619,15 @@ public class TicketReservationManager {
 
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
                                     PurchaseContext purchaseContext, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
+        List<Subscription> subscriptionsToInclude;
+        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+            subscriptionsToInclude = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId)
+                .map(List::of)
+                .orElse(List.of());
+        } else {
+            subscriptionsToInclude = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
+        }
+
         return extractSummary(reservationVatStatus,
             purchaseContext,
             locale,
@@ -1607,7 +1635,7 @@ public class TicketReservationManager {
             reservationCost,
             ticketRepository.findTicketsInReservation(reservationId),
             streamAdditionalServiceItems(reservationId, purchaseContext),
-            subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId).map(List::of).orElse(List.of()));
+            subscriptionsToInclude);
     }
 
     private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> streamAdditionalServiceItems(String reservationId, PurchaseContext purchaseContext) {
@@ -2658,7 +2686,7 @@ public class TicketReservationManager {
         // reload and lock subscription
         Subscription subscription = subscriptionRepository.findSubscriptionByIdForUpdate(subscriptionId);
 
-        if (!subscription.isValid(subscriptionDescriptor)) {
+        if (!subscription.isValid()) {
             return false;
         }
         try {

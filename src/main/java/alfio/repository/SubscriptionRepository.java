@@ -239,17 +239,23 @@ public interface SubscriptionRepository {
     @Query("select * from subscription where id = (select subscription_id_fk from tickets_reservation where id = :reservationId)")
     Optional<Subscription> findAppliedSubscriptionByReservationId(@Bind("reservationId") String id);
 
-    @Query("select sd.* from subscription_descriptor sd" +
-        " join subscription s on s.subscription_descriptor_fk = sd.id" +
-        " join tickets_reservation tr on tr.subscription_id_fk = s.id" +
-        " where tr.id = :reservationId")
-    Optional<SubscriptionDescriptor> findDescriptorForAppliedSubscription(@Bind("reservationId") String reservationId);
-
     @Query("select count(*) from subscription where id = :id")
     int countSubscriptionById(@Bind("id") UUID fromString);
 
-    @Query("update subscription set status = :status::allocation_status, first_name = :firstName, last_name = :lastName, email_address = :email where reservation_id_fk = :reservationId")
-    int updateSubscriptionStatus(@Bind("reservationId") String reservationId, @Bind("status") AllocationStatus status, @Bind("firstName") String firstName, @Bind("lastName") String lastName, @Bind("email") String email);
+    @Query("update subscription set status = :status::allocation_status, first_name = :firstName, last_name = :lastName," +
+        " email_address = :email, max_entries = :maxEntries, confirmation_ts = :confirmationTs," +
+        " validity_from = :validityFrom, validity_to = :validityTo, time_zone = :timeZone " +
+        " where reservation_id_fk = :reservationId")
+    int confirmSubscription(@Bind("reservationId") String reservationId,
+                            @Bind("status") AllocationStatus status,
+                            @Bind("firstName") String firstName,
+                            @Bind("lastName") String lastName,
+                            @Bind("email") String email,
+                            @Bind("maxEntries") int maxEntries,
+                            @Bind("validityFrom") ZonedDateTime validityFrom,
+                            @Bind("validityTo") ZonedDateTime validityTo,
+                            @Bind("confirmationTs") ZonedDateTime confirmationTimestamp,
+                            @Bind("timeZone") String timeZone);
 
     @Query("update subscription set status = 'INVALIDATED' where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit :amount")
     int invalidateSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("amount") int amount);

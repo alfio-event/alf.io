@@ -34,6 +34,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,7 +47,17 @@ public class SubscriptionDescriptor implements PurchaseContext {
     }
 
     public enum SubscriptionTimeUnit {
-        DAYS, MONTHS, YEARS
+        DAYS(ChronoUnit.DAYS), MONTHS(ChronoUnit.MONTHS), YEARS(ChronoUnit.YEARS);
+
+        private final TemporalUnit temporalUnit;
+
+        SubscriptionTimeUnit(TemporalUnit temporalUnit) {
+            this.temporalUnit = temporalUnit;
+        }
+
+        public TemporalUnit getTemporalUnit() {
+            return temporalUnit;
+        }
     }
 
     public enum SubscriptionValidityType {
@@ -214,7 +226,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
         return false;
     }
 
-    private static ZonedDateTime atZone(ZonedDateTime in, ZoneId zone) {
+    static ZonedDateTime atZone(ZonedDateTime in, ZoneId zone) {
         if(in != null) {
             return in.withZoneSameInstant(zone);
         }

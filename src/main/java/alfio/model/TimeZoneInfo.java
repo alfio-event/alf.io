@@ -22,7 +22,7 @@ import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-interface TimeZoneInfo {
+public interface TimeZoneInfo {
 
     ZoneId getZoneId();
 
