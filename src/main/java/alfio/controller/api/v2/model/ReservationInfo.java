@@ -235,6 +235,15 @@ public class ReservationInfo {
         private final UUID id;
         private final String pin;
         private final UsageDetails usageDetails;
+        private final SubscriptionOwner owner;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class SubscriptionOwner {
+        private final String firstName;
+        private final String lastName;
+        private final String email;
     }
 
 }

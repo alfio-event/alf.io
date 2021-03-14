@@ -133,7 +133,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             }
         }
 
-        var description = purchaseContext.getType() == PurchaseContext.PurchaseContextType.event ? "ticket(s) for event" : "x subscription";
+        var description = purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) ? "ticket(s) for event" : "x subscription";
         var paymentDescription = String.format("%s - %d %s %s", configurationManager.getShortReservationID(purchaseContext, reservation), items, description, purchaseContext.getDisplayName());
         var requestBody = new PaymentPageInitializeRequestBuilder(configuration.get(BASE_URL).getRequiredValue(), spec)
             .addAuthentication(configuration.get(SAFERPAY_CUSTOMER_ID).getRequiredValue(), reservationId, configuration.get(SAFERPAY_TERMINAL_ID).getRequiredValue())

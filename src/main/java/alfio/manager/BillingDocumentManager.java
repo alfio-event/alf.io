@@ -177,7 +177,7 @@ public class BillingDocumentManager {
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
             && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
-        model.put("isEvent", purchaseContext.getType() == PurchaseContextType.event);
+        model.put("isEvent", purchaseContext.ofType(PurchaseContextType.event));
         model.put("euBusiness", euBusiness);
         model.put("publicId", configurationManager.getPublicReservationID(purchaseContext, reservation));
         var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservation.getId());

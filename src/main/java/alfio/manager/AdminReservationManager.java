@@ -701,7 +701,7 @@ public class AdminReservationManager {
                 TicketReservation reservation = t.getLeft();
                 List<Ticket> tickets = t.getMiddle();
                 specialPriceRepository.resetToFreeAndCleanupForReservation(List.of(reservation.getId()));
-                if(purchaseContext.getType() == PurchaseContextType.event) {
+                if(purchaseContext.ofType(PurchaseContextType.event)) {
                     removeTicketsFromReservation(reservation, (Event) purchaseContext, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, false);
                 }
                 additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);

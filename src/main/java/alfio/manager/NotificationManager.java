@@ -306,7 +306,7 @@ public class NotificationManager {
     }
 
     private static Pair<Integer, UUID> getEventIdSubscriptionId(PurchaseContext purchaseContext) {
-        if(purchaseContext.getType() == PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContextType.event)) {
             return Pair.of(((Event)purchaseContext).getId(), null);
         } else {
             return Pair.of(null, ((SubscriptionDescriptor) purchaseContext).getId());
@@ -318,7 +318,7 @@ public class NotificationManager {
         int offset = page == null ? 0 : page * pageSize;
         String toSearch = StringUtils.trimToNull(search);
         toSearch = toSearch == null ? null : ("%" + toSearch + "%");
-        if(purchaseContext.getType() == PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContextType.event)) {
             int eventId = ((Event) purchaseContext).getId();
             return Pair.of(emailMessageRepository.countFindByEventId(eventId, toSearch), emailMessageRepository.findByEventId(eventId, offset, pageSize, toSearch));
         } else {
@@ -332,7 +332,7 @@ public class NotificationManager {
     }
 
     public Optional<LightweightMailMessage> loadSingleMessageForPurchaseContext(PurchaseContext purchaseContext, int messageId) {
-        if(purchaseContext.getType() == PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContextType.event)) {
             return emailMessageRepository.findByEventIdAndMessageId(((Event)purchaseContext).getId(), messageId);
         } else {
             return emailMessageRepository.findBySubscriptionDescriptorIdAndMessageId(((SubscriptionDescriptor)purchaseContext).getId(), messageId);

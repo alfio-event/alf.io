@@ -46,6 +46,7 @@ import alfio.util.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -177,12 +178,16 @@ public class ReservationApiV2Controller {
             var containsCategoriesLinkedToGroups = purchaseContext.event().map(event -> ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())).orElse(false);
             //
             List<ReservationInfo.SubscriptionInfo> subscriptionInfos = null;
-            if (purchaseContext.getType() == PurchaseContextType.subscription) {
+            if (purchaseContext.ofType(PurchaseContextType.subscription)) {
                 subscriptionInfos = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream()
                     .limit(1) // since we support only one subscription for now, it make sense to limit the result to avoid N+1
                     .map(s -> {
                         int usageCount = ticketRepository.countSubscriptionUsage(s.getId(), null);
-                        return new ReservationInfo.SubscriptionInfo(s.getId(), s.getPin(), UsageDetails.fromSubscription(s, usageCount));
+                        return new ReservationInfo.SubscriptionInfo(
+                            s.getStatus() == AllocationStatus.ACQUIRED ? s.getId() : null,
+                            s.getStatus() == AllocationStatus.ACQUIRED ? s.getPin() : null,
+                            UsageDetails.fromSubscription(s, usageCount),
+                            new ReservationInfo.SubscriptionOwner(s.getFirstName(), s.getLastName(), s.getEmail()));
                     })
                     .collect(Collectors.toList());
             }
@@ -403,6 +408,11 @@ public class ReservationApiV2Controller {
             purchaseContext.event().ifPresent(event -> {
                 assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
             });
+
+            if(purchaseContext.ofType(PurchaseContextType.subscription) && contactAndTicketsForm.isDifferentSubscriptionOwner()) {
+                var owner = contactAndTicketsForm.getSubscriptionOwner();
+                Validate.isTrue(subscriptionRepository.assignSubscription(reservationId, owner.getFirstName(), owner.getLastName(), owner.getEmail()) == 1);
+            }
             //
 
             Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);

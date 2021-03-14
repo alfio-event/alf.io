@@ -45,7 +45,7 @@ public class PurchaseContextSearchManager {
         String toSearch = StringUtils.trimToNull(search);
         toSearch = toSearch == null ? null : ("%" + toSearch + "%");
         List<String> toFilter = (status == null || status.isEmpty() ? Arrays.asList(TicketReservation.TicketReservationStatus.values()) : status).stream().map(TicketReservation.TicketReservationStatus::toString).collect(toList());
-        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             var event = (Event)purchaseContext;
             List<TicketReservation> reservationsForEvent = ticketSearchRepository.findReservationsForEvent(event.getId(), offset, pageSize, toSearch, toFilter);
             return Pair.of(reservationsForEvent, ticketSearchRepository.countReservationsForEvent(event.getId(), toSearch, toFilter));

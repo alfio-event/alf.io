@@ -108,6 +108,7 @@ import static alfio.util.Wrappers.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
@@ -776,7 +777,7 @@ public class TicketReservationManager {
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         int priceWithVAT = totalPrice.getPriceWithVAT();
-        long platformFee = FeeCalculator.getCalculator(event, configurationManager, Objects.requireNonNullElse(totalPrice.getCurrencyCode(), event.getCurrency()))
+        long platformFee = FeeCalculator.getCalculator(event, configurationManager, requireNonNullElse(totalPrice.getCurrencyCode(), event.getCurrency()))
             .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
             .orElse(0L);
 
@@ -806,7 +807,7 @@ public class TicketReservationManager {
 
         Map<String, Object> initialModel;
         TemplateResource templateResource;
-        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.subscription) {
+        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.subscription)) {
             var firstSubscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
             initialModel = Map.of("pin", firstSubscription.getPin(), "subscriptionId", firstSubscription.getId());
             templateResource = TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION;
@@ -1153,7 +1154,7 @@ public class TicketReservationManager {
                                           PurchaseContext purchaseContext,
                                           Locale locale,
                                           String username) {
-        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), purchaseContext.getConfigurationLevel());
             if(ticketReservation.getSrcPriceCts() > 0
                 || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
@@ -1225,15 +1226,23 @@ public class TicketReservationManager {
             validityTo   = subscriptionDescriptor.getValidityTo();
         } else if(subscriptionDescriptor.getValidityUnits() != null) {
             validityFrom = confirmationTimestamp;
-            var temporalUnit = Objects.requireNonNullElse(subscriptionDescriptor.getValidityTimeUnit(), SubscriptionTimeUnit.DAYS).getTemporalUnit();
+            var temporalUnit = requireNonNullElse(subscriptionDescriptor.getValidityTimeUnit(), SubscriptionTimeUnit.DAYS).getTemporalUnit();
             validityTo = confirmationTimestamp.plus(subscriptionDescriptor.getValidityUnits(), temporalUnit)
                 .with(ChronoField.HOUR_OF_DAY, 23)
                 .with(ChronoField.MINUTE_OF_HOUR, 59)
                 .with(ChronoField.SECOND_OF_MINUTE, 59);
         }
-
-        var updatedSubscriptions = subscriptionRepository.confirmSubscription(reservationId, status, customerName.getFirstName(), customerName.getLastName(),
-            email, subscriptionDescriptor.getMaxEntries(), validityFrom, validityTo, confirmationTimestamp, subscriptionDescriptor.getTimeZone());
+        var subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
+        var updatedSubscriptions = subscriptionRepository.confirmSubscription(reservationId,
+            status,
+            requireNonNullElse(subscription.getFirstName(), customerName.getFirstName()),
+            requireNonNullElse(subscription.getLastName(), customerName.getLastName()),
+            requireNonNullElse(subscription.getEmail(), email),
+            subscriptionDescriptor.getMaxEntries(),
+            validityFrom,
+            validityTo,
+            confirmationTimestamp,
+            subscriptionDescriptor.getTimeZone());
         subscriptionRepository.findSubscriptionsByReservationId(reservationId) // at the moment it's safe because there can be only one subscription per reservation
             .forEach(subscriptionId -> auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString()));
         Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
@@ -1620,7 +1629,7 @@ public class TicketReservationManager {
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
                                     PurchaseContext purchaseContext, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
         List<Subscription> subscriptionsToInclude;
-        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             subscriptionsToInclude = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId)
                 .map(List::of)
                 .orElse(List.of());
@@ -2448,7 +2457,7 @@ public class TicketReservationManager {
         "reservation", reservation,
         "reservationId", shortReservationID,
         "eventName", purchaseContext.getDisplayName(),
-        "provider", Objects.requireNonNullElse(paymentMethod.name(), ""),
+        "provider", requireNonNullElse(paymentMethod.name(), ""),
         "reason", paymentWebhookResult.getReason(),
         "reservationUrl", reservationUrl(reservation, purchaseContext));
 

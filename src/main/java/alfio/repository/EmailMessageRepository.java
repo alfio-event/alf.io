@@ -41,7 +41,7 @@ public interface EmailMessageRepository {
     Optional<Integer> findIdBySubscriptionDescriptorAndChecksum(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId, @Bind("checksum") String checksum);
 
     default Optional<Integer> findIdByPurchaseContextAndChecksum(PurchaseContext purchaseContext, String checksum) {
-        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             return findIdByEventIdAndChecksum(((Event)purchaseContext).getId(), checksum);
         } else {
             return findIdBySubscriptionDescriptorAndChecksum(((SubscriptionDescriptor) purchaseContext).getId(), checksum);
@@ -108,7 +108,7 @@ public interface EmailMessageRepository {
     List<LightweightMailMessage> findBySubscriptionDescriptorAndReservationId(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId, @Bind("reservationId") String reservationId);
 
     default List<LightweightMailMessage> findByPurchaseContextAndReservationId(PurchaseContext purchaseContext, String reservationId) {
-        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             return findByEventIdAndReservationId(((Event)purchaseContext).getId(), reservationId);
         } else {
             return findBySubscriptionDescriptorAndReservationId(((SubscriptionDescriptor)purchaseContext).getId(), reservationId);

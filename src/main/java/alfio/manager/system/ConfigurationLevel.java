@@ -51,7 +51,7 @@ public interface ConfigurationLevel {
     }
 
     static ConfigurationLevel purchaseContext(PurchaseContext purchaseContext) {
-        if(purchaseContext.getType() == PurchaseContext.PurchaseContextType.event) {
+        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             return event(purchaseContext.event().orElseThrow());
         }
         return organization(purchaseContext.getOrganizationId());

@@ -257,6 +257,12 @@ public interface SubscriptionRepository {
                             @Bind("confirmationTs") ZonedDateTime confirmationTimestamp,
                             @Bind("timeZone") String timeZone);
 
+    @Query("update subscription set first_name = :firstName, last_name = :lastName, email_address = :email where reservation_id_fk = :reservationId")
+    int assignSubscription(@Bind("reservationId") String reservationId,
+                           @Bind("firstName") String firstName,
+                           @Bind("lastName") String lastName,
+                           @Bind("email") String email);
+
     @Query("update subscription set status = 'INVALIDATED' where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit :amount")
     int invalidateSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("amount") int amount);
 }

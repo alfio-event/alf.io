@@ -17,8 +17,8 @@
 package alfio.controller.form;
 
 import alfio.manager.SameCountryValidator;
-import alfio.model.Event;
 import alfio.model.PurchaseContext;
+import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
@@ -76,6 +76,8 @@ public class ContactAndTicketsForm implements Serializable {
     private String italyEInvoicingReferenceAddresseeCode;
     private String italyEInvoicingReferencePEC;
     private boolean italyEInvoicingSplitPayment;
+    private boolean differentSubscriptionOwner;
+    private UpdateSubscriptionOwnerForm subscriptionOwner;
 
     //
 
@@ -214,6 +216,12 @@ public class ContactAndTicketsForm implements Serializable {
                 }
             }
         });
+
+        if(purchaseContext.ofType(PurchaseContextType.subscription) && differentSubscriptionOwner) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.email", ErrorsCode.STEP_2_EMPTY_EMAIL);
+        }
     }
 
     private boolean containsVatValidationError(List<ValidationResult> l) {

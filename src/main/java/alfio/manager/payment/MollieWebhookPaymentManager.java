@@ -308,7 +308,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("amount", Map.of("value", spec.getOrderSummary().getTotalPrice(), "currency", spec.getPurchaseContext().getCurrency()));
-        var description = purchaseContext.getType() == PurchaseContext.PurchaseContextType.event ? "ticket(s) for event" : "x subscription";
+        var description = purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) ? "ticket(s) for event" : "x subscription";
         payload.put("description", String.format("%s - %d %s %s", configurationManager.getShortReservationID(spec.getPurchaseContext(), reservation), items, description, spec.getPurchaseContext().getDisplayName()));
         payload.put("redirectUrl", bookUrl);
         payload.put("webhookUrl", baseUrl + UriComponentsBuilder.fromPath(WEBHOOK_URL_TEMPLATE).buildAndExpand(reservationId).toUriString());
@@ -385,7 +385,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     }
 
     public static final String ADDITIONAL_INFO_PURCHASE_CONTEXT_TYPE = "purchaseContextType";
-    public static final String ADDITIONAL_INFO_PURCHASE_IDENTIFIER = "purchaseContextType";
+    public static final String ADDITIONAL_INFO_PURCHASE_IDENTIFIER = "purchaseContextPublicIdentifier";
     public static final String ADDITIONAL_INFO_RESERVATION_ID = "reservationId";
 
     @Override

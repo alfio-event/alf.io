@@ -257,7 +257,7 @@ public class AdminReservationApiController {
     }
 
     private SubscriptionWithUsageDetails buildSubscriptionDetails(PurchaseContext purchaseContext, TicketReservation reservation) {
-        if(purchaseContext.getType() == PurchaseContextType.subscription) {
+        if(purchaseContext.ofType(PurchaseContextType.subscription)) {
             // load statistics
             return ticketReservationManager.findSubscriptionDetails(reservation).orElse(null);
         }

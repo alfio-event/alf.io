@@ -164,7 +164,7 @@ class BaseStripeManager {
             .filter(l -> l > 0)
             .ifPresent(fee -> chargeParams.put("application_fee_amount", fee));
         chargeParams.put("currency", purchaseContext.getCurrency());
-        var description = purchaseContext.getType() == PurchaseContextType.event ? "ticket(s) for event" : "x subscription";
+        var description = purchaseContext.ofType(PurchaseContextType.event) ? "ticket(s) for event" : "x subscription";
         chargeParams.put("description", String.format("%d %s %s", items, description, purchaseContext.getDisplayName()));
         chargeParams.put("metadata", MetadataBuilder.buildMetadata(spec, baseMetadata));
         return chargeParams;

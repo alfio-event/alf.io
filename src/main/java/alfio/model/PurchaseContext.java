@@ -88,4 +88,8 @@ public interface PurchaseContext extends Configurable, TimeZoneInfo, LocalizedCo
     default boolean getFileBlobIdIsPresent() {
         return true;
     }
+
+    default boolean ofType(PurchaseContextType purchaseContextType) {
+        return getType() == purchaseContextType;
+    }
 }
