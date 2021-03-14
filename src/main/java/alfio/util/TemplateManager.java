@@ -25,6 +25,7 @@ import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Template;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
@@ -49,6 +50,7 @@ import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
 /**
  * For hiding the ugliness :)
  * */
+@Log4j2
 public class TemplateManager {
 
 
@@ -154,6 +156,7 @@ public class TemplateManager {
             updatedModel.putIfAbsent("custom-footer-text", "");
             return compile(resource, templateOutput).execute(mv.getModel());
         } catch (Exception e) {
+            log.error("TemplateManager: got exception while generating a template", e);
             throw new IllegalStateException(e);
         }
     }

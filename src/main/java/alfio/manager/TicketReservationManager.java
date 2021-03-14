@@ -32,6 +32,7 @@ import alfio.model.*;
 import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
 import alfio.model.PromoCodeDiscount.CodeType;
 import alfio.model.PromoCodeDiscount.DiscountType;
+import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.SpecialPrice.Status;
 import alfio.model.SummaryRow.SummaryType;
 import alfio.model.Ticket.TicketStatus;
@@ -805,31 +806,44 @@ public class TicketReservationManager {
 
         OrderSummary summary = orderSummaryForReservationId(reservationId, purchaseContext);
 
-        Map<String, Object> initialModel;
-        TemplateResource templateResource;
-        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.subscription)) {
-            var firstSubscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
-            initialModel = Map.of("pin", firstSubscription.getPin(), "subscriptionId", firstSubscription.getId());
-            templateResource = TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION;
-        } else {
-            initialModel = Map.of();
-            templateResource = TemplateResource.CONFIRMATION_EMAIL;
-        }
-
-        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation, getVAT(purchaseContext), summary, ticketRepository.findTicketsInReservation(ticketReservation.getId()), initialModel);
-        List<Mailer.Attachment> attachments = Collections.emptyList();
-
+        List<Mailer.Attachment> attachments;
         if (configurationManager.canGenerateReceiptOrInvoiceToCustomer(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
             attachments = generateAttachmentForConfirmationEmail(purchaseContext, ticketReservation, language, summary, username);
+        } else{
+            attachments = List.of();
         }
+        var vat = getVAT(purchaseContext);
 
+        List<ConfirmationEmailConfiguration> configurations = new ArrayList<>();
+        if(purchaseContext.ofType(PurchaseContextType.subscription)) {
+            var firstSubscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
+            boolean sendSeparateEmailToOwner = !Objects.equals(firstSubscription.getEmail(), ticketReservation.getEmail());
+            Map<String, Object> initialModel = Map.of(
+                "pin", firstSubscription.getPin(),
+                "subscriptionId", firstSubscription.getId(),
+                "includePin", true,
+                "fullName", firstSubscription.getFirstName() + " " + firstSubscription.getLastName());
+            var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, List.of(), initialModel);
+            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : attachments));
+            if(sendSeparateEmailToOwner) {
+                var separateModel = new HashMap<>(model);
+                separateModel.put("includePin", false);
+                separateModel.put("fullName", ticketReservation.getFullName());
+                configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, ticketReservation.getEmail(), separateModel, attachments));
+            }
+        } else {
+            var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, ticketRepository.findTicketsInReservation(ticketReservation.getId()), Map.of());
+            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL, ticketReservation.getEmail(), model, attachments));
+        }
 
         var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
         var localizedType = messageSource.getMessage("purchase-context."+purchaseContext.getType(), null, language);
-        notificationManager.sendSimpleEmail(purchaseContext, ticketReservation.getId(), ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-                new Object[]{getShortReservationID(purchaseContext, ticketReservation), purchaseContext.getTitle().get(language.getLanguage()), localizedType}, language),
-           () -> templateManager.renderTemplate(purchaseContext, templateResource, reservationEmailModel, language),
-            attachments);
+        configurations.forEach(configuration -> {
+            notificationManager.sendSimpleEmail(purchaseContext, ticketReservation.getId(), configuration.getEmailAddress(), messageSource.getMessage("reservation-email-subject",
+                    new Object[]{getShortReservationID(purchaseContext, ticketReservation), purchaseContext.getTitle().get(language.getLanguage()), localizedType}, language),
+               () -> templateManager.renderTemplate(purchaseContext, configuration.getTemplateResource(), configuration.getModel(), language),
+                configuration.getAttachments());
+        });
     }
 
     private List<Mailer.Attachment> generateAttachmentForConfirmationEmail(PurchaseContext purchaseContext,
@@ -1154,7 +1168,7 @@ public class TicketReservationManager {
                                           PurchaseContext purchaseContext,
                                           Locale locale,
                                           String username) {
-        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+        if(purchaseContext.ofType(PurchaseContextType.event)) {
             var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), purchaseContext.getConfigurationLevel());
             if(ticketReservation.getSrcPriceCts() > 0
                 || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
@@ -1629,7 +1643,7 @@ public class TicketReservationManager {
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
                                     PurchaseContext purchaseContext, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
         List<Subscription> subscriptionsToInclude;
-        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+        if(purchaseContext.ofType(PurchaseContextType.event)) {
             subscriptionsToInclude = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId)
                 .map(List::of)
                 .orElse(List.of());

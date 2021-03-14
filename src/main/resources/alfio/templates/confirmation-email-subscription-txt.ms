@@ -1,11 +1,12 @@
 {{purchaseContextTitle}}
 
-{{#i18n}}email.hello [{{ticketReservation.fullName}}]{{/i18n}}
+{{#i18n}}email.hello [{{fullName}}]{{/i18n}}
 {{custom-header-text}}
 {{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.subscription.completed{{/i18n}}{{/orderSummary.waitingForPayment}}
 {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.subscription.waiting-for-payment [{{reservationUrl}}]{{/i18n}}{{/orderSummary.waitingForPayment}}
 
 {{^orderSummary.waitingForPayment}}
+{{#includePin}}
 #### {{#i18n}}reservation-page-complete.subscription{{/i18n}} ####
 
 {{#i18n}}reservation-page-complete.subscription.pin-description{{/i18n}}
@@ -15,6 +16,7 @@
 {{subscriptionId}}
 
 {{#i18n}}reservation-page-complete.buy-tickets{{/i18n}}: {{baseUrl}}/events-all?subscription={{subscriptionId}}
+{{/includePin}}
 {{/orderSummary.waitingForPayment}}
 
 #### {{#i18n}}email-confirmation.reservation-summary{{/i18n}} ####

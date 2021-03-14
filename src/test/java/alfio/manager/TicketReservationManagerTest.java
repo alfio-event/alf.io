@@ -243,6 +243,7 @@ class TicketReservationManagerTest {
         when(event.now(any(Clock.class))).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
         when(event.event()).thenReturn(Optional.of(event));
         when(event.getType()).thenReturn(PurchaseContext.PurchaseContextType.event);
+        when(event.ofType(eq(PurchaseContext.PurchaseContextType.event))).thenReturn(true);
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(specialPrice.getCode()).thenReturn(SPECIAL_PRICE_CODE);
         when(specialPrice.getId()).thenReturn(SPECIAL_PRICE_ID);

@@ -34,7 +34,7 @@
         <mj-section background-color="white">
             <mj-column width="100%">
                 <mj-text align="left" font-size="14px">
-                    {{#i18n}}email.hello [{{ticketReservation.fullName}}]{{/i18n}}<br />{{custom-header-text}}
+                    {{#i18n}}email.hello [{{fullName}}]{{/i18n}}<br />{{custom-header-text}}
                 </mj-text>
                 <mj-raw>{{^orderSummary.waitingForPayment}}</mj-raw>
                 <mj-text align="left" font-size="14px">{{#i18n}}email-confirmation.subscription.completed{{/i18n}}</mj-text>
@@ -45,7 +45,7 @@
                 <mj-raw>{{/orderSummary.waitingForPayment}}</mj-raw>
             </mj-column>
         </mj-section>
-        <mj-raw>{{^orderSummary.waitingForPayment}}</mj-raw>
+        <mj-raw>{{^orderSummary.waitingForPayment}}{{#includePin}}</mj-raw>
         <mj-section background-color="white">
             <mj-column width="100%">
                 <mj-text align="center">
@@ -68,7 +68,7 @@
                 </mj-button>
             </mj-column>
         </mj-section>
-        <mj-raw>{{/orderSummary.waitingForPayment}}</mj-raw>
+        <mj-raw>{{/includePin}}{{/orderSummary.waitingForPayment}}</mj-raw>
         <mj-section background-color="#f8f8ff">
             <mj-column width="130px">
                 <mj-image src="{{baseUrl}}/resources/images/email/icon_calendar.png"></mj-image>
