@@ -51,12 +51,12 @@ public class SubscriptionManager {
 
     public Optional<UUID> createSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
         var id = UUID.randomUUID();
-        int maxEntries = Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1);
+        int maxAvailable = Objects.requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1);
         int result = subscriptionRepository.createSubscriptionDescriptor(
             id,
             subscriptionDescriptor.getTitle(),
             subscriptionDescriptor.getDescription(),
-            Objects.requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1),
+            maxAvailable,
             subscriptionDescriptor.getOnSaleFrom(),
             subscriptionDescriptor.getOnSaleTo(),
             subscriptionDescriptor.getPriceCts(),
@@ -66,7 +66,7 @@ public class SubscriptionManager {
             Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
             subscriptionDescriptor.getOrganizationId(),
 
-            maxEntries,
+            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
             subscriptionDescriptor.getValidityType(),
             subscriptionDescriptor.getValidityTimeUnit(),
             subscriptionDescriptor.getValidityUnits(),
@@ -86,8 +86,8 @@ public class SubscriptionManager {
         }
 
         // pre-generate subscriptions if descriptor has a limited quantity
-        if(maxEntries > 0) {
-            preGenerateSubscriptions(subscriptionDescriptor, id, maxEntries);
+        if(maxAvailable > 0) {
+            preGenerateSubscriptions(subscriptionDescriptor, id, maxAvailable);
         }
 
         return Optional.of(id);
@@ -159,7 +159,8 @@ public class SubscriptionManager {
                 );
 
                 if(maxAvailable > 0 && maxAvailable > original.getMaxAvailable()) {
-                    preGenerateSubscriptions(subscriptionDescriptor, subscriptionDescriptor.getId(), maxAvailable - original.getMaxAvailable());
+                    int existing = Math.max(0, original.getMaxAvailable());
+                    preGenerateSubscriptions(subscriptionDescriptor, subscriptionDescriptor.getId(), maxAvailable - existing);
                 } else if(maxAvailable < original.getMaxAvailable()) {
                     int amount = original.getMaxAvailable() - Math.max(maxAvailable, 0);
                     int invalidated = subscriptionRepository.invalidateSubscriptions(subscriptionDescriptor.getId(), amount);

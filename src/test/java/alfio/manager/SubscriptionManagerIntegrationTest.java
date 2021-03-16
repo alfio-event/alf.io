@@ -241,16 +241,48 @@ public class SubscriptionManagerIntegrationTest {
 
         subscriptions = subscriptionRepository.findLinkedSubscriptionIds(event.getId(), event.getOrganizationId());
         assertTrue(subscriptions.isEmpty());
+    }
 
+    @Test
+    void createAsUnlimitedThenSetLimit() {
+        int orgId = event.getOrganizationId();
+        assertTrue(subscriptionManager.findAll(orgId).isEmpty());
+        var request = buildSubscriptionDescriptor(orgId, null, new BigDecimal("100"), null);
 
+        var optionalDescriptorId = subscriptionManager.createSubscriptionDescriptor(request);
+        assertTrue(optionalDescriptorId.isPresent());
+        var descriptorId = optionalDescriptorId.get();
+        var count = jdbcTemplate.queryForObject("select count(*) from subscription where subscription_descriptor_fk = :descriptorId", Map.of("descriptorId", descriptorId), Integer.class);
+        assertNotNull(count);
+        assertEquals(0, count);
+        var res = subscriptionManager.findAll(orgId);
+        assertEquals(1, res.size());
+        var descriptor = res.get(0);
+        assertEquals(-1, descriptor.getMaxAvailable());
+
+        request = buildSubscriptionDescriptor(orgId, descriptorId, new BigDecimal("100"), 42);
+        subscriptionManager.updateSubscriptionDescriptor(request);
+        count = jdbcTemplate.queryForObject("select count(*) from subscription where subscription_descriptor_fk = :descriptorId", Map.of("descriptorId", descriptorId), Integer.class);
+        assertNotNull(count);
+        assertEquals(42, count);
+
+        request = buildSubscriptionDescriptor(orgId, descriptorId, new BigDecimal("100"), 1);
+        subscriptionManager.updateSubscriptionDescriptor(request);
+        count = jdbcTemplate.queryForObject("select count(*) from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE'", Map.of("descriptorId", descriptorId), Integer.class);
+        assertNotNull(count);
+        assertEquals(1, count);
     }
 
     private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price) {
+        return buildSubscriptionDescriptor(orgId, id, price, 42);
+    }
+
+    private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price, Integer maxAvailable) {
 
         return new SubscriptionDescriptorModification(id,
             Map.of("en", "title"),
             Map.of("en", "description"),
-            42,
+            maxAvailable,
             ZonedDateTime.now(ClockProvider.clock()),
             null,
             price,

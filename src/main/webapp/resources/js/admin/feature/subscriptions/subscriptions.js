@@ -373,6 +373,7 @@
             if(ctrl.existing) {
                 // edit existing subscription
                 SubscriptionService.update(subscription).then(function(res) {
+                    NotificationHandler.showSuccess('Update successful');
                     reloadSubscription();
                 })
             } else {

@@ -264,6 +264,6 @@ public interface SubscriptionRepository {
                            @Bind("lastName") String lastName,
                            @Bind("email") String email);
 
-    @Query("update subscription set status = 'INVALIDATED' where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit :amount")
+    @Query("update subscription set status = 'INVALIDATED' where id in (select id from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit :amount)")
     int invalidateSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("amount") int amount);
 }
