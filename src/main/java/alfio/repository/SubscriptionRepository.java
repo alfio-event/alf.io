@@ -53,9 +53,9 @@ public interface SubscriptionRepository {
         " values(:eventId, :subscriptionId, :pricePerTicket, :organizationId) on conflict(subscription_descriptor_id_fk, event_id_fk) do update set price_per_ticket = excluded.price_per_ticket";
 
     String INSERT_SUBSCRIPTION = "insert into subscription(id, subscription_descriptor_fk, reservation_id_fk, max_usage, " +
-        " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency, max_entries) " +
+        " valid_from, valid_to,  organization_id_fk, status, src_price_cts, currency, max_entries, time_zone) " +
         " values (:id, :subscriptionDescriptorId, :reservationId, :maxUsage, :validFrom, :validTo, :organizationId, :status::ALLOCATION_STATUS, " +
-        " :srcPriceCts, :currency, :maxEntries)";
+        " :srcPriceCts, :currency, :maxEntries, :timeZone)";
 
     @Query("insert into subscription_descriptor (" +
         "id, title, description, max_available, on_sale_from, on_sale_to, price_cts, vat, vat_status, currency, is_public, organization_id_fk, " +
@@ -197,7 +197,8 @@ public interface SubscriptionRepository {
                            @Bind("currency") String currency,
                            @Bind("organizationId") int organizationId,
                            @Bind("status") AllocationStatus status,
-                           @Bind("maxEntries") int maxEntries);
+                           @Bind("maxEntries") int maxEntries,
+                           @Bind("timeZone") String timeZone);
 
     @Query("select id from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit 1 for update skip locked")
     Optional<UUID> selectFreeSubscription(@Bind("descriptorId") UUID subscriptionDescriptorId);

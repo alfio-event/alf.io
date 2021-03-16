@@ -272,7 +272,7 @@ public class TicketReservationManager {
         } else {
             subscriptionRepository.createSubscription(UUID.randomUUID(), subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
                 subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(),
-                subscriptionDescriptor.getOrganizationId(), AllocationStatus.PENDING, subscriptionDescriptor.getMaxEntries());
+                subscriptionDescriptor.getOrganizationId(), AllocationStatus.PENDING, subscriptionDescriptor.getMaxEntries(), subscriptionDescriptor.getTimeZone());
         }
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = subscriptionDescriptor.getVatStatus();

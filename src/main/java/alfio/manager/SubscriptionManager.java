@@ -107,6 +107,7 @@ public class SubscriptionManager {
                 .addValue("status", AllocationStatus.FREE.name())
                 .addValue("maxEntries", subscriptionDescriptor.getMaxEntries())
                 .addValue("reservationId", null)
+                .addValue("timeZone", subscriptionDescriptor.getTimeZone().toString())
             ).toArray(MapSqlParameterSource[]::new));
         var added = Arrays.stream(results).sum();
         if(added != quantity) {
