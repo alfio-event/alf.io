@@ -195,6 +195,7 @@
                 <div class="form-group">
                     <label for="maxAvailable">Max Available (optional)</label>
                     <input id="maxAvailable" type="number" autocomplete="off" ng-model="$ctrl.subscription.maxAvailable" class="form-control">
+                    <small class="help-block">How many subscriptions can be sold<br>(empty = unlimited)</small>
                 </div>
             </div>
         </div>
@@ -221,6 +222,7 @@
                 <div class="form-group">
                     <label for="maxEntries">Number of access included</label>
                     <input id="maxEntries" type="number" ng-model="$ctrl.subscription.maxEntries" class="form-control" required>
+                    <small class="help-block">How many times people can use this Subscription</small>
                 </div>
             </div>
             <div class="col-sm-6 col-md-3" ng-if="$ctrl.preset === 'period'">

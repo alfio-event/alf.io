@@ -456,7 +456,7 @@
             },
             subscriptionAvailabilityTypes: {
                 'ONCE_PER_EVENT': 'Once per Event',
-                'UNLIMITED': 'Unlimited'
+                'UNLIMITED': 'Multiple times per Event'
             },
             vatStatus: {
                 'INCLUDED': 'Taxes included in the price',
