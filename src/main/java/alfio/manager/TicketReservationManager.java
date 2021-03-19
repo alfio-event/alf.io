@@ -2535,14 +2535,16 @@ public class TicketReservationManager {
             .forEach(this::checkOfflinePaymentsForEvent);
     }
 
-    public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Locale locale) {
+    public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Locale locale, BindingResult bindingResult) {
         Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(subscriptionDescriptor));
         try {
             return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale));
         } catch (CannotProceedWithPayment cannotProceedWithPayment) {
+            bindingResult.reject("error.STEP_1_PAYMENT_METHODS_ERROR");
             log.error("missing payment methods", cannotProceedWithPayment);
         } catch (NotEnoughTicketsException nex) {
             log.error("cannot acquire subscription", nex);
+            bindingResult.reject("show-subscription.sold-out.message");
         }
         return Optional.empty();
     }

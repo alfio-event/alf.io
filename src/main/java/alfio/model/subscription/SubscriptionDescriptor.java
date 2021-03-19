@@ -32,12 +32,15 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNullElseGet;
 
 @Getter
 public class SubscriptionDescriptor implements PurchaseContext {
@@ -246,9 +249,16 @@ public class SubscriptionDescriptor implements PurchaseContext {
         return renderTextCommonMark(description);
     }
 
+    public boolean withinSalePeriod(Clock clock) {
+        var now = now(clock);
+        return requireNonNullElseGet(onSaleFrom, () -> now.minusHours(1)).isBefore(now)
+            && requireNonNullElseGet(onSaleTo, () -> now.plusHours(1)).isAfter(now);
+    }
+
     private Map<String, String> renderTextCommonMark(Map<String, String> original) {
         return original.entrySet().stream()
             .map(entry -> Map.entry(entry.getKey(), MustacheCustomTag.renderToTextCommonmark(entry.getValue())))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
+
 }

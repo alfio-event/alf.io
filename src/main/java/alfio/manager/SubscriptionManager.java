@@ -197,4 +197,8 @@ public class SubscriptionManager {
     public List<EventSubscriptionLink> getLinkedEvents(int organizationId, UUID id) {
         return subscriptionRepository.findLinkedEvents(organizationId, id);
     }
+
+    public int countFree(UUID subscriptionDescriptorId) {
+        return subscriptionRepository.countFreeSubscriptionForDescriptor(subscriptionDescriptorId);
+    }
 }

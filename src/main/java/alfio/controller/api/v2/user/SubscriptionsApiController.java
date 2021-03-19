@@ -34,17 +34,17 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
+import lombok.AllArgsConstructor;
 import org.joda.money.CurrencyUnit;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.PriceContainer.VatStatus.isVatIncluded;
@@ -53,6 +53,7 @@ import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
 
 @RestController
 @RequestMapping("/api/v2/public/")
+@AllArgsConstructor
 public class SubscriptionsApiController {
 
     private final SubscriptionManager subscriptionManager;
@@ -61,20 +62,8 @@ public class SubscriptionsApiController {
     private final ConfigurationManager configurationManager;
     private final OrganizationRepository organizationRepository;
     private final MessageSourceManager messageSourceManager;
+    private final ClockProvider clockProvider;
 
-    public SubscriptionsApiController(SubscriptionManager subscriptionManager,
-                                      I18nManager i18nManager,
-                                      TicketReservationManager reservationManager,
-                                      ConfigurationManager configurationManager,
-                                      OrganizationRepository organizationRepository,
-                                      MessageSourceManager messageSourceManager) {
-        this.subscriptionManager = subscriptionManager;
-        this.i18nManager = i18nManager;
-        this.reservationManager = reservationManager;
-        this.configurationManager = configurationManager;
-        this.organizationRepository = organizationRepository;
-        this.messageSourceManager = messageSourceManager;
-    }
 
     @GetMapping("subscriptions")
     public ResponseEntity<List<BasicSubscriptionDescriptorInfo>> listSubscriptions(/* TODO search by: organizer, tag, subscription */) {
@@ -131,6 +120,14 @@ public class SubscriptionsApiController {
                 var bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).getValueOrDefault("").split("\n"));
                 var orgContact = organizationRepository.getContactById(s.getOrganizationId());
                 var messageSource = messageSourceManager.getMessageSourceFor(s);
+                int available;
+                if(!s.withinSalePeriod(clockProvider.getClock())) {
+                    available = 0;
+                } else if (s.getMaxAvailable() == -1) {
+                    available = Integer.MAX_VALUE;
+                } else {
+                    available = subscriptionManager.countFree(s.getId());
+                }
                 return new SubscriptionDescriptorWithAdditionalInfo(s,
                     invoicingInfo,
                     analyticsConf,
@@ -144,7 +141,8 @@ public class SubscriptionsApiController {
                     Formatters.getFormattedDate(s, s.getOnSaleTo(), "common.event.date-format", messageSource),
                     s.getZoneId().toString(),
                     Formatters.getFormattedDate(s, s.getValidityFrom(), "common.event.date-format", messageSource),
-                    Formatters.getFormattedDate(s, s.getValidityTo(), "common.event.date-format", messageSource));
+                    Formatters.getFormattedDate(s, s.getValidityTo(), "common.event.date-format", messageSource),
+                    available);
             })
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
@@ -152,10 +150,17 @@ public class SubscriptionsApiController {
 
     @PostMapping("subscription/{id}")
     public ResponseEntity<ValidatedResponse<String>> reserveSubscription(@PathVariable("id") String id, Locale locale) {
+        var bindingResult = new MapBindingResult(new HashMap<>(), "request");
         return subscriptionManager.getSubscriptionById(UUID.fromString(id))
-            .map(subscriptionDescriptor -> reservationManager.createSubscriptionReservation(subscriptionDescriptor, locale)
-                .map(reservationId -> ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationId)))
-                .orElseGet(() -> ResponseEntity.unprocessableEntity().build()))
+            .map(subscriptionDescriptor -> {
+                var reservationOptional = reservationManager.createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult);
+                if (bindingResult.hasErrors()) {
+                    return new ResponseEntity<ValidatedResponse<String>>(ValidatedResponse.toResponse(bindingResult, null), HttpStatus.UNPROCESSABLE_ENTITY);
+                } else {
+                    return reservationOptional.map(reservationId -> ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationId)))
+                        .orElseGet(() -> ResponseEntity.unprocessableEntity().build());
+                }
+            })
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

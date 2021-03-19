@@ -321,7 +321,7 @@ public class EventApiV2Controller {
             Optional<String> reservationIdRes = createTicketReservation(reservation, bindingResult, event, locale, promoCodeDiscount);
 
             if (bindingResult.hasErrors()) {
-                return new ResponseEntity<ValidatedResponse<String>>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
+                return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
             } else {
                 var reservationIdentifier = reservationIdRes.orElseThrow(IllegalStateException::new);
                 return ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationIdentifier));

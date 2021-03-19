@@ -203,6 +203,9 @@ public interface SubscriptionRepository {
     @Query("select id from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit 1 for update skip locked")
     Optional<UUID> selectFreeSubscription(@Bind("descriptorId") UUID subscriptionDescriptorId);
 
+    @Query("select count(*) from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE'")
+    int countFreeSubscriptionForDescriptor(@Bind("descriptorId") UUID subscriptionDescriptorId);
+
     @Query("update subscription set reservation_id_fk = :reservationId, status = :status::allocation_status where id = :subscriptionId")
     int bindSubscriptionToReservation(@Bind("reservationId") String reservationId, @Bind("status") AllocationStatus allocationStatus, @Bind("subscriptionId") UUID subscriptionId);
 

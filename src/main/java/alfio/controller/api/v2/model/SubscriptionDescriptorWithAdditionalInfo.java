@@ -48,6 +48,7 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     private final String timeZone;
     private final Map<String, String> formattedValidFrom;
     private final Map<String, String> formattedValidTo;
+    private final Integer numAvailable;
 
     @Override
     public EventWithAdditionalInfo.InvoicingConfiguration getInvoicingConfiguration() {
@@ -189,5 +190,9 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     @Override
     public boolean isCanApplySubscriptions() {
         return false;//cannot buy a subscription with another subscription
+    }
+
+    public Integer getNumAvailable() {
+        return numAvailable;
     }
 }
