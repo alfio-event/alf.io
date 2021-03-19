@@ -1046,6 +1046,7 @@ public class TicketReservationManager {
             if(subscription.getMaxEntries() > -1) {
                 var subscriptionUsageDetails = UsageDetails.fromSubscription(subscription, ticketRepository.countSubscriptionUsage(subscription.getId(), null));
                 model.put("subscriptionUsageDetails", subscriptionUsageDetails);
+                model.put("subscriptionUrl", reservationUrl(subscription.getReservationId()));
             }
         }
         return model;
