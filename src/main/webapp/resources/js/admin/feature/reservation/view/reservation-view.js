@@ -139,6 +139,7 @@
 
 
             if(ctrl.purchaseContextType !== 'event' || ctrl.purchaseContext.visibleForCurrentUser) {
+                ctrl.purchaseContextTitle = ctrl.purchaseContext.title[Object.keys(ctrl.purchaseContext.title)[0]];
                 loadEmails();
                 loadPaymentInfo();
                 loadAudit();

@@ -1,7 +1,7 @@
 <div class="container" container-fluid-responsive="">
     <form role="form" name="viewReservation" ng-submit="$ctrl.update(viewReservation)" error-sensitive="viewReservation" novalidate>
         <div class="page-header">
-            <h1>View reservation for {{$ctrl.purchaseContext.title['en']}}</h1>
+            <h1>View reservation for <i>{{$ctrl.purchaseContextTitle}}</i></h1>
             <small>Reservation ID: {{$ctrl.reservation.id}}</small>
             <small ng-if="$ctrl.reservationDescriptor.reservation.hasInvoiceNumber">Invoice number: {{$ctrl.reservationDescriptor.reservation.invoiceNumber}}</small>
         </div>
