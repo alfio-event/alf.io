@@ -1007,7 +1007,8 @@ public class TicketReservationManager {
                                                                Map<String, Object> initialOptions) {
         Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
         String baseUrl = baseUrl(purchaseContext);
-        String reservationUrl = reservationUrl(reservation.getId());
+        var reservationId = reservation.getId();
+        String reservationUrl = reservationUrl(reservationId);
         String reservationShortID = getShortReservationID(purchaseContext, reservation);
 
         var bankingInfo = configurationManager.getFor(Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), ConfigurationLevel.purchaseContext(purchaseContext));
@@ -1029,7 +1030,7 @@ public class TicketReservationManager {
         }
         Map<String, Object> baseModel = new HashMap<>();
         baseModel.putAll(initialOptions);
-        baseModel.putAll(extensionManager.handleReservationEmailCustomText(purchaseContext, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
+        baseModel.putAll(extensionManager.handleReservationEmailCustomText(purchaseContext, reservation, ticketReservationRepository.getAdditionalInfo(reservationId))
             .map(CustomEmailText::toMap)
             .orElse(Map.of()));
         Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, purchaseContext, reservation, vat, ticketsWithCategory, summary, baseUrl, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner, baseModel);
@@ -1038,7 +1039,15 @@ public class TicketReservationManager {
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
         model.put("euBusiness", euBusiness);
         model.put("publicId", configurationManager.getPublicReservationID(purchaseContext, reservation));
-        model.put("invoicingAdditionalInfo", loadAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
+        model.put("invoicingAdditionalInfo", loadAdditionalInfo(reservationId).getInvoicingAdditionalInfo());
+        if(ticketReservationRepository.hasSubscriptionApplied(reservationId)) {
+            model.put("displaySubscriptionUsage", true);
+            var subscription = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId).orElseThrow();
+            if(subscription.getMaxEntries() > -1) {
+                var subscriptionUsageDetails = UsageDetails.fromSubscription(subscription, ticketRepository.countSubscriptionUsage(subscription.getId(), null));
+                model.put("subscriptionUsageDetails", subscriptionUsageDetails);
+            }
+        }
         return model;
     }
 

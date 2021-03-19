@@ -30,6 +30,14 @@
 
 {{#event.sameDay}}{{#i18n}}event-days.same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}] {{/i18n}}{{/event.sameDay}}
 {{^event.sameDay}}{{#i18n}}event-days.not-same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]{{/i18n}} - {{#i18n}}event-days.not-same-day [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]{{/i18n}} {{/event.sameDay}}
+{{#displaySubscriptionUsage}}
+
+########################
+{{#i18n}}reservation.complete.email.subscription.used{{/i18n}}
+{{#subscriptionUsageDetails}}{{#i18n}}reservation-page-complete.subscription.usage.available [{{subscriptionUsageDetails.available}}]{{/i18n}}{{/subscriptionUsageDetails}}
+########################
+
+{{/displaySubscriptionUsage}}
 {{custom-footer-text}}
 {{#i18n}}email.kind-regards{{/i18n}}
 

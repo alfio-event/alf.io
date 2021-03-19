@@ -129,7 +129,18 @@
 					<td>{{ticketReservation.id}}</td>
 				</tr>
 			</mj-table>
-			
+
+			<mj-raw>{{#displaySubscriptionUsage}}</mj-raw>
+			<mj-text align="center" padding-top="50px" font-size="20px" font-weight="200">
+			    {{#i18n}}reservation.complete.email.subscription.used{{/i18n}}
+			</mj-text>
+			<mj-raw>{{#subscriptionUsageDetails}}</mj-raw>
+			<mj-text align="center" font-size="20px" font-weight="200">
+            	{{#i18n}}reservation-page-complete.subscription.usage.available [{{subscriptionUsageDetails.available}}]{{/i18n}}
+            </mj-text>
+			<mj-raw>{{/subscriptionUsageDetails}}</mj-raw>
+			<mj-raw>{{/displaySubscriptionUsage}}</mj-raw>
+
 			<mj-text align="center">
       			{{#orderSummary.notYetPaid}}{{#i18n}}reservation.not-yet-paid [{{orderSummary.totalPrice}} {{event.currency}}]{{/i18n}}{{/orderSummary.notYetPaid}}
 				<br/>
