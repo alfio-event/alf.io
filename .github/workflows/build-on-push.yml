@@ -45,7 +45,7 @@ jobs:
               env:
                   COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
             -   name: 'Upload Build'
-                if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '11'}}
+                if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '9.6'}}
                 uses: actions/upload-artifact@v2
                 with:
                     name: dist
