@@ -273,7 +273,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             caps.setCapability("name", profileName);
             caps.setCapability("browserstack.console", "errors");
             caps.setCapability("browserstack.networkLogs", "true");
-            caps.setCapability("seleniumVersion", "4.0.0-alpha-6");
+            caps.setCapability("seleniumVersion", "4.0.0-beta-2");
             caps.setCapability("browserstack.idleTimeout", "180");
             return new RemoteWebDriver(url, caps);
         }

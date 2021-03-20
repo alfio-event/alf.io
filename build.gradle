@@ -224,7 +224,7 @@ dependencies {
     }
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    testImplementation 'org.seleniumhq.selenium:selenium-java:4.0.0-alpha-6'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.0.0-beta-2'
 
     errorprone('com.google.errorprone:error_prone_core:2.4.0')
 }
