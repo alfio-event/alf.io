@@ -2,6 +2,8 @@ name: "E2E Test"
 on:
     schedule:
         - cron:  '0 4 * * *'
+    workflow_dispatch:
+
 jobs:
     build:
         if: github.repository == 'alfio-event/alf.io'
