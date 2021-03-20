@@ -69,6 +69,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElemen
  *  - browserstack.access.key=
  *  - e2e.server.url=
  *  - e2e.server.apikey=
+ *  - e2e.browser=ie11|safari|firefox|chrome
  */
 @ContextConfiguration(classes = { TestConfiguration.class, NormalFlowE2ETest.E2EConfiguration.class })
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
@@ -301,19 +302,26 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             return null;
         }
 
+
+        private BrowserWebDriver build(String browser, URL url, String githubBuildNumber) {
+            switch (browser) {
+                case "ie11": return new BrowserWebDriver(BrowserWebDriver.Browser.IE, buildRemoteDriver(url,"Windows", "10", "IE", "11", "testFlowIE11"+githubBuildNumber));
+                case "chrome": return new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, buildRemoteDriver(url,"Windows", "10", "Chrome", "latest", "testFlowChrome"+githubBuildNumber));
+                case "firefox": return new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url,"Windows", "10", "Firefox", "latest", "testFlowFirefox"+githubBuildNumber));
+                case "safari": return new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url,"OS X", "Catalina", "Safari", "13.1", "testFlowSafari"+githubBuildNumber));
+                default: throw new IllegalStateException("unknown browser" + browser);
+            }
+        }
+
         @Bean
         List<BrowserWebDriver> webDrivers(Environment env, String browserStackUrl) throws Exception {
             boolean e2e = env.acceptsProfiles(Profiles.of("e2e"));
             if(e2e && env.acceptsProfiles(Profiles.of("travis"))) {
+                var browser = env.getRequiredProperty("e2e.browser");
                 LOGGER.info("e2e profile detected, CI profile detected. Running full suite on BrowserStack");
                 var url = new URL(browserStackUrl);
                 var githubBuildNumber = "-" + env.getProperty("github.run.number", "NA");
-                return List.of(
-                    new BrowserWebDriver(BrowserWebDriver.Browser.IE, buildRemoteDriver(url,"Windows", "10", "IE", "11", "testFlowIE11"+githubBuildNumber)),
-                    new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, buildRemoteDriver(url,"Windows", "10", "Chrome", "latest", "testFlowChrome"+githubBuildNumber)),
-                    new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url,"Windows", "10", "Firefox", "latest", "testFlowFirefox"+githubBuildNumber)),
-                    new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url,"OS X", "Catalina", "Safari", "13.1", "testFlowSafari"+githubBuildNumber))
-                );
+                return List.of(build(browser, url, githubBuildNumber));
             } else if(e2e) {
                 LOGGER.info("e2e profile detected, outside of CI. Returning local ChromeDriver");
                 return List.of(new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, new ChromeDriver()));

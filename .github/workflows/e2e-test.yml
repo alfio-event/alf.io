@@ -5,6 +5,9 @@ on:
 jobs:
     build:
         if: github.repository == 'alfio-event/alf.io'
+        strategy:
+            matrix:
+                browser: ['ie11', 'safari', 'firefox', 'chrome']
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
@@ -34,3 +37,4 @@ jobs:
               env:
                   E2E_SERVER_APIKEY: ${{ secrets.E2E_SERVER_APIKEY }}
                   E2E_SERVER_URL: ${{ secrets.E2E_SERVER_URL }}
+                  E2E_BROWSER: ${{matrix.browser}}
