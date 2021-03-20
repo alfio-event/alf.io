@@ -7,7 +7,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                postgresql: ['9.6','10','11','12']
+                postgresql: ['9.6','13']
         services:
             postgres:
                 image: postgres:${{ matrix.postgresql }}
@@ -40,7 +40,7 @@ jobs:
             - name: Build with Gradle
               run: ./gradlew build distribution jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
             - name: upload-to-coveralls
-              if: matrix.postgresql == '12' # run only once
+              if: matrix.postgresql == '13' # run only once
               run: ./gradlew coveralls
               env:
                   COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
