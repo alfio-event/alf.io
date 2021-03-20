@@ -9,7 +9,7 @@ jobs:
         if: github.repository == 'alfio-event/alf.io'
         strategy:
             matrix:
-                browser: ['ie11', 'safari', 'firefox', 'chrome']
+                browser: ['chrome', 'firefox', 'safari']
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
