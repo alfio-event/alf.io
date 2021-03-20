@@ -5,7 +5,7 @@
 # - https://august.nagro.us/small-java.html
 #
 
-FROM azul/zulu-openjdk-alpine:14 as zulu
+FROM azul/zulu-openjdk-alpine:14.0.1 as zulu
 
 RUN $JAVA_HOME/bin/jlink --compress=1 --strip-debug --no-header-files --no-man-pages \
     --module-path $JAVA_HOME/jmods \
