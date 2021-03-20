@@ -59,6 +59,17 @@ import java.util.concurrent.TimeUnit;
 
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 
+/**
+ * For testing with browserstack you need:
+ * Enable the profiles e2e and travis
+ *  -Dspring.profiles.active=e2e,travis
+ *
+ * And pass the following env var:
+ *  - browserstack.username=
+ *  - browserstack.access.key=
+ *  - e2e.server.url=
+ *  - e2e.server.apikey=
+ */
 @ContextConfiguration(classes = { TestConfiguration.class, NormalFlowE2ETest.E2EConfiguration.class })
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @SpringBootTest
