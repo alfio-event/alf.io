@@ -165,19 +165,27 @@
                 };
                 if(ctrl.purchaseContextType === 'subscription' && ctrl.reservation.status === 'COMPLETE') {
                     ctrl.subscriptionDetails = ctrl.reservationDescriptor.subscriptionDetails;
+                    var validityFrom = null;
+                    var validityTo = null;
+                    if (ctrl.subscriptionDetails.subscription.formattedValidityFrom) {
+                        validityFrom = {
+                            date: moment(ctrl.subscriptionDetails.subscription.formattedValidityFrom).format('YYYY-MM-DD'),
+                            time: moment(ctrl.subscriptionDetails.subscription.formattedValidityFrom).format('HH:mm')
+                        };
+                    }
+                    if (ctrl.subscriptionDetails.subscription.formattedValidityTo) {
+                        validityTo = {
+                            date: moment(ctrl.subscriptionDetails.subscription.formattedValidityTo).format('YYYY-MM-DD'),
+                            time: moment(ctrl.subscriptionDetails.subscription.formattedValidityTo).format('HH:mm')
+                        };
+                    }
                     ctrl.reservation.subscriptionDetails = {
                         firstName: ctrl.subscriptionDetails.subscription.firstName,
                         lastName: ctrl.subscriptionDetails.subscription.lastName,
                         email: ctrl.subscriptionDetails.subscription.email,
                         maxAllowed: ctrl.subscriptionDetails.usageDetails.total,
-                        validityFrom: {
-                            date: moment(ctrl.subscriptionDetails.subscription.formattedValidityFrom).format('YYYY-MM-DD'),
-                            time: moment(ctrl.subscriptionDetails.subscription.formattedValidityFrom).format('HH:mm')
-                        },
-                        validityTo: {
-                            date: moment(ctrl.subscriptionDetails.subscription.formattedValidityTo).format('YYYY-MM-DD'),
-                            time: moment(ctrl.subscriptionDetails.subscription.formattedValidityTo).format('HH:mm')
-                        }
+                        validityFrom: validityFrom,
+                        validityTo: validityTo
                     };
                 }
             }
