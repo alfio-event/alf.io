@@ -33,8 +33,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
+
+import static java.util.Objects.requireNonNullElse;
 
 @Component
 @Transactional
@@ -51,7 +56,7 @@ public class SubscriptionManager {
 
     public Optional<UUID> createSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
         var id = UUID.randomUUID();
-        int maxAvailable = Objects.requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1);
+        int maxAvailable = requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1);
         int result = subscriptionRepository.createSubscriptionDescriptor(
             id,
             subscriptionDescriptor.getTitle(),
@@ -66,7 +71,7 @@ public class SubscriptionManager {
             Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
             subscriptionDescriptor.getOrganizationId(),
 
-            Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
+            requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
             subscriptionDescriptor.getValidityType(),
             subscriptionDescriptor.getValidityTimeUnit(),
             subscriptionDescriptor.getValidityUnits(),
@@ -127,11 +132,11 @@ public class SubscriptionManager {
 
         return subscriptionRepository.findOne(subscriptionDescriptor.getId(), subscriptionDescriptor.getOrganizationId())
             .flatMap(original -> {
-                var maxAvailable = subscriptionDescriptor.getMaxAvailable();
+                int maxAvailable = requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1);
                 int result = subscriptionRepository.updateSubscriptionDescriptor(
                     subscriptionDescriptor.getTitle(),
                     subscriptionDescriptor.getDescription(),
-                    Objects.requireNonNullElse(maxAvailable, -1),
+                    requireNonNullElse(maxAvailable, -1),
                     subscriptionDescriptor.getOnSaleFrom(),
                     subscriptionDescriptor.getOnSaleTo(),
                     subscriptionDescriptor.getPriceCts(),
@@ -140,7 +145,7 @@ public class SubscriptionManager {
                     subscriptionDescriptor.getCurrency(),
                     Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),
 
-                    Objects.requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
+                    requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1),
                     subscriptionDescriptor.getValidityType(),
                     subscriptionDescriptor.getValidityTimeUnit(),
                     subscriptionDescriptor.getValidityUnits(),
@@ -161,8 +166,8 @@ public class SubscriptionManager {
                 if(maxAvailable > 0 && maxAvailable > original.getMaxAvailable()) {
                     int existing = Math.max(0, original.getMaxAvailable());
                     preGenerateSubscriptions(subscriptionDescriptor, subscriptionDescriptor.getId(), maxAvailable - existing);
-                } else if(maxAvailable < original.getMaxAvailable()) {
-                    int amount = original.getMaxAvailable() - Math.max(maxAvailable, 0);
+                } else if(maxAvailable > -1 && maxAvailable < original.getMaxAvailable()) {
+                    int amount = original.getMaxAvailable() - maxAvailable;
                     int invalidated = subscriptionRepository.invalidateSubscriptions(subscriptionDescriptor.getId(), amount);
                     Validate.isTrue(amount == invalidated, "Cannot invalidate existing subscriptions. (wanted: %d got: %d)", amount, invalidated);
                 }

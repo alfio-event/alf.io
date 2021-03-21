@@ -329,6 +329,9 @@
             });
             ctrl.preset = evaluatePresetName(ctrl.subscription);
             ctrl.previousFileBlobId = ctrl.subscription.fileBlobId;
+            if(ctrl.subscription.maxAvailable === -1) {
+                delete ctrl.subscription.maxAvailable;
+            }
         }
 
         var reloadSubscription = function() {
