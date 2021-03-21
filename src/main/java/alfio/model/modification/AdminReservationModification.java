@@ -44,6 +44,7 @@ public class AdminReservationModification implements Serializable {
     private final boolean updateAdvancedBillingOptions;
     private final AdvancedBillingOptions advancedBillingOptions;
     private final Notification notification;
+    private final SubscriptionDetails subscriptionDetails;
 
     @JsonCreator
     public AdminReservationModification(@JsonProperty("expiration") DateTimeModification expiration,
@@ -53,7 +54,8 @@ public class AdminReservationModification implements Serializable {
                                         @JsonProperty("updateContactData") Boolean updateContactData,
                                         @JsonProperty("updateAdvancedBillingOptions") Boolean updateAdvancedBillingOptions,
                                         @JsonProperty("advancedBillingOptions") AdvancedBillingOptions advancedBillingOptions,
-                                        @JsonProperty("notification") Notification notification) {
+                                        @JsonProperty("notification") Notification notification,
+                                        @JsonProperty("subscriptionDetails") SubscriptionDetails subscriptionDetails) {
         this.expiration = expiration;
         this.customerData = customerData;
         this.ticketsInfo = ticketsInfo;
@@ -62,6 +64,7 @@ public class AdminReservationModification implements Serializable {
         this.updateAdvancedBillingOptions = Boolean.TRUE.equals(updateAdvancedBillingOptions);
         this.advancedBillingOptions = advancedBillingOptions;
         this.notification = notification;
+        this.subscriptionDetails = subscriptionDetails;
     }
 
     @Getter
@@ -225,6 +228,30 @@ public class AdminReservationModification implements Serializable {
         }
     }
 
+    @Getter
+    public static class SubscriptionDetails {
+        private final String firstName;
+        private final String lastName;
+        private final String email;
+        private final Integer maxAllowed;
+        private final DateTimeModification validityFrom;
+        private final DateTimeModification validityTo;
+
+        public SubscriptionDetails(@JsonProperty("firstName") String firstName,
+                                   @JsonProperty("lastName") String lastName,
+                                   @JsonProperty("email") String email,
+                                   @JsonProperty("maxAllowed") Integer maxAllowed,
+                                   @JsonProperty("validityFrom") DateTimeModification validityFrom,
+                                   @JsonProperty("validityTo") DateTimeModification validityTo) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+            this.maxAllowed = maxAllowed;
+            this.validityFrom = validityFrom;
+            this.validityTo = validityTo;
+        }
+    }
+
     public static String summary(AdminReservationModification src) {
         try {
             List<TicketsInfo> ticketsInfo = src.ticketsInfo.stream().map(ti -> {
@@ -233,7 +260,7 @@ public class AdminReservationModification implements Serializable {
                     .map(a -> new Attendee(a.ticketId, placeholderIfNotEmpty(a.firstName), placeholderIfNotEmpty(a.lastName), placeholderIfNotEmpty(a.emailAddress), a.language, a.reassignmentForbidden, a.reference,singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))))).collect(toList());
                 return new TicketsInfo(ti.getCategory(), attendees, ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees());
             }).collect(toList());
-            return Json.toJson(new AdminReservationModification(src.expiration, summaryForCustomerData(src.customerData), ticketsInfo, src.getLanguage(), src.updateContactData, src.updateAdvancedBillingOptions, src.advancedBillingOptions, src.notification));
+            return Json.toJson(new AdminReservationModification(src.expiration, summaryForCustomerData(src.customerData), ticketsInfo, src.getLanguage(), src.updateContactData, src.updateAdvancedBillingOptions, src.advancedBillingOptions, src.notification, src.subscriptionDetails));
         } catch(Exception e) {
             return e.toString();
         }

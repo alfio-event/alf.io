@@ -77,7 +77,9 @@ import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.Wrappers.optionally;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.*;
+import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
@@ -112,6 +114,7 @@ public class AdminReservationManager {
     private final AdditionalServiceRepository additionalServiceRepository;
     private final BillingDocumentManager billingDocumentManager;
     private final ClockProvider clockProvider;
+    private final SubscriptionRepository subscriptionRepository;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     public Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType, String eventName, String reservationId, String username, Notification notification) {
@@ -285,6 +288,21 @@ public class AdminReservationManager {
                 modifications.put("fullName", fullName);
                 auditingRepository.insert(reservationId, userId, purchaseContext, UPDATE_TICKET, d, TICKET, Integer.toString(a.getTicketId()), singletonList(modifications));
             });
+
+        if(purchaseContext.getType() == PurchaseContextType.subscription && arm.getSubscriptionDetails() != null) {
+            var subscriptionDetailsModification = arm.getSubscriptionDetails();
+            // update subscription details
+            var subscription = subscriptionRepository.findFirstSubscriptionByReservationIdForUpdate(reservationId).orElseThrow();
+            subscriptionRepository.updateSubscription(subscription.getId(),
+                firstNonBlank(subscriptionDetailsModification.getFirstName(), subscription.getFirstName()),
+                firstNonBlank(subscriptionDetailsModification.getLastName(), subscription.getLastName()),
+                firstNonBlank(subscriptionDetailsModification.getEmail(), subscription.getEmail()),
+                requireNonNullElse(subscriptionDetailsModification.getMaxAllowed(), subscription.getMaxEntries()),
+                subscriptionDetailsModification.getValidityFrom() != null ? subscriptionDetailsModification.getValidityFrom().toZonedDateTime(subscription.getZoneId()) : null,
+                subscriptionDetailsModification.getValidityTo() != null ? subscriptionDetailsModification.getValidityTo().toZonedDateTime(subscription.getZoneId()) : null
+            );
+        }
+
         return Result.success(true);
     }
 

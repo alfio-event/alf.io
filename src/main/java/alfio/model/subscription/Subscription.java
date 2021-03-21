@@ -27,6 +27,7 @@ import org.springframework.validation.BindingResult;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +36,7 @@ import static alfio.model.subscription.SubscriptionDescriptor.atZone;
 @Getter
 public class Subscription implements TimeZoneInfo {
 
+    private static final DateTimeFormatter VALIDITY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private final UUID id;
     private final String firstName;
     private final String lastName;
@@ -127,5 +129,19 @@ public class Subscription implements TimeZoneInfo {
     @JsonIgnore
     public ZoneId getZoneId() {
         return zoneId;
+    }
+
+    public String getFormattedValidityTo() {
+        if(validityTo == null) {
+            return null;
+        }
+        return validityTo.format(VALIDITY_FORMATTER);
+    }
+
+    public String getFormattedValidityFrom() {
+        if(validityFrom == null) {
+            return null;
+        }
+        return validityFrom.format(VALIDITY_FORMATTER);
     }
 }

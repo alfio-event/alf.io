@@ -216,6 +216,9 @@ public interface SubscriptionRepository {
     @Query("select * from subscription where reservation_id_fk = :reservationId")
     List<Subscription> findSubscriptionsByReservationId(@Bind("reservationId") String reservationId);
 
+    @Query("select * from subscription where reservation_id_fk = :reservationId for update")
+    Optional<Subscription> findFirstSubscriptionByReservationIdForUpdate(@Bind("reservationId") String reservationId);
+
     @Query("select exists(select 1 from subscription_descriptor where id = :id)")
     boolean existsById(@Bind("id") UUID subscriptionId);
 
@@ -260,6 +263,16 @@ public interface SubscriptionRepository {
                             @Bind("validityTo") ZonedDateTime validityTo,
                             @Bind("confirmationTs") ZonedDateTime confirmationTimestamp,
                             @Bind("timeZone") String timeZone);
+
+    @Query("update subscription set first_name = :firstName, last_name = :lastName, email_address = :email," +
+        " max_entries = :maxEntries, validity_from = :validityFrom, validity_to = :validityTo where id = :id::uuid")
+    int updateSubscription(@Bind("id") UUID subscriptionId,
+                           @Bind("firstName") String firstName,
+                           @Bind("lastName") String lastName,
+                           @Bind("email") String email,
+                           @Bind("maxEntries") int maxEntries,
+                           @Bind("validityFrom") ZonedDateTime validityFrom,
+                           @Bind("validityTo") ZonedDateTime validityTo);
 
     @Query("update subscription set first_name = :firstName, last_name = :lastName, email_address = :email where reservation_id_fk = :reservationId")
     int assignSubscription(@Bind("reservationId") String reservationId,

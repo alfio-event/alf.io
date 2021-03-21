@@ -7,8 +7,8 @@
                 createReservation: function(eventName, reservation) {
                     return $http.post('/admin/api/reservation/event/'+eventName+'/new', reservation).error(HttpErrorHandler.handle);
                 },
-                updateReservation: function(eventName, reservationId, update) {
-                    return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId, update).error(HttpErrorHandler.handle);
+                updateReservation: function(purchaseContextType, purchaseContextId, reservationId, update) {
+                    return $http.post('/admin/api/reservation/'+purchaseContextType+'/'+purchaseContextId+'/'+reservationId, update).error(HttpErrorHandler.handle);
                 },
                 confirm: function(purchaseContextType, publicIdentifier, reservationId) {
                     return $http['put']('/admin/api/reservation/'+purchaseContextType+'/'+publicIdentifier+'/'+reservationId+'/confirm').error(HttpErrorHandler.handle);

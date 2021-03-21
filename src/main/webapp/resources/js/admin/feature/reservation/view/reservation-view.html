@@ -73,12 +73,67 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-xs-6" data-ng-if="$ctrl.purchaseContextType === 'subscription' && $ctrl.reservation.status === 'COMPLETE'">
+                    <div class="col-xs-6 wMarginBottom" data-ng-if="$ctrl.purchaseContextType === 'subscription' && $ctrl.reservation.status === 'COMPLETE'">
                         <h5><strong>Subscription Details</strong></h5>
+                        <div class="checkbox wMarginBottom">
+                            <label><input type="checkbox" ng-model="$ctrl.reservation.updateSubscriptionDetails"> Edit</label>
+                        </div>
                         <div class="h4">PIN: <span class="text-success">{{$ctrl.subscriptionDetails.subscription.pin}}</span></div>
-                        <div class="h4 wMarginBottom">
-                            Usage count: {{$ctrl.subscriptionDetails.usageDetails.used}}
-                            <span data-ng-if="$ctrl.subscriptionDetails.usageDetails.total > 0"> / {{$ctrl.subscriptionDetails.usageDetails.total}}</span>
+                        <div class="row wMarginTop30px">
+                            <div class="col-xs-12 col-lg-6">
+                                <div class="form-group">
+                                    <label>Usage count</label>
+                                    <div class="form-control-static">{{$ctrl.subscriptionDetails.usageDetails.used}}</div>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-lg-6">
+                                <div class="form-group" data-ng-if="$ctrl.subscriptionDetails.usageDetails.total > 0">
+                                    <label>Max Allowed</label>
+                                    <div class="form-control-static" data-ng-if="!$ctrl.reservation.updateSubscriptionDetails">{{$ctrl.subscriptionDetails.usageDetails.total}}</div>
+                                    <input type="number" class="form-control" data-ng-if="$ctrl.reservation.updateSubscriptionDetails" data-ng-model="$ctrl.reservation.subscriptionDetails.maxAllowed"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" data-ng-if="$ctrl.subscriptionDetails.subscription.validityFrom">
+                            <div class="col-xs-12 col-lg-6">
+                                <div class="form-group">
+                                    <label id="validityFromLabel">Validity From</label>
+                                    <div class="form-control-static" data-ng-if="!$ctrl.reservation.updateSubscriptionDetails">{{$ctrl.subscriptionDetails.subscription.formattedValidityFrom}}</div>
+                                    <input class="form-control" data-ng-if="$ctrl.reservation.updateSubscriptionDetails" single-date start-model="$ctrl.reservation.subscriptionDetails.validityFrom" required data-ng-model="$ctrl.reservation.subscriptionDetails.validityFromStr" aria-labelledby="validityFromLabel"/>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-lg-6" data-ng-if="$ctrl.subscriptionDetails.subscription.validityTo">
+                                <div class="form-group">
+                                    <label id="validityToLabel">Validity To</label>
+                                    <div class="form-control-static" data-ng-if="!$ctrl.reservation.updateSubscriptionDetails">{{$ctrl.subscriptionDetails.subscription.formattedValidityTo}}</div>
+                                    <input class="form-control" data-ng-if="$ctrl.reservation.updateSubscriptionDetails" single-date start-model="$ctrl.reservation.subscriptionDetails.validityTo" required data-ng-model="$ctrl.reservation.subscriptionDetails.validityToStr" aria-labelledby="validityToLabel"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12 col-lg-6">
+                                <div class="form-group">
+                                    <label id="subscriptionFirstNameLabel">Owner's First Name</label>
+                                    <div class="form-control-static" data-ng-if="!$ctrl.reservation.updateSubscriptionDetails">{{$ctrl.subscriptionDetails.subscription.firstName}}</div>
+                                    <input class="form-control" data-ng-if="$ctrl.reservation.updateSubscriptionDetails" required data-ng-model="$ctrl.reservation.subscriptionDetails.firstName" aria-labelledby="subscriptionFirstNameLabel"/>
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-lg-6">
+                                <div class="form-group">
+                                    <label id="subscriptionLastNameLabel">Last Name</label>
+                                    <div class="form-control-static" data-ng-if="!$ctrl.reservation.updateSubscriptionDetails">{{$ctrl.subscriptionDetails.subscription.lastName}}</div>
+                                    <input class="form-control" data-ng-if="$ctrl.reservation.updateSubscriptionDetails" required data-ng-model="$ctrl.reservation.subscriptionDetails.lastName" aria-labelledby="subscriptionLastNameLabel"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="form-group">
+                                    <label id="subscriptionEmailLabel">Email</label>
+                                    <div class="form-control-static" data-ng-if="!$ctrl.reservation.updateSubscriptionDetails">{{$ctrl.subscriptionDetails.subscription.email}}</div>
+                                    <input class="form-control" type="email" data-ng-if="$ctrl.reservation.updateSubscriptionDetails" required data-ng-model="$ctrl.reservation.subscriptionDetails.email" aria-labelledby="subscriptionEmailLabel"/>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-xs-3" ng-if="$ctrl.reservation.status !== 'COMPLETE' && $ctrl.reservation.status !== 'CANCELLED'">
