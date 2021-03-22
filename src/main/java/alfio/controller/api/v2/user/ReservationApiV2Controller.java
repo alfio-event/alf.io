@@ -402,15 +402,12 @@ public class ReservationApiV2Controller {
     }
 
     private TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing getItalianInvoicingInfo(ContactAndTicketsForm contactAndTicketsForm) {
-        if("IT".equalsIgnoreCase(contactAndTicketsForm.getVatCountryCode())) {
-            return new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(
-                StringUtils.upperCase(contactAndTicketsForm.getItalyEInvoicingFiscalCode()),
-                contactAndTicketsForm.getItalyEInvoicingReferenceType(),
-                contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
-                contactAndTicketsForm.getItalyEInvoicingReferencePEC(),
-                contactAndTicketsForm.isItalyEInvoicingSplitPayment());
-        }
-        return null;
+        return new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(
+            StringUtils.upperCase(contactAndTicketsForm.getItalyEInvoicingFiscalCode()),
+            contactAndTicketsForm.getItalyEInvoicingReferenceType(),
+            contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
+            contactAndTicketsForm.getItalyEInvoicingReferencePEC(),
+            contactAndTicketsForm.isItalyEInvoicingSplitPayment());
     }
 
     private void assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Locale locale, boolean preAssign, boolean skipValidation) {
