@@ -26,7 +26,7 @@ public class TicketReservationInvoicingAdditionalInfo {
     private final ItalianEInvoicing italianEInvoicing;
 
     public boolean isEmpty() {
-        return italianEInvoicing == null;
+        return italianEInvoicing == null || italianEInvoicing.isEmpty();
     }
 
     public boolean getEmpty() {
@@ -63,6 +63,13 @@ public class TicketReservationInvoicingAdditionalInfo {
                 return pec;
             }
             return null;
+        }
+
+        public boolean isEmpty() {
+            return fiscalCode == null
+                && referenceType == null
+                && addresseeCode == null
+                && pec == null;
         }
     }
 }
