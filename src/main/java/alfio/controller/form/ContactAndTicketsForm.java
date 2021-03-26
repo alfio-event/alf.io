@@ -146,7 +146,7 @@ public class ContactAndTicketsForm implements Serializable {
         // https://github.com/alfio-event/alf.io/issues/573
         // only for IT and only if enabled!
         boolean italianEInvoicingEnabled = formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false);
-        if (italianEInvoicingEnabled) {
+        if (italianEInvoicingEnabled && StringUtils.isNotEmpty(vatCountryCode)) {
             // mandatory
             ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingFiscalCode", ErrorsCode.EMPTY_FIELD);
             rejectIfOverLength(bindingResult, "italyEInvoicingFiscalCode", "error.tooLong", italyEInvoicingFiscalCode, 28);
