@@ -16,6 +16,7 @@
  */
 package alfio.controller.form;
 
+import alfio.controller.support.CustomBindingResult;
 import alfio.manager.SameCountryValidator;
 import alfio.model.Event;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
@@ -87,7 +88,7 @@ public class ContactAndTicketsForm implements Serializable {
 
 
 
-    public void validate(BindingResult bindingResult, Event event,
+    public void validate(CustomBindingResult bindingResult, Event event,
                          SameCountryValidator vatValidator,
                          Map<ConfigurationKeys, Boolean> formValidationParameters,
                          Validator.TicketFieldsFilterer ticketFieldsFilterer) {
@@ -182,8 +183,11 @@ public class ContactAndTicketsForm implements Serializable {
                 bindingResult.rejectValue("vatNr", "error.STEP_2_INVALID_VAT");
             }
 
-            if(!ItalianTaxIdValidator.validateFiscalCode(italyEInvoicingFiscalCode)) {
+            boolean fiscalCodeValid = ItalianTaxIdValidator.validateFiscalCode(italyEInvoicingFiscalCode);
+            if(!fiscalCodeValid) {
                 bindingResult.rejectValue("italyEInvoicingFiscalCode", "error.restrictedValue");
+            } else if(!ItalianTaxIdValidator.fiscalCodeMatchesWithName(firstName, lastName, italyEInvoicingFiscalCode)) {
+                bindingResult.addWarning("warning.fiscal-code-name-mismatch");
             }
 
             if(StringUtils.length(StringUtils.trimToNull(billingAddressZip)) != 5) {

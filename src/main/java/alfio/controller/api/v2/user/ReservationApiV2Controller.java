@@ -25,6 +25,7 @@ import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
+import alfio.controller.support.CustomBindingResult;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
@@ -328,9 +329,11 @@ public class ReservationApiV2Controller {
     public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable("eventName") String eventName,
                                                                          @PathVariable("reservationId") String reservationId,
                                                                          @RequestParam("lang") String lang,
+                                                                         @RequestParam(value = "ignoreWarnings", defaultValue = "false") boolean ignoreWarnings,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
-                                                                         BindingResult bindingResult) {
+                                                                         BindingResult br) {
 
+        var bindingResult = new CustomBindingResult(br);
 
         return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
             var event = er.getLeft();
@@ -392,8 +395,8 @@ public class ReservationApiV2Controller {
                 extensionManager.handleReservationValidation(event, reservation, contactAndTicketsForm, bindingResult);
             }
 
-            if(!bindingResult.hasErrors()) {
-                ticketReservationRepository.updateValidationStatus(reservationId, true);
+            if(!bindingResult.hasErrors() && (!bindingResult.hasWarnings() || ignoreWarnings)) {
+                ticketReservationManager.flagAsValidated(reservationId, event, bindingResult.getWarningCodes());
             }
 
             var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());

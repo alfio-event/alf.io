@@ -793,7 +793,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             contactForm.setTickets(Map.of(ticket1.getUuid(), ticketForm1, ticket2.getUuid(), ticketForm2));
 
-            var failure = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
+            var failure = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatusCode());
             assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("tickets["+ticket1.getUuid()+"].additional[field3][0]")).count()); //<- missing mandatory
 
@@ -811,7 +811,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             contactForm.setBillingAddressZip("ZIP");
 
             ticketForm1.getAdditional().put("field3", Collections.singletonList("missing value"));
-            var success = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
+            var success = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.OK, success.getStatusCode());
 
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
@@ -849,7 +849,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertFalse(selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).isRequired());
 
             var contactForm = new ContactAndTicketsForm();
-            var validationErrorsRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
+            var validationErrorsRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, validationErrorsRes.getStatusCode());
             assertFalse(validationErrorsRes.getBody().isSuccess());
             assertEquals(4, validationErrorsRes.getBody().getErrorCount()); // first name, last name, email + MISSING_ATTENDEE DATA
@@ -868,13 +868,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             ticketForm.setEmail("tickettest@test.com");
             contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).getTickets().get(0).getUuid(), ticketForm));
 
-            var overviewResFailed = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
+            var overviewResFailed = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, overviewResFailed.getStatusCode());
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
             //add mandatory additional field
             ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
-            var overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
+            var overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING);
             //
@@ -883,7 +883,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
-            overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
+            overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertTrue(overviewRes.getBody().getValue());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING);

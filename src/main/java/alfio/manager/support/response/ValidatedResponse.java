@@ -16,6 +16,7 @@
  */
 package alfio.manager.support.response;
 
+import alfio.controller.support.CustomBindingResult;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
 import lombok.AllArgsConstructor;
@@ -45,7 +46,8 @@ public class ValidatedResponse<T> {
             }
         }).collect(Collectors.toList());
 
-        return new ValidatedResponse<>(ValidationResult.failed(transformed), value);
+        List<String> warnings = bindingResult instanceof CustomBindingResult ? ((CustomBindingResult)bindingResult).getWarningCodes() : List.of();
+        return new ValidatedResponse<>(ValidationResult.failed(transformed, warnings), value);
     }
 
     public static <T> ValidatedResponse<T> fromResult(Result<T> result, String objectName) {
@@ -79,6 +81,10 @@ public class ValidatedResponse<T> {
 
     public T getValue() {
         return value;
+    }
+
+    public List<String> getWarnings() {
+        return validationResult.getWarnings();
     }
 
     private static Map<String, Object> fromArray(Object[] arguments) {

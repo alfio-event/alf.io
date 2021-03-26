@@ -20,6 +20,8 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,6 +31,8 @@ import static org.apache.commons.lang3.StringUtils.*;
 @UtilityClass
 public class ItalianTaxIdValidator {
     private static final char[] CONTROL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+    private static final String VOWELS = "AEIOU";
+    private static final int COMPANY_TAX_ID_LENGTH = 11;
     private static final Map<Character, EvenOddValueContainer> VALUES = Map.ofEntries(
         entry('A', new EvenOddValueContainer(0, 1)),
         entry('B', new EvenOddValueContainer(1, 0)),
@@ -71,7 +75,7 @@ public class ItalianTaxIdValidator {
     public static boolean validateFiscalCode(String fiscalCode) {
         var code = StringUtils.upperCase(trimToNull(fiscalCode));
         int length = length(code);
-        if(length == 11) {
+        if(length == COMPANY_TAX_ID_LENGTH) {
             // when length is 11 the fiscal code is equal to the VAT Number
             return validateVatId(fiscalCode);
         } else if(isBlank(code) || length != 16) {
@@ -86,9 +90,63 @@ public class ItalianTaxIdValidator {
         return chars[15] == CONTROL_CHARS[sum % 26];
     }
 
+    public static boolean fiscalCodeMatchesWithName(String firstName, String lastName, String fiscalCode) {
+        if(validateFiscalCode(fiscalCode)) {
+            if(length(fiscalCode) == COMPANY_TAX_ID_LENGTH) {
+                // if the fiscal code belongs to a company then there's no point in checking the name in it
+                return true;
+            }
+            var code = new StringBuilder();
+            var lastNameParts = parseFiscalCodePart(lastName.trim());
+            appendLastNameCode(code, lastNameParts);
+            var firstNameParts = parseFiscalCodePart(firstName.trim());
+            int numConsonants = firstNameParts.consonants.size();
+            if(numConsonants < 4) {
+                // if the first name contains less than 4 consonants,
+                // we can apply the same algorithm of the last name
+                appendLastNameCode(code, firstNameParts);
+            } else {
+                // otherwise we remove the second consonant
+                var consonantsList = new ArrayList<Character>();
+                consonantsList.add(firstNameParts.consonants.get(0));
+                consonantsList.addAll(firstNameParts.consonants.subList(2, firstNameParts.consonants.size()));
+                appendLastNameCode(code, new FiscalCodeParts(consonantsList, firstNameParts.vowels));
+            }
+            return fiscalCode.toUpperCase().startsWith(code.toString());
+        }
+        return false;
+    }
+
+    private static void appendLastNameCode(StringBuilder code, FiscalCodeParts lastNameParts) {
+        lastNameParts.consonants.stream().limit(3).forEach(code::append);
+        int chars = code.length();
+        if(chars < 3) {
+            lastNameParts.vowels.stream().limit(3 - chars).forEach(code::append);
+        }
+        chars = code.length();
+        code.append("X".repeat(Math.max(0, (3 - chars))));
+    }
+
+    private static FiscalCodeParts parseFiscalCodePart(String part) {
+        var chars = part.toUpperCase().toCharArray();
+        var consonants = new ArrayList<Character>();
+        var vowels = new ArrayList<Character>();
+        for (char c : chars) {
+            if (!Character.isAlphabetic(c)) {
+                continue;
+            }
+            if (VOWELS.indexOf(c) > -1) {
+                vowels.add(c);
+            } else {
+                consonants.add(c);
+            }
+        }
+        return new FiscalCodeParts(consonants, vowels);
+    }
+
     public static boolean validateVatId(String vatId) {
         var nr = StringUtils.trimToNull(vatId);
-        if(StringUtils.length(nr) != 11 && !StringUtils.isNumeric(nr)) {
+        if(length(nr) != COMPANY_TAX_ID_LENGTH && !StringUtils.isNumeric(nr)) {
             return false;
         }
         int sumEven = 0;
@@ -118,5 +176,11 @@ public class ItalianTaxIdValidator {
         private int getValue(int index) {
             return (index + 1) % 2 == 0 ? evenValue : oddValue;
         }
+    }
+
+    @AllArgsConstructor
+    private static class FiscalCodeParts {
+        private final List<Character> consonants;
+        private final List<Character> vowels;
     }
 }

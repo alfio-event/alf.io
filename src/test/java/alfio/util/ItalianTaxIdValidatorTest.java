@@ -16,9 +16,11 @@
  */
 package alfio.util;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static alfio.util.ItalianTaxIdValidator.fiscalCodeMatchesWithName;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,6 +63,24 @@ class ItalianTaxIdValidatorTest {
     @ValueSource(strings = { "SMPHMR66A01B602F", "SMPLSI96L50C770A", "PRSBTL38H18H826S", "PRSBTL38H18H826", "PRSBTL38H18H826SX" })
     void personalCodeValidationFailure(String number) {
         assertFalse(ItalianTaxIdValidator.validateFiscalCode(number));
+    }
+
+    @Test
+    void validateNamePart() {
+        assertTrue(fiscalCodeMatchesWithName("Homer", "Simpson", "SMPHMR66A01B602I"));
+        assertTrue(fiscalCodeMatchesWithName("Lisa", "Simpson", "SMPLSI96L50C770S"));
+        assertTrue(fiscalCodeMatchesWithName("Lisa Mary", "Simpson", "SMPLMR96S50F205L"));
+        assertTrue(fiscalCodeMatchesWithName("Gi", "Ma", "MAXGIX80E02F205R"));
+        assertTrue(fiscalCodeMatchesWithName("First", "Last", "63828920585"));
+    }
+
+    @Test
+    void namePartValidationFailure() {
+        assertFalse(fiscalCodeMatchesWithName("Homer", "Simenon", "SMPHMR66A01B602I")); // should be: Simpson
+        assertFalse(fiscalCodeMatchesWithName("Lissa", "Simpson", "SMPLSI96L50C770S")); // should be: Lisa
+        assertFalse(fiscalCodeMatchesWithName("Lisa", "Simpson", "SMPLMR96S50F205L")); // should be: Lisa Mary
+        assertFalse(fiscalCodeMatchesWithName("Gi", "Mar", "MAXGIX80E02F205R")); // should be: Ma Gi
+        assertFalse(fiscalCodeMatchesWithName("First", "Last", "61579460221"));
     }
 
 }

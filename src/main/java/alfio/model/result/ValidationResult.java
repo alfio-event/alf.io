@@ -29,14 +29,16 @@ import java.util.List;
 @Getter
 public final class ValidationResult {
 
-    private static final ValidationResult SUCCESS = new ValidationResult(Collections.emptyList());
+    private static final ValidationResult SUCCESS = new ValidationResult(Collections.emptyList(), Collections.emptyList());
 
     private final List<ErrorDescriptor> errorDescriptors;
     private final int errorCount;
+    private final List<String> warnings;
 
-    private ValidationResult(List<ErrorDescriptor> errorDescriptors) {
+    private ValidationResult(List<ErrorDescriptor> errorDescriptors, List<String> warnings) {
         this.errorDescriptors = errorDescriptors;
         this.errorCount = errorDescriptors.size();
+        this.warnings = warnings;
     }
 
     public List<ErrorDescriptor> getValidationErrors() {
@@ -48,7 +50,11 @@ public final class ValidationResult {
     }
 
     public static ValidationResult failed(List<ErrorDescriptor> errors) {
-        return new ValidationResult(errors);
+        return new ValidationResult(errors, List.of());
+    }
+
+    public static ValidationResult failed(List<ErrorDescriptor> errors, List<String> warnings) {
+        return new ValidationResult(errors, warnings);
     }
 
     public static ValidationResult failed(ErrorDescriptor... errors) {
@@ -71,7 +77,9 @@ public final class ValidationResult {
             List<ErrorDescriptor> joined = new ArrayList<>();
             joined.addAll(errorDescriptors);
             joined.addAll(second.getErrorDescriptors());
-            return new ValidationResult(joined);
+            List<String> allWarnings = new ArrayList<>(warnings);
+            allWarnings.addAll(second.getWarnings());
+            return new ValidationResult(joined, allWarnings);
         }
         return second;
     }
