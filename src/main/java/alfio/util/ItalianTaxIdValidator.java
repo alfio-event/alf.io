@@ -20,10 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static java.util.Map.entry;
 import static org.apache.commons.lang3.StringUtils.*;
@@ -112,7 +109,7 @@ public class ItalianTaxIdValidator {
                 consonantsList.addAll(firstNameParts.consonants.subList(2, firstNameParts.consonants.size()));
                 appendLastNameCode(code, new FiscalCodeParts(consonantsList, firstNameParts.vowels));
             }
-            return fiscalCode.toUpperCase().startsWith(code.toString());
+            return fiscalCode.toUpperCase(Locale.ITALIAN).startsWith(code.toString());
         }
         return false;
     }
@@ -128,7 +125,7 @@ public class ItalianTaxIdValidator {
     }
 
     private static FiscalCodeParts parseFiscalCodePart(String part) {
-        var chars = part.toUpperCase().toCharArray();
+        var chars = StringUtils.stripAccents(part.toUpperCase(Locale.ITALIAN)).toCharArray();
         var consonants = new ArrayList<Character>();
         var vowels = new ArrayList<Character>();
         for (char c : chars) {
