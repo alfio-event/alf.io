@@ -432,7 +432,7 @@ public class ReservationApiV2Controller {
             }
 
             if(!bindingResult.hasErrors() && (!bindingResult.hasWarnings() || ignoreWarnings)) {
-                ticketReservationManager.flagAsValidated(reservationId, event, bindingResult.getWarningCodes());
+                ticketReservationManager.flagAsValidated(reservationId, purchaseContext, bindingResult.getWarningCodes());
             }
 
             var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());

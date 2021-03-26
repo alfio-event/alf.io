@@ -1216,7 +1216,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         contactForm.setTickets(tickets);
-        var overviewRes = reservationApiV2Controller.validateToOverview(reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
+        var overviewRes = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
         assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
         checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);
 
