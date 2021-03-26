@@ -2616,6 +2616,13 @@ public class TicketReservationManager {
             ).orElse(Result.error(ErrorCode.EventError.NOT_FOUND));
     }
 
+    public void flagAsValidated(String reservationId, Event event, List<String> warnings) {
+        ticketReservationRepository.updateValidationStatus(reservationId, true);
+        if(!warnings.isEmpty()) {
+            auditingRepository.insert(reservationId, null, event.getId(), WARNING_IGNORED, new Date(), RESERVATION, reservationId, List.of(Map.of("codes", warnings)));
+        }
+    }
+
     private void checkOfflinePaymentsForEvent(Event event) {
         log.trace("check offline payments for event {}", event.getShortName());
         var paymentContext = new PaymentContext(event);
