@@ -69,6 +69,7 @@ class ItalianTaxIdValidatorTest {
     void validateNamePart() {
         assertTrue(fiscalCodeMatchesWithName("Homer", "Simpson", "SMPHMR66A01B602I"));
         assertTrue(fiscalCodeMatchesWithName("Lisa", "Simpson", "SMPLSI96L50C770S"));
+        assertTrue(fiscalCodeMatchesWithName("Lisà", "Sìmpsön", "SMPLSI96L50C770S"));
         assertTrue(fiscalCodeMatchesWithName("Lisa Mary", "Simpson", "SMPLMR96S50F205L"));
         assertTrue(fiscalCodeMatchesWithName("Gi", "Ma", "MAXGIX80E02F205R"));
         assertTrue(fiscalCodeMatchesWithName("First", "Last", "63828920585"));
