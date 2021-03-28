@@ -56,7 +56,7 @@ plugins {
     id 'net.researchgate.release' version '2.8.1'
     id 'org.springframework.boot' version '2.3.7.RELEASE'
     id 'org.sonarqube' version '3.0'
-    id 'net.ltgt.errorprone' version '1.3.0'
+    id 'net.ltgt.errorprone' version '2.0.1'
 	id 'com.github.node-gradle.node' version '2.2.4'
 }
 
@@ -288,10 +288,15 @@ compileJava {
     options.compilerArgs = ['-Xlint:all,-serial,-processing']
 
     // both checks are problematic with lombok code
-    options.errorprone.disable('UnusedVariable')
-    options.errorprone.disable('MixedMutabilityReturnType')
-    options.errorprone.disable('MissingOverride')
-    options.errorprone.disable('ImmutableEnumChecker') // not too useful, as it does not take into account the actual value of the field
+    options.errorprone.disable('UnusedVariable',
+        'MixedMutabilityReturnType',
+        'MissingOverride',
+        'ImmutableEnumChecker', // not too useful, as it does not take into account the actual value of the field
+        'AlmostJavadoc',
+        'MissingSummary',
+        'EscapedEntity',
+        'EmptyBlockTag'
+    )
 }
 
 compileJava.dependsOn(processResources)
