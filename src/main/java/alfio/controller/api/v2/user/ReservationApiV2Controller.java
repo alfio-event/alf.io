@@ -39,6 +39,8 @@ import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.subscription.Subscription;
+import alfio.model.subscription.SubscriptionUsageExceeded;
+import alfio.model.subscription.SubscriptionUsageExceededForEvent;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -737,7 +739,12 @@ public class ReservationApiV2Controller {
             if (bindingResult.hasErrors()) {
                 return false;
             }
-            return ticketReservationManager.applySubscriptionCode(((Event)et.getLeft()).getId(), et.getRight(), subscriptionDescriptor, subscriptionId);
+            try {
+                return ticketReservationManager.applySubscriptionCode(((Event)et.getLeft()).getId(), et.getRight(), subscriptionDescriptor, subscriptionId);
+            } catch (SubscriptionUsageExceeded | SubscriptionUsageExceededForEvent ex) {
+                bindingResult.reject(ex instanceof SubscriptionUsageExceeded ? "subscription.max-usage-reached" : "subscription.max-usage-reached-per-event");
+                return false;
+            }
         }).orElse(false);
         return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, res));
     }

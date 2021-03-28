@@ -2733,11 +2733,11 @@ public class TicketReservationManager {
         }
         try {
             log.trace("applying subscription {} to reservation {}", subscriptionId, reservation.getId());
-            ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
-            // subscription has been applied at reservation level, we now have to find how many tickets we can update
+            // find out how many tickets can be included in the subscription
             int limit;
             Integer eventIdToFilter = null;
-            if(subscriptionDescriptor.getUsageType() == ONCE_PER_EVENT) {
+            boolean oncePerEvent = subscriptionDescriptor.getUsageType() == ONCE_PER_EVENT;
+            if(oncePerEvent) {
                 limit = 1;
                 eventIdToFilter = eventId;
             } else if(subscription.getMaxEntries() > -1) {
@@ -2748,8 +2748,11 @@ public class TicketReservationManager {
             }
             int countExisting = ticketRepository.countSubscriptionUsage(subscriptionId, eventIdToFilter);
             if(countExisting >= limit) {
-                return false;
+                throw oncePerEvent ? new SubscriptionUsageExceededForEvent(limit, countExisting + 1) : new SubscriptionUsageExceeded(limit, countExisting + 1);
             }
+            // subscription can be applied. First we apply it at reservation level
+            ticketReservationRepository.applySubscription(reservation.getId(), subscription.getId());
+            // then we apply it to the tickets
             int count = ticketRepository.applySubscriptionToTicketsInReservation(reservation.getId(), subscriptionId, limit - countExisting);
             log.trace("Applied subscription {} to {} tickets for reservation {}", subscriptionId, count, reservation.getId());
         } catch(UncategorizedSQLException sqlException) {
