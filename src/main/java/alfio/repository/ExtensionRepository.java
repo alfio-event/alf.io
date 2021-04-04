@@ -17,7 +17,9 @@
 
 package alfio.repository;
 
+import alfio.extension.ExtensionMetadata;
 import alfio.model.ExtensionSupport;
+import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.*;
 
 import java.util.Collection;
@@ -28,24 +30,28 @@ import java.util.Set;
 @QueryRepository
 public interface ExtensionRepository {
 
-    @Query("insert into extension_support(path, name, display_name, hash, enabled, async, script) values " +
-        " (:path, :name, :displayName, :hash, :enabled, :async, :script)")
+    @Query("insert into extension_support(path, name, display_name, hash, enabled, async, script, metadata) values " +
+        " (:path, :name, :displayName, :hash, :enabled, :async, :script, :metadata::jsonb)")
     int insert(@Bind("path") String path,
                @Bind("name") String name,
                @Bind("displayName") String displayName,
                @Bind("hash") String hash,
                @Bind("enabled") boolean enabled,
                @Bind("async") boolean async,
-               @Bind("script") String script);
+               @Bind("script") String script,
+               @Bind("metadata") @JSONData ExtensionMetadata extensionMetadata);
 
-    @Query("update extension_support set display_name = :displayName, hash = :hash, enabled = :enabled, async = :async, script = :script where path = :path and name = :name")
+    @Query("update extension_support set display_name = :displayName," +
+        " hash = :hash, enabled = :enabled, async = :async, script = :script, metadata = :metadata::jsonb" +
+        " where path = :path and name = :name")
     int update(@Bind("path") String path,
                @Bind("name") String name,
                @Bind("displayName") String displayName,
                @Bind("hash") String hash,
                @Bind("enabled") boolean enabled,
                @Bind("async") boolean async,
-               @Bind("script") String script);
+               @Bind("script") String script,
+               @Bind("metadata") @JSONData ExtensionMetadata extensionMetadata);
 
     @Query("update extension_support set enabled = :enabled where path = :path and name = :name")
     int toggle(@Bind("path") String path, @Bind("name") String name, @Bind("enabled") boolean enabled);
@@ -80,7 +86,6 @@ public interface ExtensionRepository {
         " (select es_id, path, name, hash from extension_support where enabled = true and async = :async and (path in (:possiblePaths))) a1 " +
         " left outer join (select es_id, path, name from extension_support where enabled = true and async = :async and (path in (:possiblePaths))) a2 on " +
         " (a1.es_id = a2.es_id) and length(a1.path) < length(a2.path) where a2.path is null) a3 " +
-        " " +
         " inner join extension_event on es_id_fk = a3.es_id where event = :event order by a3.name, a3.path")
     List<ExtensionSupport.ScriptPathNameHash> findActive(@Bind("possiblePaths") Set<String> possiblePaths,
                                                          @Bind("async") boolean async,
@@ -145,5 +150,21 @@ public interface ExtensionRepository {
     List<String> findMandatoryParametersForScript(@Bind("name") String name, @Bind("path") String path);
 
     @Query("select ecm_id, ecm_name from extension_configuration_metadata where ecm_es_id_fk = :extensionId")
-    List<ExtensionSupport.ExtensionMetadata> findAllParametersForExtension(@Bind("extensionId") int extensionId);
+    List<ExtensionSupport.ExtensionMetadataIdAndName> findAllParametersForExtension(@Bind("extensionId") int extensionId);
+
+    @Query("select count(a3.*) from " +
+        " (select a1.es_id from " +
+        " (select es_id, path from extension_capabilities where (path in (:possiblePaths)) and capability in(:capabilities)) a1 " +
+        " left outer join (select es_id, path from extension_capabilities where (path in (:possiblePaths)) and capability in(:capabilities)) a2 on " +
+        " (a1.es_id = a2.es_id) and length(a1.path) < length(a2.path) where a2.path is null) a3 ")
+    int countScriptsSupportingCapability(@Bind("possiblePaths") Set<String> paths,
+                                         @Bind("capabilities") List<String> capabilities);
+
+    @Query("select distinct a3.capability from " +
+        " (select a1.es_id, a1.capability from " +
+        " (select es_id, path, capability from extension_capabilities where (path in (:possiblePaths)) and capability in(:capabilities)) a1 " +
+        " left outer join (select es_id, path, capability from extension_capabilities where (path in (:possiblePaths)) and capability in(:capabilities)) a2 on " +
+        " (a1.es_id = a2.es_id) and length(a1.path) < length(a2.path) where a2.path is null) a3 ")
+    List<String> getSupportedCapabilities(@Bind("possiblePaths") Set<String> paths,
+                                          @Bind("capabilities") Collection<String> capabilities);
 }

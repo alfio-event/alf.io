@@ -34,9 +34,9 @@ import alfio.controller.form.*;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
-import alfio.manager.ExtensionManager.ExtensionEvent;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.support.extension.ExtensionEvent;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.audit.ScanAudit;
@@ -87,7 +87,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static alfio.manager.ExtensionManager.ExtensionEvent.*;
+import static alfio.manager.support.extension.ExtensionEvent.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 

@@ -17,6 +17,8 @@
 package alfio.manager.system;
 
 import alfio.config.Initializer;
+import alfio.manager.support.extension.ExtensionCapability;
+import alfio.manager.support.extension.ExtensionEvent;
 import alfio.model.ExtensionSupport;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
@@ -25,6 +27,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -79,6 +82,21 @@ public class ExternalConfiguration {
             .collect(Collectors.toList());
     }
 
+    public List<ExtensionSupport.ScriptPathNameHash> getAllExtensionsForCapability(ExtensionCapability capability) {
+        var eventsAsString = capability.getCompatibleEvents().stream()
+            .map(ExtensionEvent::name).collect(Collectors.toList());
+        return extensions.stream()
+            .filter(e -> e.isValid() && CollectionUtils.containsAny(e.events, eventsAsString) && e.getCapabilities().contains(capability.name()))
+            .map(e -> new ExtensionSupport.ScriptPathNameHash(EXTERNAL_EXTENSION_PATH, e.getId(), DigestUtils.sha256Hex(e.file)))
+            .collect(Collectors.toList());
+    }
+
+    public Set<ExtensionCapability> getSupportedCapabilities(Set<ExtensionCapability> requested) {
+        return requested.stream()
+            .filter(ec -> extensions.stream().anyMatch(e -> e.isValid() && CollectionUtils.containsAny(e.events, ec.getCompatibleEventNames()) && e.getCapabilities().contains(ec.name())))
+            .collect(Collectors.toSet());
+    }
+
     public Map<String, String> getParametersForExtension(String id) {
         return extensions.stream().filter(ExtensionOverride::isValid)
             .filter(extensionOverride -> extensionOverride.id.equals(id))
@@ -94,6 +112,7 @@ public class ExternalConfiguration {
         private List<String> events;
         private boolean async;
         private Map<String, String> params;
+        private List<String> capabilities;
         private String type = "plain"; // plain or base64
 
         boolean isValid() {
@@ -111,6 +130,10 @@ public class ExternalConfiguration {
                 return new String(Base64.getDecoder().decode(file), StandardCharsets.UTF_8);
             }
             return file;
+        }
+
+        List<String> getCapabilities() {
+            return capabilities == null ? List.of() : capabilities;
         }
     }
 

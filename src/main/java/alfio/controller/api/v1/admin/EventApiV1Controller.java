@@ -244,7 +244,7 @@ public class EventApiV1Controller {
                 request.getExtensionSettings().stream()
                     .collect(Collectors.groupingBy(EventCreationRequest.ExtensionSetting::getExtensionId))
                     .forEach((id,settings) -> {
-                        List<ExtensionSupport.ExtensionMetadata> metadata = extensionService.getSingle(organization, e, id)
+                        List<ExtensionSupport.ExtensionMetadataIdAndName> metadata = extensionService.getSingle(organization, e, id)
                             .map(es -> extensionRepository.findAllParametersForExtension(es.getId()))
                             .orElseGet(Collections::emptyList);
 

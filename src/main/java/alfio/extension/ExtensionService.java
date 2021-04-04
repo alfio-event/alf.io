@@ -18,11 +18,14 @@
 package alfio.extension;
 
 import alfio.manager.ExtensionManager;
+import alfio.manager.support.extension.ExtensionCapability;
+import alfio.manager.support.extension.ExtensionEvent;
 import alfio.manager.system.ExternalConfiguration;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.*;
+import alfio.model.PurchaseContext;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
@@ -42,6 +45,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static alfio.manager.ExtensionManager.toPath;
+import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 @Service
 @Log4j2
@@ -114,15 +123,17 @@ public class ExtensionService {
 
         Validate.notBlank(extensionMetadata.displayName, "Display Name is mandatory");
 
+        validateCapabilities(extensionMetadata);
+
         if(previousPath != null && previousName != null) {
             extensionRepository.deleteEventsForPath(previousPath, previousName);
         }
 
         if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
             extensionRepository.deleteScriptForPath(previousPath, previousName);
-            extensionRepository.insert(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+            extensionRepository.insert(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript(), extensionMetadata);
         } else {
-            extensionRepository.update(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+            extensionRepository.update(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript(), extensionMetadata);
         }
 
         int extensionId = extensionRepository.getExtensionIdFor(script.getPath(), script.getName());
@@ -140,13 +151,29 @@ public class ExtensionService {
             for (ExtensionMetadata.Field field : parameters.getFields()) {
                 for (String level : parameters.getConfigurationLevels()) {
                     int confFieldId = extensionRepository.registerExtensionConfigurationMetadata(extensionId, field.getName(), field.getDescription(), field.getType(), level, field.isRequired()).getKey();
-                    List<ExtensionParameterKeyValue> filteredParam = extensionParameterKeyValue.stream().filter(kv -> field.getName().equals(kv.getName()) && level.equals(kv.getConfigurationLevel())).collect(Collectors.toList());
+                    List<ExtensionParameterKeyValue> filteredParam = extensionParameterKeyValue.stream().filter(kv -> field.getName().equals(kv.getName()) && level.equals(kv.getConfigurationLevel())).collect(toList());
                     for(ExtensionParameterKeyValue kv : filteredParam) {
                         //TODO: can be optimized with a bulk insert...
                         extensionRepository.insertSettingValue(confFieldId, kv.getConfigurationPath(), kv.getConfigurationValue());
                     }
                 }
             }
+        }
+    }
+
+    void validateCapabilities(ExtensionMetadata extensionMetadata) {
+        // validate events / capabilities combination
+        Set<ExtensionEvent> events = requireNonNull(extensionMetadata.events, "Events are mandatory")
+            .stream()
+            .map(ExtensionEvent::valueOf)
+            .collect(toSet());
+        Validate.isTrue(!events.isEmpty(), "Events are mandatory");
+        var invalidCapabilities = requireNonNullElse(extensionMetadata.capabilities, List.<String>of()).stream()
+            .filter(s -> ExtensionCapability.valueOf(s).getCompatibleEvents().stream().noneMatch(events::contains))
+            .collect(toSet());
+
+        if(!invalidCapabilities.isEmpty()) {
+            throw new IllegalArgumentException("Invalid capabilities: " + String.join(", ", invalidCapabilities));
         }
     }
 
@@ -181,7 +208,7 @@ public class ExtensionService {
         List<ExtensionMetadataValue> toUpdate2 = (toUpdate == null ? Collections.emptyList() : toUpdate);
         List<ExtensionMetadataValue> filtered = toUpdate2.stream()
             .filter(f -> StringUtils.trimToNull(f.getValue()) != null)
-            .collect(Collectors.toList());
+            .collect(toList());
         for (ExtensionMetadataValue v : filtered) {
             extensionRepository.insertSettingValue(v.getId(), path, v.getValue());
         }
@@ -211,8 +238,32 @@ public class ExtensionService {
 
     @Transactional(readOnly = true)
     public Optional<ExtensionSupport> getSingle(Organization organization, EventAndOrganizationId event, String name) {
-        Set<String> paths = generatePossiblePath(ExtensionManager.toPath(new EventAndOrganizationId(organization.getId(), event.getId())), Comparator.reverseOrder());
+        Set<String> paths = generatePossiblePath(toPath(new EventAndOrganizationId(organization.getId(), event.getId())), Comparator.reverseOrder());
         return extensionRepository.getSingle(paths, name);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isCapabilitySupported(ExtensionCapability capability, PurchaseContext purchaseContext) {
+        // load compatible scripts
+        var externalScripts = externalConfiguration.getAllExtensionsForCapability(capability);
+        if(!externalScripts.isEmpty()) {
+            return true;
+        }
+        var paths = generatePossiblePath(ExtensionManager.toPath(purchaseContext), Comparator.reverseOrder());
+        int count = extensionRepository.countScriptsSupportingCapability(paths, List.of(capability.name()));
+        return count > 0;
+    }
+
+    @Transactional(readOnly = true)
+    public Set<ExtensionCapability> getSupportedCapabilities(Set<ExtensionCapability> requested, PurchaseContext purchaseContext) {
+        var externalScriptsSupportedCapabilities = externalConfiguration.getSupportedCapabilities(requested);
+        if (externalScriptsSupportedCapabilities.equals(requested)) {
+            return externalScriptsSupportedCapabilities;
+        }
+        var result = new HashSet<>(externalScriptsSupportedCapabilities);
+        var paths = generatePossiblePath(ExtensionManager.toPath(purchaseContext), Comparator.reverseOrder());
+        result.addAll(ExtensionCapability.fromString(extensionRepository.getSupportedCapabilities(paths, ExtensionCapability.toString(requested))));
+        return result;
     }
 
     public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload, Class<T> clazz) {

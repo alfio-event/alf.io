@@ -31,6 +31,7 @@ public class ExtensionMetadata {
     boolean async;
     List<String> events;
     Parameters parameters;
+    List<String> capabilities;
 
     @Getter
     @AllArgsConstructor
