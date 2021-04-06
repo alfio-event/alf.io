@@ -23,6 +23,8 @@ import lombok.Getter;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNullElse;
+
 @Getter
 public class ExtensionMetadata {
     private final String id;
@@ -45,9 +47,9 @@ public class ExtensionMetadata {
         this.displayName = displayName;
         this.version = version;
         this.async = async;
-        this.events = events;
+        this.events = requireNonNullElse(events, List.of());
         this.parameters = parameters;
-        this.capabilities = capabilities;
+        this.capabilities = requireNonNullElse(capabilities, List.of());
     }
 
     @Getter
