@@ -140,6 +140,8 @@ public class ScriptingExecutionService {
             if (res instanceof NativeJavaObject) {
                 NativeJavaObject nativeRes = (NativeJavaObject) res;
                 return (T) nativeRes.unwrap();
+            } else if(clazz.isInstance(res)) {
+                return (T) res;
             } else {
                 return null;
             }

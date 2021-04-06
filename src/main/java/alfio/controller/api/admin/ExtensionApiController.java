@@ -81,7 +81,7 @@ public class ExtensionApiController {
 
     @GetMapping("/sample")
     public ExtensionSupport getSample() {
-        return new ExtensionSupport(null, "-", "", null, true, true, SAMPLE_JS);
+        return new ExtensionSupport(null, "-", "", null, true, true, SAMPLE_JS, null);
     }
 
     @PostMapping(value = "")

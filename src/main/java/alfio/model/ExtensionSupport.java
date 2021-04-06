@@ -16,6 +16,8 @@
  */
 package alfio.model;
 
+import alfio.extension.ExtensionMetadata;
+import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +32,7 @@ public class ExtensionSupport {
     private final boolean enabled;
     private final boolean async;
     private final String script;
+    private final ExtensionMetadata extensionMetadata;
 
 
     public ExtensionSupport(@Column("es_id") Integer id,
@@ -38,7 +41,8 @@ public class ExtensionSupport {
                             @Column("hash") String hash,
                             @Column("enabled") boolean enabled,
                             @Column("async") boolean async,
-                            @Column("script") String script) {
+                            @Column("script") String script,
+                            @Column("metadata") @JSONData ExtensionMetadata extensionMetadata) {
         this.id = id;
         this.path = path;
         this.name = name;
@@ -46,6 +50,7 @@ public class ExtensionSupport {
         this.enabled = enabled;
         this.async = async;
         this.script = script;
+        this.extensionMetadata = extensionMetadata;
     }
 
 
@@ -159,12 +164,12 @@ public class ExtensionSupport {
     }
 
     @Getter
-    public static class ExtensionMetadata {
+    public static class ExtensionMetadataIdAndName {
         private final int id;
         private final String name;
 
-        public ExtensionMetadata(@Column("ecm_id") int id,
-                                 @Column("ecm_name") String name) {
+        public ExtensionMetadataIdAndName(@Column("ecm_id") int id,
+                                          @Column("ecm_name") String name) {
             this.id = id;
             this.name = name;
         }

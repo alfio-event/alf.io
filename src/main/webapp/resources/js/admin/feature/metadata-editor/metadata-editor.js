@@ -26,11 +26,53 @@
         templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
     });
 
-    function MetadataViewerCtrl($uibModal, EventService) {
+    var ONLINE_EVENT_CAPABILITIES = [
+        { id: 'CREATE_VIRTUAL_ROOM', text: 'Init Virtual Room' },
+        { id: 'CREATE_GUEST_LINK', text: 'Create Join Link for Guest' },
+        { id: 'CREATE_ANONYMOUS_GUEST_LINK', text: 'Create Join Link for Anonymous Guest' }
+    ];
+
+    function MetadataViewerCtrl($uibModal, EventService, NotificationHandler, $q) {
         var ctrl = this;
+        function executeCapability(id, event) {
+            event.preventDefault();
+            var promise;
+            if (id === 'CREATE_GUEST_LINK') {
+                promise = requestGuestData($uibModal);
+            } else {
+                promise = $q.resolve({});
+            }
+            promise.then(function(params) {
+                EventService.executeCapability(ctrl.event.shortName, id, params)
+                    .then(res => {
+                        ctrl.capabilityResult = res.data;
+                    });
+            });
+        }
         ctrl.$onInit = function() {
             ctrl.categoryLevel = ctrl.level === 'category';
             ctrl.languageDescription = languageDescription(ctrl.availableLanguages);
+            if(!ctrl.categoryLevel && ctrl.event.supportedCapabilities && ctrl.event.supportedCapabilities.length > 0) {
+                ctrl.capabilities = ONLINE_EVENT_CAPABILITIES.filter(function(cap) {
+                    return ctrl.event.supportedCapabilities.indexOf(cap.id) > -1;
+                });
+                ctrl.showCapabilitiesMenu = ctrl.capabilities.length > 0;
+            }
+            ctrl.normalLayout = !ctrl.categoryLevel && !ctrl.showCapabilitiesMenu;
+            if(ctrl.showCapabilitiesMenu) {
+                ctrl.capabilitySelected = executeCapability;
+                ctrl.copyCapabilityResult = function() {
+                    var listener = function(clipboardEvent) {
+                        var clipboard = clipboardEvent.clipboardData || window['clipboadData'];
+                        clipboard.setData('text', ctrl.capabilityResult);
+                        clipboardEvent.preventDefault();
+                        NotificationHandler.showSuccess('Link copied in the clipboard!');
+                    };
+                    document.addEventListener('copy', listener, false);
+                    document.execCommand('copy');
+                    document.removeEventListener('copy', listener, false);
+                }
+            }
         };
         ctrl.metadataPresent = function() {
             return ctrl.metadata.onlineConfiguration
@@ -70,7 +112,7 @@
         }
     }
 
-    MetadataViewerCtrl.$inject = ['$uibModal', 'EventService'];
+    MetadataViewerCtrl.$inject = ['$uibModal', 'EventService', 'NotificationHandler', '$q'];
 
     function MetadataEditorCtrl(EventService) {
         var ctrl = this;
@@ -186,6 +228,30 @@
             publisher = EventService.updateEventMetadata(event.shortName, metadata);
         }
         return publisher;
+    }
+
+    function requestGuestData($uibModal) {
+        return $uibModal.open({
+            templateUrl:'../resources/js/admin/feature/metadata-editor/join-link-details-modal.html',
+            backdrop: 'static',
+            controllerAs: '$ctrl',
+            controller: function($scope) {
+                var ctrl = this;
+                ctrl.guest = {
+                    firstName: '',
+                    lastName: '',
+                    email: ''
+                };
+                ctrl.save = function(form) {
+                    if(form.$valid) {
+                       $scope.$close(ctrl.guest);
+                    }
+                };
+                ctrl.cancel = function() {
+                    $scope.$dismiss();
+                };
+            }
+        }).result;
     }
 
 })();

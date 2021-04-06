@@ -20,6 +20,8 @@ package alfio.manager;
 import alfio.extension.ExtensionService;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.support.extension.ExtensionCapability;
+import alfio.manager.support.extension.ExtensionEvent;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -49,7 +51,7 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.*;
 
-import static alfio.manager.ExtensionManager.ExtensionEvent.ONLINE_CHECK_IN_REDIRECT;
+import static alfio.manager.support.extension.ExtensionEvent.ONLINE_CHECK_IN_REDIRECT;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 
 @Component
@@ -65,37 +67,12 @@ public class ExtensionManager {
     private final TransactionRepository transactionRepository;
 
 
-    public enum ExtensionEvent {
-        RESERVATION_CONFIRMED,
-        RESERVATION_CANCELLED,
-        RESERVATION_CREDIT_NOTE_ISSUED,
-        TICKET_CANCELLED,
-        RESERVATION_EXPIRED,
-        TICKET_ASSIGNED,
-        WAITING_QUEUE_SUBSCRIBED,
-        INVOICE_GENERATION,
-        CREDIT_NOTE_GENERATION,
-        CREDIT_NOTE_GENERATED,
-        TAX_ID_NUMBER_VALIDATION,
-        RESERVATION_VALIDATION,
-        EVENT_METADATA_UPDATE,
-        //
-        STUCK_RESERVATIONS,
-        OFFLINE_RESERVATIONS_WILL_EXPIRE,
-        EVENT_CREATED,
-        EVENT_STATUS_CHANGE,
-        TICKET_CHECKED_IN,
-        TICKET_REVERT_CHECKED_IN,
-        PDF_GENERATION,
-        OAUTH2_STATE_GENERATION,
+    boolean isSupported(ExtensionCapability extensionCapability, PurchaseContext purchaseContext) {
+        return extensionService.isCapabilitySupported(extensionCapability, purchaseContext);
+    }
 
-        CONFIRMATION_MAIL_CUSTOM_TEXT,
-        TICKET_MAIL_CUSTOM_TEXT,
-        REFUND_ISSUED,
-
-        DYNAMIC_DISCOUNT_APPLICATION,
-
-        ONLINE_CHECK_IN_REDIRECT
+    Set<ExtensionCapability> getSupportedCapabilities(Set<ExtensionCapability> requested, PurchaseContext purchaseContext) {
+        return extensionService.getSupportedCapabilities(requested, purchaseContext);
     }
 
     void handleEventCreation(Event event) {
@@ -374,7 +351,6 @@ public class ExtensionManager {
         return Optional.empty();
     }
 
-
     private void asyncCall(ExtensionEvent extensionEvent, PurchaseContext event, Map<String, Object> payload) {
         extensionService.executeScriptAsync(extensionEvent.name(),
             toPath(event),
@@ -393,7 +369,7 @@ public class ExtensionManager {
         }
     }
 
-    private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, PurchaseContext purchaseContext) {
+    private Map<String, Object> fillWithBasicInfo(Map<String, ?> payload, PurchaseContext purchaseContext) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
         //FIXME ugly
         purchaseContext.event().ifPresent(event -> {
@@ -414,4 +390,13 @@ public class ExtensionManager {
         return purchaseContext.event().map(e -> toPath((EventAndOrganizationId) e)).orElseGet(() -> "-" + organizationId);
     }
 
+    public <T> Optional<T> executeCapability(ExtensionCapability capability,
+                                   Map<String, String> params,
+                                   PurchaseContext purchaseContext,
+                                   Class<T> resultType) {
+        return extensionService.executeCapability(capability,
+            toPath(purchaseContext),
+            fillWithBasicInfo(params, purchaseContext),
+            resultType);
+    }
 }

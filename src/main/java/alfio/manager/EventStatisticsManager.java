@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -57,6 +58,7 @@ public class EventStatisticsManager {
     private final ConfigurationManager configurationManager;
     private final UserManager userManager;
     private final SubscriptionRepository subscriptionRepository;
+    private final ExtensionManager extensionManager;
 
     private List<Event> getAllEvents(String username) {
         List<Integer> orgIds = userManager.findUserOrganizations(username).stream().map(Organization::getId).collect(toList());
@@ -110,13 +112,22 @@ public class EventStatisticsManager {
             .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId()), metadata.get(t.getId())))
             .collect(Collectors.toList());
 
+        Set<ExtensionCapability> supportedCapabilities;
+        if(event.getFormat() != Event.EventFormat.IN_PERSON) {
+            supportedCapabilities = extensionManager.getSupportedCapabilities(EnumSet.allOf(ExtensionCapability.class), event);
+        } else {
+            supportedCapabilities = Set.of();
+        }
+
         return new EventWithAdditionalInfo(event,
             tWithInfo,
             eventStatistic,
             description,
             grossIncome,
             eventRepository.getMetadataForEvent(event.getId()),
-            subscriptionRepository.findLinkedSubscriptionIds(event.getId(), event.getOrganizationId()));
+            subscriptionRepository.findLinkedSubscriptionIds(event.getId(), event.getOrganizationId()),
+            supportedCapabilities
+        );
     }
 
     private Event getEventAndCheckOwnership(String eventName, String username) {

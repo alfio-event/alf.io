@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static alfio.manager.ExtensionManager.ExtensionEvent.TICKET_ASSIGNED;
+import static alfio.manager.support.extension.ExtensionEvent.TICKET_ASSIGNED;
 import static org.mockito.Mockito.*;
 
 class ExtensionManagerTest {

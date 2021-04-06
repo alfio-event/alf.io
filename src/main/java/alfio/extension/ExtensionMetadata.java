@@ -17,35 +17,71 @@
 
 package alfio.extension;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNullElse;
+
 @Getter
-@AllArgsConstructor
 public class ExtensionMetadata {
-    String id;
-    String displayName;
-    Integer version;
-    boolean async;
-    List<String> events;
-    Parameters parameters;
+    private final String id;
+    private final String displayName;
+    private final Integer version;
+    private final boolean async;
+    private final List<String> events;
+    private final Parameters parameters;
+    private final List<String> capabilities;
+
+    @JsonCreator
+    public ExtensionMetadata(@JsonProperty("id") String id,
+                             @JsonProperty("displayName") String displayName,
+                             @JsonProperty("version") Integer version,
+                             @JsonProperty("async") boolean async,
+                             @JsonProperty("events") List<String> events,
+                             @JsonProperty("parameters") Parameters parameters,
+                             @JsonProperty("capabilities") List<String> capabilities) {
+        this.id = id;
+        this.displayName = displayName;
+        this.version = version;
+        this.async = async;
+        this.events = requireNonNullElse(events, List.of());
+        this.parameters = parameters;
+        this.capabilities = requireNonNullElse(capabilities, List.of());
+    }
 
     @Getter
-    @AllArgsConstructor
     public static class Parameters {
-        List<Field> fields;
-        List<String> configurationLevels;
+        private final List<Field> fields;
+        private final List<String> configurationLevels;
+
+        @JsonCreator
+        public Parameters(@JsonProperty("fields") List<Field> fields,
+                          @JsonProperty("configurationLevels") List<String> configurationLevels) {
+            this.fields = fields;
+            this.configurationLevels = configurationLevels;
+        }
     }
 
 
     @Getter
-    @AllArgsConstructor
     public static class Field {
-        String name;
-        String description;
-        String type;
-        boolean required;
+        private final String name;
+        private final String description;
+        private final String type;
+        private final boolean required;
+
+        @JsonCreator
+        public Field(@JsonProperty("name") String name,
+                     @JsonProperty("description") String description,
+                     @JsonProperty("type") String type,
+                     @JsonProperty("required") boolean required) {
+            this.name = name;
+            this.description = description;
+            this.type = type;
+            this.required = required;
+        }
     }
 }

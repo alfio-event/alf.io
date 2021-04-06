@@ -32,11 +32,26 @@
 <hr>
 
 <div class="row">
-    <div class="col-xs-12" data-ng-class="{'col-md-offset-10 col-md-2': !$ctrl.categoryLevel, 'col-md-offset-6 col-md-3': $ctrl.categoryLevel}">
+    <div data-ng-if="$ctrl.showCapabilitiesMenu" class="col-xs-12 col-md-3">
+        <div class="btn-group btn-block" uib-dropdown>
+            <button id="capabilities" class="btn btn-default" uib-dropdown-toggle>
+                Actions <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" uib-dropdown-menu aria-labelledby="capabilities">
+                <li ng-repeat="capability in $ctrl.capabilities" role="menuitem">
+                    <a ng-click="$ctrl.capabilitySelected(capability.id, $event)" href="#">{{capability.text}}</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-xs-12" data-ng-class="{'col-md-offset-6 col-md-3': $ctrl.showCapabilitiesMenu, 'col-md-offset-9 col-md-3': $ctrl.normalLayout, 'col-md-3 col-md-offset-6': $ctrl.categoryLevel}">
         <button type="button" class="btn btn-block" data-ng-click="$ctrl.edit()" data-ng-class="{'btn-warning': !$ctrl.categoryLevel, 'btn-default': $ctrl.categoryLevel}">Edit<span data-ng-if="$ctrl.categoryLevel"> Online settings</span></button>
     </div>
     <div class="col-md-3 col-xs-12" data-ng-if="$ctrl.categoryLevel">
         <div data-ng-transclude=""></div>
     </div>
 </div>
-
+<div class="text-success wMarginTop10px" data-ng-if="$ctrl.capabilityResult">
+    <hr>
+    <button class="btn btn-sm btn-default mr-10" data-ng-click="$ctrl.copyCapabilityResult()"><i class="fa fa-clipboard"></i> Copy</button> <span>{{$ctrl.capabilityResult}}</span>
+</div>
