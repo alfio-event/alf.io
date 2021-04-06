@@ -26,7 +26,6 @@ import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.*;
 import alfio.model.PurchaseContext;
-import alfio.model.extension.CapabilityExecutionResult;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
@@ -285,16 +284,12 @@ public class ExtensionService {
                                              Class<T> resultType) {
         return getFirstScriptSupportingCapability(capability, basePath)
             .map(scriptPathNameHash -> {
-                Map<String, Object> context = new HashMap<>(params);
+                Map<String, Object> context = new HashMap<>();
                 context.put("capability", capability.name());
                 context.put("output", null);
-                context = internalExecuteScript(scriptPathNameHash, context, basePath, false, PROCESS_CAPABILITY_RESULT, CapabilityExecutionResult.class);
-                var result = (CapabilityExecutionResult) context.get("output");
-                if(result != null) {
-                    return resultType.cast(result.getResult());
-                } else {
-                    return null;
-                }
+                context.put("request", params);
+                context = internalExecuteScript(scriptPathNameHash, context, basePath, false, PROCESS_CAPABILITY_RESULT, resultType);
+                return resultType.cast(context.get("output"));
             });
     }
 

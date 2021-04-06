@@ -21,6 +21,7 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
+import alfio.extension.ExtensionUtils;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -152,9 +153,14 @@ public class ExtensionManagerIntegrationTest {
         var optionalResult = extensionManager.executeCapability(CREATE_VIRTUAL_ROOM, Map.of(), event, String.class);
         assertTrue(optionalResult.isPresent());
         assertEquals("https://alf.io", optionalResult.get());
+    }
 
-        optionalResult = extensionManager.executeCapability(CREATE_GUEST_LINK, Map.of(), event, String.class);
+    @Test
+    void executeCapabilityWithParameters() {
+        var params = Map.of("firstName", "testName", "lastName", "testLastName", "email", "testEmail");
+        var optionalResult = extensionManager.executeCapability(CREATE_GUEST_LINK, params, event, String.class);
         assertTrue(optionalResult.isPresent());
-        assertEquals("https://github.com/alfio-event/alf.io", optionalResult.get());
+        var expectedParams = ExtensionUtils.base64UrlSafe("testName"+";"+"testLastName"+";"+"testEmail");
+        assertEquals("https://alf.io?user="+expectedParams, optionalResult.get());
     }
 }

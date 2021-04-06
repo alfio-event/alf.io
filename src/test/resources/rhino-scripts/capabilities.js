@@ -20,13 +20,10 @@ function executeScript(scriptEvent) {
 }
 
 function executeCapability(capability) {
-    var result;
     if(capability === 'CREATE_VIRTUAL_ROOM') {
-        result = 'https://alf.io';
+        return 'https://alf.io';
     } else {
-        result = 'https://github.com/alfio-event/alf.io';
+        var param = ExtensionUtils.base64UrlSafe(request.firstName + ';' +request.lastName + ';' + request.email);
+        return 'https://alf.io?user=' + param;
     }
-    return {
-        result: result
-    };
 }
