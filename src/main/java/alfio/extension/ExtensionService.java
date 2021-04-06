@@ -26,6 +26,7 @@ import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.*;
 import alfio.model.PurchaseContext;
+import alfio.model.extension.CapabilityExecutionResult;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
@@ -44,6 +45,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.manager.ExtensionManager.toPath;
@@ -57,6 +59,9 @@ import static java.util.stream.Collectors.toSet;
 @AllArgsConstructor
 public class ExtensionService {
 
+    private static final String EVALUATE_RESULT = "if(ExtensionUtils.needsJsonSerialization(res)) { res = GSON.fromJson(JSON.stringify(res), returnClass); }; res;";
+    private static final String PROCESS_EXTENSION_RESULT  = "var res = executeScript(extensionEvent); " + EVALUATE_RESULT;
+    private static final String PROCESS_CAPABILITY_RESULT = "var res = executeCapability(capability); " + EVALUATE_RESULT;
     private final ScriptingExecutionService scriptingExecutionService;
     private final ExtensionRepository extensionRepository;
     private final ExtensionLogRepository extensionLogRepository;
@@ -121,7 +126,7 @@ public class ExtensionService {
         String hash = DigestUtils.sha256Hex(script.getScript());
         ExtensionMetadata extensionMetadata = getMetadata(script.getName(), script.getScript());
 
-        Validate.notBlank(extensionMetadata.displayName, "Display Name is mandatory");
+        Validate.notBlank(extensionMetadata.getDisplayName(), "Display Name is mandatory");
 
         validateCapabilities(extensionMetadata);
 
@@ -131,14 +136,14 @@ public class ExtensionService {
 
         if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
             extensionRepository.deleteScriptForPath(previousPath, previousName);
-            extensionRepository.insert(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript(), extensionMetadata);
+            extensionRepository.insert(script.getPath(), script.getName(), extensionMetadata.getDisplayName(), hash, script.isEnabled(), extensionMetadata.isAsync(), script.getScript(), extensionMetadata);
         } else {
-            extensionRepository.update(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript(), extensionMetadata);
+            extensionRepository.update(script.getPath(), script.getName(), extensionMetadata.getDisplayName(), hash, script.isEnabled(), extensionMetadata.isAsync(), script.getScript(), extensionMetadata);
         }
 
         int extensionId = extensionRepository.getExtensionIdFor(script.getPath(), script.getName());
 
-        for (String event : extensionMetadata.events) {
+        for (String event : extensionMetadata.getEvents()) {
             extensionRepository.insertEvent(extensionId, event);
         }
 
@@ -163,12 +168,12 @@ public class ExtensionService {
 
     void validateCapabilities(ExtensionMetadata extensionMetadata) {
         // validate events / capabilities combination
-        Set<ExtensionEvent> events = requireNonNull(extensionMetadata.events, "Events are mandatory")
+        Set<ExtensionEvent> events = requireNonNull(extensionMetadata.getEvents(), "Events are mandatory")
             .stream()
             .map(ExtensionEvent::valueOf)
             .collect(toSet());
         Validate.isTrue(!events.isEmpty(), "Events are mandatory");
-        var invalidCapabilities = requireNonNullElse(extensionMetadata.capabilities, List.<String>of()).stream()
+        var invalidCapabilities = requireNonNullElse(extensionMetadata.getCapabilities(), List.<String>of()).stream()
             .filter(s -> ExtensionCapability.valueOf(s).getCompatibleEvents().stream().noneMatch(events::contains))
             .collect(toSet());
 
@@ -266,28 +271,42 @@ public class ExtensionService {
         return result;
     }
 
+    private Optional<ScriptPathNameHash> getFirstScriptSupportingCapability(ExtensionCapability capability, String basePath) {
+        var externalConfCapabilities = externalConfiguration.getAllExtensionsForCapability(capability);
+        if(!externalConfCapabilities.isEmpty()) {
+            return Optional.of(externalConfCapabilities.get(0));
+        }
+        return extensionRepository.getFirstScriptForCapability(generatePossiblePath(basePath), capability.name());
+    }
+
+    public <T> Optional<T> executeCapability(ExtensionCapability capability,
+                                             String basePath,
+                                             Map<String, Object> params,
+                                             Class<T> resultType) {
+        return getFirstScriptSupportingCapability(capability, basePath)
+            .map(scriptPathNameHash -> {
+                Map<String, Object> context = new HashMap<>(params);
+                context.put("capability", capability.name());
+                context.put("output", null);
+                context = internalExecuteScript(scriptPathNameHash, context, basePath, false, PROCESS_CAPABILITY_RESULT, CapabilityExecutionResult.class);
+                var result = (CapabilityExecutionResult) context.get("output");
+                if(result != null) {
+                    return resultType.cast(result.getResult());
+                } else {
+                    return null;
+                }
+            });
+    }
+
     public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload, Class<T> clazz) {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, false);
-        T res = null;
-        Map<String, Object> input = new HashMap<>(payload);
-        input.put("extensionEvent", event);
-        input.put("output", null);
+        Map<String, Object> context = new HashMap<>(payload);
+        context.put("extensionEvent", event);
+        context.put("output", null);
         for (ScriptPathNameHash activePath : activePaths) {
-            String path = activePath.getPath();
-            String name = activePath.getName();
-            Pair<Set<String>, Map<String, Object>> params = addExtensionParameters(input, basePath, activePath);
-            input = params.getRight();
-            ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name);
-
-            if(params.getLeft().isEmpty()) {
-                res = scriptingExecutionService.executeScript(name, activePath.getHash(),
-                    () -> getScript(path, name)+"\n;var res = executeScript(extensionEvent); if(ExtensionUtils.needsJsonSerialization(res)) { res = GSON.fromJson(JSON.stringify(res), returnClass); }; res;", input, clazz, extLogger);
-                input.put("output", res);
-            } else {
-                extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
-            }
+            context = internalExecuteScript(activePath, context, basePath, false, PROCESS_EXTENSION_RESULT, clazz);
         }
-        return res;
+        return clazz.cast(context.get("output"));
     }
 
     public void executeScriptAsync(String event, String basePath, Map<String, Object> payload) {
@@ -295,18 +314,34 @@ public class ExtensionService {
         Map<String, Object> input = new HashMap<>(payload);
         input.put("extensionEvent", event);
         for (ScriptPathNameHash activePath : activePaths) {
-            String path = activePath.getPath();
-            String name = activePath.getName();
-            Pair<Set<String>, Map<String, Object>> params = addExtensionParameters(input, basePath, activePath);
-            input = params.getRight();
-            ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name);
-
-            if(params.getLeft().isEmpty()) {
-                scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input, extLogger);
-            } else {
-                extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
-            }
+            input = internalExecuteScript(activePath, input, basePath, true, "executeScript(extensionEvent);", Void.class);
         }
+    }
+
+    private <T> Map<String, Object> internalExecuteScript(ScriptPathNameHash activePath,
+                                           Map<String, Object> input,
+                                           String basePath,
+                                           boolean async,
+                                           String executeInstruction,
+                                           Class<T> expectedResult) {
+        String path = activePath.getPath();
+        String name = activePath.getName();
+        Pair<Set<String>, Map<String, Object>> params = addExtensionParameters(input, basePath, activePath);
+        var context = params.getRight();
+        ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name);
+
+        if(params.getLeft().isEmpty()) {
+            Supplier<String> scriptGetter = () -> getScript(path, name)+"\n;"+executeInstruction;
+            if(async) {
+                scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), scriptGetter, context, extLogger);
+            } else {
+                Object res = scriptingExecutionService.executeScript(name, activePath.getHash(), scriptGetter, context, expectedResult, extLogger);
+                context.put("output", res);
+            }
+        } else {
+            extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
+        }
+        return context;
     }
 
     /*

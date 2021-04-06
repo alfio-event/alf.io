@@ -18,3 +18,15 @@ function getScriptMetadata() {
 function executeScript(scriptEvent) {
     return null;
 }
+
+function executeCapability(capability) {
+    var result;
+    if(capability === 'CREATE_VIRTUAL_ROOM') {
+        result = 'https://alf.io';
+    } else {
+        result = 'https://github.com/alfio-event/alf.io';
+    }
+    return {
+        result: result
+    };
+}

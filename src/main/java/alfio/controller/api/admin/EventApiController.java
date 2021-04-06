@@ -22,6 +22,7 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -831,6 +832,16 @@ public class EventApiController {
                                                               Principal principal) {
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> eventManager.getMetadataForCategory(event, categoryId)));
+    }
+
+    @PostMapping("/events/{eventName}/capability/{capability}")
+    public ResponseEntity<String> generateUrlForOnlineEvent(@PathVariable("eventName") String eventName,
+                                                            @PathVariable("capability") ExtensionCapability capability,
+                                                            @RequestBody Map<String, String> params,
+                                                            Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName())
+            .flatMap(event -> extensionManager.executeCapability(capability, params, event, String.class)));
+
     }
 
     private Event loadEvent(String eventName, Principal principal) {

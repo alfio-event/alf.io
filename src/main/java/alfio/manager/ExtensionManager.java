@@ -369,7 +369,7 @@ public class ExtensionManager {
         }
     }
 
-    private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, PurchaseContext purchaseContext) {
+    private Map<String, Object> fillWithBasicInfo(Map<String, ?> payload, PurchaseContext purchaseContext) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
         //FIXME ugly
         purchaseContext.event().ifPresent(event -> {
@@ -390,4 +390,13 @@ public class ExtensionManager {
         return purchaseContext.event().map(e -> toPath((EventAndOrganizationId) e)).orElseGet(() -> "-" + organizationId);
     }
 
+    public <T> Optional<T> executeCapability(ExtensionCapability capability,
+                                   Map<String, String> params,
+                                   PurchaseContext purchaseContext,
+                                   Class<T> resultType) {
+        return extensionService.executeCapability(capability,
+            toPath(purchaseContext),
+            fillWithBasicInfo(params, purchaseContext),
+            resultType);
+    }
 }

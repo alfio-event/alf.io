@@ -167,4 +167,12 @@ public interface ExtensionRepository {
         " (a1.es_id = a2.es_id) and length(a1.path) < length(a2.path) where a2.path is null) a3 ")
     List<String> getSupportedCapabilities(@Bind("possiblePaths") Set<String> paths,
                                           @Bind("capabilities") Collection<String> capabilities);
+
+    @Query("select a3.es_id, a3.path, a3.name, a3.hash from " +
+        " (select a1.es_id, a1.path, a1.name, a1.hash from " +
+        " (select es_id, path, name, hash from extension_capabilities where (path in (:possiblePaths)) and capability = :capability) a1 " +
+        " left outer join (select es_id, path, name, hash from extension_capabilities where (path in (:possiblePaths)) and capability = :capability) a2 on " +
+        " (a1.es_id = a2.es_id) and length(a1.path) < length(a2.path) where a2.path is null) a3 limit 1")
+    Optional<ExtensionSupport.ScriptPathNameHash> getFirstScriptForCapability(@Bind("possiblePaths") Set<String> paths,
+                                                                              @Bind("capability") String capability);
 }

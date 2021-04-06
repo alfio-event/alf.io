@@ -146,4 +146,15 @@ public class ExtensionManagerIntegrationTest {
         var requested = Set.of(CREATE_VIRTUAL_ROOM, CREATE_ANONYMOUS_GUEST_LINK, CREATE_GUEST_LINK);
         assertEquals(Set.of(CREATE_VIRTUAL_ROOM, CREATE_GUEST_LINK), extensionManager.getSupportedCapabilities(requested, event));
     }
+
+    @Test
+    void executeCapability() {
+        var optionalResult = extensionManager.executeCapability(CREATE_VIRTUAL_ROOM, Map.of(), event, String.class);
+        assertTrue(optionalResult.isPresent());
+        assertEquals("https://alf.io", optionalResult.get());
+
+        optionalResult = extensionManager.executeCapability(CREATE_GUEST_LINK, Map.of(), event, String.class);
+        assertTrue(optionalResult.isPresent());
+        assertEquals("https://github.com/alfio-event/alf.io", optionalResult.get());
+    }
 }

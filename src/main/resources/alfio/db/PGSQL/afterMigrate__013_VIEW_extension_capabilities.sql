@@ -29,9 +29,11 @@ create view extension_capabilities as (
     from extension_support es
     cross join lateral (
         select * from jsonb_array_elements_text(es.metadata->'capabilities') as cap
+            where jsonb_typeof(es.metadata -> 'capabilities') = 'array'
     ) cap
     cross join lateral (
         select array_agg(value::text) as events from jsonb_array_elements_text(es.metadata->'events')
+            where jsonb_typeof(es.metadata -> 'events') = 'array'
     ) ev
-    where enabled = true
+    where enabled = true and metadata is not null
 );

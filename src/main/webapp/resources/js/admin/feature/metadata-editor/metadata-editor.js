@@ -26,11 +26,45 @@
         templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
     });
 
-    function MetadataViewerCtrl($uibModal, EventService) {
+    var ONLINE_EVENT_CAPABILITIES = [
+        { id: 'CREATE_VIRTUAL_ROOM', text: 'Init Virtual Room' },
+        { id: 'CREATE_GUEST_LINK', text: 'Create Link for Guest' },
+        { id: 'CREATE_ANONYMOUS_GUEST_LINK', text: 'Create Link for Anonymous Guest' },
+    ];
+
+    function MetadataViewerCtrl($uibModal, EventService, NotificationHandler) {
         var ctrl = this;
+        function executeCapability(id, event) {
+            event.preventDefault();
+            EventService.executeCapability(ctrl.event.shortName, id, {})
+                .then(res => {
+                    ctrl.capabilityResult = res.data;
+                });
+        }
         ctrl.$onInit = function() {
             ctrl.categoryLevel = ctrl.level === 'category';
             ctrl.languageDescription = languageDescription(ctrl.availableLanguages);
+            if(!ctrl.categoryLevel && ctrl.event.supportedCapabilities && ctrl.event.supportedCapabilities.length > 0) {
+                ctrl.capabilities = ONLINE_EVENT_CAPABILITIES.filter(function(cap) {
+                    return ctrl.event.supportedCapabilities.indexOf(cap.id) > -1;
+                });
+                ctrl.showCapabilitiesMenu = ctrl.capabilities.length > 0;
+            }
+            ctrl.normalLayout = !ctrl.categoryLevel && !ctrl.showCapabilitiesMenu;
+            if(ctrl.showCapabilitiesMenu) {
+                ctrl.capabilitySelected = executeCapability;
+                ctrl.copyCapabilityResult = function() {
+                    var listener = function(clipboardEvent) {
+                        var clipboard = clipboardEvent.clipboardData || window['clipboadData'];
+                        clipboard.setData('text', ctrl.capabilityResult);
+                        clipboardEvent.preventDefault();
+                        NotificationHandler.showSuccess('Link copied in the clipboard!');
+                    };
+                    document.addEventListener('copy', listener, false);
+                    document.execCommand('copy');
+                    document.removeEventListener('copy', listener, false);
+                }
+            }
         };
         ctrl.metadataPresent = function() {
             return ctrl.metadata.onlineConfiguration
@@ -70,7 +104,7 @@
         }
     }
 
-    MetadataViewerCtrl.$inject = ['$uibModal', 'EventService'];
+    MetadataViewerCtrl.$inject = ['$uibModal', 'EventService', 'NotificationHandler'];
 
     function MetadataEditorCtrl(EventService) {
         var ctrl = this;
