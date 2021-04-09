@@ -17,9 +17,11 @@
 
 create view basic_event_with_optional_subscription as (
     select e.*,
-           s.id as subscription_id
+           s.id as subscription_id,
+           o.slug as org_slug
         from event e
         left join subscription_event se on se.event_id_fk = e.id
         left join subscription_descriptor sd on se.subscription_descriptor_id_fk = sd.id
         left join subscription s on sd.id = s.subscription_descriptor_fk
+        left join organization o on e.org_id = o.id
 );

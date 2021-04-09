@@ -26,19 +26,19 @@ import java.util.UUID;
 
 @Data
 @Log4j2
-public class EventSearchOptions {
+public class SearchOptions {
     private String subscription;
     private Integer organizer;
-    private String organizerName;
+    private String organizerSlug;
     private List<String> tags;
 
-    public static EventSearchOptions empty() {
-        return new EventSearchOptions();
+    public static SearchOptions empty() {
+        return new SearchOptions();
     }
 
     public boolean isEmpty() {
         return StringUtils.isEmpty(subscription)
-            && (organizer == null || organizer == 0 || StringUtils.isEmpty(organizerName))
+            && (organizer == null || organizer == 0 || StringUtils.isEmpty(organizerSlug))
             && CollectionUtils.isEmpty(tags);
     }
 

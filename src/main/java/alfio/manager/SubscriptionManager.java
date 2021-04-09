@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.controller.form.SearchOptions;
 import alfio.model.AllocationStatus;
 import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.subscription.EventSubscriptionLink;
@@ -183,8 +184,8 @@ public class SubscriptionManager {
         return subscriptionRepository.setPublicStatus(id, organizationId, isPublic) == 1;
     }
 
-    public List<SubscriptionDescriptor> getActivePublicSubscriptionsDescriptor(ZonedDateTime from) {
-        return subscriptionRepository.findAllActiveAndPublic(from);
+    public List<SubscriptionDescriptor> getActivePublicSubscriptionsDescriptor(ZonedDateTime from, SearchOptions searchOptions) {
+        return subscriptionRepository.findAllActiveAndPublic(from, searchOptions.getOrganizerSlug());
     }
 
     public Optional<SubscriptionDescriptor> getSubscriptionById(UUID id) {
