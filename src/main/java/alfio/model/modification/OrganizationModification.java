@@ -27,15 +27,21 @@ public class OrganizationModification {
     private final String name;
     private final String email;
     private final String description;
+    private final String externalId;
+    private final String slug;
 
     @JsonCreator
     public OrganizationModification(@JsonProperty("id") Integer id,
                                     @JsonProperty("name") String name,
                                     @JsonProperty("email") String email,
-                                    @JsonProperty("description") String description) {
+                                    @JsonProperty("description") String description,
+                                    @JsonProperty("externalId") String externalId,
+                                    @JsonProperty("slug") String slug) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.description = description;
+        this.externalId = externalId;
+        this.slug = slug;
     }
 }

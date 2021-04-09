@@ -137,19 +137,24 @@ public class UsersApiController {
 
     @PostMapping("/organizations/new")
     public String insertOrganization(@RequestBody OrganizationModification om) {
-        userManager.createOrganization(om.getName(), om.getDescription(), om.getEmail());
+        userManager.createOrganization(om);
         return OK;
     }
 
     @PostMapping("/organizations/update")
-    public String updateOrganization(@RequestBody OrganizationModification om) {
-        userManager.updateOrganization(om.getId(), om.getName(), om.getEmail(), om.getDescription());
+    public String updateOrganization(@RequestBody OrganizationModification om, Principal principal) {
+        userManager.updateOrganization(om, principal);
         return OK;
     }
 
     @PostMapping("/organizations/check")
-    public ValidationResult validateOrganization(@RequestBody OrganizationModification om) {
-        return userManager.validateOrganization(om.getId(), om.getName(), om.getEmail(), om.getDescription());
+    public ValidationResult validateOrganization(@RequestBody OrganizationModification om, Principal principal) {
+        return userManager.validateOrganization(om, principal);
+    }
+
+    @PostMapping("/organizations/validate-slug")
+    public ValidationResult validateSlug(@RequestBody OrganizationModification om, Principal principal) {
+        return userManager.validateOrganizationSlug(om, principal);
     }
 
     @PostMapping("/users/check")

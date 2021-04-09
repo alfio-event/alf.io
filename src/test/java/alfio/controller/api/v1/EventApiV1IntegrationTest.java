@@ -26,6 +26,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.model.api.v1.admin.EventCreationRequest;
+import alfio.model.modification.OrganizationModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -103,8 +104,9 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
         this.organizationName = UUID.randomUUID().toString();
         this.username = UUID.randomUUID().toString();
 
-        userManager.createOrganization(organizationName, "org", "email@example.com");
-        this.organization = organizationRepository.findByName(organizationName).get();
+        var organizationModification = new OrganizationModification(null, organizationName, "email@example.com", "org", null, null);
+        userManager.createOrganization(organizationModification);
+        this.organization = organizationRepository.findByName(organizationName).orElseThrow();
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL);
 
         this.mockPrincipal = Mockito.mock(Principal.class);

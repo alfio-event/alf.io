@@ -42,6 +42,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -1092,14 +1093,14 @@ public class EventManager {
     }
 
     public Map<Integer, String> getEventNamesByIds(List<Integer> eventIds, Principal principal) {
-        if (!UserManager.isAdmin(principal)) {
+        if (!RequestUtils.isAdmin(principal)) {
             throw new IllegalStateException("User must be admin");
         }
         return eventRepository.getEventNamesByIds(eventIds).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
     }
 
     public Map<Integer, String> getEventsNameInOrganization(int orgId, Principal principal) {
-        if (!UserManager.isAdmin(principal)) {
+        if (!RequestUtils.isAdmin(principal)) {
             throw new IllegalStateException("User must be admin");
         }
         return eventRepository.getEventsNameInOrganization(orgId).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));

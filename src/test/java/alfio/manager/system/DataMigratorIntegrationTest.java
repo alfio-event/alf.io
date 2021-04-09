@@ -98,7 +98,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         String username = UUID.randomUUID().toString();
         String eventName = UUID.randomUUID().toString();
 
-        organizationRepository.create(organizationName, "org", "email@example.com");
+        organizationRepository.create(organizationName, "org", "email@example.com", null, null);
         Organization organization = organizationRepository.findByName(organizationName).get();
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL);
 

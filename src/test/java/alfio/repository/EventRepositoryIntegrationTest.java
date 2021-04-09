@@ -84,7 +84,7 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
     @Before
     public void setUp() throws Exception {
         //setup hsqldb and make it usable from eventRepository
-        organizationRepository.create(ORG_NAME, "description", "email@pippobaudo.com");
+        organizationRepository.create(ORG_NAME, "description", "email@pippobaudo.com", null, null);
     }
 
 

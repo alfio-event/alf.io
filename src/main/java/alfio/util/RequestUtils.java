@@ -21,17 +21,22 @@ import alfio.model.Event;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.IteratorUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 @Log4j2
 @UtilityClass
@@ -62,10 +67,19 @@ public class RequestUtils {
      */
     public static Locale getMatchingLocale(ServletWebRequest request, Event event) {
         var allowedLanguages = event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toSet());
-        var l = request.getNativeRequest(HttpServletRequest.class).getLocales();
+        var l = requireNonNull(request.getNativeRequest(HttpServletRequest.class)).getLocales();
         List<Locale> locales = l != null ? IteratorUtils.toList(l.asIterator()) : Collections.emptyList();
         var selectedLocale = locales.stream().map(Locale::getLanguage).filter(allowedLanguages::contains).findFirst()
-            .orElseGet(() -> event.getContentLanguages().stream().findFirst().get().getLanguage());
+            .orElseGet(() -> event.getContentLanguages().stream().findFirst().orElseThrow().getLanguage());
         return LocaleUtil.forLanguageTag(selectedLocale);
+    }
+
+    public static boolean isAdmin(Principal principal) {
+        if (principal instanceof Authentication) {
+            return ((Authentication) principal).getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
+        }
+        return false;
     }
 }

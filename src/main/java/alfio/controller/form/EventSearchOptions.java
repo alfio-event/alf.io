@@ -29,6 +29,7 @@ import java.util.UUID;
 public class EventSearchOptions {
     private String subscription;
     private Integer organizer;
+    private String organizerName;
     private List<String> tags;
 
     public static EventSearchOptions empty() {
@@ -37,8 +38,7 @@ public class EventSearchOptions {
 
     public boolean isEmpty() {
         return StringUtils.isEmpty(subscription)
-            && organizer != null
-            && organizer > 0
+            && (organizer == null || organizer == 0 || StringUtils.isEmpty(organizerName))
             && CollectionUtils.isEmpty(tags);
     }
 
