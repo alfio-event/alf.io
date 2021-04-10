@@ -23,8 +23,8 @@ import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
-import alfio.controller.form.EventSearchOptions;
 import alfio.controller.form.ReservationForm;
+import alfio.controller.form.SearchOptions;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
 import alfio.manager.*;
@@ -95,11 +95,11 @@ public class EventApiV2Controller {
 
 
     @GetMapping("events")
-    public ResponseEntity<List<BasicEventInfo>> listEvents(EventSearchOptions eventSearchOptions) {
+    public ResponseEntity<List<BasicEventInfo>> listEvents(SearchOptions searchOptions) {
 
         var contentLanguages = i18nManager.getAvailableLanguages();
 
-        var events = eventManager.getPublishedEvents(eventSearchOptions)
+        var events = eventManager.getPublishedEvents(searchOptions)
             .stream()
             .map(e -> {
                 var messageSource = messageSourceManager.getMessageSourceFor(e);

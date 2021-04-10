@@ -135,8 +135,14 @@ public interface SubscriptionRepository {
     @Query("select * from subscription_descriptor where organization_id_fk = :organizationId order by creation_ts asc")
     List<SubscriptionDescriptor> findAllByOrganizationIds(@Bind("organizationId") int organizationId);
 
-    @Query("select * from subscription_descriptor where is_public = true and (max_entries > 0 or max_entries = -1) and (on_sale_from is null or :from >= on_sale_from)  and (on_sale_to is null or :from <= on_sale_to) order by on_sale_from asc")
-    List<SubscriptionDescriptor> findAllActiveAndPublic(@Bind("from") ZonedDateTime from);
+    @Query("select subscription_descriptor.* from subscription_descriptor" +
+        " join organization org on subscription_descriptor.organization_id_fk = org.id "+
+        " where is_public = true and" +
+        " (max_entries > 0 or max_entries = -1) and (on_sale_from is null or :from >= on_sale_from) " +
+        " and (on_sale_to is null or :from <= on_sale_to)" +
+        " and (:orgSlug is null or org.slug = :orgSlug)"+
+        " order by on_sale_from asc")
+    List<SubscriptionDescriptor> findAllActiveAndPublic(@Bind("from") ZonedDateTime from, @Bind("orgSlug") String organizerSlug);
 
     @Query("select * from subscription_descriptor where id = :id and organization_id_fk = :organizationId")
     Optional<SubscriptionDescriptor> findOne(@Bind("id") UUID id, @Bind("organizationId") int organizationId);

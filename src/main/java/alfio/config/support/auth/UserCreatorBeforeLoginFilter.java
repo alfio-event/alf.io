@@ -17,6 +17,7 @@
 package alfio.config.support.auth;
 
 import alfio.manager.user.UserManager;
+import alfio.model.modification.OrganizationModification;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -50,7 +51,8 @@ public class UserCreatorBeforeLoginFilter extends GenericFilterBean {
         if (requestMatcher.matches(req) && req.getParameter("username") != null && req.getParameter("password") != null) {
             String username = req.getParameter("username");
             if (!userManager.usernameExists(username)) {
-                int orgId = userManager.createOrganization(username, "Demo organization", username);
+                var organizationModification = new OrganizationModification(null, "Demo organization", username, username, null, null);
+                int orgId = userManager.createOrganization(organizationModification);
                 userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null, null);
             }
         }

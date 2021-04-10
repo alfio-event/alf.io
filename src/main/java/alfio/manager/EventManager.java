@@ -17,7 +17,7 @@
 package alfio.manager;
 
 import alfio.config.Initializer;
-import alfio.controller.form.EventSearchOptions;
+import alfio.controller.form.SearchOptions;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -42,6 +42,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -975,9 +976,10 @@ public class EventManager {
         return ticketRepository.findAllConfirmedForCSV(event.getId());
     }
 
-    public List<Event> getPublishedEvents(EventSearchOptions searchOptions) {
+    public List<Event> getPublishedEvents(SearchOptions searchOptions) {
         return eventRepository.findVisibleBySearchOptions(searchOptions.getSubscriptionCodeUUIDOrNull(),
             searchOptions.getOrganizer(),
+            searchOptions.getOrganizerSlug(),
             searchOptions.getTags());
     }
 
@@ -1092,14 +1094,14 @@ public class EventManager {
     }
 
     public Map<Integer, String> getEventNamesByIds(List<Integer> eventIds, Principal principal) {
-        if (!UserManager.isAdmin(principal)) {
+        if (!RequestUtils.isAdmin(principal)) {
             throw new IllegalStateException("User must be admin");
         }
         return eventRepository.getEventNamesByIds(eventIds).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
     }
 
     public Map<Integer, String> getEventsNameInOrganization(int orgId, Principal principal) {
-        if (!UserManager.isAdmin(principal)) {
+        if (!RequestUtils.isAdmin(principal)) {
             throw new IllegalStateException("User must be admin");
         }
         return eventRepository.getEventsNameInOrganization(orgId).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));

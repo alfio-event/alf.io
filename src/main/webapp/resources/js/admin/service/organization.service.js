@@ -20,6 +20,9 @@
             },
             checkOrganization: function (organization) {
                 return $http['post']('/admin/api/organizations/check', organization).error(HttpErrorHandler.handle);
+            },
+            checkSlug: function(organization) {
+                return $http['post']('/admin/api/organizations/validate-slug', organization).error(HttpErrorHandler.handle);
             }
         };
     }

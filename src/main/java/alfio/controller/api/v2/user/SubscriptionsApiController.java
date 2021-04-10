@@ -22,6 +22,7 @@ import alfio.controller.api.v2.model.BasicSubscriptionDescriptorInfo;
 import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
 import alfio.controller.api.v2.model.SubscriptionDescriptorWithAdditionalInfo;
 import alfio.controller.api.v2.user.support.PurchaseContextInfoBuilder;
+import alfio.controller.form.SearchOptions;
 import alfio.controller.support.Formatters;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.TicketReservationManager;
@@ -66,11 +67,11 @@ public class SubscriptionsApiController {
 
 
     @GetMapping("subscriptions")
-    public ResponseEntity<List<BasicSubscriptionDescriptorInfo>> listSubscriptions(/* TODO search by: organizer, tag, subscription */) {
+    public ResponseEntity<List<BasicSubscriptionDescriptorInfo>> listSubscriptions(SearchOptions searchOptions) {
         var contentLanguages = i18nManager.getAvailableLanguages();
 
         var now = ZonedDateTime.now(ClockProvider.clock());
-        var activeSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(now)
+        var activeSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(now, searchOptions)
             .stream()
             .map(s -> subscriptionDescriptorMapper(s, messageSourceManager.getMessageSourceFor(s)))
             .collect(Collectors.toList());

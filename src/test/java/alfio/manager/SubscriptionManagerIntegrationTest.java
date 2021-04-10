@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.form.SearchOptions;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
@@ -162,11 +163,11 @@ public class SubscriptionManagerIntegrationTest {
         assertEquals("description", descriptor.getDescription().get("en"));
         assertEquals(20000, descriptor.getPrice());
 
-        var publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()));
+        var publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()), SearchOptions.empty());
         assertEquals(0, publicSubscriptions.size());
 
         subscriptionManager.setPublicStatus(descriptor.getId(), orgId, true);
-        publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()));
+        publicSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(ZonedDateTime.now(ClockProvider.clock()), SearchOptions.empty());
         assertEquals(1, publicSubscriptions.size());
         assertEquals(res.get(0).getId(), publicSubscriptions.get(0).getId());
 

@@ -134,7 +134,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
         }
 
         Set<Integer> organizationIds = alfioUser.getAlfioOrganizationAuthorizations().keySet().stream()
-            .map(organizationRepository::findByNameOpenId)
+            .map(organizationRepository::findByExternalId)
             .filter(Optional::isPresent)
             .map(Optional::get)
             .filter(Objects::nonNull)

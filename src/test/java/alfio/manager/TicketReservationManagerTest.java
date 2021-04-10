@@ -180,7 +180,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationByIdForUpdate(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticketReservationRepository.getAdditionalInfo(any())).thenReturn(mock(TicketReservationAdditionalInfo.class));
-        organization = new Organization(ORGANIZATION_ID, "org", "desc", ORG_EMAIL, null);
+        organization = new Organization(ORGANIZATION_ID, "org", "desc", ORG_EMAIL, null, null);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
         GroupManager groupManager = mock(GroupManager.class);
         userRepository = mock(UserRepository.class);
@@ -990,7 +990,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(reservation.getUserLanguage()).thenReturn("en");
         when(reservation.getPromoCodeDiscountId()).thenReturn(null);
-        when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(new Organization(1, "", "", "", null));
+        when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(new Organization(1, "", "", "", null, null));
 //        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
 
         when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(BillingDocument.Type.class), anyString(), any(ZonedDateTime.class), anyInt()))

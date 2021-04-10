@@ -592,6 +592,10 @@
                             angular.forEach(validationResult.validationErrors, function(error) {
                                 form.$setError(error.fieldName, error.message);
                             });
+                        } else if (form.$setValidity) {
+                            angular.forEach(validationResult.validationErrors, function(error) {
+                                form[error.fieldName].$setValidity(error.code, false);
+                            });
                         } else {
                             var firstError = validationResult.validationErrors[0];
                             NotificationHandler.showError(firstError.description);

@@ -16,6 +16,7 @@
  */
 package alfio.manager.user;
 
+import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
 import alfio.model.user.join.UserOrganization;
@@ -25,13 +26,12 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.PasswordGenerator;
+import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,9 +41,11 @@ import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 @Component
@@ -52,6 +54,7 @@ import static java.util.stream.Collectors.toList;
 public class UserManager {
 
     public static final String ADMIN_USERNAME = "admin";
+    private static final Pattern SLUG_VALIDATOR = Pattern.compile("^[A-Za-z-_0-9]+$");
     private final AuthorityRepository authorityRepository;
     private final OrganizationRepository organizationRepository;
     private final UserOrganizationRepository userOrganizationRepository;
@@ -163,24 +166,51 @@ public class UserManager {
         return authorityRepository.checkRole(user.getUsername(), roleNames);
     }
 
-    public int createOrganization(String name, String description, String email) {
-        organizationRepository.create(name, description, email);
-        int orgId = organizationRepository.getIdByName(name);
+    public int createOrganization(OrganizationModification om) {
+        var affectedRowNumAndKey = organizationRepository.create(om.getName(), om.getDescription(), om.getEmail(), om.getExternalId(), om.getSlug());
+        int orgId = affectedRowNumAndKey.getKey();
         invoiceSequencesRepository.initFor(orgId);
         return orgId;
     }
 
-    public void updateOrganization(Integer id, String name, String email, String description) {
-        organizationRepository.update(id, name, description, email);
+    public void updateOrganization(OrganizationModification om, Principal principal) {
+        boolean isAdmin = RequestUtils.isAdmin(principal);
+        var currentOrg = organizationRepository.getById(requireNonNull(om.getId()));
+        organizationRepository.update(om.getId(),
+            om.getName(),
+            om.getDescription(),
+            om.getEmail(),
+            isAdmin ? om.getExternalId() : currentOrg.getExternalId(),
+            isAdmin ? om.getSlug() : currentOrg.getSlug());
     }
 
-    public ValidationResult validateOrganization(Integer id, String name, String email, String description) {
-        if(id == null && organizationRepository.findByName(name).isPresent()) {
+    public ValidationResult validateOrganizationSlug(OrganizationModification om, Principal principal) {
+        if(!RequestUtils.isAdmin(principal)) {
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("slug", "Cannot update Organizer URL."));
+        }
+        var slug = om.getSlug();
+        if(StringUtils.isBlank(slug) || !SLUG_VALIDATOR.matcher(om.getSlug()).matches()) {
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("slug", "Invalid value"));
+        }
+        if(organizationRepository.countBySlug(slug, om.getId()) > 0) {
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("slug", "URL is already taken", "value_already_in_use"));
+        }
+        return ValidationResult.success();
+    }
+
+    public ValidationResult validateOrganization(OrganizationModification om, Principal principal) {
+        if(om.getId() == null && organizationRepository.findByName(om.getName()).isPresent()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("name", "There is already another organization with the same name."));
         }
-        Validate.notBlank(name, "name can't be empty");
-        Validate.notBlank(email, "email can't be empty");
-        Validate.notBlank(description, "description can't be empty");
+        Validate.notBlank(om.getName(), "name can't be empty");
+        Validate.notBlank(om.getEmail(), "email can't be empty");
+        Validate.notBlank(om.getDescription(), "description can't be empty");
+        if(!RequestUtils.isAdmin(principal)) {
+            Validate.isTrue(StringUtils.isBlank(om.getExternalId()), "cannot update external id");
+            Validate.isTrue(StringUtils.isBlank(om.getSlug()), "cannot update slug");
+        } else if(StringUtils.isNotBlank(om.getSlug())) {
+            Validate.isTrue(SLUG_VALIDATOR.matcher(om.getSlug()).matches(), "Organizer address is not valid");
+        }
         return ValidationResult.success();
     }
 
@@ -298,12 +328,4 @@ public class UserManager {
             .orElseGet(ValidationResult::failed);
     }
 
-    public static boolean isAdmin(Principal principal) {
-        if (principal instanceof Authentication) {
-            return ((Authentication) principal).getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch("ROLE_ADMIN"::equals);
-        }
-        return false;
-    }
 }

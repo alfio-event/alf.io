@@ -1282,7 +1282,7 @@
                     };
 
                     var hasErrors = function(target) {
-                        return ['minlength','maxlength','pattern','email','url','duplicate'].filter(function(k) {
+                        return ['minlength','maxlength','pattern','email','url','duplicate','value_already_in_use'].filter(function(k) {
                             return target[k] && target[k] !== '';
                         }).length > 0;
                     };

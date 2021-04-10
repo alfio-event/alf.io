@@ -22,6 +22,7 @@ import alfio.model.Event;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
+import alfio.model.modification.OrganizationModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.ConfigurationKeys;
@@ -98,7 +99,8 @@ public class IntegrationTestUtil {
         String username = UUID.randomUUID().toString();
         String eventName = UUID.randomUUID().toString();
 
-        userManager.createOrganization(organizationName, "org", "email@example.com");
+        var organizationModification = new OrganizationModification(null, organizationName, "email@example.com", "org", null, null);
+        userManager.createOrganization(organizationModification);
         Organization organization = organizationRepository.findByName(organizationName).orElseThrow();
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL);
         userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);

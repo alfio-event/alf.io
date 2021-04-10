@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('adminApplication').component('organizationEdit', {
-        controller: ['OrganizationService', 'ValidationService', '$state', '$q', OrganizationEditCtrl],
+        controller: ['OrganizationService', 'ValidationService', '$state', '$q', '$scope', 'ConfigurationService', 'UserService', OrganizationEditCtrl],
         templateUrl: '../resources/js/admin/feature/organization-edit/organization-edit.html',
         bindings: {
             organizationId: '<',
@@ -14,20 +14,37 @@
     });
 
 
-    function OrganizationEditCtrl(OrganizationService, ValidationService, $state, $q) {
+    function OrganizationEditCtrl(OrganizationService, ValidationService, $state, $q, $scope, ConfigurationService, UserService) {
         var ctrl = this;
 
         ctrl.cancel = cancel;
         ctrl.save = save;
 
         this.$onInit = function() {
+            $q.all([ConfigurationService.loadInstanceSettings(), UserService.loadCurrentUser()]).then(function(results) {
+                ctrl.baseUrl = results[0].data.baseUrl;
+                ctrl.isAdmin = (results[1].data.role === 'ADMIN');
+            });
+            var originalSlug;
             if(ctrl.type === 'edit') {
                 OrganizationService.getOrganization(ctrl.organizationId).then(function(result) {
                     ctrl.organization = result.data;
+                    originalSlug = result.data.slug;
                 });
             } else {
                 ctrl.organization = {};
             }
+            $scope.$watch('$ctrl.organization.slug', function(newValue) {
+                if(newValue && newValue !== originalSlug) {
+                    ValidationService.validationPerformer($q, OrganizationService.checkSlug, ctrl.organization, ctrl.insertNewOrganization)
+                        .then(function() {
+                            ctrl.insertNewOrganization['slug'].$setValidity('value_already_in_use', true);
+                            console.log(ctrl.insertNewOrganization['slug'].$error);
+                        });
+                } else if (ctrl.insertNewOrganization && ctrl.insertNewOrganization['slug']) {
+                    ctrl.insertNewOrganization['slug'].$setValidity('value_already_in_use', true);
+                }
+            });
         };
 
 

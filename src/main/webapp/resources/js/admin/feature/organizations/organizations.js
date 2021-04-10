@@ -2,19 +2,22 @@
     'use strict';
 
     angular.module('adminApplication').component('organizations', {
-        controller: ['OrganizationService', OrganizationsCtrl],
+        controller: ['OrganizationService', 'UserService', OrganizationsCtrl],
         templateUrl: '../resources/js/admin/feature/organizations/organizations.html'
     });
 
 
 
-    function OrganizationsCtrl(OrganizationService) {
+    function OrganizationsCtrl(OrganizationService, UserService) {
         var ctrl = this;
 
         ctrl.load = load;
 
-        this.$onInit = function() {
-            load();
+        ctrl.$onInit = function() {
+            UserService.loadCurrentUser().then(function(result) {
+                ctrl.isAdmin = (result.data.role === 'ADMIN');
+                load();
+            });
         };
 
         function load() {

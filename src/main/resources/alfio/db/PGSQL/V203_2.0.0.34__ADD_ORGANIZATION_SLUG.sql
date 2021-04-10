@@ -15,13 +15,5 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create view basic_event_with_optional_subscription as (
-    select e.*,
-           s.id as subscription_id,
-           o.slug as org_slug
-        from event e
-        left join subscription_event se on se.event_id_fk = e.id
-        left join subscription_descriptor sd on se.subscription_descriptor_id_fk = sd.id
-        left join subscription s on sd.id = s.subscription_descriptor_fk
-        left join organization o on e.org_id = o.id
-);
+alter table organization add column slug text check ( slug is null OR slug <> 'admin' OR slug <> 'event' ),
+    add constraint "unique_org_slug" unique (slug);
