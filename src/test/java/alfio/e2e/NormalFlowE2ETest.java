@@ -226,9 +226,9 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
     private void page3Payment(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
         var driver = browserWebDriver.driver;
         selectElement(driver.findElement(By.id("CREDIT_CARD-label")), browserWebDriver);
-        wait.until(presenceOfElementLocated(By.cssSelector("iframe[allowpaymentrequest=true]")));
+        wait.until(presenceOfElementLocated(By.cssSelector("#card-element iframe")));
         driver.findElement(By.id("card-name")).sendKeys("Test McTest");
-        driver.switchTo().frame(By.cssSelector("iframe[allowpaymentrequest=true]").findElement(driver));
+        driver.switchTo().frame(By.cssSelector("#card-element iframe").findElement(driver));
         wait.until(presenceOfElementLocated(By.name("cardnumber")));
         var cardNumberElement = driver.findElement(By.name("cardnumber"));
         sendSlowInput(cardNumberElement, browserWebDriver, "4000000400000008".chars().mapToObj(Character::toString).toArray(String[]::new));
