@@ -14,10 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.system;
+package alfio.manager.openid;
 
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.core.env.Environment;
@@ -27,7 +30,6 @@ import static org.apache.commons.lang3.StringUtils.removeEnd;
 
 @Getter
 @Setter
-@AllArgsConstructor
 public class OpenIdConfiguration {
     private final String domain;
     private final String clientId;
@@ -40,6 +42,31 @@ public class OpenIdConfiguration {
     private final String alfioGroupsParameter;
     private final String logoutUrl;
     private final String logoutRedirectUrl;
+
+    @JsonCreator
+    public OpenIdConfiguration(@JsonProperty("domain") String domain,
+                               @JsonProperty("clientId") String clientId,
+                               @JsonProperty("clientSecret") String clientSecret,
+                               @JsonProperty("callbackURI") String callbackURI,
+                               @JsonProperty("authenticationUrl") String authenticationUrl,
+                               @JsonProperty("tokenEndpoint") String tokenEndpoint,
+                               @JsonProperty("contentType") String contentType,
+                               @JsonProperty("rolesParameter") String rolesParameter,
+                               @JsonProperty("alfioGroupsParameter") String alfioGroupsParameter,
+                               @JsonProperty("logoutUrl") String logoutUrl,
+                               @JsonProperty("logoutRedirectUrl") String logoutRedirectUrl) {
+        this.domain = domain;
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
+        this.callbackURI = callbackURI;
+        this.authenticationUrl = authenticationUrl;
+        this.tokenEndpoint = tokenEndpoint;
+        this.contentType = contentType;
+        this.rolesParameter = rolesParameter;
+        this.alfioGroupsParameter = alfioGroupsParameter;
+        this.logoutUrl = logoutUrl;
+        this.logoutRedirectUrl = logoutRedirectUrl;
+    }
 
     public static OpenIdConfiguration from(Environment environment, ConfigurationManager configurationManager) {
         var baseUrl = removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.system()).getRequiredValue(), "/");

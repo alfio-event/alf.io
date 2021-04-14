@@ -246,7 +246,10 @@ public enum ConfigurationKeys {
     BASE_CUSTOM_CSS("Base custom css", false, SettingCategory.GENERAL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
     EVENT_CUSTOM_CSS("Event custom css", false, SettingCategory.GENERAL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
 
-    DESCRIPTION_MAXLENGTH("Max characters in descriptions (default 4000)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM))
+    DESCRIPTION_MAXLENGTH("Max characters in descriptions (default 4000)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+
+    OPENID_PUBLIC_ENABLED("Enable OpenID for public users (default: false)", false, SettingCategory.OPENID, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    OPENID_CONFIGURATION_JSON("OpenID configuration", false, SettingCategory.OPENID, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM))
     ;
 
     @Getter
@@ -267,7 +270,8 @@ public enum ConfigurationKeys {
         TRANSLATIONS("Translations"),
         PASS_INTEGRATION("Pass Integration"),
         WAITING_LIST("Waiting List"),
-        IMPORT_ATTENDEE("Import Attendees");
+        IMPORT_ATTENDEE("Import Attendees"),
+        OPENID("Public users Authentication");
 
         private final String description;
         SettingCategory(String description) {

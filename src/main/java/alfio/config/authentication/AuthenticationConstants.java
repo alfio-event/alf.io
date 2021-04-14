@@ -14,17 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication;
 
 import lombok.experimental.UtilityClass;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.Locale;
-
 @UtilityClass
-public class RequestTypeMatchers {
-    public static boolean isTokenAuthentication(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
-    }
+public class AuthenticationConstants {
+    public static final String OPERATOR = "OPERATOR";
+    public static final String SPONSOR = "SPONSOR";
+    static final String ADMIN_API = "/admin/api";
+    static final String ADMIN_PUBLIC_API = "/api/v1/admin";
+    static final String SUPERVISOR = "SUPERVISOR";
+    static final String ADMIN = "ADMIN";
+    static final String OWNER = "OWNER";
+    static final String API_CLIENT = "API_CLIENT";
+    static final String X_REQUESTED_WITH = "X-Requested-With";
 }

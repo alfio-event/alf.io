@@ -18,7 +18,7 @@ package alfio.controller;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
-import alfio.config.support.auth.OpenIdAlfioAuthentication;
+import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;

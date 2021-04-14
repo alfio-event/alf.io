@@ -14,24 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication.support;
 
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
+import lombok.experimental.UtilityClass;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Locale;
 
-import static alfio.config.support.auth.RequestTypeMatchers.isTokenAuthentication;
-
-public class APIKeyAuthFilter extends AbstractPreAuthenticatedProcessingFilter {
-
-    @Override
-    protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-        return isTokenAuthentication(request) ? StringUtils.trim(request.getHeader("Authorization").substring("apikey ".length())) : null;
-    }
-
-    @Override
-    protected Object getPreAuthenticatedCredentials(HttpServletRequest request) {
-        return "N/A";
+@UtilityClass
+public class RequestTypeMatchers {
+    public static boolean isTokenAuthentication(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
     }
 }

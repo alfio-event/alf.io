@@ -14,22 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication.support;
 
-import alfio.model.user.Role;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 
-import java.util.Map;
-import java.util.Set;
+public class OpenIdAuthenticationProvider implements AuthenticationProvider {
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        return authentication;
+    }
 
-@Getter
-@AllArgsConstructor
-public class OpenIdAlfioUser {
-    private final String idToken;
-    private final String subject;
-    private final String email;
-    private final boolean isAdmin;
-    private final Set<Role> alfioRoles;
-    private final Map<String, Set<String>> alfioOrganizationAuthorizations;
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return authentication.equals(OpenIdAlfioAuthentication.class);
+    }
 }

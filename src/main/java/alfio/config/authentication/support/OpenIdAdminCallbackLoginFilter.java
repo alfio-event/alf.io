@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication.support;
 
-import alfio.manager.system.OpenIdAuthenticationManager;
+import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -48,9 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static alfio.manager.system.OpenIdAuthenticationManager.CODE;
-
-public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingFilter {
+public class OpenIdAdminCallbackLoginFilter extends AbstractAuthenticationProcessingFilter {
 
     private final RequestMatcher requestMatcher;
     private final UserRepository userRepository;
@@ -59,17 +57,17 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
     private final UserManager userManager;
     private final UserOrganizationRepository userOrganizationRepository;
     private final OrganizationRepository organizationRepository;
-    private final OpenIdAuthenticationManager openIdAuthenticationManager;
+    private final AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager;
 
-    public OpenIdCallbackLoginFilter(OpenIdAuthenticationManager openIdAuthenticationManager,
-                                     AntPathRequestMatcher requestMatcher,
-                                     AuthenticationManager authenticationManager,
-                                     UserRepository userRepository,
-                                     AuthorityRepository authorityRepository,
-                                     PasswordEncoder passwordEncoder,
-                                     UserManager userManager,
-                                     UserOrganizationRepository userOrganizationRepository,
-                                     OrganizationRepository organizationRepository) {
+    public OpenIdAdminCallbackLoginFilter(AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager,
+                                          AntPathRequestMatcher requestMatcher,
+                                          AuthenticationManager authenticationManager,
+                                          UserRepository userRepository,
+                                          AuthorityRepository authorityRepository,
+                                          PasswordEncoder passwordEncoder,
+                                          UserManager userManager,
+                                          UserOrganizationRepository userOrganizationRepository,
+                                          OrganizationRepository organizationRepository) {
         super(requestMatcher);
         this.setAuthenticationManager(authenticationManager);
         this.userRepository = userRepository;
@@ -79,7 +77,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
         this.userOrganizationRepository = userOrganizationRepository;
         this.organizationRepository = organizationRepository;
         this.requestMatcher = requestMatcher;
-        this.openIdAuthenticationManager = openIdAuthenticationManager;
+        this.adminOpenIdAuthenticationManager = adminOpenIdAuthenticationManager;
     }
 
     @Override
@@ -96,13 +94,13 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException {
-        String code = request.getParameter(CODE);
+        String code = request.getParameter("code");
         if (code == null) {
             logger.warn("Error: authorization code is null");
             throw new IllegalArgumentException("authorization code cannot be null");
         }
         logger.trace("Received code. Attempting to exchange it with an access Token");
-        OpenIdAlfioUser alfioUser = openIdAuthenticationManager.retrieveUserInfo(code);
+        OpenIdAlfioUser alfioUser = adminOpenIdAuthenticationManager.retrieveUserInfo(code);
 
         logger.trace("Got user info: "+alfioUser);
         if (!userManager.usernameExists(alfioUser.getEmail())) {
@@ -113,7 +111,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
 
         List<GrantedAuthority> authorities = alfioUser.getAlfioRoles().stream().map(Role::getRoleName)
             .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        OpenIdAlfioAuthentication authentication = new OpenIdAlfioAuthentication(authorities, alfioUser.getIdToken(), alfioUser.getSubject(), alfioUser.getEmail(), openIdAuthenticationManager.buildLogoutUrl());
+        OpenIdAlfioAuthentication authentication = new OpenIdAlfioAuthentication(authorities, alfioUser.getIdToken(), alfioUser.getSubject(), alfioUser.getEmail(), adminOpenIdAuthenticationManager.buildLogoutUrl());
         return getAuthenticationManager().authenticate(authentication);
     }
 
@@ -121,7 +119,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
         Optional<Integer> userId = userRepository.findIdByUserName(alfioUser.getEmail());
         if (userId.isEmpty()) {
             logger.error("Error: user not saved into the database");
-            response.sendRedirect(openIdAuthenticationManager.buildLogoutUrl());
+            response.sendRedirect(adminOpenIdAuthenticationManager.buildLogoutUrl());
             return;
         }
 
@@ -148,7 +146,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
         if (organizationIds.isEmpty()) {
             String message = "Error: The user needs to be ADMIN or to have at least one organization linked";
             logger.error(message);
-            response.sendRedirect(openIdAuthenticationManager.buildLogoutUrl());
+            response.sendRedirect(adminOpenIdAuthenticationManager.buildLogoutUrl());
         }
 
         organizationIds.stream().filter(orgId -> !databaseOrganizationIds.contains(orgId))

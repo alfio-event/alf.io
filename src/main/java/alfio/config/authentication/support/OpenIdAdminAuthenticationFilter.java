@@ -14,10 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication.support;
 
-import alfio.manager.RecaptchaService;
-import alfio.manager.system.ConfigurationManager;
+import alfio.manager.openid.AdminOpenIdAuthenticationManager;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
@@ -29,35 +30,28 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-
-import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
-
-public class RecaptchaLoginFilter extends GenericFilterBean {
+@Log4j2
+public class OpenIdAdminAuthenticationFilter extends GenericFilterBean {
     private final RequestMatcher requestMatcher;
-    private final RecaptchaService recaptchaService;
-    private final String recaptchaFailureUrl;
-    private final ConfigurationManager configurationManager;
+    private final AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager;
 
-
-    public RecaptchaLoginFilter(RecaptchaService recaptchaService,
-                                String loginProcessingUrl,
-                                String recaptchaFailureUrl,
-                                ConfigurationManager configurationManager) {
-        this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
-        this.recaptchaService = recaptchaService;
-        this.recaptchaFailureUrl = recaptchaFailureUrl;
-        this.configurationManager = configurationManager;
+    public OpenIdAdminAuthenticationFilter(String loginURL, AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager) {
+        this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
+        this.adminOpenIdAuthenticationManager = adminOpenIdAuthenticationManager;
     }
-
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
-        if (requestMatcher.matches(req) &&
-            configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault() &&
-            !recaptchaService.checkRecaptcha(null, req)) {
-            res.sendRedirect(recaptchaFailureUrl);
+
+        if (requestMatcher.matches(req)) {
+            if (SecurityContextHolder.getContext().getAuthentication() != null || req.getParameterMap().containsKey("logout")) {
+                res.sendRedirect("/admin/");
+                return;
+            }
+            log.trace("calling buildAuthorizeUrl");
+            res.sendRedirect(adminOpenIdAuthenticationManager.buildAuthorizeUrl());
             return;
         }
 

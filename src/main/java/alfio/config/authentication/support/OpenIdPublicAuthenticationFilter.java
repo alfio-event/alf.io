@@ -14,12 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication.support;
 
-import alfio.manager.user.UserManager;
-import alfio.model.modification.OrganizationModification;
-import alfio.model.user.Role;
-import alfio.model.user.User;
+import alfio.manager.openid.PublicOpenIdAuthenticationManager;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
@@ -29,32 +28,32 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-// generate a user if it does not exists, to be used by the demo profile
-public class UserCreatorBeforeLoginFilter extends GenericFilterBean {
-
-    private final UserManager userManager;
+@Log4j2
+public class OpenIdPublicAuthenticationFilter extends GenericFilterBean {
     private final RequestMatcher requestMatcher;
+    private final PublicOpenIdAuthenticationManager openIdAuthenticationManager;
 
-    public UserCreatorBeforeLoginFilter(UserManager userManager, String loginProcessingUrl) {
-        this.userManager = userManager;
-        this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
+    public OpenIdPublicAuthenticationFilter(PublicOpenIdAuthenticationManager openIdAuthenticationManager) {
+        this.requestMatcher = new AntPathRequestMatcher("/public/authentication", "GET");
+        this.openIdAuthenticationManager = openIdAuthenticationManager;
     }
-
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletResponse res = (HttpServletResponse) response;
 
-        //ensure organization/user
-        if (requestMatcher.matches(req) && req.getParameter("username") != null && req.getParameter("password") != null) {
-            String username = req.getParameter("username");
-            if (!userManager.usernameExists(username)) {
-                var organizationModification = new OrganizationModification(null, "Demo organization", username, username, null, null);
-                int orgId = userManager.createOrganization(organizationModification);
-                userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null, null);
+        if (requestMatcher.matches(req)) {
+            if (SecurityContextHolder.getContext().getAuthentication() != null || req.getParameterMap().containsKey("logout")) {
+                res.sendRedirect("/");
+                return;
             }
+            log.trace("calling buildAuthorizeUrl");
+            res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl());
+            return;
         }
 
         chain.doFilter(request, response);

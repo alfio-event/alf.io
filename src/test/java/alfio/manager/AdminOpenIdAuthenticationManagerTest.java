@@ -16,8 +16,8 @@
  */
 package alfio.manager;
 
+import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.OpenIdAuthenticationManager;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
@@ -33,11 +33,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OpenIdAuthenticationManagerTest {
+public class AdminOpenIdAuthenticationManagerTest {
     private static final String DOMAIN = "domain_test";
     private static final String CLIENT_ID = "123";
     private static final String CLIENT_SECRET = "1234";
@@ -50,7 +51,7 @@ public class OpenIdAuthenticationManagerTest {
     private static final String LOGOUT_URL = "/logoutUrl";
     private static final String LOGOUT_REDIRECT_URL = "logoutRedirectUrl";
 
-    private OpenIdAuthenticationManager authenticationManager;
+    private AdminOpenIdAuthenticationManager authenticationManager;
     private Environment environment;
 
     @BeforeEach
@@ -70,21 +71,21 @@ public class OpenIdAuthenticationManagerTest {
         var configurationManager = mock(ConfigurationManager.class);
         when(configurationManager.getFor(eq(ConfigurationKeys.BASE_URL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.BASE_URL, new ConfigurationKeyValuePathLevel("", "blabla", ConfigurationPathLevel.SYSTEM)));
-        authenticationManager = new OpenIdAuthenticationManager(environment, null, null, configurationManager);
+        authenticationManager = new AdminOpenIdAuthenticationManager(environment, null, configurationManager);
     }
 
     @Test
     public void oauth2_authorize_url_test() {
         String redirectURL = authenticationManager.buildAuthorizeUrl();
         String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&scope=openid+email+profile+groups+alfio-groups&response_type=code";
-        Assert.assertEquals(expectedURL, redirectURL);
+        assertEquals(expectedURL, redirectURL);
     }
 
     @Test
     public void oauth2_claims_url_test() {
         String claimsUrl = authenticationManager.buildClaimsRetrieverUrl();
         String expectedURL = "https://domain_test/claims";
-        Assert.assertEquals(expectedURL, claimsUrl);
+        assertEquals(expectedURL, claimsUrl);
     }
 
     @Test
