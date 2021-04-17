@@ -25,6 +25,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.core.env.Environment;
 
+import java.util.Objects;
+
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 
@@ -61,7 +63,7 @@ public class OpenIdConfiguration {
         this.callbackURI = callbackURI;
         this.authenticationUrl = authenticationUrl;
         this.tokenEndpoint = tokenEndpoint;
-        this.contentType = contentType;
+        this.contentType = Objects.requireNonNullElse(contentType, "application/x-www-form-urlencoded");
         this.rolesParameter = rolesParameter;
         this.alfioGroupsParameter = alfioGroupsParameter;
         this.logoutUrl = logoutUrl;

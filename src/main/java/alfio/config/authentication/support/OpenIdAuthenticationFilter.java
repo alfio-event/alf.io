@@ -16,7 +16,7 @@
  */
 package alfio.config.authentication.support;
 
-import alfio.manager.openid.AdminOpenIdAuthenticationManager;
+import alfio.manager.openid.OpenIdAuthenticationManager;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -31,13 +31,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 @Log4j2
-public class OpenIdAdminAuthenticationFilter extends GenericFilterBean {
+public class OpenIdAuthenticationFilter extends GenericFilterBean {
     private final RequestMatcher requestMatcher;
-    private final AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager;
+    private final OpenIdAuthenticationManager openIdAuthenticationManager;
+    private final String redirectURL;
 
-    public OpenIdAdminAuthenticationFilter(String loginURL, AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager) {
+    public OpenIdAuthenticationFilter(String loginURL,
+                                      OpenIdAuthenticationManager openIdAuthenticationManager,
+                                      String redirectURL) {
         this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
-        this.adminOpenIdAuthenticationManager = adminOpenIdAuthenticationManager;
+        this.openIdAuthenticationManager = openIdAuthenticationManager;
+        this.redirectURL = redirectURL;
     }
 
     @Override
@@ -45,13 +49,13 @@ public class OpenIdAdminAuthenticationFilter extends GenericFilterBean {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
-        if (requestMatcher.matches(req)) {
+        if (requestMatcher.matches(req) && openIdAuthenticationManager.isEnabled()) {
             if (SecurityContextHolder.getContext().getAuthentication() != null || req.getParameterMap().containsKey("logout")) {
-                res.sendRedirect("/admin/");
+                res.sendRedirect(redirectURL);
                 return;
             }
             log.trace("calling buildAuthorizeUrl");
-            res.sendRedirect(adminOpenIdAuthenticationManager.buildAuthorizeUrl());
+            res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl());
             return;
         }
 

@@ -18,7 +18,14 @@ package alfio.manager.openid;
 
 import alfio.config.authentication.support.OpenIdAlfioUser;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
+import alfio.model.user.User;
+import alfio.repository.user.AuthorityRepository;
+import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
+import alfio.repository.user.join.UserOrganizationRepository;
+import alfio.util.Json;
 import com.auth0.jwt.interfaces.Claim;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -26,6 +33,8 @@ import org.apache.commons.lang3.concurrent.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.net.http.HttpClient;
 import java.util.*;
@@ -42,8 +51,24 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
 
     public AdminOpenIdAuthenticationManager(Environment environment,
                                             HttpClient httpClient,
-                                            ConfigurationManager configurationManager) {
-        super(httpClient);
+                                            ConfigurationManager configurationManager,
+                                            UserManager userManager,
+                                            UserRepository userRepository,
+                                            AuthorityRepository authorityRepository,
+                                            OrganizationRepository organizationRepository,
+                                            UserOrganizationRepository userOrganizationRepository,
+                                            NamedParameterJdbcTemplate jdbcTemplate,
+                                            PasswordEncoder passwordEncoder,
+                                            Json json) {
+        super(httpClient,
+            userManager,
+            userRepository,
+            authorityRepository,
+            organizationRepository,
+            userOrganizationRepository,
+            jdbcTemplate,
+            passwordEncoder,
+            json);
         this.configurationContainer = new LazyConfigurationContainer(environment, configurationManager);
     }
 
@@ -95,6 +120,16 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
         return List.of("openid", "email", "profile", openIdConfiguration().getRolesParameter(), openIdConfiguration().getAlfioGroupsParameter());
     }
 
+    @Override
+    protected User.Type getUserType() {
+        return User.Type.INTERNAL;
+    }
+
+    @Override
+    protected boolean syncRoles() {
+        return true;
+    }
+
     private Map<String, Set<String>> extractOrganizationRoles(List<String> alfioOrganizationAuthorizationsRaw) {
         Map<String, Set<String>> alfioOrganizationAuthorizations = new HashMap<>();
 
@@ -110,6 +145,11 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
             alfioOrganizationAuthorizations.put(organization, Set.of(role));
         }
         return alfioOrganizationAuthorizations;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 
     private static class LazyConfigurationContainer extends LazyInitializer<OpenIdConfiguration> {

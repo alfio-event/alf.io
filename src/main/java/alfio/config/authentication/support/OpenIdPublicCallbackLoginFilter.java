@@ -35,13 +35,14 @@ public class OpenIdPublicCallbackLoginFilter extends AbstractAuthenticationProce
     private final ConfigurationManager configurationManager;
 
     public OpenIdPublicCallbackLoginFilter(ConfigurationManager configurationManager) {
-        super(new AntPathRequestMatcher("/public/callback", "GET"));
+        super(new AntPathRequestMatcher("/openid/callback", "GET"));
         this.configurationManager = configurationManager;
     }
 
     @Override
     protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
-        return configurationManager.getFor(OPENID_PUBLIC_ENABLED, ConfigurationLevel.system()).getValueAsBooleanOrDefault();
+        return super.requiresAuthentication(request, response)
+            && configurationManager.getFor(OPENID_PUBLIC_ENABLED, ConfigurationLevel.system()).getValueAsBooleanOrDefault();
     }
 
     @Override

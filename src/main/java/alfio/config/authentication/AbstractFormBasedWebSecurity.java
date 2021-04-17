@@ -17,9 +17,10 @@
 package alfio.config.authentication;
 
 import alfio.config.Initializer;
-import alfio.config.authentication.support.RecaptchaLoginFilter;
-import alfio.config.authentication.support.UserCreatorBeforeLoginFilter;
+import alfio.config.authentication.support.*;
 import alfio.manager.RecaptchaService;
+import alfio.manager.openid.OpenIdAuthenticationManager;
+import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import lombok.AllArgsConstructor;
@@ -31,9 +32,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 
@@ -56,23 +59,16 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     private final CsrfTokenRepository csrfTokenRepository;
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
+    private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
 
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.jdbcAuthentication().dataSource(dataSource)
             .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
             .authoritiesByUsernameQuery("select username, role from authority where username = ?")
-            .passwordEncoder(passwordEncoder);
-        // call implementation-specific logic
-        customizeAuthenticationManager(auth);
-    }
-
-    /**
-     * By using this method, implementations can customize the AuthenticationManager configuration
-     *
-     * @param auth
-     */
-    protected void customizeAuthenticationManager(AuthenticationManagerBuilder auth) {
+            .passwordEncoder(passwordEncoder)
+            .and()
+            .authenticationProvider(new OpenIdAuthenticationProvider());
     }
 
     @Override
@@ -155,6 +151,9 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
             .failureUrl("/authentication?failed")
             .and().logout().permitAll();
 
+        http.addFilterBefore(openIdPublicCallbackLoginFilter(publicOpenIdAuthenticationManager), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(openIdPublicAuthenticationFilter(publicOpenIdAuthenticationManager), AnonymousAuthenticationFilter.class);
+
 
         //
         http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
@@ -194,15 +193,14 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     protected void addAdditionalFilters(HttpSecurity http) throws Exception {
     }
 
-    protected UserManager getUserManager() {
-        return userManager;
+    private OpenIdAuthenticationFilter openIdPublicAuthenticationFilter(OpenIdAuthenticationManager openIdAuthenticationManager) {
+        return new OpenIdAuthenticationFilter("/openid/authentication", openIdAuthenticationManager, "/");
     }
 
-    protected PasswordEncoder getPasswordEncoder() {
-        return passwordEncoder;
-    }
-
-    protected Environment getEnvironment() {
-        return environment;
+    private OpenIdCallbackLoginFilter openIdPublicCallbackLoginFilter(OpenIdAuthenticationManager openIdAuthenticationManager) throws Exception {
+        // configurationManager
+        return new OpenIdCallbackLoginFilter(openIdAuthenticationManager,
+            new AntPathRequestMatcher("/openid/callback", "GET"),
+            authenticationManager());
     }
 }

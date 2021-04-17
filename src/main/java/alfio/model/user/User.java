@@ -26,7 +26,7 @@ import java.time.ZonedDateTime;
 public class User implements Serializable {
 
     public enum Type {
-        INTERNAL, DEMO, API_KEY
+        INTERNAL, DEMO, API_KEY, PUBLIC
     }
 
     private final int id;

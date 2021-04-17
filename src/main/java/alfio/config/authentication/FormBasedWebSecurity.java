@@ -17,6 +17,7 @@
 package alfio.config.authentication;
 
 import alfio.manager.RecaptchaService;
+import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import org.springframework.context.annotation.Configuration;
@@ -33,7 +34,7 @@ import javax.sql.DataSource;
  */
 @Profile("!openid")
 @Configuration
-@Order(3)
+@Order(1)
 public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
     public FormBasedWebSecurity(Environment environment,
                                 UserManager userManager,
@@ -41,7 +42,15 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
                                 ConfigurationManager configurationManager,
                                 CsrfTokenRepository csrfTokenRepository,
                                 DataSource dataSource,
-                                PasswordEncoder passwordEncoder) {
-        super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder);
+                                PasswordEncoder passwordEncoder,
+                                PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager) {
+        super(environment,
+            userManager,
+            recaptchaService,
+            configurationManager,
+            csrfTokenRepository,
+            dataSource,
+            passwordEncoder,
+            publicOpenIdAuthenticationManager);
     }
 }

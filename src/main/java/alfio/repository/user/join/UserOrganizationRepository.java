@@ -20,7 +20,9 @@ import alfio.model.user.join.UserOrganization;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.QueryType;
 
+import java.util.Collection;
 import java.util.List;
 
 @QueryRepository
@@ -38,13 +40,16 @@ public interface UserOrganizationRepository {
     @Query("insert into j_user_organization (user_id, org_id) values(:userId, :organizationId)")
     int create(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
 
+    @Query(type = QueryType.TEMPLATE, value = "insert into j_user_organization (user_id, org_id) values(:userId, :organizationId)")
+    String bulkCreate();
+
     @Query("update j_user_organization set org_id = :organizationId where user_id = :userId")
     int updateUserOrganization(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
 
     @Query("select distinct(org_id) from j_user_organization where user_id in(:users)")
     List<Integer> findOrganizationsForUsers(@Bind("users") List<Integer> users);
 
-    @Query("delete from j_user_organization where user_id = :userId and org_id = :organizationId")
-    int removeOrganizationUserLink(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
+    @Query("delete from j_user_organization where user_id = :userId and org_id in (:organizationIds)")
+    int removeOrganizationUserLinks(@Bind("userId") int userId, @Bind("organizationIds") Collection<Integer> organizationIds);
 
 }

@@ -275,11 +275,10 @@ public class UserManager {
     }
 
 
-    public boolean updatePassword(String username, String newPassword) {
+    public void updatePassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username).orElseThrow(IllegalStateException::new);
         Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
         Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
-        return true;
     }
 
 

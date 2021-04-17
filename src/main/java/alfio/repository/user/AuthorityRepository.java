@@ -17,7 +17,10 @@
 package alfio.repository.user;
 
 import alfio.model.user.Authority;
-import ch.digitalfondue.npjt.*;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.QueryType;
 
 import java.util.List;
 import java.util.Set;
@@ -37,6 +40,9 @@ public interface AuthorityRepository {
 
     @Query("INSERT INTO authority(username, role) VALUES (:username, :role)")
     int create(@Bind("username") String username, @Bind("role") String role);
+
+    @Query(type = QueryType.TEMPLATE, value = "INSERT INTO authority(username, role) VALUES (:username, :role)")
+    String grantAll();
 
     @Query("DELETE from authority where username = :username")
     int revokeAll(@Bind("username") String username);

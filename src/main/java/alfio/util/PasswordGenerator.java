@@ -35,7 +35,7 @@ public final class PasswordGenerator {
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final char[] PASSWORD_CHARACTERS;
     private static final boolean DEV_MODE;
-    private static final int MAX_LENGTH = 14;
+    private static final int MAX_LENGTH = 20;
     private static final int MIN_LENGTH = 10;
     private static final Pattern VALIDATION_PATTERN;
 

@@ -17,12 +17,12 @@
 package alfio.config.authentication.support;
 
 import alfio.manager.openid.OpenIdAuthenticationManager;
-import alfio.manager.openid.PublicOpenIdAuthenticationManager;
-import lombok.extern.log4j.Log4j2;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.filter.GenericFilterBean;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -32,13 +32,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@Log4j2
-public class OpenIdPublicAuthenticationFilter extends GenericFilterBean {
+public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingFilter {
+
     private final RequestMatcher requestMatcher;
     private final OpenIdAuthenticationManager openIdAuthenticationManager;
 
-    public OpenIdPublicAuthenticationFilter(PublicOpenIdAuthenticationManager openIdAuthenticationManager) {
-        this.requestMatcher = new AntPathRequestMatcher("/openid/authentication", "GET");
+    public OpenIdCallbackLoginFilter(OpenIdAuthenticationManager openIdAuthenticationManager,
+                                     AntPathRequestMatcher requestMatcher,
+                                     AuthenticationManager authenticationManager) {
+        super(requestMatcher);
+        this.setAuthenticationManager(authenticationManager);
+        this.requestMatcher = requestMatcher;
         this.openIdAuthenticationManager = openIdAuthenticationManager;
     }
 
@@ -48,14 +52,21 @@ public class OpenIdPublicAuthenticationFilter extends GenericFilterBean {
         HttpServletResponse res = (HttpServletResponse) response;
 
         if (requestMatcher.matches(req)) {
-            if (SecurityContextHolder.getContext().getAuthentication() != null || req.getParameterMap().containsKey("logout")) {
-                res.sendRedirect("/");
-                return;
-            }
-            log.trace("calling buildAuthorizeUrl");
-            res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl());
-            return;
+            super.doFilter(req, res, chain);
         }
+
         chain.doFilter(request, response);
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException {
+        String code = request.getParameter("code");
+        if (code == null) {
+            logger.warn("Error: authorization code is null");
+            throw new IllegalArgumentException("authorization code cannot be null");
+        }
+        logger.trace("Received code. Attempting to exchange it with an access Token");
+        var user = openIdAuthenticationManager.authenticateUser(code);
+        return getAuthenticationManager().authenticate(user);
     }
 }
