@@ -34,6 +34,7 @@ import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.GrantedAuthority;
@@ -100,15 +101,15 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         String email = idTokenClaims.get(EMAIL).asString();
 
         var userInfo = fromToken(idToken, subject, email, idTokenClaims);
-        return createOrRetrieveUser(userInfo);
+        return createOrRetrieveUser(userInfo, idTokenClaims);
     }
 
-    private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user) {
+    private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user, Map<String, Claim> idTokenClaims) {
         if (!userManager.usernameExists(user.getEmail())) {
             userRepository.create(user.getEmail(),
                 passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
-                user.getEmail(),
-                user.getEmail(),
+                retrieveClaimOrBlank(idTokenClaims, "given_name"),
+                retrieveClaimOrBlank(idTokenClaims, "family_name"),
                 user.getEmail(),
                 true,
                 getUserType(),
@@ -124,6 +125,14 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         List<GrantedAuthority> authorities = user.getAlfioRoles().stream().map(Role::getRoleName)
             .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
         return new OpenIdAlfioAuthentication(authorities, user.getIdToken(), user.getSubject(), user.getEmail(), buildLogoutUrl());
+    }
+
+    private static String retrieveClaimOrBlank(Map<String, Claim> claims, String name) {
+        String claimValue = null;
+        if(claims.containsKey(name)) {
+            claimValue = claims.get(name).asString();
+        }
+        return StringUtils.trimToEmpty(claimValue);
     }
 
     private void updateOrganizations(OpenIdAlfioUser alfioUser) {
