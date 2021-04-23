@@ -67,7 +67,7 @@ public class PublicOpenIdAuthenticationManager extends BaseOpenIdAuthenticationM
 
     @Override
     protected OpenIdAlfioUser fromToken(String idToken, String subject, String email, Map<String, Claim> claims) {
-        return new OpenIdAlfioUser(idToken, subject, email, false, Set.of(), Map.of());
+        return new OpenIdAlfioUser(idToken, subject, email, getUserType(), Set.of(), Map.of());
     }
 
     @Override

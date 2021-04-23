@@ -81,7 +81,7 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
 
         if (isAdmin) {
             log.trace("User is admin");
-            return new OpenIdAlfioUser(idToken, subject, email, true, Set.of(Role.ADMIN), null);
+            return new OpenIdAlfioUser(idToken, subject, email, getUserType(), Set.of(Role.ADMIN), null);
         }
 
         log.trace("User is NOT admin");
@@ -96,7 +96,7 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
         log.trace("IdToken contains the following alfioGroups: {}", alfioOrganizationAuthorizationsRaw);
         Map<String, Set<String>> alfioOrganizationAuthorizations = extractOrganizationRoles(alfioOrganizationAuthorizationsRaw);
         Set<Role> alfioRoles = extractAlfioRoles(alfioOrganizationAuthorizations);
-        return new OpenIdAlfioUser(idToken, subject, email, false, alfioRoles, alfioOrganizationAuthorizations);
+        return new OpenIdAlfioUser(idToken, subject, email, getUserType(), alfioRoles, alfioOrganizationAuthorizations);
     }
 
     @SneakyThrows

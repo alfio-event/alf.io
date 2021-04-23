@@ -19,20 +19,28 @@ package alfio.config.authentication.support;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.io.Serializable;
 import java.util.Collection;
 
-public class OpenIdAlfioAuthentication extends AbstractAuthenticationToken {
+public class OpenIdAlfioAuthentication extends AbstractAuthenticationToken implements Serializable {
     private final String idToken;
     private final String subject;
     private final String email;
     private final String idpLogoutRedirectionUrl;
+    private final boolean publicUser;
 
-    public OpenIdAlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject, String email, String idpLogoutRedirectionUrl) {
+    public OpenIdAlfioAuthentication(Collection<? extends GrantedAuthority> authorities,
+                                     String idToken,
+                                     String subject,
+                                     String email,
+                                     String idpLogoutRedirectionUrl,
+                                     boolean publicUser) {
         super(authorities);
         this.idToken = idToken;
         this.subject = subject;
         this.email = email;
         this.idpLogoutRedirectionUrl = idpLogoutRedirectionUrl;
+        this.publicUser = publicUser;
     }
 
     @Override
@@ -52,5 +60,9 @@ public class OpenIdAlfioAuthentication extends AbstractAuthenticationToken {
 
     public String getIdpLogoutRedirectionUrl() {
         return idpLogoutRedirectionUrl;
+    }
+
+    public boolean isPublicUser() {
+        return publicUser;
     }
 }

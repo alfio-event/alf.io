@@ -124,7 +124,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
 
         List<GrantedAuthority> authorities = user.getAlfioRoles().stream().map(Role::getRoleName)
             .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        return new OpenIdAlfioAuthentication(authorities, user.getIdToken(), user.getSubject(), user.getEmail(), buildLogoutUrl());
+        return new OpenIdAlfioAuthentication(authorities, user.getIdToken(), user.getSubject(), user.getEmail(), buildLogoutUrl(), user.isPublicUser());
     }
 
     private static String retrieveClaimOrBlank(Map<String, Claim> claims, String name) {
