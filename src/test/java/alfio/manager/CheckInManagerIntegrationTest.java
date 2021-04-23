@@ -123,7 +123,7 @@ public class CheckInManagerIntegrationTest {
         additionalServices.setQuantity(1);
 
         var additionalServicesModification = new ASReservationWithOptionalCodeModification(additionalServices, Optional.empty());
-        String reservationId = ticketReservationManager.createTicketReservation(event, List.of(tickets), List.of(additionalServicesModification), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, List.of(tickets), List.of(additionalServicesModification), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());

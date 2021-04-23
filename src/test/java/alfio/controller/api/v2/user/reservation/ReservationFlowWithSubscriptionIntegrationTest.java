@@ -223,7 +223,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         var descriptorId = subscriptionManager.createSubscriptionDescriptor(subscriptionModification).orElseThrow();
         var subscriptionId = subscriptionRepository.selectFreeSubscription(descriptorId).orElseThrow();
         var subscriptionReservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(clockProvider.getClock()), Date.from(Instant.now(clockProvider.getClock())), null, "en", null, new BigDecimal("7.7"), true, "CHF", event.getOrganizationId());
+        ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(clockProvider.getClock()), Date.from(Instant.now(clockProvider.getClock())), null, "en", null, new BigDecimal("7.7"), true, "CHF", event.getOrganizationId(), null);
         subscriptionRepository.bindSubscriptionToReservation(subscriptionReservationId, AllocationStatus.PENDING, subscriptionId);
         subscriptionRepository.confirmSubscription(subscriptionReservationId, AllocationStatus.ACQUIRED,
             "Test", "Mc Test", "tickettest@test.com", requireNonNullElse(subscriptionModification.getMaxEntries(), -1),

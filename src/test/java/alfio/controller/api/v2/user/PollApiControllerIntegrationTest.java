@@ -118,7 +118,7 @@ class PollApiControllerIntegrationTest {
         TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
-        var reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
+        var reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
         pollRepository.updateStatus(Poll.PollStatus.DRAFT, pollId, event.getId());
         firstOptionId = pollRepository.insertOption(pollId, Map.of("en", "first"), null, event.getOrganizationId()).getKey();

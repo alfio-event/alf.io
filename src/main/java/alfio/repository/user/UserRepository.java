@@ -60,6 +60,9 @@ public interface UserRepository {
     @Query("select * from ba_user where username = :username and enabled = true")
     Optional<User> findEnabledByUsername(@Bind("username") String username);
 
+    @Query("select id from ba_user where username = :username and user_type = 'PUBLIC' and enabled = true")
+    Optional<Integer> findPublicUserIdByUsername(@Bind("username") String username);
+
     @Query("select password from ba_user where username = :username and enabled = true")
     Optional<String> findPasswordByUsername(@Bind("username") String username);
 

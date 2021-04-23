@@ -84,6 +84,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -252,7 +253,10 @@ public class TicketReservationManager {
         this.subscriptionRepository = subscriptionRepository;
     }
 
-    private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Date reservationExpiration, Locale locale) throws CannotProceedWithPayment, NotEnoughTicketsException {
+    private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
+                                                 Date reservationExpiration,
+                                                 Locale locale,
+                                                 Integer userId) throws CannotProceedWithPayment, NotEnoughTicketsException {
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId,
             subscriptionDescriptor.now(clockProvider),
@@ -262,7 +266,8 @@ public class TicketReservationManager {
             subscriptionDescriptor.getVat(),
             subscriptionDescriptor.getVatStatus() == PriceContainer.VatStatus.INCLUDED,
             subscriptionDescriptor.getCurrency(),
-            subscriptionDescriptor.getOrganizationId());
+            subscriptionDescriptor.getOrganizationId(),
+            userId);
         if(subscriptionDescriptor.getMaxAvailable() > 0) {
             var optionalSubscription = subscriptionRepository.selectFreeSubscription(subscriptionDescriptor.getId());
             if(optionalSubscription.isEmpty()) {
@@ -300,7 +305,8 @@ public class TicketReservationManager {
                                           Date reservationExpiration,
                                           Optional<String> promotionCodeDiscount,
                                           Locale locale,
-                                          boolean forWaitingQueue) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
+                                          boolean forWaitingQueue,
+                                          Principal principal) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String reservationId = UUID.randomUUID().toString();
 
         Optional<PromoCodeDiscount> discount = promotionCodeDiscount
@@ -316,7 +322,8 @@ public class TicketReservationManager {
             event.getVat(),
             event.isVatIncluded(),
             event.getCurrency(),
-            event.getOrganizationId());
+            event.getOrganizationId(),
+            retrievePublicUserId(principal));
 
         list.forEach(t -> reserveTicketsForCategory(event, reservationId, t, locale, forWaitingQueue, discount.orElse(null), dynamicDiscount.orElse(null)));
 
@@ -2545,10 +2552,13 @@ public class TicketReservationManager {
             .forEach(this::checkOfflinePaymentsForEvent);
     }
 
-    public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor, Locale locale, BindingResult bindingResult) {
+    public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
+                                                          Locale locale,
+                                                          BindingResult bindingResult,
+                                                          Principal principal) {
         Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(subscriptionDescriptor));
         try {
-            return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale));
+            return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale, retrievePublicUserId(principal)));
         } catch (CannotProceedWithPayment cannotProceedWithPayment) {
             bindingResult.reject("error.STEP_1_PAYMENT_METHODS_ERROR");
             log.error("missing payment methods", cannotProceedWithPayment);
@@ -2564,13 +2574,18 @@ public class TicketReservationManager {
                                                     List<ASReservationWithOptionalCodeModification> additionalServices,
                                                     Optional<String> promoCodeDiscount,
                                                     Locale locale,
-                                                    BindingResult bindingResult) {
+                                                    BindingResult bindingResult,
+                                                    Principal principal) {
         Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(event));
         try {
-            String reservationId = createTicketReservation(event,
-                list, additionalServices, expiration,
+            var reservationId = createTicketReservation(event,
+                list,
+                additionalServices,
+                expiration,
                 promoCodeDiscount,
-                locale, false);
+                locale,
+                false,
+                principal);
             return Optional.of(reservationId);
         } catch (TicketReservationManager.NotEnoughTicketsException nete) {
             bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
@@ -2810,5 +2825,13 @@ public class TicketReservationManager {
                     ticketReservationRepository.findConfirmedReservationsBySubscriptionId(s.getId()));
             });
 
+    }
+
+    private Integer retrievePublicUserId(Principal principal) {
+        Integer userId = null;
+        if(principal != null) {
+            userId = userRepository.findPublicUserIdByUsername(principal.getName()).orElse(null);
+        }
+        return userId;
     }
 }

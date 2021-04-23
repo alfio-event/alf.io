@@ -430,7 +430,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             ticketReservation.setAmount(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
-            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, res.getStatusCode());
         }
 
@@ -464,7 +464,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             ticketReservation.setAmount(1);
             ticketReservation.setTicketCategoryId(hiddenCat.getId());
             form.setReservation(Collections.singletonList(ticketReservation));
-            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(res.getBody().getValue());
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
@@ -502,20 +502,20 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         {
 
             // code not found
-            var notFoundRes = eventApiV2Controller.handleCode(context.event.getShortName(), "NOT_EXIST", new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var notFoundRes = eventApiV2Controller.handleCode(context.event.getShortName(), "NOT_EXIST", new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals("/event/" + context.event.getShortName(), notFoundRes.getHeaders().getLocation().getPath());
             assertEquals("errors=error.STEP_1_CODE_NOT_FOUND", notFoundRes.getHeaders().getLocation().getQuery());
             //
 
             // promo code, we expect a redirect to event with the code in the query string
-            var redirectPromoCodeRes = eventApiV2Controller.handleCode(context.event.getShortName(), PROMO_CODE, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var redirectPromoCodeRes = eventApiV2Controller.handleCode(context.event.getShortName(), PROMO_CODE, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals("/event/" + context.event.getShortName(), redirectPromoCodeRes.getHeaders().getLocation().getPath());
             assertEquals("code=MYPROMOCODE", redirectPromoCodeRes.getHeaders().getLocation().getQuery());
 
 
             // code existing
             assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
-            var res = eventApiV2Controller.handleCode(context.event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.handleCode(context.event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             var location = Objects.requireNonNull(res.getHeaders().getLocation()).toString();
             var reservationId = location.substring(("/event/" + context.event.getShortName() + "/reservation/").length(), location.length() - "/book".length());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(reservationId);
@@ -537,7 +537,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         {
 
             assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
-            var res = eventApiV2Controller.handleCode(context.event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.handleCode(context.event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             var location = Objects.requireNonNull(res.getHeaders().getLocation()).toString();
             var reservationId = location.substring(("/event/" + context.event.getShortName() + "/reservation/").length(), location.length() - "/book".length());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(reservationId);
@@ -582,7 +582,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         //validation error: select at least one
         {
             var form = new ReservationForm();
-            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, res.getStatusCode());
             var resBody = res.getBody();
             assertNotNull(resBody);
@@ -597,7 +597,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             ticketReservation.setAmount(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
-            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var resBody = res.getBody();
             assertNotNull(resBody);
@@ -630,7 +630,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             form.setReservation(List.of(c1, c2));
             form.setPromoCode(HIDDEN_CODE);
 
-            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var resBody = res.getBody();
             assertNotNull(resBody);
@@ -658,7 +658,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             additionalService.setAdditionalServiceId(additionalServiceId);
             additionalService.setQuantity(1);
             form.setAdditionalService(Collections.singletonList(additionalService));
-            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var resBody = res.getBody();
             assertNotNull(resBody);
@@ -739,7 +739,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             ticketReservation.setAmount(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
-            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var resBody = res.getBody();
             assertNotNull(resBody);
@@ -1177,7 +1177,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertNotNull(categoriesResponse.getBody());
         ticketReservation.setTicketCategoryId(categoriesResponse.getBody().getTicketCategories().get(0).getId());
         form.setReservation(Collections.singletonList(ticketReservation));
-        var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+        var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
         assertEquals(HttpStatus.OK, res.getStatusCode());
         var resBody = res.getBody();
         assertNotNull(resBody);

@@ -44,6 +44,7 @@ import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -150,11 +151,11 @@ public class SubscriptionsApiController {
     }
 
     @PostMapping("subscription/{id}")
-    public ResponseEntity<ValidatedResponse<String>> reserveSubscription(@PathVariable("id") String id, Locale locale) {
+    public ResponseEntity<ValidatedResponse<String>> reserveSubscription(@PathVariable("id") String id, Locale locale, Principal principal) {
         var bindingResult = new MapBindingResult(new HashMap<>(), "request");
         return subscriptionManager.getSubscriptionById(UUID.fromString(id))
             .map(subscriptionDescriptor -> {
-                var reservationOptional = reservationManager.createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult);
+                var reservationOptional = reservationManager.createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal);
                 if (bindingResult.hasErrors()) {
                     return new ResponseEntity<ValidatedResponse<String>>(ValidatedResponse.toResponse(bindingResult, null), HttpStatus.UNPROCESSABLE_ENTITY);
                 } else {

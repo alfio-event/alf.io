@@ -124,9 +124,9 @@ public class WaitingQueueSubscriptionProcessorTest {
         ZonedDateTime expiration = ZonedDateTime.now(clockProvider().getClock()).plusDays(1);
         when(waitingQueueManager.distributeSeats(eq(event))).thenReturn(Stream.of(Triple.of(subscription, reservation, expiration)));
         String reservationId = "reservation-id";
-        when(ticketReservationManager.createTicketReservation(eq(event), anyList(), anyList(), any(Date.class), eq(Optional.empty()), any(Locale.class), eq(true))).thenReturn(reservationId);
+        when(ticketReservationManager.createTicketReservation(eq(event), anyList(), anyList(), any(Date.class), eq(Optional.empty()), any(Locale.class), eq(true), isNull())).thenReturn(reservationId);
         processor.handleWaitingTickets();
-        verify(ticketReservationManager).createTicketReservation(eq(event), eq(Collections.singletonList(reservation)), anyList(), eq(Date.from(expiration.toInstant())), eq(Optional.empty()), eq(Locale.ENGLISH), eq(true));
+        verify(ticketReservationManager).createTicketReservation(eq(event), eq(Collections.singletonList(reservation)), anyList(), eq(Date.from(expiration.toInstant())), eq(Optional.empty()), eq(Locale.ENGLISH), eq(true), isNull());
         verify(notificationManager).sendSimpleEmail(eq(event), eq(reservationId), eq("me"), eq("subject"), any(TemplateGenerator.class));
     }
 }

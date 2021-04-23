@@ -28,8 +28,8 @@ import java.util.*;
 @QueryRepository
 public interface TicketReservationRepository {
 
-    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code, organization_id_fk)" +
-        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :vatPercentage, :vatIncluded, :currencyCode, :organizationId)")
+    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code, organization_id_fk, user_id_fk)" +
+        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :vatPercentage, :vatIncluded, :currencyCode, :organizationId, :userId)")
     int createNewReservation(@Bind("id") String id,
                              @Bind("creationTimestamp") ZonedDateTime creationTimestamp,
                              @Bind("validity") Date validity,
@@ -38,7 +38,8 @@ public interface TicketReservationRepository {
                              @Bind("vatPercentage") BigDecimal vatPercentage,
                              @Bind("vatIncluded") Boolean vatIncluded,
                              @Bind("currencyCode") String currencyCode,
-                             @Bind("organizationId") int organizationId);
+                             @Bind("organizationId") int organizationId,
+                             @Bind("userId") Integer userId);
 
     @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email," +
         " user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId")

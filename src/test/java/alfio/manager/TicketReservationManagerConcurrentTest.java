@@ -160,8 +160,8 @@ public class TicketReservationManagerConcurrentTest {
         tr.setTicketCategoryId(firstCategoryId);
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
-        var id1 = ticketReservationManager.createTicketReservation(event, List.of(mod), List.of(), DateUtils.addHours(new Date(), -1), Optional.of(ACCESS_CODE), Locale.ENGLISH, false);
-        var id2 = ticketReservationManager.createTicketReservation(event, List.of(mod), List.of(), DateUtils.addHours(new Date(), 1), Optional.of(ACCESS_CODE), Locale.ENGLISH, false);
+        var id1 = ticketReservationManager.createTicketReservation(event, List.of(mod), List.of(), DateUtils.addHours(new Date(), -1), Optional.of(ACCESS_CODE), Locale.ENGLISH, false, null);
+        var id2 = ticketReservationManager.createTicketReservation(event, List.of(mod), List.of(), DateUtils.addHours(new Date(), 1), Optional.of(ACCESS_CODE), Locale.ENGLISH, false, null);
 
         ticketReservationManager.cleanupExpiredReservations(new Date());
 
@@ -172,7 +172,7 @@ public class TicketReservationManagerConcurrentTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         transactionTemplate.execute(tx -> {
             eventManager.deleteEvent(event.getId(), username);
             return null;
