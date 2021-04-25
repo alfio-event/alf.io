@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.api.v2.model.PurchaseContextWithReservations;
 import alfio.controller.api.v2.model.User;
 import alfio.manager.user.UserManager;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v2/public/user")
@@ -41,5 +44,10 @@ public class UserApiV2Controller {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("/reservations")
+    public ResponseEntity<List<PurchaseContextWithReservations>> getUserReservations() {
+        return ResponseEntity.badRequest().build();
     }
 }

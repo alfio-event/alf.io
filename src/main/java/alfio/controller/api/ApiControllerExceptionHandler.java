@@ -16,6 +16,7 @@
  */
 package alfio.controller.api;
 
+import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageConversionException;
@@ -57,6 +58,14 @@ public class ApiControllerExceptionHandler {
     public String badRequest(HttpMessageConversionException e) {
         log.error("message conversion exception", e);
         return "bad request";
+    }
+
+    @ExceptionHandler(ReservationAccessDenied.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public String notAuthorized(ReservationAccessDenied rad) {
+        log.trace("intercepted ReservationAccessDenied", rad);
+        return "Access to this reservation has been denied";
     }
 
 }

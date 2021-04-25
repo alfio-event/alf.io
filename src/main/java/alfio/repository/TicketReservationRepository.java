@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.*;
+import alfio.model.support.UserIdAndOrganizationId;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -40,6 +41,15 @@ public interface TicketReservationRepository {
                              @Bind("currencyCode") String currencyCode,
                              @Bind("organizationId") int organizationId,
                              @Bind("userId") Integer userId);
+
+    @Query("update tickets_reservation set user_id_fk = :userId where id = :reservationId")
+    int setReservationOwner(@Bind("reservationId") String reservationId, @Bind("userId") Integer userId);
+
+    @Query("select user_id_fk user_id, organization_id_fk organization_id from tickets_reservation where id = :reservationId and user_id_fk is not null")
+    Optional<UserIdAndOrganizationId> getReservationOwnerAndOrganizationId(@Bind("reservationId") String reservationId);
+
+    @Query("select * from tickets_reservation tr join ba_user u on u.id = tr.user_id_fk where u.username = :username")
+    List<TicketReservation> loadByOwner(@Bind("username") String username);
 
     @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email," +
         " user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId")

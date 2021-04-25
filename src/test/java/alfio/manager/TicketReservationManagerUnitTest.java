@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.*;
@@ -155,7 +156,8 @@ public class TicketReservationManagerUnitTest {
             mock(BillingDocumentManager.class),
             TestUtil.clockProvider(),
             purchaseContextManager,
-            mock(SubscriptionRepository.class));
+            mock(SubscriptionRepository.class),
+            mock(UserManager.class));
 
     }
 

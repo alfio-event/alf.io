@@ -28,6 +28,7 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.manager.system.ReservationPriceCalculator;
+import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
 import alfio.model.PromoCodeDiscount.CodeType;
@@ -50,6 +51,7 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.*;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
+import alfio.model.support.UserIdAndOrganizationId;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
@@ -161,6 +163,7 @@ public class TicketReservationManager {
     private final ClockProvider clockProvider;
     private final PurchaseContextManager purchaseContextManager;
     private final SubscriptionRepository subscriptionRepository;
+    private final UserManager userManager;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -213,7 +216,8 @@ public class TicketReservationManager {
                                     BillingDocumentManager billingDocumentManager,
                                     ClockProvider clockProvider,
                                     PurchaseContextManager purchaseContextManager,
-                                    SubscriptionRepository subscriptionRepository) {
+                                    SubscriptionRepository subscriptionRepository,
+                                    UserManager userManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -251,6 +255,7 @@ public class TicketReservationManager {
         this.clockProvider = clockProvider;
         this.purchaseContextManager = purchaseContextManager;
         this.subscriptionRepository = subscriptionRepository;
+        this.userManager = userManager;
     }
 
     private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
@@ -558,7 +563,8 @@ public class TicketReservationManager {
     public PaymentResult performPayment(PaymentSpecification spec,
                                         TotalPrice reservationCost,
                                         PaymentProxy proxy,
-                                        PaymentMethod paymentMethod) {
+                                        PaymentMethod paymentMethod,
+                                        Principal principal) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(proxy, reservationCost);
 
         if(!acquireGroupMembers(spec.getReservationId(), spec.getPurchaseContext())) {
@@ -571,7 +577,7 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
 
-        if(!initPaymentProcess(reservationCost, paymentProxy, spec)) {
+        if(!initPaymentProcess(reservationCost, paymentProxy, spec, principal)) {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
 
@@ -726,10 +732,13 @@ public class TicketReservationManager {
         return PaymentProxy.STRIPE;
     }
 
-    private boolean initPaymentProcess(TotalPrice reservationCost, PaymentProxy paymentProxy, PaymentSpecification spec) {
+    private boolean initPaymentProcess(TotalPrice reservationCost,
+                                       PaymentProxy paymentProxy,
+                                       PaymentSpecification spec,
+                                       Principal principal) {
         if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
             try {
-                transitionToInPayment(spec);
+                transitionToInPayment(spec, principal);
             } catch (Exception e) {
                 //unable to do the transition. Exiting.
                 log.debug(String.format("unable to flag the reservation %s as IN_PAYMENT", spec.getReservationId()), e);
@@ -1085,7 +1094,7 @@ public class TicketReservationManager {
         return prepareModelForReservationEmail(event, reservation, optionalVat, orderSummary, removedTickets, Map.of());
     }
 
-    private void transitionToInPayment(PaymentSpecification spec) {
+    private void transitionToInPayment(PaymentSpecification spec, Principal principal) {
         requiresNewTransactionTemplate.execute(status -> {
             var optionalStatusAndValidation = ticketReservationRepository.findOptionalStatusAndValidationById(spec.getReservationId());
             if(optionalStatusAndValidation.isPresent() && optionalStatusAndValidation.get().getStatus() == COMPLETE) {
@@ -1097,6 +1106,9 @@ public class TicketReservationManager {
                     spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(),
                     spec.getLocale().getLanguage(), spec.getBillingAddress(),null, PaymentProxy.STRIPE.toString(), spec.getCustomerReference());
                 Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
+                if(principal != null) {
+                    ticketReservationRepository.setReservationOwner(spec.getReservationId(), retrievePublicUserId(principal));
+                }
             }
             return null;
         });
@@ -1154,6 +1166,15 @@ public class TicketReservationManager {
         String reservationId = spec.getReservationId();
         var purchaseContext = spec.getPurchaseContext();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        // retrieve reservation owner if username is null
+        Integer userId;
+        if(username != null) {
+            userId = userRepository.getByUsername(username).getId();
+        } else {
+            userId = ticketReservationRepository.getReservationOwnerAndOrganizationId(reservationId)
+                .map(UserIdAndOrganizationId::getUserId)
+                .orElse(null);
+        }
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         List<Ticket> tickets = null;
         if(paymentProxy != PaymentProxy.OFFLINE) {
@@ -1162,20 +1183,19 @@ public class TicketReservationManager {
         }
 
         Date eventTime = new Date();
-        auditingRepository.insert(reservationId, null, purchaseContext, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
+        auditingRepository.insert(reservationId, userId, purchaseContext, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
         ticketReservationRepository.updateRegistrationTimestamp(reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getPurchaseContext().getZoneId())));
         if(spec.isTcAccepted()) {
-            auditingRepository.insert(reservationId, null, purchaseContext, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getPurchaseContext().getTermsAndConditionsUrl())));
+            auditingRepository.insert(reservationId, userId, purchaseContext, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getPurchaseContext().getTermsAndConditionsUrl())));
         }
 
         if(eventHasPrivacyPolicy(spec.getPurchaseContext()) && spec.isPrivacyAccepted()) {
-            auditingRepository.insert(reservationId, null, purchaseContext, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getPurchaseContext().getPrivacyPolicyUrl())));
+            auditingRepository.insert(reservationId, userId, purchaseContext, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getPurchaseContext().getPrivacyPolicyUrl())));
         }
 
         if(sendReservationConfirmationEmail) {
             TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
-            var t = tickets;
-            sendConfirmationEmailIfNecessary(updatedReservation, t, purchaseContext, locale, username);
+            sendConfirmationEmailIfNecessary(updatedReservation, tickets, purchaseContext, locale, username);
             sendReservationCompleteEmailToOrganizer(spec.getPurchaseContext(), updatedReservation, locale, username);
         }
     }
@@ -2248,7 +2268,8 @@ public class TicketReservationManager {
                                   boolean addCompanyBillingDetails,
                                   boolean skipVatNr,
                                   boolean validated,
-                                  Locale locale) {
+                                  Locale locale,
+                                  Principal principal) {
 
 
         String completeBillingAddress = buildCompleteBillingAddress(customerName,
@@ -2267,6 +2288,10 @@ public class TicketReservationManager {
             billingAddressCity, billingAddressState, completeBillingAddress, vatCountryCode, vatNr, isInvoiceRequested, addCompanyBillingDetails, skipVatNr,
             customerReference,
             validated);
+
+        if(principal != null) {
+            ticketReservationRepository.setReservationOwner(reservationId, retrievePublicUserId(principal));
+        }
     }
 
     static String buildCompleteBillingAddress(CustomerName customerName,
@@ -2812,6 +2837,22 @@ public class TicketReservationManager {
         } else {
             return false;
         }
+    }
+
+    public boolean validateAccessToReservation(TicketReservation reservation, Principal principal) {
+        return ticketReservationRepository.getReservationOwnerAndOrganizationId(reservation.getId())
+            .map(owner -> {
+                var currentUserOptional = Optional.ofNullable(principal)
+                    .map(Principal::getName)
+                    .flatMap(userRepository::findEnabledByUsername);
+                if(currentUserOptional.isEmpty()) {
+                    return false;
+                }
+                var currentUser = currentUserOptional.get();
+                // access is granted to public owner or organization owners
+                return currentUser.getId() == owner.getUserId()
+                    || userManager.isOwnerOfOrganization(currentUser, owner.getOrganizationId());
+            }).orElse(true); // reservation is anonymous, so access is granted
     }
 
     public Optional<SubscriptionWithUsageDetails> findSubscriptionDetails(TicketReservation reservation) {

@@ -192,7 +192,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
-        PaymentResult confirm = ticketReservationManager.performPayment(specification, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        PaymentResult confirm = ticketReservationManager.performPayment(specification, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(confirm.isSuccessful());
 
         assertEquals(TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, ticketReservationManager.findById(reservationId).get().getStatus());
@@ -231,7 +231,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
                 "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
-        PaymentResult confirm2 = ticketReservationManager.performPayment(specification2, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        PaymentResult confirm2 = ticketReservationManager.performPayment(specification2, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(confirm2.isSuccessful());
 
         ticketReservationManager.deleteOfflinePayment(event, reservationId2, false, false, null);
@@ -269,7 +269,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
-        PaymentResult confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        PaymentResult confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(confirm.isSuccessful());
 
         var status = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId).orElseThrow().getStatus();
@@ -284,7 +284,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
-        confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(confirm.isSuccessful());
 
         try {
@@ -590,7 +590,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
         ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);
         waitingQueueManager.distributeSeats(event);
@@ -603,7 +603,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         PaymentSpecification specification2 = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-        result = ticketReservationManager.performPayment(specification2, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        result = ticketReservationManager.performPayment(specification2, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
     }
 
@@ -680,7 +680,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
 
 

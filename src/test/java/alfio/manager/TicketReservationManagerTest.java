@@ -29,6 +29,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.support.TemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
+import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
@@ -47,6 +48,7 @@ import alfio.repository.user.UserRepository;
 import alfio.test.util.TestUtil;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -233,7 +235,8 @@ class TicketReservationManagerTest {
             mock(BillingDocumentManager.class),
             TestUtil.clockProvider(),
             purchaseContextManager,
-            mock(SubscriptionRepository.class));
+            mock(SubscriptionRepository.class),
+            mock(UserManager.class));
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -854,7 +857,7 @@ class TicketReservationManagerTest {
             true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservation.getStatus()).thenReturn(IN_PAYMENT);
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of());
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD, null);
         if(expectSuccess) {
             assertTrue(result.isSuccessful());
             assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
@@ -892,7 +895,7 @@ class TicketReservationManagerTest {
         when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.failed("error-code"));
         when(stripeCreditCardManager.accept(eq(PaymentMethod.CREDIT_CARD), any(), any())).thenReturn(true);
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "email@user", new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()), null, null, Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD, null);
         assertFalse(result.isSuccessful());
         assertFalse(result.getGatewayId().isPresent());
         assertEquals(Optional.of("error-code"), result.getErrorCode());
@@ -923,7 +926,7 @@ class TicketReservationManagerTest {
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()),
             "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), anyString(), anyString(), anyString(), isNull(), isNull(), eq(Locale.ENGLISH.getLanguage()), isNull(), any(), any(), isNull())).thenReturn(1);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.ON_SITE, PaymentMethod.ON_SITE);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.ON_SITE, PaymentMethod.ON_SITE, null);
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
@@ -951,9 +954,9 @@ class TicketReservationManagerTest {
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()),
             "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0,"CHF"), PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
-        assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0,"CHF"), PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
+        Assertions.assertTrue(result.isSuccessful());
+        Assertions.assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
