@@ -49,6 +49,7 @@ import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.*;
 import ch.digitalfondue.jfiveparse.Element;
@@ -128,6 +129,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     protected final PollRepository pollRepository;
     protected final ClockProvider clockProvider;
     protected final NotificationManager notificationManager;
+    protected final UserRepository userRepository;
 
     private Integer additionalServiceId;
 
@@ -812,6 +814,11 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             if(context.publicUserId != null) {
                 assertTrue(owner.isPresent());
                 assertEquals(context.publicUserId, owner.get().getUserId());
+
+                // make sure that the profile has been persisted
+                var optionalProfile = userRepository.loadUserProfile(context.publicUserId);
+                assertTrue(optionalProfile.isPresent());
+
                 // access to the reservation must be denied for anonymous users
                 assertThrows(ReservationAccessDenied.class, () -> reservationApiV2Controller.getReservationInfo(reservationId, null));
             } else {

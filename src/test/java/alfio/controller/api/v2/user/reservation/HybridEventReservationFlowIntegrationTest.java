@@ -43,6 +43,7 @@ import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -75,38 +76,39 @@ public class HybridEventReservationFlowIntegrationTest extends BaseReservationFl
 
     @Autowired
     public HybridEventReservationFlowIntegrationTest(OrganizationRepository organizationRepository,
-                                          EventManager eventManager,
-                                          EventRepository eventRepository,
-                                          UserManager userManager,
-                                          ClockProvider clockProvider,
-                                          ConfigurationRepository configurationRepository,
-                                          EventStatisticsManager eventStatisticsManager,
-                                          TicketCategoryRepository ticketCategoryRepository,
-                                          TicketReservationRepository ticketReservationRepository,
-                                          EventApiController eventApiController,
-                                          TicketRepository ticketRepository,
-                                          TicketFieldRepository ticketFieldRepository,
-                                          AdditionalServiceApiController additionalServiceApiController,
-                                          SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                                          SpecialPriceRepository specialPriceRepository,
-                                          CheckInApiController checkInApiController,
-                                          AttendeeApiController attendeeApiController,
-                                          UsersApiController usersApiController,
-                                          ScanAuditRepository scanAuditRepository,
-                                          AuditingRepository auditingRepository,
-                                          AdminReservationManager adminReservationManager,
-                                          TicketReservationManager ticketReservationManager,
-                                          InfoApiController infoApiController,
-                                          TranslationsApiController translationsApiController,
-                                          EventApiV2Controller eventApiV2Controller,
-                                          ReservationApiV2Controller reservationApiV2Controller,
-                                          TicketApiV2Controller ticketApiV2Controller,
-                                          IndexController indexController,
-                                          NamedParameterJdbcTemplate jdbcTemplate,
-                                          ExtensionLogRepository extensionLogRepository,
-                                          ExtensionService extensionService,
-                                          PollRepository pollRepository,
-                                          NotificationManager notificationManager) {
+                                                     EventManager eventManager,
+                                                     EventRepository eventRepository,
+                                                     UserManager userManager,
+                                                     ClockProvider clockProvider,
+                                                     ConfigurationRepository configurationRepository,
+                                                     EventStatisticsManager eventStatisticsManager,
+                                                     TicketCategoryRepository ticketCategoryRepository,
+                                                     TicketReservationRepository ticketReservationRepository,
+                                                     EventApiController eventApiController,
+                                                     TicketRepository ticketRepository,
+                                                     TicketFieldRepository ticketFieldRepository,
+                                                     AdditionalServiceApiController additionalServiceApiController,
+                                                     SpecialPriceTokenGenerator specialPriceTokenGenerator,
+                                                     SpecialPriceRepository specialPriceRepository,
+                                                     CheckInApiController checkInApiController,
+                                                     AttendeeApiController attendeeApiController,
+                                                     UsersApiController usersApiController,
+                                                     ScanAuditRepository scanAuditRepository,
+                                                     AuditingRepository auditingRepository,
+                                                     AdminReservationManager adminReservationManager,
+                                                     TicketReservationManager ticketReservationManager,
+                                                     InfoApiController infoApiController,
+                                                     TranslationsApiController translationsApiController,
+                                                     EventApiV2Controller eventApiV2Controller,
+                                                     ReservationApiV2Controller reservationApiV2Controller,
+                                                     TicketApiV2Controller ticketApiV2Controller,
+                                                     IndexController indexController,
+                                                     NamedParameterJdbcTemplate jdbcTemplate,
+                                                     ExtensionLogRepository extensionLogRepository,
+                                                     ExtensionService extensionService,
+                                                     PollRepository pollRepository,
+                                                     NotificationManager notificationManager,
+                                                     UserRepository userRepository) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -137,7 +139,8 @@ public class HybridEventReservationFlowIntegrationTest extends BaseReservationFl
             extensionService,
             pollRepository,
             clockProvider,
-            notificationManager);
+            notificationManager,
+            userRepository);
         this.organizationRepository = organizationRepository;
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;

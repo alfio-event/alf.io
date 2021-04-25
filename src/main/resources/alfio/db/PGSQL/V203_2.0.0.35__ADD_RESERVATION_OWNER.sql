@@ -21,12 +21,17 @@ create index idx_reservation_user_id on tickets_reservation(user_id_fk)
     where tickets_reservation.user_id_fk is not null;
 
 create table user_profile (
-    user_id_fk integer constraint "user_profile_user_id_fk" references ba_user(id) unique,
+    user_id_fk integer
+        constraint "user_profile_user_id_fk" references ba_user(id)
+        constraint "user_profile_user_id_unique" unique,
     billing_address_company text,
     billing_address_line1 text,
     billing_address_line2 text,
     billing_address_zip text,
     billing_address_city text,
-    invoicing_additional_information jsonb not null default '{}',
+    billing_address_state text,
+    vat_country text,
+    vat_nr text,
+    invoicing_additional_information jsonb,
     additional_fields jsonb not null default '{}'
 )

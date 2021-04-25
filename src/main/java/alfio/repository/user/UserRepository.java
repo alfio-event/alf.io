@@ -16,15 +16,15 @@
  */
 package alfio.repository.user;
 
+import alfio.model.TicketReservationInvoicingAdditionalInfo;
+import alfio.model.support.JSONData;
+import alfio.model.user.PublicUserProfile;
 import alfio.model.user.User;
 import ch.digitalfondue.npjt.*;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @QueryRepository
 public interface UserRepository {
@@ -101,6 +101,27 @@ public interface UserRepository {
 
     @Query("delete from authority where username = (select username from ba_user where id = :id)")
     int deleteUserFromAuthority(@Bind("id") int id);
+
+    @Query("insert into user_profile (user_id_fk, billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip," +
+        "billing_address_city, billing_address_state, vat_country, vat_nr, invoicing_additional_information, additional_fields)" +
+        " values (:userId, :company, :line1, :line2, :zip, :city, :state, :country, :taxId, :invoiceInfo::jsonb, :addFields::jsonb)" +
+        " on conflict (user_id_fk) do update set " +
+        " (billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, billing_address_state, vat_country, vat_nr, invoicing_additional_information, additional_fields) = " +
+        " (EXCLUDED.billing_address_company, EXCLUDED.billing_address_line1, EXCLUDED.billing_address_line2, EXCLUDED.billing_address_zip, EXCLUDED.billing_address_city, EXCLUDED.billing_address_state, EXCLUDED.vat_country, EXCLUDED.vat_nr, EXCLUDED.invoicing_additional_information::jsonb, EXCLUDED.additional_fields::jsonb)")
+    int persistUserProfile(@Bind("userId") int userId,
+                           @Bind("company") String companyName,
+                           @Bind("line1") String addressLine1,
+                           @Bind("line2") String addressLine2,
+                           @Bind("zip") String zip,
+                           @Bind("city") String city,
+                           @Bind("state") String state,
+                           @Bind("country") String country,
+                           @Bind("taxId") String taxId,
+                           @Bind("invoiceInfo") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
+                           @Bind("addFields") @JSONData Map<String, List<String>> additionalFields);
+
+    @Query("select * from user_profile where user_id_fk = :userId")
+    Optional<PublicUserProfile> loadUserProfile(@Bind("userId") int userId);
 
     default void deleteUserAndReferences(int userId) {
         deleteUserFromSponsorScan(userId);

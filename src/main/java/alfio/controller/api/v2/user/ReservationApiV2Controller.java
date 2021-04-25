@@ -37,6 +37,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
+import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.subscription.Subscription;
@@ -109,6 +110,7 @@ public class ReservationApiV2Controller {
     private final PurchaseContextManager purchaseContextManager;
     private final SubscriptionRepository subscriptionRepository;
     private final TicketRepository ticketRepository;
+    private final UserManager userManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -378,9 +380,9 @@ public class ReservationApiV2Controller {
 
             var locale = LocaleUtil.forLanguageTag(lang, purchaseContext);
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(purchaseContext.getVatStatus())).getLeft();
-            boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
 
             purchaseContext.event().ifPresent(event -> {
+                boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
                 if (forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
                     contactAndTicketsForm.setPostponeAssignment(false);
                 }
@@ -444,6 +446,10 @@ public class ReservationApiV2Controller {
 
             if(!bindingResult.hasErrors() && (!bindingResult.hasWarnings() || ignoreWarnings)) {
                 ticketReservationManager.flagAsValidated(reservationId, purchaseContext, bindingResult.getWarningCodes());
+                // save customer data
+                if(principal != null) {
+                    userManager.persistProfileForPublicUser(principal, ticketReservationManager.loadAdditionalInfo(reservationId));
+                }
             }
 
             var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());

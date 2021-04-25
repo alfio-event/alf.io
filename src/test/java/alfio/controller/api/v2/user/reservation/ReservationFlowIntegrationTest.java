@@ -43,6 +43,7 @@ import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -111,7 +112,8 @@ public class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                           ExtensionLogRepository extensionLogRepository,
                                           ExtensionService extensionService,
                                           PollRepository pollRepository,
-                                          NotificationManager notificationManager) {
+                                          NotificationManager notificationManager,
+                                          UserRepository userRepository) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -142,7 +144,8 @@ public class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
             extensionService,
             pollRepository,
             clockProvider,
-            notificationManager);
+            notificationManager,
+            userRepository);
         this.organizationRepository = organizationRepository;
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;

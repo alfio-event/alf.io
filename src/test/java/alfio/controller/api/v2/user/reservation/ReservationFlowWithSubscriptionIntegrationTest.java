@@ -52,6 +52,7 @@ import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
@@ -132,7 +133,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
                                                           NotificationManager notificationManager,
                                                           SubscriptionManager subscriptionManager,
                                                           SubscriptionRepository subscriptionRepository,
-                                                          FileUploadManager fileUploadManager) {
+                                                          FileUploadManager fileUploadManager,
+                                                          UserRepository userRepository) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -163,7 +165,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
             extensionService,
             pollRepository,
             clockProvider,
-            notificationManager);
+            notificationManager,
+            userRepository);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.subscriptionManager = subscriptionManager;

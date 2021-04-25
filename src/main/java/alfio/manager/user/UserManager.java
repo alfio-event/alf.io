@@ -16,6 +16,7 @@
  */
 package alfio.manager.user;
 
+import alfio.model.TicketReservationAdditionalInfo;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
@@ -233,6 +234,24 @@ public class UserManager {
         userRepository.updateContactInfo(id, firstName, lastName, emailAddress);
     }
 
+    public void persistProfileForPublicUser(Principal principal, TicketReservationAdditionalInfo reservationAdditionalInfo) {
+        if(principal == null) {
+            return;
+        }
+        userRepository.findIdByUserName(principal.getName())
+            .ifPresent(id -> userRepository.persistUserProfile(id,
+                reservationAdditionalInfo.getBillingAddressCompany(),
+                reservationAdditionalInfo.getBillingAddressLine1(),
+                reservationAdditionalInfo.getBillingAddressLine2(),
+                reservationAdditionalInfo.getBillingAddressZip(),
+                reservationAdditionalInfo.getBillingAddressCity(),
+                reservationAdditionalInfo.getBillingAddressState(),
+                reservationAdditionalInfo.getBillingAddressCountry(),
+                reservationAdditionalInfo.getVatNr(),
+                reservationAdditionalInfo.getInvoicingAdditionalInfo(),
+                Map.of() // TODO call extension to extract additional data
+            ));
+    }
 
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
         return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null, null);

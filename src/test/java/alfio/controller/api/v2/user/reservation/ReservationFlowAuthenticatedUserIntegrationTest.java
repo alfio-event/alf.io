@@ -75,7 +75,6 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
     private final EventRepository eventRepository;
     private final UserManager userManager;
     private final ClockProvider clockProvider;
-    private final UserRepository userRepository;
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
     private String publicUserName;
@@ -145,13 +144,13 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
             extensionService,
             pollRepository,
             clockProvider,
-            notificationManager);
+            notificationManager,
+            userRepository);
         this.organizationRepository = organizationRepository;
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;
         this.userManager = userManager;
         this.clockProvider = clockProvider;
-        this.userRepository = userRepository;
     }
 
     private ReservationFlowContext createContext() {
