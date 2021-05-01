@@ -25,7 +25,7 @@ public interface OpenIdAuthenticationManager {
 
     OpenIdAlfioAuthentication authenticateUser(String code);
 
-    String buildAuthorizeUrl();
+    String buildAuthorizeUrl(String state);
 
     String buildClaimsRetrieverUrl();
 

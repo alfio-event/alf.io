@@ -110,6 +110,10 @@ public class UserManager {
         return userRepository.findEnabledByUsername(username);
     }
 
+    public Optional<PublicUserProfile> findOptionalProfileForUser(int userId) {
+        return userRepository.loadUserProfile(userId);
+    }
+
     public boolean usernameExists(String username) {
         return userRepository.findIdByUserName(username).isPresent();
     }

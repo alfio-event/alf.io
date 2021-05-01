@@ -18,16 +18,20 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.v2.model.PurchaseContextWithReservations;
 import alfio.controller.api.v2.model.User;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.user.UserManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v2/public/user")
@@ -35,19 +39,43 @@ import java.util.List;
 public class UserApiV2Controller {
 
     private final UserManager userManager;
+    private final TicketReservationManager ticketReservationManager;
 
     @GetMapping("/me")
-    public ResponseEntity<User> getUserIdentity(Authentication authentication) {
-        if(authentication != null) {
-            return userManager.findOptionalEnabledUserByUsername(authentication.getName())
-                .map(u -> ResponseEntity.ok(new User(u.getFirstName(), u.getLastName(), u.getEmailAddress())))
+    public ResponseEntity<User> getUserIdentity(Principal principal) {
+        if(principal != null) {
+            return userManager.findOptionalEnabledUserByUsername(principal.getName())
+                .map(u -> {
+                    var userProfileOptional = userManager.findOptionalProfileForUser(u.getId());
+                    return ResponseEntity.ok(new User(u.getFirstName(), u.getLastName(), u.getEmailAddress(), userProfileOptional.orElse(null)));
+                })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Boolean> logout(Principal principal) {
+        if(principal != null) {
+            SecurityContextHolder.getContext().setAuthentication(null);
+        }
+        return ResponseEntity.ok(true);
+    }
+
     @GetMapping("/reservations")
-    public ResponseEntity<List<PurchaseContextWithReservations>> getUserReservations() {
-        return ResponseEntity.badRequest().build();
+    public ResponseEntity<List<PurchaseContextWithReservations>> getUserReservations(Principal principal) {
+        if(principal != null) {
+            var reservations = ticketReservationManager.loadReservationsForUser(principal);
+            if(reservations.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+            }
+            var results = reservations.stream()
+                .collect(Collectors.groupingBy(p -> p.getPurchaseContextType().name() + "/" + p.getPurchaseContextPublicIdentifier()))
+                .values().stream()
+                .map(PurchaseContextWithReservations::from)
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(results);
+        }
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

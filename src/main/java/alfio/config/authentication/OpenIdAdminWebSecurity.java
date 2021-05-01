@@ -18,7 +18,6 @@ package alfio.config.authentication;
 
 import alfio.config.authentication.support.OpenIdAuthenticationFilter;
 import alfio.config.authentication.support.OpenIdCallbackLoginFilter;
-import alfio.config.authentication.support.OpenIdPublicAuthenticationFilter;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
@@ -72,6 +71,6 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
             authenticationManager());
         http.addFilterBefore(callbackLoginFilter, UsernamePasswordAuthenticationFilter.class);
         log.trace("adding openid filter");
-        http.addFilterAfter(new OpenIdAuthenticationFilter("/authentication", adminOpenIdAuthenticationManager, "/"), OpenIdPublicAuthenticationFilter.class);
+        http.addFilterAfter(new OpenIdAuthenticationFilter("/authentication", adminOpenIdAuthenticationManager, "/", false), OpenIdCallbackLoginFilter.class);
     }
 }

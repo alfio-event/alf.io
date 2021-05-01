@@ -186,7 +186,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     protected abstract boolean syncRoles();
 
     @Override
-    public String buildAuthorizeUrl() {
+    public String buildAuthorizeUrl(String state) {
         log.trace("buildAuthorizeUrl, configuration: {}", this::openIdConfiguration);
         String scopeParameter = String.join("+", getScopes());
 
@@ -196,6 +196,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             .path(openIdConfiguration().getAuthenticationUrl())
             .queryParam("redirect_uri", openIdConfiguration().getCallbackURI())
             .queryParam("client_id", openIdConfiguration().getClientId())
+            .queryParam("state", state)
             .queryParam("scope", scopeParameter)
             .queryParam("response_type", "code")
             .build();

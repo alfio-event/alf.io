@@ -17,6 +17,7 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.PriceContainer;
+import alfio.model.ReservationWithPurchaseContext;
 import alfio.model.TicketReservation;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -37,4 +38,19 @@ public class ReservationHeader {
     private final String currencyCode;
     private final BigDecimal usedVatPercent;
     private final PriceContainer.VatStatus vatStatus;
+
+    public static ReservationHeader from(ReservationWithPurchaseContext r) {
+        return new ReservationHeader(
+            r.getId(),
+            r.getStatus(),
+            r.getValidity(),
+            r.getConfirmationTs(),
+            r.getRegistrationTs(),
+            r.getInvoiceNumber(),
+            r.getFinalPrice(),
+            r.getCurrencyCode(),
+            r.getVatPercentage(),
+            r.getVatStatus()
+        );
+    }
 }

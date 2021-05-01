@@ -24,6 +24,7 @@ import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
@@ -49,6 +50,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static alfio.config.authentication.AuthenticationConstants.*;
+import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
 
 @AllArgsConstructor
 abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter {
@@ -194,13 +196,27 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     }
 
     private OpenIdAuthenticationFilter openIdPublicAuthenticationFilter(OpenIdAuthenticationManager openIdAuthenticationManager) {
-        return new OpenIdAuthenticationFilter("/openid/authentication", openIdAuthenticationManager, "/");
+        return new OpenIdAuthenticationFilter("/openid/authentication", openIdAuthenticationManager, "/", true);
     }
 
     private OpenIdCallbackLoginFilter openIdPublicCallbackLoginFilter(OpenIdAuthenticationManager openIdAuthenticationManager) throws Exception {
-        // configurationManager
-        return new OpenIdCallbackLoginFilter(openIdAuthenticationManager,
+        var filter = new OpenIdCallbackLoginFilter(openIdAuthenticationManager,
             new AntPathRequestMatcher("/openid/callback", "GET"),
             authenticationManager());
+        filter.setAuthenticationSuccessHandler((request, response, authentication) -> {
+            var session = request.getSession();
+            var reservationId = (String) session.getAttribute(RESERVATION_KEY);
+            if(StringUtils.isNotBlank(reservationId)) {
+                var contextTypeKey = session.getAttribute(CONTEXT_TYPE_KEY);
+                var contextIdKey = session.getAttribute(CONTEXT_ID_KEY);
+                session.removeAttribute(CONTEXT_TYPE_KEY);
+                session.removeAttribute(CONTEXT_ID_KEY);
+                session.removeAttribute(RESERVATION_KEY);
+                response.sendRedirect("/"+contextTypeKey+"/"+ contextIdKey +"/reservation/"+reservationId+"/book");
+            } else {
+                response.sendRedirect("/");
+            }
+        });
+        return filter;
     }
 }

@@ -31,6 +31,7 @@ import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.user.EventApiV2Controller;
 import alfio.controller.api.v2.user.ReservationApiV2Controller;
 import alfio.controller.api.v2.user.TicketApiV2Controller;
+import alfio.controller.api.v2.user.UserApiV2Controller;
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
 import alfio.manager.user.UserManager;
@@ -51,6 +52,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -63,6 +65,7 @@ import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
@@ -75,6 +78,7 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
     private final EventRepository eventRepository;
     private final UserManager userManager;
     private final ClockProvider clockProvider;
+    private final UserApiV2Controller publicUserApiController;
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
     private String publicUserName;
@@ -113,7 +117,8 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
                                                            ExtensionService extensionService,
                                                            PollRepository pollRepository,
                                                            NotificationManager notificationManager,
-                                                           UserRepository userRepository) {
+                                                           UserRepository userRepository,
+                                                           UserApiV2Controller publicUserApiController) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -151,6 +156,7 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
         this.eventRepository = eventRepository;
         this.userManager = userManager;
         this.clockProvider = clockProvider;
+        this.publicUserApiController = publicUserApiController;
     }
 
     private ReservationFlowContext createContext() {
@@ -181,4 +187,12 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
         super.testBasicFlow(this::createContext);
     }
 
+    @Override
+    protected void performAdditionalTests(ReservationFlowContext reservationFlowContext) {
+        var reservationsResponse = publicUserApiController.getUserReservations(reservationFlowContext.getPublicAuthentication());
+        assertEquals(HttpStatus.OK, reservationsResponse.getStatusCode());
+        assertNotNull(reservationsResponse.getBody());
+        assertFalse(reservationsResponse.getBody().isEmpty());
+        assertEquals(1, reservationsResponse.getBody().size());
+    }
 }

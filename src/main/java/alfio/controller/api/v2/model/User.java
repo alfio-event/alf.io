@@ -16,15 +16,19 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.model.user.PublicUserProfile;
+
 public class User {
     private final String firstName;
     private final String lastName;
     private final String emailAddress;
+    private final PublicUserProfile profile;
 
-    public User(String firstName, String lastName, String emailAddress) {
+    public User(String firstName, String lastName, String emailAddress, PublicUserProfile profile) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.emailAddress = emailAddress;
+        this.profile = profile;
     }
 
     public String getFirstName() {

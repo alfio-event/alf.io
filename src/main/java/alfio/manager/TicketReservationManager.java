@@ -2855,6 +2855,14 @@ public class TicketReservationManager {
             }).orElse(true); // reservation is anonymous, so access is granted
     }
 
+    public List<ReservationWithPurchaseContext> loadReservationsForUser(Principal principal) {
+        var userId = retrievePublicUserId(principal);
+        if(userId != null) {
+            return ticketReservationRepository.findAllReservationsForUser(userId);
+        }
+        return List.of();
+    }
+
     public Optional<SubscriptionWithUsageDetails> findSubscriptionDetails(TicketReservation reservation) {
         return subscriptionRepository.findSubscriptionsByReservationId(reservation.getId())
             .stream()

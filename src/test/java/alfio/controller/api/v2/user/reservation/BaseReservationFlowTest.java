@@ -1151,10 +1151,13 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.BADGE_SCAN_SUCCESS, ticketAndcheckInResult.getResult().getStatus());
                 assertEquals(2, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));
             }
+            performAdditionalTests(context);
             eventManager.deleteEvent(context.event.getId(), context.userId);
         }
 
     }
+
+    protected void performAdditionalTests(ReservationFlowContext reservationFlowContext) {}
 
     private TicketWithCategory testEncryptedCheckInPayload(Principal principal,
                                                            TicketAndCheckInResult ticketAndcheckInResult,

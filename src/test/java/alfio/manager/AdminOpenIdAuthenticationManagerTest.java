@@ -76,8 +76,9 @@ public class AdminOpenIdAuthenticationManagerTest {
 
     @Test
     public void oauth2_authorize_url_test() {
-        String redirectURL = authenticationManager.buildAuthorizeUrl();
-        String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&scope=openid+email+profile+groups+alfio-groups&response_type=code";
+        var state = "this-is-the-state";
+        String redirectURL = authenticationManager.buildAuthorizeUrl(state);
+        String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&state="+state+"&scope=openid+email+profile+groups+alfio-groups&response_type=code";
         assertEquals(expectedURL, redirectURL);
     }
 
