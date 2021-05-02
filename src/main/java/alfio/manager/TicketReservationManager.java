@@ -1106,7 +1106,7 @@ public class TicketReservationManager {
                     spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(),
                     spec.getLocale().getLanguage(), spec.getBillingAddress(),null, PaymentProxy.STRIPE.toString(), spec.getCustomerReference());
                 Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
-                if(principal != null) {
+                if(principal != null && configurationManager.isPublicOpenIdEnabled()) {
                     ticketReservationRepository.setReservationOwner(spec.getReservationId(), retrievePublicUserId(principal));
                 }
             }
@@ -2289,7 +2289,7 @@ public class TicketReservationManager {
             customerReference,
             validated);
 
-        if(principal != null) {
+        if(principal != null && configurationManager.isPublicOpenIdEnabled()) {
             ticketReservationRepository.setReservationOwner(reservationId, retrievePublicUserId(principal));
         }
     }
@@ -2878,7 +2878,7 @@ public class TicketReservationManager {
 
     private Integer retrievePublicUserId(Principal principal) {
         Integer userId = null;
-        if(principal != null) {
+        if(configurationManager.isPublicOpenIdEnabled() && principal != null) {
             userId = userRepository.findPublicUserIdByUsername(principal.getName()).orElse(null);
         }
         return userId;

@@ -38,6 +38,8 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.IterableUtils;
@@ -51,6 +53,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -77,6 +80,9 @@ public class ConfigurationManager {
     private final EventRepository eventRepository;
     private final ExternalConfiguration externalConfiguration;
     private final Environment environment;
+    private final Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache = Caffeine.newBuilder()
+        .expireAfterWrite(Duration.ofMinutes(1))
+        .build();
 
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
@@ -677,4 +683,12 @@ public class ConfigurationManager {
         return new AlfioInfo(demoMode, devMode, prodMode, analyticsConf);
     }
 
+    public Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getPublicOpenIdConfiguration() {
+        return oneMinuteCache.get(EnumSet.of(OPENID_PUBLIC_ENABLED, OPENID_CONFIGURATION_JSON),
+            k -> getFor(k, ConfigurationLevel.system()));
+    }
+
+    public boolean isPublicOpenIdEnabled() {
+        return getPublicOpenIdConfiguration().get(OPENID_PUBLIC_ENABLED).getValueAsBooleanOrDefault();
+    }
 }

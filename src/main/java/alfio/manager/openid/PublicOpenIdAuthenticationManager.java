@@ -17,10 +17,8 @@
 package alfio.manager.openid;
 
 import alfio.config.authentication.support.OpenIdAlfioUser;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -28,27 +26,19 @@ import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.Json;
 import com.auth0.jwt.interfaces.Claim;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.net.http.HttpClient;
-import java.time.Duration;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static alfio.model.system.ConfigurationKeys.OPENID_CONFIGURATION_JSON;
-import static alfio.model.system.ConfigurationKeys.OPENID_PUBLIC_ENABLED;
 
 public class PublicOpenIdAuthenticationManager extends BaseOpenIdAuthenticationManager {
 
     private final ConfigurationManager configurationManager;
-    private final Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> activeCache = Caffeine.newBuilder()
-        .expireAfterWrite(Duration.ofMinutes(1))
-        .build();
 
     public PublicOpenIdAuthenticationManager(HttpClient httpClient,
                                              ConfigurationManager configurationManager,
@@ -72,7 +62,7 @@ public class PublicOpenIdAuthenticationManager extends BaseOpenIdAuthenticationM
 
     @Override
     protected OpenIdConfiguration openIdConfiguration() {
-        return Json.fromJson(loadCachedConfiguration().get(OPENID_CONFIGURATION_JSON).getValueOrNull(), OpenIdConfiguration.class);
+        return Json.fromJson(configurationManager.getPublicOpenIdConfiguration().get(OPENID_CONFIGURATION_JSON).getValueOrNull(), OpenIdConfiguration.class);
     }
 
     @Override
@@ -92,11 +82,6 @@ public class PublicOpenIdAuthenticationManager extends BaseOpenIdAuthenticationM
 
     @Override
     public boolean isEnabled() {
-        return loadCachedConfiguration().get(OPENID_PUBLIC_ENABLED).getValueAsBooleanOrDefault();
-    }
-
-    private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> loadCachedConfiguration() {
-        return activeCache.get(EnumSet.of(OPENID_PUBLIC_ENABLED, OPENID_CONFIGURATION_JSON),
-            k -> configurationManager.getFor(k, ConfigurationLevel.system()));
+        return configurationManager.isPublicOpenIdEnabled();
     }
 }

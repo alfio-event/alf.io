@@ -40,6 +40,7 @@ import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -180,6 +181,7 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
     public void init() {
         publicUserName = UUID.randomUUID().toString();
         userRepository.create(publicUserName, UUID.randomUUID().toString(), "First", "Last", "email@example.org", true, User.Type.PUBLIC, null, "");
+        configurationRepository.insert(ConfigurationKeys.OPENID_PUBLIC_ENABLED.name(), "true", "Openid is enabled for this test");
     }
 
     @Test

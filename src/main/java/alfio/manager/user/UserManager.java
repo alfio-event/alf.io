@@ -238,7 +238,9 @@ public class UserManager {
         userRepository.updateContactInfo(id, firstName, lastName, emailAddress);
     }
 
-    public void persistProfileForPublicUser(Principal principal, TicketReservationAdditionalInfo reservationAdditionalInfo) {
+    public void persistProfileForPublicUser(Principal principal,
+                                            TicketReservationAdditionalInfo reservationAdditionalInfo,
+                                            Map<String, List<String>> userAdditionalData) {
         if(principal == null) {
             return;
         }
@@ -253,7 +255,7 @@ public class UserManager {
                 reservationAdditionalInfo.getBillingAddressCountry(),
                 reservationAdditionalInfo.getVatNr(),
                 reservationAdditionalInfo.getInvoicingAdditionalInfo(),
-                Map.of() // TODO call extension to extract additional data
+                userAdditionalData
             ));
     }
 

@@ -27,6 +27,7 @@ import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationCodeForm;
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.CustomBindingResult;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
@@ -447,8 +448,18 @@ public class ReservationApiV2Controller {
             if(!bindingResult.hasErrors() && (!bindingResult.hasWarnings() || ignoreWarnings)) {
                 ticketReservationManager.flagAsValidated(reservationId, purchaseContext, bindingResult.getWarningCodes());
                 // save customer data
-                if(principal != null) {
-                    userManager.persistProfileForPublicUser(principal, ticketReservationManager.loadAdditionalInfo(reservationId));
+                if(principal != null && configurationManager.isPublicOpenIdEnabled()) {
+                    var additionalData = contactAndTicketsForm.getTickets().values()
+                        .stream()
+                        .filter(f -> principal.getName().equals(f.getEmail()))
+                        .limit(1)
+                        .map(UpdateTicketOwnerForm::getAdditional)
+                        .findFirst()
+                        .orElse(Map.of());
+                    if (!additionalData.isEmpty()) {
+                        additionalData = extensionManager.filterAdditionalInfoToSave(purchaseContext, additionalData);
+                    }
+                    userManager.persistProfileForPublicUser(principal, ticketReservationManager.loadAdditionalInfo(reservationId), additionalData);
                 }
             }
 
