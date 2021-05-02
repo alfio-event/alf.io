@@ -42,4 +42,8 @@ public class User {
     public String getEmailAddress() {
         return emailAddress;
     }
+
+    public PublicUserProfile getProfile() {
+        return profile;
+    }
 }

@@ -19,8 +19,9 @@ package alfio.controller.api.v2.user;
 import alfio.controller.api.v2.model.PurchaseContextWithReservations;
 import alfio.controller.api.v2.model.User;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.user.UserManager;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,11 +36,19 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v2/public/user")
-@RequiredArgsConstructor
 public class UserApiV2Controller {
 
     private final UserManager userManager;
     private final TicketReservationManager ticketReservationManager;
+    private final OpenIdAuthenticationManager openIdAuthenticationManager;
+
+    public UserApiV2Controller(UserManager userManager,
+                               TicketReservationManager ticketReservationManager,
+                               @Qualifier("publicOpenIdAuthenticationManager") OpenIdAuthenticationManager openIdAuthenticationManager) {
+        this.userManager = userManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.openIdAuthenticationManager = openIdAuthenticationManager;
+    }
 
     @GetMapping("/me")
     public ResponseEntity<User> getUserIdentity(Principal principal) {
@@ -52,6 +61,11 @@ public class UserApiV2Controller {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("/authentication-enabled")
+    public ResponseEntity<Boolean> userAuthenticationEnabled() {
+        return ResponseEntity.ok(openIdAuthenticationManager.isEnabled());
     }
 
     @PostMapping("/logout")
