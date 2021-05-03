@@ -281,6 +281,6 @@ public interface TicketReservationRepository {
     @Query("select tr.*, e.short_name from tickets_reservation tr join event e on e.id = tr.event_id_fk where tr.subscription_id_fk = :subscriptionId and tr.status = 'COMPLETE'")
     List<TicketReservationWithEventIdentifier> findConfirmedReservationsBySubscriptionId(@Bind("subscriptionId") UUID subscriptionId);
 
-    @Query("select * from reservation_with_purchase_context where tr_user_id_fk = :userId")
+    @Query("select * from reservation_with_purchase_context where tr_user_id_fk = :userId order by tr_creation_ts desc")
     List<ReservationWithPurchaseContext> findAllReservationsForUser(@Bind("userId") int userId);
 }

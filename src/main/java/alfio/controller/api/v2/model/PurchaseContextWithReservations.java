@@ -38,7 +38,7 @@ public class PurchaseContextWithReservations {
         Validate.isTrue(!reservations.isEmpty(), "Cannot build PurchaseContextWithReservation out of an empty list");
         var first = reservations.get(0);
         return new PurchaseContextWithReservations(first.getPurchaseContextTitle(),
-            first.getId(),
+            first.getPurchaseContextPublicIdentifier(),
             first.getPurchaseContextType(),
             reservations.stream().map(ReservationHeader::from).collect(Collectors.toList())
         );

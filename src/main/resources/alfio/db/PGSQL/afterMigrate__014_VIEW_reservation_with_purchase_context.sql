@@ -22,6 +22,7 @@ create view reservation_with_purchase_context as (
             id tr_id,
             validity tr_validity,
             status tr_status,
+            creation_ts tr_creation_ts,
             confirmation_ts tr_confirmation_ts,
             registration_ts tr_registration_ts,
             payment_method tr_payment_method,
