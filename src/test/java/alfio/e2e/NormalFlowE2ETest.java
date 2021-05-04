@@ -16,7 +16,7 @@
  */
 package alfio.e2e;
 
-import alfio.TestConfiguration;
+import alfio.BaseTestConfiguration;
 import alfio.config.Initializer;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.requireNonNull;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 
 /**
@@ -71,7 +72,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElemen
  *  - e2e.server.apikey=
  *  - e2e.browser=ie11|safari|firefox|chrome
  */
-@ContextConfiguration(classes = { TestConfiguration.class, NormalFlowE2ETest.E2EConfiguration.class })
+@ContextConfiguration(classes = { BaseTestConfiguration.class, NormalFlowE2ETest.E2EConfiguration.class })
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @SpringBootTest
 public class NormalFlowE2ETest extends BaseIntegrationTest {
@@ -81,7 +82,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
 
     static {
         try (var jsonStream = NormalFlowE2ETest.class.getResourceAsStream("/e2e/create-event-for-e2e.json")) {
-            JSON_BODY = String.join("\n", IOUtils.readLines(new InputStreamReader(jsonStream, StandardCharsets.UTF_8)));
+            JSON_BODY = String.join("\n", IOUtils.readLines(new InputStreamReader(requireNonNull(jsonStream), StandardCharsets.UTF_8)));
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

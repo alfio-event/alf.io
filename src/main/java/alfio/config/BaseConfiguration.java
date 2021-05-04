@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio;
+package alfio.config;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ExternalConfiguration;
@@ -26,17 +26,14 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 
-
 @Configuration
-@Import(BaseTestConfiguration.class)
-public class TestConfiguration {
+public class BaseConfiguration {
 
     @Bean
     ConfigurationManager configurationManager(ConfigurationRepository configurationRepository,
@@ -45,7 +42,7 @@ public class TestConfiguration {
                                               ExternalConfiguration externalConfiguration,
                                               Environment environment) {
         Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> cache = Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ZERO)
+            .expireAfterWrite(Duration.ofMinutes(1))
             .build();
         return new ConfigurationManager(configurationRepository,
             userManager,

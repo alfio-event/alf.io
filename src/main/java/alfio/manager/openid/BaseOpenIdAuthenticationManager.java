@@ -174,7 +174,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     private void updateRoles(Set<Role> roles, String username) {
         authorityRepository.revokeAll(username);
         var rolesToAdd = roles.stream()
-            .map(r -> new MapSqlParameterSource("username", username).addValue("role", r))
+            .map(r -> new MapSqlParameterSource("username", username).addValue("role", r.getRoleName()))
             .toArray(MapSqlParameterSource[]::new);
         jdbcTemplate.batchUpdate(authorityRepository.grantAll(), rolesToAdd);
     }
