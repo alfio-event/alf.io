@@ -654,8 +654,9 @@ public class EventManager {
             atZone(tc.getValidCheckInTo(), zoneId),
             atZone(tc.getTicketValidityStart(), zoneId),
             atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
-            Objects.requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT),
-            requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), tc.getTicketAccessType());
+            requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT),
+            requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty),
+            requireNonNullElse(tc.getTicketAccessType(), TicketCategory.TicketAccessType.INHERIT));
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
@@ -745,7 +746,7 @@ public class EventManager {
                 atZone(tc.getValidCheckInTo(), zoneId),
                 atZone(tc.getTicketValidityStart(), zoneId),
                 atZone(tc.getTicketValidityEnd(), zoneId),
-                Objects.requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT), tc.getTicketAccessType());
+                requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT), tc.getTicketAccessType());
         TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;
         if(original.isBounded() ^ tc.isBounded()) {
