@@ -97,7 +97,7 @@ public class ExtensionUtils {
                 for (var kv : na.entrySet()) {
                     res.put(kv.getKey(), unwrap(kv.getValue()));
                 }
-                return na;
+                return res;
             }
         }
         return o;
