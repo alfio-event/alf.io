@@ -16,6 +16,7 @@
  */
 package alfio.extension;
 
+import alfio.util.Json;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
@@ -65,23 +66,27 @@ public class ExtensionUtils {
     }
 
     /**
-     * Unwrap / convert all Scriptable object to their java native counterpart.
+     * Unwrap / convert all Scriptable object to their java native counterpart and transform to json
      * <ul>
      *     <li>NativeArray -> ArrayList</li>
      *     <li>NativeJavaObject -> unwrapped java object</li>
      *     <li>NativeObject -> LinkedHashMap</li>
      *  </ul>
-     *  
+     *
      * @param o
      * @return
      */
-    public static Object prepareForJson(Object o) {
+    public static String convertToJson(Object o) {
+        return Json.GSON.toJson(unwrap(o));
+    }
+
+    private static Object unwrap(Object o) {
         if (o instanceof Scriptable) {
             if (o instanceof NativeArray) {
                 List<Object> res = new ArrayList<>();
                 var na = (NativeArray) o;
                 for (var a : na) {
-                    res.add(prepareForJson(a));
+                    res.add(unwrap(a));
                 }
                 return res;
             } else if (o instanceof NativeJavaObject) {
@@ -90,7 +95,7 @@ public class ExtensionUtils {
                 var na = (NativeObject) o;
                 Map<Object, Object> res = new LinkedHashMap<>();
                 for (var kv : na.entrySet()) {
-                    res.put(kv.getKey(), prepareForJson(kv.getValue()));
+                    res.put(kv.getKey(), unwrap(kv.getValue()));
                 }
                 return na;
             }
