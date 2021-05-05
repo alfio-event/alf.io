@@ -58,7 +58,7 @@ import static java.util.stream.Collectors.toSet;
 @AllArgsConstructor
 public class ExtensionService {
 
-    private static final String EVALUATE_RESULT = "if(ExtensionUtils.needsJsonSerialization(res)) { res = GSON.fromJson(JSON.stringify(ExtensionUtils.prepareForJson(res)), returnClass); }; res;";
+    private static final String EVALUATE_RESULT = "res = GSON.fromJson(GSON.toJson(ExtensionUtils.prepareForJson(res)), returnClass);";
     private static final String PROCESS_EXTENSION_RESULT  = "var res = executeScript(extensionEvent); " + EVALUATE_RESULT;
     private static final String PROCESS_CAPABILITY_RESULT = "var res = executeCapability(capability); " + EVALUATE_RESULT;
     private final ScriptingExecutionService scriptingExecutionService;
@@ -111,7 +111,7 @@ public class ExtensionService {
     private ExtensionMetadata getMetadata(String name, String script) {
         return scriptingExecutionService.executeScript(
             name,
-            script + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
+            script + "\n;GSON.fromJson(GSON.toJson(ExtensionUtils.prepareForJson(getScriptMetadata())), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
             Collections.emptyMap(),
             ExtensionMetadata.class, new NoopExtensionLogger());
     }
