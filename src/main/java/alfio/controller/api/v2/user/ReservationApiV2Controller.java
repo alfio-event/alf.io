@@ -23,9 +23,11 @@ import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.model.ReservationPaymentResult;
 import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
+import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationCodeForm;
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.CustomBindingResult;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
@@ -36,6 +38,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
+import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.subscription.Subscription;
@@ -108,6 +111,7 @@ public class ReservationApiV2Controller {
     private final PurchaseContextManager purchaseContextManager;
     private final SubscriptionRepository subscriptionRepository;
     private final TicketRepository ticketRepository;
+    private final UserManager userManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -118,9 +122,11 @@ public class ReservationApiV2Controller {
     @GetMapping({"/reservation/{reservationId}",
         "/event/{eventName}/reservation/{reservationId}" //<-deprecated
     })
-    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("reservationId") String reservationId, Principal principal) {
 
         Optional<ReservationInfo> res = purchaseContextManager.findByReservationId(reservationId).flatMap(purchaseContext -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+
+            validateAccessToReservation(principal, reservation);
 
             var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, purchaseContext);
 
@@ -278,13 +284,15 @@ public class ReservationApiV2Controller {
                                                                                        @RequestParam("lang") String lang,
                                                                                        @RequestBody  PaymentForm paymentForm,
                                                                                        BindingResult bindingResult,
-                                                                                       HttpServletRequest request) {
+                                                                                       HttpServletRequest request,
+                                                                                       Principal principal) {
 
         return getReservation(reservationId).map(er -> {
+            var event = er.getLeft();
+            var reservation = er.getRight();
+            var locale = LocaleUtil.forLanguageTag(lang, event);
 
-           var event = er.getLeft();
-           var reservation = er.getRight();
-           var locale = LocaleUtil.forLanguageTag(lang, event);
+            validateAccessToReservation(principal, reservation);
 
             if (!reservation.getValidity().after(new Date())) {
                 bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
@@ -326,7 +334,7 @@ public class ReservationApiV2Controller {
                 orderSummary, reservation.getVatCountryCode(), reservation.getVatNr(), reservation.getVatStatus(),
                 Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
-            final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, paymentForm.getPaymentProxy(), paymentForm.getSelectedPaymentMethod());
+            final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, paymentForm.getPaymentProxy(), paymentForm.getSelectedPaymentMethod(), principal);
 
             if (status.isRedirect()) {
                 var body = ValidatedResponse.toResponse(bindingResult,
@@ -360,18 +368,22 @@ public class ReservationApiV2Controller {
                                                                          @RequestParam("lang") String lang,
                                                                          @RequestParam(value = "ignoreWarnings", defaultValue = "false") boolean ignoreWarnings,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
-                                                                         BindingResult br) {
+                                                                         BindingResult br,
+                                                                         Principal principal) {
 
         var bindingResult = new CustomBindingResult(br);
 
         return getPurchaseContextAndReservationWithPendingStatus(reservationId).map(er -> {
             var purchaseContext = er.getLeft();
             var reservation = er.getRight();
+
+            validateAccessToReservation(principal, reservation);
+
             var locale = LocaleUtil.forLanguageTag(lang, purchaseContext);
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(purchaseContext.getVatStatus())).getLeft();
-            boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
 
             purchaseContext.event().ifPresent(event -> {
+                boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
                 if (forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
                     contactAndTicketsForm.setPostponeAssignment(false);
                 }
@@ -400,7 +412,7 @@ public class ReservationApiV2Controller {
                 contactAndTicketsForm.getBillingAddressCompany(), contactAndTicketsForm.getBillingAddressLine1(), contactAndTicketsForm.getBillingAddressLine2(),
                 contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getBillingAddressState(), contactAndTicketsForm.getVatCountryCode(),
                 contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
-                contactAndTicketsForm.getAddCompanyBillingDetails(), contactAndTicketsForm.canSkipVatNrCheck(), false, locale);
+                contactAndTicketsForm.getAddCompanyBillingDetails(), contactAndTicketsForm.canSkipVatNrCheck(), false, locale, principal);
 
             boolean italyEInvoicing = configurationManager.getFor(ENABLE_ITALY_E_INVOICING, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
 
@@ -435,11 +447,32 @@ public class ReservationApiV2Controller {
 
             if(!bindingResult.hasErrors() && (!bindingResult.hasWarnings() || ignoreWarnings)) {
                 ticketReservationManager.flagAsValidated(reservationId, purchaseContext, bindingResult.getWarningCodes());
+                // save customer data
+                if(principal != null && configurationManager.isPublicOpenIdEnabled()) {
+                    var additionalData = contactAndTicketsForm.getTickets().values()
+                        .stream()
+                        .filter(f -> principal.getName().equals(f.getEmail()))
+                        .limit(1)
+                        .map(UpdateTicketOwnerForm::getAdditional)
+                        .findFirst()
+                        .orElse(Map.of());
+                    if (!additionalData.isEmpty()) {
+                        additionalData = extensionManager.filterAdditionalInfoToSave(purchaseContext, additionalData);
+                    }
+                    userManager.persistProfileForPublicUser(principal, ticketReservationManager.loadAdditionalInfo(reservationId), additionalData);
+                }
             }
 
             var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());
             return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
         }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private void validateAccessToReservation(Principal principal, TicketReservation reservation) {
+        if(!ticketReservationManager.validateAccessToReservation(reservation, principal)) {
+            log.warn("Access to reservation {} has been denied to principal {}", reservation.getId(), principal);
+            throw new ReservationAccessDenied();
+        }
     }
 
     private TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing getItalianInvoicingInfo(ContactAndTicketsForm contactAndTicketsForm) {
@@ -545,6 +578,7 @@ public class ReservationApiV2Controller {
         return ResponseEntity.of(purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
             .map(purchaseContext -> ticketReservationManager.findById(reservationId)
                 .map(ticketReservation -> {
+                    validateAccessToReservation(principal, ticketReservation);
                     ticketReservationManager.sendConfirmationEmail(purchaseContext, ticketReservation, LocaleUtil.forLanguageTag(lang, purchaseContext), principal != null ? principal.getName() : null);
                     return true;
                 }).orElse(false)));

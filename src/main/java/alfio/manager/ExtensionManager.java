@@ -244,7 +244,6 @@ public class ExtensionManager {
             String.class));
     }
 
-    // FIXME: should not depend only by event id!
     boolean handleTaxIdValidation(PurchaseContext purchaseContext, String taxIdNumber, String countryCode) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("taxIdNumber", taxIdNumber);
@@ -293,6 +292,15 @@ public class ExtensionManager {
         payload.put("transaction", info.getTransaction());
         payload.put("paymentInfo", info.getPaymentInformation());
         asyncCall(ExtensionEvent.REFUND_ISSUED, purchaseContext, payload);
+    }
+
+    public Map<String, List<String>> filterAdditionalInfoToSave(PurchaseContext purchaseContext,
+                                                         Map<String, List<String>> userAdditionalData) {
+        var payload = new HashMap<String, Object>();
+        payload.put("userAdditionalData", userAdditionalData);
+        @SuppressWarnings("unchecked")
+        Map<String, List<String>> result = syncCall(ExtensionEvent.USER_ADDITIONAL_INFO_FILTER, purchaseContext, payload, Map.class);
+        return Objects.requireNonNullElse(result, Map.of());
     }
 
     public boolean handlePdfTransformation(String html, PurchaseContext purchaseContext, OutputStream outputStream) {

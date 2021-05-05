@@ -16,8 +16,12 @@
  */
 package alfio.controller.api.v2.user.reservation;
 
+import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.model.Event;
+import org.springframework.security.core.Authentication;
 
+import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 class ReservationFlowContext {
@@ -25,15 +29,37 @@ class ReservationFlowContext {
     final String userId;
     final UUID subscriptionId;
     final String subscriptionPin;
+    final String publicUsername;
+    final Integer publicUserId;
+    private final Authentication authentication;
 
     ReservationFlowContext(Event event, String userId) {
-        this(event, userId, null, null);
+        this(event, userId, null, null, null, null);
     }
 
     ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin) {
+        this(event, userId, subscriptionId, subscriptionPin, null, null);
+    }
+
+    ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin, String publicUsername, Integer publicUserId) {
         this.event = event;
         this.userId = userId;
         this.subscriptionId = subscriptionId;
         this.subscriptionPin = subscriptionPin;
+        this.publicUsername = publicUsername;
+        this.publicUserId = publicUserId;
+        if(publicUsername != null && publicUserId != null) {
+            this.authentication = new OpenIdAlfioAuthentication(List.of(), "", publicUsername, publicUsername, "", true);
+        } else {
+            this.authentication = null;
+        }
+    }
+
+    Principal getPublicUser() {
+        return authentication;
+    }
+
+    Authentication getPublicAuthentication() {
+        return authentication;
     }
 }

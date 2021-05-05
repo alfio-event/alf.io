@@ -537,7 +537,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         List<Integer> tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), category.getId(), 1, Collections.singletonList(Ticket.TicketStatus.FREE.name()));
         String reservationId = "12345678";
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId());
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
         ticketRepository.reserveTickets(reservationId, tickets, category.getId(), "en", 100, "CHF");
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, 10,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
@@ -690,7 +690,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         trm.setTicketCategoryId(ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0).getId());
         TicketReservationWithOptionalCodeModification reservation = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
         ticketReservationManager.createTicketReservation(event, Collections.singletonList(reservation), Collections.emptyList(),
-            DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
+            DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
         TicketCategoryModification tcm = new TicketCategoryModification(null, "new", TicketCategory.TicketAccessType.INHERIT, 1,
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clockProvider.getClock())),
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now(clockProvider.getClock()).plusDays(1)),
@@ -735,7 +735,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(1, categories.size());
         int categoryId = categories.get(0).getId();
         String reservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId());
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
         int result = ticketRepository.reserveTickets(reservationId, tickets, categoryId, "en", 0, "CHF");
         assertEquals(1, result);
         assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
@@ -773,7 +773,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         int categoryId = categories.get(0).getId();
         var tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), categoryId, 1, List.of(Ticket.TicketStatus.FREE.name()));
         String reservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId());
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(clockProvider.getClock()), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency(), event.getOrganizationId(), null);
         int result = ticketRepository.reserveTickets(reservationId, tickets, categoryId, "en", 0, "CHF");
         assertEquals(1, result);
         assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));

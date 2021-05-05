@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication.support;
 
-import alfio.manager.system.OpenIdAuthenticationManager;
+import alfio.manager.openid.OpenIdAuthenticationManager;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -30,14 +30,26 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.UUID;
+
 @Log4j2
 public class OpenIdAuthenticationFilter extends GenericFilterBean {
+    public static final String RESERVATION_KEY = "RESERVATION";
+    public static final String CONTEXT_TYPE_KEY = "CONTEXT_TYPE";
+    public static final String CONTEXT_ID_KEY = "CONTEXT_ID";
     private final RequestMatcher requestMatcher;
     private final OpenIdAuthenticationManager openIdAuthenticationManager;
+    private final String redirectURL;
+    private final boolean publicAuthentication;
 
-    public OpenIdAuthenticationFilter(String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager) {
+    public OpenIdAuthenticationFilter(String loginURL,
+                                      OpenIdAuthenticationManager openIdAuthenticationManager,
+                                      String redirectURL,
+                                      boolean publicAuthentication) {
         this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
         this.openIdAuthenticationManager = openIdAuthenticationManager;
+        this.redirectURL = redirectURL;
+        this.publicAuthentication = publicAuthentication;
     }
 
     @Override
@@ -45,13 +57,24 @@ public class OpenIdAuthenticationFilter extends GenericFilterBean {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
-        if (requestMatcher.matches(req)) {
+        if (requestMatcher.matches(req) && openIdAuthenticationManager.isEnabled()) {
             if (SecurityContextHolder.getContext().getAuthentication() != null || req.getParameterMap().containsKey("logout")) {
-                res.sendRedirect("/admin/");
+                res.sendRedirect(redirectURL);
                 return;
             }
+            var parameterMap = request.getParameterMap();
+            if(publicAuthentication
+                && parameterMap.containsKey("reservation")
+                && parameterMap.containsKey("contextType")
+                && parameterMap.containsKey("id")) {
+
+                var session = req.getSession();
+                session.setAttribute(RESERVATION_KEY, request.getParameter("reservation"));
+                session.setAttribute(CONTEXT_TYPE_KEY, request.getParameter("contextType"));
+                session.setAttribute(CONTEXT_ID_KEY, request.getParameter("id"));
+            }
             log.trace("calling buildAuthorizeUrl");
-            res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl());
+            res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(UUID.randomUUID().toString()));
             return;
         }
 

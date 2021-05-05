@@ -14,20 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.manager.openid;
 
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
+import alfio.config.authentication.support.OpenIdAlfioAuthentication;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
-public class OpenIdAuthenticationProvider implements AuthenticationProvider {
-    @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        return authentication;
-    }
+public interface OpenIdAuthenticationManager {
 
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return authentication.equals(OpenIdAlfioAuthentication.class);
-    }
+    boolean isEnabled();
+
+    OpenIdAlfioAuthentication authenticateUser(String code);
+
+    String buildAuthorizeUrl(String state);
+
+    String buildClaimsRetrieverUrl();
+
+    String buildLogoutUrl();
+
+    String buildRetrieveClaimsUrlBody(String code) throws JsonProcessingException;
 }

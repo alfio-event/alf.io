@@ -39,6 +39,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
+import java.security.Principal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -69,7 +70,8 @@ public class PromoCodeRequestManager {
                                                            String code,
                                                            BiConsumer<String, String> queryStringHandler,
                                                            Function<Pair<Optional<String>, BindingResult>, Optional<String>> handleErrors,
-                                                           ServletWebRequest request) {
+                                                           ServletWebRequest request,
+                                                           Principal principal) {
 
         String trimmedCode = StringUtils.trimToNull(code);
 
@@ -91,7 +93,7 @@ public class PromoCodeRequestManager {
             } else if(codeType == PromoCodeType.TICKET_CATEGORY_CODE) {
                 var category = ticketCategoryRepository.findCodeInEvent(e.getId(), trimmedCode).orElseThrow();
                 if(!category.isAccessRestricted()) {
-                    var res = makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount);
+                    var res = makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount, principal);
                     return handleErrors.apply(res);
                 } else {
                     var specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId(), 1).stream().findFirst();
@@ -99,12 +101,12 @@ public class PromoCodeRequestManager {
                         queryStringHandler.accept("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
                         return Optional.empty();
                     }
-                    var res = makeSimpleReservation(e, category.getId(), specialPrice.get().getCode(), request, maybePromoCodeDiscount);
+                    var res = makeSimpleReservation(e, category.getId(), specialPrice.get().getCode(), request, maybePromoCodeDiscount, principal);
                     return handleErrors.apply(res);
                 }
             } else if (checkedCode.isSuccess() && codeType == PromoCodeType.SPECIAL_PRICE) {
-                int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
-                var res = makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount);
+                int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).orElseThrow().getTicketCategoryId();
+                var res = makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount, principal);
                 return handleErrors.apply(res);
             } else {
                 queryStringHandler.accept("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
@@ -184,7 +186,8 @@ public class PromoCodeRequestManager {
                                                                         int ticketCategoryId,
                                                                         String promoCode,
                                                                         ServletWebRequest request,
-                                                                        Optional<PromoCodeDiscount> promoCodeDiscount) {
+                                                                        Optional<PromoCodeDiscount> promoCodeDiscount,
+                                                                        Principal principal) {
 
         Locale locale = RequestUtils.getMatchingLocale(request, event);
         ReservationForm form = new ReservationForm();
@@ -194,16 +197,17 @@ public class PromoCodeRequestManager {
         reservation.setTicketCategoryId(ticketCategoryId);
         form.setReservation(Collections.singletonList(reservation));
         var bindingRes = new BeanPropertyBindingResult(form, "reservationForm");
-        return Pair.of(createTicketReservation(form, bindingRes, event, locale, promoCodeDiscount.map(PromoCodeDiscount::getPromoCode)), bindingRes);
+        return Pair.of(createTicketReservation(form, bindingRes, event, locale, promoCodeDiscount.map(PromoCodeDiscount::getPromoCode), principal), bindingRes);
     }
 
     private Optional<String> createTicketReservation(ReservationForm reservation,
                                                      BindingResult bindingResult,
                                                      Event event,
                                                      Locale locale,
-                                                     Optional<String> promoCodeDiscount) {
+                                                     Optional<String> promoCodeDiscount,
+                                                     Principal principal) {
         return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
-            .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult));
+            .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult, principal));
     }
 
 }

@@ -18,7 +18,6 @@
 package alfio.extension;
 
 import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.Logger;
 import org.mozilla.javascript.ErrorReporter;
 import org.mozilla.javascript.EvaluatorException;
 
@@ -39,7 +38,7 @@ public class JSErrorReporter implements ErrorReporter {
 
     @Override
     public EvaluatorException runtimeError(String message, String sourceName, int line, String lineSource, int lineOffset) {
-        return null;
+        return new EvaluatorException(message, sourceName, line, lineSource, lineOffset);
     }
 
     @Override

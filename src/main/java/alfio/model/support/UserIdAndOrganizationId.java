@@ -14,22 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.model.support;
 
-import alfio.model.user.Role;
-import lombok.AllArgsConstructor;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
-import java.util.Map;
-import java.util.Set;
-
 @Getter
-@AllArgsConstructor
-public class OpenIdAlfioUser {
-    private final String idToken;
-    private final String subject;
-    private final String email;
-    private final boolean isAdmin;
-    private final Set<Role> alfioRoles;
-    private final Map<String, Set<String>> alfioOrganizationAuthorizations;
+public class UserIdAndOrganizationId {
+    private final int userId;
+    private final int organizationId;
+
+    public UserIdAndOrganizationId(@Column("user_id") int userId,
+                                   @Column("organization_id") int organizationId) {
+        this.userId = userId;
+        this.organizationId = organizationId;
+    }
 }

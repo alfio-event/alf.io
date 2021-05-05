@@ -16,15 +16,15 @@
  */
 package alfio.manager;
 
+import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.OpenIdAuthenticationManager;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
+import alfio.util.Json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
@@ -33,11 +33,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OpenIdAuthenticationManagerTest {
+public class AdminOpenIdAuthenticationManagerTest {
     private static final String DOMAIN = "domain_test";
     private static final String CLIENT_ID = "123";
     private static final String CLIENT_SECRET = "1234";
@@ -50,7 +51,7 @@ public class OpenIdAuthenticationManagerTest {
     private static final String LOGOUT_URL = "/logoutUrl";
     private static final String LOGOUT_REDIRECT_URL = "logoutRedirectUrl";
 
-    private OpenIdAuthenticationManager authenticationManager;
+    private AdminOpenIdAuthenticationManager authenticationManager;
     private Environment environment;
 
     @BeforeEach
@@ -70,28 +71,29 @@ public class OpenIdAuthenticationManagerTest {
         var configurationManager = mock(ConfigurationManager.class);
         when(configurationManager.getFor(eq(ConfigurationKeys.BASE_URL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.BASE_URL, new ConfigurationKeyValuePathLevel("", "blabla", ConfigurationPathLevel.SYSTEM)));
-        authenticationManager = new OpenIdAuthenticationManager(environment, null, null, configurationManager);
+        authenticationManager = new AdminOpenIdAuthenticationManager(environment, null, configurationManager, null, null, null, null, null, null, null, new Json());
     }
 
     @Test
     public void oauth2_authorize_url_test() {
-        String redirectURL = authenticationManager.buildAuthorizeUrl();
-        String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&scope=openid+email+profile+groups+alfio-groups&response_type=code";
-        Assert.assertEquals(expectedURL, redirectURL);
+        var state = "this-is-the-state";
+        String redirectURL = authenticationManager.buildAuthorizeUrl(state);
+        String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&state="+state+"&scope=openid+email+profile+groups+alfio-groups&response_type=code";
+        assertEquals(expectedURL, redirectURL);
     }
 
     @Test
     public void oauth2_claims_url_test() {
         String claimsUrl = authenticationManager.buildClaimsRetrieverUrl();
         String expectedURL = "https://domain_test/claims";
-        Assert.assertEquals(expectedURL, claimsUrl);
+        assertEquals(expectedURL, claimsUrl);
     }
 
     @Test
     public void oauth2_build_logoutUrl() {
         String logoutUrl = authenticationManager.buildLogoutUrl();
         String expectedURL = "https://domain_test/logoutUrl?redirect_uri=logoutRedirectUrl";
-        Assert.assertEquals(expectedURL, logoutUrl);
+        assertEquals(expectedURL, logoutUrl);
     }
 
     @Test
@@ -102,7 +104,7 @@ public class OpenIdAuthenticationManagerTest {
         Map<String, String> expectedBody = mapper.readValue(
             "{\"code\":\"code\",\"redirect_uri\":\"callback\",\"grant_type\":\"authorization_code\",\"client_secret\":\"1234\",\"client_id\":\"123\"}", new TypeReference<>() {
             });
-        Assert.assertEquals(expectedBody, mapper.readValue(body, Map.class));
+        assertEquals(expectedBody, mapper.readValue(body, Map.class));
     }
 
     @Test
@@ -112,13 +114,13 @@ public class OpenIdAuthenticationManagerTest {
         String code = "code";
         String body = authenticationManager.buildRetrieveClaimsUrlBody(code);
         String expectedBody = "grant_type=authorization_code&code=code&client_id=123&client_secret=1234&redirect_uri=callback";
-        Assert.assertEquals(expectedBody, body);
+        assertEquals(expectedBody, body);
     }
 
     @Test
     public void oauth2_get_scopes() {
         List<String> expectedScopes = Arrays.asList("openid", "email", "profile", GROUPS_NAME, ALFIO_GROUPS_NAME);
         List<String> actualScopes = authenticationManager.getScopes();
-        Assert.assertEquals(expectedScopes, actualScopes);
+        assertEquals(expectedScopes, actualScopes);
     }
 }

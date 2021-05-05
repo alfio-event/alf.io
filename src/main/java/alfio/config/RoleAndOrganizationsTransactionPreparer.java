@@ -16,6 +16,7 @@
  */
 package alfio.config;
 
+import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -26,7 +27,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -67,6 +69,14 @@ class RoleAndOrganizationsTransactionPreparer {
         return false;
     }
 
+    private static boolean isPublic() {
+        SecurityContext context = SecurityContextHolder.getContext();
+        if (context != null && context.getAuthentication() instanceof OpenIdAlfioAuthentication) {
+            return ((OpenIdAlfioAuthentication) context.getAuthentication()).isPublicUser();
+        }
+        return false;
+    }
+
     private static boolean isAdmin() {
         if(isLoggedUser()) {
             return SecurityContextHolder.getContext().getAuthentication()
@@ -85,7 +95,7 @@ class RoleAndOrganizationsTransactionPreparer {
         if (!isInAHttpRequest()) {
             return;
         }
-        boolean mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
+        boolean mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isPublic() && !isAdmin();
         if (!mustCheck) {
             return;
         }

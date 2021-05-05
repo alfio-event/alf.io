@@ -55,6 +55,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -291,7 +292,8 @@ public class EventApiV2Controller {
                                                                     @RequestParam("lang") String lang,
                                                                     @RequestBody ReservationForm reservation,
                                                                     BindingResult bindingResult,
-                                                                    ServletWebRequest request) {
+                                                                    ServletWebRequest request,
+                                                                    Principal principal) {
 
 
 
@@ -318,7 +320,7 @@ public class EventApiV2Controller {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
-            Optional<String> reservationIdRes = createTicketReservation(reservation, bindingResult, event, locale, promoCodeDiscount);
+            Optional<String> reservationIdRes = createTicketReservation(reservation, bindingResult, event, locale, promoCodeDiscount, principal);
 
             if (bindingResult.hasErrors()) {
                 return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
@@ -335,9 +337,10 @@ public class EventApiV2Controller {
                                                      BindingResult bindingResult,
                                                      Event event,
                                                      Locale locale,
-                                                     Optional<String> promoCodeDiscount) {
+                                                     Optional<String> promoCodeDiscount,
+                                                     Principal principal) {
         return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
-            .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult));
+            .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult, principal));
     }
 
     @GetMapping("event/{eventName}/validate-code")
@@ -390,7 +393,7 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/code/{code}")
-    public ResponseEntity<Void> handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, ServletWebRequest request) {
+    public ResponseEntity<Void> handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, ServletWebRequest request, Principal principal) {
         String trimmedCode = StringUtils.trimToNull(code);
         Map<String, String> queryStrings = new HashMap<>();
 
@@ -401,7 +404,7 @@ public class EventApiV2Controller {
             return res.getLeft();
         };
 
-        var url = promoCodeRequestManager.createReservationFromPromoCode(eventName, trimmedCode, queryStrings::put, handleErrors, request).map(reservationId ->
+        var url = promoCodeRequestManager.createReservationFromPromoCode(eventName, trimmedCode, queryStrings::put, handleErrors, request, principal).map(reservationId ->
             UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/book")
                 .build(Map.of("eventShortName", eventName, "reservationId", reservationId))
                 .toString())

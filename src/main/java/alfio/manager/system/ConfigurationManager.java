@@ -38,7 +38,8 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
-import lombok.AllArgsConstructor;
+import com.github.benmanes.caffeine.cache.Cache;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -47,7 +48,6 @@ import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
@@ -62,10 +62,9 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
 import static java.util.stream.Collectors.toList;
 
-@Component
 @Transactional
 @Log4j2
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ConfigurationManager {
 
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
@@ -77,6 +76,7 @@ public class ConfigurationManager {
     private final EventRepository eventRepository;
     private final ExternalConfiguration externalConfiguration;
     private final Environment environment;
+    private final Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache;
 
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
@@ -677,4 +677,12 @@ public class ConfigurationManager {
         return new AlfioInfo(demoMode, devMode, prodMode, analyticsConf);
     }
 
+    public Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getPublicOpenIdConfiguration() {
+        return oneMinuteCache.get(EnumSet.of(OPENID_PUBLIC_ENABLED, OPENID_CONFIGURATION_JSON),
+            k -> getFor(k, ConfigurationLevel.system()));
+    }
+
+    public boolean isPublicOpenIdEnabled() {
+        return getPublicOpenIdConfiguration().get(OPENID_PUBLIC_ENABLED).getValueAsBooleanOrDefault();
+    }
 }

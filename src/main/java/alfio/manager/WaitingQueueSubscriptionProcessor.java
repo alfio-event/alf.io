@@ -134,9 +134,13 @@ public class WaitingQueueSubscriptionProcessor {
 
     private String createReservation(Event event, TicketReservationWithOptionalCodeModification reservation, ZonedDateTime expiration, Locale locale) {
         return ticketReservationManager.createTicketReservation(event,
-                Collections.singletonList(reservation), Collections.emptyList(), Date.from(expiration.toInstant()),
-                Optional.empty(),
-                locale, true);
+            Collections.singletonList(reservation),
+            Collections.emptyList(),
+            Date.from(expiration.toInstant()),
+            Optional.empty(),
+            locale,
+            true,
+            null); // set principal to null because this happens in a job
     }
 
 }

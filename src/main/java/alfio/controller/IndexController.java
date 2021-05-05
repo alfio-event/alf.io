@@ -18,7 +18,7 @@ package alfio.controller;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
-import alfio.config.support.auth.OpenIdAlfioAuthentication;
+import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
@@ -179,7 +179,9 @@ public class IndexController {
         "/subscription/{subscriptionId}/reservation/{reservationId}/error",
         // poll
         "/event/{eventShortName}/poll",
-        "/event/{eventShortName}/poll/{pollId}"
+        "/event/{eventShortName}/poll/{pollId}",
+        // user
+        "/my-orders"
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
                              @PathVariable(value = "subscriptionId", required = false) String subscriptionId,

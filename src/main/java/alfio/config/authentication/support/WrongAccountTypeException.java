@@ -14,17 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication.support;
 
-import lombok.experimental.UtilityClass;
+import org.springframework.security.authentication.AccountStatusException;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.Locale;
+public class WrongAccountTypeException extends AccountStatusException {
 
-@UtilityClass
-public class RequestTypeMatchers {
-    public static boolean isTokenAuthentication(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
+    public WrongAccountTypeException(String msg) {
+        super(msg);
     }
 }

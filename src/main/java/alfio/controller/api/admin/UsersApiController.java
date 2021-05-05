@@ -16,7 +16,7 @@
  */
 package alfio.controller.api.admin;
 
-import alfio.config.WebSecurityConfig;
+import alfio.config.authentication.AuthenticationConstants;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
@@ -88,9 +88,9 @@ public class UsersApiController {
             .stream()
             .map(GrantedAuthority::getAuthority)
             .map(s -> StringUtils.substringAfter(s, "ROLE_"))
-            .filter(WebSecurityConfig.SPONSOR::equals)
+            .filter(AuthenticationConstants.SPONSOR::equals)
             .findFirst()
-            .orElse(WebSecurityConfig.OPERATOR);
+            .orElse(AuthenticationConstants.OPERATOR);
     }
 
     @GetMapping("/user/details")

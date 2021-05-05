@@ -14,13 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.support.auth;
+package alfio.config.authentication.support;
 
-import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 
-public class WrongAccountTypeException extends AccountStatusException {
+public class OpenIdAuthenticationProvider implements AuthenticationProvider {
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        return authentication;
+    }
 
-    public WrongAccountTypeException(String msg) {
-        super(msg);
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return authentication.equals(OpenIdAlfioAuthentication.class);
     }
 }

@@ -16,10 +16,12 @@
  */
 package alfio.extension;
 
+import alfio.util.Json;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mozilla.javascript.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -27,8 +29,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Base64;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ExtensionUtils {
@@ -65,15 +66,40 @@ public class ExtensionUtils {
     }
 
     /**
-     * Checks whether or not the object needs to be JSON-serialized
-     * in order to be returned as result
+     * Unwrap / convert all Scriptable object to their java native counterpart and transform to json
+     * <ul>
+     *     <li>NativeArray -> ArrayList</li>
+     *     <li>NativeJavaObject -> unwrapped java object</li>
+     *     <li>NativeObject -> LinkedHashMap</li>
+     *  </ul>
      *
-     * @param returnObject the Object result
+     * @param o
      * @return
      */
-    public static boolean needsJsonSerialization(Object returnObject) {
-        return returnObject != null
-            // everything that is not included in the java.* package should be JSON-Serialized
-            && !returnObject.getClass().getPackage().getName().startsWith("java.");
+    public static String convertToJson(Object o) {
+        return Json.GSON.toJson(unwrap(o));
+    }
+
+    private static Object unwrap(Object o) {
+        if (o instanceof Scriptable) {
+            if (o instanceof NativeArray) {
+                List<Object> res = new ArrayList<>();
+                var na = (NativeArray) o;
+                for (var a : na) {
+                    res.add(unwrap(a));
+                }
+                return res;
+            } else if (o instanceof NativeJavaObject) {
+                return ((NativeJavaObject) o).unwrap();
+            } else if (o instanceof NativeObject) {
+                var na = (NativeObject) o;
+                Map<Object, Object> res = new LinkedHashMap<>();
+                for (var kv : na.entrySet()) {
+                    res.put(kv.getKey(), unwrap(kv.getValue()));
+                }
+                return res;
+            }
+        }
+        return o;
     }
 }

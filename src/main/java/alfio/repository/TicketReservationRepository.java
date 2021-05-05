@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.*;
+import alfio.model.support.UserIdAndOrganizationId;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -28,8 +29,8 @@ import java.util.*;
 @QueryRepository
 public interface TicketReservationRepository {
 
-    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code, organization_id_fk)" +
-        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :vatPercentage, :vatIncluded, :currencyCode, :organizationId)")
+    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code, organization_id_fk, user_id_fk)" +
+        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :vatPercentage, :vatIncluded, :currencyCode, :organizationId, :userId)")
     int createNewReservation(@Bind("id") String id,
                              @Bind("creationTimestamp") ZonedDateTime creationTimestamp,
                              @Bind("validity") Date validity,
@@ -38,7 +39,17 @@ public interface TicketReservationRepository {
                              @Bind("vatPercentage") BigDecimal vatPercentage,
                              @Bind("vatIncluded") Boolean vatIncluded,
                              @Bind("currencyCode") String currencyCode,
-                             @Bind("organizationId") int organizationId);
+                             @Bind("organizationId") int organizationId,
+                             @Bind("userId") Integer userId);
+
+    @Query("update tickets_reservation set user_id_fk = :userId where id = :reservationId")
+    int setReservationOwner(@Bind("reservationId") String reservationId, @Bind("userId") Integer userId);
+
+    @Query("select user_id_fk user_id, organization_id_fk organization_id from tickets_reservation where id = :reservationId and user_id_fk is not null")
+    Optional<UserIdAndOrganizationId> getReservationOwnerAndOrganizationId(@Bind("reservationId") String reservationId);
+
+    @Query("select * from tickets_reservation tr join ba_user u on u.id = tr.user_id_fk where u.username = :username")
+    List<TicketReservation> loadByOwner(@Bind("username") String username);
 
     @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email," +
         " user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId")
@@ -269,4 +280,7 @@ public interface TicketReservationRepository {
 
     @Query("select tr.*, e.short_name from tickets_reservation tr join event e on e.id = tr.event_id_fk where tr.subscription_id_fk = :subscriptionId and tr.status = 'COMPLETE'")
     List<TicketReservationWithEventIdentifier> findConfirmedReservationsBySubscriptionId(@Bind("subscriptionId") UUID subscriptionId);
+
+    @Query("select * from reservation_with_purchase_context where tr_user_id_fk = :userId order by tr_creation_ts desc")
+    List<ReservationWithPurchaseContext> findAllReservationsForUser(@Bind("userId") int userId);
 }

@@ -16,6 +16,7 @@
  */
 package alfio.manager.user;
 
+import alfio.model.TicketReservationAdditionalInfo;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
@@ -107,6 +108,10 @@ public class UserManager {
 
     public Optional<User> findOptionalEnabledUserByUsername(String username) {
         return userRepository.findEnabledByUsername(username);
+    }
+
+    public Optional<PublicUserProfile> findOptionalProfileForUser(int userId) {
+        return userRepository.loadUserProfile(userId);
     }
 
     public boolean usernameExists(String username) {
@@ -233,6 +238,26 @@ public class UserManager {
         userRepository.updateContactInfo(id, firstName, lastName, emailAddress);
     }
 
+    public void persistProfileForPublicUser(Principal principal,
+                                            TicketReservationAdditionalInfo reservationAdditionalInfo,
+                                            Map<String, List<String>> userAdditionalData) {
+        if(principal == null) {
+            return;
+        }
+        userRepository.findIdByUserName(principal.getName())
+            .ifPresent(id -> userRepository.persistUserProfile(id,
+                reservationAdditionalInfo.getBillingAddressCompany(),
+                reservationAdditionalInfo.getBillingAddressLine1(),
+                reservationAdditionalInfo.getBillingAddressLine2(),
+                reservationAdditionalInfo.getBillingAddressZip(),
+                reservationAdditionalInfo.getBillingAddressCity(),
+                reservationAdditionalInfo.getBillingAddressState(),
+                reservationAdditionalInfo.getBillingAddressCountry(),
+                reservationAdditionalInfo.getVatNr(),
+                reservationAdditionalInfo.getInvoicingAdditionalInfo(),
+                userAdditionalData
+            ));
+    }
 
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
         return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null, null);
@@ -275,11 +300,10 @@ public class UserManager {
     }
 
 
-    public boolean updatePassword(String username, String newPassword) {
+    public void updatePassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username).orElseThrow(IllegalStateException::new);
         Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
         Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
-        return true;
     }
 
 
