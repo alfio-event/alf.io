@@ -20,6 +20,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mozilla.javascript.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -72,8 +73,31 @@ public class ExtensionUtils {
      * @return
      */
     public static boolean needsJsonSerialization(Object returnObject) {
+        if (returnObject instanceof NativeJavaObject) {
+            return false;
+        }
         return returnObject != null
             // everything that is not included in the java.* package should be JSON-Serialized
-            && !returnObject.getClass().getPackage().getName().startsWith("java.");
+            && (!returnObject.getClass().getPackage().getName().startsWith("java."));
+    }
+
+    public static Object prepareForJson(Object o) {
+        if (o instanceof ScriptableObject) {
+            var no = (ScriptableObject) o;
+            for (var k : no.getIds()) {
+                var target = no.get(k);
+                if (target instanceof String || target instanceof Number) {
+                    var val = ScriptRuntime.toObject(Context.getCurrentContext(), no, target);
+                    if (k instanceof String) {
+                        no.put((String) k, no, val);
+                    } else if (k instanceof Integer) {
+                        no.put((int) k, no, val);
+                    }
+                } else if (target instanceof ScriptableObject) {
+                    prepareForJson(target);
+                }
+            }
+        }
+        return o;
     }
 }
