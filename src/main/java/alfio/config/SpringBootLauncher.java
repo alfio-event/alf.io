@@ -54,6 +54,6 @@ public class SpringBootLauncher {
         application.setAdditionalProfiles(additionalProfiles.toArray(new String[0]));
         ConfigurableApplicationContext applicationContext = application.run(args);
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
-        log.info("profiles: requested {}, active {}", profiles, String.join(", ", (CharSequence[]) environment.getActiveProfiles()));
+        log.info("profiles: requested {}, active {}", profiles, String.join(", ", environment.getActiveProfiles()));
     }
 }

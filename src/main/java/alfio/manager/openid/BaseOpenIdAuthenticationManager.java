@@ -96,6 +96,14 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         var accessTokenResponse = retrieveAccessToken(code);
         String idToken = (String) accessTokenResponse.get(ID_TOKEN);
 
+        // implementation note:
+        //
+        // the JWT token is not intended to be propagated to the client, which is not aware of the
+        // authentication method used.
+        //
+        // In addition to that, since we consider the Token Provider a trusted entity (specified by the admin),
+        // we don't *strictly* need to verify the token.
+        // This might change in the future if we decide to propagate the token to the client
         Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
         String subject = idTokenClaims.get(SUBJECT).asString();
         String email = idTokenClaims.get(EMAIL).asString();
@@ -106,10 +114,11 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
 
     private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user, Map<String, Claim> idTokenClaims) {
         if (!userManager.usernameExists(user.getEmail())) {
+            var configuration = openIdConfiguration();
             userRepository.create(user.getEmail(),
                 passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
-                retrieveClaimOrBlank(idTokenClaims, "given_name"),
-                retrieveClaimOrBlank(idTokenClaims, "family_name"),
+                retrieveClaimOrBlank(idTokenClaims, configuration.getGivenNameClaim()),
+                retrieveClaimOrBlank(idTokenClaims, configuration.getFamilyNameClaim()),
                 user.getEmail(),
                 true,
                 getUserType(),
@@ -266,8 +275,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if(HttpUtils.callSuccessful(response)) {
                 log.trace("Access Token successfully retrieved");
-                return Json.fromJson(response.body(), new TypeReference<>() {
-                });
+                return Json.fromJson(response.body(), new TypeReference<>() {});
             } else {
                 log.warn("cannot retrieve access token");
                 throw new IllegalStateException("cannot retrieve access token. Response from server: " +response.body());

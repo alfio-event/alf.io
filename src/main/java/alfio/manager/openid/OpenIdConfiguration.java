@@ -25,8 +25,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.core.env.Environment;
 
-import java.util.Objects;
-
+import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 
@@ -39,6 +38,8 @@ public class OpenIdConfiguration {
     private final String callbackURI;
     private final String authenticationUrl;
     private final String tokenEndpoint;
+    private final String givenNameClaim;
+    private final String familyNameClaim;
     private final String contentType;
     private final String rolesParameter;
     private final String alfioGroupsParameter;
@@ -52,6 +53,8 @@ public class OpenIdConfiguration {
                                @JsonProperty("callbackURI") String callbackURI,
                                @JsonProperty("authenticationUrl") String authenticationUrl,
                                @JsonProperty("tokenEndpoint") String tokenEndpoint,
+                               @JsonProperty("givenNameClaim") String givenNameClaim,
+                               @JsonProperty("familyNameClaim") String familyNameClaim,
                                @JsonProperty("contentType") String contentType,
                                @JsonProperty("rolesParameter") String rolesParameter,
                                @JsonProperty("alfioGroupsParameter") String alfioGroupsParameter,
@@ -63,7 +66,9 @@ public class OpenIdConfiguration {
         this.callbackURI = callbackURI;
         this.authenticationUrl = authenticationUrl;
         this.tokenEndpoint = tokenEndpoint;
-        this.contentType = Objects.requireNonNullElse(contentType, "application/x-www-form-urlencoded");
+        this.givenNameClaim = requireNonNullElse(givenNameClaim, "given_name");
+        this.familyNameClaim = requireNonNullElse(familyNameClaim, "family_name");
+        this.contentType = requireNonNullElse(contentType, "application/x-www-form-urlencoded");
         this.rolesParameter = rolesParameter;
         this.alfioGroupsParameter = alfioGroupsParameter;
         this.logoutUrl = logoutUrl;
@@ -79,6 +84,8 @@ public class OpenIdConfiguration {
             environment.getProperty("openid.callbackURI",baseUrl + "/callback"),
             environment.getProperty("openid.authenticationUrl"),
             environment.getProperty("openid.tokenEndpoint", "/authorize"),
+            environment.getProperty("openid.givenNameClaim"),
+            environment.getProperty("openid.familyNameClaim"),
             environment.getProperty("openid.contentType", "application/x-www-form-urlencoded"),
             environment.getProperty("openid.rolesParameter"),
             environment.getProperty("openid.alfioGroupsParameter"),

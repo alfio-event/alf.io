@@ -179,7 +179,9 @@ public class IndexController {
         "/subscription/{subscriptionId}/reservation/{reservationId}/error",
         // poll
         "/event/{eventShortName}/poll",
-        "/event/{eventShortName}/poll/{pollId}"
+        "/event/{eventShortName}/poll/{pollId}",
+        // user
+        "/my-orders"
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
                              @PathVariable(value = "subscriptionId", required = false) String subscriptionId,

@@ -83,6 +83,8 @@ import static alfio.util.Wrappers.optionally;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.*;
 
 @Component
@@ -631,7 +633,7 @@ public class EventManager {
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 atZone(tc.getValidCheckInFrom(), zoneId), atZone(tc.getValidCheckInTo(), zoneId),
                 atZone(tc.getTicketValidityStart(), zoneId), atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT),
-                Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), tc.getTicketAccessType());
+                requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), requireNonNullElse(tc.getTicketAccessType(), TicketCategory.TicketAccessType.INHERIT));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -653,7 +655,7 @@ public class EventManager {
             atZone(tc.getTicketValidityStart(), zoneId),
             atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
             Objects.requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT),
-            Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), tc.getTicketAccessType());
+            requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), tc.getTicketAccessType());
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
