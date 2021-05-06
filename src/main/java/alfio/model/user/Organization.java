@@ -75,6 +75,15 @@ public class Organization {
             .toHashCode();
     }
 
+    /**
+     * @deprecated use {@link #getExternalId()}
+     * @return the external ID, if present
+     */
+    @Deprecated
+    public String getNameOpenId() {
+        return externalId;
+    }
+
     @Getter
     public static class OrganizationContact {
         private final String name;

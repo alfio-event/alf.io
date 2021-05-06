@@ -70,7 +70,7 @@ public class ScriptingExecutionService {
         this.executorSupplier = executorSupplier;
         Context cx = ContextFactory.getGlobal().enterContext();
         try {
-            sealedScope = cx.initSafeStandardObjects();
+            sealedScope = cx.initSafeStandardObjects(null, true);
             sealedScope.put("log", sealedScope, log);
             sealedScope.put("GSON", sealedScope, Json.GSON);
             sealedScope.put("simpleHttpClient", sealedScope, simpleHttpClient);

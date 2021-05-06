@@ -138,7 +138,7 @@ public class ExtensionManager {
     void handleTicketCancelledForEvent(Event event, Collection<String> ticketUUIDs) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("ticketUUIDs", ticketUUIDs);
-
+        payload.put("eventMetadata", eventRepository.getMetadataForEvent(event.getId()));
         syncCall(ExtensionEvent.TICKET_CANCELLED, event, payload, Boolean.class);
     }
 
@@ -276,6 +276,14 @@ public class ExtensionManager {
         );
 
         syncCall(ExtensionEvent.RESERVATION_VALIDATION, purchaseContext, payload, Void.class);
+    }
+
+    void handleEventHeaderUpdate(Event event, Organization organization) {
+        Map<String, Object> payload = Map.of(
+            "eventMetadata", eventRepository.getMetadataForEvent(event.getId()),
+            "organization", organization
+        );
+        asyncCall(ExtensionEvent.EVENT_HEADER_UPDATED, event, payload);
     }
 
     void handleReservationsCreditNoteIssuedForEvent(Event event, List<String> reservationIds) {

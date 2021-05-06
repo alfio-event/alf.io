@@ -17,11 +17,16 @@
 package alfio.extension;
 
 import alfio.util.Json;
+import lombok.experimental.UtilityClass;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mozilla.javascript.*;
+import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.NativeJavaObject;
+import org.mozilla.javascript.NativeObject;
+import org.mozilla.javascript.Scriptable;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -32,6 +37,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Log4j2
+@UtilityClass
 public class ExtensionUtils {
 
     public static String format(String str, String... params) {
@@ -99,6 +106,8 @@ public class ExtensionUtils {
                 }
                 return res;
             }
+        } else if (o instanceof CharSequence) {
+            return o.toString();
         }
         return o;
     }

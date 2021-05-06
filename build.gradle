@@ -284,6 +284,18 @@ processResources {
     }
 }
 
+compileTestJava {
+    options.errorprone.disable('UnusedVariable',
+        'MixedMutabilityReturnType',
+        'MissingOverride',
+        'ImmutableEnumChecker', // not too useful, as it does not take into account the actual value of the field
+        'AlmostJavadoc',
+        'MissingSummary',
+        'EscapedEntity',
+        'EmptyBlockTag'
+    )
+}
+
 compileJava {
     options.compilerArgs = ['-Xlint:all,-serial,-processing']
 

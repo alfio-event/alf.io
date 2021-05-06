@@ -358,6 +358,7 @@ public class EventManager {
         if(!original.getBegin().equals(begin) || !original.getEnd().equals(end)) {
             fixOutOfRangeCategories(em, username, zoneId, end);
         }
+        extensionManager.handleEventHeaderUpdate(eventRepository.findById(eventId), organizationRepository.findOrganizationForUser(username, em.getOrganizationId()).orElseThrow());
     }
 
     public void updateEventPrices(EventAndOrganizationId original, EventModification em, String username) {

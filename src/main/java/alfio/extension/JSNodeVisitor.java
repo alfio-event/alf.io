@@ -17,11 +17,11 @@
 
 package alfio.extension;
 
-import java.util.ArrayList;
-
 import alfio.extension.exception.ScriptNotValidException;
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.*;
+
+import java.util.ArrayList;
 
 /**
  *
@@ -83,7 +83,7 @@ class JSNodeVisitor implements NodeVisitor {
                         // when the function name is found, check if it was called from somewhere else
                         // if this function is called from another place and it contains another function call, throw an exception
                         if (functionCalls.contains(id)) {
-                            throw new ScriptNotValidException("Script not valid.");
+                            throw new ScriptNotValidException("Script not valid. Cannot call nested functions: "+name.getIdentifier());
                         }
                         break;
                     }
@@ -98,7 +98,13 @@ class JSNodeVisitor implements NodeVisitor {
             || (node instanceof PropertyGet && ((PropertyGet) node).getRight().getString().equals("System"))
             || (node instanceof PropertyGet && ((PropertyGet) node).getRight().getString().equals("getClass"))
             || (node instanceof Name && node.getString().equals("newInstance"))) {
-            throw new ScriptNotValidException("Script not valid.");
+            throw new ScriptNotValidException("Script not valid. One or more of the following components have been detected: \n" +
+                "- while() Loop\n" +
+                "- with() Statement\n" +
+                "- a labeled statement\n" +
+                "- Access to java.lang.System\n" +
+                "- Access to Object.getClass()\n" +
+                "- Java reflection usage");
         }
     }
 
