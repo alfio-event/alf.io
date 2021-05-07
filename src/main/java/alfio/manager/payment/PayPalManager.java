@@ -136,7 +136,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                 if("APPROVED".equals(status)) {
                     saveToken(reservation.getId(), spec.getPurchaseContext(), new PayPalToken(order.payer().payerId(), order.id(), hmac));
                 }
-                return "/" + purchaseContextType + "/" + spec.getPurchaseContext().getPublicIdentifier() + "/reservation/" + spec.getReservationId();
+                return "/" + purchaseContextType + "/" + publicIdentifier + "/reservation/" + spec.getReservationId();
             } else if("CREATED".equals(status)) {
                 //add 15 minutes of validity in case the paypal flow is slow
                 ticketReservationRepository.updateValidity(spec.getReservationId(), DateUtils.addMinutes(reservation.getValidity(), 15));

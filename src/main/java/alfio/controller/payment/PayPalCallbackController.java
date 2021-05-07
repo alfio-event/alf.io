@@ -19,6 +19,7 @@ package alfio.controller.payment;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.payment.PayPalManager;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.token.PayPalToken;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ import java.util.Optional;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Controller
-@RequestMapping("/reservation/{reservationId}/payment/paypal")
+@RequestMapping("/{purchaseContextType}/{purchaseContextIdentifier}/reservation/{reservationId}/payment/paypal")
 @RequiredArgsConstructor
 public class PayPalCallbackController {
 
@@ -42,12 +43,15 @@ public class PayPalCallbackController {
     private final PayPalManager payPalManager;
 
     @GetMapping("/confirm")
-    public String payPalSuccess(@PathVariable("reservationId") String reservationId,
+    public String payPalSuccess(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
+                                @PathVariable("purchaseContextIdentifier") String purchaseContextId,
+                                @PathVariable("reservationId") String reservationId,
                                 @RequestParam(value = "token", required = false) String payPalPaymentId,
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
                                 @RequestParam(value = "hmac") String hmac) {
 
-        var optionalPurchaseContext = purchaseContextManager.findByReservationId(reservationId);
+        var optionalPurchaseContext = purchaseContextManager.findByReservationId(reservationId)
+            .filter(pc -> pc.getType() == purchaseContextType && pc.getPublicIdentifier().equals(purchaseContextId));
         if(optionalPurchaseContext.isEmpty()) {
             return "redirect:/";
         }
