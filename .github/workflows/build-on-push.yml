@@ -39,11 +39,11 @@ jobs:
                   java-version: 11
             - name: Build with Gradle
               run: ./gradlew build distribution jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
-            - name: upload-to-coveralls
-              if: matrix.postgresql == '13' # run only once
-              run: ./gradlew coveralls
-              env:
-                  COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+#            - name: upload-to-coveralls
+#              if: matrix.postgresql == '13' # run only once
+#              run: ./gradlew coveralls
+#              env:
+#                  COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
             -   name: 'Upload Build'
                 if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '9.6'}}
                 uses: actions/upload-artifact@v2
