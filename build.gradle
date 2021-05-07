@@ -45,7 +45,7 @@ buildscript {
 }
 
 plugins {
-    id 'io.freefair.lombok' version '5.2.1'
+    id 'io.freefair.lombok' version '5.3.3.3'
     id 'java'
     id 'idea'
     id 'org.kordamp.gradle.jacoco' version '0.45.0'
