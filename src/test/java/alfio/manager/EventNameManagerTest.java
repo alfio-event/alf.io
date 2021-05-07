@@ -17,10 +17,10 @@
 package alfio.manager;
 
 import alfio.repository.EventRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -35,7 +35,7 @@ public class EventNameManagerTest {
     }
 
     @Test
-    public void dashedLowerCaseIfLessThan15Chars() throws Exception {
+    public void dashedLowerCaseIfLessThan15Chars() {
         when(eventRepository.countByShortName("my-event-2015")).thenReturn(0);
         assertEquals("my-event-2015", eventNameManager.generateShortName("my Event 2015"));
     }
@@ -49,27 +49,27 @@ public class EventNameManagerTest {
     }
 
     @Test
-    public void randomNameIfCroppedNotAvailable() throws Exception {
+    public void randomNameIfCroppedNotAvailable() {
         when(eventRepository.countByShortName("vdt2016")).thenReturn(1);
         when(eventRepository.countByShortName("vdz2016")).thenReturn(1);
-        assertNotEquals("vdt2016", eventNameManager.generateShortName("Voxxed Days Ticino 2016"));
-        assertNotEquals("vdz2016", eventNameManager.generateShortName("Voxxed Days Zürich 2016"));
+        Assertions.assertNotEquals("vdt2016", eventNameManager.generateShortName("Voxxed Days Ticino 2016"));
+        Assertions.assertNotEquals("vdz2016", eventNameManager.generateShortName("Voxxed Days Zürich 2016"));
     }
 
     @Test
-    public void removePunctuation() throws Exception {
+    public void removePunctuation() {
         assertEquals("bigg-i-o-2015", eventNameManager.generateShortName("BigG I/O 2015"));
     }
 
     @Test
-    public void giveUpAfter5Times() throws Exception {
+    public void giveUpAfter5Times() {
         when(eventRepository.countByShortName(anyString())).thenReturn(1);
         assertEquals("", eventNameManager.generateShortName("Pippo Baudo and Friends 2017"));
         verify(eventRepository, times(6)).countByShortName(anyString());
     }
 
     @Test
-    public void removeUnicodeCharacters() throws Exception {
+    public void removeUnicodeCharacters() {
         assertEquals("sa-lsia", eventNameManager.generateShortName("sa\u2013lsia"));
     }
 

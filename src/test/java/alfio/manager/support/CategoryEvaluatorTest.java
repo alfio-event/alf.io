@@ -19,11 +19,10 @@ package alfio.manager.support;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.repository.TicketCategoryRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -52,27 +51,27 @@ public class CategoryEvaluatorTest {
     @Test
     public void allowTicketCancellationIfItBelongsToAPublicCategory() {
         when(category.isAccessRestricted()).thenReturn(false);
-        assertTrue(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
+        Assertions.assertTrue(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
     }
 
     @Test
     public void doNotAllowCancellationIfCategoryAllBounded() {
         when(category.isAccessRestricted()).thenReturn(true);
         when(tcr.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(0);
-        assertFalse(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
+        Assertions.assertFalse(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
     }
 
     @Test
     public void allowCancellationOnRestrictedCategoryIfAtLeastOneBounded() {
         when(category.isAccessRestricted()).thenReturn(true);
         when(tcr.countUnboundedCategoriesByEventId(eq(eventId))).thenReturn(1);
-        assertTrue(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
+        Assertions.assertTrue(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
     }
 
     @Test
-    public void doNotAllowCancellationIfTicketStatusIsNotAcquired() throws Exception {
+    public void doNotAllowCancellationIfTicketStatusIsNotAcquired() {
         when(category.isAccessRestricted()).thenReturn(false);
         when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.CHECKED_IN);
-        assertFalse(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
+        Assertions.assertFalse(CategoryEvaluator.isTicketCancellationAvailable(tcr, ticket));
     }
 }

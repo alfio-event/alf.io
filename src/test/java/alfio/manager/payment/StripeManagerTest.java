@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -71,10 +71,10 @@ public class StripeManagerTest {
     }
 
     @Test
-    public void successFlow() throws StripeException {
+    public void successFlow() {
         BaseStripeManager baseStripeManager = new BaseStripeManager(configurationManager, configurationRepository, ticketRepository, mock(Environment.class)) {
             @Override
-            protected Optional<Charge> charge(PaymentSpecification spec, Map<String, Object> chargeParams ) throws StripeException {
+            protected Optional<Charge> charge(PaymentSpecification spec, Map<String, Object> chargeParams ) {
                 return Optional.of( new Charge() {{
                     setId(paymentId);
                     setDescription("description");

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 public class PriceContainerTest {
 
     @Test
-    public void getFinalPriceInputDoNotApplyVat() throws Exception {
+    public void getFinalPriceInputDoNotApplyVat() {
         Stream.of(PriceContainer.VatStatus.INCLUDED, PriceContainer.VatStatus.NONE)
             .forEach(vatStatus -> {
                 PriceContainerImpl vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), vatStatus);
@@ -55,7 +55,7 @@ public class PriceContainerTest {
     }
 
     @Test
-    public void getFinalPriceInputVatNotIncludedSingle() throws Exception {
+    public void getFinalPriceInputVatNotIncludedSingle() {
         PriceContainerImpl vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), PriceContainer.VatStatus.NOT_INCLUDED);
         assertEquals(new BigDecimal("13.00"), vs.getFinalPrice());
 
@@ -115,7 +115,7 @@ public class PriceContainerTest {
     }
 
     @Test
-    public void getFinalPriceInputVatNotIncluded() throws Exception {
+    public void getFinalPriceInputVatNotIncluded() {
         generateTestStream(PriceContainer.VatStatus.NOT_INCLUDED)
             .forEach(p -> {
                 PriceContainer priceContainer = p.getRight();

@@ -16,10 +16,10 @@
  */
 package alfio.manager;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -32,7 +32,7 @@ public class FileDownloadManagerIntegrationTest {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    @BeforeClass
+    @BeforeAll
     public static void startServer() {
         mockServer = ClientAndServer.startClientAndServer(4242);
 
@@ -48,7 +48,7 @@ public class FileDownloadManagerIntegrationTest {
             .respond(HttpResponse.response().withStatusCode(404));
     }
 
-    @AfterClass
+    @AfterAll
     public static void stopServer() {
         mockServer.stop();
     }
@@ -56,14 +56,14 @@ public class FileDownloadManagerIntegrationTest {
     @Test
     public void testFileDownloadSuccess() {
         var file = new FileDownloadManager(httpClient).downloadFile("http://localhost:4242/test.txt");
-        Assert.assertEquals("text/plain; charset=utf-8", file.getType());
-        Assert.assertEquals("test.txt", file.getName());
-        Assert.assertEquals("Hello World!".length(), file.getFile().length);
+        Assertions.assertEquals("text/plain; charset=utf-8", file.getType());
+        Assertions.assertEquals("test.txt", file.getName());
+        Assertions.assertEquals("Hello World!".length(), file.getFile().length);
     }
 
     @Test
     public void testFileDownloadNotFound() {
         var res = new FileDownloadManager(httpClient).downloadFile("http://localhost:4242/404");
-        Assert.assertNull(res);
+        Assertions.assertNull(res);
     }
 }

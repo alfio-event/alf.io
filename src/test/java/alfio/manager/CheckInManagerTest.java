@@ -25,15 +25,15 @@ import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.TestUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 import java.util.Optional;
 
 import static alfio.model.system.ConfigurationKeys.CHECK_IN_STATS;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 public class CheckInManagerTest {
@@ -49,7 +49,7 @@ public class CheckInManagerTest {
     private Event event;
 
 
-    @Before
+    @BeforeEach
     public void setUp() {
         eventRepository = mock(EventRepository.class);
         configurationManager = mock(ConfigurationManager.class);

@@ -23,20 +23,21 @@ import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.ContentLanguage;
 import alfio.util.BaseIntegrationTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -60,7 +61,7 @@ public class I18nManagerIntegrationTest extends BaseIntegrationTest {
 
         for (ContentLanguage cl : i18nManager.getAvailableLanguages()) {
             formatDateWith(cl); //<- will launch an exception if the format is not valid
-            Assert.assertTrue(true);
+            assertTrue(true);
         }
     }
 
@@ -70,18 +71,18 @@ public class I18nManagerIntegrationTest extends BaseIntegrationTest {
      */
     @Test
     public void testFormatSpecifically() {
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ITALIAN));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ENGLISH));
-        Assert.assertEquals("03.02.1999 04:05", formatDateWith(ContentLanguage.GERMAN));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.DUTCH));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.FRENCH));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ROMANIAN));
-        Assert.assertEquals("03.02.1999 04:05", formatDateWith(ContentLanguage.PORTUGUESE));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.TURKISH));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.SPANISH));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.POLISH));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.DANISH));
-        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.BULGARIAN));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ITALIAN));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ENGLISH));
+        assertEquals("03.02.1999 04:05", formatDateWith(ContentLanguage.GERMAN));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.DUTCH));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.FRENCH));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ROMANIAN));
+        assertEquals("03.02.1999 04:05", formatDateWith(ContentLanguage.PORTUGUESE));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.TURKISH));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.SPANISH));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.POLISH));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.DANISH));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.BULGARIAN));
     }
 
     private String formatDateWith(ContentLanguage cl) {

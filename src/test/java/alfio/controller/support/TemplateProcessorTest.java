@@ -20,6 +20,7 @@ import alfio.manager.FileUploadManager;
 import alfio.model.Event;
 import alfio.model.FileBlobMetadata;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -28,7 +29,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -60,8 +60,8 @@ public class TemplateProcessorTest {
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
         when(fileUploadManager.findMetadata(e.getFileBlobId())).thenReturn(Optional.of(metadata));
         TemplateProcessor.extractImageModel(e, fileUploadManager).ifPresent(imageData -> {
-            assertTrue(imageData.getImageWidth() <= 300);
-            assertTrue(imageData.getImageHeight() <= 150);
+            Assertions.assertTrue(imageData.getImageWidth() <= 300);
+            Assertions.assertTrue(imageData.getImageHeight() <= 150);
         });
     }
 }

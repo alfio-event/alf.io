@@ -17,10 +17,10 @@
 package alfio.extension;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.*;
 
@@ -30,6 +30,8 @@ import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class SimpleHttpClientIntegrationTest {
 
     private static ClientAndServer mockServer;
@@ -37,12 +39,12 @@ public class SimpleHttpClientIntegrationTest {
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final SimpleHttpClient simpleHttpClient = new SimpleHttpClient(httpClient);
 
-    @BeforeClass
+    @BeforeAll
     public static void startServer() {
         mockServer = ClientAndServer.startClientAndServer(4243);
     }
 
-    @AfterClass
+    @AfterAll
     public static void stopServer() {
         mockServer.stop();
     }
@@ -56,13 +58,13 @@ public class SimpleHttpClientIntegrationTest {
 
         var res = simpleHttpClient.get("http://localhost:4243/simple-get-1");
 
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals("ok", res.getBody());
-        Assert.assertEquals(200, res.getCode());
+        assertTrue(res.isSuccessful());
+        assertEquals("ok", res.getBody());
+        assertEquals(200, res.getCode());
 
         var notFound = simpleHttpClient.get("http://localhost:4243/simple-get-2-failure");
-        Assert.assertFalse(notFound.isSuccessful());
-        Assert.assertEquals(404, notFound.getCode());
+        assertFalse(notFound.isSuccessful());
+        assertEquals(404, notFound.getCode());
     }
 
     @Test
@@ -72,13 +74,13 @@ public class SimpleHttpClientIntegrationTest {
             .respond(HttpResponse.response("ok").withStatusCode(200).withHeader("Content-Type", "text/plain"));
 
         var missingHeader = simpleHttpClient.get("http://localhost:4243/simple-get-header", Map.of());
-        Assert.assertFalse(missingHeader.isSuccessful());
-        Assert.assertEquals(404, missingHeader.getCode());
+        assertFalse(missingHeader.isSuccessful());
+        Assertions.assertEquals(404, missingHeader.getCode());
 
 
         var res = simpleHttpClient.get("http://localhost:4243/simple-get-header", Map.of("Custom-Header", "Custom-Value"));
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals(200, res.getCode());
+        assertTrue(res.isSuccessful());
+        assertEquals(200, res.getCode());
     }
 
     @Test
@@ -90,15 +92,15 @@ public class SimpleHttpClientIntegrationTest {
         var res = simpleHttpClient.get("http://localhost:4243/simple-get-json");
 
         var body = res.getJsonBody(Map.class);
-        Assert.assertNotNull(body);
-        Assert.assertTrue(body.containsKey("key"));
-        Assert.assertEquals("value", body.get("key"));
+        assertNotNull(body);
+        assertTrue(body.containsKey("key"));
+        Assertions.assertEquals("value", body.get("key"));
 
         @SuppressWarnings("unchecked")
         var body2 = (Map<String, String>) res.getJsonBody();
-        Assert.assertNotNull(body2);
-        Assert.assertTrue(body2.containsKey("key"));
-        Assert.assertEquals("value", body2.get("key"));
+        assertNotNull(body2);
+        assertTrue(body2.containsKey("key"));
+        Assertions.assertEquals("value", body2.get("key"));
     }
 
     @Test
@@ -108,8 +110,8 @@ public class SimpleHttpClientIntegrationTest {
             .respond(HttpResponse.response().withStatusCode(200));
 
         var res = simpleHttpClient.head("http://localhost:4243/simple-head");
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals(200, res.getCode());
+        assertTrue(res.isSuccessful());
+        Assertions.assertEquals(200, res.getCode());
     }
 
     @Test
@@ -119,13 +121,13 @@ public class SimpleHttpClientIntegrationTest {
             .respond(HttpResponse.response().withStatusCode(200));
 
         var noHeader = simpleHttpClient.head("http://localhost:4243/simple-head-header");
-        Assert.assertFalse(noHeader.isSuccessful());
-        Assert.assertEquals(404, noHeader.getCode());
+        assertFalse(noHeader.isSuccessful());
+        Assertions.assertEquals(404, noHeader.getCode());
 
 
         var res = simpleHttpClient.head("http://localhost:4243/simple-head-header", Map.of("Custom-Header", "Custom-Value"));
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals(200, res.getCode());
+        assertTrue(res.isSuccessful());
+        Assertions.assertEquals(200, res.getCode());
     }
 
     @Test
@@ -135,12 +137,12 @@ public class SimpleHttpClientIntegrationTest {
             .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
 
         var res = simpleHttpClient.post("http://localhost:4243/simple-post");
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals(200, res.getCode());
-        Assert.assertEquals("Hello World!", res.getBody());
-        Assert.assertTrue(res.getHeaders().containsKey("Content-Type"));
-        Assert.assertEquals("text/plain", res.getHeaders().get("Content-Type").get(0));
-        Assert.assertEquals("text/plain", res.getHeader("Content-Type"));
+        assertTrue(res.isSuccessful());
+        Assertions.assertEquals(200, res.getCode());
+        Assertions.assertEquals("Hello World!", res.getBody());
+        assertTrue(res.getHeaders().containsKey("Content-Type"));
+        Assertions.assertEquals("text/plain", res.getHeaders().get("Content-Type").get(0));
+        Assertions.assertEquals("text/plain", res.getHeader("Content-Type"));
     }
 
     @Test
@@ -149,9 +151,9 @@ public class SimpleHttpClientIntegrationTest {
             .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-header").withHeader("Custom-Header", "Custom-Value"))
             .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
 
-        Assert.assertFalse(simpleHttpClient.post("http://localhost:4243/simple-post-header").isSuccessful());
+        assertFalse(simpleHttpClient.post("http://localhost:4243/simple-post-header").isSuccessful());
 
-        Assert.assertTrue(simpleHttpClient.post("http://localhost:4243/simple-post-header", Map.of("Custom-Header", "Custom-Value")).isSuccessful());
+        assertTrue(simpleHttpClient.post("http://localhost:4243/simple-post-header", Map.of("Custom-Header", "Custom-Value")).isSuccessful());
     }
 
     @Test
@@ -161,17 +163,17 @@ public class SimpleHttpClientIntegrationTest {
             .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
 
         var resNok = simpleHttpClient.post("http://localhost:4243/simple-post-json", Map.of(), Map.of("not", "correct"));
-        Assert.assertFalse(resNok.isSuccessful());
-        Assert.assertEquals(404, resNok.getCode());
+        assertFalse(resNok.isSuccessful());
+        Assertions.assertEquals(404, resNok.getCode());
 
         var res = simpleHttpClient.post("http://localhost:4243/simple-post-json", Map.of(), Map.of("key", "value"));
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals(200, res.getCode());
+        assertTrue(res.isSuccessful());
+        Assertions.assertEquals(200, res.getCode());
 
 
         var res2 = simpleHttpClient.postJSON("http://localhost:4243/simple-post-json", Map.of(), Map.of("key", "value"));
-        Assert.assertTrue(res2.isSuccessful());
-        Assert.assertEquals(200, res2.getCode());
+        assertTrue(res2.isSuccessful());
+        Assertions.assertEquals(200, res2.getCode());
     }
 
     @Test
@@ -185,8 +187,8 @@ public class SimpleHttpClientIntegrationTest {
             .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
 
         var res = simpleHttpClient.postForm("http://localhost:4243/simple-post-form", Map.of(), Map.of("k1", "v1", "k2", "v2"));
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals(200, res.getCode());
+        assertTrue(res.isSuccessful());
+        Assertions.assertEquals(200, res.getCode());
     }
 
     @Test
@@ -199,11 +201,11 @@ public class SimpleHttpClientIntegrationTest {
         FileUtils.write(tmp, "content", StandardCharsets.UTF_8.toString());
 
         var res = simpleHttpClient.postFileAndSaveResponse("http://localhost:4243/simple-post-file", Map.of(), tmp.getAbsolutePath(), tmp.getName(), "text/plain");
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals(200, res.getCode());
-        Assert.assertNotNull(res.getTempFilePath());
+        assertTrue(res.isSuccessful());
+        Assertions.assertEquals(200, res.getCode());
+        assertNotNull(res.getTempFilePath());
         var saved = new File(res.getTempFilePath());
-        Assert.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8.toString()));
+        Assertions.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8.toString()));
 
         tmp.delete();
         saved.delete();
@@ -217,11 +219,11 @@ public class SimpleHttpClientIntegrationTest {
             .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
 
         var res = simpleHttpClient.postBodyAndSaveResponse("http://localhost:4243/simple-post-body", Map.of(), "content", "text/plain");
-        Assert.assertTrue(res.isSuccessful());
-        Assert.assertEquals(200, res.getCode());
-        Assert.assertNotNull(res.getTempFilePath());
+        assertTrue(res.isSuccessful());
+        Assertions.assertEquals(200, res.getCode());
+        assertNotNull(res.getTempFilePath());
         var saved = new File(res.getTempFilePath());
-        Assert.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8.toString()));
+        Assertions.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8.toString()));
         saved.delete();
     }
 }

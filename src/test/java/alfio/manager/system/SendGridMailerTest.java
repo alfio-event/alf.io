@@ -21,8 +21,8 @@ import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import org.apache.commons.lang3.ArrayUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
@@ -47,8 +47,8 @@ public class SendGridMailerTest {
 
     private HttpClient client;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp() {
         configurationManager = mock(ConfigurationManager.class);
         client = mock(HttpClient.class);
         sendGridMailer = new SendGridMailer(client, configurationManager);

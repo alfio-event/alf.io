@@ -35,13 +35,12 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -54,9 +53,10 @@ import java.util.stream.IntStream;
 import static alfio.model.modification.AdminReservationModification.Notification.EMPTY;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static java.util.stream.Collectors.toList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -85,13 +85,13 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     @Autowired
     private ConfigurationRepository configurationRepository;
 
-    @Before
+    @BeforeEach
     public void init() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
     }
 
     @Test
-    public void testReserveFromExistingCategory() throws Exception {
+    public void testReserveFromExistingCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -101,7 +101,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingMultipleCategories() throws Exception {
+    public void testReserveFromExistingMultipleCategories() {
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -115,7 +115,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingCategoryNotEnoughSeatsNotBounded() throws Exception {
+    public void testReserveFromExistingCategoryNotEnoughSeatsNotBounded() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -125,7 +125,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveExistingCategoryNotEnoughSeatsNotBoundedSoldOut() throws Exception {
+    public void testReserveExistingCategoryNotEnoughSeatsNotBoundedSoldOut() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -135,7 +135,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingCategoryNotEnoughSeatsBounded() throws Exception {
+    public void testReserveFromExistingCategoryNotEnoughSeatsBounded() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -145,7 +145,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingCategoryNotEnoughSeatsNoExtensionAllowedBounded() throws Exception {
+    public void testReserveFromExistingCategoryNotEnoughSeatsNoExtensionAllowedBounded() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -155,7 +155,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingCategoryNotEnoughSeatsNoExtensionAllowedNotBounded() throws Exception {
+    public void testReserveFromExistingCategoryNotEnoughSeatsNoExtensionAllowedNotBounded() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -165,7 +165,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromNewCategory() throws Exception {
+    public void testReserveFromNewCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -199,7 +199,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveMixed() throws Exception {
+    public void testReserveMixed() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -245,7 +245,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testConfirmReservation() throws Exception {
+    public void testConfirmReservation() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -290,7 +290,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     private Triple<Event, String, TicketReservation> performExistingCategoryTest(List<TicketCategoryModification> categories, boolean bounded,
                                                                                  List<Integer> attendeesNr, boolean addSeatsIfNotAvailable, boolean expectSuccess,
                                                                                  int reservedTickets, int expectedEventSeats) {
-        assertEquals("Test error: categories' size must be equal to attendees' size", categories.size(), attendeesNr.size());
+        assertEquals(categories.size(), attendeesNr.size(), "Test error: categories' size must be equal to attendees' size");
         Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
@@ -331,7 +331,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
 
         assertTrue(result.isSuccess());
         Pair<TicketReservation, List<Ticket>> data = result.getData();
-        assertTrue(data.getRight().size() == attendeesNr.stream().mapToInt(i -> i).sum());
+        assertEquals(data.getRight().size(), attendeesNr.stream().mapToInt(i -> i).sum());
         assertNotNull(data.getLeft());
         Event modified = eventManager.getSingleEvent(event.getShortName(), username);
         assertEquals(expectedEventSeats, eventRepository.countExistingTickets(event.getId()).intValue());

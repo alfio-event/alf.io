@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static alfio.test.util.TestUtil.clockProvider;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -56,7 +56,7 @@ public class TemplateResourceTest {
     }
 
     @Test
-    public void buildModelForTicketEmail() throws Exception {
+    public void buildModelForTicketEmail() {
         Pair<ZonedDateTime, ZonedDateTime> dates = getDates();
         Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, "Https://test", "Https://test", "Https://test", ticket, ticketCategory, Map.of());
         assertEquals(dates.getLeft(), model.get("validityStart"));
@@ -64,7 +64,7 @@ public class TemplateResourceTest {
     }
 
     @Test
-    public void buildModelForTicketPDF() throws Exception {
+    public void buildModelForTicketPDF() {
         Pair<ZonedDateTime, ZonedDateTime> dates = getDates();
         when(ticket.ticketCode(anyString())).thenReturn("abcd");
         when(event.getPrivateKey()).thenReturn("key");

@@ -24,24 +24,21 @@ import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.util.BaseIntegrationTest;
 import org.apache.commons.lang3.time.DateUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
-import static alfio.util.BaseIntegrationTest.ONE_PIXEL_BLACK_GIF;
+import static org.junit.jupiter.api.Assertions.*;
 
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -64,17 +61,17 @@ public class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
 
         fileUploadManager.outputFile(id, baos);
 
-        Assert.assertArrayEquals(FILE, baos.toByteArray());
+        assertArrayEquals(FILE, baos.toByteArray());
 
         Optional<FileBlobMetadata> metadata = fileUploadManager.findMetadata(id);
-        Assert.assertTrue(metadata.isPresent());
-        Assert.assertEquals("myfile.txt", metadata.get().getName());
-        Assert.assertEquals("text/plain", metadata.get().getContentType());
+        assertTrue(metadata.isPresent());
+        assertEquals("myfile.txt", metadata.get().getName());
+        assertEquals("text/plain", metadata.get().getContentType());
 
         //
 
         fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), 1));
-        Assert.assertFalse(fileUploadManager.findMetadata(id).isPresent());
+        assertFalse(fileUploadManager.findMetadata(id).isPresent());
     }
 
 
@@ -88,17 +85,17 @@ public class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
 
         Optional<FileBlobMetadata> metadata = fileUploadManager.findMetadata(id);
 
-        Assert.assertTrue(metadata.isPresent());
+        assertTrue(metadata.isPresent());
 
-        Assert.assertEquals("1", metadata.get().getAttributes().get("width"));
-        Assert.assertEquals("1", metadata.get().getAttributes().get("height"));
+        assertEquals("1", metadata.get().getAttributes().get("width"));
+        assertEquals("1", metadata.get().getAttributes().get("height"));
 
         fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), 1));
-        Assert.assertFalse(fileUploadManager.findMetadata(id).isPresent());
+        assertFalse(fileUploadManager.findMetadata(id).isPresent());
     }
 
     @Test
     public void testFindMetadataNotPresent() {
-        Assert.assertFalse(fileUploadManager.findMetadata("unknownid").isPresent());
+        assertFalse(fileUploadManager.findMetadata("unknownid").isPresent());
     }
 }

@@ -33,14 +33,12 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
@@ -51,8 +49,9 @@ import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -84,7 +83,7 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
     Event event;
     String user;
 
-    @Before
+    @BeforeEach
     public void ensureConfiguration() {
 
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
@@ -101,98 +100,98 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testGlobal() {
-        Assert.assertFalse(uploadedResourceManager.hasResource("file_name.txt"));
-        Assert.assertTrue(uploadedResourceManager.findAll().isEmpty());
+        assertFalse(uploadedResourceManager.hasResource("file_name.txt"));
+        assertTrue(uploadedResourceManager.findAll().isEmpty());
 
         UploadBase64FileModification toSave = new UploadBase64FileModification();
         toSave.setFile(FILE);
         toSave.setName("file_name.txt");
         toSave.setType("text/plain");
         Optional<Integer> savedResource = uploadedResourceManager.saveResource(toSave);
-        Assert.assertTrue(savedResource.isPresent());
-        Assert.assertEquals(1, savedResource.get().intValue());
+        assertTrue(savedResource.isPresent());
+        assertEquals(1, savedResource.get().intValue());
 
-        Assert.assertTrue(uploadedResourceManager.hasResource("file_name.txt"));
-        Assert.assertEquals(1, uploadedResourceManager.findAll().size());
-        Assert.assertEquals(toSave.getName(), uploadedResourceManager.get("file_name.txt").getName());
+        assertTrue(uploadedResourceManager.hasResource("file_name.txt"));
+        assertEquals(1, uploadedResourceManager.findAll().size());
+        assertEquals(toSave.getName(), uploadedResourceManager.get("file_name.txt").getName());
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource("file_name.txt", baos);
-        Assert.assertArrayEquals(FILE, baos.toByteArray());
+        assertArrayEquals(FILE, baos.toByteArray());
 
         toSave.setFile(ONE_PIXEL_BLACK_GIF);
         savedResource = uploadedResourceManager.saveResource(toSave);
-        Assert.assertTrue(savedResource.isPresent());
-        Assert.assertEquals(1, savedResource.get().intValue());
+        assertTrue(savedResource.isPresent());
+        assertEquals(1, savedResource.get().intValue());
 
         ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource("file_name.txt", baos1);
-        Assert.assertArrayEquals(ONE_PIXEL_BLACK_GIF, baos1.toByteArray());
+        assertArrayEquals(ONE_PIXEL_BLACK_GIF, baos1.toByteArray());
     }
 
     @Test
     public void testOrganization() {
         int orgId = event.getOrganizationId();
-        Assert.assertFalse(uploadedResourceManager.hasResource(orgId, "file_name.txt"));
-        Assert.assertTrue(uploadedResourceManager.findAll(orgId).isEmpty());
+        assertFalse(uploadedResourceManager.hasResource(orgId, "file_name.txt"));
+        assertTrue(uploadedResourceManager.findAll(orgId).isEmpty());
 
         UploadBase64FileModification toSave = new UploadBase64FileModification();
         toSave.setFile(FILE);
         toSave.setName("file_name.txt");
         toSave.setType("text/plain");
         var savedResource = uploadedResourceManager.saveResource(orgId, toSave);
-        Assert.assertTrue(savedResource.isPresent());
-        Assert.assertEquals(1, savedResource.get().intValue());
+        assertTrue(savedResource.isPresent());
+        assertEquals(1, savedResource.get().intValue());
 
-        Assert.assertTrue(uploadedResourceManager.hasResource(orgId, "file_name.txt"));
-        Assert.assertEquals(1, uploadedResourceManager.findAll(orgId).size());
-        Assert.assertEquals(toSave.getName(), uploadedResourceManager.get(orgId, "file_name.txt").getName());
+        assertTrue(uploadedResourceManager.hasResource(orgId, "file_name.txt"));
+        assertEquals(1, uploadedResourceManager.findAll(orgId).size());
+        assertEquals(toSave.getName(), uploadedResourceManager.get(orgId, "file_name.txt").getName());
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource(orgId, "file_name.txt", baos);
-        Assert.assertArrayEquals(FILE, baos.toByteArray());
+        assertArrayEquals(FILE, baos.toByteArray());
 
         toSave.setFile(ONE_PIXEL_BLACK_GIF);
         savedResource = uploadedResourceManager.saveResource(orgId, toSave);
-        Assert.assertTrue(savedResource.isPresent());
-        Assert.assertEquals(1, savedResource.get().intValue());
+        assertTrue(savedResource.isPresent());
+        assertEquals(1, savedResource.get().intValue());
 
         ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource(orgId, "file_name.txt", baos1);
-        Assert.assertArrayEquals(ONE_PIXEL_BLACK_GIF, baos1.toByteArray());
+        assertArrayEquals(ONE_PIXEL_BLACK_GIF, baos1.toByteArray());
     }
 
     @Test
     public void testEvent() {
         int orgId = event.getOrganizationId();
         int eventId = event.getId();
-        Assert.assertFalse(uploadedResourceManager.hasResource(orgId, eventId, "file_name.txt"));
-        Assert.assertTrue(uploadedResourceManager.findAll(orgId, eventId).isEmpty());
+        assertFalse(uploadedResourceManager.hasResource(orgId, eventId, "file_name.txt"));
+        assertTrue(uploadedResourceManager.findAll(orgId, eventId).isEmpty());
 
         UploadBase64FileModification toSave = new UploadBase64FileModification();
         toSave.setFile(FILE);
         toSave.setName("file_name.txt");
         toSave.setType("text/plain");
         var savedResource = uploadedResourceManager.saveResource(orgId, eventId, toSave);
-        Assert.assertTrue(savedResource.isPresent());
-        Assert.assertEquals(1, savedResource.get().intValue());
+        assertTrue(savedResource.isPresent());
+        assertEquals(1, savedResource.get().intValue());
 
-        Assert.assertTrue(uploadedResourceManager.hasResource(orgId, eventId, "file_name.txt"));
-        Assert.assertEquals(1, uploadedResourceManager.findAll(orgId, eventId).size());
-        Assert.assertEquals(toSave.getName(), uploadedResourceManager.get(orgId, eventId, "file_name.txt").getName());
+        assertTrue(uploadedResourceManager.hasResource(orgId, eventId, "file_name.txt"));
+        assertEquals(1, uploadedResourceManager.findAll(orgId, eventId).size());
+        assertEquals(toSave.getName(), uploadedResourceManager.get(orgId, eventId, "file_name.txt").getName());
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource(orgId, eventId, "file_name.txt", baos);
-        Assert.assertArrayEquals(FILE, baos.toByteArray());
+        assertArrayEquals(FILE, baos.toByteArray());
 
         toSave.setFile(ONE_PIXEL_BLACK_GIF);
         savedResource = uploadedResourceManager.saveResource(orgId, eventId, toSave);
-        Assert.assertTrue(savedResource.isPresent());
-        Assert.assertEquals(1, savedResource.get().intValue());
+        assertTrue(savedResource.isPresent());
+        assertEquals(1, savedResource.get().intValue());
 
         ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource(orgId, eventId, "file_name.txt", baos1);
-        Assert.assertArrayEquals(ONE_PIXEL_BLACK_GIF, baos1.toByteArray());
+        assertArrayEquals(ONE_PIXEL_BLACK_GIF, baos1.toByteArray());
     }
 
 

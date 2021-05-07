@@ -17,8 +17,7 @@
 package alfio.util;
 
 import com.samskivert.mustache.Template;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -27,7 +26,7 @@ import java.util.Collections;
 import java.util.Locale;
 
 import static alfio.util.MustacheCustomTag.ADDITIONAL_FIELD_VALUE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 public class MustacheCustomTagTest {
@@ -80,12 +79,12 @@ public class MustacheCustomTagTest {
     @Test
     public void testHtmlMarkDown() {
         //by default we escape all html
-        Assert.assertEquals("<p>escape &lt;a href=&quot;http://test&quot;&gt;bla&lt;/a&gt; escape</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("escape <a href=\"http://test\">bla</a> escape"));
+        assertEquals("<p>escape &lt;a href=&quot;http://test&quot;&gt;bla&lt;/a&gt; escape</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("escape <a href=\"http://test\">bla</a> escape"));
 
         //for relative link we don't add target="_blank"
-        Assert.assertEquals("<p>link <a href=\"/test\">bla</a> link</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("link [bla](/test) link"));
+        assertEquals("<p>link <a href=\"/test\">bla</a> link</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("link [bla](/test) link"));
 
         //for absolute link we add target="_blank"
-        Assert.assertEquals("<p>link <a href=\"http://test\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">bla</a> link</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("link [bla](http://test) link"));
+        assertEquals("<p>link <a href=\"http://test\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">bla</a> link</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("link [bla](http://test) link"));
     }
 }

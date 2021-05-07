@@ -27,6 +27,7 @@ import alfio.repository.TicketRepository;
 import alfio.test.util.TestUtil;
 import com.stripe.exception.*;
 import com.stripe.net.RequestOptions;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,10 +37,7 @@ import java.util.Optional;
 
 import static alfio.manager.testSupport.StripeUtils.completeStripeConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -93,7 +91,7 @@ public class StripeCreditCardManagerTest {
             .thenReturn(new ConfigurationManager.MaybeConfiguration(PLATFORM_MODE_ENABLED, new ConfigurationKeyValuePathLevel(null, "true", null)));
         when(configurationManager.getFor(eq(STRIPE_CONNECTED_ID), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(STRIPE_CONNECTED_ID));
         Optional<RequestOptions> options = baseStripeManager.options(event);
-        assertNotNull(options);
+        Assertions.assertNotNull(options);
         assertFalse(options.isPresent());
     }
 

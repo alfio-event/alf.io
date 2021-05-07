@@ -18,13 +18,14 @@ package alfio.util;
 
 import alfio.model.Ticket;
 import alfio.test.util.TestUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ObjectDiffTest {
 
@@ -44,43 +45,43 @@ public class ObjectDiffTest {
     public void diffMapTest() {
         Map<String, String> empty = Map.of();
         Map<String, String> emptyAfter = Map.of();
-        Assert.assertTrue(ObjectDiffUtil.diff(empty, emptyAfter).isEmpty());
+        assertTrue(ObjectDiffUtil.diff(empty, emptyAfter).isEmpty());
 
         var newElement = Map.of("new", "element");
         var newElementRes = ObjectDiffUtil.diff(emptyAfter, newElement);
-        Assert.assertEquals(1, newElementRes.size());
-        Assert.assertEquals("/{new}", newElementRes.get(0).getPropertyName());
-        Assert.assertEquals("element", newElementRes.get(0).getNewValue());
-        Assert.assertEquals(null, newElementRes.get(0).getOldValue());
-        Assert.assertEquals(ObjectDiffUtil.State.ADDED, newElementRes.get(0).getState());
+        assertEquals(1, newElementRes.size());
+        assertEquals("/{new}", newElementRes.get(0).getPropertyName());
+        assertEquals("element", newElementRes.get(0).getNewValue());
+        assertNull(newElementRes.get(0).getOldValue());
+        assertEquals(ObjectDiffUtil.State.ADDED, newElementRes.get(0).getState());
 
         var removedElementRes = ObjectDiffUtil.diff(newElement, empty);
-        Assert.assertEquals(1, removedElementRes.size());
-        Assert.assertEquals("/{new}", removedElementRes.get(0).getPropertyName());
-        Assert.assertEquals(null, removedElementRes.get(0).getNewValue());
-        Assert.assertEquals("element", removedElementRes.get(0).getOldValue());
-        Assert.assertEquals(ObjectDiffUtil.State.REMOVED, removedElementRes.get(0).getState());
+        assertEquals(1, removedElementRes.size());
+        assertEquals("/{new}", removedElementRes.get(0).getPropertyName());
+        assertNull(removedElementRes.get(0).getNewValue());
+        assertEquals("element", removedElementRes.get(0).getOldValue());
+        assertEquals(ObjectDiffUtil.State.REMOVED, removedElementRes.get(0).getState());
 
         var changedElem = ObjectDiffUtil.diff(newElement, Map.of("new", "changed"));
-        Assert.assertEquals(1, changedElem.size());
-        Assert.assertEquals("/{new}", changedElem.get(0).getPropertyName());
-        Assert.assertEquals("changed", changedElem.get(0).getNewValue());
-        Assert.assertEquals("element", changedElem.get(0).getOldValue());
-        Assert.assertEquals(ObjectDiffUtil.State.CHANGED, changedElem.get(0).getState());
+        assertEquals(1, changedElem.size());
+        assertEquals("/{new}", changedElem.get(0).getPropertyName());
+        assertEquals("changed", changedElem.get(0).getNewValue());
+        assertEquals("element", changedElem.get(0).getOldValue());
+        assertEquals(ObjectDiffUtil.State.CHANGED, changedElem.get(0).getState());
 
 
         var untouchedElem = ObjectDiffUtil.diff(newElement, new HashMap<>(newElement));
-        Assert.assertEquals(0, untouchedElem.size());
+        assertEquals(0, untouchedElem.size());
     }
 
     @Test
     public void testTicketDiff() {
         var res = ObjectDiffUtil.diff(preUpdateTicket, postUpdateTicket);
 
-        Assert.assertEquals(1, res.size());
-        Assert.assertEquals("/status", res.get(0).getPropertyName());
-        Assert.assertEquals(Ticket.TicketStatus.CANCELLED, res.get(0).getNewValue());
-        Assert.assertEquals(Ticket.TicketStatus.ACQUIRED, res.get(0).getOldValue());
-        Assert.assertEquals(ObjectDiffUtil.State.CHANGED, res.get(0).getState());
+        assertEquals(1, res.size());
+        assertEquals("/status", res.get(0).getPropertyName());
+        assertEquals(Ticket.TicketStatus.CANCELLED, res.get(0).getNewValue());
+        assertEquals(Ticket.TicketStatus.ACQUIRED, res.get(0).getOldValue());
+        assertEquals(ObjectDiffUtil.State.CHANGED, res.get(0).getState());
     }
 }

@@ -35,13 +35,12 @@ import alfio.util.ClockProvider;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -55,9 +54,10 @@ import java.util.List;
 
 import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -81,15 +81,15 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void setUp() {
         //setup hsqldb and make it usable from eventRepository
         organizationRepository.create(ORG_NAME, "description", "email@pippobaudo.com", null, null);
     }
 
 
     @Test
-    public void testJavaInsertedDatesRespectTheirTimeZone() throws Exception {
+    public void testJavaInsertedDatesRespectTheirTimeZone() {
         //these are the values of what we have inserted in the SQL insert script
         ZonedDateTime beginEventDate = ZonedDateTime.of(2015, 4, 18, 0, 0, 0, 0, ZoneId.of("America/New_York"));
         ZonedDateTime endEventDate = ZonedDateTime.of(2015, 4, 19, 23, 59, 59, 0, ZoneId.of("America/New_York"));
@@ -101,10 +101,10 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
             "http://localhost:8080", null,null, null, "Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, "CHF", 4, true,
             new BigDecimal(1), "", "", orgId, 7, PriceContainer.VatStatus.INCLUDED, 0, null, Event.Status.PUBLIC, AlfioMetadata.empty());
         Event e = eventRepository.findById(pair.getKey());
-        assertNotNull("Event not found in DB", e);
+        assertNotNull(e, "Event not found in DB");
 
-        assertEquals("Begin date is not correct", beginEventDate, e.getBegin());
-        assertEquals("End date is not correct", endEventDate, e.getEnd());
+        assertEquals(beginEventDate, e.getBegin(), "Begin date is not correct");
+        assertEquals(endEventDate, e.getEnd(), "End date is not correct");
 
         //since when debugging the toString method is used .... and it rely on the system TimeZone, we test it too
         System.out.println(e.getBegin().toString());

@@ -42,13 +42,12 @@ import alfio.util.MonetaryUtil;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -58,9 +57,10 @@ import java.util.stream.Collectors;
 
 import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.test.util.IntegrationTestUtil.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -93,7 +93,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ClockProvider clockProvider;
 
-    @Before
+    @BeforeEach
     public void init() {
         ensureMinimalConfiguration(configurationRepository);
     }
@@ -118,7 +118,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testDistributeSeatsFirstCategoryIsUnbounded() throws Exception {
+    public void testDistributeSeatsFirstCategoryIsUnbounded() {
         List<TicketCategoryModification> categories = getPreSalesTicketCategoryModifications(false, AVAILABLE_SEATS, true, 10);
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
@@ -140,7 +140,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testDistributeSeatsFirstCategoryIsBounded() throws Exception {
+    public void testDistributeSeatsFirstCategoryIsBounded() {
         List<TicketCategoryModification> categories = getPreSalesTicketCategoryModifications(true, 10, true, 10);
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();

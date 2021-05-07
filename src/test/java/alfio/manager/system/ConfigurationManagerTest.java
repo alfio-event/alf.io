@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -25,27 +26,25 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationPathLevel.*;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class ConfigurationManagerTest {
 
     @Test
-    public void testUnionEvent() throws Exception {
+    public void testUnionEvent() {
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> intersection = ConfigurationManager.union(SYSTEM, EVENT);
-        assertNotNull(intersection);
+        Assertions.assertNotNull(intersection);
         List<Configuration> values = intersection.values().stream().flatMap(List::stream).collect(Collectors.toList());
-        assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
-        assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.BASE_URL && v.getConfigurationPathLevel() == SYSTEM));
+        Assertions.assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
+        Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.BASE_URL && v.getConfigurationPathLevel() == SYSTEM));
     }
 
     @Test
-    public void testUnionOrganization() throws Exception {
+    public void testUnionOrganization() {
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> intersection = ConfigurationManager.union(EVENT, ORGANIZATION);
-        assertNotNull(intersection);
+        Assertions.assertNotNull(intersection);
         List<Configuration> values = intersection.values().stream().flatMap(List::stream).collect(Collectors.toList());
-        assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
-        assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.VAT_NR && v.getConfigurationPathLevel() == ORGANIZATION));
+        Assertions.assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
+        Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.VAT_NR && v.getConfigurationPathLevel() == ORGANIZATION));
     }
 
 }

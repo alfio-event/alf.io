@@ -33,14 +33,13 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -59,9 +58,9 @@ import static alfio.manager.TicketReservationManagerIntegrationTest.DESCRIPTION;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static alfio.test.util.TestUtil.clockProvider;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest()
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 public class TicketReservationManagerConcurrentTest {
@@ -95,7 +94,7 @@ public class TicketReservationManagerConcurrentTest {
     private PromoCodeDiscount promoCodeDiscount;
     private TransactionTemplate transactionTemplate;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         var transactionDefinition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         transactionTemplate = new TransactionTemplate(platformTransactionManager, transactionDefinition);
@@ -171,7 +170,7 @@ public class TicketReservationManagerConcurrentTest {
         assertEquals(1, specialPriceRepository.findAllByCategoryId(firstCategoryId).stream().filter(sp -> sp.getAccessCodeId() != null).count());
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         transactionTemplate.execute(tx -> {
             eventManager.deleteEvent(event.getId(), username);

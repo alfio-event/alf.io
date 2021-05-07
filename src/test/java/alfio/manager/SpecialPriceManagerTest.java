@@ -43,7 +43,6 @@ import java.util.*;
 import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -100,7 +99,7 @@ public class SpecialPriceManagerTest {
     }
 
     @Test
-    public void linkAssigneeToCode() throws Exception {
+    public void linkAssigneeToCode() {
         when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(2))).thenReturn(List.of(specialPrice1, specialPrice2));
         testAssigneeLink(specialPriceManager, CODES_NOT_REQUESTED);
         testAssigneeLink(specialPriceManager, CODES_PARTIALLY_REQUESTED);
@@ -108,41 +107,41 @@ public class SpecialPriceManagerTest {
     }
 
     @Test
-    public void validationErrorCategoryNotRestricted() throws Exception {
+    public void validationErrorCategoryNotRestricted() {
         setRestricted(ticketCategory, false);
         Assertions.assertThrows(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(Collections.emptyList(), "test", 0, "username"));
     }
 
     @Test
-    public void validationErrorTooManyCodesRequested() throws Exception {
+    public void validationErrorTooManyCodesRequested() {
         List<SendCodeModification> oneMore = new ArrayList<>(CODES_REQUESTED);
         oneMore.add(new SendCodeModification("123", "", "", ""));
         Assertions.assertThrows(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(oneMore, "test", 0, "username"));
     }
 
     @Test
-    public void validationErrorRequestedCodeIsNotAvailable() throws Exception {
+    public void validationErrorRequestedCodeIsNotAvailable() {
         List<SendCodeModification> notExistingCode = asList(new SendCodeModification("AAA", "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(notExistingCode, "test", 0, "username"));
     }
 
     @Test
-    public void validationErrorCodeRequestedTwice() throws Exception {
+    public void validationErrorCodeRequestedTwice() {
         List<SendCodeModification> duplicatedCodes = asList(new SendCodeModification("123", "A 123", "123@123", "it"), new SendCodeModification("123", "A 456", "456@456", "en"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> specialPriceManager.linkAssigneeToCode(duplicatedCodes, "test", 0, "username"));
     }
 
     @Test
-    public void sendAllCodes() throws Exception {
+    public void sendAllCodes() {
         when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(2))).thenReturn(List.of(specialPrice1, specialPrice2));
-        assertTrue(specialPriceManager.sendCodeToAssignee(CODES_REQUESTED, "", 0, ""));
+        Assertions.assertTrue(specialPriceManager.sendCodeToAssignee(CODES_REQUESTED, "", 0, ""));
         verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), isNull(), anyString(), anyString(), any());
     }
 
     @Test
-    public void sendSuccessfulComplete() throws Exception {
+    public void sendSuccessfulComplete() {
         when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(1))).thenReturn(List.of(specialPrice1));
@@ -150,11 +149,11 @@ public class SpecialPriceManagerTest {
     }
 
     @Test
-    public void trimLanguageTag() throws Exception {
+    public void trimLanguageTag() {
         when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(1))).thenReturn(List.of(specialPrice1));
-        assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", " it")), "", 0, ""));
+        Assertions.assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", " it")), "", 0, ""));
         ArgumentCaptor<TemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TemplateGenerator.class);
         verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
@@ -162,11 +161,11 @@ public class SpecialPriceManagerTest {
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
         Map<String, Object> model = captor.getValue();
-        assertEquals("123", model.get("code"));
-        assertEquals(event, model.get("event"));
-        assertEquals(organization, model.get("organization"));
-        assertEquals("http://my-event", model.get("eventPage"));
-        assertEquals("me", model.get("assignee"));
+        Assertions.assertEquals("123", model.get("code"));
+        Assertions.assertEquals(event, model.get("event"));
+        Assertions.assertEquals(organization, model.get("organization"));
+        Assertions.assertEquals("http://my-event", model.get("eventPage"));
+        Assertions.assertEquals("me", model.get("assignee"));
         verify(messageSource).getMessage(eq("email-code.subject"), eq(new Object[]{"Event Name", null}), eq(Locale.ITALIAN));
     }
 
@@ -180,7 +179,7 @@ public class SpecialPriceManagerTest {
     }
 
     private void sendMessage(String promoCodeDescription) {
-        assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", "it")), "", 0, ""));
+        Assertions.assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", "it")), "", 0, ""));
         ArgumentCaptor<TemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TemplateGenerator.class);
         verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
@@ -188,11 +187,11 @@ public class SpecialPriceManagerTest {
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
         Map<String, Object> model = captor.getValue();
-        assertEquals("123", model.get("code"));
-        assertEquals(event, model.get("event"));
-        assertEquals(organization, model.get("organization"));
-        assertEquals("http://my-event", model.get("eventPage"));
-        assertEquals("me", model.get("assignee"));
+        Assertions.assertEquals("123", model.get("code"));
+        Assertions.assertEquals(event, model.get("event"));
+        Assertions.assertEquals(organization, model.get("organization"));
+        Assertions.assertEquals("http://my-event", model.get("eventPage"));
+        Assertions.assertEquals("me", model.get("assignee"));
         verify(messageSource).getMessage(eq("email-code.subject"), eq(new Object[]{"Event Name", promoCodeDescription}), eq(Locale.ITALIAN));
     }
 
@@ -202,9 +201,9 @@ public class SpecialPriceManagerTest {
 
     private static void testAssigneeLink(SpecialPriceManager specialPriceManager, List<SendCodeModification> modifications) {
         List<SendCodeModification> sendCodeModifications = specialPriceManager.linkAssigneeToCode(modifications, "test", 0, "username");
-        assertFalse(sendCodeModifications.isEmpty());
-        assertEquals(2, sendCodeModifications.size());
-        sendCodeModifications.forEach(m -> assertEquals("A " + m.getCode(), m.getAssignee()));
+        Assertions.assertFalse(sendCodeModifications.isEmpty());
+        Assertions.assertEquals(2, sendCodeModifications.size());
+        sendCodeModifications.forEach(m -> Assertions.assertEquals("A " + m.getCode(), m.getAssignee()));
     }
 
     private static final List<SendCodeModification> CODES_REQUESTED = asList(new SendCodeModification("123", "A 123", "123@123", "it"), new SendCodeModification("456", "A 456", "456@456", "en"));

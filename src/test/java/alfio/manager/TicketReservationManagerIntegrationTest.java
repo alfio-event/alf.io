@@ -36,15 +36,13 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -61,9 +59,9 @@ import static alfio.model.system.ConfigurationKeys.AUTOMATIC_REMOVAL_EXPIRED_OFF
 import static alfio.model.system.ConfigurationKeys.DEFERRED_BANK_TRANSFER_ENABLED;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -108,7 +106,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
 
-    @Before
+    @BeforeEach
     public void ensureConfiguration() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
     }
@@ -236,7 +234,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         ticketReservationManager.deleteOfflinePayment(event, reservationId2, false, false, null);
 
-        Assert.assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
+        assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
     }
 
     @Test
@@ -295,7 +293,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         }
 
         ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);
-        Assert.assertFalse(ticketReservationManager.findById(reservationId).isPresent());
+        assertFalse(ticketReservationManager.findById(reservationId).isPresent());
     }
 
     @Test
@@ -328,15 +326,15 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         assertEquals("MYPROMOCODE", priceAndDiscount.getRight().get().getPromoCode());
 
         // 3 * 10 chf is the normal price, 10% discount -> 300 discount
-        Assert.assertEquals(2700, totalPrice.getPriceWithVAT());
-        Assert.assertEquals(27, totalPrice.getVAT());
-        Assert.assertEquals(-300, totalPrice.getDiscount());
-        Assert.assertEquals(1, totalPrice.getDiscountAppliedCount());
+        assertEquals(2700, totalPrice.getPriceWithVAT());
+        assertEquals(27, totalPrice.getVAT());
+        assertEquals(-300, totalPrice.getDiscount());
+        assertEquals(1, totalPrice.getDiscountAppliedCount());
 
         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
-        Assert.assertEquals("27.00", orderSummary.getTotalPrice());
-        Assert.assertEquals("0.27", orderSummary.getTotalVAT());
-        Assert.assertEquals(3, orderSummary.getTicketAmount());
+        assertEquals("27.00", orderSummary.getTotalPrice());
+        assertEquals("0.27", orderSummary.getTotalVAT());
+        assertEquals(3, orderSummary.getTicketAmount());
 
 
         TicketReservationModification trFixed = new TicketReservationModification();
@@ -352,15 +350,15 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         assertEquals("MYFIXEDPROMO", priceAndDiscountFixed.getRight().get().getPromoCode());
 
         // 3 * 10 chf is the normal price, 3 * 5 is the discount
-        Assert.assertEquals(2985, totalPriceFixed.getPriceWithVAT());
-        Assert.assertEquals(30, totalPriceFixed.getVAT());
-        Assert.assertEquals(-15, totalPriceFixed.getDiscount());
-        Assert.assertEquals(3, totalPriceFixed.getDiscountAppliedCount());
+        assertEquals(2985, totalPriceFixed.getPriceWithVAT());
+        assertEquals(30, totalPriceFixed.getVAT());
+        assertEquals(-15, totalPriceFixed.getDiscount());
+        assertEquals(3, totalPriceFixed.getDiscountAppliedCount());
 
         OrderSummary orderSummaryFixed = ticketReservationManager.orderSummaryForReservationId(reservationIdFixed, event);
-        Assert.assertEquals("29.85", orderSummaryFixed.getTotalPrice());
-        Assert.assertEquals("0.30", orderSummaryFixed.getTotalVAT());
-        Assert.assertEquals(3, orderSummaryFixed.getTicketAmount());
+        assertEquals("29.85", orderSummaryFixed.getTotalPrice());
+        assertEquals("0.30", orderSummaryFixed.getTotalVAT());
+        assertEquals(3, orderSummaryFixed.getTicketAmount());
 
 
         //check if we try to fetch more than the limit
@@ -371,7 +369,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
         try {
             ticketReservationManager.createTicketReservation(event, Collections.singletonList(modTooMuch ), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false, null);
-            Assert.fail("must not enter here");
+            fail("must not enter here");
         } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException e) {
         }
 
@@ -457,15 +455,15 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
 
         // 3 * 10 chf is the normal price, 10% discount -> 300 discount
-        Assert.assertEquals(3000, totalPrice.getPriceWithVAT());
-        Assert.assertEquals(30, totalPrice.getVAT());
-        Assert.assertEquals(0, totalPrice.getDiscount());
-        Assert.assertEquals(0, totalPrice.getDiscountAppliedCount());
+        assertEquals(3000, totalPrice.getPriceWithVAT());
+        assertEquals(30, totalPrice.getVAT());
+        assertEquals(0, totalPrice.getDiscount());
+        assertEquals(0, totalPrice.getDiscountAppliedCount());
 
         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
-        Assert.assertEquals("30.00", orderSummary.getTotalPrice());
-        Assert.assertEquals("0.30", orderSummary.getTotalVAT());
-        Assert.assertEquals(3, orderSummary.getTicketAmount());
+        assertEquals("30.00", orderSummary.getTotalPrice());
+        assertEquals("0.30", orderSummary.getTotalVAT());
+        assertEquals(3, orderSummary.getTicketAmount());
 
         return Triple.of(event, category, reservationId);
 
@@ -480,7 +478,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
         try {
             ticketReservationManager.createTicketReservation(triple.getLeft(), List.of(modTooMuch), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.of(ACCESS_CODE), Locale.ENGLISH, false, null);
-            Assert.fail("trigger is not working!");
+            fail("trigger is not working!");
         } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException e) {
         }
     }
@@ -532,23 +530,23 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TotalPrice totalPrice = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
 
-        Assert.assertEquals(4000, totalPrice.getPriceWithVAT());//3 tickets + 1 AS
-        Assert.assertEquals(40, totalPrice.getVAT());
-        Assert.assertEquals(0, totalPrice.getDiscount());
-        Assert.assertEquals(0, totalPrice.getDiscountAppliedCount());
+        assertEquals(4000, totalPrice.getPriceWithVAT());//3 tickets + 1 AS
+        assertEquals(40, totalPrice.getVAT());
+        assertEquals(0, totalPrice.getDiscount());
+        assertEquals(0, totalPrice.getDiscountAppliedCount());
 
         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
-        Assert.assertEquals("40.00", orderSummary.getTotalPrice());
-        Assert.assertEquals("0.40", orderSummary.getTotalVAT());
-        Assert.assertEquals(3, orderSummary.getTicketAmount());
+        assertEquals("40.00", orderSummary.getTotalPrice());
+        assertEquals("0.40", orderSummary.getTotalVAT());
+        assertEquals(3, orderSummary.getTicketAmount());
         List<SummaryRow> asRows = orderSummary.getSummary().stream().filter(s -> s.getType() == SummaryRow.SummaryType.ADDITIONAL_SERVICE).collect(Collectors.toList());
-        Assert.assertEquals(1, asRows.size());
-        Assert.assertEquals("9.90", asRows.get(0).getPriceBeforeVat());
-        Assert.assertEquals("9.90", asRows.get(0).getSubTotalBeforeVat());
-        Assert.assertEquals("10.00", asRows.get(0).getSubTotal());
+        assertEquals(1, asRows.size());
+        assertEquals("9.90", asRows.get(0).getPriceBeforeVat());
+        assertEquals("9.90", asRows.get(0).getSubTotalBeforeVat());
+        assertEquals("10.00", asRows.get(0).getSubTotal());
     }
 
-    @Test(expected = TicketReservationManager.NotEnoughTicketsException.class)
+    @Test
     public void testTicketSelectionNotEnoughTicketsAvailable() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
@@ -564,7 +562,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
-        ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
+        assertThrows(TicketReservationManager.NotEnoughTicketsException.class, () -> ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null));
     }
 
     @Test
@@ -633,17 +631,17 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         final Supplier<List<String>> idsPendingQuery = () -> jdbcTemplate.queryForList("select id from tickets_reservation where validity < :date and status = 'PENDING'", Collections.singletonMap("date", now), String.class);
 
-        Assert.assertTrue(idsPendingQuery.get().isEmpty());
+        assertTrue(idsPendingQuery.get().isEmpty());
 
         String reservationId = ticketReservationManager.createTicketReservation(event, List.of(mod), Collections.emptyList(), DateUtils.addDays(new Date(), -2), Optional.empty(), Locale.ENGLISH, false, null);
 
         List<String> reservationIdPending = idsPendingQuery.get();
-        Assert.assertEquals(1, reservationIdPending.size());
-        Assert.assertEquals(reservationId, reservationIdPending.get(0));
+        assertEquals(1, reservationIdPending.size());
+        assertEquals(reservationId, reservationIdPending.get(0));
 
         ticketReservationManager.cleanupExpiredReservations(now);
 
-        Assert.assertTrue(idsPendingQuery.get().isEmpty());
+        assertTrue(idsPendingQuery.get().isEmpty());
     }
 
     @Test
@@ -672,7 +670,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         final Supplier<List<String>> idsOfflinePayment = () -> jdbcTemplate.queryForList("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT'", Collections.singletonMap("date", now), String.class);
 
-        Assert.assertTrue(idsOfflinePayment.get().isEmpty());
+        assertTrue(idsOfflinePayment.get().isEmpty());
 
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCost = priceAndDiscount.getLeft();
@@ -685,21 +683,21 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
 
         //
-        Assert.assertEquals(1, jdbcTemplate.update("update tickets_reservation set validity = :date where id = :id", Map.of("date", past, "id", reservationId)));
+        assertEquals(1, jdbcTemplate.update("update tickets_reservation set validity = :date where id = :id", Map.of("date", past, "id", reservationId)));
 
         //
         List<String> idsOffline = idsOfflinePayment.get();
 
-        Assert.assertEquals(1, idsOffline.size());
-        Assert.assertEquals(reservationId, idsOffline.get(0));
+        assertEquals(1, idsOffline.size());
+        assertEquals(reservationId, idsOffline.get(0));
 
         ticketReservationManager.cleanupExpiredOfflineReservations(now);
-        Assert.assertFalse(idsOfflinePayment.get().isEmpty());
+        assertFalse(idsOfflinePayment.get().isEmpty());
 
         configurationRepository.insert(AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT.name(), "true", "");
 
         ticketReservationManager.cleanupExpiredOfflineReservations(now);
-        Assert.assertTrue(idsOfflinePayment.get().isEmpty());
+        assertTrue(idsOfflinePayment.get().isEmpty());
 
     }
 }

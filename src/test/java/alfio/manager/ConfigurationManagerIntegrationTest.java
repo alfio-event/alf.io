@@ -41,13 +41,12 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -58,9 +57,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -89,7 +89,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
 
-    @Before
+    @BeforeEach
     public void prepareEnv() {
         //setup...
         organizationRepository.create("org", "org", "email@example.com", null, null);
@@ -136,10 +136,9 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("-1", configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getValueOrDefault("-1"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMissingConfigValue() {
-        configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getRequiredValue();
-        fail("something wrong happened...");
+        assertThrows(IllegalArgumentException.class, () -> configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getRequiredValue());
     }
 
     @Test
@@ -266,11 +265,11 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     @Test
     public void testLoadOrganizationConfiguration() {
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> orgConf = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
-        assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().flatMap(Collection::stream).count());
+        assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().mapToLong(Collection::size).sum());
         String value = "MY-ACCOUNT_NUMBER";
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), value, "empty");
         orgConf = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
-        assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().flatMap(Collection::stream).count());
+        assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().mapToLong(Collection::size).sum());
         assertEquals(value, orgConf.get(SettingCategory.PAYMENT_OFFLINE).stream().filter(c -> c.getConfigurationKey() == ConfigurationKeys.BANK_ACCOUNT_NR).findFirst().orElseThrow(IllegalStateException::new).getValue());
     }
 

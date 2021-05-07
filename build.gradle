@@ -24,8 +24,8 @@ buildscript {
 
     dependencies {
         classpath 'com.opentable.components:otj-pg-embedded:0.13.3'
-        classpath 'org.postgresql:postgresql:42.2.14'
-        classpath "org.springframework:spring-jdbc:$springVersion"
+        classpath 'org.postgresql:postgresql:42.2.20'
+        classpath "org.springframework:spring-jdbc:5.3.6"
 
         //this is for processing the index.html at compile time
         classpath "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
@@ -34,7 +34,6 @@ buildscript {
     }
 
     repositories {
-        jcenter()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
@@ -49,15 +48,15 @@ plugins {
     id 'io.freefair.lombok' version '5.2.1'
     id 'java'
     id 'idea'
-    id 'org.kordamp.gradle.jacoco' version '0.40.0'
-    id 'org.kordamp.gradle.coveralls' version '0.40.0'
-    id 'com.github.ben-manes.versions' version '0.33.0'
-    id 'com.github.hierynomus.license' version '0.15.0'
+    id 'org.kordamp.gradle.jacoco' version '0.45.0'
+    id 'org.kordamp.gradle.coveralls' version '0.45.0'
+    id 'com.github.ben-manes.versions' version '0.38.0'
+    id 'com.github.hierynomus.license' version '0.16.1'
     id 'net.researchgate.release' version '2.8.1'
-    id 'org.springframework.boot' version '2.3.7.RELEASE'
-    id 'org.sonarqube' version '3.0'
+    id 'org.springframework.boot' version '2.4.5'
+    id 'org.sonarqube' version '3.2.0'
     id 'net.ltgt.errorprone' version '2.0.1'
-	id 'com.github.node-gradle.node' version '2.2.4'
+	id 'com.github.node-gradle.node' version '3.1.0'
 }
 
 apply plugin: 'java'
@@ -114,7 +113,6 @@ configurations {
 repositories {
     mavenLocal()
     mavenCentral()
-    jcenter()
     maven {
         url "https://jitpack.io"
     }
@@ -122,7 +120,7 @@ repositories {
 
 dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
-    implementation "com.auth0:java-jwt:3.11.0"
+    implementation "com.auth0:java-jwt:3.15.0"
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "org.springframework.boot:spring-boot-properties-migrator", {
@@ -134,8 +132,8 @@ dependencies {
     implementation "javax.mail:mail:1.5.0-b01"
     implementation 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    implementation "com.openhtmltopdf:openhtmltopdf-core:1.0.4"
-    implementation "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.4"
+    implementation "com.openhtmltopdf:openhtmltopdf-core:1.0.8"
+    implementation "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.8"
     implementation "ch.digitalfondue.jfiveparse:jfiveparse:0.9.0"
     /**/
     implementation "com.google.zxing:core:3.4.1"
@@ -144,24 +142,24 @@ dependencies {
     implementation "org.postgresql:postgresql"
     implementation "com.zaxxer:HikariCP"
     implementation "org.apache.logging.log4j:log4j-api"
-    implementation "com.stripe:stripe-java:20.23.0"
-    implementation 'com.paypal.sdk:checkout-sdk:1.0.2'
+    implementation "com.stripe:stripe-java:20.50.0"
+    implementation 'com.paypal.sdk:checkout-sdk:1.0.3'
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.1', {
         exclude module: 'gson'
     }
 
-    implementation "org.apache.commons:commons-lang3:3.11"
+    implementation "org.apache.commons:commons-lang3:3.12.0"
     implementation "org.apache.commons:commons-text:1.9"
-    implementation "com.opencsv:opencsv:5.2"
+    implementation "com.opencsv:opencsv:5.4"
     implementation 'commons-codec:commons-codec:1.15'
-    implementation 'net.sf.biweekly:biweekly:0.6.4'
-    implementation 'com.atlassian.commonmark:commonmark:0.15.2'
-    implementation 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.15.2'
+    implementation 'net.sf.biweekly:biweekly:0.6.6'
+    implementation 'com.atlassian.commonmark:commonmark:0.17.0'
+    implementation 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.17.0'
     implementation 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'com.github.scribejava:scribejava-core:5.0.0'
-    implementation 'ch.digitalfondue.vatchecker:vatchecker:1.4.3'
+    implementation 'ch.digitalfondue.vatchecker:vatchecker:1.5.0'
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.mozilla:rhino-runtime:1.7.13'
@@ -204,7 +202,6 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api"
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.junit.platform:junit-platform-engine"
-    testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
 
     providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
@@ -219,12 +216,12 @@ dependencies {
 
     implementation "org.joda:joda-money:1.0.1"
 
-    testImplementation 'org.mock-server:mockserver-netty:5.11.1', {
+    testImplementation 'org.mock-server:mockserver-netty:5.11.2', {
         exclude group: 'org.mozilla', module: 'rhino'
     }
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    testImplementation 'org.seleniumhq.selenium:selenium-java:4.0.0-beta-2'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.0.0-beta-3'
 
     errorprone('com.google.errorprone:error_prone_core:2.4.0')
 }

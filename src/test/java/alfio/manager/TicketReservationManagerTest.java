@@ -73,7 +73,6 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -489,7 +488,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         List<Event> events = trm.getNotifiableEventsStream().collect(Collectors.toList());
-        assertEquals(0, events.size());
+        Assertions.assertEquals(0, events.size());
         verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TemplateGenerator.class));
     }
 
@@ -505,7 +504,7 @@ class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
         ZonedDateTime expectedDate = ZonedDateTime.now(ClockProvider.clock()).plusDays(2L).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
-        assertEquals(expectedDate, offlinePaymentDeadline);
+        Assertions.assertEquals(expectedDate, offlinePaymentDeadline);
     }
 
     @Test
@@ -513,8 +512,8 @@ class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(3));
         OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager);
-        assertTrue(offlinePaymentWaitingPeriod.isPresent());
-        assertEquals(2, offlinePaymentWaitingPeriod.getAsInt());
+        Assertions.assertTrue(offlinePaymentWaitingPeriod.isPresent());
+        Assertions.assertEquals(2, offlinePaymentWaitingPeriod.getAsInt());
     }
 
     @Test
@@ -524,9 +523,9 @@ class TicketReservationManagerTest {
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
 
         long days = ChronoUnit.DAYS.between(LocalDate.now(ClockProvider.clock()), offlinePaymentDeadline.toLocalDate());
-        assertTrue("value must be 3 on Friday", LocalDate.now(ClockProvider.clock()).getDayOfWeek() != DayOfWeek.FRIDAY || days == 3);
-        assertTrue("value must be 2 on Saturday",LocalDate.now(ClockProvider.clock()).getDayOfWeek() != DayOfWeek.SATURDAY || days == 2);
-        assertTrue("value must be 1 on week days",!EnumSet.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY).contains(LocalDate.now(ClockProvider.clock()).getDayOfWeek()) || days == 1);
+        Assertions.assertTrue(LocalDate.now(ClockProvider.clock()).getDayOfWeek() != DayOfWeek.FRIDAY || days == 3, "value must be 3 on Friday");
+        Assertions.assertTrue(LocalDate.now(ClockProvider.clock()).getDayOfWeek() != DayOfWeek.SATURDAY || days == 2, "value must be 2 on Saturday");
+        Assertions.assertTrue(!EnumSet.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY).contains(LocalDate.now(ClockProvider.clock()).getDayOfWeek()) || days == 1, "value must be 1 on week days");
     }
 
     @Test
@@ -534,8 +533,8 @@ class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).plusDays(1));
         OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager);
-        assertTrue(offlinePaymentWaitingPeriod.isPresent());
-        assertEquals(1, offlinePaymentWaitingPeriod.getAsInt());
+        Assertions.assertTrue(offlinePaymentWaitingPeriod.isPresent());
+        Assertions.assertEquals(1, offlinePaymentWaitingPeriod.getAsInt());
     }
 
     @Test
@@ -543,7 +542,7 @@ class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
-        assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now(ClockProvider.clock())));
+        Assertions.assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now(ClockProvider.clock())));
     }
 
 //    FIXME implement test
@@ -744,9 +743,9 @@ class TicketReservationManagerTest {
         when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(2);
         try {
             trm.releaseTicket(event, ticketReservation, ticket);
-            fail();
+            Assertions.fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Expected 1 row to be updated, got 2", e.getMessage());
+            Assertions.assertEquals("Expected 1 row to be updated, got 2", e.getMessage());
             verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
             verify(notificationManager, never()).sendSimpleEmail(any(), any(), any(), any(), any(TemplateGenerator.class));
         }
@@ -859,8 +858,8 @@ class TicketReservationManagerTest {
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of());
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD, null);
         if(expectSuccess) {
-            assertTrue(result.isSuccessful());
-            assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
+            Assertions.assertTrue(result.isSuccessful());
+            Assertions.assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
             verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
             verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
             verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
@@ -875,8 +874,8 @@ class TicketReservationManagerTest {
             verify(waitingQueueManager, verificationMode).fireReservationConfirmed(eq(RESERVATION_ID));
             verify(configurationManager, verificationMode).hasAllConfigurationsForInvoice(eq(event));
         } else {
-            assertFalse(result.isSuccessful());
-            assertTrue(result.isFailed());
+            Assertions.assertFalse(result.isSuccessful());
+            Assertions.assertTrue(result.isFailed());
         }
     }
 
@@ -896,9 +895,9 @@ class TicketReservationManagerTest {
         when(stripeCreditCardManager.accept(eq(PaymentMethod.CREDIT_CARD), any(), any())).thenReturn(true);
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "email@user", new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()), null, null, Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD, null);
-        assertFalse(result.isSuccessful());
-        assertFalse(result.getGatewayId().isPresent());
-        assertEquals(Optional.of("error-code"), result.getErrorCode());
+        Assertions.assertFalse(result.isSuccessful());
+        Assertions.assertFalse(result.getGatewayId().isPresent());
+        Assertions.assertEquals(Optional.of("error-code"), result.getErrorCode());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull());
         verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
@@ -927,8 +926,8 @@ class TicketReservationManagerTest {
             "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), anyString(), anyString(), anyString(), isNull(), isNull(), eq(Locale.ENGLISH.getLanguage()), isNull(), any(), any(), isNull())).thenReturn(1);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.ON_SITE, PaymentMethod.ON_SITE, null);
-        assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
+        Assertions.assertTrue(result.isSuccessful());
+        Assertions.assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
         verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()));
@@ -1098,18 +1097,18 @@ class TicketReservationManagerTest {
         when(ticketRepository.findByUUID(ticketId)).thenReturn(ticket);
         when(ticket.getUserLanguage()).thenReturn(USER_LANGUAGE);
         //generate the reservationUrl from RESERVATION_ID
-        assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID));
         //generate the reservationUrl from RESERVATION_ID and event
-        assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID, event));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID, event));
         //generate the reservationUrl from reservation and event
-        assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(ticketReservation, event));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(ticketReservation, event));
 
         when(event.getShortName()).thenReturn(shortName);
 
         //generate the ticket URL
-        assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
         //generate the ticket update URL
-        assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId/update?lang=it", trm.ticketUpdateUrl(event, "ticketId"));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId/update?lang=it", trm.ticketUpdateUrl(event, "ticketId"));
     }
 
     //sendReminderForOptionalInfo
@@ -1213,7 +1212,7 @@ class TicketReservationManagerTest {
         form.setEmail("test@test.ch");
         form.setFirstName("Test2");
         form.setLastName("Test");
-        assertTrue(trm.isTicketBeingReassigned(ticket, form, event));
+        Assertions.assertTrue(trm.isTicketBeingReassigned(ticket, form, event));
     }
 
     @Test
@@ -1225,7 +1224,7 @@ class TicketReservationManagerTest {
         form.setEmail("test@test.ch");
         form.setFirstName("Test");
         form.setLastName("Test");
-        assertFalse(trm.isTicketBeingReassigned(ticket, form, event));
+        Assertions.assertFalse(trm.isTicketBeingReassigned(ticket, form, event));
     }
 
     @Test
@@ -1237,15 +1236,15 @@ class TicketReservationManagerTest {
         form.setEmail("test@test.ch");
         form.setFirstName("Test");
         form.setLastName("Test");
-        assertFalse(trm.isTicketBeingReassigned(ticket, form, event));
+        Assertions.assertFalse(trm.isTicketBeingReassigned(ticket, form, event));
     }
 
     @Test
     void testBuildCompleteBillingAddress() {
         CustomerName customerName = new CustomerName(null, "First", "Last", true);
-        assertEquals("First Last\nline1\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "   ", "line1", null, "zip", "city", "state", "CH", Locale.ENGLISH));
-        assertEquals("Company\nFirst Last\nline1\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", null, "zip", "city", "state", "CH", Locale.ENGLISH));
-        assertEquals("Company\nFirst Last\nline1\nline2\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", "line2", "zip", "city", "state", "CH", Locale.ENGLISH));
+        Assertions.assertEquals("First Last\nline1\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "   ", "line1", null, "zip", "city", "state", "CH", Locale.ENGLISH));
+        Assertions.assertEquals("Company\nFirst Last\nline1\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", null, "zip", "city", "state", "CH", Locale.ENGLISH));
+        Assertions.assertEquals("Company\nFirst Last\nline1\nline2\nzip city state\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", "line2", "zip", "city", "state", "CH", Locale.ENGLISH));
     }
 
     @Test
@@ -1255,7 +1254,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(Arrays.asList(PaymentMethod.values()));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
-        assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+        Assertions.assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 
     @Test
@@ -1264,7 +1263,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(PaymentMethod.PAYPAL, PaymentMethod.NONE))));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), pp.getPaymentMethod() == PaymentMethod.PAYPAL ? PaymentMethodStatus.ERROR : PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
-        assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+        Assertions.assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 
     @Test
@@ -1273,7 +1272,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(PaymentMethod.NONE))));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
-        assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+        Assertions.assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 
     @Test
@@ -1282,7 +1281,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of());
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
-        assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+        Assertions.assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 
     @Test
@@ -1291,7 +1290,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1, 2));
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of(PaymentMethod.CREDIT_CARD));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
-        assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+        Assertions.assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 
     @Nested

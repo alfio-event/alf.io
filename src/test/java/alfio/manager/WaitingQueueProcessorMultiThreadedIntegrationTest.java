@@ -40,12 +40,11 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -57,10 +56,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static alfio.test.util.IntegrationTestUtil.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 public class WaitingQueueProcessorMultiThreadedIntegrationTest {
@@ -91,8 +90,6 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
     private ConfigurationRepository configurationRepository;
     @Autowired
     private EventRepository eventRepository;
-
-
 
     @Test
     public void testPreRegistration() throws InterruptedException {

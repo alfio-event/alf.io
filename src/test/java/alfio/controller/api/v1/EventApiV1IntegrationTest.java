@@ -36,15 +36,15 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -56,17 +56,16 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class EventApiV1IntegrationTest extends BaseIntegrationTest {
+class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void initEnv() {
     }
 
@@ -97,7 +96,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
     private String shortName = "test";
 
-    @Before
+    @BeforeEach
     public void ensureConfiguration() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
 
@@ -180,7 +179,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
         assertEquals(eventCreationRequest.getTickets().getCurrency(),event.getCurrency());
         assertEquals(eventCreationRequest.getWebsiteUrl(),event.getWebsiteUrl());
         assertEquals(eventCreationRequest.getTickets().getPaymentMethods(),event.getAllowedPaymentProxies());
-        assertTrue(event.getFileBlobIdIsPresent());
+        Assertions.assertTrue(event.getFileBlobIdIsPresent());
         assertEquals(eventCreationRequest.getTickets().getCategories().size(),tickets.size());
         tickets.forEach((t) -> {
                 List<EventCreationRequest.CategoryRequest> requestCategories = eventCreationRequest.getTickets().getCategories().stream().filter((rt) -> rt.getName().equals(t.getName())).collect(Collectors.toList());

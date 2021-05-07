@@ -40,13 +40,13 @@ import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -55,9 +55,9 @@ import java.time.LocalTime;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -86,7 +86,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private TicketReservationManager ticketReservationManager;
 
-    @Before
+    @BeforeEach
     public void setup() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         initAdminUser(userRepository, authorityRepository);
@@ -111,14 +111,14 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
         int categoryId = ticketCategories.get(0).getId();
         assertTrue(groupManager.isGroupLinked(event.getId(), categoryId));
         List<LinkedGroup> activeConfigurations = groupRepository.findActiveConfigurationsFor(event.getId(), categoryId);
-        assertFalse(activeConfigurations.isEmpty());
+        assertFalse(activeConfigurations.isEmpty(), "ActiveConfigurations should be empty");
         assertEquals(1, activeConfigurations.size());
         assertEquals(configuration.getId(), activeConfigurations.get(0).getId());
-        assertFalse("Group is empty, therefore no value is allowed", groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
+        assertFalse(groupManager.isAllowed("test@test.ch", event.getId(), categoryId), "Group is empty, therefore no value is allowed");
         Result<Integer> items = groupManager.insertMembers(group.getId(), Collections.singletonList(new GroupMemberModification(null,"test@test.ch", "description")));
         assertTrue(items.isSuccess());
         assertEquals(Integer.valueOf(1), items.getData());
-        assertTrue("Value should be allowed", groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
+        assertTrue(groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
 
         TicketReservationModification ticketReservation = new TicketReservationModification();
         ticketReservation.setAmount(1);
@@ -131,13 +131,13 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
         ticketRepository.updateTicketOwnerById(ticket.getId(), "test@test.ch", "This is a Test", "This is", "a Test");
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertTrue("cannot confirm ticket", groupManager.acquireMemberForTicket(ticket));
+        assertTrue(groupManager.acquireMemberForTicket(ticket));
 
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty())),
             Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertFalse("shouldn't be allowed", groupManager.acquireMemberForTicket(ticket));
+        assertFalse(groupManager.acquireMemberForTicket(ticket), "shouldn't be allowed");
 
     }
 
@@ -156,7 +156,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
         LinkedGroup configuration = groupManager.createLink(group.getId(), event.getId(), modification);
         assertNotNull(configuration);
         Result<Integer> items = groupManager.insertMembers(group.getId(), Arrays.asList(new GroupMemberModification(null,"test@test.ch", "description"), new GroupMemberModification(null,"test@test.ch", "description")));
-        assertFalse(items.isSuccess());
+        Assertions.assertFalse(items.isSuccess());
         assertEquals("value.duplicate", items.getFirstErrorOrNull().getCode());
         assertEquals("test@test.ch", items.getFirstErrorOrNull().getDescription());
     }

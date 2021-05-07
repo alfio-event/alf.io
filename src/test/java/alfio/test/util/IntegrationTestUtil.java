@@ -37,7 +37,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -120,7 +120,7 @@ public class IntegrationTestUtil {
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty(), List.of());
         eventManager.createEvent(em, username);
         Event event = eventManager.getSingleEvent(eventName, username);
-        Assert.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
+        Assertions.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
         return Pair.of(event, username);
     }
 

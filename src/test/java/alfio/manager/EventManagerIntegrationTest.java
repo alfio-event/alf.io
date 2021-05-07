@@ -35,13 +35,11 @@ import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -52,10 +50,9 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
-import static org.junit.Assert.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -168,7 +165,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(1, tickets.stream().filter(t -> t.getCategoryId() == null).count());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEventGenerationWithOverflow() {
         List<TicketCategoryModification> categories = Arrays.asList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
@@ -183,12 +180,13 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
-        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
-        assertNotNull(tickets);
-        assertFalse(tickets.isEmpty());
-        assertEquals(AVAILABLE_SEATS, tickets.size());
-        assertTrue(tickets.stream().noneMatch(t -> t.getCategoryId() == null));
+        assertThrows(IllegalArgumentException.class, () -> initEvent(categories, organizationRepository, userManager, eventManager, eventRepository));
+//        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
+//        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
+//        assertNotNull(tickets);
+//        assertFalse(tickets.isEmpty());
+//        assertEquals(AVAILABLE_SEATS, tickets.size());
+//        assertTrue(tickets.stream().noneMatch(t -> t.getCategoryId() == null));
     }
 
     /**
@@ -442,11 +440,11 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         Event updatedEvent = eventRepository.findById(event.getId());
 
-        Assert.assertEquals("http://example.com/new", updatedEvent.getWebsiteUrl());
-        Assert.assertEquals("http://example.com/tc", updatedEvent.getTermsAndConditionsUrl());
-        Assert.assertEquals("http://example.com/pp", updatedEvent.getPrivacyPolicyUrl());
-        Assert.assertEquals("https://example.com/img.png", updatedEvent.getImageUrl());
-        Assert.assertEquals("new display name", updatedEvent.getDisplayName());
+        assertEquals("http://example.com/new", updatedEvent.getWebsiteUrl());
+        assertEquals("http://example.com/tc", updatedEvent.getTermsAndConditionsUrl());
+        assertEquals("http://example.com/pp", updatedEvent.getPrivacyPolicyUrl());
+        assertEquals("https://example.com/img.png", updatedEvent.getImageUrl());
+        assertEquals("new display name", updatedEvent.getDisplayName());
     }
 
     @Test
@@ -632,7 +630,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
             categoryDescription, category.getPrice(), true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
         Result<TicketCategory> resOk = eventManager.updateCategory(category.getId(), event, tcmOk, username);
-        Assert.assertTrue(resOk.isSuccess());
+        assertTrue(resOk.isSuccess());
 
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), TicketCategory.TicketAccessType.INHERIT, 1,
@@ -640,8 +638,8 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
             DateTimeModification.fromZonedDateTime(category.getUtcExpiration()),
             categoryDescription, category.getPrice(), true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
         Result<TicketCategory> res = eventManager.updateCategory(category.getId(), event, tcm, username);
-        Assert.assertFalse(res.isSuccess());
-        Assert.assertTrue(res.getErrors().contains(ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK));
+        assertFalse(res.isSuccess());
+        assertTrue(res.getErrors().contains(ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK));
     }
 
     @Test

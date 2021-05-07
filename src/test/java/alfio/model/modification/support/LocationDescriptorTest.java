@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LocationDescriptorTest {
 

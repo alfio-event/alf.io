@@ -24,8 +24,8 @@ import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +40,7 @@ public class EuVatCheckerTest {
     private ConfigurationManager configurationManager;
     private EventAndOrganizationId eventAndOrganizationId;
 
-    @Before
+    @BeforeEach
     public void init() {
         client = mock(EUVatChecker.class);
         configurationManager = mock(ConfigurationManager.class);
@@ -94,11 +94,10 @@ public class EuVatCheckerTest {
         assertEquals("------", vatDetail.getAddress());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void performCheckRequestFailed() {
         when(client.check(any(String.class), any(String.class))).thenThrow(new IllegalStateException("from test!"));
-        Optional<VatDetail> result = EuVatChecker.performCheck("1234", "IE", eventAndOrganizationId).apply(configurationManager, client);
-        assertFalse(result.isPresent());
+        assertThrows(IllegalStateException.class, () -> EuVatChecker.performCheck("1234", "IE", eventAndOrganizationId).apply(configurationManager, client));
     }
 
     @Test

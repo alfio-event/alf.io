@@ -41,13 +41,12 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -59,10 +58,10 @@ import java.util.*;
 import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static java.util.Collections.emptyMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
@@ -97,7 +96,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private EventRepository eventRepository;
 
-    @Before
+    @BeforeEach
     public void setup() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_PRE_REGISTRATION, "true");
@@ -241,12 +240,12 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         Thread.sleep(100L);//we are testing ordering, not concurrency...
         waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event.mustUseFirstAndLastName()), "bixio@mille.org", null, Locale.ITALIAN);
         List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAll(event.getId());
-        assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
+        assertEquals(2, (int) waitingQueueRepository.countWaitingPeople(event.getId()));
         assertTrue(subscriptions.stream().allMatch(w -> w.getSubscriptionType().equals(WaitingQueueSubscription.Type.SOLD_OUT)));
 
         //the following call shouldn't have any effect
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
-        assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
+        assertEquals(2, (int) waitingQueueRepository.countWaitingPeople(event.getId()));
         return Pair.of(reservationId, event);
     }
 }
