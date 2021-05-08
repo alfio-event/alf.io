@@ -49,30 +49,6 @@ The local "bootRun" task has the following prerequisites:
 
 once started, alf.io will create all the required tables in the database, and be available at http://localhost:8080/admin. You can log in using the default Username _admin_ and the password which was printed on the console.
 
-Note: if you want to test without installing a pgsql instance, we have configured the following tasks:
-
-- startEmbeddedPgSQL
-- stopEmbeddedPgSQL
-
-So, in a terminal first launch pgsql:
-
-```
-./gradlew startEmbeddedPgSQL
-```
-
-In another one launch alf.io
-
-```
-./gradlew -Pprofile=dev :bootRun
-```
-
-When you are done, kill the pgsql instance with:
-
-```
-./gradlew stopEmbeddedPgSQL
-```
-
-
 The following profiles are supported
 
  * `dev`
@@ -109,12 +85,12 @@ Importing the Gradle project into Intellij and Eclipse both work.
 
 Container images are available on https://hub.docker.com/r/alfio/alf.io/tags.
 
-alf.io can also be run with Docker Compose:
+alf.io can also be run with Docker Compose (*experimental*):
 
     docker-compose up
 
-If you plan on using Docker Compose to run alf.io in production, then you need
-to make a couple of changes:
+Running alf.io in production using Docker compose is not officially supported.
+However, if you decide to do so, then you need to make a couple of changes:
 
 * Add a mapping for port `8443`
 * Handle SSL termination (e.g. with something like `tutum/haproxy`)
@@ -130,12 +106,19 @@ to make a couple of changes:
 
 ### Generate a new version of the alfio/alf.io docker image
 
- * Build application and Dockerfile:
+#### Build application and Dockerfile
  ```
- docker run --rm -u gradle -v "$PWD":/home/gradle/project -w /home/gradle/project gradle:jdk11 gradle distribution
+ ./gradlew distribution
  ```
+ Alternatively, you can use Docker (*experimental*):
+ ```
+ docker run --rm -u gradle -v "$PWD":/home/gradle/project -w /home/gradle/project gradle:7.0.0-jdk11 gradle --no-daemon distribution -x test
+ ```
+ 
+ Please note that at the moment the command above performs the build without running the automated tests.
+ Use it at your own risk. 
 
- * Create docker image:
+#### Create docker image:
  ```
  docker build -t alfio/alf.io ./build/dockerize
  ```
@@ -194,7 +177,10 @@ This project is sponsored by:
   <img alt="Swicket" src="https://swicket.io/logo-web.png" width="200">
 </a>
 <br><br>
-<img alt="Exteso" src="https://alf.io/img/logos/exteso_logo.jpg" width="150"> &nbsp; 
+<img alt="Exteso" src="https://alf.io/img/logos/exteso_logo.jpg" width="150"> &nbsp;
+<a href="https://www.starplane.it/" target="_blank">
+  <img alt="Starplane" src="https://alf.io/img/logos/starplane.png" width="120">
+</a>&nbsp;
 <a href="https://www.amicidelticino.ch/" target="_blank">
   <img alt="Amici del Ticino" src="https://alf.io/img/logos/amicidelticino-logo.png" width="120">
 </a>&nbsp;
