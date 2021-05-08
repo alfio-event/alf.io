@@ -17,7 +17,6 @@
 package alfio.extension;
 
 import alfio.util.HttpUtils;
-import alfio.util.Json;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.*;
@@ -27,7 +26,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 @Log4j2
 public class SimpleHttpClient {
@@ -177,6 +178,7 @@ public class SimpleHttpClient {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             logInterruption(exception);
+            throw new IllegalStateException(exception);
         }
         Path tempFile = null;
         if (HttpUtils.callSuccessful(response)) {
@@ -213,7 +215,7 @@ public class SimpleHttpClient {
     }
 
     private static HttpRequest.BodyPublisher buildRequestBody(Object body) {
-        return body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(body));
+        return body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(ExtensionUtils.convertToJson(body));
     }
 
 }

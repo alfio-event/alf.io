@@ -813,8 +813,8 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
     public void updateEventFormat() {
         var categories = List.of(
             new TicketCategoryModification(null, "first", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2, null, null, AlfioMetadata.empty()));
 
         var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
