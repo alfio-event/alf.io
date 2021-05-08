@@ -29,7 +29,7 @@
     baseServices.service('PaymentProxyService', function($http, HttpErrorHandler) {
         return {
             getAllProxies : function(orgId) {
-                return $http.get('/admin/api/paymentProxies/'+orgId+'.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/paymentProxies/'+orgId).error(HttpErrorHandler.handle);
             }
         };
     });
@@ -57,21 +57,21 @@
         var service = {
             data: {},
             getAllEvents : function() {
-                return $http.get('/admin/api/events.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/events').error(HttpErrorHandler.handle);
             },
             getAllActiveEvents : function() {
-                return $http.get('/admin/api/active-events.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/active-events').error(HttpErrorHandler.handle);
             },
             getAllExpiredEvents : function() {
-                return $http.get('/admin/api/expired-events.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/expired-events').error(HttpErrorHandler.handle);
             },
             getEvent: function(name) {
-                return $http.get('/admin/api/events/'+name+'.json').success(function(result) {
+                return $http.get('/admin/api/events/'+name).success(function(result) {
                     $rootScope.$emit('EventLoaded', result.event);
                 }).error(HttpErrorHandler.handle);
             },
             getEventById: function(eventId) {
-                return $http.get('/admin/api/events/id/'+eventId+'.json').success(function(result) {
+                return $http.get('/admin/api/events/id/'+eventId).success(function(result) {
                     $rootScope.$emit('EventLoaded', result);
                 }).error(HttpErrorHandler.handle);
             },

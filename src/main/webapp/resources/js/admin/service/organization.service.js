@@ -7,10 +7,10 @@
     function OrganizationService($http, HttpErrorHandler) {
         return {
             getAllOrganizations: function () {
-                return $http.get('/admin/api/organizations.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/organizations').error(HttpErrorHandler.handle);
             },
             getOrganization: function (id) {
-                return $http.get('/admin/api/organizations/' + id + '.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/organizations/' + id).error(HttpErrorHandler.handle);
             },
             createOrganization: function (organization) {
                 return $http['post']('/admin/api/organizations/new', organization).error(HttpErrorHandler.handle);

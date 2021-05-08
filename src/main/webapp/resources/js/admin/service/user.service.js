@@ -7,10 +7,10 @@
     function UserService($http, $uibModal, $window, HttpErrorHandler) {
         return {
             getAllRoles: function() {
-                return $http.get('/admin/api/roles.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/roles').error(HttpErrorHandler.handle);
             },
             getAllUsers : function() {
-                return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/users').error(HttpErrorHandler.handle);
             },
             editUser : function(user) {
                 var url = angular.isDefined(user.id) ? '/admin/api/users/edit' : ('/admin/api/users/new?baseUrl='+window.encodeURIComponent($window.location.origin));
@@ -29,7 +29,7 @@
                 return $http['post']('/admin/api/users/check', user).error(HttpErrorHandler.handle);
             },
             loadUser: function(userId) {
-                return $http.get('/admin/api/users/'+userId+'.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/users/'+userId).error(HttpErrorHandler.handle);
             },
             loadCurrentUser: function() {
                 return $http.get('/admin/api/users/current').error(HttpErrorHandler.handle);
