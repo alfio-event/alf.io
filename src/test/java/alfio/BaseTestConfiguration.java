@@ -24,7 +24,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
-import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,16 +31,11 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ByteArrayResource;
 
-import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.http.HttpClient;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -53,49 +47,30 @@ import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
 
 @Configuration
 public class BaseTestConfiguration {
-    private EmbeddedPostgres postgres;
-
-    private final String POSTGRES_USERNAME = "postgres";
+    private final String POSTGRES_USERNAME = "alfio";
     private final String POSTGRES_PASSWORD = "postgres";
-    private final String POSTGRES_DB = "postgres";
+    private final String POSTGRES_DB = "alfio";
+    private final String TC_URL = "jdbc:tc:postgresql:13:///"+POSTGRES_DB;
+
 
     @Bean
     @Profile("!travis")
-    public PlatformProvider getCloudProvider(EmbeddedPostgres postgres) {
-        IntegrationTestUtil.generateDBConfig(postgres.getJdbcUrl(POSTGRES_USERNAME, POSTGRES_DB), POSTGRES_USERNAME, POSTGRES_PASSWORD)
+    public PlatformProvider getCloudProvider() {
+        IntegrationTestUtil.generateDBConfig(TC_URL, POSTGRES_USERNAME, POSTGRES_PASSWORD)
             .forEach(System::setProperty);
         return PlatformProvider.DEFAULT;
     }
 
     @Bean
     @Profile("!travis")
-    public DataSource getDataSource(EmbeddedPostgres postgres) {
+    public DataSource getDataSource() {
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(postgres.getJdbcUrl(POSTGRES_USERNAME, POSTGRES_DB));
+        dataSource.setJdbcUrl(TC_URL);
         dataSource.setUsername(POSTGRES_USERNAME);
         dataSource.setPassword(POSTGRES_PASSWORD);
-        dataSource.setDriverClassName("org.postgresql.Driver");
         dataSource.setMaximumPoolSize(5);
         return dataSource;
     }
-
-    @Bean
-    @Profile("!travis")
-    public EmbeddedPostgres postgres() throws IOException {
-        Path pgsqlPath = Paths.get(".", "alfio-itest");
-        Files.createDirectories(pgsqlPath);
-        Path tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data");
-        postgres = EmbeddedPostgres.builder().setDataDirectory(tmpDataDir).start();
-        return postgres;
-    }
-
-    @PreDestroy
-    public void shutdown() throws IOException {
-        if (postgres != null) {
-            postgres.close();
-        }
-    }
-
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer propConfig() {

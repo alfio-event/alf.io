@@ -2,31 +2,19 @@ import ch.digitalfondue.jfiveparse.HtmlSerializer
 import ch.digitalfondue.jfiveparse.NodeMatcher
 import ch.digitalfondue.jfiveparse.Parser
 import ch.digitalfondue.jfiveparse.Selector
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
-import com.opentable.db.postgres.embedded.PgBinaryResolver
-import org.apache.commons.io.FileUtils
-import org.apache.commons.io.IOUtils
-import org.apache.commons.lang3.SystemUtils
 import org.apache.tools.ant.filters.ReplaceTokens
-import org.springframework.jdbc.core.JdbcTemplate
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.Year
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-
-import static java.lang.String.format
 
 buildscript {
 
     dependencies {
         classpath 'com.opentable.components:otj-pg-embedded:0.13.3'
         classpath 'org.postgresql:postgresql:42.2.20'
-        classpath "org.springframework:spring-jdbc:5.3.6"
-
         //this is for processing the index.html at compile time
         classpath "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
         classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.9.0"
@@ -166,10 +154,11 @@ dependencies {
 
     implementation "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
 
-    testImplementation 'com.opentable.components:otj-pg-embedded:0.13.3'
-
     compileOnly "javax.servlet:javax.servlet-api:4.0.1"
     testImplementation "javax.servlet:javax.servlet-api:4.0.1"
+    testImplementation "org.testcontainers:testcontainers:1.15.3"
+    testImplementation "org.testcontainers:postgresql:1.15.3"
+    testImplementation "org.testcontainers:junit-jupiter:1.15.3"
     testImplementation "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }
@@ -395,97 +384,6 @@ task clever(type: Copy) {
     })
     into "${project.buildDir}/clevercloud"
     dependsOn build
-}
-
-task startEmbeddedPgSQL {
-    doLast {
-        def pgsqlPath = Paths.get(System.getProperty("user.dir"), "alfio-itest")
-        Files.createDirectories(pgsqlPath)
-        def tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data")
-
-        def binDir = "alfio-pg-bin"+(UUID.randomUUID().toString())
-        def postgresBinariesDir = Files.createDirectories(pgsqlPath.resolve(binDir)).toAbsolutePath().toFile()
-
-        def postgres = EmbeddedPostgres.builder()
-            .setPort(5432)
-            .setDataDirectory(tmpDataDir)
-            .setOverrideWorkingDirectory(postgresBinariesDir)
-            // we are doing this because there is an unfortunate interplay with the persistence of the gradle daemon and
-            // EmbeddedPostgres.PREPARE_BINARIES (which is a static field)
-            // this cause to reuse a wrong directory
-            .setPgBinaryResolver(new PgBinaryResolver() {
-                @Override
-                InputStream getPgBinary(String system, String machineHardware) {
-                    return EmbeddedPostgres.class.getResourceAsStream(format("/postgresql-%s-%s.txz", system, machineHardware));
-                }
-            })
-            .start()
-
-        // create a new admin, and then rename the user "postgres" as we don't want to have the superuser roles
-        def jdbc = new JdbcTemplate(postgres.getDatabase("postgres", "postgres"))
-        jdbc.execute("CREATE ROLE tmpadmin LOGIN PASSWORD 'password' SUPERUSER")
-
-        jdbc = new JdbcTemplate(postgres.getDatabase("tmpadmin", "postgres"))
-        jdbc.execute("ALTER USER postgres RENAME TO admin")
-        //
-        //todo: check if the following grants are necessary
-        jdbc.execute("CREATE ROLE postgres LOGIN PASSWORD 'password' NOSUPERUSER INHERIT CREATEDB CREATEROLE REPLICATION")
-        jdbc.execute("GRANT pg_monitor TO postgres")
-        jdbc.execute("GRANT pg_read_all_settings TO postgres")
-        jdbc.execute("GRANT pg_read_all_stats TO postgres")
-        jdbc.execute("GRANT pg_signal_backend TO postgres")
-        jdbc.execute("GRANT pg_stat_scan_tables TO postgres")
-        jdbc.execute("CREATE DATABASE alfio WITH OWNER postgres")
-        //
-        Files.write(Paths.get(".", "alfio-itest", "pgsql-descriptor"), Arrays.asList(tmpDataDir.toAbsolutePath().toFile().toString(), postgresBinariesDir.toString()))
-        System.out.println("Launched pgsql")
-    }
-}
-
-// code imported from EmbeddedPostgres :D
-String pgBin(File pgDirBase, String binaryName) {
-    final pgDir = pgDirBase.listFiles(new FileFilter() {
-        @Override
-        boolean accept(File file) {
-            return file.getName().startsWith("PG-") && file.isDirectory()
-        }
-    })[0]
-    final String extension = SystemUtils.IS_OS_WINDOWS ? ".exe" : ""
-    return new File(pgDir, "bin/" + binaryName + extension).getPath()
-}
-
-void system(String... command) {
-    final ProcessBuilder builder = new ProcessBuilder(command)
-    final Process process = builder.start()
-    if (0 != process.waitFor()) {
-        throw new IllegalStateException(String.format("Process %s failed%n%s", Arrays.asList(command), IOUtils.toString(process.getErrorStream())))
-    }
-}
-
-void pgCtl(File binDir, File dataDir, String action) {
-    system(pgBin(binDir, "pg_ctl"), "-D", dataDir.getPath(), action, "-m", "fast", "-t", "5", "-w")
-}
-//
-
-task stopEmbeddedPgSQL {
-    doLast {
-        def descriptor = Paths.get(".", "alfio-itest", "pgsql-descriptor")
-
-        if (!Files.exists(descriptor)) {
-            System.out.println("No pid file, you may need to remove manually the alfio-itest folder")
-            return
-        }
-
-        def r = Files.readAllLines(descriptor)
-        def dataDir = new File(r.get(0))
-        def binariesDir = new File(r.get(1))
-
-        pgCtl(binariesDir, dataDir, "stop")
-        Files.deleteIfExists(descriptor)
-        FileUtils.deleteDirectory(dataDir)
-        FileUtils.deleteDirectory(binariesDir)
-        System.out.println("Stopped postgresql")
-    }
 }
 
 release {
