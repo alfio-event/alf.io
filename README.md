@@ -75,7 +75,10 @@ Add a new line with: `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,addr
 ## Developing alf.io
 Importing the Gradle project into Intellij and Eclipse both work.
 
-**Note**: this project uses [Project Lombok](https://projectlombok.org/). You will need to install the corresponding Lombok plugin for integration into your IDE.
+**Notes**:
+- this project uses [Project Lombok](https://projectlombok.org/). You will need to install the corresponding Lombok plugin for integration into your IDE.
+- this project uses [TestContainers](https://testcontainers.org) to run integration tests against a real PostgreSQL database. Please make sure that your configuration meets [their requirements](https://www.testcontainers.org/supported_docker_environment/)
+
 
 ## Check dependencies to update
 
