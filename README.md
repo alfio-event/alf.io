@@ -79,9 +79,9 @@ Importing the Gradle project into Intellij and Eclipse both work.
 - this project uses [Project Lombok](https://projectlombok.org/). You will need to install the corresponding Lombok plugin for integration into your IDE.
 - this project uses [TestContainers](https://testcontainers.org) to run integration tests against a real PostgreSQL database. Please make sure that your configuration meets [their requirements](https://www.testcontainers.org/supported_docker_environment/)
 
-### TestContainers + podman notes (fedora)
-
-As TestContainers expect the docker socket for managing the containers, you will need to do the following (found in issue: https://github.com/containers/podman/issues/7927#issuecomment-732676422).
+<details><summary>How to configure TestContainers with Podman (Fedora 34)</summary>
+<p>
+As TestContainers expect the docker socket for managing the containers, you will need to do the following <a href="https://github.com/containers/podman/issues/7927#issuecomment-732676422" target="_blank" rel="noopener">(see original issue for details)</a>:
 
 Define the 2 env. variable:
 
@@ -92,12 +92,16 @@ export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock
 
 And run in another console:
 
-> podman system service -t 0
+```
+podman system service -t 0
+```
+To be noted:
 
-To be noted: 
+- for unknown reason, the first time podman download the missing images, testcontainers will fail. Run another time and it will work.
+- in theory, with systemd+socket activation the service should start automatically, but currently I was not able to make it works.
 
- - for unknown reason, the first time podman download the missing images, testcontainers will fail. Run another time and it will work.
- - in theory, with systemd+socket activation the service should start automatically, but currently I was not able to make it works.
+</p>
+</details>
 
 
 ## Check dependencies to update
