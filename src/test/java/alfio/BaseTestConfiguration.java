@@ -45,7 +45,7 @@ import java.util.function.Supplier;
 
 import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class BaseTestConfiguration {
     private final String POSTGRES_USERNAME = "alfio";
     private final String POSTGRES_PASSWORD = "postgres";

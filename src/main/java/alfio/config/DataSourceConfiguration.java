@@ -72,7 +72,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableTransactionManagement
 @EnableScheduling
 @EnableAsync
@@ -228,30 +228,22 @@ public class DataSourceConfiguration {
                      SpecialPriceTokenGenerator specialPriceTokenGenerator,
                      WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor,
                      TicketReservationManager ticketReservationManager,
-                     AdminJobQueueRepository adminJobQueueRepository,
-                     PlatformTransactionManager platformTransactionManager,
-                     BillingDocumentManager billingDocumentManager,
-                     EventRepository eventRepository,
-                     OrganizationRepository organizationRepository,
-                     ClockProvider clockProvider
+                     AdminJobManager adminJobManager
                      ) {
         return new Jobs(adminReservationRequestManager, fileUploadManager,
             notificationManager, specialPriceTokenGenerator, ticketReservationManager,
             waitingQueueSubscriptionProcessor,
-            adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager, billingDocumentManager, eventRepository, notificationManager, organizationRepository, clockProvider));
+            adminJobManager);
     }
 
     @Bean
     AdminJobManager adminJobManager(AdminJobQueueRepository adminJobQueueRepository,
                                     PlatformTransactionManager transactionManager,
-                                    TicketReservationManager ticketReservationManager,
-                                    BillingDocumentManager billingDocumentManager,
-                                    EventRepository eventRepository,
-                                    NotificationManager notificationManager,
-                                    OrganizationRepository organizationRepository,
-                                    ClockProvider clockProvider) {
+                                    ClockProvider clockProvider,
+                                    ReservationJobExecutor reservationJobExecutor,
+                                    BillingDocumentJobExecutor billingDocumentJobExecutor) {
         return new AdminJobManager(
-            List.of(reservationJobExecutor(ticketReservationManager), billingDocumentJobExecutor(billingDocumentManager, ticketReservationManager, eventRepository, notificationManager, organizationRepository)),
+            List.of(reservationJobExecutor, billingDocumentJobExecutor),
             adminJobQueueRepository,
             transactionManager,
             clockProvider);

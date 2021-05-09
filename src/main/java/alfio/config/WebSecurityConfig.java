@@ -38,7 +38,7 @@ import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
 import java.net.http.HttpClient;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 @Log4j2
 public class WebSecurityConfig {

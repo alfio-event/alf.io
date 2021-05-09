@@ -37,7 +37,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import javax.sql.DataSource;
 
 @Profile("openid")
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Order(1)
 @Log4j2
 public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {

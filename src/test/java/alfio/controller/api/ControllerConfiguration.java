@@ -19,7 +19,7 @@ package alfio.controller.api;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ComponentScan(basePackages = {"alfio.controller"})
 public class ControllerConfiguration {
 

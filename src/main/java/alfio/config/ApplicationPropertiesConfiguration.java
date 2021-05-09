@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ClassPathResource;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Profile("!"+Initializer.PROFILE_SPRING_BOOT)
 public class ApplicationPropertiesConfiguration {
     @Bean

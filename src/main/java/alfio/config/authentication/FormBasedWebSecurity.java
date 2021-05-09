@@ -33,7 +33,7 @@ import javax.sql.DataSource;
  * Default form based configuration.
  */
 @Profile("!openid")
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Order(1)
 public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
     public FormBasedWebSecurity(Environment environment,

@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Import(BaseTestConfiguration.class)
 public class TestConfiguration {
 

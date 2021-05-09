@@ -45,7 +45,7 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
     org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class,
     org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration.class})
 @EnableConfigurationProperties(ExternalConfiguration.class)
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Profile(Initializer.PROFILE_SPRING_BOOT)
 public class SpringBootInitializer {
 
