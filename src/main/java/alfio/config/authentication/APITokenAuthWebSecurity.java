@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 import static alfio.config.authentication.AuthenticationConstants.*;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Order(0)
 public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
 

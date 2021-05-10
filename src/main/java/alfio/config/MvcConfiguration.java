@@ -16,10 +16,7 @@
  */
 package alfio.config;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -45,7 +42,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
 @EnableWebMvc
 @EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60) //4h
@@ -53,10 +50,14 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     private final Environment environment;
     private final String frontendVersion;
+    private final ObjectMapper objectMapper;
 
-    public MvcConfiguration(Environment environment, @Value("${alfio.frontend.version}") String frontendVersion) {
+    public MvcConfiguration(Environment environment,
+                            @Value("${alfio.frontend.version}") String frontendVersion,
+                            ObjectMapper objectMapper) {
         this.environment = environment;
         this.frontendVersion = frontendVersion;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -82,26 +83,16 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.add(jacksonMessageConverter());
+        converters.add(jacksonMessageConverter(objectMapper));
         StringHttpMessageConverter converter = new StringHttpMessageConverter();
         converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));
         converters.add(converter);
     }
 
-    @Bean
-    public MappingJackson2HttpMessageConverter jacksonMessageConverter() {
+    private MappingJackson2HttpMessageConverter jacksonMessageConverter(ObjectMapper objectMapper) {
         final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-        converter.setObjectMapper(objectMapper());
+        converter.setObjectMapper(objectMapper);
         return converter;
-    }
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        return mapper;
     }
 
     @Bean

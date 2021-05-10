@@ -22,6 +22,10 @@ import alfio.manager.user.UserManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +36,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class BaseConfiguration {
 
     @Bean
@@ -50,5 +54,14 @@ public class BaseConfiguration {
             externalConfiguration,
             environment,
             cache);
+    }
+
+    @Bean
+    ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        return mapper;
     }
 }

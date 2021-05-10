@@ -269,7 +269,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         }
     }
 
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     static class E2EConfiguration {
 
         private static WebDriver buildRemoteDriver(URL url,
