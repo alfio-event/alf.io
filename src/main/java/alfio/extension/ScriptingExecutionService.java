@@ -126,6 +126,7 @@ public class ScriptingExecutionService {
             scope.setPrototype(sealedScope);
             scope.setParentScope(null);
             scope.put("extensionLogger", scope, extensionLogger);
+            scope.put("console", scope, new ConsoleLogger(extensionLogger));
 
             // retrocompatibility
             scope.put("Java", scope, new JavaClassInterop(Map.of("alfio.model.CustomerName", alfio.model.CustomerName.class), scope));

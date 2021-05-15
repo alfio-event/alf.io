@@ -32,8 +32,10 @@ function executeScript(scriptEvent) {
     var string = JSON.stringify(map);
     log.warn(string);
     var parsed = JSON.parse(string, function() {});
-    log.warn(parsed.test);
-    if(scriptEvent === 'INVOICE_GENERATION') {
+    if (scriptEvent === 'EVENT_CREATED') {
+        console.log('created event. Here some debug info', parsed.test, parsed.name, 'custom string', map);
+    }
+    if (scriptEvent === 'INVOICE_GENERATION') {
         return {
             invoiceNumber: 'blabla'
         };
