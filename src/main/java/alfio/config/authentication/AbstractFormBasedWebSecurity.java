@@ -23,6 +23,7 @@ import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
@@ -52,7 +53,7 @@ import java.util.regex.Pattern;
 import static alfio.config.authentication.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
 
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter {
     private final Environment environment;
     private final UserManager userManager;

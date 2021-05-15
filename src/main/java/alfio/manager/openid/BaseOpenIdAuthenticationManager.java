@@ -150,7 +150,9 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             .map(Organization::getId).collect(Collectors.toSet());
 
         if (alfioUser.isAdmin()) {
-            userOrganizationRepository.removeOrganizationUserLinks(userId, databaseOrganizationIds);
+            if(!databaseOrganizationIds.isEmpty()) {
+                userOrganizationRepository.removeOrganizationUserLinks(userId, databaseOrganizationIds);
+            }
             return;
         }
 

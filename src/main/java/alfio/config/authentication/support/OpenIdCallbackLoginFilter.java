@@ -17,10 +17,12 @@
 package alfio.config.authentication.support;
 
 import alfio.manager.openid.OpenIdAuthenticationManager;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
@@ -32,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+@Log4j2
 public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingFilter {
 
     private final RequestMatcher requestMatcher;
@@ -52,6 +55,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
         HttpServletResponse res = (HttpServletResponse) response;
 
         if (requestMatcher.matches(req)) {
+            log.info("request URL matches {}", req.getRequestURI());
             super.doFilter(req, res, chain);
         }
 
@@ -59,11 +63,10 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException {
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         String code = request.getParameter("code");
         if (code == null) {
-            logger.warn("Error: authorization code is null");
-            throw new IllegalArgumentException("authorization code cannot be null");
+            throw new SessionAuthenticationException("authorization code cannot be null");
         }
         logger.trace("Received code. Attempting to exchange it with an access Token");
         var user = openIdAuthenticationManager.authenticateUser(code);

@@ -117,7 +117,16 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
     }
 
     public List<String> getScopes() {
-        return List.of("openid", "email", "profile", openIdConfiguration().getRolesParameter(), openIdConfiguration().getAlfioGroupsParameter());
+        var openIdConfiguration = openIdConfiguration();
+        return List.of(
+            "openid",
+            "email",
+            "profile",
+            openIdConfiguration.getRolesParameter(),
+            openIdConfiguration.getAlfioGroupsParameter(),
+            openIdConfiguration.getGivenNameClaim(),
+            openIdConfiguration.getFamilyNameClaim()
+        );
     }
 
     @Override
