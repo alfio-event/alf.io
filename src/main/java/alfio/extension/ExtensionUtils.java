@@ -87,7 +87,7 @@ public class ExtensionUtils {
         return Json.GSON.toJson(unwrap(o));
     }
 
-    private static Object unwrap(Object o) {
+    static Object unwrap(Object o) {
         if (o instanceof Scriptable) {
             if (o instanceof NativeArray) {
                 List<Object> res = new ArrayList<>();

@@ -214,9 +214,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         // check if EVENT_CREATED was logged
         List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-        assertEventLogged(extLogs, ExtensionEvent.EVENT_METADATA_UPDATE.name(), 6, 1);
-        assertEventLogged(extLogs, "EVENT_CREATED", 6, 3);
-        assertEventLogged(extLogs, "EVENT_CREATED", 6, 5);
+        assertEventLogged(extLogs, ExtensionEvent.EVENT_METADATA_UPDATE.name(), 8, 1);
+        assertEventLogged(extLogs, "EVENT_CREATED", 8, 4);
+        assertEventLogged(extLogs, "EVENT_CREATED", 8, 7);
 
 
         {
@@ -1296,7 +1296,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         jdbcTemplate.update("delete from extension_log", Map.of());
     }
 
-    private void assertEventLogged(List<ExtensionLog> extLog, String event, int logSize, int index){
+    private void assertEventLogged(List<ExtensionLog> extLog, String event, int logSize, int index) {
         assertEquals(logSize, extLog.size()); // each event logs exactly two logs
         assertEquals(event, extLog.get(index).getDescription());
     }

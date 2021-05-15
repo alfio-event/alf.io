@@ -73,6 +73,7 @@ public class ScriptingExecutionService {
             sealedScope = cx.initSafeStandardObjects(null, true);
             sealedScope.put("log", sealedScope, log);
             sealedScope.put("GSON", sealedScope, Json.GSON);
+            sealedScope.put("JSON", sealedScope, new NativeJavaClass(sealedScope, JSON.class));
             sealedScope.put("simpleHttpClient", sealedScope, simpleHttpClient);
             sealedScope.put("HashMap", sealedScope, new NativeJavaClass(sealedScope, HashMap.class));
             sealedScope.put("ExtensionUtils", sealedScope, new NativeJavaClass(sealedScope, ExtensionUtils.class));
@@ -125,6 +126,7 @@ public class ScriptingExecutionService {
             scope.setPrototype(sealedScope);
             scope.setParentScope(null);
             scope.put("extensionLogger", scope, extensionLogger);
+            scope.put("console", scope, new ConsoleLogger(extensionLogger));
 
             // retrocompatibility
             scope.put("Java", scope, new JavaClassInterop(Map.of("alfio.model.CustomerName", alfio.model.CustomerName.class), scope));
