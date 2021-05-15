@@ -78,7 +78,7 @@ public class AdminOpenIdAuthenticationManagerTest {
     public void oauth2_authorize_url_test() {
         var state = "this-is-the-state";
         String redirectURL = authenticationManager.buildAuthorizeUrl(state);
-        String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&state="+state+"&scope=openid+email+profile+groups+alfio-groups&response_type=code";
+        String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&state="+state+"&scope=openid+email+profile+groups+alfio-groups+given_name+family_name&response_type=code";
         assertEquals(expectedURL, redirectURL);
     }
 
@@ -118,8 +118,19 @@ public class AdminOpenIdAuthenticationManagerTest {
     }
 
     @Test
-    public void oauth2_get_scopes() {
-        List<String> expectedScopes = Arrays.asList("openid", "email", "profile", GROUPS_NAME, ALFIO_GROUPS_NAME);
+    public void oauth2GetScopes() {
+        List<String> expectedScopes = Arrays.asList("openid", "email", "profile", GROUPS_NAME, ALFIO_GROUPS_NAME, "given_name", "family_name");
+        List<String> actualScopes = authenticationManager.getScopes();
+        assertEquals(expectedScopes, actualScopes);
+    }
+
+    @Test
+    public void oauth2GetScopesOverrideClaims() {
+        var familyNameClaim = "my-family-name";
+        var givenNameClaim = "my-given-name";
+        when(environment.getProperty(eq("openid.familyNameClaim"))).thenReturn(familyNameClaim);
+        when(environment.getProperty(eq("openid.givenNameClaim"))).thenReturn(givenNameClaim);
+        List<String> expectedScopes = Arrays.asList("openid", "email", "profile", GROUPS_NAME, ALFIO_GROUPS_NAME, givenNameClaim, familyNameClaim);
         List<String> actualScopes = authenticationManager.getScopes();
         assertEquals(expectedScopes, actualScopes);
     }
