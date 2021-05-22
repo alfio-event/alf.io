@@ -28,4 +28,6 @@ public class AlfioInfo {
     private final boolean devModeEnabled;
     private final boolean prodModeEnabled;
     private final AnalyticsConfiguration analyticsConfiguration;
+    private final String globalPrivacyPolicyUrl;
+    private final String globalTermsUrl;
 }
