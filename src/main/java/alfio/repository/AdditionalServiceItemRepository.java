@@ -18,6 +18,7 @@ package alfio.repository;
 
 import alfio.model.AdditionalServiceItem;
 import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
+import alfio.model.AdditionalServiceItemExport;
 import alfio.model.BookedAdditionalService;
 import ch.digitalfondue.npjt.*;
 
@@ -63,6 +64,22 @@ public interface AdditionalServiceItemRepository {
                                                                       @Bind("language") String language,
                                                                       @Bind("eventId") int eventId);
 
-
+    @Query(
+        "select" +
+            "    ai.uuid ai_uuid, ai.creation ai_creation, ai.last_modified ai_last_modified, ai.final_price_cts ai_final_price_cts, ai.currency_code ai_currency_code, ai.vat_cts ai_vat_cts, ai.discount_cts ai_discount_cts," +
+            "    tr.id tr_uuid, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address," +
+            "    asv.service_type as_type, asd.value as_title" +
+            " from additional_service_item ai" +
+            "    join additional_service asv on ai.additional_service_id_fk = asv.id" +
+            "    join tickets_reservation tr on ai.tickets_reservation_uuid = tr.id" +
+            "    join additional_service_description asd on ai.additional_service_id_fk = asd.additional_service_id_fk" +
+            " where ai.event_id_fk = :eventId" +
+            "  and asv.service_type = :additionalServiceType" +
+            "  and asd.type = 'TITLE'" +
+            "  and asd.locale = :locale"
+    )
+    List<AdditionalServiceItemExport> getAdditionalServicesOfTypeForEvent(@Bind("eventId") int eventId,
+                                                                          @Bind("additionalServiceType") String additionalServiceType,
+                                                                          @Bind("locale") String locale);
 
 }
