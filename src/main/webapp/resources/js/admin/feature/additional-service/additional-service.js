@@ -7,6 +7,7 @@
                     selectedLanguages: '=',
                     onModification: '&',
                     eventId: '=',
+                    eventShortName: '=',
                     eventStartDate: '=',
                     eventIsFreeOfCharge: '=',
                     title: '@',
@@ -95,6 +96,13 @@
             });
             self.displayList = buildDisplayList(self.list);
             self.additionalServiceUseCount = results[2].data;
+            var countSold = 0;
+            self.displayList.map(function(i) {
+                if (self.additionalServiceUseCount[i.id] > 0) {
+                    countSold ++;
+                }
+            });
+            self.allowDownload = countSold > 0;
 
         });
 

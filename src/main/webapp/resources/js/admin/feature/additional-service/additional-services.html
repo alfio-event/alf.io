@@ -1,5 +1,11 @@
 <div class="page-header">
-    <h3><i class="fa {{ctrl.icon}}"></i> {{ctrl.title}}</h3>
+    <h3>
+        <i class="fa {{ctrl.icon}}"></i> {{ctrl.title}}
+        <a class="btn btn-default pull-right" data-ng-if="ctrl.allowDownload" ng-href="/admin/api/events/{{ctrl.eventShortName}}/additional-services/{{ctrl.type}}/export" target="_blank" rel="noopener">
+            <i class="fa fa-download"></i> Export purchased items
+        </a>
+    </h3>
+
 </div>
 <div class="panel panel-default" data-ng-repeat="item in ctrl.displayList | filter : {type: ctrl.type}">
     <div data-ng-if="item.id" id="additional-service-{{item.id}}"></div>
@@ -7,7 +13,10 @@
         <div class="panel-title">
             <div class="row">
                 <div class="col-xs-9">
-                    <div class="h4"><span data-ng-repeat="pair in item.zippedTitleAndDescriptions" title="{{pair[0].locale}}"><span ng-class="{'text-danger': pair[0].value === ''}">{{pair[0] | showMissingASText}}</span> <span data-ng-if="!$last"> / </span></span></div>
+                    <div class="h4">
+                        <span data-ng-repeat="pair in item.zippedTitleAndDescriptions" title="{{pair[0].locale}}"><span ng-class="{'text-danger': pair[0].value === ''}">{{pair[0] | showMissingASText}}</span> <span data-ng-if="!$last"> / </span></span>
+                        <span style="margin-left: 20px;" class="text-success" data-ng-if="ctrl.additionalServiceUseCount[item.id] > 0"> Confirmed: {{ctrl.additionalServiceUseCount[item.id]}}</span>
+                    </div>
                 </div>
                 <div class="col-xs-3">
                     <div class="pull-right">
