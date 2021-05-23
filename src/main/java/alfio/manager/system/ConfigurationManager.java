@@ -670,11 +670,11 @@ public class ConfigurationManager {
         var prodMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
 
 
-        var conf = getFor(Set.of(ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE, ConfigurationKeys.GOOGLE_ANALYTICS_KEY), ConfigurationLevel.system());
+        var conf = getFor(Set.of(GOOGLE_ANALYTICS_ANONYMOUS_MODE, GOOGLE_ANALYTICS_KEY, GLOBAL_PRIVACY_POLICY, GLOBAL_TERMS), ConfigurationLevel.system());
 
         var analyticsConf = AnalyticsConfiguration.build(conf, session);
 
-        return new AlfioInfo(demoMode, devMode, prodMode, analyticsConf);
+        return new AlfioInfo(demoMode, devMode, prodMode, analyticsConf, conf.get(GLOBAL_PRIVACY_POLICY).getValueOrNull(), conf.get(GLOBAL_TERMS).getValueOrNull());
     }
 
     public Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getPublicOpenIdConfiguration() {
