@@ -25,6 +25,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -59,4 +60,6 @@ public class BasicSubscriptionDescriptorInfo {
 
     private final Map<String, String> formattedValidFrom;
     private final Map<String, String> formattedValidTo;
+
+    private final List<Language> contentLanguages;
 }

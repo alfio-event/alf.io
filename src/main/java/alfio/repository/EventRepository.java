@@ -207,7 +207,7 @@ public interface EventRepository {
         " and (:subscriptionId::uuid is null or subscription_id = :subscriptionId::uuid)" +
         " and (:organizer::integer is null or org_id = :organizer)" +
         " and (:organizerSlug::text is null or org_slug = :organizerSlug)" +
-        " and (:tags::text[] is null or tags @> ARRAY[ :tags ]::text[]))")
+        " and (:tags::text[] is null or tags @> ARRAY[ :tags ]::text[])) order by start_ts")
     List<Event> findVisibleBySearchOptions(@Bind("subscriptionId") UUID subscriptionId,
                                            @Bind("organizer") Integer organizer,
                                            @Bind("organizerSlug") String organizerSlug,

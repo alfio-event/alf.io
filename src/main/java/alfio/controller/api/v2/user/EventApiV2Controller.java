@@ -107,7 +107,8 @@ public class EventApiV2Controller {
                 var formattedDates = Formatters.getFormattedDates(e, messageSource, contentLanguages);
                 return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getTitle(), e.getFormat(), e.getLocation(),
                     e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
-                    formattedDates.endDate, formattedDates.endTime);
+                    formattedDates.endDate, formattedDates.endTime,
+                    e.getContentLanguages().stream().map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage())).collect(toList()));
             })
             .collect(Collectors.toList());
         return new ResponseEntity<>(events, getCorsHeaders(), HttpStatus.OK);

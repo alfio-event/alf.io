@@ -17,10 +17,7 @@
 package alfio.controller.api.v2.user;
 
 import alfio.controller.api.support.CurrencyDescriptor;
-import alfio.controller.api.v2.model.AnalyticsConfiguration;
-import alfio.controller.api.v2.model.BasicSubscriptionDescriptorInfo;
-import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
-import alfio.controller.api.v2.model.SubscriptionDescriptorWithAdditionalInfo;
+import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.user.support.PurchaseContextInfoBuilder;
 import alfio.controller.form.SearchOptions;
 import alfio.controller.support.Formatters;
@@ -52,6 +49,7 @@ import java.util.stream.Collectors;
 import static alfio.model.PriceContainer.VatStatus.isVatIncluded;
 import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
 import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
+import static java.util.stream.Collectors.toList;
 
 @RestController
 @RequestMapping("/api/v2/public/")
@@ -105,7 +103,8 @@ public class SubscriptionsApiController {
             Formatters.getFormattedDate(s, s.getOnSaleFrom(), "common.event.date-format", messageSource),
             Formatters.getFormattedDate(s, s.getOnSaleTo(), "common.event.date-format", messageSource),
             Formatters.getFormattedDate(s, s.getValidityFrom(), "common.event.date-format", messageSource),
-            Formatters.getFormattedDate(s, s.getValidityTo(), "common.event.date-format", messageSource)
+            Formatters.getFormattedDate(s, s.getValidityTo(), "common.event.date-format", messageSource),
+            s.getContentLanguages().stream().map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage())).collect(toList())
         );
     }
 

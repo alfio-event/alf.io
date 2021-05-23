@@ -20,6 +20,7 @@ import alfio.model.Event.EventFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -39,4 +40,5 @@ public class BasicEventInfo implements DateValidity {
     private final Map<String, String> formattedBeginTime; //the hour/minute component
     private final Map<String, String> formattedEndDate;
     private final Map<String, String> formattedEndTime;
+    private final List<Language> contentLanguages;
 }
