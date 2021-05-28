@@ -79,13 +79,13 @@ public interface EventRepository {
     @Query("select locales from event where short_name = :eventName")
     Optional<Integer> findLocalesByShortName(@Bind("eventName") String eventName);
 
-    @Query("select * from event order by start_ts asc")
+    @Query("select * from event order by start_ts, end_ts")
     List<Event> findAll();
 
-    @Query("select * from event where id in(:ids)")
+    @Query("select * from event where id in(:ids) order by start_ts, end_ts")
     List<Event> findByIds(@Bind("ids") Collection<Integer> ids);
 
-    @Query("select * from event where org_id in (:organizationIds)")
+    @Query("select * from event where org_id in (:organizationIds) order by start_ts, end_ts")
     List<Event> findByOrganizationIds(@Bind("organizationIds") Collection<Integer> organizationIds);
 
     @Query("insert into event(short_name, format, display_name, website_url, external_url, website_t_c_url, website_p_p_url, image_url, file_blob_id, location, latitude, longitude, start_ts, end_ts, time_zone, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, locales, vat_status, src_price_cts, version, status, metadata) " +
@@ -163,7 +163,7 @@ public interface EventRepository {
     @Query("select id from event where end_ts > :now")
     List<Integer> findAllActiveIds(@Bind("now") ZonedDateTime now);
 
-    @Query("select * from event where end_ts > :now")
+    @Query("select * from event where end_ts > :now order by start_ts, end_ts")
     List<Event> findAllActives(@Bind("now") ZonedDateTime now);
 
     @Query("update event set available_seats = :newValue where id = :eventId")
@@ -207,7 +207,7 @@ public interface EventRepository {
         " and (:subscriptionId::uuid is null or subscription_id = :subscriptionId::uuid)" +
         " and (:organizer::integer is null or org_id = :organizer)" +
         " and (:organizerSlug::text is null or org_slug = :organizerSlug)" +
-        " and (:tags::text[] is null or tags @> ARRAY[ :tags ]::text[])) order by start_ts")
+        " and (:tags::text[] is null or tags @> ARRAY[ :tags ]::text[])) order by start_ts, end_ts")
     List<Event> findVisibleBySearchOptions(@Bind("subscriptionId") UUID subscriptionId,
                                            @Bind("organizer") Integer organizer,
                                            @Bind("organizerSlug") String organizerSlug,

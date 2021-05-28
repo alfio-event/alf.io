@@ -132,7 +132,7 @@ public interface SubscriptionRepository {
     @Query("update subscription_descriptor set is_public = :isPublic where id = :id and organization_id_fk = :organizationId")
     int setPublicStatus(@Bind("id") UUID id, @Bind("organizationId") int organizationId, @Bind("isPublic") boolean isPublic);
 
-    @Query("select * from subscription_descriptor where organization_id_fk = :organizationId order by creation_ts asc")
+    @Query("select * from subscription_descriptor where organization_id_fk = :organizationId order by on_sale_from, on_sale_to")
     List<SubscriptionDescriptor> findAllByOrganizationIds(@Bind("organizationId") int organizationId);
 
     @Query("select subscription_descriptor.* from subscription_descriptor" +
@@ -141,7 +141,7 @@ public interface SubscriptionRepository {
         " (max_entries > 0 or max_entries = -1) and (on_sale_from is null or :from >= on_sale_from) " +
         " and (on_sale_to is null or :from <= on_sale_to)" +
         " and (:orgSlug is null or org.slug = :orgSlug)"+
-        " order by on_sale_from asc")
+        " order by on_sale_from, on_sale_to")
     List<SubscriptionDescriptor> findAllActiveAndPublic(@Bind("from") ZonedDateTime from, @Bind("orgSlug") String organizerSlug);
 
     @Query("select * from subscription_descriptor where id = :id and organization_id_fk = :organizationId")

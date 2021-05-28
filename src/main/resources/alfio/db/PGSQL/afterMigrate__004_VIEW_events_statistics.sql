@@ -59,4 +59,4 @@ from
     sum(case (is_containing_stuck_tickets) when true then 1 else 0 end) is_containing_stuck_tickets_count,
     sum(case (access_restricted = false and is_expired = false) when true then 1 else 0 end) as public_and_valid_count,
 	event_id from ticket_category_statistics group by event_id) as stats
-inner join event on event_id = event.id);
+inner join event on event_id = event.id order by event.start_ts, event.end_ts);
