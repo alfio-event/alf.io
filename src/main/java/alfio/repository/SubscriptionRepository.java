@@ -288,4 +288,7 @@ public interface SubscriptionRepository {
 
     @Query("update subscription set status = 'INVALIDATED' where id in (select id from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE' limit :amount)")
     int invalidateSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("amount") int amount);
+
+    @Query("update subscription set status = 'CANCELLED' where reservation_id_fk = :reservationId")
+    int cancelSubscriptions(@Bind("reservationId") String reservationId);
 }

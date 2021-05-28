@@ -31,6 +31,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -66,7 +67,7 @@ public class SubscriptionManager {
             subscriptionDescriptor.getOnSaleFrom(),
             subscriptionDescriptor.getOnSaleTo(),
             subscriptionDescriptor.getPriceCts(),
-            subscriptionDescriptor.getVat(),
+            requireNonNullElse(subscriptionDescriptor.getVat(), BigDecimal.ZERO),
             subscriptionDescriptor.getVatStatus(),
             subscriptionDescriptor.getCurrency(),
             Boolean.TRUE.equals(subscriptionDescriptor.getIsPublic()),

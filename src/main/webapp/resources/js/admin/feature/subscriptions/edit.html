@@ -98,7 +98,11 @@
     </div>
 
     <div class="page-header" ng-if="$ctrl.existing">
-        <h3>Visibility</h3>
+        <h3>
+            Visibility:
+            <span class="text-danger" ng-if="!$ctrl.subscription.isPublic">Hidden</span>
+            <span class="text-success" ng-if="$ctrl.subscription.isPublic">Visible</span>
+        </h3>
     </div>
     <div ng-if="$ctrl.existing">
         <div class="row">

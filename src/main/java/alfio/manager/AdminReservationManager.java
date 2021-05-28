@@ -207,7 +207,7 @@ public class AdminReservationManager {
             .map(pair -> {
                 var purchaseContext = pair.getLeft();
                 TicketReservation reservation = pair.getRight();
-                if(notification.isCustomer()){
+                if(notification.isCustomer()) {
                     ticketReservationManager.sendConfirmationEmail(purchaseContext, reservation, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), username);
                 }
                 if(notification.isAttendees() && purchaseContextType == PurchaseContextType.event) {
@@ -688,6 +688,9 @@ public class AdminReservationManager {
                 var ticketReservation = pair.getRight();
                 if(!creditNoteRequested || !ticketReservation.getHasInvoiceNumber()) {
                     markAsCancelled(ticketReservation, username, purchaseContext);
+                }
+                if(purchaseContext.ofType(PurchaseContextType.subscription)) {
+                    subscriptionRepository.cancelSubscriptions(reservationId);
                 }
                 return true;
             });
