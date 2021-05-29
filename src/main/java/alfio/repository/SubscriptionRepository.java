@@ -172,12 +172,11 @@ public interface SubscriptionRepository {
     List<EventSubscriptionLink> findLinkedEvents(@Bind("organizationId") int organizationId,
                                                  @Bind("subscriptionId") UUID id);
 
-    @Query(FETCH_SUBSCRIPTION_LINK + " where se.event_id_fk = :eventId")
-    List<EventSubscriptionLink> findLinkedSubscriptions(@Bind("organizationId") int organizationId,
-                                                        @Bind("eventId") int eventId);
-
     @Query("select subscription_descriptor_id_fk from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
     List<UUID> findLinkedSubscriptionIds(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
+
+    @Query("select * from subscription_descriptor where organization_id_fk = :organizationId and (on_sale_to is null or on_sale_to > now()) order by on_sale_from, on_sale_to nulls last")
+    List<SubscriptionDescriptor> findActiveSubscriptionsForOrganization(@Bind("organizationId") int organizationId);
 
     @Query("delete from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId" +
         " and subscription_descriptor_id_fk not in (:descriptorIds)")

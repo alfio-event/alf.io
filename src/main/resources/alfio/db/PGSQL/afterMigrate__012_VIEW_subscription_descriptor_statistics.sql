@@ -47,5 +47,5 @@ create view subscription_descriptor_statistics as (
             (select count(*) from subscription where status between 'ACQUIRED' and 'CHECKED_IN' and subscription_descriptor_fk = sd.id) s_sold_count,
             (select count(*) from subscription where status = 'PENDING' and subscription_descriptor_fk = sd.id) s_pending_count,
             (select count(*) from subscription_event where subscription_descriptor_id_fk = sd.id) s_events_count
-      from subscription_descriptor sd
+      from subscription_descriptor sd order by on_sale_from, on_sale_to nulls last
 )

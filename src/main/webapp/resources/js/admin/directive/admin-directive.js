@@ -599,9 +599,8 @@
                     }, true);
                 }
 
-                SubscriptionService.loadSubscriptionsDescriptors($scope.obj.organizationId).then(function(res) {
-                    $scope.subscriptionDescriptors = res.data.map(function(r) {
-                        var descriptor = r.descriptor;
+                SubscriptionService.loadActiveSubscriptionsDescriptors($scope.obj.organizationId).then(function(res) {
+                    $scope.subscriptionDescriptors = res.data.map(function(descriptor) {
                         descriptor.selected = ($scope.obj && $scope.obj.linkedSubscriptions && _.contains($scope.obj.linkedSubscriptions, descriptor.id));
                         return descriptor;
                     });

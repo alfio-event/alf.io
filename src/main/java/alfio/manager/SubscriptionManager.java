@@ -208,4 +208,8 @@ public class SubscriptionManager {
     public int countFree(UUID subscriptionDescriptorId) {
         return subscriptionRepository.countFreeSubscriptionForDescriptor(subscriptionDescriptorId);
     }
+
+    public List<SubscriptionDescriptor> loadActiveSubscriptionDescriptors(int organizationId) {
+        return subscriptionRepository.findActiveSubscriptionsForOrganization(organizationId);
+    }
 }

@@ -338,6 +338,14 @@
             SubscriptionService.loadDescriptor(ctrl.organizationId, ctrl.subscription.id).then(function(res) {
                 ctrl.subscription = res.data;
                 initExistingSubscription();
+                var onSaleFrom = SubscriptionService.dateTimeObjectToDate(ctrl.subscription.onSaleFromModel);
+                if (onSaleFrom) {
+                    ctrl.subscription.onSaleFromText = onSaleFrom.format('YYYY-MM-DD HH:mm');
+                }
+                var onSaleTo = SubscriptionService.dateTimeObjectToDate(ctrl.subscription.onSaleToModel);
+                if (onSaleTo) {
+                    ctrl.subscription.onSaleToText = onSaleTo.format('YYYY-MM-DD HH:mm');
+                }
             });
         };
 
@@ -426,6 +434,10 @@
             },
             loadSubscriptionsDescriptors: function(organizationId) {
                 return $http.get('/admin/api/organization/'+organizationId+'/subscription/list')
+                    .error(HttpErrorHandler.handle);
+            },
+            loadActiveSubscriptionsDescriptors: function(organizationId) {
+                return $http.get('/admin/api/organization/'+organizationId+'/subscription/active')
                     .error(HttpErrorHandler.handle);
             },
             loadDescriptor: function(organizationId, subscriptionId) {

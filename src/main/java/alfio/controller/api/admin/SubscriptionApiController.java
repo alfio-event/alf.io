@@ -20,6 +20,7 @@ import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.subscription.EventSubscriptionLink;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +50,15 @@ public class SubscriptionApiController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
+    }
+
+    @GetMapping("/active")
+    ResponseEntity<List<SubscriptionDescriptor>> findActive(@PathVariable("organizationId") int organizationId, Principal principal) {
+        if (userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
+            return ResponseEntity.ok(subscriptionManager.loadActiveSubscriptionDescriptors(organizationId));
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     @GetMapping("/{subscriptionId}")
