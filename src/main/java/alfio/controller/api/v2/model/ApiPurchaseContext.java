@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 public interface ApiPurchaseContext {
 
-    EventWithAdditionalInfo.InvoicingConfiguration getInvoicingConfiguration();
+    InvoicingConfiguration getInvoicingConfiguration();
     EventWithAdditionalInfo.AssignmentConfiguration getAssignmentConfiguration();
     AnalyticsConfiguration getAnalyticsConfiguration();
     EventWithAdditionalInfo.CaptchaConfiguration getCaptchaConfiguration();

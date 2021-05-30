@@ -106,8 +106,16 @@ public interface UserRepository {
         "billing_address_city, billing_address_state, vat_country, vat_nr, invoicing_additional_information, additional_fields)" +
         " values (:userId, :company, :line1, :line2, :zip, :city, :state, :country, :taxId, :invoiceInfo::jsonb, :addFields::jsonb)" +
         " on conflict (user_id_fk) do update set " +
-        " (billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, billing_address_state, vat_country, vat_nr, invoicing_additional_information, additional_fields) = " +
-        " (EXCLUDED.billing_address_company, EXCLUDED.billing_address_line1, EXCLUDED.billing_address_line2, EXCLUDED.billing_address_zip, EXCLUDED.billing_address_city, EXCLUDED.billing_address_state, EXCLUDED.vat_country, EXCLUDED.vat_nr, EXCLUDED.invoicing_additional_information::jsonb, EXCLUDED.additional_fields::jsonb)")
+        " billing_address_company = EXCLUDED.billing_address_company," +
+        " billing_address_line1 = EXCLUDED.billing_address_line1," +
+        " billing_address_line2 = EXCLUDED.billing_address_line2," +
+        " billing_address_zip = EXCLUDED.billing_address_zip," +
+        " billing_address_city = EXCLUDED.billing_address_city," +
+        " billing_address_state = EXCLUDED.billing_address_state," +
+        " vat_country = EXCLUDED.vat_country," +
+        " vat_nr = EXCLUDED.vat_nr," +
+        " invoicing_additional_information = EXCLUDED.invoicing_additional_information::jsonb," +
+        " additional_fields = EXCLUDED.additional_fields::jsonb")
     int persistUserProfile(@Bind("userId") int userId,
                            @Bind("company") String companyName,
                            @Bind("line1") String addressLine1,

@@ -17,6 +17,7 @@
 package alfio.controller.api.v2.user.support;
 
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
+import alfio.controller.api.v2.model.InvoicingConfiguration;
 import alfio.manager.EuVatChecker;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.PurchaseContext;
@@ -66,7 +67,8 @@ public class PurchaseContextInfoBuilder {
         ), purchaseContext.getConfigurationLevel());
     }
 
-    public static EventWithAdditionalInfo.InvoicingConfiguration invoicingInfo(ConfigurationManager configurationManager, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationsValues) {
+    public static InvoicingConfiguration invoicingInfo(ConfigurationManager configurationManager,
+                                                       Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationsValues) {
         boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurationsValues);
         boolean euVatCheckingEnabled = EuVatChecker.reverseChargeEnabled(configurationsValues);
         boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(configurationsValues);
@@ -75,7 +77,7 @@ public class PurchaseContextInfoBuilder {
         boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault();
         boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).getValueAsBooleanOrDefault();
 
-        return new EventWithAdditionalInfo.InvoicingConfiguration(canGenerateReceiptOrInvoiceToCustomer,
+        return new InvoicingConfiguration(canGenerateReceiptOrInvoiceToCustomer,
             euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
             customerReferenceEnabled, enabledItalyEInvoicing, vatNumberStrictlyRequired);
 

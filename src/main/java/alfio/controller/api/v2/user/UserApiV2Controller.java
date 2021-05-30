@@ -18,17 +18,20 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.v2.model.PurchaseContextWithReservations;
 import alfio.controller.api.v2.model.User;
+import alfio.controller.form.ContactAndTicketsForm;
+import alfio.controller.support.CustomBindingResult;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.support.response.ValidatedResponse;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.util.ErrorsCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
@@ -49,11 +52,47 @@ public class UserApiV2Controller {
             return userManager.findOptionalEnabledUserByUsername(principal.getName())
                 .map(u -> {
                     var userProfileOptional = userManager.findOptionalProfileForUser(u.getId());
-                    return ResponseEntity.ok(new User(u.getFirstName(), u.getLastName(), u.getEmailAddress(), userProfileOptional.orElse(null)));
+                    return ResponseEntity.ok(new User(
+                        u.getFirstName(),
+                        u.getLastName(),
+                        u.getEmailAddress(),
+                        userProfileOptional.orElse(null)));
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @PostMapping("/me")
+    public ResponseEntity<ValidatedResponse<User>> updateProfile(@RequestBody ContactAndTicketsForm update,
+                                                                 BindingResult bindingResult,
+                                                                 Principal principal) {
+        if(principal != null) {
+
+            boolean italianEInvoicingEnabled = configurationManager.isItalianEInvoicingEnabled(ConfigurationLevel.system());
+
+            return ResponseEntity.of(userManager.findOptionalEnabledUserByUsername(principal.getName())
+                .map(u -> {
+                    var customBindingResult = new CustomBindingResult(bindingResult);
+                    // set email from original user to pass the validation
+                    update.setEmail(u.getEmailAddress());
+                    update.formalValidation(customBindingResult, italianEInvoicingEnabled);
+                    if(!customBindingResult.hasErrors()) {
+                        var publicUserProfile = userManager.updateProfile(u, update, italianEInvoicingEnabled);
+                        if(publicUserProfile.isPresent()) {
+                            var profile = publicUserProfile.get();
+                            var updatedUser = new User(update.getFirstName(),
+                                update.getLastName(),
+                                u.getEmailAddress(),
+                                profile);
+                            return ValidatedResponse.toResponse(customBindingResult, updatedUser);
+                        }
+                        customBindingResult.reject(ErrorsCode.EMPTY_FIELD);
+                    }
+                    return ValidatedResponse.toResponse(customBindingResult, null);
+                }));
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     @GetMapping("/authentication-enabled")

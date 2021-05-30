@@ -238,18 +238,6 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
 
     @AllArgsConstructor
     @Getter
-    public static class InvoicingConfiguration {
-        private final boolean userCanDownloadReceiptOrInvoice;
-        private final boolean euVatCheckingEnabled;
-        private final boolean invoiceAllowed;
-        private final boolean onlyInvoice;
-        private final boolean customerReferenceEnabled;
-        private final boolean enabledItalyEInvoicing;
-        private final boolean vatNumberStrictlyRequired;
-    }
-
-    @AllArgsConstructor
-    @Getter
     public static class CaptchaConfiguration {
         private final boolean captchaForTicketSelection;
         private final boolean captchaForOfflinePaymentAndFree;

@@ -30,7 +30,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseContext {
     private final SubscriptionDescriptor subscriptionDescriptor;
-    private final EventWithAdditionalInfo.InvoicingConfiguration invoicingConfiguration;
+    private final InvoicingConfiguration invoicingConfiguration;
     private final AnalyticsConfiguration analyticsConfiguration;
     private final EventWithAdditionalInfo.CaptchaConfiguration captchaConfiguration;
 
@@ -51,7 +51,7 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     private final Integer numAvailable;
 
     @Override
-    public EventWithAdditionalInfo.InvoicingConfiguration getInvoicingConfiguration() {
+    public InvoicingConfiguration getInvoicingConfiguration() {
         return invoicingConfiguration;
     }
 

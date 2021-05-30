@@ -19,6 +19,7 @@ package alfio.manager.system;
 import alfio.config.Initializer;
 import alfio.controller.api.v2.model.AlfioInfo;
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
+import alfio.controller.api.v2.user.support.PurchaseContextInfoBuilder;
 import alfio.manager.system.ConfigurationLevels.CategoryLevel;
 import alfio.manager.system.ConfigurationLevels.EventLevel;
 import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
@@ -505,7 +506,11 @@ public class ConfigurationManager {
     }
 
     public boolean isItalianEInvoicingEnabled(Configurable configurable) {
-        var res = getFor(List.of(ENABLE_ITALY_E_INVOICING), configurable.getConfigurationLevel());
+        return isItalianEInvoicingEnabled(configurable.getConfigurationLevel());
+    }
+
+    public boolean isItalianEInvoicingEnabled(ConfigurationLevel configurationLevel) {
+        var res = getFor(List.of(ENABLE_ITALY_E_INVOICING), configurationLevel);
         return isItalianEInvoicingEnabled(res);
     }
 
@@ -670,11 +675,30 @@ public class ConfigurationManager {
         var prodMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
 
 
-        var conf = getFor(Set.of(GOOGLE_ANALYTICS_ANONYMOUS_MODE, GOOGLE_ANALYTICS_KEY, GLOBAL_PRIVACY_POLICY, GLOBAL_TERMS), ConfigurationLevel.system());
+        var options = EnumSet.of(
+            GOOGLE_ANALYTICS_ANONYMOUS_MODE,
+            GOOGLE_ANALYTICS_KEY,
+            GLOBAL_PRIVACY_POLICY,
+            GLOBAL_TERMS,
+            ENABLE_ITALY_E_INVOICING,
+            ENABLE_CUSTOMER_REFERENCE,
+            VAT_NUMBER_IS_REQUIRED,
+            GENERATE_ONLY_INVOICE,
+            INVOICE_ADDRESS,
+            VAT_NR,
+            ENABLE_EU_VAT_DIRECTIVE,
+            COUNTRY_OF_BUSINESS);
+        var conf = getFor(options, ConfigurationLevel.system());
 
         var analyticsConf = AnalyticsConfiguration.build(conf, session);
 
-        return new AlfioInfo(demoMode, devMode, prodMode, analyticsConf, conf.get(GLOBAL_PRIVACY_POLICY).getValueOrNull(), conf.get(GLOBAL_TERMS).getValueOrNull());
+        return new AlfioInfo(demoMode,
+            devMode,
+            prodMode,
+            analyticsConf,
+            conf.get(GLOBAL_PRIVACY_POLICY).getValueOrNull(),
+            conf.get(GLOBAL_TERMS).getValueOrNull(),
+            PurchaseContextInfoBuilder.invoicingInfo(this, conf));
     }
 
     public Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getPublicOpenIdConfiguration() {

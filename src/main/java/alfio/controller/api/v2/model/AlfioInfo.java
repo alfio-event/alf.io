@@ -30,4 +30,5 @@ public class AlfioInfo {
     private final AnalyticsConfiguration analyticsConfiguration;
     private final String globalPrivacyPolicyUrl;
     private final String globalTermsUrl;
+    private final InvoicingConfiguration invoicingConfiguration;
 }

@@ -97,7 +97,37 @@ public class ContactAndTicketsForm implements Serializable {
                          Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer) {
 
 
-        
+        formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false));
+
+        purchaseContext.event().ifPresent(event -> {
+            if(!postponeAssignment) {
+                Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
+                    .filter(m -> !m.isEmpty())
+                    .map(m -> m.entrySet().stream().map(e -> {
+                        var filteredForTicket = ticketFieldsFilterer.orElseThrow().getFieldsForTicket(e.getKey());
+                        return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator);
+                    }))
+                    .map(s -> s.collect(Collectors.toList()));
+
+                boolean success = validationResults
+                    .filter(l -> l.stream().allMatch(ValidationResult::isSuccess))
+                    .isPresent();
+                if(!success) {
+                    String errorCode = validationResults.filter(this::containsVatValidationError).isPresent() ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
+                    bindingResult.reject(errorCode);
+                }
+            }
+        });
+
+        if(purchaseContext.ofType(PurchaseContextType.subscription) && differentSubscriptionOwner) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.email", ErrorsCode.STEP_2_EMPTY_EMAIL);
+        }
+    }
+
+    public void formalValidation(CustomBindingResult bindingResult,
+                                 boolean italianEInvoicingEnabled) {
         email = StringUtils.trim(email);
 
         fullName = StringUtils.trim(fullName);
@@ -116,14 +146,7 @@ public class ContactAndTicketsForm implements Serializable {
         rejectIfOverLength(bindingResult, "lastName", ErrorsCode.STEP_2_MAX_LENGTH_LASTNAME, fullName, 255);
 
 
-
-
         if(invoiceRequested) {
-            /*if(companyVatChecked) {
-                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressCompany", ErrorsCode.EMPTY_FIELD);
-                rejectIfOverLength(bindingResult, "billingAddressCompany", "error.tooLong", billingAddressCompany, 256);
-            }*/
-
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressLine1", ErrorsCode.EMPTY_FIELD);
             rejectIfOverLength(bindingResult, "billingAddressLine1", "error.tooLong", billingAddressLine1, 256);
 
@@ -145,7 +168,6 @@ public class ContactAndTicketsForm implements Serializable {
 
         // https://github.com/alfio-event/alf.io/issues/573
         // only for IT and only if enabled!
-        boolean italianEInvoicingEnabled = formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false);
         if (italianEInvoicingEnabled && StringUtils.isNotEmpty(vatCountryCode)) {
             // mandatory
             ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingFiscalCode", ErrorsCode.EMPTY_FIELD);
@@ -200,32 +222,6 @@ public class ContactAndTicketsForm implements Serializable {
 
         if (email != null && !bindingResult.hasFieldErrors("email") && !Validator.isEmailValid(email)) {
             bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL, new Object[] {}, null);
-        }
-
-        purchaseContext.event().ifPresent(event -> {
-            if(!postponeAssignment) {
-                Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
-                    .filter(m -> !m.isEmpty())
-                    .map(m -> m.entrySet().stream().map(e -> {
-                        var filteredForTicket = ticketFieldsFilterer.orElseThrow().getFieldsForTicket(e.getKey());
-                        return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator);
-                    }))
-                    .map(s -> s.collect(Collectors.toList()));
-
-                boolean success = validationResults
-                    .filter(l -> l.stream().allMatch(ValidationResult::isSuccess))
-                    .isPresent();
-                if(!success) {
-                    String errorCode = validationResults.filter(this::containsVatValidationError).isPresent() ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
-                    bindingResult.reject(errorCode);
-                }
-            }
-        });
-
-        if(purchaseContext.ofType(PurchaseContextType.subscription) && differentSubscriptionOwner) {
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.email", ErrorsCode.STEP_2_EMPTY_EMAIL);
         }
     }
 

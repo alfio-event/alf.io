@@ -24,7 +24,10 @@ public class User {
     private final String emailAddress;
     private final PublicUserProfile profile;
 
-    public User(String firstName, String lastName, String emailAddress, PublicUserProfile profile) {
+    public User(String firstName,
+                String lastName,
+                String emailAddress,
+                PublicUserProfile profile) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.emailAddress = emailAddress;
