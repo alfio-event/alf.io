@@ -16,25 +16,27 @@
         }
     }).service('ReservationCancelService', ['$q', '$uibModal', '$http', function($q, $uibModal, $http) {
             return {
-                cancelReservation: function(purchaseContextType, publicIdentifier, reservationId, refund, notify, credit) {
+                cancelReservation: function(purchaseContextType, publicIdentifier, reservationId, refund, notify, credit, issueCreditNote) {
                     var operation = credit ? 'credit' : 'cancel';
                     return $http.post('/admin/api/reservation/'+purchaseContextType+'/'+publicIdentifier+'/'+reservationId+'/'+operation, null, {
                         params: {
                             refund: refund,
-                            notify: notify
+                            notify: notify,
+                            issueCreditNote: issueCreditNote
                         }
                     });
                 },
 
-                cancelReservationModal: function(purchaseContextType, purchaseContext, reservationId, credit) {
+                cancelReservationModal: function(purchaseContextType, purchaseContext, reservation, credit) {
                     var modal = $uibModal.open({
                         size:'lg',
-                        template:'<reservation-cancel purchase-context-type="purchaseContextType" purchase-context="purchaseContext" reservation-id="reservationId" on-success="success()" on-cancel="close()" credit="credit"></reservation-cancel>',
+                        template:'<reservation-cancel purchase-context-type="purchaseContextType" purchase-context="purchaseContext" reservation-id="reservationId" on-success="success()" on-cancel="close()" credit="credit" can-generate-credit-note="invoiceRequested"></reservation-cancel>',
                         backdrop: 'static',
                         controller: function($scope) {
                             $scope.purchaseContext = purchaseContext;
                             $scope.purchaseContextType = purchaseContextType;
-                            $scope.reservationId = reservationId;
+                            $scope.reservationId = reservation.id;
+                            $scope.invoiceRequested = reservation.customerData.invoiceRequested;
                             $scope.credit = credit;
                             $scope.close = function() {
                                 $scope.$dismiss(false);

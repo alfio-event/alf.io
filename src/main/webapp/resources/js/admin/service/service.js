@@ -324,7 +324,7 @@
                     }
                 });
             },
-            removeTicketModal: function(event, reservationId, ticketId) {
+            removeTicketModal: function(event, reservationId, ticketId, invoiceRequested) {
                 var deferred = $q.defer();
                 var promise = deferred.promise;
 
@@ -355,17 +355,6 @@
                     refundTo: ticketIdsToRefund,
                     notify : notify,
                     issueCreditNote: issueCreditNote
-                });
-            },
-
-            cancelReservation: function(eventName, reservationId, refund, notify, credit, issueCreditNote) {
-                var operation = credit ? 'credit' : 'cancel';
-                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/'+operation, null, {
-                    params: {
-                        refund: refund,
-                        notify: notify,
-                        issueCreditNote: issueCreditNote
-                    }
                 });
             },
 

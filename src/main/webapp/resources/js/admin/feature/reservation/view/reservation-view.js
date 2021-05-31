@@ -389,7 +389,7 @@
         };
 
         ctrl.cancelReservationModal = function(credit) {
-            ReservationCancelService.cancelReservationModal(ctrl.purchaseContextType, ctrl.purchaseContext, ctrl.reservation.id, credit).then(function() {
+            ReservationCancelService.cancelReservationModal(ctrl.purchaseContextType, ctrl.purchaseContext, ctrl.reservation, credit).then(function() {
                 var message = credit ? 'Credit note generated.' : 'Reservation has been cancelled.';
                 if(!credit && ctrl.reservationDescriptor.reservation.status === 'CREDIT_NOTE_ISSUED') {
                     message += ' A credit note has been generated. Please check the Billing Documents tab.';
@@ -399,7 +399,7 @@
         };
 
         ctrl.removeTicket = function(ticket) {
-            EventService.removeTicketModal(ctrl.event, ctrl.reservation.id, ticket.ticketId, ctrl.reservation.customerData.invoiceRequested).then(function(billingDocumentRequested) {
+            EventService.removeTicketModal(ctrl.purchaseContext, ctrl.reservation.id, ticket.ticketId, ctrl.reservation.customerData.invoiceRequested).then(function(billingDocumentRequested) {
                 var message = 'Ticket has been cancelled.';
                 if(billingDocumentRequested) {
                     message += ' A credit note has been generated. Please check the Billing Documents tab.';
