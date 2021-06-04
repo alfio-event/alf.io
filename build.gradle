@@ -212,7 +212,7 @@ dependencies {
 
     testImplementation 'org.seleniumhq.selenium:selenium-java:4.0.0-beta-3'
 
-    errorprone('com.google.errorprone:error_prone_core:2.4.0')
+    errorprone('com.google.errorprone:error_prone_core:2.7.1')
 }
 
 // -- license configuration

@@ -152,7 +152,7 @@ public class ExtensionService {
         if (parameters != null) {
             List<ExtensionParameterKeyValue> extensionParameterKeyValue = extensionRepository.findExtensionParameterKeyValue(extensionId);
             extensionRepository.deleteExtensionParameter(extensionId);
-            for (ExtensionMetadata.Field field : parameters.getFields()) {
+            for (ExtensionMetadata.Field field : requireNonNullElse(parameters.getFields(), List.<ExtensionMetadata.Field>of())) {
                 for (String level : parameters.getConfigurationLevels()) {
                     int confFieldId = extensionRepository.registerExtensionConfigurationMetadata(extensionId, field.getName(), field.getDescription(), field.getType(), level, field.isRequired()).getKey();
                     List<ExtensionParameterKeyValue> filteredParam = extensionParameterKeyValue.stream().filter(kv -> field.getName().equals(kv.getName()) && level.equals(kv.getConfigurationLevel())).collect(toList());

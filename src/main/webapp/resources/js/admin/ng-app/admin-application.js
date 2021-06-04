@@ -2003,7 +2003,8 @@
         var getPendingPayments = function(force) {
             EventService.getPendingPayments($stateParams.eventName, force).success(function(data) {
                 var pendingReservations = data.map(function(pending) {
-                    ReservationIdentifierConfiguration.getReservationIdentifier($scope.event.id, pending.ticketReservation, false).then(function(result) {
+
+                    ReservationIdentifierConfiguration.getReservationIdentifier('event', $scope.event.shortName, pending.ticketReservation, false).then(function(result) {
                         pending.publicId = result;
                     });
                     return pending;

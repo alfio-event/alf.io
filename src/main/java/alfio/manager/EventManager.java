@@ -630,11 +630,16 @@ public class EventManager {
         em.getTicketCategories().forEach(tc -> {
             final int price = evaluatePrice(tc.getPrice(), freeOfCharge, event.getCurrency());
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
+            var accessType = requireNonNullElse(tc.getTicketAccessType(), TicketCategory.TicketAccessType.INHERIT);
+            if(event.getFormat() == Event.EventFormat.HYBRID && accessType == TicketCategory.TicketAccessType.INHERIT) {
+                // if the event is hybrid the default is IN_PERSON
+                accessType = TicketCategory.TicketAccessType.IN_PERSON;
+            }
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 atZone(tc.getValidCheckInFrom(), zoneId), atZone(tc.getValidCheckInTo(), zoneId),
                 atZone(tc.getTicketValidityStart(), zoneId), atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT),
-                requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), requireNonNullElse(tc.getTicketAccessType(), TicketCategory.TicketAccessType.INHERIT));
+                requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty), accessType);
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
