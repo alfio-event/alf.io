@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 
 // table {path, name, hash, script content, params}
@@ -48,6 +49,8 @@ import java.util.function.Supplier;
 @Service
 @Log4j2
 public class ScriptingExecutionService {
+
+    static final String EXTENSION_PARAMETERS = "extensionParameters";
 
     private final Supplier<Executor> executorSupplier;
     private final ScriptableObject sealedScope;
@@ -134,7 +137,11 @@ public class ScriptingExecutionService {
             scope.put("returnClass", scope, clazz);
 
             for (var entry : params.entrySet()) {
-                scope.put(entry.getKey(), scope, entry.getValue());
+                var value = entry.getValue();
+                if(entry.getKey().equals(EXTENSION_PARAMETERS)) {
+                    value = convertExtensionParameters(scope, value);
+                }
+                scope.put(entry.getKey(), scope, value);
             }
             Object res;
             res = cx.evaluateString(scope, script, name, 1, null);
@@ -156,5 +163,11 @@ public class ScriptingExecutionService {
         } finally {
             Context.exit();
         }
+    }
+
+    private Object convertExtensionParameters(Scriptable context, Object extensionParameters) {
+        return ((Map<?, ?>) extensionParameters).entrySet().stream()
+            .map(entry -> Map.entry(entry.getKey(), ScriptRuntime.toObject(context, entry.getValue())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

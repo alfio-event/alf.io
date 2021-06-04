@@ -47,6 +47,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static alfio.extension.ScriptingExecutionService.EXTENSION_PARAMETERS;
 import static alfio.manager.ExtensionManager.toPath;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -353,7 +354,7 @@ public class ExtensionService {
     private Pair<Set<String>, Map<String, Object>> getExternalExtensionParameters(Map<String, Object> input, ScriptPathNameHash activePath) {
         Map<String, Object> copy = new HashMap<>(input);
         // we assume that external parameters are defined correctly.
-        copy.put("extensionParameters", externalConfiguration.getParametersForExtension(activePath.getName()));
+        copy.put(EXTENSION_PARAMETERS, externalConfiguration.getParametersForExtension(activePath.getName()));
         return Pair.of(Set.of(), copy);
     }
 
@@ -368,7 +369,7 @@ public class ExtensionService {
 
         mandatory.removeAll(nameAndValues.keySet());
 
-        copy.put("extensionParameters", nameAndValues);
+        copy.put(EXTENSION_PARAMETERS, nameAndValues);
         return Pair.of(mandatory, copy);
     }
 
