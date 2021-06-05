@@ -19,6 +19,7 @@ package alfio.manager.support.response;
 import alfio.controller.support.CustomBindingResult;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
+import alfio.model.result.WarningMessage;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.validation.BindingResult;
@@ -46,7 +47,7 @@ public class ValidatedResponse<T> {
             }
         }).collect(Collectors.toList());
 
-        List<String> warnings = bindingResult instanceof CustomBindingResult ? ((CustomBindingResult)bindingResult).getWarningCodes() : List.of();
+        List<WarningMessage> warnings = bindingResult instanceof CustomBindingResult ? ((CustomBindingResult)bindingResult).getWarnings() : List.of();
         return new ValidatedResponse<>(ValidationResult.failed(transformed, warnings), value);
     }
 
@@ -83,7 +84,7 @@ public class ValidatedResponse<T> {
         return value;
     }
 
-    public List<String> getWarnings() {
+    public List<WarningMessage> getWarnings() {
         return validationResult.getWarnings();
     }
 

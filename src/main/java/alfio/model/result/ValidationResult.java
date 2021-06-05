@@ -33,9 +33,9 @@ public final class ValidationResult {
 
     private final List<ErrorDescriptor> errorDescriptors;
     private final int errorCount;
-    private final List<String> warnings;
+    private final List<WarningMessage> warnings;
 
-    private ValidationResult(List<ErrorDescriptor> errorDescriptors, List<String> warnings) {
+    private ValidationResult(List<ErrorDescriptor> errorDescriptors, List<WarningMessage> warnings) {
         this.errorDescriptors = errorDescriptors;
         this.errorCount = errorDescriptors.size();
         this.warnings = warnings;
@@ -53,7 +53,7 @@ public final class ValidationResult {
         return new ValidationResult(errors, List.of());
     }
 
-    public static ValidationResult failed(List<ErrorDescriptor> errors, List<String> warnings) {
+    public static ValidationResult failed(List<ErrorDescriptor> errors, List<WarningMessage> warnings) {
         return new ValidationResult(errors, warnings);
     }
 
@@ -77,7 +77,7 @@ public final class ValidationResult {
             List<ErrorDescriptor> joined = new ArrayList<>();
             joined.addAll(errorDescriptors);
             joined.addAll(second.getErrorDescriptors());
-            List<String> allWarnings = new ArrayList<>(warnings);
+            List<WarningMessage> allWarnings = new ArrayList<>(warnings);
             allWarnings.addAll(second.getWarnings());
             return new ValidationResult(joined, allWarnings);
         }

@@ -16,6 +16,7 @@
  */
 package alfio.controller.support;
 
+import alfio.model.result.WarningMessage;
 import lombok.experimental.Delegate;
 import org.springframework.validation.BindingResult;
 
@@ -25,21 +26,26 @@ import java.util.List;
 public class CustomBindingResult implements BindingResult {
     @Delegate
     private final BindingResult target;
-    private final List<String> warningCodes = new ArrayList<>();
+    private final List<WarningMessage> warnings = new ArrayList<>();
 
     public CustomBindingResult(BindingResult target) {
         this.target = target;
     }
 
     public void addWarning(String code) {
-        this.warningCodes.add(code);
+        this.warnings.add(new WarningMessage(code, List.of()));
     }
 
-    public List<String> getWarningCodes() {
-        return warningCodes;
+    public void addWarning(WarningMessage warning) {
+        warnings.add(warning);
+    }
+
+    public List<WarningMessage> getWarnings() {
+        return warnings;
     }
 
     public boolean hasWarnings() {
-        return !warningCodes.isEmpty();
+        return !warnings.isEmpty();
     }
+
 }

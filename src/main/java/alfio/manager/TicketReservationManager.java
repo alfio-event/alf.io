@@ -49,6 +49,7 @@ import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.result.WarningMessage;
 import alfio.model.subscription.*;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.support.UserIdAndOrganizationId;
@@ -2656,10 +2657,10 @@ public class TicketReservationManager {
             ).orElse(Result.error(ErrorCode.EventError.NOT_FOUND));
     }
 
-    public void flagAsValidated(String reservationId, PurchaseContext purchaseContext, List<String> warnings) {
+    public void flagAsValidated(String reservationId, PurchaseContext purchaseContext, List<WarningMessage> warnings) {
         ticketReservationRepository.updateValidationStatus(reservationId, true);
         if(!warnings.isEmpty()) {
-            auditingRepository.insert(reservationId, null, purchaseContext, WARNING_IGNORED, new Date(), RESERVATION, reservationId, List.of(Map.of("codes", warnings)));
+            auditingRepository.insert(reservationId, null, purchaseContext, WARNING_IGNORED, new Date(), RESERVATION, reservationId, List.of(Map.of("warnings", warnings)));
         }
     }
 

@@ -22,6 +22,7 @@ import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
+import alfio.model.result.WarningMessage;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.ErrorsCode;
 import alfio.util.ItalianTaxIdValidator;
@@ -220,8 +221,12 @@ public class ContactAndTicketsForm implements Serializable {
 
         }
 
-        if (email != null && !bindingResult.hasFieldErrors("email") && !Validator.isEmailValid(email)) {
-            bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL, new Object[] {}, null);
+        if (email != null && !bindingResult.hasFieldErrors("email")) {
+            if (!Validator.isEmailValid(email)) {
+                bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL, new Object[] {}, null);
+            } else if (!Validator.isCanonicalMailAddress(email)) {
+                bindingResult.addWarning(new WarningMessage(ErrorsCode.STEP_2_EMAIL_TYPO, List.of(email)));
+            }
         }
     }
 

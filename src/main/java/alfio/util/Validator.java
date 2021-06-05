@@ -48,6 +48,8 @@ public final class Validator {
 
     // source: https://commons.apache.org/proper/commons-validator/apidocs/src-html/org/apache/commons/validator/routines/EmailValidator.html
     private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^\\s*?(.+)@(.+?)\\s*$");
+    // this regex validates the e-mail to be a canonical address (i.e. test@example.org)
+    private static final Pattern CANONICAL_MAIL_VALIDATOR = Pattern.compile("^[^@\\s]+@[^@\\s]+(\\.[^@\\s]+)+$");
 
     private Validator() {
     }
@@ -343,6 +345,10 @@ public final class Validator {
 
     public static boolean isEmailValid(String email) {
         return StringUtils.isNotEmpty(email) && !email.strip().endsWith(".") && SIMPLE_E_MAIL_PATTERN.matcher(email).matches();
+    }
+
+    public static boolean isCanonicalMailAddress(String email) {
+        return StringUtils.isNotEmpty(email) && CANONICAL_MAIL_VALIDATOR.matcher(email).matches();
     }
 
     private static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {

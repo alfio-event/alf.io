@@ -446,7 +446,7 @@ public class ReservationApiV2Controller {
             }
 
             if(!bindingResult.hasErrors() && (!bindingResult.hasWarnings() || ignoreWarnings)) {
-                ticketReservationManager.flagAsValidated(reservationId, purchaseContext, bindingResult.getWarningCodes());
+                ticketReservationManager.flagAsValidated(reservationId, purchaseContext, bindingResult.getWarnings());
                 // save customer data
                 if(principal != null && configurationManager.isPublicOpenIdEnabled()) {
                     var additionalData = contactAndTicketsForm.getTickets().values()
