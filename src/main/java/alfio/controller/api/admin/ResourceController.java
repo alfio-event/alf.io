@@ -102,7 +102,7 @@ public class ResourceController {
             is.transferTo(os);
         }
         Locale loc = LocaleUtil.forLanguageTag(locale);
-        String template = new String(os.toByteArray(), StandardCharsets.UTF_8);
+        String template = os.toString(StandardCharsets.UTF_8);
 
         response.setContentType(MediaType.TEXT_PLAIN_VALUE);
         response.getWriter().print(TemplateManager.translate(template, loc, messageSourceManager.getRootMessageSource()));
@@ -137,7 +137,7 @@ public class ResourceController {
             Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(event, fileUploadManager);
             Map<String, Object> model = name.prepareSampleModel(organization, event, image);
             String renderedTemplate = templateManager.renderString(event, template.getFileAsString(), model, loc, name.getTemplateOutput());
-            if(MediaType.TEXT_PLAIN_VALUE.equals(name.getRenderedContentType())) {
+            if(MediaType.TEXT_PLAIN_VALUE.equals(name.getRenderedContentType()) || TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE.equals(name.getRenderedContentType())) {
                 response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".txt");
                 response.setContentType(MediaType.TEXT_PLAIN_VALUE);
                 response.setCharacterEncoding("UTF-8");
