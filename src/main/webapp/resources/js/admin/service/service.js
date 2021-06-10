@@ -319,7 +319,7 @@
                             if(!pathName.endsWith("/")) {
                                 pathName = pathName + "/";
                             }
-                            $window.open(pathName+"api/events/"+event.shortName+"/export.csv?"+queryString);
+                            $window.open(pathName+"api/events/"+event.shortName+"/export?"+queryString);
                         };
                     }
                 });
