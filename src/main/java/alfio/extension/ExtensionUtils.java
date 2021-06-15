@@ -23,10 +23,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mozilla.javascript.NativeArray;
-import org.mozilla.javascript.NativeJavaObject;
-import org.mozilla.javascript.NativeObject;
-import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -105,10 +102,27 @@ public class ExtensionUtils {
                     res.put(kv.getKey(), unwrap(kv.getValue()));
                 }
                 return res;
+            } else if (o instanceof IdScriptableObject) {
+                return parseIdScriptableObject((IdScriptableObject) o);
             }
         } else if (o instanceof CharSequence) {
             return o.toString();
         }
         return o;
+    }
+
+    private static Object parseIdScriptableObject(IdScriptableObject object) {
+        var className = object.getClassName();
+        switch (className) {
+            case "String":
+                return ScriptRuntime.toCharSequence(object);
+            case "Boolean":
+                return Context.jsToJava(object, Boolean.class);
+            case "Date": {
+                return Context.jsToJava(object, Date.class);
+            }
+        }
+        // better safe than sorry: we ignore all the unknown objects
+        return null;
     }
 }
