@@ -42,13 +42,17 @@
                         config[key] = null;
                     }, 30000);
                 }
-                return config[key].then(function(result) {
+                var deferred = $q.defer();
+                config[key].then(function(result) {
                     var useInvoiceNumber = (result === 'true'); // default is false
                     if(useInvoiceNumber) {
-                        return reservation.invoiceNumber || 'N/A';
+                        deferred.resolve(reservation.invoiceNumber || 'N/A');
                     }
-                    return displayFullId ? reservation.id : reservation.id.substring(0,8).toUpperCase();
+                    deferred.resolve(displayFullId ? reservation.id : reservation.id.substring(0,8).toUpperCase());
+                }, function() {
+                    deferred.resolve(displayFullId ? reservation.id : reservation.id.substring(0,8).toUpperCase());
                 });
+                return deferred.promise;
             }
         }
 
