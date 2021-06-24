@@ -17,7 +17,7 @@
 package alfio.model.modification;
 
 import alfio.model.metadata.AlfioMetadata;
-import alfio.model.metadata.CallLink;
+import alfio.model.metadata.JoinLink;
 import alfio.model.metadata.OnlineConfiguration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -72,8 +72,8 @@ public class MetadataModification {
             return validFrom != null && validTo != null && validFrom.isBefore(validTo);
         }
 
-        public CallLink toCallLink() {
-            return new CallLink(link, validFrom.toLocalDateTime(), validTo.toLocalDateTime());
+        public JoinLink toCallLink() {
+            return new JoinLink(link, validFrom.toLocalDateTime(), validTo.toLocalDateTime(), null);
         }
     }
 }

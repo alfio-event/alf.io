@@ -18,8 +18,10 @@ package alfio.repository;
 
 import alfio.model.*;
 import alfio.model.checkin.OnlineCheckInFullInfo;
+import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.poll.PollParticipant;
 import alfio.model.support.Array;
+import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -365,4 +367,11 @@ public interface TicketRepository {
 
     @Query("select count(*) from ticket where subscription_id_fk = :subscriptionId and (:eventId is null or event_id = :eventId)")
     Integer countSubscriptionUsage(@Bind("subscriptionId") UUID subscriptionId, @Bind("eventId") Integer eventId);
+
+    @JSONData
+    @Query("select metadata::jsonb from ticket where id = :ticketId")
+    TicketMetadataContainer getTicketMetadata(@Bind("ticketId") int ticketId);
+
+    @Query("update ticket set metadata = :metadata::jsonb where id = :ticketId")
+    int updateTicketMetadata(@Bind("ticketId") int ticketId, @JSONData @Bind("metadata") TicketMetadataContainer ticketMetadataContainer);
 }

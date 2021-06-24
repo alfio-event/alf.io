@@ -9,6 +9,7 @@
 {{#i18n}}email.event.online.check-in{{/i18n}}
 {{onlineCheckInUrl}}
 
+{{#customCheckInUrl}}{{customCheckInUrlDescription}}{{/customCheckInUrl}}
 {{prerequisites}}
 *********************************************
 

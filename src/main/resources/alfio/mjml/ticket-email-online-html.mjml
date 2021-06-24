@@ -64,22 +64,22 @@
 					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
 			</mj-column>
 		</mj-section>
-    
+
    		<mj-section background-color="white">
 			<mj-column width="100%">
 		        <mj-text align="center" font-size="14px">
 		        	{{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}<br/>
               		{{custom-header-text}}
 		        </mj-text>
-	        
+
 	        	<mj-text align="center" font-size="20px">{{#i18n}}email-ticket.thank-you{{/i18n}}</mj-text>
-				
+
 				<mj-text align="center" font-size="20px">{{#i18n}}email-ticket.confirmation-event [{{event.displayName}}]{{/i18n}}</mj-text>
-			    
-			    <mj-raw>{{#custom-body-text?}}</mj-raw>
+
+			    <mj-raw>{{#custom-body-text}}</mj-raw>
 			    <mj-text align="center" font-size="14px">{{custom-body-text}}</mj-text>
-			    <mj-raw>{{/custom-body-text?}}</mj-raw>
-			    
+			    <mj-raw>{{/custom-body-text}}</mj-raw>
+
 			</mj-column>
 		</mj-section>
 		<mj-section background-color="#f8f8ff">
@@ -92,8 +92,16 @@
                 </mj-text>
                 <mj-text align="center" font-size="14px">{{#i18n}}email.event.online.check-in{{/i18n}}</mj-text>
                 <mj-button background-color="#28a745" href="{{onlineCheckInUrl}}" rel="notrack">
+                    <mj-raw>{{#customCheckInUrlText}}</mj-raw>
+                  	{{customCheckInUrlText}}
+                  	<mj-raw>{{/customCheckInUrlText}}</mj-raw>
+                    <mj-raw>{{^customCheckInUrlText}}</mj-raw>
                     {{#i18n}}email-ticket.online.join-event{{/i18n}}
+                  	<mj-raw>{{/customCheckInUrlText}}</mj-raw>
                 </mj-button>
+              	<mj-raw>{{#customCheckInUrlDescription}}</mj-raw>
+              	<mj-text align="center" font-size="14px">{{customCheckInUrlDescription}}</mj-text>
+                <mj-raw>{{/customCheckInUrlDescription}}</mj-raw>
                 <mj-text align="center" font-size="14px">{{#i18n}}email-ticket.look-forward{{/i18n}}</mj-text>
             </mj-column>
 
@@ -103,20 +111,20 @@
 			<mj-column width="130px">
 	   			<mj-image src="{{baseUrl}}/resources/images/email/icon_calendar.png"></mj-image>
 			</mj-column>
-			
+
 			<mj-column width="350px">
-			
+
 				<mj-text font-size="20px" align="center" color="#212529">{{#i18n}}email.event-info{{/i18n}}</mj-text>
-				
+
 				<mj-text align="center" font-size="14px">{{#i18n}}event.location.online{{/i18n}}</mj-text>
-	      
+
 	    		<mj-raw>{{#event.sameDay}}</mj-raw>
 	    		<mj-text align="center" font-size="16px" font-weight="bold">
 					{{#i18n}}event-days.same-day [{{#format-date}}{{validityStart}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}] [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}] {{/i18n}}
 	    		</mj-text>
 	    		<mj-raw>{{/event.sameDay}}</mj-raw>
-	    		
-	    		
+
+
 	    		<mj-raw>{{^event.sameDay}}</mj-raw>
 				<mj-table font-size="16px" font-weight="bold" >
 					<tr class="bottom-border">
@@ -129,14 +137,14 @@
 				<mj-raw>{{/event.sameDay}}</mj-raw>
 			</mj-column>
 		</mj-section>
-    
+
 	    <mj-section>
             <mj-column width="100%">
                 <mj-button rel="notrack" align="center" background-color="#7C8B95" href="{{ticketUrl}}"> {{#i18n}}email-ticket.view-modify{{/i18n}}</mj-button>
             </mj-column>
 	    </mj-section>
-	   	
-	   	<mj-raw>{{#custom-footer-text?}}</mj-raw>
+
+	   	<mj-raw>{{#custom-footer-text}}</mj-raw>
 	    <mj-section background-color="white">
 	      <mj-column width="100%">
 	    	<mj-text align="center">
@@ -144,7 +152,6 @@
 	        </mj-text>
 	      </mj-column>
 	    </mj-section>
-	    <mj-raw>{{/custom-footer-text?}}</mj-raw>
+	    <mj-raw>{{/custom-footer-text}}</mj-raw>
 	</mj-body>
 </mjml>
-
