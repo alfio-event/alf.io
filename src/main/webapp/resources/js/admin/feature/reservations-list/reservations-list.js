@@ -112,6 +112,9 @@
                     ctrl.foundCreditedReservations = res.data.right;
                 });
             }
+
+            var keys = Object.keys(ctrl.purchaseContext.title);
+            ctrl.purchaseContextTitle = ctrl.purchaseContext.title[keys[0]];
         }
 
         function formatFullName(r) {
