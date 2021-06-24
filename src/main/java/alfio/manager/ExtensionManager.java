@@ -29,9 +29,11 @@ import alfio.model.PromoCodeDiscount.CodeType;
 import alfio.model.checkin.EventWithCheckInInfo;
 import alfio.model.extension.*;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.metadata.TicketMetadata;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
@@ -64,6 +66,7 @@ public class ExtensionManager {
     private final ExtensionService extensionService;
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
+    private final TicketRepository ticketRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
@@ -413,5 +416,23 @@ public class ExtensionManager {
             toPath(purchaseContext),
             fillWithBasicInfo(params, purchaseContext),
             resultType);
+    }
+
+    public Optional<TicketMetadata> handleCustomOnlineJoinUrl(Event event, Ticket ticket) {
+        var ticketMetadataContainer = ticketRepository.getTicketMetadata(ticket.getId());
+        var context = new HashMap<String, Object>();
+        var key = ExtensionEvent.CUSTOM_ONLINE_JOIN_URL.name();
+        context.put("ticket", ticket);
+        var existingMetadata = ticketMetadataContainer.getMetadataForKey(key);
+        existingMetadata.ifPresent(m -> context.put("ticketMetadata", m));
+        var result = Optional.ofNullable(syncCall(ExtensionEvent.CUSTOM_ONLINE_JOIN_URL, event, context, TicketMetadata.class));
+        result.ifPresent(m -> {
+            // we update the value only if it's changed
+            boolean changed = existingMetadata.isEmpty() || !existingMetadata.get().equals(m);
+            if(changed && ticketMetadataContainer.putMetadata(key, m)) {
+                ticketRepository.updateTicketMetadata(ticket.getId(), ticketMetadataContainer);
+            }
+        });
+        return result;
     }
 }

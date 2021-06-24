@@ -214,9 +214,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         // check if EVENT_CREATED was logged
         List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-        assertEventLogged(extLogs, ExtensionEvent.EVENT_METADATA_UPDATE.name(), 8, 1);
-        assertEventLogged(extLogs, "EVENT_CREATED", 8, 4);
-        assertEventLogged(extLogs, "EVENT_CREATED", 8, 7);
+        assertEventLogged(extLogs, EVENT_METADATA_UPDATE, 8);
+        assertEventLogged(extLogs, EVENT_CREATED, 8);
 
 
         {
@@ -496,7 +495,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             cleanupExtensionLog();
             reservationApiV2Controller.cancelPendingReservation(res.getBody().getValue());
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-            assertEventLogged(extLogs, "RESERVATION_CANCELLED", 2, 1);
+            assertEventLogged(extLogs, RESERVATION_CANCELLED, 2);
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(context.event.getId()));
@@ -867,10 +866,16 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             validatePayment(context.event.getShortName(), reservationId, context);
 
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-            assertEventLogged(extLogs, RESERVATION_CONFIRMED.name(), 8, 1);
-            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT.name(), 8, 3);
-            assertEventLogged(extLogs, TICKET_ASSIGNED.name(), 8, 5);
-            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT.name(), 8, 7);
+
+            boolean online = containsOnlineTickets(context, reservationId);
+            assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 10 : 8);
+            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 10 : 8);
+            assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 10 : 8);
+            if(online) {
+                assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 10);
+            }
+            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 10 : 8);
+
 
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
@@ -994,7 +999,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertTrue(audits.stream().anyMatch(sa -> sa.getTicketUuid().equals(ticketIdentifier)));
 
                 extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-                assertEventLogged(extLogs, "TICKET_CHECKED_IN", 2, 1);
+                assertEventLogged(extLogs, TICKET_CHECKED_IN, 2);
 
 
 
@@ -1045,7 +1050,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.SUCCESS, ticketAndcheckInResult.getResult().getStatus());
 
                 extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-                assertEventLogged(extLogs, "TICKET_CHECKED_IN", 2, 1);
+                assertEventLogged(extLogs, TICKET_CHECKED_IN, 2);
 
                 var offlineIdentifiers = checkInApiController.getOfflineIdentifiers(context.event.getShortName(), 0L, new MockHttpServletResponse(), principal);
                 assertFalse(offlineIdentifiers.isEmpty(), "Alf.io-PI integration must be enabled by default");
@@ -1296,9 +1301,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         jdbcTemplate.update("delete from extension_log", Map.of());
     }
 
-    private void assertEventLogged(List<ExtensionLog> extLog, String event, int logSize, int index) {
+    private void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event, int logSize) {
         assertEquals(logSize, extLog.size()); // each event logs exactly two logs
-        assertEquals(event, extLog.get(index).getDescription());
+        assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
     }
 
     private void checkStatus(String reservationId,
@@ -1340,6 +1345,20 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         MockHttpServletResponse resGoogleCal = new MockHttpServletResponse();
         eventApiV2Controller.getCalendar(eventName, "en", "google", null, resGoogleCal);
         assertTrue(requireNonNull(resGoogleCal.getRedirectedUrl()).startsWith("https://www.google.com/calendar/event"));
+    }
+
+    private boolean containsOnlineTickets(ReservationFlowContext context, String reservationId) {
+        if(context.event.getFormat() == Event.EventFormat.IN_PERSON) {
+            return false;
+        }
+        if(context.event.getFormat() == Event.EventFormat.ONLINE) {
+            return true;
+        }
+
+        Integer count = jdbcTemplate.queryForObject("select count(*) from ticket t join ticket_category tc on t.category_id = tc.id where t.tickets_reservation_id = :reservationId and tc.ticket_access_type = 'ONLINE'",
+            Map.of("reservationId", reservationId),
+            Integer.class);
+        return count != null && count > 0;
     }
 
 }

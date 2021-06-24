@@ -31,8 +31,7 @@ public class AlfioMetadata {
     private final List<ConditionsLink> conditionsToBeAccepted;
 
     @JsonCreator
-    public AlfioMetadata(
-                         @JsonProperty("onlineConfiguration") OnlineConfiguration onlineConfiguration,
+    public AlfioMetadata(@JsonProperty("onlineConfiguration") OnlineConfiguration onlineConfiguration,
                          @JsonProperty("requirementsDescriptions") Map<String, String> requirementsDescriptions,
                          @JsonProperty("conditionsToBeAccepted") List<ConditionsLink> conditionsToBeAccepted) {
         this.onlineConfiguration = onlineConfiguration;

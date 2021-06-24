@@ -19,7 +19,7 @@ package alfio.util;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.metadata.CallLink;
+import alfio.model.metadata.JoinLink;
 import alfio.model.metadata.OnlineConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -235,20 +235,20 @@ public final class EventUtil {
 
     public static Optional<String> findMatchingLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
         return firstMatchingCallLink(eventZoneId, categoryConfiguration, eventConfiguration)
-            .map(CallLink::getLink);
+            .map(JoinLink::getLink);
     }
 
-    public static Optional<CallLink> firstMatchingCallLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
+    public static Optional<JoinLink> firstMatchingCallLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
         var now = ZonedDateTime.now(ClockProvider.clock().withZone(eventZoneId));
         return firstMatchingCallLink(categoryConfiguration, eventZoneId, now)
             .or(() -> firstMatchingCallLink(eventConfiguration, eventZoneId, now));
     }
 
-    private static Optional<CallLink> firstMatchingCallLink(OnlineConfiguration onlineConfiguration, ZoneId zoneId, ZonedDateTime now) {
+    private static Optional<JoinLink> firstMatchingCallLink(OnlineConfiguration onlineConfiguration, ZoneId zoneId, ZonedDateTime now) {
         return Optional.ofNullable(onlineConfiguration).stream()
             .flatMap(configuration -> configuration.getCallLinks().stream())
-            .sorted(Comparator.comparing(CallLink::getValidFrom).reversed())
-            .filter(callLink -> now.isBefore(callLink.getValidTo().atZone(zoneId)) && now.plusSeconds(1).isAfter(callLink.getValidFrom().atZone(zoneId)))
+            .sorted(Comparator.comparing(JoinLink::getValidFrom).reversed())
+            .filter(joinLink -> now.isBefore(joinLink.getValidTo().atZone(zoneId)) && now.plusSeconds(1).isAfter(joinLink.getValidFrom().atZone(zoneId)))
             .findFirst();
     }
 
@@ -256,5 +256,30 @@ public final class EventUtil {
         return event.getFormat() == Event.EventFormat.ONLINE
             || event.getFormat() == Event.EventFormat.HYBRID
             && category.getTicketAccessType() == TicketCategory.TicketAccessType.ONLINE;
+    }
+
+    /**
+     * Returns the message in the desired languages, if present.
+     * If none of the languages are found, it returns the first available, if any.
+     * @param lang the desired language
+     * @param fallback fallback entity for detecting language
+     * @return link description in the desired language, or the first one if not found. Or {@code null} if the map is empty
+     */
+    public static String getLocalizedMessage(Map<String, String> messagesByLang, String lang, LocalizedContent fallback) {
+        if(messagesByLang.isEmpty()) {
+            return null;
+        }
+
+        if(messagesByLang.containsKey(lang)) {
+            return messagesByLang.get(lang);
+        }
+
+        var defaultLanguage = fallback.getFirstContentLanguage().getLanguage();
+
+        if(messagesByLang.containsKey(defaultLanguage)) {
+            return messagesByLang.get(defaultLanguage);
+        }
+
+        return messagesByLang.values().stream().findFirst().orElseThrow();
     }
 }

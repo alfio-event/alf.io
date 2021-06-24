@@ -20,4 +20,8 @@ import java.util.List;
 
 public interface LocalizedContent {
     List<ContentLanguage> getContentLanguages();
+
+    default ContentLanguage getFirstContentLanguage() {
+        return getContentLanguages().get(0);
+    }
 }

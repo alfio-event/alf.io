@@ -97,6 +97,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -1332,11 +1333,7 @@ public class TicketReservationManager {
                 .map(CustomEmailText::toMap)
                 .orElse(Map.of());
             if(EventUtil.isAccessOnline(ticketCategory, event)) {
-                initialOptions = new HashMap<>(initialOptions);
-                var eventMetadata = Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
-                var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
-                initialOptions.put("onlineCheckInUrl", ticketOnlineCheckIn(event, ticket.getUuid()));
-                initialOptions.put("prerequisites", categoryMetadata.or(() -> eventMetadata).orElse(""));
+                initialOptions = addOnlineCheckInInfo(event, ticketLanguage, ticket, ticketCategory, initialOptions);
             }
             var baseUrl = StringUtils.removeEnd(configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue(), "/");
             var calendarUrl = UriComponentsBuilder.fromUriString(baseUrl + "/api/v2/public/event/{eventShortName}/calendar/{currentLang}")
@@ -1347,6 +1344,28 @@ public class TicketReservationManager {
         };
     }
 
+    private Map<String, Object> addOnlineCheckInInfo(Event event, Locale ticketLanguage, Ticket ticket, TicketCategory ticketCategory, Map<String, Object> options) {
+        var initialOptions = new HashMap<>(options);
+        var customMetadataOptional = extensionManager.handleCustomOnlineJoinUrl(event, ticket);
+        initialOptions.put("customCheckInUrl", customMetadataOptional.isPresent());
+        if(customMetadataOptional.isPresent()) {
+            var ticketMetadata = customMetadataOptional.get();
+            var joinLink = ticketMetadata.getJoinLink();
+            initialOptions.put("onlineCheckInUrl", joinLink.getLink());
+            if(joinLink.hasLinkText()) {
+                initialOptions.put("customCheckInUrlText", joinLink.getLocalizedText(ticketLanguage.getLanguage(), event));
+            }
+            var linkDescription = ticketMetadata.getLocalizedDescription(ticketLanguage.getLanguage(), event);
+            initialOptions.put("customCheckInUrlDescription", linkDescription);
+            initialOptions.put("prerequisites", "");
+        } else {
+            Supplier<Optional<String>> eventMetadata = () -> Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
+            var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
+            initialOptions.put("onlineCheckInUrl", ticketOnlineCheckIn(event, ticket.getUuid()));
+            initialOptions.put("prerequisites", categoryMetadata.or(eventMetadata).orElse(""));
+        }
+        return initialOptions;
+    }
 
 
     @Transactional
