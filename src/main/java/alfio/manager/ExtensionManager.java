@@ -35,6 +35,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
+import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -108,16 +109,22 @@ public class ExtensionManager {
             payload);
     }
 
-    void handleTicketAssignment(Ticket ticket, Map<String, List<String>> additionalInfo) {
+    void handleTicketAssignment(Ticket ticket,
+                                TicketCategory category,
+                                Map<String, List<String>> additionalInfo) {
         if(!ticket.hasBeenSold()) {
             return; // ignore tickets if the reservation is not yet confirmed
         }
         int eventId = ticket.getEventId();
-        //int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         Event event = eventRepository.findById(eventId);
         asyncCall(ExtensionEvent.TICKET_ASSIGNED,
             event,
-            Map.of("ticket", ticket, "additionalInfo", additionalInfo));
+            Map.of(
+                "ticket", ticket,
+                "additionalInfo", additionalInfo,
+                "eventMetadata", eventRepository.getMetadataForEvent(event.getId()),
+                "onlineAccessTicket", EventUtil.isAccessOnline(category, event)
+            ));
     }
 
     void handleWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {

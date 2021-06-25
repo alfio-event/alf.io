@@ -1118,10 +1118,7 @@ public class EventManager {
 
     public boolean updateMetadata(Event event, AlfioMetadata metadata) {
         var updatedMetadata = extensionManager.handleMetadataUpdate(event, organizationRepository.getById(event.getOrganizationId()), metadata);
-        if(updatedMetadata != null) {
-            eventRepository.updateMetadata(updatedMetadata, event.getId());
-        }
-        eventRepository.updateMetadata(metadata, event.getId());
+        eventRepository.updateMetadata(Objects.requireNonNullElse(updatedMetadata, metadata), event.getId());
         return true;
     }
 

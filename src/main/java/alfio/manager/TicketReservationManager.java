@@ -1262,7 +1262,7 @@ public class TicketReservationManager {
                 Map<String, List<String>> additionalInfo = ticketFieldRepository.findNameAndValue(ticket.getId())
                     .stream()
                     .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
-                extensionManager.handleTicketAssignment(ticket, additionalInfo);
+                extensionManager.handleTicketAssignment(ticket, ticketCategoryRepository.getById(ticket.getCategoryId()), additionalInfo);
             });
         return assignedTickets;
     }
@@ -1923,7 +1923,7 @@ public class TicketReservationManager {
             log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
             ticketReservationRepository.updateAssignee(reservation.getId(), username);
         }
-        extensionManager.handleTicketAssignment(newTicket, updateTicketOwner.getAdditional());
+        extensionManager.handleTicketAssignment(newTicket, ticketCategoryRepository.getById(ticket.getCategoryId()), updateTicketOwner.getAdditional());
 
 
 
