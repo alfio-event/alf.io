@@ -112,7 +112,7 @@ public class ScriptingExecutionService {
             if (mapping.containsKey(clazz)) {
                 return new NativeJavaClass(scope, mapping.get(clazz));
             } else {
-                throw new IllegalArgumentException("");
+                throw new IllegalArgumentException("Type "+clazz+" is not recognized");
             }
         }
     }

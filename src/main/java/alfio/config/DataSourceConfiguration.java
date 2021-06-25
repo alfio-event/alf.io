@@ -210,7 +210,10 @@ public class DataSourceConfiguration {
 
     @Bean
     public HttpClient getHttpClient() {
-        return HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
+        return HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .executor(Executors.newCachedThreadPool())
+            .build();
     }
 
     @Bean
