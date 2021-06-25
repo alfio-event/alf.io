@@ -17,7 +17,6 @@
 package alfio.manager.openid;
 
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 public interface OpenIdAuthenticationManager {
 
@@ -31,5 +30,5 @@ public interface OpenIdAuthenticationManager {
 
     String buildLogoutUrl();
 
-    String buildRetrieveClaimsUrlBody(String code) throws JsonProcessingException;
+    String buildRetrieveClaimsUrlBody(String code);
 }

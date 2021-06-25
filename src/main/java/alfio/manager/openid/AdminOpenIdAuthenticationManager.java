@@ -151,7 +151,9 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
                 alfioOrganizationAuthorizations.get(organization).add(role);
                 continue;
             }
-            alfioOrganizationAuthorizations.put(organization, Set.of(role));
+            var roles = new HashSet<String>();
+            roles.add(role);
+            alfioOrganizationAuthorizations.put(organization, roles);
         }
         return alfioOrganizationAuthorizations;
     }

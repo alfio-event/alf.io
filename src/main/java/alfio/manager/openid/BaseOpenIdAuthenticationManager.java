@@ -31,7 +31,6 @@ import alfio.util.Json;
 import alfio.util.PasswordGenerator;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -92,24 +91,29 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
 
     @Override
     public final OpenIdAlfioAuthentication authenticateUser(String code) {
-        log.trace("Attempting to retrieve Access Token");
-        var accessTokenResponse = retrieveAccessToken(code);
-        String idToken = (String) accessTokenResponse.get(ID_TOKEN);
+        try {
+            log.trace("Attempting to retrieve Access Token");
+            var accessTokenResponse = retrieveAccessToken(code);
+            String idToken = (String) accessTokenResponse.get(ID_TOKEN);
 
-        // implementation note:
-        //
-        // the JWT token is not intended to be propagated to the client, which is not aware of the
-        // authentication method used.
-        //
-        // In addition to that, since we consider the Token Provider a trusted entity (specified by the admin),
-        // we don't *strictly* need to verify the token.
-        // This might change in the future if we decide to propagate the token to the client
-        Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
-        String subject = idTokenClaims.get(SUBJECT).asString();
-        String email = idTokenClaims.get(EMAIL).asString();
+            // implementation note:
+            //
+            // the JWT token is not intended to be propagated to the client, which is not aware of the
+            // authentication method used.
+            //
+            // In addition to that, since we consider the Token Provider a trusted entity (specified by the admin),
+            // we don't *strictly* need to verify the token.
+            // This might change in the future if we decide to propagate the token to the client
+            Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
+            String subject = idTokenClaims.get(SUBJECT).asString();
+            String email = idTokenClaims.get(EMAIL).asString();
 
-        var userInfo = fromToken(idToken, subject, email, idTokenClaims);
-        return createOrRetrieveUser(userInfo, idTokenClaims);
+            var userInfo = fromToken(idToken, subject, email, idTokenClaims);
+            return createOrRetrieveUser(userInfo, idTokenClaims);
+        } catch (Exception e) {
+            log.error("Error while decoding token", e);
+            throw e;
+        }
     }
 
     private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user, Map<String, Claim> idTokenClaims) {
@@ -236,7 +240,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     }
 
     @Override
-    public String buildRetrieveClaimsUrlBody(String code) throws JsonProcessingException {
+    public String buildRetrieveClaimsUrlBody(String code) {
         var contentType = openIdConfiguration().getContentType();
         if (contentType.equals(APPLICATION_JSON)) {
             return buildAccessTokenUrlJson(code);
