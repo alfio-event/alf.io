@@ -2190,9 +2190,9 @@ public class TicketReservationManager {
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && transactionRepository.loadOptionalByReservationId(reservationId).isEmpty()) {
             removeReservation(event, ticketReservation, false, null);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
-        } else {
-            extensionManager.handleTicketCancelledForEvent(event, Collections.singletonList(ticket.getUuid()));
         }
+        // always trigger "ticket cancelled for event"
+        extensionManager.handleTicketCancelledForEvent(event, Collections.singletonList(ticket.getUuid()));
     }
 
     int getReservationTimeout(Configurable configurable) {

@@ -17,7 +17,6 @@
 
 package alfio.extension;
 
-import alfio.manager.ExtensionManager;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.support.extension.ExtensionEvent;
 import alfio.manager.system.ExternalConfiguration;
@@ -48,7 +47,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.extension.ScriptingExecutionService.EXTENSION_PARAMETERS;
-import static alfio.manager.ExtensionManager.toPath;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
@@ -254,7 +252,7 @@ public class ExtensionService {
         if(!externalScripts.isEmpty()) {
             return true;
         }
-        var paths = generatePossiblePath(ExtensionManager.toPath(purchaseContext), Comparator.reverseOrder());
+        var paths = generatePossiblePath(toPath(purchaseContext), Comparator.reverseOrder());
         int count = extensionRepository.countScriptsSupportingCapability(paths, List.of(capability.name()));
         return count > 0;
     }
@@ -266,7 +264,7 @@ public class ExtensionService {
             return externalScriptsSupportedCapabilities;
         }
         var result = new HashSet<>(externalScriptsSupportedCapabilities);
-        var paths = generatePossiblePath(ExtensionManager.toPath(purchaseContext), Comparator.reverseOrder());
+        var paths = generatePossiblePath(toPath(purchaseContext), Comparator.reverseOrder());
         result.addAll(ExtensionCapability.fromString(extensionRepository.getSupportedCapabilities(paths, ExtensionCapability.toString(requested))));
         return result;
     }
@@ -420,5 +418,14 @@ public class ExtensionService {
         int count = extensionLogRepository.countPages(path, name, typeAsString);
         List<ExtensionLog> logs = extensionLogRepository.getPage(path, name, typeAsString, pageSize, offset);
         return Pair.of(logs, count);
+    }
+
+    public static String toPath(EventAndOrganizationId event) {
+        return "-" + event.getOrganizationId() + "-" + event.getId();
+    }
+
+    public static String toPath(PurchaseContext purchaseContext) {
+        int organizationId = purchaseContext.getOrganizationId();
+        return purchaseContext.event().map(e -> toPath((EventAndOrganizationId) e)).orElseGet(() -> "-" + organizationId);
     }
 }

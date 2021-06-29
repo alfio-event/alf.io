@@ -52,6 +52,7 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.*;
 
+import static alfio.extension.ExtensionService.toPath;
 import static alfio.manager.support.extension.ExtensionEvent.ONLINE_CHECK_IN_REDIRECT;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 
@@ -109,7 +110,7 @@ public class ExtensionManager {
             payload);
     }
 
-    void handleTicketAssignment(Ticket ticket,
+    public void handleTicketAssignment(Ticket ticket,
                                 TicketCategory category,
                                 Map<String, List<String>> additionalInfo) {
         if(!ticket.hasBeenSold()) {
@@ -402,15 +403,6 @@ public class ExtensionManager {
         payloadCopy.put("purchaseContext", purchaseContext);
         payloadCopy.put("organizationId", purchaseContext.getOrganizationId());
         return payloadCopy;
-    }
-
-    public static String toPath(EventAndOrganizationId event) {
-        return "-" + event.getOrganizationId() + "-" + event.getId();
-    }
-
-    public static String toPath(PurchaseContext purchaseContext) {
-        int organizationId = purchaseContext.getOrganizationId();
-        return purchaseContext.event().map(e -> toPath((EventAndOrganizationId) e)).orElseGet(() -> "-" + organizationId);
     }
 
     public <T> Optional<T> executeCapability(ExtensionCapability capability,
