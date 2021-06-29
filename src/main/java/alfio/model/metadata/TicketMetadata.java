@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNullElse;
 public class TicketMetadata {
 
     /**
-     * Alternate Link configuration. If present, it will override Alf.io's default join link.
+     * Alternative Link configuration. If present, it will override Alf.io's default join link.
      * This would allow seamless integration with external, invitation-based virtual conference systems
      */
     private final JoinLink joinLink;
