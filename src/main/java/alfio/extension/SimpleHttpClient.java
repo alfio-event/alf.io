@@ -202,11 +202,11 @@ public class SimpleHttpClient {
         return HttpUtils.basicAuth(username, password);
     }
 
-    private static HttpRequest.Builder buildUrlAndHeader(String url, Map<String, String> headers, String contentType) {
+    private static HttpRequest.Builder buildUrlAndHeader(String url, Map<?, ?> headers, String contentType) {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
         requestBuilder.uri(URI.create(url));
         if (headers != null) {
-            headers.forEach(requestBuilder::header);
+            headers.forEach((k, v) -> requestBuilder.header(String.valueOf(k), String.valueOf(v)));
         }
         if (contentType != null) {
             requestBuilder.header(HttpUtils.CONTENT_TYPE, contentType);

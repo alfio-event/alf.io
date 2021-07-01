@@ -229,7 +229,8 @@ public class AdminReservationManager {
             .filter(matcher)
             .forEach(t -> {
                 Locale locale = LocaleUtil.forLanguageTag(t.getUserLanguage());
-                ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale));
+                var additionalInfo = ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(t);
+                ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale, additionalInfo));
             });
     }
 

@@ -97,6 +97,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -1256,12 +1257,10 @@ public class TicketReservationManager {
             .forEach(ticket -> {
                 var event = purchaseContext.event().orElseThrow();
                 Locale locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
+                var additionalInfo = retrieveAttendeeAdditionalInfoForTicket(ticket);
                 if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
-                    sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
+                    sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale, additionalInfo));
                 }
-                Map<String, List<String>> additionalInfo = ticketFieldRepository.findNameAndValue(ticket.getId())
-                    .stream()
-                    .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
                 extensionManager.handleTicketAssignment(ticket, ticketCategoryRepository.getById(ticket.getCategoryId()), additionalInfo);
             });
         return assignedTickets;
@@ -1322,7 +1321,10 @@ public class TicketReservationManager {
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
     }
 
-    public PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation ticketReservation, Locale ticketLanguage) {
+    public PartialTicketTextGenerator getTicketEmailGenerator(Event event,
+                                                              TicketReservation ticketReservation,
+                                                              Locale ticketLanguage,
+                                                              Map<String, List<String>> additionalInfo) {
         return ticket -> {
             Organization organization = organizationRepository.getById(event.getOrganizationId());
             String ticketUrl = ticketUpdateUrl(event, ticket.getUuid());
@@ -1332,11 +1334,7 @@ public class TicketReservationManager {
                 .map(CustomEmailText::toMap)
                 .orElse(Map.of());
             if(EventUtil.isAccessOnline(ticketCategory, event)) {
-                initialOptions = new HashMap<>(initialOptions);
-                var eventMetadata = Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
-                var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
-                initialOptions.put("onlineCheckInUrl", ticketOnlineCheckIn(event, ticket.getUuid()));
-                initialOptions.put("prerequisites", categoryMetadata.or(() -> eventMetadata).orElse(""));
+                initialOptions = addOnlineCheckInInfo(event, ticketLanguage, ticket, ticketCategory, initialOptions, additionalInfo);
             }
             var baseUrl = StringUtils.removeEnd(configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue(), "/");
             var calendarUrl = UriComponentsBuilder.fromUriString(baseUrl + "/api/v2/public/event/{eventShortName}/calendar/{currentLang}")
@@ -1347,6 +1345,33 @@ public class TicketReservationManager {
         };
     }
 
+    private Map<String, Object> addOnlineCheckInInfo(Event event,
+                                                     Locale ticketLanguage,
+                                                     Ticket ticket,
+                                                     TicketCategory ticketCategory,
+                                                     Map<String, Object> options,
+                                                     Map<String, List<String>> ticketAdditionalInfo) {
+        var initialOptions = new HashMap<>(options);
+        var customMetadataOptional = extensionManager.handleCustomOnlineJoinUrl(event, ticket, ticketAdditionalInfo);
+        initialOptions.put("customCheckInUrl", customMetadataOptional.isPresent());
+        if(customMetadataOptional.isPresent()) {
+            var ticketMetadata = customMetadataOptional.get();
+            var joinLink = ticketMetadata.getJoinLink();
+            initialOptions.put("onlineCheckInUrl", joinLink.getLink());
+            if(joinLink.hasLinkText()) {
+                initialOptions.put("customCheckInUrlText", joinLink.getLocalizedText(ticketLanguage.getLanguage(), event));
+            }
+            var linkDescription = ticketMetadata.getLocalizedDescription(ticketLanguage.getLanguage(), event);
+            initialOptions.put("customCheckInUrlDescription", linkDescription);
+            initialOptions.put("prerequisites", "");
+        } else {
+            Supplier<Optional<String>> eventMetadata = () -> Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
+            var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
+            initialOptions.put("onlineCheckInUrl", ticketOnlineCheckIn(event, ticket.getUuid()));
+            initialOptions.put("prerequisites", categoryMetadata.or(eventMetadata).orElse(""));
+        }
+        return initialOptions;
+    }
 
 
     @Transactional
@@ -2874,7 +2899,12 @@ public class TicketReservationManager {
                     UsageDetails.fromSubscription(s, usageCount),
                     ticketReservationRepository.findConfirmedReservationsBySubscriptionId(s.getId()));
             });
+    }
 
+    public Map<String, List<String>> retrieveAttendeeAdditionalInfoForTicket(Ticket ticket) {
+        return ticketFieldRepository.findNameAndValue(ticket.getId())
+            .stream()
+            .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
     }
 
     private Integer retrievePublicUserId(Principal principal) {

@@ -156,9 +156,12 @@ public class NotificationManager {
         };
     }
 
-    private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, 
-    		TicketCategoryRepository ticketCategoryRepository, OrganizationRepository organizationRepository, MessageSourceManager messageSourceManager) {
-    	
+    private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository,
+                                                                     EventDescriptionRepository eventDescriptionRepository,
+                                                                     TicketCategoryRepository ticketCategoryRepository,
+                                                                     OrganizationRepository organizationRepository,
+                                                                     MessageSourceManager messageSourceManager) {
+
         return model -> {
             Event event;
             Locale locale;

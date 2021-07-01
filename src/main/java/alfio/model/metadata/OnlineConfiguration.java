@@ -24,10 +24,10 @@ import java.util.List;
 
 @Getter
 public class OnlineConfiguration {
-    private final List<CallLink> callLinks;
+    private final List<JoinLink> callLinks;
 
     @JsonCreator
-    public OnlineConfiguration(@JsonProperty("callLinks") List<CallLink> callLinks) {
-        this.callLinks = callLinks;
+    public OnlineConfiguration(@JsonProperty("callLinks") List<JoinLink> joinLinks) {
+        this.callLinks = joinLinks;
     }
 }

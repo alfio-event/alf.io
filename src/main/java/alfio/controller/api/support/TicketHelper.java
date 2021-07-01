@@ -44,6 +44,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.*;
+
 @Component
 @AllArgsConstructor
 public class TicketHelper {
@@ -219,8 +221,15 @@ public class TicketHelper {
         return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, ticketLanguage);
     }
 
-    public PartialTicketTextGenerator getConfirmationTextBuilder(Locale ticketLanguage, Event event, TicketReservation ticketReservation, Ticket ticket, TicketCategory ticketCategory) {
-        return ticketReservationManager.getTicketEmailGenerator(event, ticketReservation, ticketLanguage);
+    public PartialTicketTextGenerator getConfirmationTextBuilder(Locale ticketLanguage,
+                                                                 Event event,
+                                                                 TicketReservation ticketReservation,
+                                                                 Ticket ticket,
+                                                                 TicketCategory ticketCategory) {
+        return ticketReservationManager.getTicketEmailGenerator(event,
+            ticketReservation,
+            ticketLanguage,
+            ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket));
     }
 
 }
