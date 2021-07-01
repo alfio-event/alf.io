@@ -91,14 +91,16 @@
                     {{#i18n}}email.event.online.important-information{{/i18n}}
                 </mj-text>
                 <mj-text align="center" font-size="14px">{{#i18n}}email.event.online.check-in{{/i18n}}</mj-text>
+                <mj-raw>{{#customCheckInUrlText}}</mj-raw>
                 <mj-button background-color="#28a745" href="{{onlineCheckInUrl}}" rel="notrack">
-                    <mj-raw>{{#customCheckInUrlText}}</mj-raw>
-                  	{{customCheckInUrlText}}
-                  	<mj-raw>{{/customCheckInUrlText}}</mj-raw>
-                    <mj-raw>{{^customCheckInUrlText}}</mj-raw>
-                    {{#i18n}}email-ticket.online.join-event{{/i18n}}
-                  	<mj-raw>{{/customCheckInUrlText}}</mj-raw>
+                    {{customCheckInUrlText}}
                 </mj-button>
+                <mj-raw>{{/customCheckInUrlText}}</mj-raw>
+                <mj-raw>{{^customCheckInUrlText}}</mj-raw>
+                <mj-button background-color="#28a745" href="{{onlineCheckInUrl}}" rel="notrack">
+                    {{#i18n}}email-ticket.online.join-event{{/i18n}}
+                </mj-button>
+                <mj-raw>{{/customCheckInUrlText}}</mj-raw>
               	<mj-raw>{{#customCheckInUrlDescription}}</mj-raw>
               	<mj-text align="center" font-size="14px">{{customCheckInUrlDescription}}</mj-text>
                 <mj-raw>{{/customCheckInUrlDescription}}</mj-raw>
