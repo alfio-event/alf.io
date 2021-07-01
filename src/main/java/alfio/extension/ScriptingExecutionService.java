@@ -139,9 +139,10 @@ public class ScriptingExecutionService {
             for (var entry : params.entrySet()) {
                 var value = entry.getValue();
                 if(entry.getKey().equals(EXTENSION_PARAMETERS)) {
-                    value = convertExtensionParameters(scope, value);
+                    scope.put(entry.getKey(), scope, convertExtensionParameters(scope, value));
+                } else {
+                    scope.put(entry.getKey(), scope, Context.javaToJS(value, scope));
                 }
-                scope.put(entry.getKey(), scope, value);
             }
             Object res;
             res = cx.evaluateString(scope, script, name, 1, null);
