@@ -166,8 +166,11 @@ public final class EventUtil {
     	 
          VEvent vEvent = new VEvent();
          vEvent.setSummary(event.getDisplayName());
-         vEvent.setDescription(description);
-         vEvent.setLocation(RegExUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+         vEvent.setDescription(MustacheCustomTag.renderToTextCommonmark(description));
+         if (!isAccessOnline(ticketCategory, event)) {
+             // add location only if the attendee can access the location
+            vEvent.setLocation(RegExUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+         }
          ZonedDateTime begin = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
          ZonedDateTime end = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
          vEvent.setDateStart(Date.from(begin.toInstant()));
@@ -255,6 +258,7 @@ public final class EventUtil {
     public static boolean isAccessOnline(TicketCategory category, EventCheckInInfo event) {
         return event.getFormat() == Event.EventFormat.ONLINE
             || event.getFormat() == Event.EventFormat.HYBRID
+            && category != null
             && category.getTicketAccessType() == TicketCategory.TicketAccessType.ONLINE;
     }
 

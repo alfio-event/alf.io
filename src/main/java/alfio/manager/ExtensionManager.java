@@ -418,11 +418,14 @@ public class ExtensionManager {
             resultType);
     }
 
-    public Optional<TicketMetadata> handleCustomOnlineJoinUrl(Event event, Ticket ticket) {
+    public Optional<TicketMetadata> handleCustomOnlineJoinUrl(Event event,
+                                                              Ticket ticket,
+                                                              Map<String, List<String>> ticketAdditionalInfo) {
         var ticketMetadataContainer = ticketRepository.getTicketMetadata(ticket.getId());
         var context = new HashMap<String, Object>();
         var key = ExtensionEvent.CUSTOM_ONLINE_JOIN_URL.name();
         context.put("ticket", ticket);
+        context.put("additionalInfo", ticketAdditionalInfo);
         var existingMetadata = ticketMetadataContainer.getMetadataForKey(key);
         existingMetadata.ifPresent(m -> context.put("ticketMetadata", m));
         var result = Optional.ofNullable(syncCall(ExtensionEvent.CUSTOM_ONLINE_JOIN_URL, event, context, TicketMetadata.class));
