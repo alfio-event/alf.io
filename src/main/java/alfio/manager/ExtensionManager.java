@@ -433,6 +433,6 @@ public class ExtensionManager {
                 ticketRepository.updateTicketMetadata(ticket.getId(), ticketMetadataContainer);
             }
         });
-        return result;
+        return result.or(() -> existingMetadata);
     }
 }
