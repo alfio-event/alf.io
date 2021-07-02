@@ -379,17 +379,15 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         return configuration.get(MOLLIE_CONNECT_CLIENT_ID).isPresent() && configuration.get(MOLLIE_CONNECT_CLIENT_SECRET).isPresent();
     }
 
-    @Override
-    public String getWebhookSignatureKey() {
-        return null;
-    }
-
     public static final String ADDITIONAL_INFO_PURCHASE_CONTEXT_TYPE = "purchaseContextType";
     public static final String ADDITIONAL_INFO_PURCHASE_IDENTIFIER = "purchaseContextPublicIdentifier";
     public static final String ADDITIONAL_INFO_RESERVATION_ID = "reservationId";
 
     @Override
-    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature, Map<String, String> additionalInfo) {
+    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body,
+                                                                       String signature,
+                                                                       Map<String, String> additionalInfo,
+                                                                       PaymentContext paymentContext) {
         try(var reader = new StringReader(body)) {
             Properties properties = new Properties();
             properties.load(reader);
