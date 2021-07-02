@@ -37,6 +37,10 @@ public interface ConfigurationLevel {
         return OptionalInt.empty();
     }
 
+    default boolean isSystem() {
+        return getPathLevel() == ConfigurationPathLevel.SYSTEM;
+    }
+
     static ConfigurationLevel external() {
         return new ConfigurationLevels.ExternalLevel();
     }

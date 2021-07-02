@@ -2097,9 +2097,9 @@ public class TicketReservationManager {
         return processTransactionWebhook(body, signature, paymentProxy, additionalInfo, new PaymentContext());
     }
 
-    public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentProxy paymentProxy, Map<String, String> additionalInfo, PaymentContext paymentContext) {
+    public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentProxy paymentProxy, Map<String, String> additionalInfo, PaymentContext pc) {
         //load the payment provider using given configuration
-        var paymentProviderOptional = paymentManager.streamActiveProvidersByProxyAndCapabilities(paymentProxy, paymentContext, List.of(WebhookHandler.class)).findFirst();
+        var paymentProviderOptional = paymentManager.streamActiveProvidersByProxyAndCapabilities(paymentProxy, pc, List.of(WebhookHandler.class)).findFirst();
         if(paymentProviderOptional.isEmpty()) {
             return PaymentWebhookResult.error("payment provider not found");
         }
@@ -2109,7 +2109,17 @@ public class TicketReservationManager {
             return PaymentWebhookResult.error("signature is missing");
         }
 
-        var optionalTransactionWebhookPayload = ((WebhookHandler)paymentProvider).parseTransactionPayload(body, signature, additionalInfo);
+        PaymentContext paymentContext;
+        if(pc.getConfigurationLevel().isSystem()) {
+            // https://github.com/alfio-event/alf.io/issues/1019
+            // if the current PaymentContext is System, and if the provider supports it,
+            // we try to narrow the payment context by pre-parsing the JSON body
+            paymentContext = ((WebhookHandler) paymentProvider).detectPaymentContext(body).orElse(pc);
+        } else {
+            paymentContext = pc;
+        }
+
+        var optionalTransactionWebhookPayload = ((WebhookHandler)paymentProvider).parseTransactionPayload(body, signature, additionalInfo, paymentContext);
         if(optionalTransactionWebhookPayload.isEmpty()) {
             return PaymentWebhookResult.error("payload not recognized");
         }

@@ -17,6 +17,7 @@
 package alfio.model.transaction.capabilities;
 
 import alfio.manager.support.PaymentWebhookResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.Capability;
 import alfio.model.transaction.PaymentContext;
@@ -28,9 +29,11 @@ import java.util.Optional;
 
 public interface WebhookHandler extends Capability {
 
-    String getWebhookSignatureKey();
+    default String getWebhookSignatureKey(ConfigurationLevel configurationLevel) {
+        return null;
+    }
 
-    Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature, Map<String, String> additionalInfo);
+    Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature, Map<String, String> additionalInfo, PaymentContext paymentContext);
 
     PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction, PaymentContext paymentContext);
 
@@ -40,4 +43,7 @@ public interface WebhookHandler extends Capability {
         return true;
     }
 
+    default Optional<PaymentContext> detectPaymentContext(String payload) {
+        return Optional.empty();
+    }
 }

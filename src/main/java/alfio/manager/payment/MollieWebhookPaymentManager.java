@@ -374,12 +374,10 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     }
 
     @Override
-    public String getWebhookSignatureKey() {
-        return null;
-    }
-
-    @Override
-    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature, Map<String, String> additionalInfo) {
+    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body,
+                                                                       String signature,
+                                                                       Map<String, String> additionalInfo,
+                                                                       PaymentContext paymentContext) {
         try(var reader = new StringReader(body)) {
             Properties properties = new Properties();
             properties.load(reader);

@@ -1,0 +1,176 @@
+{
+    "id": "evt_ID",
+    "object": "event",
+    "account": "acct_ID",
+    "api_version": "2019-05-16",
+    "created": 1625198985,
+    "data": {
+        "object": {
+            "id": "pi_ID",
+            "object": "payment_intent",
+            "amount": 1000,
+            "amount_capturable": 0,
+            "amount_received": 1000,
+            "application": "ca_APPLICATION",
+            "application_fee_amount": null,
+            "canceled_at": null,
+            "cancellation_reason": null,
+            "capture_method": "automatic",
+            "charges": {
+                "object": "list",
+                "data": [
+                    {
+                        "id": "ch_ID",
+                        "object": "charge",
+                        "amount": 1000,
+                        "amount_captured": 1000,
+                        "amount_refunded": 0,
+                        "application": "ca_APPLICATION",
+                        "application_fee": null,
+                        "application_fee_amount": null,
+                        "balance_transaction": "txn_TRANSACTION",
+                        "billing_details": {
+                            "address": {
+                                "city": null,
+                                "country": "CH",
+                                "line1": "Bahnhofstrasse 1",
+                                "line2": null,
+                                "postal_code": "8000",
+                                "state": null
+                            },
+                            "email": "noreply@example.org",
+                            "name": "Test McTest",
+                            "phone": null
+                        },
+                        "calculated_statement_descriptor": "ALF.IO",
+                        "captured": true,
+                        "created": 1625198984,
+                        "currency": "chf",
+                        "customer": null,
+                        "description": "1 ticket(s) for event Event Name",
+                        "destination": null,
+                        "dispute": null,
+                        "disputed": false,
+                        "failure_code": null,
+                        "failure_message": null,
+                        "fraud_details": {
+                        },
+                        "invoice": null,
+                        "livemode": false,
+                        "metadata": {
+                            "fullName": "Test McTest",
+                            "alfioBaseUrl": "https://alf.io",
+                            "billingAddress": "Test McTest,Bahnhofstrasse 1,8000 Zürich,Switzerland",
+                            "reservationId": "abcdefgefsjdnakdjasd",
+                            "email": "noreply@example.org"
+                        },
+                        "on_behalf_of": null,
+                        "order": null,
+                        "outcome": {
+                            "network_status": "approved_by_network",
+                            "reason": null,
+                            "risk_level": "normal",
+                            "risk_score": 34,
+                            "seller_message": "Payment complete.",
+                            "type": "authorized"
+                        },
+                        "paid": true,
+                        "payment_intent": "pi_ID",
+                        "payment_method": "pm_ID",
+                        "payment_method_details": {
+                            "card": {
+                                "brand": "visa",
+                                "checks": {
+                                    "address_line1_check": "pass",
+                                    "address_postal_code_check": "pass",
+                                    "cvc_check": "pass"
+                                },
+                                "country": "AT",
+                                "exp_month": 12,
+                                "exp_year": 2030,
+                                "fingerprint": "lNnHuacTDaE0lAZL",
+                                "funding": "credit",
+                                "installments": null,
+                                "last4": "0008",
+                                "network": "visa",
+                                "three_d_secure": {
+                                    "authenticated": false,
+                                    "authentication_flow": null,
+                                    "result": "attempt_acknowledged",
+                                    "result_reason": null,
+                                    "succeeded": true,
+                                    "version": "1.0.2"
+                                },
+                                "wallet": null
+                            },
+                            "type": "card"
+                        },
+                        "receipt_email": null,
+                        "receipt_number": null,
+                        "receipt_url": "https://pay.stripe.com/receipts/RECEIPT",
+                        "refunded": false,
+                        "refunds": {
+                            "object": "list",
+                            "data": [
+                            ],
+                            "has_more": false,
+                            "total_count": 0,
+                            "url": "/v1/charges/ch_ID"
+                        },
+                        "review": null,
+                        "shipping": null,
+                        "source": null,
+                        "source_transfer": null,
+                        "statement_descriptor": null,
+                        "statement_descriptor_suffix": null,
+                        "status": "succeeded",
+                        "transfer_data": null,
+                        "transfer_group": null
+                    }
+                ],
+                "has_more": false,
+                "total_count": 1,
+                "url": "/v1/charges?payment_intent=pi_PI"
+            },
+            "client_secret": "pi_ID_secret_ID",
+            "confirmation_method": "automatic",
+            "created": 1625198982,
+            "currency": "chf",
+            "customer": null,
+            "description": "1 ticket(s) for event Event Name",
+            "invoice": null,
+            "last_payment_error": null,
+            "livemode": false,
+            "next_action": null,
+            "on_behalf_of": null,
+            "payment_method": "pm_ID",
+            "payment_method_options": {
+                "card": {
+                    "installments": null,
+                    "network": null,
+                    "request_three_d_secure": "automatic"
+                }
+            },
+            "payment_method_types": [
+                "card"
+            ],
+            "receipt_email": null,
+            "review": null,
+            "setup_future_usage": null,
+            "shipping": null,
+            "source": null,
+            "statement_descriptor": null,
+            "statement_descriptor_suffix": null,
+            "status": "succeeded",
+            "transfer_data": null,
+            "transfer_group": null
+        }
+    },
+    "livemode": false,
+    "pending_webhooks": 3,
+    "request": {
+        "id": null,
+        "idempotency_key": "pi_ID-src_ID"
+    },
+    "type": "payment_intent.succeeded"
+}

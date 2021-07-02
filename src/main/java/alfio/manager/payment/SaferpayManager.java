@@ -154,12 +154,10 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     }
 
     @Override
-    public String getWebhookSignatureKey() {
-        return null;
-    }
-
-    @Override
-    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature, Map<String, String> additionalInfo) {
+    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body,
+                                                                       String signature,
+                                                                       Map<String, String> additionalInfo,
+                                                                       PaymentContext paymentContext) {
         return Optional.of(new EmptyWebhookPayload(additionalInfo.get("reservationId"), TransactionWebhookPayload.Status.SUCCESS));
     }
 

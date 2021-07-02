@@ -32,6 +32,7 @@ import alfio.model.transaction.webhook.StripeChargeTransactionWebhookPayload;
 import alfio.model.transaction.webhook.StripePaymentIntentWebhookPayload;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
+import com.google.gson.JsonParser;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.BalanceTransaction;
@@ -45,6 +46,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.StringReader;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -204,14 +206,17 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
-    public String getWebhookSignatureKey() {
-        return configurationManager.getForSystem(STRIPE_WEBHOOK_PAYMENT_KEY).getRequiredValue();
+    public String getWebhookSignatureKey(ConfigurationLevel configurationLevel) {
+        return configurationManager.getFor(STRIPE_WEBHOOK_PAYMENT_KEY, configurationLevel).getRequiredValue();
     }
 
     @Override
-    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature, Map<String, String> additionalInfo) {
+    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body,
+                                                                       String signature,
+                                                                       Map<String, String> additionalInfo,
+                                                                       PaymentContext paymentContext) {
         try {
-            var stripeEvent = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
+            var stripeEvent = Webhook.constructEvent(body, signature, getWebhookSignatureKey(paymentContext.getConfigurationLevel()));
             String eventType = stripeEvent.getType();
             if(eventType.startsWith("charge.")) {
                 return deserializeObject(stripeEvent).map(obj -> new StripeChargeTransactionWebhookPayload(eventType, (Charge)obj));
@@ -424,6 +429,31 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         } catch(Exception ex) {
             log.error("Error trying to check PaymentIntent status", ex);
             return PaymentWebhookResult.error("failed");
+        }
+    }
+
+    /**
+     * Detects {@link PaymentContext} by parsing Stripe's Webhook payload.
+     * If anything goes wrong, it returns an empty PaymentContext
+     * @param payload Stripe Webhook payload
+     * @return PaymentContext
+     */
+    @Override
+    public Optional<PaymentContext> detectPaymentContext(String payload) {
+        try (var stringReader = new StringReader(payload)) {
+            var reservationId = JsonParser.parseReader(stringReader)
+                .getAsJsonObject()
+                .getAsJsonObject("data")
+                .getAsJsonObject("object")
+                .getAsJsonObject("metadata")
+                .get("reservationId")
+                .getAsString();
+
+            var event = eventRepository.findByReservationId(reservationId);
+            return Optional.of(new PaymentContext(event, reservationId));
+        } catch(Exception ex) {
+            log.warn("Cannot detect PaymentContext from the webhook body. Using a generic one", ex);
+            return Optional.empty();
         }
     }
 }
