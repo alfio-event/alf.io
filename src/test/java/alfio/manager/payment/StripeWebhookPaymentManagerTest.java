@@ -37,6 +37,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -259,6 +261,35 @@ class StripeWebhookPaymentManagerTest {
         when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
             .thenReturn(completeStripeConfiguration(true));
         assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
+    }
+
+    @Test
+    void detectPaymentContextValidJson() throws Exception {
+        var resource = getClass().getResource("/transaction-json/stripe-success-valid.json");
+        assertNotNull(resource);
+        var payload = Files.readString(Path.of(resource.toURI()));
+        when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
+        var paymentContextOptional = stripeWebhookPaymentManager.detectPaymentContext(payload);
+        assertTrue(paymentContextOptional.isPresent());
+        var paymentContext = paymentContextOptional.get();
+        assertSame(event, paymentContext.getPurchaseContext());
+    }
+
+    @Test
+    void detectPaymentContextMetadataMissing() throws Exception {
+        var resource = getClass().getResource("/transaction-json/stripe-success-metadata-missing.json");
+        assertNotNull(resource);
+        var payload = Files.readString(Path.of(resource.toURI()));
+        when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
+        var paymentContextOptional = stripeWebhookPaymentManager.detectPaymentContext(payload);
+        assertTrue(paymentContextOptional.isEmpty());
+    }
+
+    @Test
+    void detectPaymentContextJsonInvalid() {
+        when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
+        var paymentContextOptional = stripeWebhookPaymentManager.detectPaymentContext("invalid json");
+        assertTrue(paymentContextOptional.isEmpty());
     }
 
 }

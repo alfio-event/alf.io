@@ -62,7 +62,7 @@ In order to process your attendees and create a ticket for each of them.
 
 #### Example CSV file
 
-you can download an example CSV [here](/resources/import-attendees/test-alfio.csv)
+you can download an example CSV [here](/files/import-attendees/test-alfio.csv)
 
 ![upload CSV file](/img/tutorials/import-attendees/res.4.png)
 
