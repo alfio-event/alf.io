@@ -26,16 +26,15 @@ import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.modification.MessageModification;
 import alfio.model.user.Organization;
-import alfio.repository.EventDeleterRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
+import alfio.util.EventUtil;
 import alfio.util.Json;
 import alfio.util.RenderedTemplate;
 import alfio.util.TemplateManager;
 import alfio.util.checkin.TicketCheckInUtil;
 import lombok.AllArgsConstructor;
-import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Component;
@@ -48,7 +47,6 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static alfio.manager.system.Mailer.AttachmentIdentifier.CALENDAR_ICS;
-import static alfio.model.system.ConfigurationKeys.BASE_URL;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Component
@@ -79,7 +77,7 @@ public class CustomMessageManager {
     public void sendMessages(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
 
         Event event = eventManager.getSingleEvent(eventName, username);
-        preview(event, input, username);//dry run for checking the syntax
+        preview(event, input, username); // dry run for checking the syntax
         Organization organization = eventManager.loadOrganizer(event, username);
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
         var categoriesById = ticketCategoryRepository.findByEventIdAsMap(event.getId());
@@ -111,12 +109,11 @@ public class CustomMessageManager {
                     StringBuilder text = new StringBuilder(renderResource(m.getText(), event, model, m.getLocale(), templateManager));
                     List<Mailer.Attachment> attachments = new ArrayList<>();
                     if(m.isAttachTicket()) {
-                        boolean onlineEvent = event.isOnline();
                         var optionalReservation = ticketReservationManager.findById(ticket.getTicketsReservationId());
                         var optionalTicketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId());
 
-                        if(optionalReservation.isPresent() && optionalTicketCategory.isPresent() && onlineEvent) {
-                            var onlineCheckInModel = TicketCheckInUtil.getOnlineCheckInInfo(
+                        if(optionalReservation.isPresent() && optionalTicketCategory.isPresent() && EventUtil.isAccessOnline(optionalTicketCategory.get(), event)) {
+                            var onlineCheckInModel = new HashMap<>(TicketCheckInUtil.getOnlineCheckInInfo(
                                 extensionManager,
                                 eventRepository,
                                 ticketCategoryRepository,
@@ -126,7 +123,9 @@ public class CustomMessageManager {
                                 ticket,
                                 categoriesById.get(ticket.getCategoryId()),
                                 ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket)
-                            );
+                            ));
+                            // add ticket model in order to be able to generate the calendar invitation
+                            onlineCheckInModel.putAll(getModelForTicket(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
                             // generate only calendar invitation, as Ticket PDF would not make sense in this case.
                             attachments.add(generateCalendarAttachmentForOnlineEvent(onlineCheckInModel));
                             // add check-in URL and prerequisites, if any
