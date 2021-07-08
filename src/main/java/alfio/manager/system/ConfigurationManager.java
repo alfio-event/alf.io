@@ -709,4 +709,10 @@ public class ConfigurationManager {
     public boolean isPublicOpenIdEnabled() {
         return getPublicOpenIdConfiguration().get(OPENID_PUBLIC_ENABLED).getValueAsBooleanOrDefault();
     }
+
+    public String baseUrl(PurchaseContext purchaseContext) {
+        var configurationLevel = purchaseContext.event().map(ConfigurationLevel::event)
+            .orElseGet(() -> ConfigurationLevel.organization(purchaseContext.getOrganizationId()));
+        return StringUtils.removeEnd(getFor(BASE_URL, configurationLevel).getRequiredValue(), "/");
+    }
 }

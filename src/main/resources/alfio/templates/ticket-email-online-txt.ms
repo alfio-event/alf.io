@@ -6,10 +6,10 @@
 *********************************************
 {{#i18n}}email.event.online.important-information{{/i18n}}
 
-{{#i18n}}email.event.online.check-in{{/i18n}}
+{{#customCheckInUrlText}}{{.}}{{/customCheckInUrlText}}{{^customCheckInUrlText}}{{#i18n}}email.event.online.check-in{{/i18n}}{{/customCheckInUrlText}}
 {{onlineCheckInUrl}}
 
-{{#customCheckInUrl}}{{customCheckInUrlDescription}}{{/customCheckInUrl}}
+{{#customCheckInUrlDescription}}{{.}}{{/customCheckInUrlDescription}}
 {{prerequisites}}
 *********************************************
 

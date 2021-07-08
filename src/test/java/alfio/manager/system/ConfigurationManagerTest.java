@@ -16,6 +16,7 @@
  */
 package alfio.manager.system;
 
+import alfio.model.PurchaseContext;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import org.junit.jupiter.api.Assertions;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationPathLevel.*;
+import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 

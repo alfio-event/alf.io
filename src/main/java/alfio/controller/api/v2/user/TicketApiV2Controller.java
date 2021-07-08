@@ -141,9 +141,15 @@ public class TicketApiV2Controller {
 
             Locale locale = LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(reservation.getUserLanguage(), event));
             TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
-            notificationManager.sendTicketByEmail(ticket,
-                event, locale, ticketHelper.getConfirmationTextBuilder(locale, event, reservation, ticket, category),
-                reservation, ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()));
+            notificationManager.sendTicketByEmail(
+                ticket,
+                event,
+                locale,
+                ticketHelper.getConfirmationTextBuilder(locale, event, reservation, ticket, category),
+                reservation,
+                ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()),
+                () -> ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket)
+            );
             return ResponseEntity.ok(true);
 
         }).orElseGet(() -> ResponseEntity.notFound().build());

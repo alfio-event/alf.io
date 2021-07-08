@@ -48,6 +48,7 @@ import alfio.repository.user.UserRepository;
 import alfio.test.util.TestUtil;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -91,7 +92,7 @@ class TicketReservationManagerTest {
     private static final String RESERVATION_EMAIL = "me@mydomain.com";
     private static final String TRANSACTION_ID = "transaction-id";
     private static final String GATEWAY_TOKEN = "token";
-    private static final String BASE_URL = "http://my-website/";
+    private static final String BASE_URL = "https://my-website/";
     private static final String ORG_EMAIL = "org@org.org";
     private static final String EVENT_CURRENCY = "CHF";
     private static final String CATEGORY_CURRENCY = "EUR";
@@ -252,6 +253,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(eventRepository.findAll()).thenReturn(Collections.singletonList(event));
         var baseUrlConf = new MaybeConfiguration(ConfigurationKeys.BASE_URL, new ConfigurationKeyValuePathLevel(null, BASE_URL, null));
+        when(configurationManager.baseUrl(any())).thenReturn(StringUtils.removeEnd(BASE_URL, "/"));
         when(configurationManager.getForSystem(ConfigurationKeys.BASE_URL)).thenReturn(baseUrlConf);
         when(configurationManager.getFor(eq(ConfigurationKeys.BASE_URL), any())).thenReturn(baseUrlConf);
         when(configurationManager.hasAllConfigurationsForInvoice(eq(event))).thenReturn(false);
@@ -385,7 +387,7 @@ class TicketReservationManagerTest {
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
-        verify(notificationManager, times(1)).sendTicketByEmail(eq(modified), eq(event), eq(Locale.ENGLISH), any(), any(), any());
+        verify(notificationManager, times(1)).sendTicketByEmail(eq(modified), eq(event), eq(Locale.ENGLISH), any(), any(), any(), any());
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(originalEmail), anyString(), any(TemplateGenerator.class));
     }
 
@@ -770,7 +772,7 @@ class TicketReservationManagerTest {
         when(configurationManager.getFor(eq(BANKING_KEY), any())).thenReturn(BANKING_INFO);
         mockBillingDocument();
         testPaidReservation(true, true);
-        verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any());
+        verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -785,7 +787,7 @@ class TicketReservationManagerTest {
         when(configurationManager.getFor(eq(BANKING_KEY), any())).thenReturn(BANKING_INFO);
         mockBillingDocument();
         testPaidReservation(true, true);
-        verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any());
+        verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test

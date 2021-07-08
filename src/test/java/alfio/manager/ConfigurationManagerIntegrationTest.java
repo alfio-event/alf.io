@@ -359,4 +359,10 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(ConfigurationPathLevel.EVENT, res.get(ENABLE_WAITING_QUEUE).getConfigurationPathLevelOrDefault(null));
         assertEquals(ConfigurationPathLevel.EVENT, res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getConfigurationPathLevelOrDefault(null));
     }
+
+    @Test
+    void testBaseUrl() {
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), BASE_URL.getValue(), "https://test/", "");
+        assertEquals("https://test", configurationManager.baseUrl(event));
+    }
 }

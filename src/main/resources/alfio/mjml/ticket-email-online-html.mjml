@@ -77,7 +77,7 @@
 				<mj-text align="center" font-size="20px">{{#i18n}}email-ticket.confirmation-event [{{event.displayName}}]{{/i18n}}</mj-text>
 
 			    <mj-raw>{{#custom-body-text}}</mj-raw>
-			    <mj-text align="center" font-size="14px">{{custom-body-text}}</mj-text>
+			    <mj-text align="center" font-size="14px">{{.}}</mj-text>
 			    <mj-raw>{{/custom-body-text}}</mj-raw>
 
 			</mj-column>
@@ -93,7 +93,7 @@
                 <mj-text align="center" font-size="14px">{{#i18n}}email.event.online.check-in{{/i18n}}</mj-text>
                 <mj-raw>{{#customCheckInUrlText}}</mj-raw>
                 <mj-button background-color="#28a745" href="{{onlineCheckInUrl}}" rel="notrack">
-                    {{customCheckInUrlText}}
+                    {{.}}
                 </mj-button>
                 <mj-raw>{{/customCheckInUrlText}}</mj-raw>
                 <mj-raw>{{^customCheckInUrlText}}</mj-raw>
@@ -102,7 +102,7 @@
                 </mj-button>
                 <mj-raw>{{/customCheckInUrlText}}</mj-raw>
               	<mj-raw>{{#customCheckInUrlDescription}}</mj-raw>
-              	<mj-text align="center" font-size="14px">{{customCheckInUrlDescription}}</mj-text>
+              	<mj-text align="center" font-size="14px">{{.}}</mj-text>
                 <mj-raw>{{/customCheckInUrlDescription}}</mj-raw>
                 <mj-text align="center" font-size="14px">{{#i18n}}email-ticket.look-forward{{/i18n}}</mj-text>
             </mj-column>
