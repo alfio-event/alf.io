@@ -261,30 +261,28 @@ public class NotificationManager {
 
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
+        // pre-generate template in order to reuse model
+        var renderedTemplate = textBuilder.generate(ticket);
+
         List<Mailer.Attachment> attachments = new ArrayList<>();
         if(EventUtil.isAccessOnline(ticketCategory, event)) { // generate only calendar invitation
-            attachments.add(CustomMessageManager.generateCalendarAttachmentForOnlineEvent(
-                event,
-                ticket,
-                Locale.forLanguageTag(ticket.getUserLanguage()),
-                reservation,
-                ticketCategory,
-                organization,
-                extensionManager,
-                eventRepository,
-                ticketCategoryRepository,
-                configurationManager,
-                ticketAdditionalInfoSupplier.get()
-            ));
+            var attachmentModel = new HashMap<String, String>();
+            // attachment model expects non-string properties to be JSON, so we convert them
+            renderedTemplate.getSrcModel().forEach((k, v) -> {
+                if(v instanceof String) {
+                    attachmentModel.put(k, (String) v);
+                } else {
+                    attachmentModel.put(k, Json.toJson(v));
+                }
+            });
+            attachments.add(CustomMessageManager.generateCalendarAttachmentForOnlineEvent(attachmentModel));
         } else {
             attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
         }
 
         String displayName = event.getDisplayName();
-
-        String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String subject = messageSourceManager.getMessageSourceFor(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
-        var renderedTemplate = textBuilder.generate(ticket);
+        String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, renderedTemplate);
         String recipient = ticket.getEmail();
         

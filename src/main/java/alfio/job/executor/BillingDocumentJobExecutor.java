@@ -28,6 +28,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,7 +69,7 @@ public class BillingDocumentJobExecutor implements AdminJobExecutor {
         if(counter.get() > 0) {
             var organization = organizationRepository.getById(event.getOrganizationId());
             notificationManager.sendSimpleEmail(event, null, organization.getEmail(), "Invoice Regeneration complete",
-                () -> RenderedTemplate.plaintext("Invoice regeneration for event "+event.getDisplayName()+ " is now complete. "+counter.get()+" invoices generated."));
+                () -> RenderedTemplate.plaintext("Invoice regeneration for event "+event.getDisplayName()+ " is now complete. "+counter.get()+" invoices generated.", Map.of()));
         }
         return "generated";
     }

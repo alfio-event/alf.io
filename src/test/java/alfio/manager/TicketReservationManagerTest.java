@@ -317,7 +317,7 @@ class TicketReservationManagerTest {
         when(event.getShortName()).thenReturn("short-name");
         initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
         PartialTicketTextGenerator ownerChangeTextBuilder = mock(PartialTicketTextGenerator.class);
-        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>"));
+        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>", Map.of()));
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
@@ -339,7 +339,7 @@ class TicketReservationManagerTest {
         when(event.getShortName()).thenReturn("short-name");
         initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
         PartialTicketTextGenerator ownerChangeTextBuilder = mock(PartialTicketTextGenerator.class);
-        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>"));
+        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>", Map.of()));
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ClockProvider.clock()).minusSeconds(1));
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
@@ -361,7 +361,7 @@ class TicketReservationManagerTest {
         when(event.getShortName()).thenReturn("short-name");
         initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
         PartialTicketTextGenerator ownerChangeTextBuilder = mock(PartialTicketTextGenerator.class);
-        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>"));
+        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>", Map.of()));
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verifyNoInteractions(messageSource);
@@ -383,7 +383,7 @@ class TicketReservationManagerTest {
         initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
         form.setUserLanguage("");
         PartialTicketTextGenerator ownerChangeTextBuilder = mock(PartialTicketTextGenerator.class);
-        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>"));
+        when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn(RenderedTemplate.multipart("Hello, world", "<p>Hello, world</p>", Map.of()));
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));

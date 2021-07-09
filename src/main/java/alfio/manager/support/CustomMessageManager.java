@@ -108,6 +108,7 @@ public class CustomMessageManager {
                     String subject = renderResource(m.getSubject(), event, model, m.getLocale(), templateManager);
                     StringBuilder text = new StringBuilder(renderResource(m.getText(), event, model, m.getLocale(), templateManager));
                     List<Mailer.Attachment> attachments = new ArrayList<>();
+                    var templateModel = new HashMap<>(model.asMap());
                     if(m.isAttachTicket()) {
                         var optionalReservation = ticketReservationManager.findById(ticket.getTicketsReservationId());
                         var optionalTicketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId());
@@ -130,11 +131,12 @@ public class CustomMessageManager {
                             attachments.add(generateCalendarAttachmentForOnlineEvent(onlineCheckInModel));
                             // add check-in URL and prerequisites, if any
                             text.append(notificationManager.buildOnlineCheckInText(onlineCheckInModel, Locale.forLanguageTag(ticket.getUserLanguage()), messageSource));
+                            templateModel.putAll(onlineCheckInModel);
                         } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
                             attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
                         }
                     }
-                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, () -> RenderedTemplate.plaintext(text.toString()), attachments);
+                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, () -> RenderedTemplate.plaintext(text.toString(), templateModel), attachments);
                 });
         });
 
@@ -197,7 +199,7 @@ public class CustomMessageManager {
         return generateCalendarAttachmentForOnlineEvent(model);
     }
 
-    private static Mailer.Attachment generateCalendarAttachmentForOnlineEvent(Map<String, String> model) {
+    public static Mailer.Attachment generateCalendarAttachmentForOnlineEvent(Map<String, String> model) {
         return new Mailer.Attachment(CALENDAR_ICS.fileName(""), null, CALENDAR_ICS.contentType(""), model, CALENDAR_ICS);
     }
 

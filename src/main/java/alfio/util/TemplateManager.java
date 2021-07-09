@@ -111,13 +111,13 @@ public class TemplateManager {
         		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, purchaseContext, TemplateOutput.HTML) :
         		null;
         		
-    	return RenderedTemplate.multipart(textRender, htmlRender);
+    	return RenderedTemplate.multipart(textRender, htmlRender, model);
     }
 
     public RenderedTemplate renderTemplate(PurchaseContext purchaseContext, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
         Map<String, Object> updatedModel = modelEnricher(model, purchaseContext, locale);
         return uploadedResourceManager.findCascading(purchaseContext.getOrganizationId(), purchaseContext.event().map(Event::getId).orElse(null), templateResource.getSavedName(locale))
-            .map(resource -> RenderedTemplate.plaintext(render(new ByteArrayResource(resource), updatedModel, locale, purchaseContext, templateResource.getTemplateOutput())))
+            .map(resource -> RenderedTemplate.plaintext(render(new ByteArrayResource(resource), updatedModel, locale, purchaseContext, templateResource.getTemplateOutput()), model))
             .orElseGet(() -> renderMultipartTemplate(purchaseContext, templateResource, updatedModel, locale));
     }
 

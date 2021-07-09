@@ -868,13 +868,13 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
 
             boolean online = containsOnlineTickets(context, reservationId);
-            assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 12 : 8); // FIXME should be 10 for online
-            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 12 : 8);// FIXME should be 10 for online
-            assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 12 : 8);// FIXME should be 10 for online
+            assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 10 : 8);
+            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 10 : 8);
+            assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 10 : 8);
             if(online) {
-                assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 12);// FIXME should be 10 for online
+                assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 10);
             }
-            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 8);// FIXME should be 10 for online
+            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 10 : 8);
 
 
 

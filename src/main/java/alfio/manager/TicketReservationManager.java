@@ -1437,7 +1437,7 @@ public class TicketReservationManager {
             reservationsGroupedByEvent.forEach((event, reservations) -> {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(),
-                    STUCK_TICKETS_SUBJECT,  () -> RenderedTemplate.plaintext(String.format(STUCK_TICKETS_MSG, event.getDisplayName())));
+                    STUCK_TICKETS_SUBJECT,  () -> RenderedTemplate.plaintext(String.format(STUCK_TICKETS_MSG, event.getDisplayName()), Map.of()));
 
                 extensionManager.handleStuckReservations(event, reservations.stream().map(p -> p.getLeft().getId()).collect(toList()));
             });

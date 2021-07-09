@@ -18,25 +18,29 @@ package alfio.util;
 
 import lombok.Getter;
 
+import java.util.Map;
+
 @Getter
 public class RenderedTemplate {
     private final String textPart;
     private final String htmlPart;
+    private final Map<String, Object> srcModel;
 
-    private RenderedTemplate(String textPart, String htmlPart) {
+    private RenderedTemplate(String textPart, String htmlPart, Map<String, Object> model) {
         this.textPart = textPart;
         this.htmlPart = htmlPart;
+        this.srcModel = model;
     }
 
     public boolean isMultipart() {
         return htmlPart != null;
     }
 
-    public static RenderedTemplate plaintext(String textPart) {
-        return new RenderedTemplate(textPart, null);
+    public static RenderedTemplate plaintext(String textPart, Map<String, Object> model) {
+        return new RenderedTemplate(textPart, null, model);
     }
 
-    public static RenderedTemplate multipart(String textPart, String htmlPart) {
-        return new RenderedTemplate(textPart, htmlPart);
+    public static RenderedTemplate multipart(String textPart, String htmlPart, Map<String, Object> model) {
+        return new RenderedTemplate(textPart, htmlPart, model);
     }
 }
