@@ -76,7 +76,7 @@ public class EventStatisticsManager {
             return stats.map(stat -> {
                 Event event = mappedEvent.get(stat.getEventId());
                 return new EventStatistic(event, stat, displayStatisticsForEvent(event));
-            }).sorted().collect(Collectors.toList());
+            }).collect(Collectors.toList());
         } else {
             return Collections.emptyList();
         }

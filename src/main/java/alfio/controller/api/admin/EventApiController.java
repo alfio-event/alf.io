@@ -162,7 +162,10 @@ public class EventApiController {
 
     @GetMapping("/expired-events")
     public List<EventStatistic> getAllExpiredEvents(Principal principal) {
-        return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> event.expiredSince(14));
+        var results = new ArrayList<>(eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> event.expiredSince(14)));
+        // items are sorted by start_ts asc; expired events should be sorted by start_ts desc, so we need to reverse the list.
+        Collections.reverse(results);
+        return results;
     }
 
 
