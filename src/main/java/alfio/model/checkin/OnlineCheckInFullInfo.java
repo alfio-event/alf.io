@@ -133,7 +133,8 @@ public class OnlineCheckInFullInfo {
                                  @Column("e_time_zone") String timezone,
                                  @Column("e_private_key") String eventPrivateKey,
                                  @Column("e_org_id") int eventOrgId,
-                                 @Column("e_metadata") @JSONData AlfioMetadata eventMetadata
+                                 @Column("e_metadata") @JSONData AlfioMetadata eventMetadata,
+                                 @Column("e_locales") int locales
                                  ) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
@@ -148,6 +149,6 @@ public class OnlineCheckInFullInfo {
 
         this.categoryMetadata = categoryMetadata;
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, billingAddressState, vatCountry, vatNr, invoicingAdditionalInfo);
-        this.eventWithCheckInInfo = new EventWithCheckInInfo(eventId, eventFormat, eventShortName, eventDisplayName, eventStartTs, eventEndTs, timezone, eventPrivateKey, eventOrgId, eventMetadata);
+        this.eventWithCheckInInfo = new EventWithCheckInInfo(eventId, eventFormat, eventShortName, eventDisplayName, eventStartTs, eventEndTs, timezone, eventPrivateKey, eventOrgId, eventMetadata, locales);
     }
 }

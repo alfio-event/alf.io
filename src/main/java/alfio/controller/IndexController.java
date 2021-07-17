@@ -164,6 +164,7 @@ public class IndexController {
         "/event/{eventShortName}/reservation/{reservationId}/error",
         "/event/{eventShortName}/ticket/{ticketId}/view",
         "/event/{eventShortName}/ticket/{ticketId}/update",
+        "/event/{eventShortName}/ticket/{ticketId}/check-in/{ticketCodeHash}/waiting-room",
         //
         // subscription
         "/subscriptions-all",

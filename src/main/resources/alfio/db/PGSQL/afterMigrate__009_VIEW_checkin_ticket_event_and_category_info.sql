@@ -117,7 +117,8 @@ create view checkin_ticket_event_and_category_info as (
              e.time_zone e_time_zone,
              e.private_key e_private_key,
              e.metadata e_metadata,
-             e.org_id e_org_id
+             e.org_id e_org_id,
+             e.locales e_locales
 
       from ticket t
                inner join tickets_reservation tr on t.tickets_reservation_id = tr.id

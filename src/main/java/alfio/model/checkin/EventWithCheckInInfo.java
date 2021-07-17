@@ -16,10 +16,7 @@
  */
 package alfio.model.checkin;
 
-import alfio.model.Event;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.EventCheckInInfo;
-import alfio.model.EventHiddenFieldContainer;
+import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.support.JSONData;
 import lombok.Getter;
@@ -28,11 +25,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import static ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 
 @Getter
-public class EventWithCheckInInfo extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo {
+public class EventWithCheckInInfo extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo, LocalizedContent {
 
     private final Event.EventFormat format;
     private final String shortName;
@@ -42,6 +40,7 @@ public class EventWithCheckInInfo extends EventAndOrganizationId implements Even
     private final ZoneId zoneId;
     private final String privateKey;
     private final AlfioMetadata metadata;
+    private final List<ContentLanguage> contentLanguages;
 
 
     public EventWithCheckInInfo(@Column("id") int id,
@@ -53,7 +52,8 @@ public class EventWithCheckInInfo extends EventAndOrganizationId implements Even
                                 @Column("time_zone") String timezone,
                                 @Column("private_key") String privateKey,
                                 @Column("org_id") int organizationId,
-                                @Column("metadata") @JSONData AlfioMetadata metadata) {
+                                @Column("metadata") @JSONData AlfioMetadata metadata,
+                                @Column("locales") int locales) {
         super(id, organizationId);
         this.zoneId = ZoneId.of(timezone);
         this.format = format;
@@ -63,6 +63,7 @@ public class EventWithCheckInInfo extends EventAndOrganizationId implements Even
         this.end = endTs.withZoneSameInstant(zoneId);
         this.privateKey = privateKey;
         this.metadata = metadata;
+        this.contentLanguages = ContentLanguage.findAllFor(locales);
     }
 
     public boolean isOnline() {
@@ -87,5 +88,10 @@ public class EventWithCheckInInfo extends EventAndOrganizationId implements Even
     @Override
     public BigDecimal getVat() {
         return null;
+    }
+
+    @Override
+    public List<ContentLanguage> getContentLanguages() {
+        return contentLanguages;
     }
 }

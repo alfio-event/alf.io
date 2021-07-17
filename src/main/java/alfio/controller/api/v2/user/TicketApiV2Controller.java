@@ -18,6 +18,7 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
+import alfio.controller.api.v2.model.OnlineCheckInInfo;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.TicketInfo;
 import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
@@ -42,6 +43,8 @@ import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import lombok.AllArgsConstructor;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -52,10 +55,15 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
+import static alfio.util.EventUtil.firstMatchingCallLink;
 
 @RestController
 @AllArgsConstructor
@@ -265,4 +273,27 @@ public class TicketApiV2Controller {
         ).orElseThrow(IllegalStateException::new);
     }
 
+    @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/code/{checkInCode}/check-in-info")
+    public ResponseEntity<OnlineCheckInInfo> getCheckInInfo(@PathVariable("eventName") String eventName,
+                                                            @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                                            @PathVariable("checkInCode") String checkInCode,
+                                                            @RequestParam(value = "tz", required = false) String userTz) {
+        return ResponseEntity.of(ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventName, ticketIdentifier)
+            .flatMap(info -> {
+                var ticket = info.getTicket();
+                var event = info.getEventWithCheckInInfo();
+                var messageSource = messageSourceManager.getMessageSourceFor(event.getOrganizationId(), event.getId());
+                String ticketCode = ticket.ticketCode(event.getPrivateKey());
+                if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), checkInCode.getBytes(StandardCharsets.UTF_8))) {
+                    var categoryConfiguration = info.getCategoryMetadata().getOnlineConfiguration();
+                    var eventConfiguration = event.getMetadata().getOnlineConfiguration();
+                    var zoneId = StringUtils.isNotBlank(userTz) ? ZoneId.of(userTz) : event.getZoneId();
+                    return firstMatchingCallLink(event.getZoneId(), categoryConfiguration, eventConfiguration)
+                        .map(joinLink -> OnlineCheckInInfo.fromJoinLink(joinLink, event, zoneId, messageSource))
+                        .or(() -> Optional.of(OnlineCheckInInfo.fromEvent(event, zoneId, messageSource)));
+                } else {
+                    return Optional.empty();
+                }
+            }));
+    }
 }

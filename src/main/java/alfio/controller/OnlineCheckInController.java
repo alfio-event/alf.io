@@ -73,7 +73,7 @@ public class OnlineCheckInController {
                         return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/update");
                     }
                     log.info("validation was successful, but cannot find a valid link for {}", ticketUUID);
-                    return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/update");
+                    return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/check-in/"+ticketCodeHash+"/waiting-room");
                 }
                 log.warn("code validation failed for ticket {}", ticketUUID);
                 return Optional.empty();
