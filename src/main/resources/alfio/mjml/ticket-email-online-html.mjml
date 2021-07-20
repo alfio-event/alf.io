@@ -48,22 +48,27 @@
 	  </mj-head>
 	<mj-body>
 		<mj-section padding-bottom="0px" background-color="white">
-			<mj-column width="100%">
-				<mj-divider
-					padding-top="20px" padding-bottom="0px" padding-left="0px"
-					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
-			</mj-column>
-		</mj-section>
-		<mj-section padding-bottom="0px" background-color="#f8f8f8">
-			<mj-column width="100%">
-				<mj-text align="center" font-family="Helvetica Neue" font-size="20px" color="grey" font-weight="200">
-					{{event.displayName}}
-				</mj-text>
-				<mj-divider
-					padding-top="20px" padding-bottom="0px" padding-left="0px"
-					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
-			</mj-column>
-		</mj-section>
+            <mj-column width="100%">
+                <mj-divider
+                    padding-top="20px" padding-bottom="0px" padding-left="0px"
+                    padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+            </mj-column>
+        </mj-section>
+        <mj-section padding-bottom="0px" background-color="white">
+          <mj-column width="50%">
+            <mj-image src="{{baseUrl}}/file/{{event.fileBlobId}}" alt="{{event.displayName}}"></mj-image>
+          </mj-column>
+        </mj-section>
+        <mj-section padding-bottom="0px" background-color="white">
+          <mj-column width="100%">
+            <mj-text align="center" font-family="Helvetica Neue" font-size="20px" color="grey" font-weight="200">
+                        {{event.displayName}}
+                </mj-text>
+                <mj-divider
+                    padding-top="20px" padding-bottom="0px" padding-left="0px"
+                    padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+            </mj-column>
+        </mj-section>
 
    		<mj-section background-color="white">
 			<mj-column width="100%">
