@@ -119,7 +119,7 @@ public class IndexController {
 
     //url defined in the angular app in app-routing.module.ts
     /**
-     <pre>
+     <pre>{@code
      { path: '', component: EventListComponent, canActivate: [LanguageGuard] },
      { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [EventGuard, LanguageGuard] },
      { path: 'event/:eventShortName/poll', loadChildren: () => import('./poll/poll.module').then(m => m.PollModule), canActivate: [EventGuard, LanguageGuard] },
@@ -138,13 +138,15 @@ public class IndexController {
      { path: 'view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] },
      { path: 'update', component: UpdateTicketComponent, canActivate: [EventGuard, LanguageGuard] }
      ]}
+    }
      </pre>
      Poll routing:
-     <pre>
+     <pre>{@code
      { path: '', component: PollComponent, children: [
      {path: '', component: PollSelectionComponent },
      {path: ':pollId', component: DisplayPollComponent }
      ]}
+    }
      </pre>
 
      */
@@ -182,7 +184,8 @@ public class IndexController {
         "/event/{eventShortName}/poll",
         "/event/{eventShortName}/poll/{pollId}",
         // user
-        "/my-orders"
+        "/my-orders",
+        "/my-profile",
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
                              @PathVariable(value = "subscriptionId", required = false) String subscriptionId,

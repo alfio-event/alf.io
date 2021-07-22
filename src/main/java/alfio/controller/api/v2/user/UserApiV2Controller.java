@@ -16,6 +16,8 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.config.authentication.support.OpenIdAlfioAuthentication;
+import alfio.controller.api.v2.model.ClientRedirect;
 import alfio.controller.api.v2.model.PurchaseContextWithReservations;
 import alfio.controller.api.v2.model.User;
 import alfio.controller.form.ContactAndTicketsForm;
@@ -29,6 +31,7 @@ import alfio.util.ErrorsCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -101,11 +104,15 @@ public class UserApiV2Controller {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Boolean> logout(Principal principal) {
-        if(principal != null) {
+    public ResponseEntity<ClientRedirect> logout(Authentication authentication) {
+        if(authentication != null) {
             SecurityContextHolder.getContext().setAuthentication(null);
         }
-        return ResponseEntity.ok(true);
+        String redirectUrl = "";
+        if(authentication instanceof OpenIdAlfioAuthentication) {
+            redirectUrl = ((OpenIdAlfioAuthentication)authentication).getIdpLogoutRedirectionUrl();
+        }
+        return ResponseEntity.ok(new ClientRedirect(redirectUrl));
     }
 
     @GetMapping("/reservations")

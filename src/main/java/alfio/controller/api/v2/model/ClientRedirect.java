@@ -14,26 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2;
+package alfio.controller.api.v2.model;
 
-import alfio.controller.api.v2.model.AlfioInfo;
-import alfio.manager.system.ConfigurationManager;
 import lombok.AllArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
-import javax.servlet.http.HttpSession;
-
-@RestController
-@RequestMapping("/api/v2/")
+@Getter
 @AllArgsConstructor
-public class InfoApiController {
+public class ClientRedirect {
+    private final String targetUrl;
 
-    private final ConfigurationManager configurationManager;
-
-    @GetMapping("info")
-    public AlfioInfo getInfo(HttpSession session) {
-        return configurationManager.getInfo(session);
+    public boolean isEmpty() {
+        return StringUtils.isBlank(targetUrl);
     }
 }
