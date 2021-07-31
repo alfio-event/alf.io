@@ -17,6 +17,7 @@
 package alfio.extension;
 
 import alfio.util.Json;
+import com.google.gson.*;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Hex;
@@ -25,6 +26,7 @@ import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mozilla.javascript.*;
 
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -37,6 +39,10 @@ import java.util.stream.Collectors;
 @Log4j2
 @UtilityClass
 public class ExtensionUtils {
+
+    private static final Gson JSON_SERIALIZER = Json.GSON.newBuilder()
+        .registerTypeAdapter(Double.class, new DoubleSerializer())
+        .create();
 
     public static String format(String str, String... params) {
         return String.format(str, (Object[]) params);
@@ -81,7 +87,7 @@ public class ExtensionUtils {
      * @return
      */
     public static String convertToJson(Object o) {
-        return Json.GSON.toJson(unwrap(o));
+        return JSON_SERIALIZER.toJson(unwrap(o));
     }
 
     static Object unwrap(Object o) {
@@ -124,5 +130,27 @@ public class ExtensionUtils {
         }
         // better safe than sorry: we ignore all the unknown objects
         return null;
+    }
+
+    /**
+     * Adapter for Javascript -> Java -> JSON binding.
+     * Writes a JSON decimal only if it's strictly necessary.
+     * If the number does not have a decimal part, it will be serialized as Long (int64)
+     */
+    private static class DoubleSerializer implements JsonSerializer<Double> {
+
+        @Override
+        public JsonElement serialize(Double src, Type typeOfSrc, JsonSerializationContext context) {
+
+            if(src == null) {
+                return null;
+            }
+
+            if(Math.floor(src) == src) {
+                return new JsonPrimitive(src.longValue());
+            } else {
+                return new JsonPrimitive(src);
+            }
+        }
     }
 }

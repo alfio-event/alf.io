@@ -425,6 +425,9 @@ public class ExtensionService {
     }
 
     public static String toPath(PurchaseContext purchaseContext) {
+        if(purchaseContext == null) {
+            return "-";
+        }
         int organizationId = purchaseContext.getOrganizationId();
         return purchaseContext.event().map(e -> toPath((EventAndOrganizationId) e)).orElseGet(() -> "-" + organizationId);
     }

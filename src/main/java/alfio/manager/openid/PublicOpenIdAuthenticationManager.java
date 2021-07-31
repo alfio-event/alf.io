@@ -17,6 +17,7 @@
 package alfio.manager.openid;
 
 import alfio.config.authentication.support.OpenIdAlfioUser;
+import alfio.manager.ExtensionManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.User;
@@ -39,6 +40,7 @@ import static alfio.model.system.ConfigurationKeys.OPENID_CONFIGURATION_JSON;
 public class PublicOpenIdAuthenticationManager extends BaseOpenIdAuthenticationManager {
 
     private final ConfigurationManager configurationManager;
+    private final ExtensionManager extensionManager;
 
     public PublicOpenIdAuthenticationManager(HttpClient httpClient,
                                              ConfigurationManager configurationManager,
@@ -49,15 +51,22 @@ public class PublicOpenIdAuthenticationManager extends BaseOpenIdAuthenticationM
                                              UserOrganizationRepository userOrganizationRepository,
                                              NamedParameterJdbcTemplate jdbcTemplate,
                                              PasswordEncoder passwordEncoder,
-                                             Json json) {
+                                             Json json,
+                                             ExtensionManager extensionManager) {
         super(httpClient, userManager, userRepository, authorityRepository, organizationRepository, userOrganizationRepository, jdbcTemplate, passwordEncoder, json);
         this.configurationManager = configurationManager;
+        this.extensionManager = extensionManager;
     }
 
 
     @Override
     protected OpenIdAlfioUser fromToken(String idToken, String subject, String email, Map<String, Claim> claims) {
         return new OpenIdAlfioUser(idToken, subject, email, getUserType(), Set.of(), Map.of());
+    }
+
+    @Override
+    protected void onUserCreated(User user) {
+        extensionManager.handlePublicUserSignUp(user);
     }
 
     @Override

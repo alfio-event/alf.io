@@ -32,6 +32,7 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
+import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
@@ -56,6 +57,7 @@ import java.util.*;
 
 import static alfio.extension.ExtensionService.toPath;
 import static alfio.manager.support.extension.ExtensionEvent.ONLINE_CHECK_IN_REDIRECT;
+import static alfio.manager.support.extension.ExtensionEvent.PUBLIC_USER_SIGN_UP;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 
 @Component
@@ -398,13 +400,15 @@ public class ExtensionManager {
 
     private Map<String, Object> fillWithBasicInfo(Map<String, ?> payload, PurchaseContext purchaseContext) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
-        //FIXME ugly
-        purchaseContext.event().ifPresent(event -> {
-            payloadCopy.put("event", event);
-            payloadCopy.put("eventId", event.getId());
-        });
-        payloadCopy.put("purchaseContext", purchaseContext);
-        payloadCopy.put("organizationId", purchaseContext.getOrganizationId());
+        if(purchaseContext != null) {
+            //FIXME ugly
+            purchaseContext.event().ifPresent(event -> {
+                payloadCopy.put("event", event);
+                payloadCopy.put("eventId", event.getId());
+            });
+            payloadCopy.put("purchaseContext", purchaseContext);
+            payloadCopy.put("organizationId", purchaseContext.getOrganizationId());
+        }
         return payloadCopy;
     }
 
@@ -416,6 +420,10 @@ public class ExtensionManager {
             toPath(purchaseContext),
             fillWithBasicInfo(params, purchaseContext),
             resultType);
+    }
+
+    public void handlePublicUserSignUp(User user) {
+        asyncCall(PUBLIC_USER_SIGN_UP, null, Map.of("user", user));
     }
 
     public Optional<TicketMetadata> handleCustomOnlineJoinUrl(Event event,

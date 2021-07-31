@@ -16,6 +16,7 @@
  */
 package alfio.config;
 
+import alfio.manager.ExtensionManager;
 import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
@@ -90,7 +91,8 @@ public class WebSecurityConfig {
                                                                                UserOrganizationRepository userOrganizationRepository,
                                                                                NamedParameterJdbcTemplate jdbcTemplate,
                                                                                PasswordEncoder passwordEncoder,
-                                                                               Json json) {
+                                                                               Json json,
+                                                                               ExtensionManager extensionManager) {
         return new PublicOpenIdAuthenticationManager(httpClient,
             configurationManager,
             userManager,
@@ -100,7 +102,8 @@ public class WebSecurityConfig {
             userOrganizationRepository,
             jdbcTemplate,
             passwordEncoder,
-            json);
+            json,
+            extensionManager);
     }
 
 }

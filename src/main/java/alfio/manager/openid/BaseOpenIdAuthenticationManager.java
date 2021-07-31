@@ -119,7 +119,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user, Map<String, Claim> idTokenClaims) {
         if (!userManager.usernameExists(user.getEmail())) {
             var configuration = openIdConfiguration();
-            userRepository.create(user.getEmail(),
+            var result = userRepository.create(user.getEmail(),
                 passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
                 retrieveClaimOrBlank(idTokenClaims, configuration.getGivenNameClaim()),
                 retrieveClaimOrBlank(idTokenClaims, configuration.getFamilyNameClaim()),
@@ -128,6 +128,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
                 getUserType(),
                 null,
                 null);
+            onUserCreated(userRepository.findById(result.getKey()));
         }
 
         if(syncRoles()) {
@@ -138,6 +139,10 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         List<GrantedAuthority> authorities = user.getAlfioRoles().stream().map(Role::getRoleName)
             .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
         return new OpenIdAlfioAuthentication(authorities, user.getIdToken(), user.getSubject(), user.getEmail(), buildLogoutUrl(), user.isPublicUser());
+    }
+
+    protected void onUserCreated(User user) {
+        // default implementation does nothing
     }
 
     private static String retrieveClaimOrBlank(Map<String, Claim> claims, String name) {
