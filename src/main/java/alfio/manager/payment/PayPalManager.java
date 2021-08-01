@@ -239,8 +239,18 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                         .map(r -> new BigDecimal(r.amount().value()))
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                     var gatewayFee = payments.stream().flatMap(p -> emptyIfNull(p.captures()).stream())
-                        .map(c -> c.sellerReceivableBreakdown().paypalFee())
-                        .map(fee -> new BigDecimal(fee.value()))
+                        .map(c -> {
+                            if(c != null && c.sellerReceivableBreakdown() != null) {
+                                return c.sellerReceivableBreakdown().paypalFee();
+                            }
+                            return null;
+                        })
+                        .map(fee -> {
+                            if(fee != null) {
+                                return new BigDecimal(fee.value());
+                            }
+                            return BigDecimal.ZERO;
+                        })
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                     var paidAmount = payments.stream().flatMap(p -> emptyIfNull(p.captures()).stream())
                         .map(r -> new BigDecimal(r.amount().value()))
