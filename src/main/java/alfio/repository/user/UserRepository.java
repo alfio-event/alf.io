@@ -131,10 +131,17 @@ public interface UserRepository {
     @Query("select * from user_profile where user_id_fk = :userId")
     Optional<PublicUserProfile> loadUserProfile(@Bind("userId") int userId);
 
+    @Query("delete from user_profile where user_id_fk = :userId")
+    int deleteUserProfile(@Bind("userId") int userId);
+
     default void deleteUserAndReferences(int userId) {
         deleteUserFromSponsorScan(userId);
         deleteUserFromOrganization(userId);
         deleteUserFromAuthority(userId);
+        deleteUserProfile(userId);
         deleteUser(userId);
     }
+
+    @Query("update ba_user set enabled = false, email_address = :newEmail, username = :newEmail, first_name = 'Deleted', last_name = 'Deleted' where id = :userId")
+    int invalidatePublicUser(@Bind("userId") int userId, @Bind("newEmail") String newEmail);
 }

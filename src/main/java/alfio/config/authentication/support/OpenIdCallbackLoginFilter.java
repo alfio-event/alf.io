@@ -57,6 +57,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
         if (requestMatcher.matches(req)) {
             log.info("request URL matches {}", req.getRequestURI());
             super.doFilter(req, res, chain);
+            return;
         }
 
         chain.doFilter(request, response);

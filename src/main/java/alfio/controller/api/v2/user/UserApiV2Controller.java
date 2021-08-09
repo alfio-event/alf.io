@@ -26,7 +26,7 @@ import alfio.manager.TicketReservationManager;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
+import alfio.manager.user.PublicUserManager;
 import alfio.util.ErrorsCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -45,21 +45,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserApiV2Controller {
 
-    private final UserManager userManager;
+    private final PublicUserManager publicUserManager;
     private final TicketReservationManager ticketReservationManager;
     private final ConfigurationManager configurationManager;
 
     @GetMapping("/me")
-    public ResponseEntity<User> getUserIdentity(Principal principal) {
+    public ResponseEntity<User> getUserIdentity(Authentication principal) {
         if(principal != null) {
-            return userManager.findOptionalEnabledUserByUsername(principal.getName())
-                .map(u -> {
-                    var userProfileOptional = userManager.findOptionalProfileForUser(u.getId());
+            return publicUserManager.findOptionalProfileForUser(principal)
+                .map(userWithOptionalProfile -> {
+                    var user = userWithOptionalProfile.getLeft();
                     return ResponseEntity.ok(new User(
-                        u.getFirstName(),
-                        u.getLastName(),
-                        u.getEmailAddress(),
-                        userProfileOptional.orElse(null)));
+                        user.getFirstName(),
+                        user.getLastName(),
+                        user.getEmailAddress(),
+                        user.getType(),
+                        userWithOptionalProfile.getRight().orElse(null)));
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NO_CONTENT).build());
         }
@@ -74,19 +75,20 @@ public class UserApiV2Controller {
 
             boolean italianEInvoicingEnabled = configurationManager.isItalianEInvoicingEnabled(ConfigurationLevel.system());
 
-            return ResponseEntity.of(userManager.findOptionalEnabledUserByUsername(principal.getName())
+            return ResponseEntity.of(publicUserManager.findOptionalEnabledUserByUsername(principal.getName())
                 .map(u -> {
                     var customBindingResult = new CustomBindingResult(bindingResult);
                     // set email from original user to pass the validation
                     update.setEmail(u.getEmailAddress());
                     update.formalValidation(customBindingResult, italianEInvoicingEnabled);
                     if(!customBindingResult.hasErrors()) {
-                        var publicUserProfile = userManager.updateProfile(u, update, italianEInvoicingEnabled);
+                        var publicUserProfile = publicUserManager.updateProfile(u, update, italianEInvoicingEnabled);
                         if(publicUserProfile.isPresent()) {
                             var profile = publicUserProfile.get();
                             var updatedUser = new User(update.getFirstName(),
                                 update.getLastName(),
                                 u.getEmailAddress(),
+                                u.getType(),
                                 profile);
                             return ValidatedResponse.toResponse(customBindingResult, updatedUser);
                         }
@@ -98,6 +100,16 @@ public class UserApiV2Controller {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
+    @DeleteMapping("/me")
+    public ResponseEntity<ClientRedirect> deleteCurrentUser(Authentication authentication) {
+        var alfioAuthentication = ((OpenIdAlfioAuthentication)authentication);
+
+        if(publicUserManager.deleteUserProfile(alfioAuthentication)) {
+            return redirectToIdpLogout(authentication);
+        }
+        return ResponseEntity.badRequest().build();
+    }
+
     @GetMapping("/authentication-enabled")
     public ResponseEntity<Boolean> userAuthenticationEnabled() {
         return ResponseEntity.ok(configurationManager.isPublicOpenIdEnabled());
@@ -105,14 +117,7 @@ public class UserApiV2Controller {
 
     @PostMapping("/logout")
     public ResponseEntity<ClientRedirect> logout(Authentication authentication) {
-        if(authentication != null) {
-            SecurityContextHolder.getContext().setAuthentication(null);
-        }
-        String redirectUrl = "";
-        if(authentication instanceof OpenIdAlfioAuthentication) {
-            redirectUrl = ((OpenIdAlfioAuthentication)authentication).getIdpLogoutRedirectionUrl();
-        }
-        return ResponseEntity.ok(new ClientRedirect(redirectUrl));
+        return redirectToIdpLogout(authentication);
     }
 
     @GetMapping("/reservations")
@@ -130,5 +135,16 @@ public class UserApiV2Controller {
             return ResponseEntity.ok(results);
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    private static ResponseEntity<ClientRedirect> redirectToIdpLogout(Authentication authentication) {
+        if(authentication != null) {
+            SecurityContextHolder.getContext().setAuthentication(null);
+        }
+        String redirectUrl = "/";
+        if(authentication instanceof OpenIdAlfioAuthentication) {
+            redirectUrl = ((OpenIdAlfioAuthentication) authentication).getIdpLogoutRedirectionUrl();
+        }
+        return ResponseEntity.ok(new ClientRedirect(redirectUrl));
     }
 }

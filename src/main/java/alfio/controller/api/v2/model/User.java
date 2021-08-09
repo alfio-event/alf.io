@@ -17,20 +17,24 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.user.PublicUserProfile;
+import alfio.model.user.User.Type;
 
 public class User {
     private final String firstName;
     private final String lastName;
     private final String emailAddress;
+    private final Type type;
     private final PublicUserProfile profile;
 
     public User(String firstName,
                 String lastName,
                 String emailAddress,
+                Type type,
                 PublicUserProfile profile) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.emailAddress = emailAddress;
+        this.type = type;
         this.profile = profile;
     }
 
@@ -48,5 +52,9 @@ public class User {
 
     public PublicUserProfile getProfile() {
         return profile;
+    }
+
+    public boolean isExternal() {
+        return type == Type.PUBLIC;
     }
 }

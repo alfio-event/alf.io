@@ -16,9 +16,7 @@
  */
 package alfio.manager.user;
 
-import alfio.controller.form.ContactAndTicketsForm;
 import alfio.model.TicketReservationAdditionalInfo;
-import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
@@ -110,47 +108,6 @@ public class UserManager {
 
     public Optional<User> findOptionalEnabledUserByUsername(String username) {
         return userRepository.findEnabledByUsername(username);
-    }
-
-    public Optional<PublicUserProfile> findOptionalProfileForUser(int userId) {
-        return userRepository.loadUserProfile(userId);
-    }
-
-    public Optional<PublicUserProfile> updateProfile(User original,
-                                                     ContactAndTicketsForm update,
-                                                     boolean italianEInvoicingEnabled) {
-        // update user
-        int userId = original.getId();
-        userRepository.update(userId, original.getUsername(), update.getFirstName(), update.getLastName(), original.getEmailAddress(), original.getDescription());
-        var currentAdditionalData = userRepository.loadUserProfile(userId).map(PublicUserProfile::getAdditionalData).orElse(Map.of());
-        Validate.isTrue(1 == userRepository.persistUserProfile(userId,
-            update.getBillingAddressCompany(),
-            update.getBillingAddressLine1(),
-            update.getBillingAddressLine2(),
-            update.getBillingAddressZip(),
-            update.getBillingAddressCity(),
-            update.getBillingAddressState(),
-            update.getVatCountryCode(),
-            update.getVatNr(),
-            getAdditionalInfo(update, italianEInvoicingEnabled),
-            currentAdditionalData
-        ));
-        return userRepository.loadUserProfile(userId);
-    }
-
-    private TicketReservationInvoicingAdditionalInfo getAdditionalInfo(ContactAndTicketsForm update,
-                                                                       boolean italianEInvoicingEnabled) {
-        if(italianEInvoicingEnabled) {
-            return new TicketReservationInvoicingAdditionalInfo(
-                new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(
-                    update.getItalyEInvoicingFiscalCode(),
-                    update.getItalyEInvoicingReferenceType(),
-                    update.getItalyEInvoicingReferenceAddresseeCode(),
-                    update.getItalyEInvoicingReferencePEC(),
-                    update.isItalyEInvoicingSplitPayment())
-            );
-        }
-        return new TicketReservationInvoicingAdditionalInfo(null);
     }
 
     public boolean usernameExists(String username) {

@@ -17,6 +17,7 @@
 
 package alfio.manager;
 
+import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.extension.ExtensionService;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.payment.PaymentSpecification;
@@ -56,8 +57,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.extension.ExtensionService.toPath;
-import static alfio.manager.support.extension.ExtensionEvent.ONLINE_CHECK_IN_REDIRECT;
-import static alfio.manager.support.extension.ExtensionEvent.PUBLIC_USER_SIGN_UP;
+import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 
 @Component
@@ -424,6 +424,10 @@ public class ExtensionManager {
 
     public void handlePublicUserSignUp(User user) {
         asyncCall(PUBLIC_USER_SIGN_UP, null, Map.of("user", user));
+    }
+
+    public void handlePublicUserDelete(OpenIdAlfioAuthentication authentication, User user) {
+        syncCall(PUBLIC_USER_DELETE, null, Map.of("user", user, "subject", authentication.getPrincipal()), Void.class);
     }
 
     public Optional<TicketMetadata> handleCustomOnlineJoinUrl(Event event,
