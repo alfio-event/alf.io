@@ -19,16 +19,19 @@ package alfio.model.user;
 import alfio.model.BillingDetails;
 import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.model.support.JSONData;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Getter;
 
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 
 @Getter
 public class PublicUserProfile {
     private final BillingDetails billingDetails;
-    private final Map<String, List<String>> additionalData;
+    private final Map<String, AdditionalInfoWithLabel> additionalData;
 
     public PublicUserProfile(@Column("billing_address_company") String companyName,
                              @Column("billing_address_line1") String addressLine1,
@@ -39,8 +42,8 @@ public class PublicUserProfile {
                              @Column("vat_country") String country,
                              @Column("vat_nr") String taxId,
                              @Column("invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
-                             @Column("additional_fields") @JSONData Map<String, List<String>> additionalData) {
+                             @Column("additional_fields") String additionalData) {
         this.billingDetails = new BillingDetails(companyName, addressLine1, addressLine2, zip, city, state, country, taxId, invoicingAdditionalInfo);
-        this.additionalData = additionalData;
+        this.additionalData = Json.fromJson(additionalData, new TypeReference<>() { });
     }
 }

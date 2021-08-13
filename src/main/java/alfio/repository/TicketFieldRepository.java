@@ -130,6 +130,9 @@ public interface TicketFieldRepository extends FieldRepository {
 
     @Query("select * from ticket_field_configuration where event_id_fk = :eventId order by field_order asc")
     List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
+
+    @Query("select * from ticket_field_configuration where event_id_fk = :eventId and field_type = :type order by field_order asc")
+    List<TicketFieldConfiguration> findAdditionalFieldsOfTypeForEvent(@Bind("eventId") int eventId, @Bind("type") String type);
     
     @Query("select * from ticket_field_configuration where id = :id")
     TicketFieldConfiguration findById(@Bind("id") int id);

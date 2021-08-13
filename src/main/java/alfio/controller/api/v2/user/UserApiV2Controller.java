@@ -21,7 +21,9 @@ import alfio.controller.api.v2.model.ClientRedirect;
 import alfio.controller.api.v2.model.PurchaseContextWithReservations;
 import alfio.controller.api.v2.model.User;
 import alfio.controller.form.ContactAndTicketsForm;
+import alfio.controller.form.UpdateProfileForm;
 import alfio.controller.support.CustomBindingResult;
+import alfio.manager.ExtensionManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationLevel;
@@ -48,6 +50,7 @@ public class UserApiV2Controller {
     private final PublicUserManager publicUserManager;
     private final TicketReservationManager ticketReservationManager;
     private final ConfigurationManager configurationManager;
+    private final ExtensionManager extensionManager;
 
     @GetMapping("/me")
     public ResponseEntity<User> getUserIdentity(Authentication principal) {
@@ -68,19 +71,22 @@ public class UserApiV2Controller {
     }
 
     @PostMapping("/me")
-    public ResponseEntity<ValidatedResponse<User>> updateProfile(@RequestBody ContactAndTicketsForm update,
+    public ResponseEntity<ValidatedResponse<User>> updateProfile(@RequestBody UpdateProfileForm update,
                                                                  BindingResult bindingResult,
                                                                  Principal principal) {
         if(principal != null) {
 
             boolean italianEInvoicingEnabled = configurationManager.isItalianEInvoicingEnabled(ConfigurationLevel.system());
 
-            return ResponseEntity.of(publicUserManager.findOptionalEnabledUserByUsername(principal.getName())
+            return publicUserManager.findOptionalEnabledUserByUsername(principal.getName())
                 .map(u -> {
                     var customBindingResult = new CustomBindingResult(bindingResult);
                     // set email from original user to pass the validation
                     update.setEmail(u.getEmailAddress());
                     update.formalValidation(customBindingResult, italianEInvoicingEnabled);
+                    if(!customBindingResult.hasErrors()) {
+                        extensionManager.handleUserProfileValidation(update, bindingResult);
+                    }
                     if(!customBindingResult.hasErrors()) {
                         var publicUserProfile = publicUserManager.updateProfile(u, update, italianEInvoicingEnabled);
                         if(publicUserProfile.isPresent()) {
@@ -90,12 +96,13 @@ public class UserApiV2Controller {
                                 u.getEmailAddress(),
                                 u.getType(),
                                 profile);
-                            return ValidatedResponse.toResponse(customBindingResult, updatedUser);
+                            return ResponseEntity.ok(ValidatedResponse.toResponse(customBindingResult, updatedUser));
                         }
                         customBindingResult.reject(ErrorsCode.EMPTY_FIELD);
                     }
-                    return ValidatedResponse.toResponse(customBindingResult, null);
-                }));
+                    ValidatedResponse<User> body = ValidatedResponse.toResponse(customBindingResult, null);
+                    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
+                }).orElseGet(() -> ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }

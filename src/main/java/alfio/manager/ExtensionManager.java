@@ -33,6 +33,7 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
+import alfio.model.user.PublicUserProfile;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
@@ -291,6 +292,16 @@ public class ExtensionManager {
         syncCall(ExtensionEvent.RESERVATION_VALIDATION, purchaseContext, payload, Void.class);
     }
 
+    public void handleUserProfileValidation(Object clientForm, BindingResult bindingResult) {
+        Map<String, Object> payload = Map.of(
+            "form", clientForm,
+            "jdbcTemplate", jdbcTemplate,
+            "bindingResult", bindingResult
+        );
+
+        syncCall(ExtensionEvent.PUBLIC_USER_PROFILE_VALIDATION, null, payload, Void.class);
+    }
+
     void handleEventHeaderUpdate(Event event, Organization organization) {
         Map<String, Object> payload = Map.of(
             "eventMetadata", eventRepository.getMetadataForEvent(event.getId()),
@@ -315,13 +326,25 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.REFUND_ISSUED, purchaseContext, payload);
     }
 
-    public Map<String, List<String>> filterAdditionalInfoToSave(PurchaseContext purchaseContext,
-                                                         Map<String, List<String>> userAdditionalData) {
+    /**
+     * returns the keys to save from the given map
+     *
+     * @param purchaseContext the current Purchase Context
+     * @param userAdditionalData user data to filter
+     * @param userProfile existing user profile, may be null
+     * @return the keys to persist
+     */
+    public List<AdditionalInfoItem> filterAdditionalInfoToSave(PurchaseContext purchaseContext,
+                                                               Map<String, List<String>> userAdditionalData,
+                                                               PublicUserProfile userProfile) {
         var payload = new HashMap<String, Object>();
         payload.put("userAdditionalData", userAdditionalData);
-        @SuppressWarnings("unchecked")
-        Map<String, List<String>> result = syncCall(ExtensionEvent.USER_ADDITIONAL_INFO_FILTER, purchaseContext, payload, Map.class);
-        return Objects.requireNonNullElse(result, Map.of());
+        payload.put("userProfile", userProfile);
+        var result = syncCall(ExtensionEvent.USER_ADDITIONAL_INFO_FILTER, purchaseContext, payload, AdditionalInfoFilterResult.class);
+        if(result != null) {
+            return result.getItems();
+        }
+        return null;
     }
 
     public boolean handlePdfTransformation(String html, PurchaseContext purchaseContext, OutputStream outputStream) {

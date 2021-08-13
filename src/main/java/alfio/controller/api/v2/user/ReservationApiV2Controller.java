@@ -38,15 +38,19 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
+import alfio.manager.user.PublicUserManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.extension.AdditionalInfoItem;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionUsageExceeded;
 import alfio.model.subscription.SubscriptionUsageExceededForEvent;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.model.user.AdditionalInfoWithLabel;
+import alfio.model.user.PublicUserProfile;
 import alfio.repository.*;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
@@ -75,11 +79,13 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.unitToCents;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -112,6 +118,7 @@ public class ReservationApiV2Controller {
     private final SubscriptionRepository subscriptionRepository;
     private final TicketRepository ticketRepository;
     private final UserManager userManager;
+    private final PublicUserManager publicUserManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -369,7 +376,7 @@ public class ReservationApiV2Controller {
                                                                          @RequestParam(value = "ignoreWarnings", defaultValue = "false") boolean ignoreWarnings,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
                                                                          BindingResult br,
-                                                                         Principal principal) {
+                                                                         Authentication principal) {
 
         var bindingResult = new CustomBindingResult(br);
 
@@ -451,15 +458,17 @@ public class ReservationApiV2Controller {
                 if(principal != null && configurationManager.isPublicOpenIdEnabled()) {
                     var additionalData = contactAndTicketsForm.getTickets().values()
                         .stream()
-                        .filter(f -> principal.getName().equals(f.getEmail()))
+                        .filter(f -> principal.getName().equals(f.getEmail()) && !f.getAdditional().isEmpty())
                         .limit(1)
-                        .map(UpdateTicketOwnerForm::getAdditional)
+                        .map(form -> publicUserManager.buildAdditionalInfoWithLabels(principal, purchaseContext, form))
                         .findFirst()
                         .orElse(Map.of());
-                    if (!additionalData.isEmpty()) {
-                        additionalData = extensionManager.filterAdditionalInfoToSave(purchaseContext, additionalData);
-                    }
-                    userManager.persistProfileForPublicUser(principal, ticketReservationManager.loadAdditionalInfo(reservationId), additionalData);
+
+                    publicUserManager.persistProfileForPublicUser(principal,
+                        contactAndTicketsForm,
+                        bindingResult,
+                        ticketReservationManager.loadAdditionalInfo(reservationId),
+                        additionalData);
                 }
             }
 

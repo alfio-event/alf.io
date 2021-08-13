@@ -18,6 +18,7 @@ package alfio.repository.user;
 
 import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.model.support.JSONData;
+import alfio.model.user.AdditionalInfoWithLabel;
 import alfio.model.user.PublicUserProfile;
 import alfio.model.user.User;
 import ch.digitalfondue.npjt.*;
@@ -126,7 +127,7 @@ public interface UserRepository {
                            @Bind("country") String country,
                            @Bind("taxId") String taxId,
                            @Bind("invoiceInfo") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
-                           @Bind("addFields") @JSONData Map<String, List<String>> additionalFields);
+                           @Bind("addFields") @JSONData Map<String, AdditionalInfoWithLabel> additionalFields);
 
     @Query("select * from user_profile where user_id_fk = :userId")
     Optional<PublicUserProfile> loadUserProfile(@Bind("userId") int userId);
