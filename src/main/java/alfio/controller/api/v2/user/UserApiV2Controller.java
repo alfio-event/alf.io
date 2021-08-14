@@ -20,15 +20,16 @@ import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.api.v2.model.ClientRedirect;
 import alfio.controller.api.v2.model.PurchaseContextWithReservations;
 import alfio.controller.api.v2.model.User;
-import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.UpdateProfileForm;
 import alfio.controller.support.CustomBindingResult;
 import alfio.manager.ExtensionManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.PublicUserManager;
+import alfio.model.ContentLanguage;
 import alfio.util.ErrorsCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -51,6 +53,7 @@ public class UserApiV2Controller {
     private final TicketReservationManager ticketReservationManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
+    private final MessageSourceManager messageSourceManager;
 
     @GetMapping("/me")
     public ResponseEntity<User> getUserIdentity(Authentication principal) {
@@ -134,10 +137,15 @@ public class UserApiV2Controller {
             if(reservations.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
             }
+            // "datetime.pattern"
+            var messageSource = messageSourceManager.getRootMessageSource();
+            var datePatternsMap = ContentLanguage.ALL_LANGUAGES.stream()
+                .map(l -> Map.entry(l.getLocale(), messageSource.getMessage("datetime.pattern", null, l.getLocale())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             var results = reservations.stream()
                 .collect(Collectors.groupingBy(p -> p.getPurchaseContextType().name() + "/" + p.getPurchaseContextPublicIdentifier()))
                 .values().stream()
-                .map(PurchaseContextWithReservations::from)
+                .map(pc -> PurchaseContextWithReservations.from(pc, datePatternsMap))
                 .collect(Collectors.toList());
             return ResponseEntity.ok(results);
         }

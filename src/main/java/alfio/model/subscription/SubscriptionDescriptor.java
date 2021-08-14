@@ -25,6 +25,7 @@ import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ClockProvider;
+import alfio.util.LocaleUtil;
 import alfio.util.MustacheCustomTag;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -131,8 +132,8 @@ public class SubscriptionDescriptor implements PurchaseContext {
         this.maxAvailable = maxAvailable;
         this.creation = creation;
         this.timeZone = timeZone;
-        this.onSaleFrom = atZone(onSaleFrom, zoneId);
-        this.onSaleTo = atZone(onSaleTo, zoneId);
+        this.onSaleFrom = LocaleUtil.atZone(onSaleFrom, zoneId);
+        this.onSaleTo = LocaleUtil.atZone(onSaleTo, zoneId);
         this.price = price;
         this.vat = vat;
         this.vatStatus = vatStatus;
@@ -144,8 +145,8 @@ public class SubscriptionDescriptor implements PurchaseContext {
         this.validityType = validityType;
         this.validityTimeUnit = validityTimeUnit;
         this.validityUnits = validityUnits;
-        this.validityFrom = atZone(validityFrom, zoneId);
-        this.validityTo = atZone(validityTo, zoneId);
+        this.validityFrom = LocaleUtil.atZone(validityFrom, zoneId);
+        this.validityTo = LocaleUtil.atZone(validityTo, zoneId);
         this.usageType = usageType;
 
         this.termsAndConditionsUrl = termsAndConditionsUrl;
@@ -227,13 +228,6 @@ public class SubscriptionDescriptor implements PurchaseContext {
     @Override
     public boolean isFreeOfCharge() {
         return false;
-    }
-
-    static ZonedDateTime atZone(ZonedDateTime in, ZoneId zone) {
-        if(in != null) {
-            return in.withZoneSameInstant(zone);
-        }
-        return null;
     }
 
     public String getLocalizedTitle(Locale locale) {

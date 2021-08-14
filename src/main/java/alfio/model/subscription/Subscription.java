@@ -31,7 +31,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
 
-import static alfio.model.subscription.SubscriptionDescriptor.atZone;
+import static alfio.util.LocaleUtil.atZone;
 
 @Getter
 public class Subscription implements TimeZoneInfo {

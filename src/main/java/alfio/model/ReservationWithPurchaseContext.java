@@ -18,14 +18,20 @@ package alfio.model;
 
 import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static alfio.util.LocaleUtil.atZone;
 import static alfio.util.MonetaryUtil.centsToUnit;
 
 @Getter
@@ -33,6 +39,8 @@ public class ReservationWithPurchaseContext implements PriceContainer {
     private final String id;
     private final ZonedDateTime validity;
     private final TicketReservation.TicketReservationStatus status;
+    private final ZonedDateTime purchaseContextStartDate;
+    private final ZonedDateTime purchaseContextEndDate;
     private final ZonedDateTime confirmationTs;
     private final ZonedDateTime registrationTs;
     private final PaymentProxy paymentMethod;
@@ -48,6 +56,7 @@ public class ReservationWithPurchaseContext implements PriceContainer {
     private final PurchaseContext.PurchaseContextType purchaseContextType;
     private final String purchaseContextPublicIdentifier;
     private final Map<String, String> purchaseContextTitle;
+    private final List<PurchaseContextItem> items;
 
 
     public ReservationWithPurchaseContext(@Column("tr_id") String id,
@@ -66,12 +75,17 @@ public class ReservationWithPurchaseContext implements PriceContainer {
                                           @Column("tr_currency_code") String currencyCode,
                                           @Column("pc_type") PurchaseContext.PurchaseContextType purchaseContextType,
                                           @Column("pc_public_identifier") String purchaseContextPublicIdentifier,
-                                          @Column("pc_title") @JSONData Map<String, String> purchaseContextTitle) {
+                                          @Column("pc_title") @JSONData Map<String, String> purchaseContextTitle,
+                                          @Column("pc_time_zone") String purchaseContextTimezone,
+                                          @Column("pc_start_date") ZonedDateTime purchaseContextStartDate,
+                                          @Column("pc_end_date") ZonedDateTime purchaseContextEndDate,
+                                          @Column("pc_items") String itemsJson) {
+        var zoneId = ZoneId.of(purchaseContextTimezone);
         this.id = id;
-        this.validity = validity;
+        this.validity = atZone(validity, zoneId);
         this.status = status;
-        this.confirmationTs = confirmationTs;
-        this.registrationTs = registrationTs;
+        this.confirmationTs = atZone(confirmationTs, zoneId);
+        this.registrationTs = atZone(registrationTs, zoneId);
         this.paymentMethod = paymentMethod;
         this.invoiceNumber = invoiceNumber;
         this.vatStatus = vatStatus;
@@ -84,6 +98,9 @@ public class ReservationWithPurchaseContext implements PriceContainer {
         this.purchaseContextType = purchaseContextType;
         this.purchaseContextPublicIdentifier = purchaseContextPublicIdentifier;
         this.purchaseContextTitle = purchaseContextTitle;
+        this.purchaseContextStartDate = atZone(purchaseContextStartDate, zoneId);
+        this.purchaseContextEndDate = atZone(purchaseContextEndDate, zoneId);
+        this.items = Json.fromJson(itemsJson, new TypeReference<>() {});
     }
 
     @Override
@@ -104,5 +121,14 @@ public class ReservationWithPurchaseContext implements PriceContainer {
     @Override
     public BigDecimal getAppliedDiscount() {
         return centsToUnit(discountCts, currencyCode);
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class PurchaseContextItem {
+        private final String id;
+        private final String firstName;
+        private final String lastName;
+        private final Map<String, String> type;
     }
 }

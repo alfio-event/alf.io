@@ -37,20 +37,52 @@ create view reservation_with_purchase_context as (
             event_id_fk tr_event_id_fk,
             user_id_fk tr_user_id_fk
         from tickets_reservation where user_id_fk is not null and status <> 'CANCELLED'
+    ),
+    ticketsJsonb as (
+        select
+            jsonb_agg(jsonb_build_object(
+                'id', t.uuid,
+                'firstName', t.first_name,
+                'lastName', t.last_name,
+                'type', jsonb_build_object('en', tc.name))) t_tickets,
+            t.tickets_reservation_id t_reservation_id
+        from ticket t left join ticket_category tc on t.category_id = tc.id
+        group by t.tickets_reservation_id
+    ),
+    subscriptionsJsonb as (
+        select
+            jsonb_agg(jsonb_build_object(
+                'id', s.id,
+                'firstName', s.first_name,
+                'lastName', s.last_name,
+                'type', d.title)) s_subscriptions,
+            s.reservation_id_fk s_reservation_id
+        from subscription s
+            join subscription_descriptor d on s.subscription_descriptor_fk = d.id
+            group by s.reservation_id_fk
     )
     select res.*,
            'event' as pc_type,
            e.time_zone as pc_time_zone,
+           e.start_ts as pc_start_date,
+           e.end_ts as pc_end_date,
            e.short_name as pc_public_identifier,
-           jsonb_build_object('en', e.display_name) as pc_title
-    from reservations res join event e on e.id = res.tr_event_id_fk
+           jsonb_build_object('en', e.display_name) as pc_title,
+           t.t_tickets pc_items
+    from reservations res
+        join event e on e.id = res.tr_event_id_fk
+        join ticketsJsonb t on t.t_reservation_id = res.tr_id
     union
     select res.*,
            'subscription' as pc_type,
            sd.time_zone as pc_time_zone,
+           s.validity_from as pc_start_date,
+           s.validity_to as pc_end_date,
            sd.id::text as pc_public_identifier,
-           sd.title as pc_title from reservations res
+           sd.title as pc_title,
+           sj.s_subscriptions pc_items
+        from reservations res
         join subscription s on s.reservation_id_fk = res.tr_id
         join subscription_descriptor sd on sd.id = s.subscription_descriptor_fk
-
+        join subscriptionsJsonb sj on sj.s_reservation_id = res.tr_id
 );

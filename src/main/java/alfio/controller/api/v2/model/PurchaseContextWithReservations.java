@@ -18,11 +18,15 @@ package alfio.controller.api.v2.model;
 
 import alfio.model.PurchaseContext;
 import alfio.model.ReservationWithPurchaseContext;
+import alfio.util.LocaleUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.Validate;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -32,15 +36,29 @@ public class PurchaseContextWithReservations {
     private final Map<String, String> title;
     private final String publicIdentifier;
     private final PurchaseContext.PurchaseContextType type;
+    private final Map<String, String> formattedStartDate;
+    private final Map<String, String> formattedEndDate;
+    private final boolean sameDay;
     private final List<ReservationHeader> reservations;
 
-    public static PurchaseContextWithReservations from(List<ReservationWithPurchaseContext> reservations) {
+    public static PurchaseContextWithReservations from(List<ReservationWithPurchaseContext> reservations,
+                                                       Map<Locale, String> datePatternsMap) {
         Validate.isTrue(!reservations.isEmpty(), "Cannot build PurchaseContextWithReservation out of an empty list");
         var first = reservations.get(0);
         return new PurchaseContextWithReservations(first.getPurchaseContextTitle(),
             first.getPurchaseContextPublicIdentifier(),
             first.getPurchaseContextType(),
-            reservations.stream().map(ReservationHeader::from).collect(Collectors.toList())
+            LocaleUtil.formatDate(first.getPurchaseContextStartDate(), datePatternsMap),
+            LocaleUtil.formatDate(first.getPurchaseContextEndDate(), datePatternsMap),
+            isSameDay(first.getPurchaseContextStartDate(), first.getPurchaseContextEndDate()),
+            reservations.stream().map(r -> ReservationHeader.from(r, datePatternsMap)).collect(Collectors.toList())
         );
     }
+
+    private static boolean isSameDay(ZonedDateTime startDate, ZonedDateTime endDate) {
+        return startDate != null
+            && endDate != null
+            && startDate.truncatedTo(ChronoUnit.DAYS).equals(endDate.truncatedTo(ChronoUnit.DAYS));
+    }
+
 }

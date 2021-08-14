@@ -21,8 +21,13 @@ import alfio.model.LocalizedContent;
 import alfio.model.Ticket;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public final class LocaleUtil {
     private LocaleUtil() {}
@@ -52,5 +57,21 @@ public final class LocaleUtil {
             //vvv fallback
             .orElseGet(() -> localizedContent.getContentLanguages().stream().findFirst().map(ContentLanguage::getLanguage).orElse("en"));
         return forLanguageTag(filteredLang);
+    }
+
+    public static ZonedDateTime atZone(ZonedDateTime in, ZoneId zone) {
+        if(in != null) {
+            return in.withZoneSameInstant(zone);
+        }
+        return null;
+    }
+
+    public static Map<String, String> formatDate(ZonedDateTime date, Map<Locale, String> datePatterns) {
+        if(date == null) {
+            return null;
+        }
+        return datePatterns.entrySet().stream()
+            .map(dp -> Map.entry(dp.getKey().getLanguage(), DateTimeFormatter.ofPattern(dp.getValue()).format(date)))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

@@ -23,34 +23,41 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static alfio.util.LocaleUtil.formatDate;
 
 @RequiredArgsConstructor
 @Getter
 public class ReservationHeader {
     private final String id;
     private final TicketReservation.TicketReservationStatus status;
-    private final ZonedDateTime expiresOn;
-    private final ZonedDateTime confirmedOn;
-    private final ZonedDateTime createdOn;
+    private final Map<String, String> formattedExpiresOn;
+    private final Map<String, String> formattedConfirmedOn;
+    private final Map<String, String> formattedCreatedOn;
     private final String invoiceNumber;
     private final BigDecimal finalPrice;
     private final String currencyCode;
     private final BigDecimal usedVatPercent;
     private final PriceContainer.VatStatus vatStatus;
+    private final List<ReservationWithPurchaseContext.PurchaseContextItem> items;
 
-    public static ReservationHeader from(ReservationWithPurchaseContext r) {
+
+    public static ReservationHeader from(ReservationWithPurchaseContext r, Map<Locale, String> datePatternsMap) {
         return new ReservationHeader(
             r.getId(),
             r.getStatus(),
-            r.getValidity(),
-            r.getConfirmationTs(),
-            r.getRegistrationTs(),
+            formatDate(r.getValidity(), datePatternsMap),
+            formatDate(r.getConfirmationTs(), datePatternsMap),
+            formatDate(r.getRegistrationTs(), datePatternsMap),
             r.getInvoiceNumber(),
             r.getFinalPrice(),
             r.getCurrencyCode(),
             r.getVatPercentage(),
-            r.getVatStatus()
+            r.getVatStatus(),
+            r.getItems()
         );
     }
 }
