@@ -173,7 +173,13 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             return;
         }
 
-        List<Integer> organizationIds = organizationRepository.findOrganizationIdsByExternalId(alfioUser.getAlfioOrganizationAuthorizations().keySet());
+        List<Integer> organizationIds;
+        var userOrg = alfioUser.getAlfioOrganizationAuthorizations().keySet();
+        if(!userOrg.isEmpty()) {
+            organizationIds = organizationRepository.findOrganizationIdsByExternalId(userOrg);
+        } else {
+            organizationIds = List.of();
+        }
 
         var organizationsToUnlink = databaseOrganizationIds.stream()
             .filter(orgId -> !organizationIds.contains(orgId))
