@@ -70,7 +70,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
             throw new SessionAuthenticationException("authorization code cannot be null");
         }
         logger.trace("Received code. Attempting to exchange it with an access Token");
-        var user = openIdAuthenticationManager.authenticateUser(code);
+        var user = openIdAuthenticationManager.authenticateUser(code, request.getSession());
         return getAuthenticationManager().authenticate(user);
     }
 }

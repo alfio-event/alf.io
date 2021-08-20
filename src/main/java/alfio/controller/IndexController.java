@@ -21,6 +21,7 @@ import alfio.config.WebSecurityConfig;
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
@@ -38,6 +39,9 @@ import alfio.util.TemplateManager;
 import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.IterableUtils;
+import org.apache.commons.collections4.IteratorUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -208,6 +212,11 @@ public class IndexController {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrNull();
                 var idx = INDEX_PAGE.cloneNode(true);
+                if(session.getAttribute(OpenIdAuthenticationManager.USER_SIGNED_UP) != null) {
+                    Optional.ofNullable(IterableUtils.get(idx.getElementsByTagName("html"), 0))
+                            .ifPresent(html -> html.setAttribute("data-signed-up", "true"));
+                    session.removeAttribute(OpenIdAuthenticationManager.USER_SIGNED_UP);
+                }
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
                 var head = idx.getElementsByTagName("head").get(0);
                 head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), "application/json", "preload-info", null));
@@ -344,13 +353,12 @@ public class IndexController {
     public String redirectCode(@PathVariable("eventShortName") String eventName,
                                @PathVariable("code") String code) {
         return "redirect:" + UriComponentsBuilder.fromPath("/api/v2/public/event/{eventShortName}/code/{code}")
-            .build(Map.of("eventShortName", eventName, "code", code))
-            .toString();
+            .build(Map.of("eventShortName", eventName, "code", code));
     }
 
     @GetMapping("/e/{eventShortName}")
     public String redirectEvent(@PathVariable("eventShortName") String eventName) {
-        return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of("eventShortName", eventName)).toString();
+        return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of("eventShortName", eventName));
     }
 
     // login related

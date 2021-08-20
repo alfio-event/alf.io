@@ -19,6 +19,7 @@ package alfio.repository.user;
 import alfio.model.user.Organization;
 import ch.digitalfondue.npjt.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,8 +35,8 @@ public interface OrganizationRepository {
     @Query("SELECT * FROM organization where name = :name")
     Optional<Organization> findByName(@Bind("name") String name);
 
-    @Query("SELECT * FROM organization where name_openid = :externalId")
-    Optional<Organization> findByExternalId(@Bind("externalId") String externalId);
+    @Query("SELECT distinct id FROM organization where name_openid in (:externalIds)")
+    List<Integer> findOrganizationIdsByExternalId(@Bind("externalIds") Collection<String> externalIds);
 
     @Query("select count(*) from organization where slug = :slug and (:currentId is null or id <> :currentId)")
     Integer countBySlug(@Bind("slug") String slug, @Bind("currentId") Integer idToExclude);

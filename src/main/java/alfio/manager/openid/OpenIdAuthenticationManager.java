@@ -18,11 +18,15 @@ package alfio.manager.openid;
 
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 
+import javax.servlet.http.HttpSession;
+
 public interface OpenIdAuthenticationManager {
+
+    String USER_SIGNED_UP = "USER_SIGNED_UP";
 
     boolean isEnabled();
 
-    OpenIdAlfioAuthentication authenticateUser(String code);
+    OpenIdAlfioAuthentication authenticateUser(String code, HttpSession session);
 
     String buildAuthorizeUrl(String state);
 

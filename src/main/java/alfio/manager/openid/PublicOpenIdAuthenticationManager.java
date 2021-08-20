@@ -65,7 +65,7 @@ public class PublicOpenIdAuthenticationManager extends BaseOpenIdAuthenticationM
     }
 
     @Override
-    protected void onUserCreated(User user) {
+    protected void internalOnUserCreated(User user) {
         extensionManager.handlePublicUserSignUp(user);
     }
 

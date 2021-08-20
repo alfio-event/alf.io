@@ -42,6 +42,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.servlet.http.HttpSession;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -90,7 +91,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     }
 
     @Override
-    public final OpenIdAlfioAuthentication authenticateUser(String code) {
+    public final OpenIdAlfioAuthentication authenticateUser(String code, HttpSession session) {
         try {
             log.trace("Attempting to retrieve Access Token");
             var accessTokenResponse = retrieveAccessToken(code);
@@ -109,14 +110,16 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             String email = idTokenClaims.get(EMAIL).asString();
 
             var userInfo = fromToken(idToken, subject, email, idTokenClaims);
-            return createOrRetrieveUser(userInfo, idTokenClaims);
+            return createOrRetrieveUser(userInfo, idTokenClaims, session);
         } catch (Exception e) {
             log.error("Error while decoding token", e);
             throw e;
         }
     }
 
-    private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user, Map<String, Claim> idTokenClaims) {
+    private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user,
+                                                           Map<String, Claim> idTokenClaims,
+                                                           HttpSession session) {
         if (!userManager.usernameExists(user.getEmail())) {
             var configuration = openIdConfiguration();
             var result = userRepository.create(user.getEmail(),
@@ -128,7 +131,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
                 getUserType(),
                 null,
                 null);
-            onUserCreated(userRepository.findById(result.getKey()));
+            onUserCreated(userRepository.findById(result.getKey()), session);
         }
 
         if(syncRoles()) {
@@ -141,7 +144,12 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         return new OpenIdAlfioAuthentication(authorities, user.getIdToken(), user.getSubject(), user.getEmail(), buildLogoutUrl(), user.isPublicUser());
     }
 
-    protected void onUserCreated(User user) {
+    private void onUserCreated(User user, HttpSession session) {
+        session.setAttribute(USER_SIGNED_UP, true);
+        this.internalOnUserCreated(user);
+    }
+
+    protected void internalOnUserCreated(User user) {
         // default implementation does nothing
     }
 
@@ -165,13 +173,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             return;
         }
 
-        Set<Integer> organizationIds = alfioUser.getAlfioOrganizationAuthorizations().keySet().stream()
-            .map(organizationRepository::findByExternalId)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .filter(Objects::nonNull)
-            .map(Organization::getId)
-            .collect(Collectors.toSet());
+        List<Integer> organizationIds = organizationRepository.findOrganizationIdsByExternalId(alfioUser.getAlfioOrganizationAuthorizations().keySet());
 
         var organizationsToUnlink = databaseOrganizationIds.stream()
             .filter(orgId -> !organizationIds.contains(orgId))
