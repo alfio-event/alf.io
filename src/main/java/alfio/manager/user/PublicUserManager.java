@@ -123,6 +123,7 @@ public class PublicUserManager {
             filteredItemsByKey = null;
         }
         var labels = ticketFieldRepository.findDescriptions(event.getId(), userLanguage).stream()
+            .filter(f -> fieldsById.containsKey(f.getTicketFieldConfigurationId()))
             .map(f -> Map.entry(fieldsById.get(f.getTicketFieldConfigurationId()).getName(), f))
             .filter(f -> filteredItemsByKey == null || filteredItemsByKey.containsKey(f.getKey()))
             .map(e -> {
