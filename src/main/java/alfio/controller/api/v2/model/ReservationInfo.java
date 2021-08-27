@@ -99,6 +99,8 @@ public class ReservationInfo {
         private final boolean locked;
         private final boolean acquired;
         private final boolean cancellationEnabled;
+        private final boolean sendMailEnabled;
+        private final boolean downloadEnabled;
         private final List<AdditionalField> ticketFieldConfiguration;
         private final Map<String, String> formattedOnlineCheckInDate;
         private final boolean onlineEventStarted;
@@ -155,6 +157,14 @@ public class ReservationInfo {
 
         public boolean isOnlineEventStarted() {
             return onlineEventStarted;
+        }
+
+        public boolean isSendMailEnabled() {
+            return sendMailEnabled;
+        }
+
+        public boolean isDownloadEnabled() {
+            return downloadEnabled;
         }
     }
 

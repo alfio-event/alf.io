@@ -37,7 +37,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @AllArgsConstructor
@@ -95,12 +95,15 @@ public class BookingInfoTicketLoader {
                                                                  Map<String, String> formattedOnlineCheckInDate,
                                                                  boolean onlineEventStarted) {
         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
+        var configuration = configurationManager.getFor(EnumSet.of(ALLOW_FREE_TICKETS_CANCELLATION, SEND_TICKETS_AUTOMATICALLY, ALLOW_TICKET_DOWNLOAD), ConfigurationLevel.ticketCategory(event, t.getCategoryId()));
         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
-            (!hasPaidSupplement && configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, t.getCategoryId())).getValueAsBooleanOrDefault()) && // freeCancellationEnabled
+            (!hasPaidSupplement && configuration.get(ALLOW_FREE_TICKETS_CANCELLATION).getValueAsBooleanOrDefault()) && // freeCancellationEnabled
             eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
         //
         return toBookingInfoTicket(t,
             cancellationEnabled,
+            configuration.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault(),
+            configuration.get(ALLOW_TICKET_DOWNLOAD).getValueAsBooleanOrDefault(),
             ticketFieldsFilterer.getFieldsForTicket(t.getUuid()),
             descriptionsByTicketFieldId,
             valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()),
@@ -117,6 +120,8 @@ public class BookingInfoTicketLoader {
 
     private static ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket,
                                                                          boolean cancellationEnabled,
+                                                                         boolean sendMailEnabled,
+                                                                         boolean downloadEnabled,
                                                                          List<TicketFieldConfiguration> ticketFields,
                                                                          Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
                                                                          List<TicketFieldValue> ticketFieldValues,
@@ -138,13 +143,17 @@ public class BookingInfoTicketLoader {
             }).collect(Collectors.toList());
 
         return new ReservationInfo.BookingInfoTicket(ticket.getUuid(),
-            ticket.getFirstName(), ticket.getLastName(),
-            ticket.getEmail(), ticket.getFullName(),
+            ticket.getFirstName(),
+            ticket.getLastName(),
+            ticket.getEmail(),
+            ticket.getFullName(),
             ticket.getUserLanguage(),
             ticket.getAssigned(),
             ticket.getLockedAssignment(),
             ticket.getStatus() == Ticket.TicketStatus.ACQUIRED,
             cancellationEnabled,
+            sendMailEnabled,
+            downloadEnabled,
             ticketFieldsAdditional,
             formattedOnlineCheckInDate,
             onlineEventStarted);
