@@ -75,10 +75,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
-    private final EventManager eventManager;
-    private final EventRepository eventRepository;
     private final UserManager userManager;
-    private final ClockProvider clockProvider;
     private final UserApiV2Controller publicUserApiController;
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
@@ -153,10 +150,7 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
             notificationManager,
             userRepository);
         this.organizationRepository = organizationRepository;
-        this.eventManager = eventManager;
-        this.eventRepository = eventRepository;
         this.userManager = userManager;
-        this.clockProvider = clockProvider;
         this.publicUserApiController = publicUserApiController;
     }
 

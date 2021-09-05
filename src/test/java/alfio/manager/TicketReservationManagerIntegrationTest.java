@@ -367,12 +367,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         trTooMuch.setAmount(4);
         trTooMuch.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
-        try {
-            ticketReservationManager.createTicketReservation(event, Collections.singletonList(modTooMuch ), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false, null);
-            fail("must not enter here");
-        } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException e) {
-        }
-
+        assertThrows(TicketReservationManager.TooManyTicketsForDiscountCodeException.class,
+            () -> ticketReservationManager.createTicketReservation(event, Collections.singletonList(modTooMuch ), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false, null));
     }
 
     @Test
@@ -476,11 +472,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         trTooMuch.setAmount(1);
         trTooMuch.setTicketCategoryId(triple.getMiddle().getId());
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
-        try {
-            ticketReservationManager.createTicketReservation(triple.getLeft(), List.of(modTooMuch), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.of(ACCESS_CODE), Locale.ENGLISH, false, null);
-            fail("trigger is not working!");
-        } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException e) {
-        }
+        assertThrows(TicketReservationManager.TooManyTicketsForDiscountCodeException.class,
+            () -> ticketReservationManager.createTicketReservation(triple.getLeft(), List.of(modTooMuch), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.of(ACCESS_CODE), Locale.ENGLISH, false, null));
     }
 
     @Test
@@ -608,40 +601,65 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
     @Test
     public void testCleanupExpiredReservations() {
-        List<TicketCategoryModification> categories = List.of(
-            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
-                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
-                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
-        Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
-        Event event = eventAndUsername.getKey();
 
-        TicketCategory bounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        var testCases = List.of(
+            // 1st test case: bounded category, max 10 tickets
+            List.of(
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                    DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())),
+            // 2nd test case: unbounded category
+            List.of(
+                new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, -1,
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                    new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                    DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()))
+        );
 
+        for (List<TicketCategoryModification> categories : testCases) {
+            Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+            Event event = eventAndUsername.getKey();
 
-        TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(10);
-        tr.setTicketCategoryId(bounded.getId());
+            TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().findFirst().orElseThrow(IllegalStateException::new);
+            boolean bounded = category.isBounded();
 
-        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+            TicketReservationModification tr = new TicketReservationModification();
+            tr.setAmount(10);
+            tr.setTicketCategoryId(category.getId());
 
+            TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
+            Date now = new Date();
 
-        Date now = new Date();
+            final Supplier<List<String>> idsPendingQuery = () -> jdbcTemplate.queryForList("select id from tickets_reservation where validity < :date and status = 'PENDING'", Collections.singletonMap("date", now), String.class);
 
-        final Supplier<List<String>> idsPendingQuery = () -> jdbcTemplate.queryForList("select id from tickets_reservation where validity < :date and status = 'PENDING'", Collections.singletonMap("date", now), String.class);
+            assertTrue(idsPendingQuery.get().isEmpty());
 
-        assertTrue(idsPendingQuery.get().isEmpty());
+            String reservationId = ticketReservationManager.createTicketReservation(event, List.of(mod), Collections.emptyList(), DateUtils.addDays(new Date(), -2), Optional.empty(), Locale.ENGLISH, false, null);
+            List<String> reservationIdPending = idsPendingQuery.get();
+            assertEquals(1, reservationIdPending.size());
+            assertEquals(reservationId, reservationIdPending.get(0));
 
-        String reservationId = ticketReservationManager.createTicketReservation(event, List.of(mod), Collections.emptyList(), DateUtils.addDays(new Date(), -2), Optional.empty(), Locale.ENGLISH, false, null);
+            // check tickets
+            var tickets = ticketRepository.findTicketsInReservation(reservationId);
+            assertEquals(10, tickets.size());
+            tickets.forEach(ticket -> assertEquals(category.getId(), ticket.getCategoryId()));
+            var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toList());
 
-        List<String> reservationIdPending = idsPendingQuery.get();
-        assertEquals(1, reservationIdPending.size());
-        assertEquals(reservationId, reservationIdPending.get(0));
+            ticketReservationManager.cleanupExpiredReservations(now);
+            assertTrue(idsPendingQuery.get().isEmpty());
 
-        ticketReservationManager.cleanupExpiredReservations(now);
+            // check that category ID has been handled correctly
+            tickets = ticketRepository.findByIds(ticketIds);
+            assertEquals(10, tickets.size());
+            if(bounded) {
+                tickets.forEach(ticket -> assertEquals(category.getId(), ticket.getCategoryId()));
+            } else {
+                tickets.forEach(ticket -> assertNull(ticket.getCategoryId()));
+            }
+        }
 
-        assertTrue(idsPendingQuery.get().isEmpty());
     }
 
     @Test

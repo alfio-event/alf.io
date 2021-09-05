@@ -69,10 +69,7 @@ import static alfio.test.util.IntegrationTestUtil.*;
 public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
-    private final EventManager eventManager;
-    private final EventRepository eventRepository;
     private final UserManager userManager;
-    private final ClockProvider clockProvider;
 
     @Autowired
     public OnlineEventReservationFlowIntegrationTest(OrganizationRepository organizationRepository,
@@ -142,10 +139,7 @@ public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFl
             notificationManager,
             userRepository);
         this.organizationRepository = organizationRepository;
-        this.eventManager = eventManager;
-        this.eventRepository = eventRepository;
         this.userManager = userManager;
-        this.clockProvider = clockProvider;
     }
 
     private ReservationFlowContext createContext() {
