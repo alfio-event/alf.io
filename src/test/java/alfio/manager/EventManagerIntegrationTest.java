@@ -181,12 +181,6 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         assertThrows(IllegalArgumentException.class, () -> initEvent(categories, organizationRepository, userManager, eventManager, eventRepository));
-//        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
-//        List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
-//        assertNotNull(tickets);
-//        assertFalse(tickets.isEmpty());
-//        assertEquals(AVAILABLE_SEATS, tickets.size());
-//        assertTrue(tickets.stream().noneMatch(t -> t.getCategoryId() == null));
     }
 
     /**
@@ -775,6 +769,61 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         int result = ticketRepository.reserveTickets(reservationId, tickets, categoryId, "en", 0, "CHF");
         assertEquals(1, result);
         assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
+    }
+
+    @Test
+    public void deletedBoundedCategoriesNotIncludedInStatistics() {
+        /*
+        String reservationId = UUID.randomUUID().toString();
+        var tickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), 1, List.of(Ticket.TicketStatus.FREE.name()));
+        int result = ticketRepository.reserveTickets(reservationId, tickets, categoryId, "en", 0, "CHF");
+        assertEquals(1, result);
+        //var statistics = eventRepository.findStatisticsFor(event.getId());
+        //        statistics.
+         */
+        var to_be_deleted = "to be deleted";
+        List<TicketCategoryModification> cat = List.of(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
+            new TicketCategoryModification(null, to_be_deleted, TicketCategory.TicketAccessType.INHERIT, 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
+            );
+        Pair<Event, String> pair = initEvent(cat, organizationRepository, userManager, eventManager, eventRepository);
+        var event = pair.getLeft();
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        assertEquals(2, categories.size());
+        // check statistics
+        var statistics = eventRepository.findStatisticsFor(event.getId());
+        assertEquals(AVAILABLE_SEATS, statistics.getNotSoldTickets());
+        assertEquals(AVAILABLE_SEATS, statistics.getAvailableSeats());
+        var categoryToBeDeleted = categories.stream().filter(c -> c.getName().equals(to_be_deleted)).findFirst().orElseThrow();
+        var username = pair.getRight();
+        eventManager.deleteCategory(event.getShortName(), categoryToBeDeleted.getId(), username);
+        statistics = eventRepository.findStatisticsFor(event.getId());
+        // statistics now should report only 10 tickets to sell
+        assertEquals(AVAILABLE_SEATS - 10, statistics.getNotSoldTickets());
+        assertEquals(AVAILABLE_SEATS, statistics.getAvailableSeats());
+
+        // expand the existing category and check again
+        var activeCategory = categories.stream().filter(c -> c.getId() != categoryToBeDeleted.getId()).findFirst().orElseThrow();
+        var updateResult = eventManager.updateCategory(
+            activeCategory.getId(),
+            event,
+            new TicketCategoryModification(activeCategory.getId(), "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
+            username
+        );
+        assertTrue(updateResult.isSuccess());
+        // statistics should now report 20 tickets to sell
+        statistics = eventRepository.findStatisticsFor(event.getId());
+        assertEquals(AVAILABLE_SEATS, statistics.getNotSoldTickets());
+        assertEquals(AVAILABLE_SEATS, statistics.getAvailableSeats());
     }
 
     @Test

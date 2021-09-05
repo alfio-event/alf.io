@@ -36,7 +36,7 @@ from
   coalesce(stuck_count, 0) as stuck_count
 from
 
-(select max_tickets, bounded, id, event_id, expiration < now() as is_expired, access_restricted from ticket_category ) ticket_cat
+(select max_tickets, bounded, id, event_id, expiration < now() as is_expired, access_restricted from ticket_category where tc_status = 'ACTIVE' ) ticket_cat
 
 left join
 
