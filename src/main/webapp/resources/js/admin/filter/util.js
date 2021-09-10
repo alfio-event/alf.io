@@ -143,7 +143,7 @@
 
     filters.filter('money', function() {
         return function(amount, currency, hideCurrency) {
-            if(!currency || !amount) {
+            if(!currency || typeof amount === 'undefined') {
                 return "";
             }
             var formatted = new Intl.NumberFormat(navigator.language, { style: 'currency', currency: currency, currencyDisplay: 'code' }).format(amount);
