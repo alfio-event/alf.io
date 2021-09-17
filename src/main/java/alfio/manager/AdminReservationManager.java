@@ -324,14 +324,35 @@ public class AdminReservationManager {
             .orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
     }
 
-    private Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> performConfirmation(String reservationId, PurchaseContext purchaseContext, TicketReservation original, Notification notification, String username) {
+    private Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> performConfirmation(String reservationId,
+                                                                                                 PurchaseContext purchaseContext,
+                                                                                                 TicketReservation original,
+                                                                                                 Notification notification,
+                                                                                                 String username) {
         try {
-            PaymentSpecification spec = new PaymentSpecification(reservationId, null, 0,
-                purchaseContext, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), purchaseContext.mustUseFirstAndLastName()),
-                original.getBillingAddress(), original.getCustomerReference(), LocaleUtil.forLanguageTag(original.getUserLanguage()),
-                false, false, null, null, null, null, false, false);
+            PaymentSpecification spec = new PaymentSpecification(reservationId,
+                null,
+                original.getFinalPriceCts(),
+                purchaseContext,
+                original.getEmail(),
+                new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), purchaseContext.mustUseFirstAndLastName()),
+                original.getBillingAddress(),
+                original.getCustomerReference(),
+                LocaleUtil.forLanguageTag(original.getUserLanguage()),
+                false,
+                false,
+                null,
+                original.getVatCountryCode(),
+                original.getVatNr(),
+                original.getVatStatus(),
+                false,
+                false);
 
-            ticketReservationManager.completeReservation(spec, PaymentProxy.ADMIN, notification.isCustomer(), notification.isAttendees(), username);
+            ticketReservationManager.completeReservation(spec,
+                PaymentProxy.ADMIN,
+                notification.isCustomer(),
+                notification.isAttendees(),
+                username);
             return loadReservation(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);

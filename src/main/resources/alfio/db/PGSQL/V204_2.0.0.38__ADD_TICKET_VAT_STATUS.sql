@@ -16,8 +16,8 @@
 --
 
 alter table ticket add column vat_status VAT_STATUS;
-update ticket set vat_status = r.vat_status::VAT_STATUS
-    from tickets_reservation r
+update ticket set vat_status = coalesce(r.vat_status, e.vat_status)::VAT_STATUS
+    from tickets_reservation r join event e on r.event_id_fk = e.id
 where r.id = ticket.tickets_reservation_id
   and ticket.status in ('PENDING', 'TO_BE_PAID', 'ACQUIRED', 'CHECKED_IN', 'PRE_RESERVED');
 
