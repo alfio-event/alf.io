@@ -72,7 +72,12 @@ public class EventStatisticsManager {
         if(!mappedEvent.isEmpty()) {
             boolean isOwner = userManager.isOwner(userManager.findUserByUsername(username));
             Set<Integer> ids = mappedEvent.keySet();
-            Stream<EventStatisticView> stats = isOwner ? eventRepository.findStatisticsFor(ids).stream() : ids.stream().map(EventStatisticView::empty);
+            final Stream<EventStatisticView> stats;
+            if(isOwner) {
+                stats = eventRepository.findStatisticsFor(ids).stream();
+            } else {
+                stats = ids.stream().map(EventStatisticView::empty);
+            }
             return stats.map(stat -> {
                 Event event = mappedEvent.get(stat.getEventId());
                 return new EventStatistic(event, stat, displayStatisticsForEvent(event));

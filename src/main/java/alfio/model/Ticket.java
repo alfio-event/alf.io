@@ -60,6 +60,7 @@ public class Ticket implements TicketInfoContainer {
 
     private final List<String> tags;
     private final UUID subscriptionId;
+    private final PriceContainer.VatStatus vatStatus;
 
     public Ticket(@JsonProperty("id") @Column("id") int id,
                   @JsonProperty("uuid") @Column("uuid") String uuid,
@@ -81,7 +82,8 @@ public class Ticket implements TicketInfoContainer {
                   @JsonProperty("extReference") @Column("ext_reference") String extReference,
                   @JsonProperty("currencyCode") @Column("currency_code") String currencyCode,
                   @JsonProperty("tags") @Column("tags") @Array List<String> tags,
-                  @JsonProperty("subscriptionId") @Column("subscription_id_fk") UUID subscriptionId) {
+                  @JsonProperty("subscriptionId") @Column("subscription_id_fk") UUID subscriptionId,
+                  @JsonProperty("vatStatus") @Column("vat_status") PriceContainer.VatStatus vatStatus) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -104,6 +106,7 @@ public class Ticket implements TicketInfoContainer {
         this.currencyCode = currencyCode;
         this.tags = tags;
         this.subscriptionId = subscriptionId;
+        this.vatStatus = vatStatus;
     }
     
     @Override

@@ -40,6 +40,7 @@ create view checkin_ticket_event_and_category_info as (
              t.currency_code t_currency_code,
              t.tags t_tags,
              t.subscription_id_fk t_subscription_id,
+             t.vat_status t_vat_status,
 
              -- ticket reservation
 

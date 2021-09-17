@@ -85,18 +85,18 @@ public class MailjetMailer implements Mailer  {
             .POST(HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(mailPayload)))
             .build();
 
-        try {
-            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-            if(!HttpUtils.callSuccessful(response)) {
-                log.warn("sending email was not successful:" + response);
-                throw new IllegalStateException("Attempt to send a message failed. Result is: "+response.statusCode());
-            }
-        } catch (IOException e) {
-            log.warn("error while sending email", e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("error while sending email", e);
-        }
+//        try {
+//            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+//            if(!HttpUtils.callSuccessful(response)) {
+//                log.warn("sending email was not successful:" + response);
+//                throw new IllegalStateException("Attempt to send a message failed. Result is: "+response.statusCode());
+//            }
+//        } catch (IOException e) {
+//            log.warn("error while sending email", e);
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
+//            log.warn("error while sending email", e);
+//        }
     }
 
 

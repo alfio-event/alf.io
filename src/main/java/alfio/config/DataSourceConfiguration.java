@@ -17,6 +17,7 @@
 package alfio.config;
 
 import alfio.config.support.ArrayColumnMapper;
+import alfio.config.support.EnumTypeColumnMapper;
 import alfio.config.support.JSONColumnMapper;
 import alfio.config.support.PlatformProvider;
 import alfio.job.Jobs;
@@ -148,12 +149,12 @@ public class DataSourceConfiguration {
 
     @Bean
     public List<ColumnMapperFactory> getAdditionalColumnMappers() {
-        return Arrays.asList(new JSONColumnMapper.Factory(), new ArrayColumnMapper.Factory());
+        return Arrays.asList(new JSONColumnMapper.Factory(), new ArrayColumnMapper.Factory(), new EnumTypeColumnMapper.Factory());
     }
 
     @Bean
     public List<ParameterConverter> getAdditionalParameterConverters() {
-        return Arrays.asList(new JSONColumnMapper.Converter(), new ArrayColumnMapper.Converter());
+        return Arrays.asList(new JSONColumnMapper.Converter(), new ArrayColumnMapper.Converter(), new EnumTypeColumnMapper.Converter());
     }
 
     @Bean

@@ -63,6 +63,7 @@ public class FullTicketInfo implements TicketInfoContainer {
                           @Column("t_currency_code") String currencyCode,
                           @Column("t_tags") @Array List<String> ticketTags,
                           @Column("t_subscription_id") UUID ticketSubscriptionId,
+                          @Column("t_vat_status") PriceContainer.VatStatus ticketVatStatus,
                           //
                           @Column("tr_id") String trId,
                           @Column("tr_validity") Date trValidity,
@@ -126,8 +127,9 @@ public class FullTicketInfo implements TicketInfoContainer {
                           @Column("tc_ticket_access_type") TicketCategory.TicketAccessType ticketAccessType
                           ) {
 
-        this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
-            lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference, currencyCode, ticketTags, ticketSubscriptionId);
+        this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName,
+            firstName, lastName, email, lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts,
+            ticketVatCts, ticketDiscountCts, extReference, currencyCode, ticketTags, ticketSubscriptionId, ticketVatStatus);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage,
             directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded, reservationCreationTimestamp, customerReference,

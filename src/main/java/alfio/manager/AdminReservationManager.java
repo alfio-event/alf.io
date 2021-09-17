@@ -417,7 +417,15 @@ public class AdminReservationManager {
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts(), currencyCode);
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), null);
-        ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), unitToCents(priceContainer.getFinalPrice(), currencyCode), unitToCents(priceContainer.getVAT(), currencyCode), unitToCents(priceContainer.getAppliedDiscount(), currencyCode), currencyCode);
+        ticketRepository.updateTicketPrice(reservedForUpdate,
+            categoryId,
+            event.getId(),
+            category.getSrcPriceCts(),
+            unitToCents(priceContainer.getFinalPrice(), currencyCode),
+            unitToCents(priceContainer.getVAT(), currencyCode),
+            unitToCents(priceContainer.getAppliedDiscount(), currencyCode),
+            currencyCode,
+            priceContainer.getVatStatus());
         List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(categoryId, attendees) : Collections.emptyList();
         if(category.isAccessRestricted() && codes.size() < attendees.size()) {
             return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
@@ -497,7 +505,8 @@ public class AdminReservationManager {
                     ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
                 }
             }
-            specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts, event.getCurrency()));
+            specialPriceIterator.map(Iterator::next)
+                .ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts, event.getCurrency(), event.getVatStatus()));
         }
     }
 

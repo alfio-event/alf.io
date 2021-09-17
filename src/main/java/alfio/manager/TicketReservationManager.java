@@ -442,7 +442,13 @@ public class TicketReservationManager {
                 var ticketId = reservedForUpdate.get(0);
                 var sp = specialPrices.get(0);
                 var accessCodeId = accessCodeOrDiscount != null && accessCodeOrDiscount.getHiddenCategoryId() != null ? accessCodeOrDiscount.getId() : null;
-                ticketRepository.reserveTicket(reservationId, ticketId,sp.getId(), locale.getLanguage(), category.getSrcPriceCts(), category.getCurrencyCode());
+                ticketRepository.reserveTicket(reservationId,
+                    ticketId,
+                    sp.getId(),
+                    locale.getLanguage(),
+                    category.getSrcPriceCts(),
+                    category.getCurrencyCode(),
+                    event.getVatStatus());
                 specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), null, accessCodeId);
             } else {
                 jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicket(), ticketsAndSpecialPrices.stream().map(
@@ -452,6 +458,7 @@ public class TicketReservationManager {
                         .addValue("userLanguage", locale.getLanguage())
                         .addValue("srcPriceCts", category.getSrcPriceCts())
                         .addValue("currencyCode", category.getCurrencyCode())
+                        .addValue("vatStatus", event.getVatStatus().toString())
                 ).toArray(MapSqlParameterSource[]::new));
                 specialPriceRepository.batchUpdateStatus(
                     specialPrices.stream().map(SpecialPrice::getId).collect(toList()),
@@ -472,7 +479,8 @@ public class TicketReservationManager {
             MonetaryUtil.unitToCents(priceContainer.getFinalPrice(), currencyCode),
             MonetaryUtil.unitToCents(priceContainer.getVAT(), currencyCode),
             MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount(), currencyCode),
-            category.getCurrencyCode());
+            category.getCurrencyCode(),
+            priceContainer.getVatStatus());
     }
 
     List<SpecialPrice> reserveTokensForAccessCode(TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount accessCode) {
