@@ -158,6 +158,9 @@ public interface TicketCategoryRepository {
     @Query("select count(*) from ticket_category where id in (:categoryIds) and src_price_cts > 0")
     Integer countPaidCategoriesInReservation(@Bind("categoryIds") Collection<Integer> categoryIds);
 
+    @Query("select distinct tc.* from ticket_category_with_currency tc join ticket t on t.category_id = tc.id where t.tickets_reservation_id = :reservationId")
+    List<TicketCategory> findCategoriesInReservation(@Bind("reservationId") String reservationId);
+
     @JSONData
     @Query("select metadata from ticket_category where id = :id and event_id = :eventId")
     AlfioMetadata getMetadata(@Bind("eventId") int eventId, @Bind("id") int categoryId);

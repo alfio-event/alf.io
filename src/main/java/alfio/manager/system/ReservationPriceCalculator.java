@@ -46,7 +46,7 @@ public class ReservationPriceCalculator implements PriceContainer {
 
     @Override
     public int getSrcPriceCts() {
-        return tickets.stream().mapToInt(Ticket::getSrcPriceCts).sum() +
+        return tickets.stream().mapToInt(this::getTicketSrcPriceCts).sum() +
             additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getSrcPriceCts).sum() +
             subscriptions.stream().mapToInt(Subscription::getSrcPriceCts).sum();
     }
@@ -112,6 +112,13 @@ public class ReservationPriceCalculator implements PriceContainer {
         var additionalServiceItems = additionalServiceItemsByAdditionalService.stream().flatMap(p -> p.getRight().stream()).collect(Collectors.toList());
         var additionalServices = additionalServiceItemsByAdditionalService.stream().map(Pair::getKey).collect(Collectors.toList());
         return new ReservationPriceCalculator(reservation, discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions, appliedSubscription);
+    }
+
+    private int getTicketSrcPriceCts(Ticket t) {
+        if(t.getVatStatus() == VatStatus.INCLUDED_EXEMPT || t.getVatStatus() == VatStatus.NOT_INCLUDED_EXEMPT) {
+            return t.getSrcPriceCts() - Math.abs(t.getVatCts()); // VAT can be negative in some cases
+        }
+        return t.getSrcPriceCts();
     }
 
 }

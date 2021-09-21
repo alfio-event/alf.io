@@ -157,7 +157,12 @@ public interface TicketRepository {
                           @Bind("vatCts") int vatCts,
                           @Bind("discountCts") int discountCts,
                           @Bind("currencyCode") String currencyCode,
-                          @Bind("vatStatus") PriceContainer.VatStatus vatStatus);
+                          @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus);
+
+    @Query(type = QueryType.TEMPLATE, value = "update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts," +
+        " vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode," +
+        " vat_status = :vatStatus::VAT_STATUS where event_id = :eventId and category_id = :categoryId and tickets_reservation_id = :reservationId")
+    String updateTicketPriceForCategoryInReservation();
 
     @Query("update ticket set tags = :tags::text[] where id in(:ids)")
     int updateTicketTags(@Bind("ids") List<Integer> ticketIds, @Bind("tags") @Array List<String> tags);
@@ -404,4 +409,8 @@ public interface TicketRepository {
 
     @Query("update ticket set metadata = :metadata::jsonb where id = :ticketId")
     int updateTicketMetadata(@Bind("ticketId") int ticketId, @JSONData @Bind("metadata") TicketMetadataContainer ticketMetadataContainer);
+
+    @Query("update ticket set vat_status = :vatStatus::VAT_STATUS where tickets_reservation_id = :reservationId")
+    int updateVatStatusForReservation(@Bind("reservationId") String reservationId, @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus);
+
 }

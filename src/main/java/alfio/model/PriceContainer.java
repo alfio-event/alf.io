@@ -135,7 +135,7 @@ public interface PriceContainer {
 
     /**
      * Returns the taxable price.
-     * This is often the price itself, but it can also be a fraction of it, if some of the items are not taxable
+     * This is often the price itself, but it can also be a fraction of it, if some items are not taxable
      */
     default BigDecimal getTaxablePrice() {
         return centsToUnit(getSrcPriceCts(), getCurrencyCode()).subtract(getAppliedDiscount());

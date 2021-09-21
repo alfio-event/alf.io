@@ -63,7 +63,7 @@ public class SameCountryValidator implements Predicate<String> {
         }
         if(valid && StringUtils.isNotEmpty(ticketReservationId)) {
             VatDetail detail = new VatDetail(vatNr, organizerCountry, true, "", "", validStrict ? VatDetail.Type.VIES : VatDetail.Type.FORMAL, false);
-            checker.logSuccessfulValidation(detail, ticketReservationId, purchaseContext.event().map(Event::getId).orElse(null));
+            checker.logSuccessfulValidation(detail, ticketReservationId, purchaseContext);
         }
         return valid;
     }

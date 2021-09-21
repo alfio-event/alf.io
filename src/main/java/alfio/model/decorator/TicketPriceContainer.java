@@ -56,7 +56,7 @@ public class TicketPriceContainer implements SummaryPriceContainer {
 
     public int getSummarySrcPriceCts() {
         if(VatStatus.isVatExempt(getVatStatus())) {
-            return unitToCents(getFinalPrice(), getCurrencyCode());
+            return getFinalPriceCts();
         }
         return getSrcPriceCts();
     }
@@ -64,6 +64,14 @@ public class TicketPriceContainer implements SummaryPriceContainer {
     public static TicketPriceContainer from(Ticket t, VatStatus reservationVatStatus, BigDecimal vat, VatStatus eventVatStatus, PromoCodeDiscount discount) {
         VatStatus vatStatus = ObjectUtils.firstNonNull(t.getVatStatus(), reservationVatStatus, eventVatStatus);
         return new TicketPriceContainer(t, discount, vat, vatStatus);
+    }
+
+    @Override
+    public BigDecimal getTaxablePrice() {
+        if(vatStatus != VatStatus.INCLUDED_EXEMPT && vatStatus != VatStatus.NOT_INCLUDED_EXEMPT) {
+            return SummaryPriceContainer.super.getTaxablePrice();
+        }
+        return BigDecimal.ZERO;
     }
 
     @Override

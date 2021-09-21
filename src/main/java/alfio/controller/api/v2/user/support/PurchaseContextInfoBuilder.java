@@ -61,6 +61,8 @@ public class PurchaseContextInfoBuilder {
             // required by EuVatChecker.reverseChargeEnabled
             ENABLE_EU_VAT_DIRECTIVE,
             COUNTRY_OF_BUSINESS,
+            ENABLE_REVERSE_CHARGE_IN_PERSON,
+            ENABLE_REVERSE_CHARGE_ONLINE,
 
             DISPLAY_TICKETS_LEFT_INDICATOR,
             EVENT_CUSTOM_CSS

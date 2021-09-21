@@ -254,7 +254,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         //EL -> greece for vat
         assertEquals("Greece", translationsApiController.getCountriesForVat("en").stream().filter(c->"EL".equals(c.getIsoCode())).findFirst().get().getName());
-        assertEquals(28, translationsApiController.getEuCountriesForVat("en").size()); //
+        assertEquals(27, translationsApiController.getEuCountriesForVat("en").size()); //
         //
 
 

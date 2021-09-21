@@ -378,7 +378,7 @@ public class ConfigurationManager {
                 Set<Configuration> entries = new TreeSet<>(e.getValue());
                 if(existing.containsKey(key)) {
                     List<Configuration> configurations = existing.get(key).stream().filter(Predicate.not(Configuration::isInternal)).collect(Collectors.toList());
-                    entries.removeAll(configurations);
+                    configurations.forEach(entries::remove);
                     entries.addAll(configurations);
                 }
                 return Pair.of(key, new ArrayList<>(entries));
@@ -687,7 +687,9 @@ public class ConfigurationManager {
             INVOICE_ADDRESS,
             VAT_NR,
             ENABLE_EU_VAT_DIRECTIVE,
-            COUNTRY_OF_BUSINESS);
+            COUNTRY_OF_BUSINESS,
+            ENABLE_REVERSE_CHARGE_IN_PERSON,
+            ENABLE_REVERSE_CHARGE_ONLINE);
         var conf = getFor(options, ConfigurationLevel.system());
 
         var analyticsConf = AnalyticsConfiguration.build(conf, session);

@@ -36,6 +36,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
@@ -55,7 +56,7 @@ public class EuVatChecker {
         .expireAfterWrite(Duration.ofMinutes(15))
         .build();
 
-    public boolean isReverseChargeEnabledFor(Configurable configurable) {
+    public boolean isReverseChargeEnabledFor(PurchaseContext configurable) {
         return reverseChargeEnabled(configurationManager, configurable);
     }
 
@@ -73,7 +74,9 @@ public class EuVatChecker {
         });
     }
 
-    static BiFunction<ConfigurationManager, EUVatChecker, Optional<VatDetail>> performCheck(String vatNr, String countryCode, Configurable configurable) {
+    static BiFunction<ConfigurationManager, EUVatChecker, Optional<VatDetail>> performCheck(String vatNr,
+                                                                                            String countryCode,
+                                                                                            Configurable configurable) {
         return (configurationManager, client) -> {
             boolean vatNrNotEmpty = StringUtils.isNotEmpty(vatNr);
             boolean validCountryCode = StringUtils.length(StringUtils.trimToNull(countryCode)) == 2;
@@ -104,7 +107,7 @@ public class EuVatChecker {
         };
     }
 
-    public void logSuccessfulValidation(VatDetail detail, String reservationId, Integer eventId) {
+    public void logSuccessfulValidation(VatDetail detail, String reservationId, PurchaseContext purchaseContext) {
         List<Map<String, Object>> modifications = List.of(
             Map.of("vatNumber", detail.getVatNr(), "country", detail.getCountry(), "validationType", detail.getType())
         );
@@ -121,7 +124,7 @@ public class EuVatChecker {
                 eventType = VAT_FORMAL_VALIDATION_SUCCESSFUL;
             break;
         }
-        auditingRepository.insert(reservationId, null, eventId, eventType, new Date(), RESERVATION, reservationId, modifications);
+        auditingRepository.insert(reservationId, null, purchaseContext, eventType, new Date(), RESERVATION, reservationId, modifications);
     }
 
 
@@ -140,22 +143,35 @@ public class EuVatChecker {
     }
 
     static String organizerCountry(ConfigurationManager configurationManager, Configurable configurable) {
-        return configurationManager.getFor(ConfigurationKeys.COUNTRY_OF_BUSINESS, configurable.getConfigurationLevel()).getValueOrNull();
+        return configurationManager.getFor(COUNTRY_OF_BUSINESS, configurable.getConfigurationLevel()).getValueOrNull();
     }
 
     private static boolean reverseChargeEnabled(ConfigurationManager configurationManager, Configurable configurable) {
-        var res = configurationManager.getFor(Set.of(ENABLE_EU_VAT_DIRECTIVE, ConfigurationKeys.COUNTRY_OF_BUSINESS), configurable.getConfigurationLevel());
-        return reverseChargeEnabled(res);
+        return reverseChargeEnabled(loadConfigurationForReverseChargeCheck(configurationManager, configurable));
+    }
+
+    public static Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> loadConfigurationForReverseChargeCheck(ConfigurationManager configurationManager, Configurable configurable) {
+        return configurationManager.getFor(Set.of(ENABLE_EU_VAT_DIRECTIVE,
+            COUNTRY_OF_BUSINESS,
+            ENABLE_REVERSE_CHARGE_IN_PERSON,
+            ENABLE_REVERSE_CHARGE_ONLINE), configurable.getConfigurationLevel());
     }
 
     /**
-     * @param res require the keys ENABLE_EU_VAT_DIRECTIVE, COUNTRY_OF_BUSINESS
-     * @return
+     * In order for Reverse Charge to be enabled, the global flag must be active (ENABLE_EU_VAT_DIRECTIVE) plus one of ENABLE_REVERSE_CHARGE_IN_PERSON, ENABLE_REVERSE_CHARGE_ONLINE
+     * which are active by default.
+     * @param res require the keys ENABLE_EU_VAT_DIRECTIVE, COUNTRY_OF_BUSINESS, ENABLE_REVERSE_CHARGE_IN_PERSON, ENABLE_REVERSE_CHARGE_ONLINE
+     * @return true if Reverse Charge is enabled
      */
     public static boolean reverseChargeEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> res) {
-        Validate.isTrue(res.containsKey(ENABLE_EU_VAT_DIRECTIVE) && res.containsKey(COUNTRY_OF_BUSINESS));
-        return res.get(ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault() &&
-            res.get(ConfigurationKeys.COUNTRY_OF_BUSINESS).isPresent();
+        Validate.isTrue(res.containsKey(ENABLE_EU_VAT_DIRECTIVE)
+            && res.containsKey(COUNTRY_OF_BUSINESS)
+            && res.containsKey(ENABLE_REVERSE_CHARGE_IN_PERSON)
+            && res.containsKey(ENABLE_REVERSE_CHARGE_ONLINE));
+        return (
+            res.get(ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault()
+                && (res.get(ENABLE_REVERSE_CHARGE_IN_PERSON).getValueAsBooleanOrDefault() || res.get(ENABLE_REVERSE_CHARGE_ONLINE).getValueAsBooleanOrDefault())
+        ) && res.get(COUNTRY_OF_BUSINESS).isPresent();
     }
 
     static boolean validationEnabled(ConfigurationManager configurationManager, Configurable configurable) {
