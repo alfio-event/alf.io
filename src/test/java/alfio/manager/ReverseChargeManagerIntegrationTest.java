@@ -29,6 +29,7 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.SummaryRow;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
@@ -143,9 +144,18 @@ public class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
         configurationManager.saveConfig(Configuration.from(event, ENABLE_REVERSE_CHARGE_IN_PERSON), "false");
 
         var reservation = createReservation();
+        var summary = reservation.getOrderSummary();
         // 20 + 1.98 = 21.98
-        assertEquals("0.20", reservation.getOrderSummary().getTotalVAT());
-        assertEquals(2198, reservation.getOrderSummary().getPriceInCents());
+        assertEquals("0.20", summary.getTotalVAT());
+        assertEquals(2198, summary.getPriceInCents());
+
+        // we expect to find two rows for VAT: the first one for in-person (1%), the second one for online (0%)
+        var rows = summary.getSummary();
+        assertEquals(3, rows.size());
+        assertEquals(SummaryRow.SummaryType.TAX_DETAIL, rows.get(1).getType());
+        assertEquals("0", rows.get(1).getTaxPercentage());
+        assertEquals("", rows.get(1).getPrice());
+        assertEquals("0.00", rows.get(1).getSubTotal());
     }
 
     @Test
@@ -185,6 +195,14 @@ public class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
     void reverseChargeDisabled() {
         configurationManager.saveConfig(Configuration.from(event, ENABLE_EU_VAT_DIRECTIVE), "false");
         var reservation = createReservation();
+        // 19.80 + 1.98 = 21.78
+        assertEquals("0.22", reservation.getOrderSummary().getTotalVAT());
+        assertEquals(2200, reservation.getOrderSummary().getPriceInCents());
+
+        configurationManager.saveConfig(Configuration.from(event, ENABLE_REVERSE_CHARGE_IN_PERSON), "true");
+        configurationManager.saveConfig(Configuration.from(event, ENABLE_REVERSE_CHARGE_ONLINE), "true");
+        // since the global flag is disabled, the specific settings are not effective
+        reservation = createReservation();
         // 19.80 + 1.98 = 21.78
         assertEquals("0.22", reservation.getOrderSummary().getTotalVAT());
         assertEquals(2200, reservation.getOrderSummary().getPriceInCents());

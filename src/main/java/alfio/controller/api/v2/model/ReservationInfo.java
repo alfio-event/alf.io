@@ -216,7 +216,7 @@ public class ReservationInfo {
         public ReservationInfoOrderSummary(OrderSummary orderSummary) {
             this.summary = orderSummary.getSummary()
                 .stream()
-                .map(s -> new ReservationInfoOrderSummaryRow(s.getName(), s.getAmount(), s.getPrice(), s.getSubTotal(), s.getType()))
+                .map(s -> new ReservationInfoOrderSummaryRow(s.getName(), s.getAmount(), s.getPrice(), s.getSubTotal(), s.getType(), s.getTaxPercentage()))
                 .collect(Collectors.toList());
             this.totalPrice = orderSummary.getTotalPrice();
             this.free = orderSummary.getFree();
@@ -237,6 +237,7 @@ public class ReservationInfo {
         private final String price;
         private final String subTotal;
         private final SummaryType type;
+        private final String taxPercentage;
     }
 
     @AllArgsConstructor

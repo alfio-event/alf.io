@@ -93,7 +93,9 @@ public class TicketReservationManagerUnitTest {
         when(event.event()).thenReturn(Optional.of(event));
         ticket = mock(Ticket.class);
         when(ticket.getCurrencyCode()).thenReturn("CHF");
+        when(ticket.getCategoryId()).thenReturn(1);
         ticketCategory = mock(TicketCategory.class);
+        when(ticketCategory.getId()).thenReturn(1);
         organizationRepository = mock(OrganizationRepository.class);
         ticketCategoryRepository = mock(TicketCategoryRepository.class);
         ticketCategoryDescriptionRepository = mock(TicketCategoryDescriptionRepository.class);
@@ -312,6 +314,7 @@ public class TicketReservationManagerUnitTest {
         when(ticket.getCategoryId()).thenReturn(1);
         when(ticketRepository.findTicketsInReservation(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
         when(ticketCategoryRepository.getByIdAndActive(eq(1), eq(1))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdsAndActive(anyCollection(), eq(1))).thenReturn(List.of(ticketCategory));
         when(reservation.getId()).thenReturn(TICKET_RESERVATION_ID);
     }
 

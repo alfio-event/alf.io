@@ -712,7 +712,7 @@ public class AdminReservationManager {
                         ticketReservationManager.issueCreditNoteForReservation(result.getRight(), reservation, username, false);
                     }
                     // setting refund to false because we've already done it
-                    return removeReservation(result, false, notify, username, true);
+                    return removeReservation(result, false, notify, username, true, false);
                 }))
             .map(pair -> {
                 var purchaseContext = pair.getLeft();
@@ -729,15 +729,15 @@ public class AdminReservationManager {
 
     @Transactional
     public void creditReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, boolean refund, boolean notify, String username) {
-        removeReservation(purchaseContextType, publicIdentifier, reservationId, refund, notify, username, false)
-            .ifSuccess(pair -> ticketReservationManager.issueCreditNoteForReservation(pair.getLeft(), pair.getRight().getId(), username));
+        loadReservation(purchaseContextType, publicIdentifier, reservationId, username).flatMap(res -> removeReservation(res, refund, notify, username, false, true));
     }
 
-    private Result<Pair<PurchaseContext, TicketReservation>> removeReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, boolean refund, boolean notify, String username, boolean removeReservation) {
-        return loadReservation(purchaseContextType, publicIdentifier, reservationId, username).flatMap(res -> removeReservation(res, refund, notify, username, removeReservation));
-    }
-
-    private Result<Pair<PurchaseContext, TicketReservation>> removeReservation(Triple<TicketReservation, List<Ticket>, PurchaseContext> triple, boolean refund, boolean notify, String username, boolean removeReservation) {
+    private Result<Pair<PurchaseContext, TicketReservation>> removeReservation(Triple<TicketReservation, List<Ticket>, PurchaseContext> triple,
+                                                                               boolean refund,
+                                                                               boolean notify,
+                                                                               String username,
+                                                                               boolean removeReservation,
+                                                                               boolean issueCreditNote) {
         return new Result.Builder<Triple<TicketReservation, List<Ticket>, PurchaseContext>>()
             .checkPrecondition(() -> ticketsStatusIsCompatibleWithCancellation(triple.getMiddle()), ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS)
             .buildAndEvaluate(() -> {
@@ -754,7 +754,7 @@ public class AdminReservationManager {
                 List<Ticket> tickets = t.getMiddle();
                 specialPriceRepository.resetToFreeAndCleanupForReservation(List.of(reservation.getId()));
                 if(purchaseContext.ofType(PurchaseContextType.event)) {
-                    removeTicketsFromReservation(reservation, (Event) purchaseContext, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, false);
+                    removeTicketsFromReservation(reservation, (Event) purchaseContext, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, issueCreditNote);
                 }
                 additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
                 return Pair.of(purchaseContext, reservation);

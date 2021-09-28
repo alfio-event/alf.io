@@ -362,11 +362,13 @@
                                 </thead>
                                 <tbody>
                                     <tr data-ng-repeat="summaryRow in $ctrl.reservationDescriptor.orderSummary.summary">
-                                        <td>{{summaryRow.name}}</td>
-                                        <td>{{summaryRow.type}}</td>
-                                        <td class="text-center">{{summaryRow.amount}}</td>
+                                        <th data-ng-if="summaryRow.type === 'TAX_DETAIL'">Taxes</th>
+                                        <td data-ng-if="summaryRow.type !== 'TAX_DETAIL'">{{summaryRow.name}}</td>
+                                        <td>{{ summaryRow.type !== 'TAX_DETAIL' ? summaryRow.type : '' }}</td>
+                                        <td class="text-center">{{summaryRow.type != 'TAX_DETAIL' ? summaryRow.amount : ''}}</td>
                                         <td class="text-right">{{summaryRow.price}}</td>
-                                        <td class="text-right">{{summaryRow.subTotal}}</td>
+                                        <th data-ng-if="summaryRow.type === 'TAX_DETAIL'" class="text-right">{{summaryRow.subTotal}}</th>
+                                        <td data-ng-if="summaryRow.type !== 'TAX_DETAIL'" class="text-right">{{summaryRow.subTotal}}</td>
                                     </tr>
                                     <tr ng-if="!$ctrl.reservationDescriptor.orderSummary.vatExempt && $ctrl.reservationDescriptor.orderSummary.vatStatus === 'NOT_INCLUDED'">
                                         <th>Taxes</th>

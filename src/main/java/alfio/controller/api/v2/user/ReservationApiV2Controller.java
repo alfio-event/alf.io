@@ -143,7 +143,7 @@ public class ReservationApiV2Controller {
             boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
             //
 
-            var ticketsInfo = purchaseContext.event().map(event -> {
+            var ticketsInfo = purchaseContext.event().filter(e -> !ticketIds.isEmpty()).map(event -> {
                 var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
                     .stream()
                     .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));

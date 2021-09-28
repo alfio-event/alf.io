@@ -28,16 +28,24 @@ public class SummaryRow {
     private final String subTotalBeforeVat;
     private final int originalSubTotal;
     private final SummaryType type;
+    private final String taxPercentage;
 
     public enum SummaryType {
-        TICKET, SUBSCRIPTION, PROMOTION_CODE, DYNAMIC_DISCOUNT, ADDITIONAL_SERVICE, APPLIED_SUBSCRIPTION
+        TICKET, SUBSCRIPTION, PROMOTION_CODE, DYNAMIC_DISCOUNT, ADDITIONAL_SERVICE, APPLIED_SUBSCRIPTION, TAX_DETAIL
     }
 
     public String getDescriptionForPayment() {
-        return amount + " x " + name;
+        if(name != null) {
+            return amount + " x " + name;
+        }
+        return "";
     }
 
     public boolean isDiscount() {
         return type == SummaryType.PROMOTION_CODE || type == SummaryType.DYNAMIC_DISCOUNT;
+    }
+
+    public boolean getTaxDetail() {
+        return type == SummaryType.TAX_DETAIL;
     }
 }

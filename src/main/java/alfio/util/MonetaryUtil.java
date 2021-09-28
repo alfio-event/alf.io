@@ -61,7 +61,11 @@ public final class MonetaryUtil {
     }
 
     public static BigDecimal centsToUnit(long cents, String currencyCode) {
-        if(cents == 0 || StringUtils.isEmpty(currencyCode)) {
+        return centsToUnit(cents, currencyCode, false);
+    }
+
+    public static BigDecimal centsToUnit(long cents, String currencyCode, boolean formatZero) {
+        if((cents == 0 && !formatZero) || StringUtils.isEmpty(currencyCode)) {
             return BigDecimal.ZERO;
         }
         var currencyUnit = CurrencyUnit.of(currencyCode.toUpperCase(Locale.ENGLISH));
@@ -91,11 +95,15 @@ public final class MonetaryUtil {
         return formatCents((long) cents, currencyCode);
     }
 
-    public static String formatCents(long cents, String currencyCode) {
+    public static String formatCents(long cents, String currencyCode, boolean formatZero) {
         if (StringUtils.isEmpty(currencyCode)) {
             return "0";
         }
-        return centsToUnit(cents, currencyCode).toPlainString();
+        return centsToUnit(cents, currencyCode, formatZero).toPlainString();
+    }
+
+    public static String formatCents(long cents, String currencyCode) {
+        return formatCents(cents, currencyCode, false);
     }
 
     public static String formatUnit(BigDecimal unit, String currencyCode) {
