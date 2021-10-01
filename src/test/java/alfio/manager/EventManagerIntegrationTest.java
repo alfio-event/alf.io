@@ -38,6 +38,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -871,7 +872,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         // add ON_SITE payment method
         var withOnSite = List.of(PaymentProxy.OFFLINE, PaymentProxy.ON_SITE);
-        var onSitePaymentMethodModification = createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.IN_PERSON, withOnSite);
+        var onSitePaymentMethodModification = createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.IN_PERSON, withOnSite, event.getLocation());
         var username = eventAndUsername.getRight();
         eventManager.updateEventPrices(event, onSitePaymentMethodModification, username);
 
@@ -879,7 +880,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(withOnSite, event.getAllowedPaymentProxies());
 
         try {
-            eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, withOnSite), username);
+            eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, withOnSite, event.getLocation()), username);
             fail();
         } catch(IllegalArgumentException ex) {
             assertEquals(EventManager.ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE, ex.getMessage());
@@ -887,10 +888,92 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         event = eventRepository.findById(event.getId());
         // update header and remove ON_SITE
-        eventManager.updateEventPrices(event, createEventModification(AVAILABLE_SEATS, event, event.getFormat(), List.of(PaymentProxy.OFFLINE)), username);
+        eventManager.updateEventPrices(event, createEventModification(AVAILABLE_SEATS, event, event.getFormat(), List.of(PaymentProxy.OFFLINE), event.getLocation()), username);
         // retry
         event = eventRepository.findById(event.getId());
-        eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, event.getAllowedPaymentProxies()), username);
+        eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, event.getAllowedPaymentProxies(), event.getLocation()), username);
+    }
+
+    @Test
+    public void updateInPersonEventToHybridAndBack() {
+        var categories = List.of(
+            new TicketCategoryModification(null, "first", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2, null, null, AlfioMetadata.empty()),
+            new TicketCategoryModification(null, "second", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2, null, null, AlfioMetadata.empty())
+            );
+
+        var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        var event = eventAndUsername.getLeft();
+        var username = eventAndUsername.getRight();
+
+        eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.HYBRID, event.getAllowedPaymentProxies(), event.getLocation()), username);
+
+        // check that all the categories have been converted to IN_PERSON
+        assertTrue(ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> tc.getTicketAccessType() == TicketCategory.TicketAccessType.IN_PERSON));
+
+        event = eventRepository.findById(event.getId());
+
+        // revert modification
+        eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.IN_PERSON, event.getAllowedPaymentProxies(), event.getLocation()), username);
+        // we expect all the access types to be INHERIT
+        assertTrue(ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> tc.getTicketAccessType() == TicketCategory.TicketAccessType.INHERIT));
+
+    }
+
+    @Test
+    public void testFailedUpdateOnlineEventToHybrid() {
+        var categories = List.of(
+            new TicketCategoryModification(null, "first", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2, null, null, AlfioMetadata.empty()),
+            new TicketCategoryModification(null, "second", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2, null, null, AlfioMetadata.empty())
+        );
+        var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, List.of(), Event.EventFormat.ONLINE);
+        var event = eventAndUsername.getLeft();
+        var username = eventAndUsername.getRight();
+
+        // This must give an error because the "check_location_if_in_person" constraint will kick in
+        assertThrows(DataIntegrityViolationException.class, () -> eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.HYBRID, event.getAllowedPaymentProxies(), null), username));
+    }
+
+    @Test
+    public void updateOnlineEventToHybridAndBack() {
+        var categories = List.of(
+            new TicketCategoryModification(null, "first", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2, null, null, AlfioMetadata.empty()),
+            new TicketCategoryModification(null, "second", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS - 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2, null, null, AlfioMetadata.empty())
+        );
+
+        var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, List.of(), Event.EventFormat.ONLINE);
+        var event = eventAndUsername.getLeft();
+        var username = eventAndUsername.getRight();
+
+        // if we set the location, everything should work as expected
+        eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.HYBRID, event.getAllowedPaymentProxies(), "location"), username);
+
+        // check that all the categories have been converted to ONLINE
+        assertTrue(ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> tc.getTicketAccessType() == TicketCategory.TicketAccessType.ONLINE));
+
+        event = eventRepository.findById(event.getId());
+
+        // revert modification
+        eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, event.getAllowedPaymentProxies(), null), username);
+        // we expect all the access types to be INHERIT
+        assertTrue(ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> tc.getTicketAccessType() == TicketCategory.TicketAccessType.INHERIT));
     }
 
     private Pair<Event, String> generateAndEditEvent(int newEventSize) {
@@ -918,11 +1001,11 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     private EventModification createEventModification(int availableSeats, Event event) {
-        return createEventModification(availableSeats, event, Event.EventFormat.IN_PERSON, event.getAllowedPaymentProxies());
+        return createEventModification(availableSeats, event, Event.EventFormat.IN_PERSON, event.getAllowedPaymentProxies(), event.getLocation());
     }
 
-    private EventModification createEventModification(int availableSeats, Event event, Event.EventFormat format, List<PaymentProxy> allowedPaymentProxies) {
-        return new EventModification(event.getId(), format, "http://website-url", null, "http://website-url/tc", null, null, null, null, null, event.getOrganizationId(), null, null,
+    private EventModification createEventModification(int availableSeats, Event event, Event.EventFormat format, List<PaymentProxy> allowedPaymentProxies, String location) {
+        return new EventModification(event.getId(), format, "http://website-url", null, "http://website-url/tc", null, null, null, null, null, event.getOrganizationId(), location, null,
             null, event.getZoneId().toString(), Collections.emptyMap(), DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), availableSeats, event.getVat(), event.isVatIncluded(), allowedPaymentProxies, null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty(), List.of());
     }

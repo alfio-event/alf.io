@@ -164,4 +164,7 @@ public interface TicketCategoryRepository {
 
     @Query("update ticket_category set metadata = :metadata::jsonb where id = :id and event_id = :eventId")
     int updateMetadata(@Bind("metadata") @JSONData AlfioMetadata metadata, @Bind("eventId") int eventId, @Bind("id") int categoryId);
+
+    @Query("update ticket_category set ticket_access_type = :ticketAccessType::ticket_access_type where event_id = :eventId")
+    void updateTicketAccessTypeForEvent(@Bind("eventId") int eventId, @Bind("ticketAccessType") TicketCategory.TicketAccessType ticketAccessType);
 }

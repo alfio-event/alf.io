@@ -22,8 +22,10 @@ import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.Event.EventFormat;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
+import alfio.model.TicketCategory.TicketAccessType;
 import alfio.model.TicketFieldConfiguration.Context;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.metadata.AlfioMetadata;
@@ -337,7 +339,8 @@ public class EventManager {
         int eventId = original.getId();
         Validate.isTrue(sameOrganization || groupRepository.countByEventId(eventId) == 0, "Cannot change organization because there is a group linked to this event.");
 
-        if(em.getFormat() == Event.EventFormat.ONLINE && em.getFormat() != original.getFormat()) {
+        boolean formatUpdated = em.getFormat() != original.getFormat();
+        if(em.getFormat() == EventFormat.ONLINE && formatUpdated) {
             Validate.isTrue(original.getAllowedPaymentProxies().stream().allMatch(p -> p != PaymentProxy.ON_SITE), ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE);
         }
 
@@ -354,11 +357,24 @@ public class EventManager {
 
         createOrUpdateEventDescription(eventId, em);
 
-
         if(!original.getBegin().equals(begin) || !original.getEnd().equals(end)) {
             fixOutOfRangeCategories(em, username, zoneId, end);
         }
+
+        if(formatUpdated) {
+            // update ticket access type for categories if the format has been updated
+            var ticketAccessType = evaluateTicketAccessType(original.getFormat(), em.getFormat());
+            ticketCategoryRepository.updateTicketAccessTypeForEvent(eventId, ticketAccessType);
+        }
+
         extensionManager.handleEventHeaderUpdate(eventRepository.findById(eventId), organizationRepository.findOrganizationForUser(username, em.getOrganizationId()).orElseThrow());
+    }
+
+    private TicketAccessType evaluateTicketAccessType(EventFormat oldFormat, EventFormat newFormat) {
+        if(newFormat == EventFormat.HYBRID) {
+            return oldFormat == EventFormat.ONLINE ? TicketAccessType.ONLINE : TicketAccessType.IN_PERSON;
+        }
+        return TicketAccessType.INHERIT;
     }
 
     public void updateEventPrices(EventAndOrganizationId original, EventModification em, String username) {
@@ -630,10 +646,10 @@ public class EventManager {
         em.getTicketCategories().forEach(tc -> {
             final int price = evaluatePrice(tc.getPrice(), freeOfCharge, event.getCurrency());
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
-            var accessType = requireNonNullElse(tc.getTicketAccessType(), TicketCategory.TicketAccessType.INHERIT);
-            if(event.getFormat() == Event.EventFormat.HYBRID && accessType == TicketCategory.TicketAccessType.INHERIT) {
+            var accessType = requireNonNullElse(tc.getTicketAccessType(), TicketAccessType.INHERIT);
+            if(event.getFormat() == EventFormat.HYBRID && accessType == TicketAccessType.INHERIT) {
                 // if the event is hybrid the default is IN_PERSON
-                accessType = TicketCategory.TicketAccessType.IN_PERSON;
+                accessType = TicketAccessType.IN_PERSON;
             }
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
@@ -662,7 +678,7 @@ public class EventManager {
             atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
             requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT),
             requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty),
-            requireNonNullElse(tc.getTicketAccessType(), TicketCategory.TicketAccessType.INHERIT));
+            requireNonNullElse(tc.getTicketAccessType(), TicketAccessType.INHERIT));
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
