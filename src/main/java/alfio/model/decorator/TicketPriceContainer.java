@@ -22,6 +22,7 @@ import alfio.model.Ticket;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -55,14 +56,22 @@ public class TicketPriceContainer implements SummaryPriceContainer {
 
     public int getSummarySrcPriceCts() {
         if(VatStatus.isVatExempt(getVatStatus())) {
-            return unitToCents(getFinalPrice(), getCurrencyCode());
+            return getFinalPriceCts();
         }
         return getSrcPriceCts();
     }
 
     public static TicketPriceContainer from(Ticket t, VatStatus reservationVatStatus, BigDecimal vat, VatStatus eventVatStatus, PromoCodeDiscount discount) {
-        VatStatus vatStatus = Optional.ofNullable(reservationVatStatus).orElse(eventVatStatus);
+        VatStatus vatStatus = ObjectUtils.firstNonNull(t.getVatStatus(), reservationVatStatus, eventVatStatus);
         return new TicketPriceContainer(t, discount, vat, vatStatus);
+    }
+
+    @Override
+    public BigDecimal getTaxablePrice() {
+        if(vatStatus != VatStatus.INCLUDED_EXEMPT && vatStatus != VatStatus.NOT_INCLUDED_EXEMPT) {
+            return SummaryPriceContainer.super.getTaxablePrice();
+        }
+        return BigDecimal.ZERO;
     }
 
     @Override
@@ -71,6 +80,7 @@ public class TicketPriceContainer implements SummaryPriceContainer {
     }
 
     private interface OverridePriceContainer {
+        VatStatus getVatStatus();
         int getVatCts();
         int getFinalPriceCts();
     }

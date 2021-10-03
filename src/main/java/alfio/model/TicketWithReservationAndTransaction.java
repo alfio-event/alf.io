@@ -60,6 +60,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("t_currency_code") String currencyCode,
                                                @Column("t_tags") @Array List<String> ticketTags,
                                                @Column("t_subscription_id") UUID ticketSubscriptionId,
+                                               @Column("t_vat_status") PriceContainer.VatStatus ticketVatStatus,
                                                //
                                                @Column("tr_id") String trId,
                                                @Column("tr_event_id") int eventId,
@@ -125,7 +126,8 @@ public class TicketWithReservationAndTransaction {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
             fullName, firstName, lastName, email, lockedAssignment, userLanguage,
-            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode, ticketTags, ticketSubscriptionId) : null;
+            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode,
+            ticketTags, ticketSubscriptionId, vatStatus) : null;
 
 
         this.ticketReservation = new TicketReservation(trId, validity, trStatus,

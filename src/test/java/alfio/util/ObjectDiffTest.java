@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import alfio.model.PriceContainer;
 import alfio.model.Ticket;
 import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.Test;
@@ -34,12 +35,12 @@ public class ObjectDiffTest {
     Ticket preUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.ACQUIRED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",
         false, "en",
-        0,  0, 0, 0, null, null, List.of(), null);
+        0,  0, 0, 0, null, null, List.of(), null, PriceContainer.VatStatus.INCLUDED);
 
     Ticket postUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.CANCELLED.name(), 42,
         "42", "full name", "full", "name", "email@email.com",
         false, "en",
-        0,  0, 0, 0, null, null, List.of(), null);
+        0,  0, 0, 0, null, null, List.of(), null, PriceContainer.VatStatus.INCLUDED);
 
     @Test
     public void diffMapTest() {

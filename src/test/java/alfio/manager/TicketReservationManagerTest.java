@@ -166,6 +166,8 @@ class TicketReservationManagerTest {
         ticketCategory = mock(TicketCategory.class);
         ticket = mock(Ticket.class);
         when(ticket.getCurrencyCode()).thenReturn("CHF");
+        when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
+        when(ticket.getCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         json = mock(Json.class);
 
@@ -189,6 +191,7 @@ class TicketReservationManagerTest {
         ExtensionManager extensionManager = mock(ExtensionManager.class);
         billingDocumentRepository = mock(BillingDocumentRepository.class);
         when(ticketCategoryRepository.getByIdAndActive(anyInt(), eq(EVENT_ID))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdsAndActive(anyCollection(), eq(EVENT_ID))).thenReturn(List.of(ticketCategory));
         when(ticketCategory.getName()).thenReturn("Category Name");
         when(ticketCategory.getCurrencyCode()).thenReturn(CATEGORY_CURRENCY);
         when(configurationManager.getFor(eq(VAT_NR), any())).thenReturn(new MaybeConfiguration(VAT_NR));
@@ -682,7 +685,6 @@ class TicketReservationManagerTest {
         when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.ACQUIRED);
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
-        when(ticket.getCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticket.getFinalPriceCts()).thenReturn(0);
         var mockExistingConfig = mock(MaybeConfiguration.class);
         when(mockExistingConfig.getValueAsBooleanOrDefault()).thenReturn(true);

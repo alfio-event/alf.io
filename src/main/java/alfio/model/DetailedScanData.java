@@ -41,6 +41,7 @@ public class DetailedScanData {
                             @Column("t_final_price_cts") int ticketFinalPriceCts,
                             @Column("t_vat_cts") int ticketVatCts,
                             @Column("t_discount_cts") int ticketDiscountCts,
+                            @Column("t_vat_status") PriceContainer.VatStatus ticketVatStatus,
 
                             @Column("t_tickets_reservation_id") String ticketsReservationId,
                             @Column("t_full_name") String ticketFullName,
@@ -63,7 +64,8 @@ public class DetailedScanData {
         this.ticket = new Ticket(ticketId, ticketUuid, ticketCreation, ticketCategoryId,
             ticketStatus, ticketEventId, ticketsReservationId, ticketFullName, ticketFirstName,
             ticketLastName, ticketEmail, ticketLockedAssignment, ticketUserLanguage, ticketSrcPriceCts,
-            ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference, currencyCode, ticketTags, ticketSubscriptionId);
+            ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference, currencyCode, ticketTags,
+            ticketSubscriptionId, ticketVatStatus);
         this.sponsorScan = new SponsorScan(scanUserId, scanTimestamp, scanEventId, scanTicketId, notes, leadStatus);
     }
 }

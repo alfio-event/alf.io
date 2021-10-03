@@ -93,7 +93,9 @@ public class TicketReservationManagerUnitTest {
         when(event.event()).thenReturn(Optional.of(event));
         ticket = mock(Ticket.class);
         when(ticket.getCurrencyCode()).thenReturn("CHF");
+        when(ticket.getCategoryId()).thenReturn(1);
         ticketCategory = mock(TicketCategory.class);
+        when(ticketCategory.getId()).thenReturn(1);
         organizationRepository = mock(OrganizationRepository.class);
         ticketCategoryRepository = mock(TicketCategoryRepository.class);
         ticketCategoryDescriptionRepository = mock(TicketCategoryDescriptionRepository.class);
@@ -251,6 +253,8 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedExempt() {
         initReservationWithTicket(1000, true);
+        when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED_EXEMPT);
+        when(ticket.getFinalPriceCts()).thenReturn(909);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(1, summaryRows.size());
         Assertions.assertEquals("9.09", summaryRows.get(0).getPrice());
@@ -258,7 +262,9 @@ public class TicketReservationManagerUnitTest {
 
     @Test
     public void testExtractSummaryVatNotIncludedExempt() {
-        initReservationWithTicket(1000, true);
+        initReservationWithTicket(1000, false);
+        when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT);
+        when(ticket.getFinalPriceCts()).thenReturn(1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(1, summaryRows.size());
         Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
@@ -308,6 +314,7 @@ public class TicketReservationManagerUnitTest {
         when(ticket.getCategoryId()).thenReturn(1);
         when(ticketRepository.findTicketsInReservation(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
         when(ticketCategoryRepository.getByIdAndActive(eq(1), eq(1))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdsAndActive(anyCollection(), eq(1))).thenReturn(List.of(ticketCategory));
         when(reservation.getId()).thenReturn(TICKET_RESERVATION_ID);
     }
 

@@ -158,19 +158,32 @@
             </thead>
             <tbody>
         {{#orderSummary.summary}}
+            {{^taxDetail}}
                 <tr>
                     <td class="text-center">{{amount}}</td>
                     <td>{{name}}</td>
                     <td class="text-right">{{priceBeforeVat}}</td>
                     <td class="text-right">{{subTotalBeforeVat}}</td>
                 </tr>
+            {{/taxDetail}}
+            {{#taxDetail}}
+                <tr>
+                    <th colspan="3">{{#i18n}}reservation-page.vat [{{taxPercentage}}] [{{vatTranslation}}]{{/i18n}}</th>
+                    <th class="text-right">{{subTotalBeforeVat}}</th>
+                </tr>
+            {{/taxDetail}}
         {{/orderSummary.summary}}
+        {{^orderSummary.free}}
+            {{#orderSummary.displayVat}}
+                <tr>
+                    <th colspan="3">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th>
+                    <th class="text-right">{{orderSummary.totalVAT}}</td>
+                </tr>
+            {{/orderSummary.displayVat}}
+        {{/orderSummary.free}}
             </tbody>
             <tfoot>
                 {{^orderSummary.free}}
-                    {{#orderSummary.displayVat}}
-                        <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
-                   	{{/orderSummary.displayVat}}
                     {{^orderSummary.displayVat}}
                         <tr><th colspan="4" class="no-padding">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</th></tr>
                     {{/orderSummary.displayVat}}

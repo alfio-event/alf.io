@@ -292,7 +292,7 @@ public enum TemplateResource {
     private static Ticket sampleTicket(String firstName, String lastName, String email, ZoneId zoneId) {
         return new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)), 0, "ACQUIRED", 0,
             "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", firstName + " " + lastName, firstName, lastName, email, false, "en",
-            1000, 1000, 80, 0, null, "CHF", List.of(), null);
+            1000, 1000, 80, 0, null, "CHF", List.of(), null, PriceContainer.VatStatus.INCLUDED);
     }
 
     private static TicketReservation sampleTicketReservation(ZoneId zoneId) {
@@ -309,7 +309,7 @@ public enum TemplateResource {
         Optional<String> vat = Optional.of("VAT-NR");
         List<TicketWithCategory> tickets = Collections.singletonList(new TicketWithCategory(sampleTicket(event.getZoneId()), sampleCategory(event.getZoneId())));
         OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0, "CHF"),
-            Collections.singletonList(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
+            List.of(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET, null)), false, "10.00", "0.80", false, false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
         String baseUrl = "http://your-domain.tld";
         String reservationUrl = baseUrl + "/reservation-url/";
         String reservationShortId = "597e7e7b";

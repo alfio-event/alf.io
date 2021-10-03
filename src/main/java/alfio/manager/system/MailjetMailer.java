@@ -47,7 +47,7 @@ public class MailjetMailer implements Mailer  {
     @Override
     public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
 
-        var conf = configurationManager.getFor(Set.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO), configurable.getConfigurationLevel());
+        var conf = configurationManager.getFor(EnumSet.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO), configurable.getConfigurationLevel());
 
 
         String apiKeyPublic = conf.get(MAILJET_APIKEY_PUBLIC).getRequiredValue();

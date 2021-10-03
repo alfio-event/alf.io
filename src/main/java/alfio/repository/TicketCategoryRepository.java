@@ -58,6 +58,9 @@ public interface TicketCategoryRepository {
     @Query("select * from ticket_category_with_currency where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
     TicketCategory getByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
 
+    @Query("select * from ticket_category_with_currency where id in (:ids) and event_id = :eventId and tc_status = 'ACTIVE'")
+    List<TicketCategory> getByIdsAndActive(@Bind("ids") Collection<Integer> ids, @Bind("eventId") int eventId);
+
     @Query("select * from ticket_category_with_currency where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
     Optional<TicketCategory> getOptionalByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
 
@@ -157,6 +160,9 @@ public interface TicketCategoryRepository {
 
     @Query("select count(*) from ticket_category where id in (:categoryIds) and src_price_cts > 0")
     Integer countPaidCategoriesInReservation(@Bind("categoryIds") Collection<Integer> categoryIds);
+
+    @Query("select distinct tc.* from ticket_category_with_currency tc join ticket t on t.category_id = tc.id where t.tickets_reservation_id = :reservationId")
+    List<TicketCategory> findCategoriesInReservation(@Bind("reservationId") String reservationId);
 
     @JSONData
     @Query("select metadata from ticket_category where id = :id and event_id = :eventId")

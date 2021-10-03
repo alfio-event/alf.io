@@ -21,6 +21,7 @@ import alfio.model.checkin.OnlineCheckInFullInfo;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.poll.PollParticipant;
 import alfio.model.support.Array;
+import alfio.model.support.EnumTypeAsString;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
@@ -41,7 +42,7 @@ public interface TicketRepository {
     String REVERT_TO_FREE = "update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId";
     String SORT_TICKETS = "order by category_id asc, uuid asc";
 
-    String RESET_TICKET = " TICKETS_RESERVATION_ID = null, FULL_NAME = null, EMAIL_ADDRESS = null, SPECIAL_PRICE_ID_FK = null, LOCKED_ASSIGNMENT = false, USER_LANGUAGE = null, REMINDER_SENT = false, SRC_PRICE_CTS = 0, FINAL_PRICE_CTS = 0, VAT_CTS = 0, DISCOUNT_CTS = 0, FIRST_NAME = null, LAST_NAME = null, EXT_REFERENCE = null, TAGS = array[]::text[] ";
+    String RESET_TICKET = " TICKETS_RESERVATION_ID = null, FULL_NAME = null, EMAIL_ADDRESS = null, SPECIAL_PRICE_ID_FK = null, LOCKED_ASSIGNMENT = false, USER_LANGUAGE = null, REMINDER_SENT = false, SRC_PRICE_CTS = 0, FINAL_PRICE_CTS = 0, VAT_CTS = 0, DISCOUNT_CTS = 0, FIRST_NAME = null, LAST_NAME = null, EXT_REFERENCE = null, TAGS = array[]::text[], VAT_STATUS = null ";
     String RELEASE_TICKET_QUERY = "update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status in('ACQUIRED', 'PENDING', 'TO_BE_PAID') and tickets_reservation_id = :reservationId and event_id = :eventId";
 
 
@@ -108,11 +109,22 @@ public interface TicketRepository {
     @Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', category_id = :categoryId, user_language = :userLanguage, src_price_cts = :srcPriceCts, currency_code = :currencyCode where id in (:reservedForUpdate)")
     int reserveTickets(@Bind("reservationId") String reservationId, @Bind("reservedForUpdate") List<Integer> reservedForUpdate, @Bind("categoryId") int categoryId, @Bind("userLanguage") String userLanguage, @Bind("srcPriceCts") int srcPriceCts, @Bind("currencyCode") String currencyCode);
 
-    @Query(type = QueryType.TEMPLATE, value = "update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId, user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts, currency_code = :currencyCode where id = :ticketId")
+    @Query(type = QueryType.TEMPLATE,
+        value = "update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
+            " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts," +
+            " currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS where id = :ticketId")
     String batchReserveTicket();
 
-    @Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId, user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts, currency_code = :currencyCode where id = :ticketId")
-    void reserveTicket(@Bind("reservationId")String transactionId, @Bind("ticketId") int ticketId, @Bind("specialCodeId") int specialCodeId, @Bind("userLanguage") String userLanguage, @Bind("srcPriceCts") int srcPriceCts, @Bind("currencyCode") String currencyCode);
+    @Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
+        " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts, currency_code = :currencyCode," +
+        " vat_status = :vatStatus::VAT_STATUS where id = :ticketId")
+    void reserveTicket(@Bind("reservationId")String transactionId,
+                       @Bind("ticketId") int ticketId,
+                       @Bind("specialCodeId") int specialCodeId,
+                       @Bind("userLanguage") String userLanguage,
+                       @Bind("srcPriceCts") int srcPriceCts,
+                       @Bind("currencyCode") String currencyCode,
+                       @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus);
 
     @Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
     int updateTicketsStatusWithReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);
@@ -123,11 +135,34 @@ public interface TicketRepository {
     @Query("update ticket set status = 'INVALIDATED' where id in (:ids)")
     int invalidateTickets(@Bind("ids") List<Integer> ids);
 
-    @Query("update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode where event_id = :eventId and category_id = :categoryId")
-    int updateTicketPrice(@Bind("categoryId") int categoryId, @Bind("eventId") int eventId, @Bind("srcPriceCts") int srcPriceCts, @Bind("finalPriceCts") int finalPriceCts, @Bind("vatCts") int vatCts, @Bind("discountCts") int discountCts, @Bind("currencyCode") String currencyCode);
+    @Query("update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts," +
+        " vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, vat_status = null" +
+        " where event_id = :eventId and category_id = :categoryId and status = 'FREE'")
+    int updateTicketPrice(@Bind("categoryId") int categoryId,
+                          @Bind("eventId") int eventId,
+                          @Bind("srcPriceCts") int srcPriceCts,
+                          @Bind("finalPriceCts") int finalPriceCts,
+                          @Bind("vatCts") int vatCts,
+                          @Bind("discountCts") int discountCts,
+                          @Bind("currencyCode") String currencyCode);
 
-    @Query("update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode where event_id = :eventId and category_id = :categoryId and id in(:ids)")
-    int updateTicketPrice(@Bind("ids") List<Integer> ids, @Bind("categoryId") int categoryId, @Bind("eventId") int eventId, @Bind("srcPriceCts") int srcPriceCts, @Bind("finalPriceCts") int finalPriceCts, @Bind("vatCts") int vatCts, @Bind("discountCts") int discountCts, @Bind("currencyCode") String currencyCode);
+    @Query("update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts," +
+        " vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode," +
+        " vat_status = :vatStatus::VAT_STATUS where event_id = :eventId and category_id = :categoryId and id in(:ids)")
+    int updateTicketPrice(@Bind("ids") List<Integer> ids,
+                          @Bind("categoryId") int categoryId,
+                          @Bind("eventId") int eventId,
+                          @Bind("srcPriceCts") int srcPriceCts,
+                          @Bind("finalPriceCts") int finalPriceCts,
+                          @Bind("vatCts") int vatCts,
+                          @Bind("discountCts") int discountCts,
+                          @Bind("currencyCode") String currencyCode,
+                          @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus);
+
+    @Query(type = QueryType.TEMPLATE, value = "update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts," +
+        " vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode," +
+        " vat_status = :vatStatus::VAT_STATUS where event_id = :eventId and category_id = :categoryId and tickets_reservation_id = :reservationId")
+    String updateTicketPriceForCategoryInReservation();
 
     @Query("update ticket set tags = :tags::text[] where id in(:ids)")
     int updateTicketTags(@Bind("ids") List<Integer> ticketIds, @Bind("tags") @Array List<String> tags);
@@ -218,7 +253,7 @@ public interface TicketRepository {
         " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
         " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
         " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
-        " t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, t.tags t_tags, t.subscription_id_fk t_subscription_id, " +
+        " t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, t.tags t_tags, t.subscription_id_fk t_subscription_id, t.vat_status t_vat_status, " +
         " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
         " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, " +
         " tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, " +
@@ -374,4 +409,8 @@ public interface TicketRepository {
 
     @Query("update ticket set metadata = :metadata::jsonb where id = :ticketId")
     int updateTicketMetadata(@Bind("ticketId") int ticketId, @JSONData @Bind("metadata") TicketMetadataContainer ticketMetadataContainer);
+
+    @Query("update ticket set vat_status = :vatStatus::VAT_STATUS where tickets_reservation_id = :reservationId")
+    int updateVatStatusForReservation(@Bind("reservationId") String reservationId, @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus);
+
 }

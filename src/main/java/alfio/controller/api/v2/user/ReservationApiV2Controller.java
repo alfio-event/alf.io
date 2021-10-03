@@ -27,7 +27,6 @@ import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationCodeForm;
-import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.CustomBindingResult;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
@@ -39,18 +38,15 @@ import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.manager.user.PublicUserManager;
-import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.TicketCategory.TicketAccessType;
 import alfio.model.PurchaseContext.PurchaseContextType;
-import alfio.model.extension.AdditionalInfoItem;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionUsageExceeded;
 import alfio.model.subscription.SubscriptionUsageExceededForEvent;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
-import alfio.model.user.AdditionalInfoWithLabel;
-import alfio.model.user.PublicUserProfile;
 import alfio.repository.*;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
@@ -62,6 +58,8 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.Assert;
@@ -74,18 +72,20 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.unitToCents;
-import static java.util.Objects.requireNonNullElse;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -110,15 +110,12 @@ public class ReservationApiV2Controller {
     private final EuVatChecker vatChecker;
     private final RecaptchaService recaptchaService;
     private final BookingInfoTicketLoader bookingInfoTicketLoader;
-    private final PromoCodeDiscountRepository promoCodeDiscountRepository;
-    private final AdditionalServiceItemRepository additionalServiceItemRepository;
-    private final AdditionalServiceRepository additionalServiceRepository;
     private final BillingDocumentManager billingDocumentManager;
     private final PurchaseContextManager purchaseContextManager;
     private final SubscriptionRepository subscriptionRepository;
     private final TicketRepository ticketRepository;
-    private final UserManager userManager;
     private final PublicUserManager publicUserManager;
+    private final ReverseChargeManager reverseChargeManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -146,7 +143,7 @@ public class ReservationApiV2Controller {
             boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
             //
 
-            var ticketsInfo = purchaseContext.event().map(event -> {
+            var ticketsInfo = purchaseContext.event().filter(e -> !ticketIds.isEmpty()).map(event -> {
                 var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
                     .stream()
                     .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
@@ -411,7 +408,9 @@ public class ReservationApiV2Controller {
             ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), purchaseContext.getVatStatus(),
                 reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
             if(contactAndTicketsForm.isBusiness()) {
-                checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
+                reverseChargeManager.checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
+            } else if(reservationCost.getPriceWithVAT() > 0) {
+                reverseChargeManager.resetVat(purchaseContext, reservationId);
             }
 
             //persist data
@@ -504,59 +503,6 @@ public class ReservationApiV2Controller {
                 }
             });
         }
-    }
-
-    private void checkAndApplyVATRules(PurchaseContext purchaseContext, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult) {
-        // VAT handling
-        String country = contactAndTicketsForm.getVatCountryCode();
-
-        // validate VAT presence if EU mode is enabled
-        if (vatChecker.isReverseChargeEnabledFor(purchaseContext) && (country == null || isEUCountry(country))) {
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
-        }
-
-        try {
-            var optionalReservation = ticketReservationRepository.findOptionalReservationById(reservationId);
-            Optional<VatDetail> vatDetail = optionalReservation
-                .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(purchaseContext.getVatStatus()))
-                .filter(e -> vatChecker.isReverseChargeEnabledFor(purchaseContext))
-                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, purchaseContext));
-
-
-            if(vatDetail.isPresent()) {
-                var vatValidation = vatDetail.get();
-                if (!vatValidation.isValid()) {
-                    bindingResult.rejectValue("vatNr", "error.STEP_2_INVALID_VAT");
-                } else {
-                    var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
-                    var currencyCode = reservation.getCurrencyCode();
-                    PriceContainer.VatStatus vatStatus = determineVatStatus(purchaseContext.getVatStatus(), vatValidation.isVatExempt());
-                    updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, country, trimToNull(vatValidation.getVatNr()), reservation, vatStatus);
-                    vatChecker.logSuccessfulValidation(vatValidation, reservationId, purchaseContext.event().map(Event::getId).orElse(null));
-                }
-            } else if(optionalReservation.isPresent() && contactAndTicketsForm.isItalyEInvoicingSplitPayment()) {
-                var reservation = optionalReservation.get();
-                var vatStatus = purchaseContext.getVatStatus() == INCLUDED ? INCLUDED_NOT_CHARGED : NOT_INCLUDED_NOT_CHARGED;
-                updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, vatStatus);
-            }
-        } catch (IllegalStateException ise) {//vat checker failure
-            bindingResult.rejectValue("vatNr", "error.vatVIESDown");
-        }
-    }
-
-    private void updateBillingData(String reservationId, ContactAndTicketsForm contactAndTicketsForm, PurchaseContext purchaseContext, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
-        var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
-        var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservation.getId());
-        var tickets = ticketReservationManager.findTicketsInReservation(reservation.getId());
-        var additionalServices = purchaseContext.event().map(event -> additionalServiceRepository.loadAllForEvent(event.getId())).orElse(List.of());
-        var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
-        var appliedSubscription = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId);
-        var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServices, purchaseContext, subscriptions, appliedSubscription);
-        var currencyCode = reservation.getCurrencyCode();
-        ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
-            unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
-            reservation.getCurrencyCode(), vatNr,
-            country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
     }
 
     private Optional<Pair<PurchaseContext, TicketReservation>> getReservation(String reservationId) {
@@ -813,18 +759,6 @@ public class ReservationApiV2Controller {
         }
         return res;
     }
-
-    private boolean isEUCountry(String countryCode) {
-        return configurationManager.getForSystem(EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
-    }
-
-    private static PriceContainer.VatStatus determineVatStatus(PriceContainer.VatStatus current, boolean isVatExempt) {
-        if(!isVatExempt) {
-            return current;
-        }
-        return current == NOT_INCLUDED ? NOT_INCLUDED_EXEMPT : INCLUDED_EXEMPT;
-    }
-
 
     private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, String recaptchaResponse, HttpServletRequest request, Configurable configurable) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
