@@ -47,7 +47,7 @@ public class MailjetMailer implements Mailer  {
     @Override
     public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
 
-        var conf = configurationManager.getFor(Set.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO), configurable.getConfigurationLevel());
+        var conf = configurationManager.getFor(EnumSet.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO), configurable.getConfigurationLevel());
 
 
         String apiKeyPublic = conf.get(MAILJET_APIKEY_PUBLIC).getRequiredValue();
@@ -85,18 +85,18 @@ public class MailjetMailer implements Mailer  {
             .POST(HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(mailPayload)))
             .build();
 
-//        try {
-//            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-//            if(!HttpUtils.callSuccessful(response)) {
-//                log.warn("sending email was not successful:" + response);
-//                throw new IllegalStateException("Attempt to send a message failed. Result is: "+response.statusCode());
-//            }
-//        } catch (IOException e) {
-//            log.warn("error while sending email", e);
-//        } catch (InterruptedException e) {
-//            Thread.currentThread().interrupt();
-//            log.warn("error while sending email", e);
-//        }
+        try {
+            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            if(!HttpUtils.callSuccessful(response)) {
+                log.warn("sending email was not successful:" + response);
+                throw new IllegalStateException("Attempt to send a message failed. Result is: "+response.statusCode());
+            }
+        } catch (IOException e) {
+            log.warn("error while sending email", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("error while sending email", e);
+        }
     }
 
 
