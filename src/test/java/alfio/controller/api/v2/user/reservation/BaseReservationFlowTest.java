@@ -497,6 +497,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
             assertEventLogged(extLogs, RESERVATION_CANCELLED, 2);
 
+            assertEquals(0, jdbcTemplate.queryForObject("select count(*) from ticket where status = 'FREE' and final_price_cts > 0", Map.of(), Integer.class));
+
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(context.event.getId()));
         }
