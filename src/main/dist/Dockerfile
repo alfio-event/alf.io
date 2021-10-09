@@ -5,9 +5,9 @@
 # - https://august.nagro.us/small-java.html
 #
 
-FROM azul/zulu-openjdk-alpine:14.0.1 as zulu
+FROM azul/zulu-openjdk-alpine:15.0.2 as zulu
 
-RUN $JAVA_HOME/bin/jlink --compress=1 --strip-debug --no-header-files --no-man-pages \
+RUN $JAVA_HOME/bin/jlink --compress=1 --strip-java-debug-attributes --no-header-files --no-man-pages \
     --module-path $JAVA_HOME/jmods \
     # see https://github.com/ben-manes/caffeine/issues/273
     # see https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html#GUID-9224B90B-7B2F-41F9-BB96-C0A1B6A0FEAA
