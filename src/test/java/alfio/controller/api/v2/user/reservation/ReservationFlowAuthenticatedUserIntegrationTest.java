@@ -168,7 +168,7 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         publicUserName = UUID.randomUUID().toString();
         var userIdContainer = userRepository.create(publicUserName, UUID.randomUUID().toString(), "First", "Last", "email@example.org", true, User.Type.PUBLIC, null, "");
-        return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner", null, null, publicUserName, userIdContainer.getKey());
+        return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner", null, null, publicUserName, userIdContainer.getKey(), true);
     }
 
     @BeforeEach

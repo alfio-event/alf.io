@@ -31,17 +31,18 @@ class ReservationFlowContext {
     final String subscriptionPin;
     final String publicUsername;
     final Integer publicUserId;
+    final boolean checkInStationsEnabled;
     private final Authentication authentication;
 
     ReservationFlowContext(Event event, String userId) {
-        this(event, userId, null, null, null, null);
+        this(event, userId, null, null, null, null, true);
     }
 
     ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin) {
-        this(event, userId, subscriptionId, subscriptionPin, null, null);
+        this(event, userId, subscriptionId, subscriptionPin, null, null, true);
     }
 
-    ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin, String publicUsername, Integer publicUserId) {
+    ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin, String publicUsername, Integer publicUserId, boolean checkInStationsEnabled) {
         this.event = event;
         this.userId = userId;
         this.subscriptionId = subscriptionId;
@@ -53,6 +54,7 @@ class ReservationFlowContext {
         } else {
             this.authentication = null;
         }
+        this.checkInStationsEnabled = checkInStationsEnabled;
     }
 
     Principal getPublicUser() {

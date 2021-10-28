@@ -1055,108 +1055,113 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEventLogged(extLogs, TICKET_CHECKED_IN, 2);
 
                 var offlineIdentifiers = checkInApiController.getOfflineIdentifiers(context.event.getShortName(), 0L, new MockHttpServletResponse(), principal);
-                assertFalse(offlineIdentifiers.isEmpty(), "Alf.io-PI integration must be enabled by default");
 
-                //disable Alf.io-PI
-                configurationRepository.insert(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "false", null);
-                offlineIdentifiers = checkInApiController.getOfflineIdentifiers(context.event.getShortName(), 0L, new MockHttpServletResponse(), principal);
-                assertTrue(offlineIdentifiers.isEmpty());
+                if(context.checkInStationsEnabled) {
+                    assertFalse(offlineIdentifiers.isEmpty(), "Alf.io-PI integration must be enabled by default");
 
-                //re-enable Alf.io-PI
-                configurationRepository.insertEventLevel(context.event.getOrganizationId(), context.event.getId(), ConfigurationKeys.OFFLINE_CHECKIN_ENABLED.name(), "true", null);
-                configurationRepository.update(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "true");
-                offlineIdentifiers = checkInApiController.getOfflineIdentifiers(context.event.getShortName(), 0L, new MockHttpServletResponse(), principal);
-                assertFalse(offlineIdentifiers.isEmpty());
-                // download encrypted ticket data
-                TicketWithCategory ticketwc = testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, false, context);
+                    //disable Alf.io-PI
+                    configurationRepository.insert(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "false", null);
+                    offlineIdentifiers = checkInApiController.getOfflineIdentifiers(context.event.getShortName(), 0L, new MockHttpServletResponse(), principal);
+                    assertTrue(offlineIdentifiers.isEmpty());
 
-                // insert a poll and download again encrypted data. This time we expect a pin to be present because we haven't specified a tag
-                var rowCountAndKey = pollRepository.insert(Map.of("en", "test poll"), null, List.of(), 0, context.event.getId(), context.event.getOrganizationId());
-                testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, true, context);
+                    //re-enable Alf.io-PI
+                    configurationRepository.insertEventLevel(context.event.getOrganizationId(), context.event.getId(), ConfigurationKeys.OFFLINE_CHECKIN_ENABLED.name(), "true", null);
+                    configurationRepository.update(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "true");
+                    offlineIdentifiers = checkInApiController.getOfflineIdentifiers(context.event.getShortName(), 0L, new MockHttpServletResponse(), principal);
+                    assertFalse(offlineIdentifiers.isEmpty());
+                    // download encrypted ticket data
+                    TicketWithCategory ticketwc = testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, false, context);
 
-                // we define a tag for the poll, this time we won't have a pin in the result
-                pollRepository.update(Map.of("en", "test poll"), null, List.of("blabla"), 0, rowCountAndKey.getKey(), context.event.getId());
-                testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, false, context);
+                    // insert a poll and download again encrypted data. This time we expect a pin to be present because we haven't specified a tag
+                    var rowCountAndKey = pollRepository.insert(Map.of("en", "test poll"), null, List.of(), 0, context.event.getId(), context.event.getOrganizationId());
+                    testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, true, context);
 
-                // now we add a matching tag to the ticket. As a result, the pin must be included in the result
-                ticketRepository.updateTicketTags(List.of(ticketwc.getId()), List.of("blabla"));
-                testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, true, context);
+                    // we define a tag for the poll, this time we won't have a pin in the result
+                    pollRepository.update(Map.of("en", "test poll"), null, List.of("blabla"), 0, rowCountAndKey.getKey(), context.event.getId());
+                    testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, false, context);
 
-                //
+                    // now we add a matching tag to the ticket. As a result, the pin must be included in the result
+                    ticketRepository.updateTicketTags(List.of(ticketwc.getId()), List.of("blabla"));
+                    testEncryptedCheckInPayload(principal, ticketAndcheckInResult, offlineIdentifiers, true, context);
 
-                // check register sponsor scan success flow
-                assertTrue(attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
-                assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal).getBody().getResult().getStatus());
-                assertEquals(1, attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
+                    //
 
-                // check export
-                MockHttpServletResponse response = new MockHttpServletResponse();
-                eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
-                response.getContentAsString();
-                CSVReader csvReader = new CSVReader(new StringReader(response.getContentAsString()));
-                List<String[]> csvSponsorScan = csvReader.readAll();
-                assertEquals(2, csvSponsorScan.size());
-                assertEquals("sponsor", csvSponsorScan.get(1)[0]);
-                assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
-                assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
-                assertEquals("", csvSponsorScan.get(1)[8]);
-                assertEquals(SponsorScan.LeadStatus.WARM.name(), csvSponsorScan.get(1)[9]);
-                //
+                    // check register sponsor scan success flow
+                    assertTrue(attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal).getBody().getResult().getStatus());
+                    assertEquals(1, attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
 
-                // check update notes
-                assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal).getBody().getResult().getStatus());
-                assertEquals(1, attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
-                response = new MockHttpServletResponse();
-                eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
-                response.getContentAsString();
-                csvReader = new CSVReader(new StringReader(response.getContentAsString()));
-                csvSponsorScan = csvReader.readAll();
-                assertEquals(2, csvSponsorScan.size());
-                assertEquals("sponsor", csvSponsorScan.get(1)[0]);
-                assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
-                assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
-                assertEquals("this is a very good lead!", csvSponsorScan.get(1)[8]);
-                assertEquals(SponsorScan.LeadStatus.HOT.name(), csvSponsorScan.get(1)[9]);
+                    // check export
+                    MockHttpServletResponse response = new MockHttpServletResponse();
+                    eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
+                    response.getContentAsString();
+                    CSVReader csvReader = new CSVReader(new StringReader(response.getContentAsString()));
+                    List<String[]> csvSponsorScan = csvReader.readAll();
+                    assertEquals(2, csvSponsorScan.size());
+                    assertEquals("sponsor", csvSponsorScan.get(1)[0]);
+                    assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
+                    assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
+                    assertEquals("", csvSponsorScan.get(1)[8]);
+                    assertEquals(SponsorScan.LeadStatus.WARM.name(), csvSponsorScan.get(1)[9]);
+                    //
 
-                // #742 - test multiple check-ins
+                    // check update notes
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal).getBody().getResult().getStatus());
+                    assertEquals(1, attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
+                    response = new MockHttpServletResponse();
+                    eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
+                    response.getContentAsString();
+                    csvReader = new CSVReader(new StringReader(response.getContentAsString()));
+                    csvSponsorScan = csvReader.readAll();
+                    assertEquals(2, csvSponsorScan.size());
+                    assertEquals("sponsor", csvSponsorScan.get(1)[0]);
+                    assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
+                    assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
+                    assertEquals("this is a very good lead!", csvSponsorScan.get(1)[8]);
+                    assertEquals(SponsorScan.LeadStatus.HOT.name(), csvSponsorScan.get(1)[9]);
 
-                // since on the badge we don't have the full ticket info, we will pass in "null" as scanned code
-                CheckInApiController.TicketCode badgeScan = new CheckInApiController.TicketCode();
-                badgeScan.setCode(null);
-                ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
-                // ONCE_PER_DAY is disabled by default, therefore we get an error
-                assertEquals(CheckInStatus.EMPTY_TICKET_CODE, ticketAndcheckInResult.getResult().getStatus());
-                // enable ONCE_PER_DAYFalse
-                TicketCategory category = ticketCategoryRepository.getById(ticketwc.getCategoryId());
-                ticketCategoryRepository.update(category.getId(), category.getName(), category.getInception(context.event.getZoneId()), category.getExpiration(context.event.getZoneId()), category.getMaxTickets(), category.isAccessRestricted(),
-                    MonetaryUtil.unitToCents(category.getPrice(), category.getCurrencyCode()), category.getCode(), category.getValidCheckInFrom(), category.getValidCheckInTo(), category.getTicketValidityStart(), category.getTicketValidityEnd(),
-                    TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY,
-                    category.getTicketAccessType()
-                );
-                ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
-                // the event start date is in one week, so we expect an error here
-                assertEquals(CheckInStatus.INVALID_TICKET_CATEGORY_CHECK_IN_DATE, ticketAndcheckInResult.getResult().getStatus());
+                    // #742 - test multiple check-ins
 
-                eventRepository.updateHeader(context.event.getId(), context.event.getDisplayName(), context.event.getWebsiteUrl(), context.event.getExternalUrl(), context.event.getTermsAndConditionsUrl(), context.event.getPrivacyPolicyUrl(), context.event.getImageUrl(),
-                    context.event.getFileBlobId(), context.event.getLocation(), context.event.getLatitude(), context.event.getLongitude(), context.event.now(clockProvider).minusSeconds(1), context.event.getEnd(), context.event.getTimeZone(),
-                    context.event.getOrganizationId(), context.event.getLocales(), context.event.getFormat());
+                    // since on the badge we don't have the full ticket info, we will pass in "null" as scanned code
+                    CheckInApiController.TicketCode badgeScan = new CheckInApiController.TicketCode();
+                    badgeScan.setCode(null);
+                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                    // ONCE_PER_DAY is disabled by default, therefore we get an error
+                    assertEquals(CheckInStatus.EMPTY_TICKET_CODE, ticketAndcheckInResult.getResult().getStatus());
+                    // enable ONCE_PER_DAYFalse
+                    TicketCategory category = ticketCategoryRepository.getById(ticketwc.getCategoryId());
+                    ticketCategoryRepository.update(category.getId(), category.getName(), category.getInception(context.event.getZoneId()), category.getExpiration(context.event.getZoneId()), category.getMaxTickets(), category.isAccessRestricted(),
+                        MonetaryUtil.unitToCents(category.getPrice(), category.getCurrencyCode()), category.getCode(), category.getValidCheckInFrom(), category.getValidCheckInTo(), category.getTicketValidityStart(), category.getTicketValidityEnd(),
+                        TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY,
+                        category.getTicketAccessType()
+                    );
+                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                    // the event start date is in one week, so we expect an error here
+                    assertEquals(CheckInStatus.INVALID_TICKET_CATEGORY_CHECK_IN_DATE, ticketAndcheckInResult.getResult().getStatus());
 
-                ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
-                // we have already scanned the ticket today, so we expect to receive a warning
-                assertEquals(CheckInStatus.BADGE_SCAN_ALREADY_DONE, ticketAndcheckInResult.getResult().getStatus());
-                assertEquals(1, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));
+                    eventRepository.updateHeader(context.event.getId(), context.event.getDisplayName(), context.event.getWebsiteUrl(), context.event.getExternalUrl(), context.event.getTermsAndConditionsUrl(), context.event.getPrivacyPolicyUrl(), context.event.getImageUrl(),
+                        context.event.getFileBlobId(), context.event.getLocation(), context.event.getLatitude(), context.event.getLongitude(), context.event.now(clockProvider).minusSeconds(1), context.event.getEnd(), context.event.getTimeZone(),
+                        context.event.getOrganizationId(), context.event.getLocales(), context.event.getFormat());
 
-                // move the scans to yesterday
-                // we expect 3 rows because:
-                // 1 check-in
-                // 1 revert
-                // 1 badge scan
-                assertEquals(3, jdbcTemplate.update("update auditing set event_time = event_time - interval '1 day' where reservation_id = :reservationId and event_type in ('BADGE_SCAN', 'CHECK_IN')", Map.of("reservationId", reservationId)));
+                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                    // we have already scanned the ticket today, so we expect to receive a warning
+                    assertEquals(CheckInStatus.BADGE_SCAN_ALREADY_DONE, ticketAndcheckInResult.getResult().getStatus());
+                    assertEquals(1, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));
 
-                ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
-                // we now expect to receive a successful message
-                assertEquals(CheckInStatus.BADGE_SCAN_SUCCESS, ticketAndcheckInResult.getResult().getStatus());
-                assertEquals(2, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));
+                    // move the scans to yesterday
+                    // we expect 3 rows because:
+                    // 1 check-in
+                    // 1 revert
+                    // 1 badge scan
+                    assertEquals(3, jdbcTemplate.update("update auditing set event_time = event_time - interval '1 day' where reservation_id = :reservationId and event_type in ('BADGE_SCAN', 'CHECK_IN')", Map.of("reservationId", reservationId)));
+
+                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                    // we now expect to receive a successful message
+                    assertEquals(CheckInStatus.BADGE_SCAN_SUCCESS, ticketAndcheckInResult.getResult().getStatus());
+                    assertEquals(2, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));
+                } else {
+                    assertTrue(offlineIdentifiers.isEmpty(), "Alf.io-PI integration must be disabled");
+                }
             }
             performAdditionalTests(context);
             eventManager.deleteEvent(context.event.getId(), context.userId);

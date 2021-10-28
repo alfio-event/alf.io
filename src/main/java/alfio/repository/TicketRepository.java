@@ -273,9 +273,11 @@ public interface TicketRepository {
 
     @Query("select t.id " +
             " from ticket t " +
+            " join ticket_category tc on t.category_id = tc.id" +
             " left outer join latest_ticket_update ltu on t.id = ltu.ticket_id and ltu.event_id = :eventId " +
-            " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null and (coalesce(ltu.last_update, t.creation) > :changedSince)  order by t.id asc")
-    List<Integer> findAllAssignedByEventId(@Bind("eventId") int eventId, @Bind("changedSince") Date changedSince);
+            " where t.event_id = :eventId and tc.ticket_access_type <> 'ONLINE'" +
+            " and t.full_name is not null and t.email_address is not null and (coalesce(ltu.last_update, t.creation) > :changedSince)  order by t.id asc")
+    List<Integer> findAllAssignedByEventIdForCheckIn(@Bind("eventId") int eventId, @Bind("changedSince") Date changedSince);
 
     @Query("select * from reservation_and_ticket_and_tx where t_id is not null and t_status in (" + CONFIRMED + ") and t_event_id = :eventId order by tr_confirmation_ts, t_id")
     List<TicketWithReservationAndTransaction> findAllConfirmedForCSV(@Bind("eventId") int eventId);

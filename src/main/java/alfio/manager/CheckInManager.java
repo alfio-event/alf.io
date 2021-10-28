@@ -356,14 +356,14 @@ public class CheckInManager {
         return Optional.ofNullable(ev)
             .filter(EventManager.checkOwnership(username, organizationRepository))
             .filter(isOfflineCheckInEnabled())
-            .map(event -> ticketRepository.findAllAssignedByEventId(event.getId(), changedSince))
+            .map(event -> ticketRepository.findAllAssignedByEventIdForCheckIn(event.getId(), changedSince))
             .orElseGet(Collections::emptyList);
     }
 
     public List<Integer> getAttendeesIdentifiers(int eventId, Date changedSince, String username) {
         return eventRepository.findOptionalById(eventId)
             .filter(EventManager.checkOwnership(username, organizationRepository))
-            .map(event -> ticketRepository.findAllAssignedByEventId(event.getId(), changedSince))
+            .map(event -> ticketRepository.findAllAssignedByEventIdForCheckIn(event.getId(), changedSince))
             .orElse(Collections.emptyList());
     }
 
