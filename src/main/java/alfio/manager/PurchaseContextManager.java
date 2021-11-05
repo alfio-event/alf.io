@@ -16,10 +16,13 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.model.PurchaseContext;
 import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketReservationRepository;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +31,7 @@ import java.util.UUID;
 
 @Transactional(readOnly = true)
 @Component
+@Log4j2
 public class PurchaseContextManager {
 
     private final EventRepository eventRepository;
@@ -62,5 +66,24 @@ public class PurchaseContextManager {
         return ticketReservationRepository.findEventIdFor(reservationId).map(eventRepository::findById)
             .map(PurchaseContext.class::cast)
             .or(() -> subscriptionRepository.findDescriptorByReservationId(reservationId));
+    }
+
+    public Optional<ConfigurationLevel> detectConfigurationLevel(String eventShortName, String subscriptionId) {
+        if (StringUtils.isAllEmpty(eventShortName, subscriptionId)) {
+            return Optional.empty();
+        }
+
+        try {
+            if (StringUtils.isNotEmpty(eventShortName)) {
+                return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName)
+                    .map(ConfigurationLevel::event);
+            }
+
+            return subscriptionRepository.findOrganizationIdForSubscription(UUID.fromString(subscriptionId))
+                .map(ConfigurationLevel::organization);
+        } catch (Exception ex) {
+            log.warn("error while loading ConfigurationLevel", ex);
+            return Optional.empty();
+        }
     }
 }
