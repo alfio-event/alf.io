@@ -45,6 +45,7 @@ import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.extension.CustomEmailText;
 import alfio.model.group.LinkedGroup;
+import alfio.model.metadata.TicketMetadata;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
@@ -338,7 +339,7 @@ public class TicketReservationManager {
 
         int ticketCount = list
             .stream()
-            .map(TicketReservationWithOptionalCodeModification::getAmount)
+            .map(TicketReservationWithOptionalCodeModification::getQuantity)
             .mapToInt(Integer::intValue).sum();
 
         // apply valid additional service with supplement policy mandatory one for ticket
@@ -383,7 +384,7 @@ public class TicketReservationManager {
             return Optional.empty();
         }
 
-        var newCodeOptional = extensionManager.handleDynamicDiscount(event, list.stream().collect(groupingBy(TicketReservationWithOptionalCodeModification::getTicketCategoryId, summingLong(TicketReservationWithOptionalCodeModification::getAmount))), reservationId);
+        var newCodeOptional = extensionManager.handleDynamicDiscount(event, list.stream().collect(groupingBy(TicketReservationWithOptionalCodeModification::getTicketCategoryId, summingLong(TicketReservationWithOptionalCodeModification::getQuantity))), reservationId);
         if(newCodeOptional.isPresent()) {
             var newCode = newCodeOptional.get();
             int result = promoCodeDiscountRepository.addPromoCodeIfNotExists(newCode.getPromoCode(), event.getId(),
@@ -423,7 +424,7 @@ public class TicketReservationManager {
         }
 
         List<Integer> reservedForUpdate = reserveTickets(event.getId(), ticketReservation, forWaitingQueue ? asList(TicketStatus.RELEASED, TicketStatus.PRE_RESERVED) : singletonList(TicketStatus.FREE));
-        int requested = ticketReservation.getAmount();
+        int requested = ticketReservation.getQuantity();
         if (reservedForUpdate.size() != requested) {
             throw new NotEnoughTicketsException();
         }
@@ -435,29 +436,47 @@ public class TicketReservationManager {
             }
 
             AtomicInteger counter = new AtomicInteger(0);
-            var ticketsAndSpecialPrices = specialPrices.stream().map(sp -> Pair.of(reservedForUpdate.get(counter.getAndIncrement()), sp)).collect(Collectors.toList());
+            List<Map<String, String>> ticketMetadata = requireNonNullElse(ticketReservation.getMetadata(), List.of());
+            var ticketsAndSpecialPrices = specialPrices.stream()
+                .map(sp -> {
+                    int index = counter.getAndIncrement();
+                    return Triple.of(reservedForUpdate.get(index), sp, getAtIndexOrNull(ticketMetadata, index));
+                }).collect(Collectors.toList());
 
             if(specialPrices.size() == 1) {
                 var ticketId = reservedForUpdate.get(0);
                 var sp = specialPrices.get(0);
                 var accessCodeId = accessCodeOrDiscount != null && accessCodeOrDiscount.getHiddenCategoryId() != null ? accessCodeOrDiscount.getId() : null;
+                TicketMetadata metadata = null;
+                var attributes = getAtIndexOrNull(ticketMetadata, 0);
+                if(attributes != null) {
+                    metadata = new TicketMetadata(null, null, attributes);
+                }
                 ticketRepository.reserveTicket(reservationId,
                     ticketId,
                     sp.getId(),
                     locale.getLanguage(),
                     category.getSrcPriceCts(),
                     category.getCurrencyCode(),
-                    event.getVatStatus());
+                    event.getVatStatus(),
+                    metadata);
                 specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), null, accessCodeId);
             } else {
                 jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicket(), ticketsAndSpecialPrices.stream().map(
-                    pair -> new MapSqlParameterSource("reservationId", reservationId)
-                        .addValue("ticketId", pair.getKey())
-                        .addValue("specialCodeId", pair.getValue().getId())
-                        .addValue("userLanguage", locale.getLanguage())
-                        .addValue("srcPriceCts", category.getSrcPriceCts())
-                        .addValue("currencyCode", category.getCurrencyCode())
-                        .addValue("vatStatus", event.getVatStatus().toString())
+                    triple -> {
+                        TicketMetadata metadata = null;
+                        if(triple.getRight() != null) {
+                            metadata = new TicketMetadata(null, null, triple.getRight());
+                        }
+                        return new MapSqlParameterSource("reservationId", reservationId)
+                            .addValue("ticketId", triple.getLeft())
+                            .addValue("specialCodeId", triple.getMiddle().getId())
+                            .addValue("userLanguage", locale.getLanguage())
+                            .addValue("srcPriceCts", category.getSrcPriceCts())
+                            .addValue("currencyCode", category.getCurrencyCode())
+                            .addValue("ticketMetadata", json.asJsonString(metadata))
+                            .addValue("vatStatus", event.getVatStatus().toString());
+                    }
                 ).toArray(MapSqlParameterSource[]::new));
                 specialPriceRepository.batchUpdateStatus(
                     specialPrices.stream().map(SpecialPrice::getId).collect(toList()),
@@ -482,13 +501,20 @@ public class TicketReservationManager {
             priceContainer.getVatStatus());
     }
 
+    private static <T> T getAtIndexOrNull(List<T> elements, int index) {
+        if (elements == null || index >= elements.size()) {
+            return null;
+        }
+        return elements.get(index);
+    }
+
     List<SpecialPrice> reserveTokensForAccessCode(TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount accessCode) {
         try {
             // since we're going to get some tokens for an access code, we lock the access code itself until we're done.
             // This will allow us to serialize the requests and limit the contention
             Validate.isTrue(promoCodeDiscountRepository.lockAccessCodeForUpdate(accessCode.getId()).equals(accessCode.getId()));
-            List<SpecialPrice> boundSpecialPrices = specialPriceRepository.bindToAccessCode(ticketReservation.getTicketCategoryId(), accessCode.getId(), ticketReservation.getAmount());
-            if(boundSpecialPrices.size() != ticketReservation.getAmount()) {
+            List<SpecialPrice> boundSpecialPrices = specialPriceRepository.bindToAccessCode(ticketReservation.getTicketCategoryId(), accessCode.getId(), ticketReservation.getQuantity());
+            if(boundSpecialPrices.size() != ticketReservation.getQuantity()) {
                 throw new NotEnoughTicketsException();
             }
             return boundSpecialPrices;
@@ -530,7 +556,7 @@ public class TicketReservationManager {
     }
 
     List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, List<TicketStatus> requiredStatuses) {
-        return reserveTickets(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount(), requiredStatuses);
+        return reserveTickets(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getQuantity(), requiredStatuses);
     }
 
     List<Integer> reserveTickets(int eventId , int categoryId, int qty, List<TicketStatus> requiredStatuses) {
@@ -561,7 +587,7 @@ public class TicketReservationManager {
                 && specialPrice.get().getTicketCategoryId() == ticketCategoryId;
 
 
-        if (canAccessRestrictedCategory && ticketReservation.getAmount() > 1) {
+        if (canAccessRestrictedCategory && ticketReservation.getQuantity() > 1) {
             throw new NotEnoughTicketsException();
         }
 

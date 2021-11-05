@@ -302,17 +302,7 @@ public class EventApiV2Controller {
 
             Locale locale = LocaleUtil.forLanguageTag(lang, event);
 
-            Optional<ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>>> codeCheck = Optional.empty();
-
-            if(StringUtils.trimToNull(reservation.getPromoCode()) != null) {
-                var resCheck = promoCodeRequestManager.checkCode(event, reservation.getPromoCode());
-                if(!resCheck.isSuccess()) {
-                    bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                }
-                codeCheck = Optional.of(resCheck);
-            }
-
-            Optional<String> promoCodeDiscount = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getRight).map(PromoCodeDiscount::getPromoCode);
+            Optional<String> promoCodeDiscount = ReservationUtil.checkPromoCode(reservation, event, promoCodeRequestManager, bindingResult);;
             var configurationValues = configurationManager.getFor(List.of(
                 ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
                 RECAPTCHA_API_KEY), event.getConfigurationLevel());
@@ -340,7 +330,7 @@ public class EventApiV2Controller {
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount,
                                                      Principal principal) {
-        return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
+        return ReservationUtil.validateCreateRequest(reservation, bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult, principal));
     }
 
@@ -371,8 +361,8 @@ public class EventApiV2Controller {
         return eventRepository.findOptionalByShortName(eventName)
             .flatMap(event -> {
                 Map<Integer, Long> quantityByCategory = reservation.getReservation().stream()
-                    .filter(trm -> trm.getAmount() > 0)
-                    .collect(groupingBy(TicketReservationModification::getTicketCategoryId, summingLong(TicketReservationModification::getAmount)));
+                    .filter(trm -> trm.getQuantity() > 0)
+                    .collect(groupingBy(TicketReservationModification::getTicketCategoryId, summingLong(TicketReservationModification::getQuantity)));
                 if(quantityByCategory.isEmpty() || ticketCategoryRepository.countPaidCategoriesInReservation(quantityByCategory.keySet()) == 0) {
                     return Optional.empty();
                 }

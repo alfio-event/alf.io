@@ -14,28 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.modification;
+package alfio.controller.form;
 
-import lombok.Data;
+import alfio.model.modification.AdditionalServiceReservationModification;
+import alfio.model.modification.TicketReservationModification;
 
-import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 
-@Data
-public class TicketReservationModification implements Serializable {
-    private Integer ticketCategoryId;
-    private Integer quantity;
-    private List<Map<String, String>> metadata;
-
-    // temporary until we replace the public front-end
-    @Deprecated
-    public Integer getAmount() {
-        return quantity;
-    }
-
-    @Deprecated
-    public void setAmount(Integer amount) {
-        this.quantity = amount;
-    }
+public interface ReservationCreate {
+    String getPromoCode();
+    List<TicketReservationModification> getTickets();
+    List<AdditionalServiceReservationModification> getAdditionalServices();
+    String getCaptcha();
 }

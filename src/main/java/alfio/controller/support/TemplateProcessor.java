@@ -29,6 +29,7 @@ import ch.digitalfondue.jfiveparse.Parser;
 import ch.digitalfondue.jfiveparse.W3CDom;
 import com.openhtmltopdf.extend.FSStream;
 import com.openhtmltopdf.extend.FSStreamFactory;
+import com.openhtmltopdf.pdfboxout.PdfBoxFontResolver;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.log4j.Log4j2;
@@ -119,7 +120,7 @@ public final class TemplateProcessor {
         try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {
             File defaultFont = ImageUtil.getDejaVuSansMonoFont();
             if (defaultFont != null) {
-                renderer.getFontResolver().addFont(defaultFont, "DejaVu Sans Mono", null, null, false);
+                renderer.getFontResolver().addFont(defaultFont, "DejaVu Sans Mono", null, null, false, PdfBoxFontResolver.FontGroup.MAIN);
             }
             renderer.layout();
             renderer.createPDF();

@@ -30,6 +30,7 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.util.ClockProvider;
 import alfio.util.ErrorsCode;
 import alfio.util.RequestUtils;
+import alfio.util.ReservationUtil;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -193,7 +194,7 @@ public class PromoCodeRequestManager {
         ReservationForm form = new ReservationForm();
         form.setPromoCode(promoCode);
         TicketReservationModification reservation = new TicketReservationModification();
-        reservation.setAmount(1);
+        reservation.setQuantity(1);
         reservation.setTicketCategoryId(ticketCategoryId);
         form.setReservation(Collections.singletonList(reservation));
         var bindingRes = new BeanPropertyBindingResult(form, "reservationForm");
@@ -206,7 +207,7 @@ public class PromoCodeRequestManager {
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount,
                                                      Principal principal) {
-        return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
+        return ReservationUtil.validateCreateRequest(reservation, bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult, principal));
     }
 

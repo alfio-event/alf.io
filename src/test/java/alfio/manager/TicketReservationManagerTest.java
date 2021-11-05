@@ -565,7 +565,7 @@ class TicketReservationManagerTest {
         PromoCodeDiscount discount = mock(PromoCodeDiscount.class);
         when(discount.getCodeType()).thenReturn(PromoCodeDiscount.CodeType.ACCESS);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
-        when(reservationModification.getAmount()).thenReturn(2);
+        when(reservationModification.getQuantity()).thenReturn(2);
         when(discount.getHiddenCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         int accessCodeId = 666;
         when(discount.getId()).thenReturn(accessCodeId);
@@ -594,7 +594,7 @@ class TicketReservationManagerTest {
         when(ticketCategory.isBounded()).thenReturn(true);
         List<Integer> ids = singletonList(1);
         when(ticketRepository.selectTicketInCategoryForUpdateSkipLocked(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
-        when(reservationModification.getAmount()).thenReturn(1);
+        when(reservationModification.getQuantity()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, false, null, null);
@@ -606,7 +606,7 @@ class TicketReservationManagerTest {
         when(ticketCategory.isBounded()).thenReturn(true);
         List<Integer> ids = singletonList(1);
         when(ticketRepository.selectTicketInCategoryForUpdateSkipLocked(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
-        when(reservationModification.getAmount()).thenReturn(1);
+        when(reservationModification.getQuantity()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, true, null, null);
@@ -618,7 +618,7 @@ class TicketReservationManagerTest {
         when(ticketCategory.isBounded()).thenReturn(false);
         List<Integer> ids = singletonList(1);
         when(ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eq(EVENT_ID), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
-        when(reservationModification.getAmount()).thenReturn(1);
+        when(reservationModification.getQuantity()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, false, null, null);
@@ -630,7 +630,7 @@ class TicketReservationManagerTest {
         when(ticketCategory.isBounded()).thenReturn(false);
         List<Integer> ids = singletonList(1);
         when(ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eq(EVENT_ID), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
-        when(reservationModification.getAmount()).thenReturn(1);
+        when(reservationModification.getQuantity()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, true, null, null);

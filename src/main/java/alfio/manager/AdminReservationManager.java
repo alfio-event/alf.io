@@ -527,7 +527,7 @@ public class AdminReservationManager {
                 }
             }
             specialPriceIterator.map(Iterator::next)
-                .ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts, event.getCurrency(), event.getVatStatus()));
+                .ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts, event.getCurrency(), event.getVatStatus(), null));
         }
     }
 
