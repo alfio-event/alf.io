@@ -1806,9 +1806,23 @@ public class TicketReservationManager {
     public String reservationUrl(String reservationId, PurchaseContext purchaseContext) {
         return reservationUrl(ticketReservationRepository.findReservationById(reservationId), purchaseContext);
     }
+
+    public String reservationUrlForExternalClients(String reservationId, PurchaseContext purchaseContext, String userLanguage, boolean userLoggedIn) {
+        var configMap = configurationManager.getFor(EnumSet.of(BASE_URL, OPENID_PUBLIC_ENABLED), purchaseContext.getConfigurationLevel());
+        var baseUrl = StringUtils.removeEnd(configMap.get(BASE_URL).getRequiredValue(), "/");
+        if(userLoggedIn && configMap.get(OPENID_PUBLIC_ENABLED).getValueAsBooleanOrDefault()) {
+            return baseUrl + "/openid/authentication?reservation=" + reservationId + "&contextType=" + purchaseContext.getType() + "&id=" + purchaseContext.getPublicIdentifier();
+        } else {
+            return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage);
+        }
+    }
+
+    String reservationUrl(String baseUrl, String reservationId, PurchaseContext purchaseContext, String userLanguage) {
+        return StringUtils.removeEnd(baseUrl, "/") + "/" + purchaseContext.getType()+ "/" + purchaseContext.getPublicIdentifier() + "/reservation/" + reservationId + "?lang="+userLanguage;
+    }
     
     String reservationUrl(TicketReservation reservation, PurchaseContext purchaseContext) {
-        return configurationManager.baseUrl(purchaseContext) + "/"+purchaseContext.getType()+ "/" + purchaseContext.getPublicIdentifier() + "/reservation/" + reservation.getId() + "?lang="+reservation.getUserLanguage();
+        return reservationUrl(configurationManager.baseUrl(purchaseContext), reservation.getId(), purchaseContext, reservation.getUserLanguage());
     }
 
     String ticketUrl(Event event, String ticketId) {
@@ -2364,6 +2378,18 @@ public class TicketReservationManager {
 
         if(principal != null && configurationManager.isPublicOpenIdEnabled()) {
             ticketReservationRepository.setReservationOwner(reservationId, retrievePublicUserId(principal));
+        }
+    }
+
+    public void setReservationOwner(String reservationId, String email, String firstName, String lastName) {
+        // make sure that user has been created
+        var userId = userManager.createPublicUserIfNotExists(email, firstName, lastName);
+        // assign reservation to user
+        if(userId != null) {
+            ticketReservationRepository.setReservationOwner(reservationId, userId);
+            log.info("Assigned reservation {} to user ID {}", reservationId, userId);
+        } else {
+            log.info("UserId not found. Leaving reservation {} public", reservationId);
         }
     }
 

@@ -20,11 +20,15 @@ import alfio.manager.EventManager;
 import alfio.manager.PromoCodeRequestManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.UserManager;
 import alfio.model.api.v1.admin.ReservationCreationRequest;
 import alfio.model.result.ErrorCode;
 import alfio.util.ReservationUtil;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,16 +48,19 @@ public class ReservationApiV1Controller {
     private final ConfigurationManager configurationManager;
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
+    private final UserManager userManager;
 
     @Autowired
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
                                       ConfigurationManager configurationManager,
                                       EventManager eventManager,
-                                      PromoCodeRequestManager promoCodeRequestManager) {
+                                      PromoCodeRequestManager promoCodeRequestManager,
+                                      UserManager userManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.configurationManager = configurationManager;
         this.eventManager = eventManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
+        this.userManager = userManager;
     }
 
     @PostMapping("/{slug}/reservation")
@@ -73,7 +80,13 @@ public class ReservationApiV1Controller {
         if(selected.isPresent() && !bindingResult.hasErrors()) {
             var pair = selected.get();
             return ticketReservationManager.createTicketReservation(event, pair.getLeft(), pair.getRight(), promoCodeDiscount, locale, bindingResult, principal)
-                .map(id -> ResponseEntity.ok(CreationResponse.success(id, ticketReservationManager.reservationUrl(id, event))))
+                .map(id -> {
+                    var user = reservationCreationRequest.getUser();
+                    if(user != null) {
+                        ticketReservationManager.setReservationOwner(id, user.getEmail(), user.getFirstName(), user.getLastName());
+                    }
+                    return ResponseEntity.ok(CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, event, locale.getLanguage(), user != null)));
+                })
                 .orElseGet(() -> ResponseEntity.badRequest().build());
         } else {
             return ResponseEntity.badRequest()
@@ -102,6 +115,10 @@ public class ReservationApiV1Controller {
 
         public List<ErrorCode> getErrors() {
             return errors;
+        }
+
+        public boolean isSuccess() {
+            return CollectionUtils.isEmpty(errors) && StringUtils.isNotEmpty(id);
         }
 
         static CreationResponse success(String id, String href) {

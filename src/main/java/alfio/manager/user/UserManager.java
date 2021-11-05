@@ -30,6 +30,7 @@ import alfio.util.PasswordGenerator;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -47,11 +48,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional
 @RequiredArgsConstructor
+@Log4j2
 public class UserManager {
 
     public static final String ADMIN_USERNAME = "admin";
@@ -325,6 +328,22 @@ public class UserManager {
                 return ValidationResult.of(errors);
             })
             .orElseGet(ValidationResult::failed);
+    }
+
+    public Integer createPublicUserIfNotExists(String email, String firstName, String lastName) {
+        var result = userRepository.createPublicUserIfNotExists(email,
+            passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
+            firstName,
+            lastName,
+            email,
+            true);
+        if (result.getAffectedRowCount() == 1) {
+            log.info("Created public user with id {}", result.getKey());
+            return result.getKey();
+        } else {
+            log.info("User was not created because already existed");
+            return userRepository.findIdByUserName(email).orElse(null);
+        }
     }
 
 }

@@ -71,6 +71,7 @@ import static alfio.manager.TicketReservationManager.buildCompleteBillingAddress
 import static alfio.model.Audit.EventType.PAYMENT_CONFIRMED;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.model.system.ConfigurationKeys.BASE_URL;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -1113,6 +1114,32 @@ class TicketReservationManagerTest {
         Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
         //generate the ticket update URL
         Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId/update?lang=it", trm.ticketUpdateUrl(event, "ticketId"));
+    }
+
+    @Test
+    void reservationUrlForExternalClients() {
+        String shortName = "shortName";
+        when(event.getType()).thenReturn(PurchaseContext.PurchaseContextType.event);
+        when(event.getPublicIdentifier()).thenReturn(shortName);
+        when(ticketReservation.getUserLanguage()).thenReturn("en");
+        when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
+
+        var maybeOpenId = mock(MaybeConfiguration.class);
+        var maybeBaseUrl = mock(MaybeConfiguration.class);
+        when(maybeBaseUrl.getRequiredValue()).thenReturn(BASE_URL);
+
+        when(configurationManager.getFor(eq(EnumSet.of(ConfigurationKeys.BASE_URL, OPENID_PUBLIC_ENABLED)), any()))
+            .thenReturn(Map.of(ConfigurationKeys.BASE_URL, maybeBaseUrl, OPENID_PUBLIC_ENABLED, maybeOpenId));
+
+        // OpenID active
+        when(maybeOpenId.getValueAsBooleanOrDefault()).thenReturn(true);
+        Assertions.assertEquals(BASE_URL + "openid/authentication?reservation=" + RESERVATION_ID + "&contextType=" + PurchaseContext.PurchaseContextType.event + "&id=" + shortName, trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true));
+
+        // user not specified in the request
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", false));
+        // OpenID not active
+        when(maybeOpenId.getValueAsBooleanOrDefault()).thenReturn(false);
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true));
     }
 
     //sendReminderForOptionalInfo
