@@ -83,7 +83,7 @@ public class ReservationApiV1Controller {
                 .map(id -> {
                     var user = reservationCreationRequest.getUser();
                     if(user != null) {
-                        ticketReservationManager.setReservationOwner(id, user.getEmail(), user.getFirstName(), user.getLastName());
+                        ticketReservationManager.setReservationOwner(id, user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(), locale.getLanguage());
                     }
                     return ResponseEntity.ok(CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, event, locale.getLanguage(), user != null)));
                 })

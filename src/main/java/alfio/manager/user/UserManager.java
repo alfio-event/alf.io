@@ -330,20 +330,19 @@ public class UserManager {
             .orElseGet(ValidationResult::failed);
     }
 
-    public Integer createPublicUserIfNotExists(String email, String firstName, String lastName) {
-        var result = userRepository.createPublicUserIfNotExists(email,
+    public Integer createPublicUserIfNotExists(String username, String email, String firstName, String lastName) {
+        int result = userRepository.createPublicUserIfNotExists(username,
             passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
             firstName,
             lastName,
             email,
             true);
-        if (result.getAffectedRowCount() == 1) {
-            log.info("Created public user with id {}", result.getKey());
-            return result.getKey();
+        if (result == 1) {
+            log.info("Created public user");
         } else {
             log.info("User was not created because already existed");
-            return userRepository.findIdByUserName(email).orElse(null);
         }
+        return userRepository.findIdByUserName(username).orElse(null);
     }
 
 }

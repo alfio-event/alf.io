@@ -2381,16 +2381,39 @@ public class TicketReservationManager {
         }
     }
 
-    public void setReservationOwner(String reservationId, String email, String firstName, String lastName) {
-        // make sure that user has been created
-        var userId = userManager.createPublicUserIfNotExists(email, firstName, lastName);
-        // assign reservation to user
-        if(userId != null) {
-            ticketReservationRepository.setReservationOwner(reservationId, userId);
-            log.info("Assigned reservation {} to user ID {}", reservationId, userId);
+    public void setReservationOwner(String reservationId,
+                                    String username,
+                                    String email,
+                                    String firstName,
+                                    String lastName,
+                                    String userLanguage) {
+        if(configurationManager.isPublicOpenIdEnabled()) {
+            // make sure that user has been created
+            var userId = userManager.createPublicUserIfNotExists(username, email, firstName, lastName);
+            // assign reservation to user
+            if (userId != null) {
+                ticketReservationRepository.setReservationOwner(reservationId, userId);
+                log.info("Assigned reservation {} to user ID {}", reservationId, userId);
+            } else {
+                log.info("UserId not found. Leaving reservation {} anonymous", reservationId);
+            }
         } else {
-            log.info("UserId not found. Leaving reservation {} public", reservationId);
+            log.info("Public OpenID is not enabled. Leaving reservation {} anonymous", reservationId);
         }
+        // in any case we can safely set the given user as contact
+        var customerName = new CustomerName(null, firstName, lastName, true);
+        ticketReservationRepository.updateTicketReservation(reservationId,
+            Status.PENDING.toString(),
+            email,
+            customerName.getFullName(),
+            customerName.getFirstName(),
+            customerName.getLastName(),
+            userLanguage,
+            null,
+            null,
+            null,
+            null
+        );
     }
 
     static String buildCompleteBillingAddress(CustomerName customerName,
