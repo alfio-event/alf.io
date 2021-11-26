@@ -109,6 +109,7 @@
               	<mj-raw>{{#customCheckInUrlDescription}}</mj-raw>
               	<mj-text align="center" font-size="14px">{{.}}</mj-text>
                 <mj-raw>{{/customCheckInUrlDescription}}</mj-raw>
+                <mj-text align="center" font-size="14px">{{prerequisites}}</mj-text>
                 <mj-text align="center" font-size="14px">{{#i18n}}email-ticket.look-forward{{/i18n}}</mj-text>
             </mj-column>
 
