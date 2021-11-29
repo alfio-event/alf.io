@@ -49,6 +49,9 @@ public interface AdminReservationRequestRepository {
     @Query("select id from admin_reservation_request where status = 'PENDING' order by request_id limit :limit for update skip locked")
     List<Long> findPendingForUpdate(@Bind("limit") int limit);
 
+    @Query("select count(*) from admin_reservation_request where status = 'PENDING'")
+    Integer countPending();
+
     @Query("select * from admin_reservation_request where id = :id")
     AdminReservationRequest fetchCompleteById(@Bind("id") long id);
 

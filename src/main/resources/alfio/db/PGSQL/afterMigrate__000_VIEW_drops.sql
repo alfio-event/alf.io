@@ -30,3 +30,4 @@ drop view if exists basic_event_with_optional_subscription;
 drop view if exists reservation_and_subscription_and_tx;
 drop view if exists extension_capabilities;
 drop view if exists reservation_with_purchase_context;
+drop view if exists available_subscriptions_by_event;

@@ -18,13 +18,10 @@ package alfio.repository;
 
 import alfio.model.AllocationStatus;
 import alfio.model.PriceContainer.VatStatus;
-import alfio.model.subscription.EventSubscriptionLink;
-import alfio.model.subscription.Subscription;
-import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.subscription.*;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
-import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
@@ -162,6 +159,12 @@ public interface SubscriptionRepository {
     @Query("select * from subscription_descriptor_statistics where sd_organization_id_fk = :organizationId")
     List<SubscriptionDescriptorWithStatistics> findAllWithStatistics(@Bind("organizationId") int organizationId);
 
+    @Query("select exists (select 1 from subscription_event where event_id_fk = :eventId" +
+        " and subscription_descriptor_id_fk = :subscriptionDescriptorId::uuid and organization_id_fk = :organizationId)")
+    boolean isSubscriptionLinkedToEvent(@Bind("eventId") int eventId,
+                                        @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
+                                        @Bind("organizationId") int organizationId);
+
     @Query(INSERT_SUBSCRIPTION_LINK)
     int linkSubscriptionAndEvent(@Bind("subscriptionId") UUID subscriptionId,
                                  @Bind("eventId") int eventId,
@@ -293,4 +296,7 @@ public interface SubscriptionRepository {
 
     @Query("update subscription set status = 'CANCELLED' where reservation_id_fk = :reservationId")
     int cancelSubscriptions(@Bind("reservationId") String reservationId);
+
+    @Query("select * from available_subscriptions_by_event")
+    List<AvailableSubscriptionsByEvent> loadAvailableSubscriptionsByEvent();
 }

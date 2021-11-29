@@ -45,6 +45,7 @@ public class AdminReservationModification implements Serializable {
     private final AdvancedBillingOptions advancedBillingOptions;
     private final Notification notification;
     private final SubscriptionDetails subscriptionDetails;
+    private final UUID linkedSubscriptionId;
 
     @JsonCreator
     public AdminReservationModification(@JsonProperty("expiration") DateTimeModification expiration,
@@ -55,7 +56,8 @@ public class AdminReservationModification implements Serializable {
                                         @JsonProperty("updateAdvancedBillingOptions") Boolean updateAdvancedBillingOptions,
                                         @JsonProperty("advancedBillingOptions") AdvancedBillingOptions advancedBillingOptions,
                                         @JsonProperty("notification") Notification notification,
-                                        @JsonProperty("subscriptionDetails") SubscriptionDetails subscriptionDetails) {
+                                        @JsonProperty("subscriptionDetails") SubscriptionDetails subscriptionDetails,
+                                        @JsonProperty("linkedSubscriptionId") UUID linkedSubscriptionId) {
         this.expiration = expiration;
         this.customerData = customerData;
         this.ticketsInfo = ticketsInfo;
@@ -65,6 +67,7 @@ public class AdminReservationModification implements Serializable {
         this.advancedBillingOptions = advancedBillingOptions;
         this.notification = notification;
         this.subscriptionDetails = subscriptionDetails;
+        this.linkedSubscriptionId = linkedSubscriptionId;
     }
 
     @Getter
@@ -166,6 +169,7 @@ public class AdminReservationModification implements Serializable {
         private final String language;
         private final boolean reassignmentForbidden;
         private final String reference;
+        private final UUID subscriptionId;
         private final Map<String, List<String>> additionalInfo;
 
         @JsonCreator
@@ -176,6 +180,7 @@ public class AdminReservationModification implements Serializable {
                         @JsonProperty("language") String language,
                         @JsonProperty("forbidReassignment") Boolean reassignmentForbidden,
                         @JsonProperty("reference") String reference,
+                        @JsonProperty("subscriptionId") UUID subscriptionId,
                         @JsonProperty("additionalInfo") Map<String, List<String>> additionalInfo) {
             this.ticketId = ticketId;
             this.firstName = trimToEmpty(firstName);
@@ -184,6 +189,7 @@ public class AdminReservationModification implements Serializable {
             this.language = language;
             this.reassignmentForbidden = Optional.ofNullable(reassignmentForbidden).orElse(false);
             this.reference = reference;
+            this.subscriptionId = subscriptionId;
             this.additionalInfo = Optional.ofNullable(additionalInfo).orElse(Collections.emptyMap());
         }
 
@@ -257,10 +263,27 @@ public class AdminReservationModification implements Serializable {
             List<TicketsInfo> ticketsInfo = src.ticketsInfo.stream().map(ti -> {
                 List<Attendee> attendees = ti.getAttendees()
                     .stream()
-                    .map(a -> new Attendee(a.ticketId, placeholderIfNotEmpty(a.firstName), placeholderIfNotEmpty(a.lastName), placeholderIfNotEmpty(a.emailAddress), a.language, a.reassignmentForbidden, a.reference,singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))))).collect(toList());
+                    .map(a -> new Attendee(a.ticketId,
+                        placeholderIfNotEmpty(a.firstName),
+                        placeholderIfNotEmpty(a.lastName),
+                        placeholderIfNotEmpty(a.emailAddress),
+                        a.language,
+                        a.reassignmentForbidden,
+                        a.reference,
+                        a.subscriptionId,
+                        singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))))).collect(toList());
                 return new TicketsInfo(ti.getCategory(), attendees, ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees());
             }).collect(toList());
-            return Json.toJson(new AdminReservationModification(src.expiration, summaryForCustomerData(src.customerData), ticketsInfo, src.getLanguage(), src.updateContactData, src.updateAdvancedBillingOptions, src.advancedBillingOptions, src.notification, src.subscriptionDetails));
+            return Json.toJson(new AdminReservationModification(src.expiration,
+                summaryForCustomerData(src.customerData),
+                ticketsInfo,
+                src.getLanguage(),
+                src.updateContactData,
+                src.updateAdvancedBillingOptions,
+                src.advancedBillingOptions,
+                src.notification,
+                src.subscriptionDetails,
+                src.linkedSubscriptionId));
         } catch(Exception e) {
             return e.toString();
         }

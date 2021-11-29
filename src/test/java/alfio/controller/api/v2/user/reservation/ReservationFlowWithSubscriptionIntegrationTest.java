@@ -34,20 +34,16 @@ import alfio.controller.api.v2.user.TicketApiV2Controller;
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
 import alfio.manager.user.UserManager;
-import alfio.model.AllocationStatus;
 import alfio.model.Event;
-import alfio.model.PriceContainer;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
-import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.subscription.MaxEntriesOverageDetails;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionUsageExceeded;
 import alfio.model.subscription.SubscriptionUsageExceededForEvent;
-import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -70,15 +66,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZonedDateTime;
 import java.util.*;
 
-import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
-import static alfio.test.util.IntegrationTestUtil.initEvent;
-import static java.util.Objects.requireNonNullElse;
+import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -197,42 +189,11 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         // create subscription descriptor
 
         var event = eventAndUser.getLeft();
-        var zoneId = clockProvider.getClock().getZone();
-        var subscriptionModification = new SubscriptionDescriptorModification(null,
-            Map.of("en", "title"),
-            Map.of("en", "description"),
-            42,
-            ZonedDateTime.now(ClockProvider.clock()),
-            null,
-            BigDecimal.TEN,
-            new BigDecimal("7.7"),
-            PriceContainer.VatStatus.INCLUDED,
-            "CHF",
-            false,
-            event.getOrganizationId(),
-            2,
-            SubscriptionDescriptor.SubscriptionValidityType.CUSTOM,
-            null,
-            null,
-            ZonedDateTime.now(ClockProvider.clock()).minusDays(1),
-            ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
-            SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT,
-            "https://example.org",
-            null,
-            fileBlobId,
-            List.of(PaymentProxy.STRIPE),
-            zoneId);
-
-        var descriptorId = subscriptionManager.createSubscriptionDescriptor(subscriptionModification).orElseThrow();
-        var subscriptionId = subscriptionRepository.selectFreeSubscription(descriptorId).orElseThrow();
-        var subscriptionReservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(clockProvider.getClock()), Date.from(Instant.now(clockProvider.getClock())), null, "en", null, new BigDecimal("7.7"), true, "CHF", event.getOrganizationId(), null);
-        subscriptionRepository.bindSubscriptionToReservation(subscriptionReservationId, AllocationStatus.PENDING, subscriptionId);
-        subscriptionRepository.confirmSubscription(subscriptionReservationId, AllocationStatus.ACQUIRED,
-            "Test", "Mc Test", "tickettest@test.com", requireNonNullElse(subscriptionModification.getMaxEntries(), -1),
-            null, null, ZonedDateTime.now(clockProvider.getClock()), zoneId.toString());
-        var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
-        this.context = new ReservationFlowContext(event, eventAndUser.getRight() + "_owner", subscriptionId, subscription.getPin());
+        int maxEntries = 2;
+        var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, maxEntries);
+        var subscriptionIdAndPin = confirmAndLinkSubscription(descriptorId, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
+        this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
+        this.context = new ReservationFlowContext(event, eventAndUser.getRight() + "_owner", subscriptionIdAndPin.getLeft(), subscriptionIdAndPin.getRight());
     }
 
     @AfterEach

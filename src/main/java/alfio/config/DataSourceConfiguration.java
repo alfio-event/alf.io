@@ -21,6 +21,7 @@ import alfio.config.support.EnumTypeColumnMapper;
 import alfio.config.support.JSONColumnMapper;
 import alfio.config.support.PlatformProvider;
 import alfio.job.Jobs;
+import alfio.job.executor.AssignTicketToSubscriberJobExecutor;
 import alfio.job.executor.BillingDocumentJobExecutor;
 import alfio.job.executor.ReservationJobExecutor;
 import alfio.manager.*;
@@ -29,6 +30,8 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.repository.EventDeleterRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.SubscriptionRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -245,9 +248,10 @@ public class DataSourceConfiguration {
                                     PlatformTransactionManager transactionManager,
                                     ClockProvider clockProvider,
                                     ReservationJobExecutor reservationJobExecutor,
-                                    BillingDocumentJobExecutor billingDocumentJobExecutor) {
+                                    BillingDocumentJobExecutor billingDocumentJobExecutor,
+                                    AssignTicketToSubscriberJobExecutor assignTicketToSubscriberJobExecutor) {
         return new AdminJobManager(
-            List.of(reservationJobExecutor, billingDocumentJobExecutor),
+            List.of(reservationJobExecutor, billingDocumentJobExecutor, assignTicketToSubscriberJobExecutor),
             adminJobQueueRepository,
             transactionManager,
             clockProvider);
@@ -265,6 +269,21 @@ public class DataSourceConfiguration {
                                                           NotificationManager notificationManager,
                                                           OrganizationRepository organizationRepository) {
         return new BillingDocumentJobExecutor(billingDocumentManager, ticketReservationManager, eventRepository, notificationManager, organizationRepository);
+    }
+
+    @Bean
+    AssignTicketToSubscriberJobExecutor assignTicketToSubscriberJobExecutor(AdminReservationRequestManager requestManager,
+                                                                            ConfigurationManager configurationManager,
+                                                                            SubscriptionRepository subscriptionRepository,
+                                                                            EventRepository eventRepository,
+                                                                            ClockProvider clockProvider,
+                                                                            TicketCategoryRepository ticketCategoryRepository) {
+        return new AssignTicketToSubscriberJobExecutor(requestManager,
+            configurationManager,
+            subscriptionRepository,
+            eventRepository,
+            clockProvider,
+            ticketCategoryRepository);
     }
 
     @Bean

@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.api.support.TicketHelper;
+import alfio.controller.form.ReservationCodeForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
@@ -85,7 +86,9 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
@@ -2887,10 +2890,67 @@ public class TicketReservationManager {
         }
     }
 
-    public boolean applySubscriptionCode(int eventId,
-                                         TicketReservation reservation,
-                                         SubscriptionDescriptor subscriptionDescriptor,
-                                         UUID subscriptionId) throws SubscriptionUsageExceeded, SubscriptionUsageExceededForEvent {
+    public boolean validateAndApplySubscriptionCode(PurchaseContext purchaseContext,
+                                                    TicketReservation reservation,
+                                                    Optional<UUID> subscriptionUUID,
+                                                    String pin,
+                                                    String email,
+                                                    BindingResult bindingResult) {
+
+        Assert.isTrue(purchaseContext.ofType(PurchaseContextType.event), "PurchaseContext must be of type \"event\"");
+        boolean isUUID = subscriptionUUID.isPresent();
+        log.trace("is code UUID {}", isUUID);
+        if (!isUUID && !PinGenerator.isPinValid(pin, Subscription.PIN_LENGTH)) {
+            bindingResult.reject("error.restrictedValue");
+            return false;
+        }
+
+        //ensure pin length, as we will do a like concat(pin,'%'), it could be dangerous to have an empty string...
+        Assert.isTrue(pin.length() >= Subscription.PIN_LENGTH, "Pin must have a length of at least 8 characters");
+
+        var partialUuid = !isUUID ? PinGenerator.pinToPartialUuid(pin, Subscription.PIN_LENGTH) : pin;
+        var requireEmail = false;
+        int count;
+        if (isUUID) {
+            count = subscriptionRepository.countSubscriptionById(subscriptionUUID.get());
+        } else {
+            count = subscriptionRepository.countSubscriptionByPartialUuid(partialUuid);
+            if (count > 1) {
+                count = subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
+                requireEmail = true;
+            }
+        }
+        log.trace("code count is {}", count);
+        if (count == 0) {
+            bindingResult.reject(isUUID ? "subscription.uuid.not.found" : "subscription.pin.not.found");
+        }
+        if (count > 1) {
+            bindingResult.reject("subscription.code.insert.full");
+        }
+
+        if (bindingResult.hasErrors()) {
+            return false;
+        }
+
+        var subscriptionId = isUUID ? UUID.fromString(pin) : requireEmail ? subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email) : subscriptionRepository.getSubscriptionIdByPartialUuid(partialUuid);
+        var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
+        var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+        subscription.isValid(Optional.of(bindingResult));
+        if (bindingResult.hasErrors()) {
+            return false;
+        }
+        try {
+            return applySubscriptionCode(((Event)purchaseContext).getId(), reservation, subscriptionDescriptor, subscriptionId);
+        } catch (SubscriptionUsageExceeded | SubscriptionUsageExceededForEvent ex) {
+            bindingResult.reject(ex instanceof SubscriptionUsageExceeded ? "subscription.max-usage-reached" : "subscription.max-usage-reached-per-event");
+            return false;
+        }
+    }
+
+    boolean applySubscriptionCode(int eventId,
+                                  TicketReservation reservation,
+                                  SubscriptionDescriptor subscriptionDescriptor,
+                                  UUID subscriptionId) throws SubscriptionUsageExceeded, SubscriptionUsageExceededForEvent {
 
         log.trace("entering applySubscription {}", subscriptionId);
 
@@ -2903,6 +2963,12 @@ public class TicketReservationManager {
         if (!subscription.isValid()) {
             return false;
         }
+
+        if (!subscriptionRepository.isSubscriptionLinkedToEvent(eventId, subscription.getSubscriptionDescriptorId(), subscription.getOrganizationId())) {
+            log.warn("Attempt to use subscription {} - descriptor {} for event {}", subscription.getId(), subscriptionDescriptor.getId(), eventId);
+            return false;
+        }
+
         try {
             log.trace("applying subscription {} to reservation {}", subscriptionId, reservation.getId());
             // find out how many tickets can be included in the subscription

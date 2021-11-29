@@ -29,7 +29,8 @@ public interface AdminJobExecutor {
         SEND_OFFLINE_PAYMENT_REMINDER,
         UNKNOWN,
         SEND_OFFLINE_PAYMENT_TO_ORGANIZER,
-        REGENERATE_INVOICES;
+        REGENERATE_INVOICES,
+        ASSIGN_TICKETS_TO_SUBSCRIBERS;
 
         public static JobName safeValueOf(String value) {
             return Arrays.stream(values())

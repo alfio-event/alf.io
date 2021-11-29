@@ -36,10 +36,8 @@ import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.ReservationPriceCalculator;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
-import alfio.model.TicketCategory.TicketAccessType;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionUsageExceeded;
@@ -58,36 +56,27 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static alfio.model.PriceContainer.VatStatus.*;
-import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.util.MonetaryUtil.unitToCents;
-import static java.util.stream.Collectors.groupingBy;
+import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
+import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RestController
 @AllArgsConstructor
@@ -620,7 +609,7 @@ public class ReservationApiV2Controller {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(reservationId)
+        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = purchaseContextManager.getReservationWithPurchaseContext(reservationId)
             .map(pair -> {
                 var event = pair.getLeft();
                 return ticketReservationManager.initTransaction(event, reservationId, paymentMethod, allParams)
@@ -637,7 +626,7 @@ public class ReservationApiV2Controller {
     public ResponseEntity<Boolean> removeToken(@PathVariable("eventName") String eventName,
                                                @PathVariable("reservationId") String reservationId) {
 
-        var res = getEventReservationPair(reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
+        var res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
         return ResponseEntity.ok(res);
     }
 
@@ -647,16 +636,8 @@ public class ReservationApiV2Controller {
     })
     public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable("reservationId") String reservationId) {
 
-        var res = getEventReservationPair(reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
+        var res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
         return ResponseEntity.ok(res);
-    }
-
-    //FIXME: rename ->getPurchaseContextReservationPair
-    private Optional<Pair<PurchaseContext, TicketReservation>> getEventReservationPair(String reservationId) {
-        return purchaseContextManager.findByReservationId(reservationId)
-            .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
-            .filter(pair -> pair.getRight().isPresent())
-            .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));
     }
 
     @GetMapping({
@@ -673,7 +654,7 @@ public class ReservationApiV2Controller {
             return ResponseEntity.badRequest().build();
         }
 
-        return getEventReservationPair(reservationId)
+        return purchaseContextManager.getReservationWithPurchaseContext(reservationId)
             .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
             .map(pr -> ResponseEntity.ok(new ReservationPaymentResult(pr.isSuccessful(), pr.isRedirect(), pr.getRedirectUrl(), pr.isFailed(), pr.getGatewayIdOrNull())))
             .orElseGet(() -> ResponseEntity.notFound().build());
@@ -684,57 +665,14 @@ public class ReservationApiV2Controller {
         if(reservationCodeForm.getType() != ReservationCodeForm.ReservationCodeType.SUBSCRIPTION) {
             throw new IllegalStateException(reservationCodeForm.getType() + " not supported");
         }
-        boolean res = getEventReservationPair(reservationId).map(et -> {
-            boolean isUUID = reservationCodeForm.isCodeUUID();
-            log.trace("is code UUID {}", isUUID);
-            var pin = reservationCodeForm.getCode();
-            if (!isUUID && !PinGenerator.isPinValid(pin, Subscription.PIN_LENGTH)) {
-                bindingResult.reject("error.restrictedValue");
-                return false;
-            }
-
-            //ensure pin length, as we will do a like concat(pin,'%'), it could be dangerous to have an empty string...
-            Assert.isTrue(pin.length() >= Subscription.PIN_LENGTH, "Pin must have a length of at least 8 characters");
-
-            var partialUuid = !isUUID ? PinGenerator.pinToPartialUuid(pin, Subscription.PIN_LENGTH) : pin;
-            var email = reservationCodeForm.getEmail();
-            var requireEmail = false;
-            int count;
-            if (isUUID) {
-                count = subscriptionRepository.countSubscriptionById(UUID.fromString(pin));
-            } else {
-                count = subscriptionRepository.countSubscriptionByPartialUuid(partialUuid);
-                if (count > 1) {
-                    count = subscriptionRepository.countSubscriptionByPartialUuidAndEmail(partialUuid, email);
-                    requireEmail = true;
-                }
-            }
-            log.trace("code count is {}", count);
-            if (count == 0) {
-                bindingResult.reject(isUUID ? "subscription.uuid.not.found" : "subscription.pin.not.found");
-            }
-            if (count > 1) {
-                bindingResult.reject("subscription.code.insert.full");
-            }
-
-            if (bindingResult.hasErrors()) {
-                return false;
-            }
-
-            var subscriptionId = isUUID ? UUID.fromString(pin) : requireEmail ? subscriptionRepository.getSubscriptionIdByPartialUuidAndEmail(partialUuid, email) : subscriptionRepository.getSubscriptionIdByPartialUuid(partialUuid);
-            var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
-            var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
-            subscription.isValid(Optional.of(bindingResult));
-            if (bindingResult.hasErrors()) {
-                return false;
-            }
-            try {
-                return ticketReservationManager.applySubscriptionCode(((Event)et.getLeft()).getId(), et.getRight(), subscriptionDescriptor, subscriptionId);
-            } catch (SubscriptionUsageExceeded | SubscriptionUsageExceededForEvent ex) {
-                bindingResult.reject(ex instanceof SubscriptionUsageExceeded ? "subscription.max-usage-reached" : "subscription.max-usage-reached-per-event");
-                return false;
-            }
-        }).orElse(false);
+        boolean res = purchaseContextManager.getReservationWithPurchaseContext(reservationId)
+            .map(et -> ticketReservationManager.validateAndApplySubscriptionCode(et.getLeft(),
+                et.getRight(),
+                reservationCodeForm.getCodeAsUUID(),
+                reservationCodeForm.getCode(),
+                reservationCodeForm.getEmail(),
+                bindingResult))
+            .orElse(false);
         return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, res));
     }
 
@@ -742,7 +680,7 @@ public class ReservationApiV2Controller {
     public ResponseEntity<Boolean> removeCode(@PathVariable("reservationId") String reservationId, @RequestParam("type") ReservationCodeForm.ReservationCodeType type) {
         boolean res = false;
         if (type == ReservationCodeForm.ReservationCodeType.SUBSCRIPTION) {
-            res = getEventReservationPair(reservationId).map(et -> ticketReservationManager.removeSubscription(et.getRight())).orElse(false);
+            res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> ticketReservationManager.removeSubscription(et.getRight())).orElse(false);
         }
         return ResponseEntity.ok(res);
     }

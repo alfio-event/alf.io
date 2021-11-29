@@ -256,7 +256,9 @@ public enum ConfigurationKeys {
     DESCRIPTION_MAXLENGTH("Max characters in descriptions (default 4000)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
     OPENID_PUBLIC_ENABLED("Enable OpenID for public users (default: false)", false, SettingCategory.OPENID, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
-    OPENID_CONFIGURATION_JSON("OpenID configuration", false, SettingCategory.OPENID, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM))
+    OPENID_CONFIGURATION_JSON("OpenID configuration", false, SettingCategory.OPENID, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
+
+    GENERATE_TICKETS_FOR_SUBSCRIPTIONS("Generate and send tickets automatically to subscription holders for compatible events (default: false)", false, SettingCategory.SUBSCRIPTIONS, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false")
     ;
 
     @Getter
@@ -278,7 +280,8 @@ public enum ConfigurationKeys {
         PASS_INTEGRATION("Pass Integration"),
         WAITING_LIST("Waiting List"),
         IMPORT_ATTENDEE("Import Attendees"),
-        OPENID("Public users Authentication");
+        OPENID("Public users Authentication"),
+        SUBSCRIPTIONS("Subscriptions");
 
         private final String description;
         SettingCategory(String description) {
