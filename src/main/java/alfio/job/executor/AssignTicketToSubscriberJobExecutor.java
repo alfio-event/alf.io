@@ -22,10 +22,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.model.modification.AdminReservationModification;
-import alfio.model.modification.AdminReservationModification.Attendee;
-import alfio.model.modification.AdminReservationModification.Category;
-import alfio.model.modification.AdminReservationModification.CustomerData;
-import alfio.model.modification.AdminReservationModification.TicketsInfo;
+import alfio.model.modification.AdminReservationModification.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.subscription.AvailableSubscriptionsByEvent;
 import alfio.model.system.AdminJobSchedule;
@@ -130,7 +127,7 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
             false,
             false,
             null,
-            null,
+            new Notification(false, true),
             null,
             null
         );

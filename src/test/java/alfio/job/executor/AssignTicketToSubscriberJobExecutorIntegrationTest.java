@@ -20,15 +20,9 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
-import alfio.manager.AdminReservationRequestManager;
-import alfio.manager.EventManager;
-import alfio.manager.FileUploadManager;
-import alfio.manager.SubscriptionManager;
+import alfio.manager.*;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -94,6 +88,7 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final NotificationManager notificationManager;
 
     private Event event;
     private String userId;
@@ -115,7 +110,8 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
                                                        AuthorityRepository authorityRepository,
                                                        NamedParameterJdbcTemplate jdbcTemplate,
                                                        TicketRepository ticketRepository,
-                                                       TicketCategoryRepository ticketCategoryRepository) {
+                                                       TicketCategoryRepository ticketCategoryRepository,
+                                                       NotificationManager notificationManager) {
         this.eventManager = eventManager;
         this.userManager = userManager;
         this.subscriptionManager = subscriptionManager;
@@ -133,6 +129,7 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
         this.jdbcTemplate = jdbcTemplate;
         this.ticketRepository = ticketRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
+        this.notificationManager = notificationManager;
     }
 
     @BeforeEach
@@ -213,6 +210,13 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, reservation.getStatus());
         assertEquals(PaymentProxy.ADMIN, reservation.getPaymentMethod());
         assertEquals(BigDecimal.ZERO, reservation.getFinalPrice());
+
+        // trigger email send
+        int sent = notificationManager.sendWaitingMessages();
+        assertTrue(sent > 0);
+        var messagesPair = notificationManager.loadAllMessagesForPurchaseContext(event, null, null);
+        assertEquals(1, messagesPair.getLeft());
+        assertTrue(messagesPair.getRight().stream().allMatch(m -> m.getStatus() == EmailMessage.Status.SENT));
 
     }
 }
