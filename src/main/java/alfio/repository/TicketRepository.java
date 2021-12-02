@@ -18,6 +18,7 @@ package alfio.repository;
 
 import alfio.model.*;
 import alfio.model.checkin.OnlineCheckInFullInfo;
+import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.poll.PollParticipant;
 import alfio.model.support.Array;
@@ -112,19 +113,20 @@ public interface TicketRepository {
     @Query(type = QueryType.TEMPLATE,
         value = "update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
             " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts," +
-            " currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS where id = :ticketId")
+            " currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS, metadata = :ticketMetadata::jsonb where id = :ticketId")
     String batchReserveTicket();
 
     @Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
         " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts, currency_code = :currencyCode," +
-        " vat_status = :vatStatus::VAT_STATUS where id = :ticketId")
+        " vat_status = :vatStatus::VAT_STATUS, metadata = :ticketMetadata::jsonb where id = :ticketId")
     void reserveTicket(@Bind("reservationId")String transactionId,
                        @Bind("ticketId") int ticketId,
                        @Bind("specialCodeId") int specialCodeId,
                        @Bind("userLanguage") String userLanguage,
                        @Bind("srcPriceCts") int srcPriceCts,
                        @Bind("currencyCode") String currencyCode,
-                       @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus);
+                       @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus,
+                       @Bind("ticketMetadata") @JSONData TicketMetadata ticketMetadata);
 
     @Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
     int updateTicketsStatusWithReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);

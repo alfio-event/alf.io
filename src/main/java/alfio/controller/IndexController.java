@@ -20,14 +20,12 @@ import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.api.v2.user.support.EventLoader;
+import alfio.manager.PurchaseContextManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.ContentLanguage;
-import alfio.model.EventDescription;
-import alfio.model.FileBlobMetadata;
-import alfio.model.TicketReservationStatusAndValidation;
+import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
 import alfio.repository.*;
@@ -39,9 +37,8 @@ import alfio.util.TemplateManager;
 import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
-import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -108,6 +105,7 @@ public class IndexController {
     private final TicketReservationRepository ticketReservationRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final EventLoader eventLoader;
+    private final PurchaseContextManager purchaseContextManager;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -201,7 +199,7 @@ public class IndexController {
 
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
         response.setCharacterEncoding(UTF_8);
-        var nonce = addCspHeader(response);
+        var nonce = addCspHeader(response, detectConfigurationLevel(eventShortName, subscriptionId), true);
 
         if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventRepository.existsByShortName(eventShortName)) {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
@@ -391,7 +389,7 @@ public class IndexController {
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
-            var nonce = addCspHeader(response);
+            var nonce = addCspHeader(response, false);
             model.addAttribute("nonce", nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
@@ -434,7 +432,7 @@ public class IndexController {
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
-            var nonce = addCspHeader(response);
+            var nonce = addCspHeader(response, false);
             model.addAttribute("nonce", nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
         }
@@ -455,27 +453,48 @@ public class IndexController {
         return Hex.encodeHexString(nonce);
     }
 
-    public String addCspHeader(HttpServletResponse response) {
+    public String addCspHeader(HttpServletResponse response, boolean embeddingSupported) {
+        return addCspHeader(response, ConfigurationLevel.system(), embeddingSupported);
+    }
 
-        String nonce = getNonce();
+    public String addCspHeader(HttpServletResponse response, ConfigurationLevel configurationLevel, boolean embeddingSupported) {
+
+        var nonce = getNonce();
 
         String reportUri = "";
 
-        var conf = configurationManager.getFor(List.of(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED, ConfigurationKeys.SECURITY_CSP_REPORT_URI), ConfigurationLevel.system());
+        var conf = configurationManager.getFor(List.of(SECURITY_CSP_REPORT_ENABLED, SECURITY_CSP_REPORT_URI, EMBED_ALLOWED_ORIGINS), configurationLevel);
 
-        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault();
+        boolean enabledReport = conf.get(SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault();
         if (enabledReport) {
-            reportUri = " report-uri " + conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
+            reportUri = " report-uri " + conf.get(SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
         }
         //
         // https://csp.withgoogle.com/docs/strict-csp.html
         // with base-uri set to 'self'
 
+        var frameAncestors = "'none'";
+        var allowedContainer = conf.get(EMBED_ALLOWED_ORIGINS).getValueOrNull();
+        if (embeddingSupported && StringUtils.isNotBlank(allowedContainer)) {
+            var splitHosts = allowedContainer.split("[,\n]");
+            frameAncestors = String.join(" ", splitHosts);
+            // IE11
+            response.addHeader("X-Frame-Options", "ALLOW-FROM "+splitHosts[0]);
+        } else {
+            response.addHeader("X-Frame-Options", "DENY");
+        }
+
         response.addHeader("Content-Security-Policy", "object-src 'none'; "+
             "script-src 'strict-dynamic' 'nonce-" + nonce + "' 'unsafe-inline' http: https:; " +
-            "base-uri 'self'; "
+            "base-uri 'self'; " +
+            "frame-ancestors " + frameAncestors + "; "
             + reportUri);
 
         return nonce;
+    }
+
+    private ConfigurationLevel detectConfigurationLevel(String eventShortName, String subscriptionId) {
+        return purchaseContextManager.detectConfigurationLevel(eventShortName, subscriptionId)
+            .orElseGet(ConfigurationLevel::system);
     }
 }

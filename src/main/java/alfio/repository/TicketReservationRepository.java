@@ -61,7 +61,7 @@ public interface TicketReservationRepository {
                                 @Bind("lastName") String lastName,
                                 @Bind("userLanguage") String userLanguage,
                                 @Bind("billingAddress") String billingAddress,
-                                @Bind("timestamp") ZonedDateTime timestamp,
+                                @Bind("timestamp") ZonedDateTime confirmationTimestamp,
                                 @Bind("paymentMethod") String paymentMethod,
                                 @Bind("customerReference") String customerReference);
 

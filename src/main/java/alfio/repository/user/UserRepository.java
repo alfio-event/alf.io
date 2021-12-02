@@ -75,6 +75,15 @@ public interface UserRepository {
                                            @Bind("email_address") String emailAddress, @Bind("enabled") boolean enabled, @Bind("userType") User.Type userType,
                                            @Bind("validTo") ZonedDateTime validTo, @Bind("description") String description);
 
+    @Query("INSERT INTO ba_user(username, password, first_name, last_name, email_address, enabled, user_type) VALUES"
+        + " (:username, :password, :first_name, :last_name, :email_address, :enabled, 'PUBLIC') on conflict(username) do nothing")
+    int createPublicUserIfNotExists(@Bind("username") String username,
+                                                                @Bind("password") String password,
+                                                                @Bind("first_name") String firstname,
+                                                                @Bind("last_name") String lastname,
+                                                                @Bind("email_address") String emailAddress,
+                                                                @Bind("enabled") boolean enabled);
+
     @Query("update ba_user set username = :username, first_name = :firstName, last_name = :lastName, email_address = :emailAddress, description = :description where id = :id")
     int update(@Bind("id") int id, @Bind("username") String username, @Bind("firstName") String firstName, @Bind("lastName") String lastName,
                @Bind("emailAddress") String emailAddress, @Bind("description") String description);

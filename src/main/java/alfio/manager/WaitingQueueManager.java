@@ -229,7 +229,7 @@ public class WaitingQueueManager {
             .map(wq -> Pair.of(wq, tickets.next()))
             .map(pair -> {
                 TicketReservationModification ticketReservation = new TicketReservationModification();
-                ticketReservation.setAmount(1);
+                ticketReservation.setQuantity(1);
                 Integer categoryId = Optional.ofNullable(pair.getValue().getCategoryId()).orElseGet(() -> findBestCategory(unboundedCategories, pair.getKey()).orElseThrow(RuntimeException::new).getId());
                 ticketReservation.setTicketCategoryId(categoryId);
                 return Pair.of(pair.getLeft(), new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty()));

@@ -131,6 +131,8 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
 
         configurer.csrfTokenRepository(csrfTokenRepository)
             .and()
+            .headers().frameOptions().disable() // https://github.com/alfio-event/alf.io/issues/1031 X-Frame-Options has been moved to IndexController
+            .and()
             .authorizeRequests()
             .antMatchers(HttpMethod.GET, ADMIN_API + "/users/current").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
             .antMatchers(HttpMethod.POST, ADMIN_API + "/users/check", ADMIN_API + "/users/current/edit", ADMIN_API + "/users/current/update-password").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
