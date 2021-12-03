@@ -36,10 +36,8 @@ import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.ReservationPriceCalculator;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
-import alfio.model.TicketCategory.TicketAccessType;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionUsageExceeded;
@@ -58,36 +56,27 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static alfio.model.PriceContainer.VatStatus.*;
-import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.util.MonetaryUtil.unitToCents;
-import static java.util.stream.Collectors.groupingBy;
+import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
+import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RestController
 @AllArgsConstructor
@@ -444,7 +433,7 @@ public class ReservationApiV2Controller {
 
             //
             contactAndTicketsForm.validate(bindingResult, purchaseContext, new SameCountryValidator(configurationManager, extensionManager, purchaseContext, reservationId, vatChecker),
-                formValidationParameters, ticketFieldFilterer);
+                formValidationParameters, ticketFieldFilterer, reservationCost.requiresPayment());
             //
 
             if(!bindingResult.hasErrors()) {

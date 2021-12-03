@@ -86,7 +86,8 @@ public class UserApiV2Controller {
                     var customBindingResult = new CustomBindingResult(bindingResult);
                     // set email from original user to pass the validation
                     update.setEmail(u.getEmailAddress());
-                    update.formalValidation(customBindingResult, italianEInvoicingEnabled);
+                    // enforce billing address validation if EInvoicing is enabled
+                    update.formalValidation(customBindingResult, italianEInvoicingEnabled, italianEInvoicingEnabled);
                     if(!customBindingResult.hasErrors()) {
                         extensionManager.handleUserProfileValidation(update, bindingResult);
                     }

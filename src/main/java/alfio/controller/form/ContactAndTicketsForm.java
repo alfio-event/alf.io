@@ -95,10 +95,11 @@ public class ContactAndTicketsForm implements Serializable {
     public void validate(CustomBindingResult bindingResult, PurchaseContext purchaseContext,
                          SameCountryValidator vatValidator,
                          Map<ConfigurationKeys, Boolean> formValidationParameters,
-                         Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer) {
+                         Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer,
+                         boolean reservationRequiresPayment) {
 
 
-        formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false));
+        formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false), reservationRequiresPayment);
 
         purchaseContext.event().ifPresent(event -> {
             if(!postponeAssignment) {
@@ -128,7 +129,8 @@ public class ContactAndTicketsForm implements Serializable {
     }
 
     public void formalValidation(CustomBindingResult bindingResult,
-                                 boolean italianEInvoicingEnabled) {
+                                 boolean italianEInvoicingEnabled,
+                                 boolean reservationRequiresPayment) {
         email = StringUtils.trim(email);
 
         fullName = StringUtils.trim(fullName);
@@ -169,13 +171,13 @@ public class ContactAndTicketsForm implements Serializable {
 
         // https://github.com/alfio-event/alf.io/issues/573
         // only for IT and only if enabled!
-        if (italianEInvoicingEnabled && StringUtils.isNotEmpty(vatCountryCode)) {
+        if (italianEInvoicingEnabled && StringUtils.isNotEmpty(vatCountryCode) && reservationRequiresPayment) {
             // mandatory
             ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingFiscalCode", ErrorsCode.EMPTY_FIELD);
             rejectIfOverLength(bindingResult, "italyEInvoicingFiscalCode", "error.tooLong", italyEInvoicingFiscalCode, 28);
         }
 
-        if (italianEInvoicingEnabled && "IT".equals(vatCountryCode)) {
+        if (italianEInvoicingEnabled && "IT".equals(vatCountryCode) && reservationRequiresPayment) {
             //
             ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceType", "error.italyEInvoicingReferenceTypeSelectValue");
             //
