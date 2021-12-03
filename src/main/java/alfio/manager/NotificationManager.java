@@ -32,7 +32,6 @@ import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
-import alfio.util.checkin.TicketCheckInUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
@@ -64,7 +63,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.model.EmailMessage.Status.*;
-import static alfio.model.system.ConfigurationKeys.BASE_URL;
+import static alfio.model.system.ConfigurationKeys.INCLUDE_CHECK_IN_URL_ICAL;
 import static alfio.util.checkin.TicketCheckInUtil.*;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
@@ -124,7 +123,7 @@ public class NotificationManager {
         this.purchaseContextManager = purchaseContextManager;
         this.extensionManager = extensionManager;
         attachmentTransformer = new EnumMap<>(Mailer.AttachmentIdentifier.class);
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository, organizationRepository, messageSourceManager));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository, organizationRepository, messageSourceManager, configurationManager));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(purchaseContextManager, eventRepository,
             payload -> TemplateProcessor.buildReceiptPdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(purchaseContextManager, eventRepository,
@@ -166,7 +165,8 @@ public class NotificationManager {
                                                                      EventDescriptionRepository eventDescriptionRepository,
                                                                      TicketCategoryRepository ticketCategoryRepository,
                                                                      OrganizationRepository organizationRepository,
-                                                                     MessageSourceManager messageSourceManager) {
+                                                                     MessageSourceManager messageSourceManager,
+                                                                     ConfigurationManager configurationManager) {
 
         return model -> {
             Event event;
@@ -186,7 +186,7 @@ public class NotificationManager {
             Organization organization = organizationRepository.getById(event.getOrganizationId());
             TicketCategory category = Optional.ofNullable(categoryId).map(ticketCategoryRepository::getById).orElse(null);
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
-            if(model.containsKey("onlineCheckInUrl")) { // special case: online event
+            if(model.containsKey("onlineCheckInUrl") && configurationManager.getFor(INCLUDE_CHECK_IN_URL_ICAL, event.getConfigurationLevel()).getValueAsBooleanOrDefault()) { // special case: online event
                 var messageSource = messageSourceManager.getMessageSourceFor(event);
                 description = description +
                     "\n```\n" + // start "multiline code" marker to preserve formatting
