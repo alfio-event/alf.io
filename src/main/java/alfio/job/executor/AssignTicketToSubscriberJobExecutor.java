@@ -30,6 +30,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.util.ClockProvider;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 import static alfio.model.system.ConfigurationKeys.GENERATE_TICKETS_FOR_SUBSCRIPTIONS;
 
 @Component
+@Log4j2
 public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
 
     private final AdminReservationRequestManager requestManager;
@@ -92,9 +94,9 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
                     .getValueAsBooleanOrDefault();
                 if (generationEnabled) {
                     var subscriptions = subscriptionsByEvent.get(event.getId());
-                    var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
-                    if (!categories.isEmpty()) {
-                        var category = categories.get(0);
+                    var optionalCategory = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId());
+                    if (optionalCategory.isPresent()) {
+                        var category = optionalCategory.get();
                         // 3. create reservation import request for the subscribers. ID is "AUTO_${eventShortName}_${now_ISO}"
                         var requestId = String.format("AUTO_%s_%s", event.getShortName(), LocalDateTime.now(clockProvider.getClock()).format(DateTimeFormatter.ISO_DATE_TIME));
                         requestManager.insertRequest(requestId,
@@ -103,6 +105,8 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
                             false,
                             "admin");
 
+                    } else {
+                        log.warn("Cannot find a suitable ticket category for event {}", event.getId());
                     }
                 }
             });
