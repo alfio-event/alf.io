@@ -49,6 +49,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Component;
@@ -58,6 +59,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
+import org.springframework.validation.MapBindingResult;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -117,7 +119,12 @@ public class AdminReservationManager {
     private final SubscriptionRepository subscriptionRepository;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
-    public Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType, String eventName, String reservationId, String username, Notification notification) {
+    Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,
+                                                                                        String eventName,
+                                                                                        String reservationId,
+                                                                                        String username,
+                                                                                        Notification notification,
+                                                                                        UUID subscriptionId) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
         return template.execute(status -> {
@@ -125,7 +132,7 @@ public class AdminReservationManager {
                 Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> result = purchaseContextManager.findBy(purchaseContextType, eventName)
                     .map(purchaseContext -> ticketReservationRepository.findOptionalReservationById(reservationId)
                         .filter(r -> r.getStatus() == TicketReservationStatus.PENDING || r.getStatus() == TicketReservationStatus.STUCK)
-                        .map(r -> performConfirmation(reservationId, purchaseContext, r, notification, username))
+                        .map(r -> performConfirmation(reservationId, purchaseContext, r, notification, username, subscriptionId))
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
                 if(!result.isSuccess()) {
@@ -139,6 +146,13 @@ public class AdminReservationManager {
                 return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
             }
         });
+    }
+    public Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,
+                                                                                               String eventName,
+                                                                                               String reservationId,
+                                                                                               String username,
+                                                                                               Notification notification) {
+        return confirmReservation(purchaseContextType, eventName, reservationId, username, notification, null);
     }
 
     public Result<Boolean> updateReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, AdminReservationModification adminReservationModification, String username) {
@@ -328,23 +342,47 @@ public class AdminReservationManager {
                                                                                                  PurchaseContext purchaseContext,
                                                                                                  TicketReservation original,
                                                                                                  Notification notification,
-                                                                                                 String username) {
+                                                                                                 String username,
+                                                                                                 UUID subscriptionId) {
         try {
+
+            var reservation = original;
+
+            if (subscriptionId != null && purchaseContext.ofType(PurchaseContextType.event)) {
+                var subscriptionDetails = subscriptionRepository.findSubscriptionById(subscriptionId);
+                var bindingResult = new MapBindingResult(new HashMap<>(), "");
+                boolean result = ticketReservationManager.validateAndApplySubscriptionCode(purchaseContext,
+                    original,
+                    Optional.of(subscriptionId),
+                    subscriptionId.toString(),
+                    subscriptionDetails.getEmail(),
+                    bindingResult);
+                if (!result) {
+                    var message = bindingResult.getGlobalErrors().stream()
+                        .findFirst()
+                        .map(DefaultMessageSourceResolvable::getCode)
+                        .orElse("Unknown error");
+                    return Result.error(ErrorCode.custom(message, String.format("Cannot assign subscription %s to Reservation %s", subscriptionId, reservationId)));
+                }
+
+                reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+            }
+
             PaymentSpecification spec = new PaymentSpecification(reservationId,
                 null,
-                original.getFinalPriceCts(),
+                reservation.getFinalPriceCts(),
                 purchaseContext,
-                original.getEmail(),
-                new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), purchaseContext.mustUseFirstAndLastName()),
-                original.getBillingAddress(),
-                original.getCustomerReference(),
-                LocaleUtil.forLanguageTag(original.getUserLanguage()),
+                reservation.getEmail(),
+                new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), purchaseContext.mustUseFirstAndLastName()),
+                reservation.getBillingAddress(),
+                reservation.getCustomerReference(),
+                LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
                 false,
                 false,
                 null,
-                original.getVatCountryCode(),
-                original.getVatNr(),
-                original.getVatStatus(),
+                reservation.getVatCountryCode(),
+                reservation.getVatNr(),
+                reservation.getVatStatus(),
                 false,
                 false);
 

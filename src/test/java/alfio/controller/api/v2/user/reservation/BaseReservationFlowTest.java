@@ -1205,7 +1205,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     protected void testAddSubscription(ReservationFlowContext context, int numberOfTickets) {
         var form = new ReservationForm();
         var ticketReservation = new TicketReservationModification();
-        ticketReservation.setAmount(numberOfTickets);
+        ticketReservation.setQuantity(numberOfTickets);
         var categoriesResponse = eventApiV2Controller.getTicketCategories(context.event.getShortName(), null);
         assertTrue(categoriesResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(categoriesResponse.getBody());

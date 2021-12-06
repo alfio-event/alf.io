@@ -17,32 +17,35 @@
 package alfio.test.util;
 
 import alfio.manager.EventManager;
+import alfio.manager.FileUploadManager;
+import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
+import alfio.model.AllocationStatus;
 import alfio.model.Event;
+import alfio.model.PriceContainer;
 import alfio.model.metadata.AlfioMetadata;
-import alfio.model.modification.DateTimeModification;
-import alfio.model.modification.EventModification;
-import alfio.model.modification.OrganizationModification;
-import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
+import alfio.repository.SubscriptionRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.*;
 
 public class IntegrationTestUtil {
@@ -132,5 +135,59 @@ public class IntegrationTestUtil {
     public static void removeAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
         authorityRepository.revokeAll(UserManager.ADMIN_USERNAME);
         userRepository.deleteUser(userRepository.findIdByUserName(UserManager.ADMIN_USERNAME).orElseThrow());
+    }
+
+    public static UUID createSubscriptionDescriptor(int organizationId,
+                                                    FileUploadManager fileUploadManager,
+                                                    SubscriptionManager subscriptionManager,
+                                                    int maxEntries) {
+        var uploadFileForm = new UploadBase64FileModification();
+        uploadFileForm.setFile(BaseIntegrationTest.ONE_PIXEL_BLACK_GIF);
+        uploadFileForm.setName("my-image.gif");
+        uploadFileForm.setType("image/gif");
+        String fileBlobId = fileUploadManager.insertFile(uploadFileForm);
+        var subscriptionModification = new SubscriptionDescriptorModification(null,
+            Map.of("en", "title"),
+            Map.of("en", "description"),
+            42,
+            ZonedDateTime.now(ClockProvider.clock()),
+            null,
+            BigDecimal.TEN,
+            new BigDecimal("7.7"),
+            PriceContainer.VatStatus.INCLUDED,
+            "CHF",
+            false,
+            organizationId,
+            maxEntries,
+            SubscriptionDescriptor.SubscriptionValidityType.CUSTOM,
+            null,
+            null,
+            ZonedDateTime.now(ClockProvider.clock()).minusDays(1),
+            ZonedDateTime.now(ClockProvider.clock()).plusDays(42),
+            SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT,
+            "https://example.org",
+            null,
+            fileBlobId,
+            List.of(PaymentProxy.STRIPE),
+            ClockProvider.clock().getZone());
+
+        return subscriptionManager.createSubscriptionDescriptor(subscriptionModification).orElseThrow();
+    }
+
+    public static Pair<UUID, String> confirmAndLinkSubscription(UUID descriptorId,
+                                                                int organizationId,
+                                                                SubscriptionRepository subscriptionRepository,
+                                                                TicketReservationRepository ticketReservationRepository,
+                                                                int maxEntries) {
+        var zoneId = ClockProvider.clock().getZone();
+        var subscriptionId = subscriptionRepository.selectFreeSubscription(descriptorId).orElseThrow();
+        var subscriptionReservationId = UUID.randomUUID().toString();
+        ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(ClockProvider.clock()), Date.from(Instant.now(ClockProvider.clock())), null, "en", null, new BigDecimal("7.7"), true, "CHF", organizationId, null);
+        subscriptionRepository.bindSubscriptionToReservation(subscriptionReservationId, AllocationStatus.PENDING, subscriptionId);
+        subscriptionRepository.confirmSubscription(subscriptionReservationId, AllocationStatus.ACQUIRED,
+            "Test", "Mc Test", "tickettest@test.com", maxEntries,
+            null, null, ZonedDateTime.now(ClockProvider.clock()), zoneId.toString());
+        var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+        return Pair.of(subscriptionId, subscription.getPin());
     }
 }

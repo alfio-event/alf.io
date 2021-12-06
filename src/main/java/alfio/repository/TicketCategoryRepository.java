@@ -85,6 +85,16 @@ public interface TicketCategoryRepository {
     @Query("select * from ticket_category_with_currency where event_id = :eventId  and tc_status = 'ACTIVE' order by ordinal asc, inception asc, expiration asc, id asc")
     List<TicketCategory> findAllTicketCategories(@Bind("eventId") int eventId);
 
+    @Query("select tc.* from ticket_category_with_currency tc" +
+        "    join ticket_category_statistics tcs on tc.id = tcs.ticket_category_id" +
+        "    where tc.event_id = :eventId" +
+        "    and tcs.is_expired is FALSE" +
+        "    and tcs.access_restricted is FALSE" +
+        "    and (tcs.bounded is FALSE or tcs.not_sold_tickets > 0)" +
+        " order by tc.inception, tc.expiration, tc.id" +
+        " limit 1")
+    Optional<TicketCategory> findFirstWithAvailableTickets(@Bind("eventId") int eventId);
+
     default Map<Integer, TicketCategory> findByEventIdAsMap(int eventId) {
         return findAllTicketCategories(eventId).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
     }

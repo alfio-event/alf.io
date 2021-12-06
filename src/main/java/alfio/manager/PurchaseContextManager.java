@@ -18,11 +18,13 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.model.PurchaseContext;
+import alfio.model.TicketReservation;
 import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketReservationRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,5 +87,10 @@ public class PurchaseContextManager {
             log.warn("error while loading ConfigurationLevel", ex);
             return Optional.empty();
         }
+    }
+
+    public Optional<Pair<PurchaseContext, TicketReservation>> getReservationWithPurchaseContext(String reservationId) {
+        return findByReservationId(reservationId)
+            .map(event -> Pair.of(event, ticketReservationRepository.findReservationById(reservationId)));
     }
 }

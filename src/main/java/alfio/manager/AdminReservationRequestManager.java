@@ -31,6 +31,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -74,7 +75,7 @@ public class AdminReservationRequestManager {
                                                boolean singleReservation,
                                                String username) {
 
-        //safety check: if there are more than 150 people in a single reservation, the reservation page could take a while before showing up.
+        //safety check: if there are more than 150 people in a single reservation, the reservation page could take a while before showing up,
         //therefore we will limit the maximum amount of people in a single reservation to 100. This will be addressed in rel. 2.0
 
         if(singleReservation && body.getTicketsInfo().stream().mapToLong(ti -> ti.getAttendees().size()).sum() > 100) {
@@ -135,8 +136,14 @@ public class AdminReservationRequestManager {
             try {
                 String eventName = event.getShortName();
                 String username = user.getUsername();
-                Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(request.getBody(), eventName, username)
-                    .flatMap(r -> adminReservationManager.confirmReservation(PurchaseContext.PurchaseContextType.event, eventName, r.getLeft().getId(), username, orEmpty(request.getBody().getNotification())))
+                var requestBody = request.getBody();
+                Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(requestBody, eventName, username)
+                    .flatMap(r -> adminReservationManager.confirmReservation(PurchaseContext.PurchaseContextType.event,
+                        eventName,
+                        r.getLeft().getId(),
+                        username,
+                        orEmpty(requestBody.getNotification()),
+                        requestBody.getLinkedSubscriptionId()))
                     .map(triple -> Triple.of(triple.getLeft(), triple.getMiddle(), (Event) triple.getRight()));
                 if(!result.isSuccess()) {
                     status.rollbackToSavepoint(savepoint);
@@ -159,10 +166,35 @@ public class AdminReservationRequestManager {
 
     private Result<String> insertRequest(AdminReservationModification body, EventAndOrganizationId event, boolean singleReservation, String username) {
         try {
-            String requestId = UUID.randomUUID().toString();
+            return insertRequest(UUID.randomUUID().toString(), body, event, singleReservation, username);
+        } catch(DataIntegrityViolationException e) {
+            log.error("data integrity violation while inserting request", e);
+            return Result.error(ErrorCode.custom("internal_server_error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Insert a request using the provided ID and body
+     *
+     * @param requestId requestId, must be unique
+     * @param body request body which can be split across multiple reservations
+     * @param event the event for which we need to create reservations
+     * @param singleReservation whether the request will produce one or more reservations
+     * @param username user requesting the import
+     * @return {@code Result} the operation result
+     * @throws DataIntegrityViolationException if the given ID already exists
+     */
+    public Result<String> insertRequest(String requestId,
+                                 AdminReservationModification body,
+                                 EventAndOrganizationId event,
+                                 boolean singleReservation,
+                                 String username) {
+        try {
             long userId = userRepository.findIdByUserName(username).orElseThrow(IllegalArgumentException::new);
             adminReservationRequestRepository.insertRequest(requestId, userId, event, spread(body, singleReservation));
             return Result.success(requestId);
+        } catch (DataIntegrityViolationException e) {
+            throw e;
         } catch (Exception e) {
             log.error("can't insert reservation request", e);
             return Result.error(ErrorCode.custom("internal_server_error", e.getMessage()));
@@ -181,7 +213,16 @@ public class AdminReservationRequestManager {
                 String language = StringUtils.defaultIfBlank(attendee.getLanguage(), src.getLanguage());
 
                 CustomerData cd = new CustomerData(attendee.getFirstName(), attendee.getLastName(), attendee.getEmailAddress(), null, language, null, null, null, null);
-                return new AdminReservationModification(src.getExpiration(), cd, singletonList(p.getRight()), language, src.isUpdateContactData(), false, null, src.getNotification(), null);
+                return new AdminReservationModification(src.getExpiration(),
+                    cd,
+                    singletonList(p.getRight()),
+                    language,
+                    src.isUpdateContactData(),
+                    false,
+                    null,
+                    src.getNotification(),
+                    null,
+                    attendee.getSubscriptionId());
             });
     }
 

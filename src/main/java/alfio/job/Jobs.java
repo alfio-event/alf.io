@@ -95,6 +95,16 @@ public class Jobs {
         }
     }
 
+    @Scheduled(cron = "#{environment.acceptsProfiles('dev') ? '0 * * * * *' : '0 0 0/1 * * ?'}")
+    public void assignTicketsToSubscribers() {
+        log.trace("running job assignTicketsToSubscribers");
+        try {
+            adminJobManager.scheduleExecution(AdminJobExecutor.JobName.ASSIGN_TICKETS_TO_SUBSCRIBERS, Map.of());
+        } finally {
+            log.trace("end job sendOfflinePaymentReminderToEventOrganizers");
+        }
+    }
+
 
     @Scheduled(fixedRate = FIVE_SECONDS)
     public void sendEmails() {

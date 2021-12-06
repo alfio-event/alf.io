@@ -1217,6 +1217,14 @@
                             {
                                 id: 'PAYMENT',
                                 name: 'Payment'
+                            },
+                            {
+                                id: 'IMPORT_ATTENDEES',
+                                name: 'Import Attendees'
+                            },
+                            {
+                                id: 'SUBSCRIPTIONS',
+                                name: 'Subscriptions'
                             }
                         ];
                     });
