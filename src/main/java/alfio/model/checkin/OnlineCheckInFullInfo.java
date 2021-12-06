@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -38,6 +39,7 @@ public class OnlineCheckInFullInfo {
     private final BillingDetails billingDetails;
     private final TicketCategory ticketCategory;
     private final AlfioMetadata categoryMetadata;
+    private final Map<String, List<String>> ticketAdditionalInfo;
     private final EventWithCheckInInfo eventWithCheckInInfo;
 
 
@@ -135,7 +137,9 @@ public class OnlineCheckInFullInfo {
                                  @Column("e_private_key") String eventPrivateKey,
                                  @Column("e_org_id") int eventOrgId,
                                  @Column("e_metadata") @JSONData AlfioMetadata eventMetadata,
-                                 @Column("e_locales") int locales
+                                 @Column("e_locales") int locales,
+
+                                 @Column("tai_additional_info") @JSONData Map<String, List<String>> ticketAdditionalInfo
                                  ) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
@@ -152,5 +156,6 @@ public class OnlineCheckInFullInfo {
         this.categoryMetadata = categoryMetadata;
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, billingAddressState, vatCountry, vatNr, invoicingAdditionalInfo);
         this.eventWithCheckInInfo = new EventWithCheckInInfo(eventId, eventFormat, eventShortName, eventDisplayName, eventStartTs, eventEndTs, timezone, eventPrivateKey, eventOrgId, eventMetadata, locales);
+        this.ticketAdditionalInfo = ticketAdditionalInfo;
     }
 }
