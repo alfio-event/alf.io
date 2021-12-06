@@ -254,7 +254,7 @@ public class ExtensionManager {
         payload.put("organizationId", event.getOrganizationId());
         payload.put("ticket", ticket);
         payload.put("originalURL", originalUrl);
-        payload.put("additionalInfo", additionalInfo);
+        payload.put("additionalInfo", Objects.requireNonNullElse(additionalInfo, Map.of()));
 
         return Optional.ofNullable(extensionService.executeScriptsForEvent(ONLINE_CHECK_IN_REDIRECT.name(),
             toPath(event),
