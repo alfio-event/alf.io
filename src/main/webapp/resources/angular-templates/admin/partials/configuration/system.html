@@ -289,6 +289,9 @@
         <div>
             <div data-ng-repeat="setting in systemConf.subscriptions.settings">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                <div data-ng-if="setting.key === 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS' && setting.id > -1 && setting.value === 'true'">
+                    <button class="btn btn-default" type="button" ng-click="systemConf.generateTicketsForSubscribers()">Force generation</button>
+                </div>
             </div>
         </div>
 

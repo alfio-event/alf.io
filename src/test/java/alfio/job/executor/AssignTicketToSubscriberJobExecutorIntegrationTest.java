@@ -27,6 +27,7 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.UploadBase64FileModification;
+import alfio.model.system.AdminJobSchedule;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Role;
@@ -53,6 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -168,27 +170,45 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
 
     @Test
     void process() {
+        performTest(Map.of());
+    }
+
+    @Test
+    void processOrganizationLevel() {
+        performTest(Map.of(AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, event.getOrganizationId()));
+    }
+
+    @Test
+    void processEventLevel() {
+        performTest(Map.of(
+            AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, event.getOrganizationId(),
+            AssignTicketToSubscriberJobExecutor.EVENT_ID, event.getId()
+        ));
+    }
+
+    private void performTest(Map<String, Object> metadata) {
+        var adminRequest = new AdminJobSchedule(1L, "", ZonedDateTime.now(ClockProvider.clock()), AdminJobSchedule.Status.SCHEDULED, null, metadata);
         int maxEntries = 2;
         var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, maxEntries);
         var subscriptionIdAndPin = confirmAndLinkSubscription(descriptorId, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
         subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
-        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent().size());
+        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
         // trigger job schedule with flag not active
-        executor.process(null);
-        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent().size());
+        executor.process(adminRequest);
+        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
         assertEquals(0, adminReservationRequestRepository.countPending());
 
         // try again with flag active
         configurationRepository.insert(ConfigurationKeys.GENERATE_TICKETS_FOR_SUBSCRIPTIONS.name(), "true", "");
-        executor.process(null);
-        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent().size());
+        executor.process(adminRequest);
+        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
         assertEquals(1, adminReservationRequestRepository.countPending());
 
         // trigger reservation processing
         var result = adminReservationRequestManager.processPendingReservations();
         assertEquals(1, result.getLeft()); //  1 success
         assertEquals(0, result.getRight()); // 0 failures
-        assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent().size());
+        assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
 
         // check ticket
         var ticketUuid = jdbcTemplate.queryForObject("select uuid from ticket where event_id = :eventId and ext_reference = :ref",
@@ -215,6 +235,5 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
         var messagesPair = notificationManager.loadAllMessagesForPurchaseContext(event, null, null);
         assertEquals(1, messagesPair.getLeft());
         assertTrue(messagesPair.getRight().stream().allMatch(m -> m.getStatus() == EmailMessage.Status.SENT));
-
     }
 }

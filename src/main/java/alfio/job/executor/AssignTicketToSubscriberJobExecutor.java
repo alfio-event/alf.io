@@ -50,6 +50,8 @@ import static alfio.model.system.ConfigurationKeys.GENERATE_TICKETS_FOR_SUBSCRIP
 @Log4j2
 public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
 
+    public static final String EVENT_ID = "eventId";
+    public static final String ORGANIZATION_ID = "organizationId";
     private final AdminReservationRequestManager requestManager;
     private final ConfigurationManager configurationManager;
     private final SubscriptionRepository subscriptionRepository;
@@ -78,13 +80,15 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
 
     @Override
     public String process(AdminJobSchedule schedule) {
+        var metadata = schedule.getMetadata();
+        log.debug("Executing AssignTicketToSubscribers with metadata {}", metadata);
         // 1. Find all subscriptions bought until now. Filters:
         //     - subscription_descriptor_fk is linked to the current event
         //     - id does not have any reservations attached to the current event
         //     - validity_from is <= now()
         //     - validity_to is null or > now()
         //     - status = 'ACQUIRED'
-        var subscriptionsByEvent = subscriptionRepository.loadAvailableSubscriptionsByEvent()
+        var subscriptionsByEvent = subscriptionRepository.loadAvailableSubscriptionsByEvent((Integer) metadata.get(EVENT_ID), (Integer) metadata.get(ORGANIZATION_ID))
             .stream()
             .collect(Collectors.groupingBy(AvailableSubscriptionsByEvent::getEventId));
         if (!subscriptionsByEvent.isEmpty()) {
@@ -110,6 +114,8 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
                     }
                 }
             });
+        } else {
+            log.debug("No subscriptions found for metadata {}", metadata);
         }
         return null;
     }

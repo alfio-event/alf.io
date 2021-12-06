@@ -218,6 +218,18 @@
                 </div>
             </div>
 
+            <div class="page-header" id="SUBSCRIPTIONS">
+                <h2>Subscriptions</h2>
+            </div>
+            <div>
+                <div data-ng-repeat="setting in eventConf.subscriptions.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    <div data-ng-if="setting.key === 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS' && setting.id > -1 && setting.value === 'true'">
+                        <button class="btn btn-default" type="button" ng-click="eventConf.generateTicketsForSubscribers()">Force generation</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="page-header" data-ng-if="eventConf.payment || eventConf.paymentPaypal || eventConf.paymentStripe || eventConf.paymentMollie || eventConf.paymentOffline">
                 <h2>Check-in settings</h2>
             </div>

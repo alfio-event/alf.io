@@ -249,6 +249,18 @@
                     </div>
                 </div>
 
+                <div class="page-header" id="SUBSCRIPTIONS">
+                    <h2>Subscriptions</h2>
+                </div>
+                <div>
+                    <div data-ng-repeat="setting in organizationConf.subscriptions.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        <div data-ng-if="setting.key === 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS' && setting.id > -1 && setting.value === 'true'">
+                            <button class="btn btn-default" type="button" ng-click="organizationConf.generateTicketsForSubscribers()">Force generation</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
                     <h2>Alf.io PI settings</h2>
                 </div>

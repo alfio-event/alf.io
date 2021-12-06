@@ -225,6 +225,14 @@
             },
             loadFirstInvoiceDate: function(event) {
                 return $http.get('/admin/api/configuration/event/'+event.id+'/invoice-first-date').error(HttpErrorHandler.handle);
+            },
+            generateTicketsForSubscribers: function(organizationId, eventId) {
+                return $http.put('/admin/api/configuration/generate-tickets-for-subscriptions', {}, {
+                    params: {
+                        eventId,
+                        organizationId
+                    }
+                })
             }
         };
         return service;
@@ -308,6 +316,14 @@
             });
         };
 
+        systemConf.generateTicketsForSubscribers = function() {
+            ConfigurationService.generateTicketsForSubscribers().then(function() {
+                NotificationHandler.showSuccess("Generation has been scheduled. Will run in 1 minute");
+            }, function() {
+                NotificationHandler.showError("Error while scheduling generation");
+            })
+        };
+
         systemConf.updateLocales = function() {
             updateLocales(systemConf);
         };
@@ -373,6 +389,14 @@
 
         organizationConf.delete = function(config) {
             return ConfigurationService.removeOrganizationConfig(config, organizationConf.organizationId);
+        };
+
+        organizationConf.generateTicketsForSubscribers = function() {
+            ConfigurationService.generateTicketsForSubscribers(organizationConf.organizationId).then(function() {
+                NotificationHandler.showSuccess("Generation has been scheduled. Will run in 1 minute");
+            }, function() {
+                NotificationHandler.showError("Error while scheduling generation");
+            })
         };
 
         organizationConf.deleteExtensionSetting = function(config) {
@@ -505,6 +529,14 @@
 
         eventConf.delete = function(config) {
             return ConfigurationService.removeEventConfig(config, eventConf.eventId);
+        };
+
+        eventConf.generateTicketsForSubscribers = function() {
+            ConfigurationService.generateTicketsForSubscribers(eventConf.organizationId, eventConf.eventId).then(function() {
+                NotificationHandler.showSuccess("Generation has been scheduled. Will run in 1 minute");
+            }, function() {
+                NotificationHandler.showError("Error while scheduling generation");
+            })
         };
 
         eventConf.deleteExtensionSetting = function(config) {

@@ -29,6 +29,7 @@ create view available_subscriptions_by_event as (
         from subscription s
     )
     select e.id event_id,
+           e.org_id organization_id,
            s.id as subscription_id,
            s.email_address as email_address,
            s.first_name as first_name,

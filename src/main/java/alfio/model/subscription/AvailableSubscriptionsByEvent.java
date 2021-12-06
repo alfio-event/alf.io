@@ -22,6 +22,7 @@ import java.util.UUID;
 
 public class AvailableSubscriptionsByEvent {
     private final int eventId;
+    private final int organizationId;
     private final UUID subscriptionId;
     private final String emailAddress;
     private final String firstName;
@@ -29,12 +30,14 @@ public class AvailableSubscriptionsByEvent {
     private final String userLanguage;
 
     public AvailableSubscriptionsByEvent(@Column("event_id") int eventId,
+                                         @Column("organization_id") int organizationId,
                                          @Column("subscription_id") UUID subscriptionId,
                                          @Column("email_address") String emailAddress,
                                          @Column("first_name") String firstName,
                                          @Column("last_name") String lastName,
                                          @Column("user_language") String userLanguage) {
         this.eventId = eventId;
+        this.organizationId = organizationId;
         this.subscriptionId = subscriptionId;
         this.emailAddress = emailAddress;
         this.firstName = firstName;
@@ -64,5 +67,9 @@ public class AvailableSubscriptionsByEvent {
 
     public String getUserLanguage() {
         return userLanguage;
+    }
+
+    public int getOrganizationId() {
+        return organizationId;
     }
 }

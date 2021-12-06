@@ -50,6 +50,7 @@ public class Jobs {
     private static final int THIRTY_SECONDS = 1000 * 30;
     private static final int FIVE_SECONDS = 1000 * 5;
     private static final int THIRTY_MINUTES = 30 * ONE_MINUTE;
+    private static final String EVERY_HOUR = "0 0 0/1 * * ?";
 
     private final AdminReservationRequestManager adminReservationRequestManager;
     private final FileUploadManager fileUploadManager;
@@ -85,7 +86,7 @@ public class Jobs {
 
 
     //run each hour
-    @Scheduled(cron = "0 0 0/1 * * ?")
+    @Scheduled(cron = EVERY_HOUR)
     public void sendOfflinePaymentReminderToEventOrganizers() {
         log.trace("running job sendOfflinePaymentReminderToEventOrganizers");
         try {
@@ -95,7 +96,7 @@ public class Jobs {
         }
     }
 
-    @Scheduled(cron = "#{environment.acceptsProfiles('dev') ? '0 * * * * *' : '0 0 0/1 * * ?'}")
+    @Scheduled(cron = EVERY_HOUR)
     public void assignTicketsToSubscribers() {
         log.trace("running job assignTicketsToSubscribers");
         try {
