@@ -66,7 +66,9 @@ public class OnlineCheckInController {
                             // invoke the extension for customizing the URL, if any
                             // we call the extension from here because it will have a smaller impact on the throughput compared to
                             // calling it from the checkInManager
-                            var customUrlOptional = extensionManager.handleOnlineCheckInLink(match.get(), ticket, event);
+                            // FIXME load additional info from view
+                            var additionalInfo = ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket);
+                            var customUrlOptional = extensionManager.handleOnlineCheckInLink(match.get(), ticket, event, additionalInfo);
                             return customUrlOptional.or(() -> match);
                         }
                         log.info("denying check-in for ticket {} because check-in status was {}", ticketUUID, checkInStatus);

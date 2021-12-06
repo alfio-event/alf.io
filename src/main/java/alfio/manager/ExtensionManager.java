@@ -244,13 +244,17 @@ public class ExtensionManager {
         ), CreditNoteGeneration.class));
     }
 
-    public Optional<String> handleOnlineCheckInLink(String originalUrl, Ticket ticket, EventWithCheckInInfo event) {
+    public Optional<String> handleOnlineCheckInLink(String originalUrl,
+                                                    Ticket ticket,
+                                                    EventWithCheckInInfo event,
+                                                    Map<String, List<String>> additionalInfo) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("event", event);
         payload.put("eventId", event.getId());
         payload.put("organizationId", event.getOrganizationId());
         payload.put("ticket", ticket);
         payload.put("originalURL", originalUrl);
+        payload.put("additionalInfo", additionalInfo);
 
         return Optional.ofNullable(extensionService.executeScriptsForEvent(ONLINE_CHECK_IN_REDIRECT.name(),
             toPath(event),
