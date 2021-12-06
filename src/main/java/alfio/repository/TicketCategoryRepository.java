@@ -91,6 +91,7 @@ public interface TicketCategoryRepository {
         "    and tcs.is_expired is FALSE" +
         "    and tcs.access_restricted is FALSE" +
         "    and (tcs.bounded is FALSE or tcs.not_sold_tickets > 0)" +
+        " order by tc.inception, tc.expiration, tc.id" +
         " limit 1")
     Optional<TicketCategory> findFirstWithAvailableTickets(@Bind("eventId") int eventId);
 
