@@ -49,26 +49,24 @@ public class OnlineCheckInController {
                                  @PathVariable("ticketCodeHash") String ticketCodeHash) {
 
         return ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventShortName, ticketUUID)
-            .flatMap(info -> {
-                var ticket = info.getTicket();
-                var event = info.getEventWithCheckInInfo();
+            .flatMap(data -> {
+                var ticket = data.getTicket();
+                var event = data.getEventWithCheckInInfo();
                 String ticketCode = ticket.ticketCode(event.getPrivateKey());
                 if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), ticketCodeHash.getBytes(StandardCharsets.UTF_8))) {
                     log.debug("code successfully validated for ticket {}", ticketUUID);
                     // check-in can be done. Let's check if there is a redirection URL
-                    var categoryConfiguration = info.getCategoryMetadata().getOnlineConfiguration();
+                    var categoryConfiguration = data.getCategoryMetadata().getOnlineConfiguration();
                     var eventConfiguration = event.getMetadata().getOnlineConfiguration();
                     var match = findMatchingLink(event.getZoneId(), categoryConfiguration, eventConfiguration);
                     if(match.isPresent()) {
-                        var checkInStatus = checkInManager.performCheckinForOnlineEvent(ticket, event, info.getTicketCategory());
+                        var checkInStatus = checkInManager.performCheckinForOnlineEvent(ticket, event, data.getTicketCategory());
                         log.info("check-in status {} for ticket {}", checkInStatus, ticketUUID);
                         if(checkInStatus == SUCCESS || (checkInStatus == ALREADY_CHECK_IN && ticket.isCheckedIn())) {
                             // invoke the extension for customizing the URL, if any
                             // we call the extension from here because it will have a smaller impact on the throughput compared to
                             // calling it from the checkInManager
-                            // FIXME load additional info from view
-                            var additionalInfo = ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket);
-                            var customUrlOptional = extensionManager.handleOnlineCheckInLink(match.get(), ticket, event, additionalInfo);
+                            var customUrlOptional = extensionManager.handleOnlineCheckInLink(match.get(), ticket, event, data.getTicketAdditionalInfo());
                             return customUrlOptional.or(() -> match);
                         }
                         log.info("denying check-in for ticket {} because check-in status was {}", ticketUUID, checkInStatus);
