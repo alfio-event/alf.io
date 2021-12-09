@@ -141,9 +141,14 @@
         var ctrl = this;
 
         ctrl.$onInit = function() {
-            $q.all([SubscriptionService.loadSubscriptionsDescriptors(ctrl.organizationId), ConfigurationService.loadSingleConfigForOrganization(ctrl.organizationId, 'BASE_URL')]).then(function(res) {
+            $q.all([
+                SubscriptionService.loadSubscriptionsDescriptors(ctrl.organizationId),
+                ConfigurationService.loadSingleConfigForOrganization(ctrl.organizationId, 'BASE_URL'),
+                ConfigurationService.loadSingleConfigForOrganization(ctrl.organizationId, 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS'),
+            ]).then(function(res) {
                 ctrl.subscriptions = res[0].data;
                 ctrl.baseUrl = res[1].data;
+                ctrl.ticketsGenerationJobActive = res[2].data === 'true';
             });
         }
 
@@ -250,7 +255,8 @@
                 EventService.getSupportedLanguages(),
                 UtilsService.getAvailableCurrencies(),
                 PaymentProxyService.getAllProxies(ctrl.organizationId),
-                LocationService.getTimezones()
+                LocationService.getTimezones(),
+                ConfigurationService.loadSingleConfigForOrganization(ctrl.organizationId, 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS')
             ];
             if(ctrl.subscriptionId) {
                 ctrl.existing = true;
@@ -275,6 +281,7 @@
                 ctrl.currencies = res[2].data;
                 ctrl.paymentMethods = getPaymentMethods(res[3].data);
                 ctrl.timeZones = res[4].data;
+                ctrl.ticketsGenerationJobActive = res[5].data === 'true';
 
                 if(ctrl.existing) {
                     initExistingSubscription();

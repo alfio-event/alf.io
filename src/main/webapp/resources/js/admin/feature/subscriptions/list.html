@@ -67,7 +67,7 @@
                         <i class="fa fa-clock-o fa-1_5x"></i><span class="sr-only">Validity</span>
                         <span class="text-muted">{{subscription.descriptor.validityFrom | formatDate}}<span ng-if="subscription.descriptor.validityTo"> - {{subscription.descriptor.validityFrom | formatDate}}</span></span>
                     </h5>
-                    <h5 ng-if="subscription.descriptor.supportsTicketsGeneration" class="text-success">
+                    <h5 ng-if="$ctrl.ticketsGenerationJobActive && subscription.descriptor.supportsTicketsGeneration" class="text-success">
                         <i class="fa fa-check fa-1_5x"></i><span class="sr-only">Validity</span>
                         <span>Automatic tickets generation is active</span>
                     </h5>
