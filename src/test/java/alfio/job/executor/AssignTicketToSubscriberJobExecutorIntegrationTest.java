@@ -192,13 +192,18 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
         var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, maxEntries);
         var subscriptionIdAndPin = confirmAndLinkSubscription(descriptorId, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
         subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
+        // 1. check that subscription descriptor is not marked as "available" because it does not support ticket generation
+        assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
+        // enable support for tickets generation
+        assertEquals(1, jdbcTemplate.update("update subscription_descriptor set supports_tickets_generation = true where id = :id", Map.of("id", descriptorId)));
         assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
-        // trigger job schedule with flag not active
+
+        // 2. trigger job schedule with flag not active
         executor.process(adminRequest);
         assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
         assertEquals(0, adminReservationRequestRepository.countPending());
 
-        // try again with flag active
+        // 3. trigger job schedule with flag active
         configurationRepository.insert(ConfigurationKeys.GENERATE_TICKETS_FOR_SUBSCRIPTIONS.name(), "true", "");
         executor.process(adminRequest);
         assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());

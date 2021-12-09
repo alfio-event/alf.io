@@ -86,7 +86,8 @@ public class SubscriptionManager {
             subscriptionDescriptor.getFileBlobId(),
             subscriptionDescriptor.getPaymentProxies(),
             UUID.randomUUID().toString(),
-            subscriptionDescriptor.getTimeZone().toString());
+            subscriptionDescriptor.getTimeZone().toString(),
+            Boolean.TRUE.equals(subscriptionDescriptor.getSupportsTicketsGeneration()));
 
         if(result != 1) {
             return Optional.empty();
@@ -162,7 +163,8 @@ public class SubscriptionManager {
 
                     subscriptionDescriptor.getId(),
                     original.getOrganizationId(),
-                    subscriptionDescriptor.getTimeZone().toString()
+                    subscriptionDescriptor.getTimeZone().toString(),
+                    Boolean.TRUE.equals(subscriptionDescriptor.getSupportsTicketsGeneration())
                 );
 
                 if(maxAvailable > 0 && maxAvailable > original.getMaxAvailable()) {

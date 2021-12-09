@@ -96,6 +96,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
     private final List<PaymentProxy> paymentProxies;
     private final String privateKey;
     private final String timeZone;
+    private final boolean supportsTicketsGeneration;
 
     public SubscriptionDescriptor(@Column("id") UUID id,
                                   @Column("title") @JSONData Map<String, String> title,
@@ -124,7 +125,8 @@ public class SubscriptionDescriptor implements PurchaseContext {
                                   @Column("file_blob_id_fk") String fileBlobId,
                                   @Column("allowed_payment_proxies") @Array List<String> paymentProxies,
                                   @Column("private_key") String privateKey,
-                                  @Column("time_zone") String timeZone) {
+                                  @Column("time_zone") String timeZone,
+                                  @Column("supports_tickets_generation") Boolean supportsTicketsGeneration) {
         var zoneId = ZoneId.of(timeZone);
         this.id = id;
         this.title = title;
@@ -155,6 +157,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
         this.paymentProxies = paymentProxies.stream().map(PaymentProxy::valueOf).collect(Collectors.toList());
 
         this.privateKey = privateKey;
+        this.supportsTicketsGeneration = Boolean.TRUE.equals(supportsTicketsGeneration);
     }
 
     @Override

@@ -68,6 +68,7 @@ public class SubscriptionDescriptorWithStatistics {
         @Column("sd_allowed_payment_proxies") @Array List<String> paymentProxies,
         @Column("sd_private_key") String privateKey,
         @Column("sd_time_zone") String timeZone,
+        @Column("sd_supports_tickets_generation") Boolean supportsTicketsGeneration,
 
 
         @Column("s_pending_count") int pendingCount,
@@ -104,7 +105,8 @@ public class SubscriptionDescriptorWithStatistics {
             fileBlobId,
             paymentProxies,
             privateKey,
-            timeZone);
+            timeZone,
+            supportsTicketsGeneration);
     }
 
     public BigDecimal getUnitPrice() {

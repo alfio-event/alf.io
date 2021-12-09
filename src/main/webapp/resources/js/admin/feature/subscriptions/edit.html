@@ -262,6 +262,13 @@
                 </div>
             </div>
         </div>
+        <div class="page-header">
+            <h3>Automatic tickets generation</h3>
+        </div>
+        <div class="checkbox">
+            <label><input type="checkbox" ng-model="$ctrl.subscription.supportsTicketsGeneration"> Generate tickets automatically for compatible events</label>
+            <small class="help-block">If enabled, each subscriber will receive one ticket for present and future compatible events automatically.<br>Unless the subscriber has already used the subscription for that event, in which case no tickets will be generated</small>
+        </div>
         <hr class="wMarginTop30px"/>
         <div class="row wMarginBottom30px">
             <div class="col-md-4 col-md-push-8 col-xs-12">

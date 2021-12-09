@@ -303,7 +303,8 @@ public class SubscriptionManagerIntegrationTest {
             null,
             fileBlobId,
             List.of(PaymentProxy.STRIPE),
-            ZoneId.of("Europe/Zurich"));
+            ZoneId.of("Europe/Zurich"),
+            false);
     }
 
 }

@@ -264,7 +264,8 @@
                         validityToModel: {},
                         onSaleFromModel: {},
                         onSaleToModel: {},
-                        organizationId: ctrl.organizationId
+                        organizationId: ctrl.organizationId,
+                        supportsTicketsGeneration: false
                     }
                 }));
             }
@@ -531,7 +532,8 @@
                     privacyPolicyUrl: subscription.privacyPolicyUrl,
                     fileBlobId: subscription.fileBlobId,
                     paymentProxies: subscription.paymentProxies,
-                    timeZone: subscription.timeZone
+                    timeZone: subscription.timeZone,
+                    supportsTicketsGeneration: subscription.supportsTicketsGeneration
                 };
             }
         };

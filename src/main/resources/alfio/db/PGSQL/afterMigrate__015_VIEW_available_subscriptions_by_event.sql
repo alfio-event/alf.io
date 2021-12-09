@@ -45,6 +45,7 @@ create view available_subscriptions_by_event as (
     where e.end_ts > now() -- make sure that event is not in the past
       and s.status = 'ACQUIRED'
       and not exists(select id from tickets_reservation tr where tr.subscription_id_fk = s.id and tr.event_id_fk = e.id)
+      and sd.supports_tickets_generation is TRUE
       and exp.inception <= now()
       and exp.expiration > now()
       and (s.max_usage = -1 or s.max_usage > u.usage)

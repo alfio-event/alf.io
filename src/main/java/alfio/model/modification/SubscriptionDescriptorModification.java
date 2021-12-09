@@ -61,6 +61,7 @@ public class SubscriptionDescriptorModification {
     private final String fileBlobId;
     private final List<PaymentProxy> paymentProxies;
     private final ZoneId timeZone;
+    private final Boolean supportsTicketsGeneration;
 
     public SubscriptionDescriptorModification(@JsonProperty("id") UUID id,
                                               @JsonProperty("title") Map<String, String> title,
@@ -85,7 +86,8 @@ public class SubscriptionDescriptorModification {
                                               @JsonProperty("privacyPolicyUrl") String privacyPolicyUrl,
                                               @JsonProperty("fileBlobId") String fileBlobId,
                                               @JsonProperty("paymentProxies") List<PaymentProxy> paymentProxies,
-                                              @JsonProperty("timeZone") ZoneId timeZone) {
+                                              @JsonProperty("timeZone") ZoneId timeZone,
+                                              @JsonProperty("supportsTicketsGeneration") Boolean supportsTicketsGeneration) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -110,6 +112,7 @@ public class SubscriptionDescriptorModification {
         this.fileBlobId = fileBlobId;
         this.paymentProxies = paymentProxies;
         this.timeZone = timeZone;
+        this.supportsTicketsGeneration = supportsTicketsGeneration;
     }
 
     public int getPriceCts() {
@@ -161,6 +164,7 @@ public class SubscriptionDescriptorModification {
             subscriptionDescriptor.getPrivacyPolicyUrl(),
             subscriptionDescriptor.getFileBlobId(),
             subscriptionDescriptor.getPaymentProxies(),
-            subscriptionDescriptor.getZoneId());
+            subscriptionDescriptor.getZoneId(),
+            subscriptionDescriptor.isSupportsTicketsGeneration());
     }
 }

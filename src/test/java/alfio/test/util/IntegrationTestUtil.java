@@ -169,7 +169,8 @@ public class IntegrationTestUtil {
             null,
             fileBlobId,
             List.of(PaymentProxy.STRIPE),
-            ClockProvider.clock().getZone());
+            ClockProvider.clock().getZone(),
+            false);
 
         return subscriptionManager.createSubscriptionDescriptor(subscriptionModification).orElseThrow();
     }
