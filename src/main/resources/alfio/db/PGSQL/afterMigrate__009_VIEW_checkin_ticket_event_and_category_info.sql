@@ -18,7 +18,7 @@
 create view checkin_ticket_event_and_category_info as
 (
     with aggregated_ticket_field_values as (
-        select tfc.id, ticket_id_fk, jsonb_agg(jsonb_build_object(tfc.field_name, case tfc.field_type when 'checkbox' then tfv.field_value::jsonb else jsonb_build_array(tfv.field_value) end)) as additional_info
+        select tfc.id, ticket_id_fk, jsonb_object_agg(tfc.field_name, case tfc.field_type when 'checkbox' then tfv.field_value::jsonb else jsonb_build_array(tfv.field_value) end) as additional_info
         from ticket_field_value tfv
                  inner join ticket_field_configuration tfc on tfv.ticket_field_configuration_id_fk = tfc.id
         group by 1, 2, tfc.field_name
