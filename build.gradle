@@ -144,7 +144,14 @@ dependencies {
     compile "org.flywaydb:flyway-core:6.0.8"
     compile "org.postgresql:postgresql:42.2.14"
     compile "com.zaxxer:HikariCP:3.4.2"
-    compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
+
+    /* https://www.lunasec.io/docs/blog/log4j-zero-day/ */
+    implementation "org.apache.logging.log4j:log4j-api:2.15.0"
+    implementation "org.apache.logging.log4j:log4j-core:2.15.0"
+    implementation "org.apache.logging.log4j:log4j-jul:2.15.0"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.15.0"
+    /**/
+
     compile "com.stripe:stripe-java:15.4.0"
     implementation 'com.paypal.sdk:checkout-sdk:1.0.2'
     implementation 'com.google.code.gson:gson:2.8.6'
@@ -195,6 +202,7 @@ dependencies {
         exclude module : 'spring-boot-starter-logging'
     }
     compile "org.springframework.boot:spring-boot-starter-log4j2"
+
     compile "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
