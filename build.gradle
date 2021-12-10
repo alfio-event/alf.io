@@ -108,7 +108,7 @@ repositories {
 
 dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
-    implementation "com.auth0:java-jwt:3.15.0"
+    implementation 'com.auth0:java-jwt:3.18.2'
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "org.springframework.boot:spring-boot-properties-migrator", {
@@ -120,8 +120,8 @@ dependencies {
     implementation "javax.mail:mail:1.5.0-b01"
     implementation 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    implementation "com.openhtmltopdf:openhtmltopdf-core:1.0.8"
-    implementation "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.8"
+    implementation 'com.openhtmltopdf:openhtmltopdf-core:1.0.10'
+    implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
     implementation "ch.digitalfondue.jfiveparse:jfiveparse:0.9.0"
     /**/
     implementation "com.google.zxing:core:3.4.1"
@@ -129,17 +129,24 @@ dependencies {
     implementation "org.flywaydb:flyway-core"
     implementation "org.postgresql:postgresql"
     implementation "com.zaxxer:HikariCP"
-    implementation "org.apache.logging.log4j:log4j-api"
+
+    /* https://www.lunasec.io/docs/blog/log4j-zero-day/ */
+    implementation "org.apache.logging.log4j:log4j-api:2.15.0"
+    implementation "org.apache.logging.log4j:log4j-core:2.15.0"
+    implementation "org.apache.logging.log4j:log4j-jul:2.15.0"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.15.0"
+    /**/
+
     implementation "com.stripe:stripe-java:20.50.0"
-    implementation 'com.paypal.sdk:checkout-sdk:1.0.3'
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.paypal.sdk:checkout-sdk:1.0.5'
+    implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.1', {
         exclude module: 'gson'
     }
 
     implementation "org.apache.commons:commons-lang3:3.12.0"
     implementation "org.apache.commons:commons-text:1.9"
-    implementation "com.opencsv:opencsv:5.4"
+    implementation 'com.opencsv:opencsv:5.5.2'
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'net.sf.biweekly:biweekly:0.6.6'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
@@ -156,9 +163,9 @@ dependencies {
 
     compileOnly "javax.servlet:javax.servlet-api:4.0.1"
     testImplementation "javax.servlet:javax.servlet-api:4.0.1"
-    testImplementation "org.testcontainers:testcontainers:1.15.3"
-    testImplementation "org.testcontainers:postgresql:1.15.3"
-    testImplementation "org.testcontainers:junit-jupiter:1.15.3"
+    testImplementation 'org.testcontainers:testcontainers:1.16.2'
+    testImplementation 'org.testcontainers:postgresql:1.16.2'
+    testImplementation 'org.testcontainers:junit-jupiter:1.16.2'
     testImplementation "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }
@@ -210,7 +217,7 @@ dependencies {
     }
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    testImplementation 'org.seleniumhq.selenium:selenium-java:4.0.0-beta-3'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.1.0'
 
     errorprone('com.google.errorprone:error_prone_core:2.4.0')
 }
