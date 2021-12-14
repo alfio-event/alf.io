@@ -283,4 +283,8 @@ public interface TicketReservationRepository {
 
     @Query("select * from reservation_with_purchase_context where tr_user_id_fk = :userId order by tr_creation_ts desc")
     List<ReservationWithPurchaseContext> findAllReservationsForUser(@Bind("userId") int userId);
+
+    @Query("update tickets_reservation set vat_status = :vatStatus where id = :reservationId")
+    int updateVatStatus(@Bind("reservationId") String reservationId,
+                        @Bind("vatStatus") PriceContainer.VatStatus vatStatus);
 }

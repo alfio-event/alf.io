@@ -232,7 +232,8 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
         var reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, reservation.getStatus());
         assertEquals(PaymentProxy.ADMIN, reservation.getPaymentMethod());
-        assertEquals(BigDecimal.ZERO, reservation.getFinalPrice());
+        assertEquals(0, reservation.getFinalPriceCts());
+        assertEquals(event.getVatStatus(), reservation.getVatStatus());
 
         // trigger email send
         int sent = notificationManager.sendWaitingMessages();

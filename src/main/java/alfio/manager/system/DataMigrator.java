@@ -132,7 +132,7 @@ public class DataMigrator {
 
     private void fixVatStatus() {
         transactionTemplate.execute(ts -> {
-            int rows = jdbc.update("update tickets_reservation set vat_status = (select vat_status from event where id = event_id_fk) where vat_status is null", Map.of());
+            int rows = jdbc.update("update tickets_reservation set vat_status = e.vat_status from event e where tickets_reservation.vat_status is null and tickets_reservation.event_id_fk = e.id", Map.of());
             log.debug("update VAT/GST on {} reservations", rows);
             return null;
         });

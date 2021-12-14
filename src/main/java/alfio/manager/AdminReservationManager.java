@@ -349,10 +349,15 @@ public class AdminReservationManager {
             var reservation = original;
 
             if (subscriptionId != null && purchaseContext.ofType(PurchaseContextType.event)) {
+                if (reservation.getVatStatus() == null && purchaseContext.getVatStatus() != null) {
+                    // set default vatStatus if not present
+                    ticketReservationRepository.updateVatStatus(reservationId, purchaseContext.getVatStatus());
+                    reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+                }
                 var subscriptionDetails = subscriptionRepository.findSubscriptionById(subscriptionId);
                 var bindingResult = new MapBindingResult(new HashMap<>(), "");
                 boolean result = ticketReservationManager.validateAndApplySubscriptionCode(purchaseContext,
-                    original,
+                    reservation,
                     Optional.of(subscriptionId),
                     subscriptionId.toString(),
                     subscriptionDetails.getEmail(),
