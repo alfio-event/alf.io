@@ -133,7 +133,8 @@ public class SubscriptionManager {
 
     public Optional<UUID> updateSubscriptionDescriptor(SubscriptionDescriptorModification subscriptionDescriptor) {
 
-        return subscriptionRepository.findOne(subscriptionDescriptor.getId(), subscriptionDescriptor.getOrganizationId())
+        var subscriptionDescriptorId = subscriptionDescriptor.getId();
+        return subscriptionRepository.findOne(subscriptionDescriptorId, subscriptionDescriptor.getOrganizationId())
             .flatMap(original -> {
                 int maxAvailable = requireNonNullElse(subscriptionDescriptor.getMaxAvailable(), -1);
                 int result = subscriptionRepository.updateSubscriptionDescriptor(
@@ -161,21 +162,28 @@ public class SubscriptionManager {
                     subscriptionDescriptor.getFileBlobId(),
                     subscriptionDescriptor.getPaymentProxies(),
 
-                    subscriptionDescriptor.getId(),
+                    subscriptionDescriptorId,
                     original.getOrganizationId(),
                     subscriptionDescriptor.getTimeZone().toString(),
                     Boolean.TRUE.equals(subscriptionDescriptor.getSupportsTicketsGeneration())
                 );
 
+                if (result != 1) {
+                    return Optional.empty();
+                }
+
                 if(maxAvailable > 0 && maxAvailable > original.getMaxAvailable()) {
                     int existing = Math.max(0, original.getMaxAvailable());
-                    preGenerateSubscriptions(subscriptionDescriptor, subscriptionDescriptor.getId(), maxAvailable - existing);
+                    preGenerateSubscriptions(subscriptionDescriptor, subscriptionDescriptorId, maxAvailable - existing);
                 } else if(maxAvailable > -1 && maxAvailable < original.getMaxAvailable()) {
                     int amount = original.getMaxAvailable() - maxAvailable;
-                    int invalidated = subscriptionRepository.invalidateSubscriptions(subscriptionDescriptor.getId(), amount);
+                    int invalidated = subscriptionRepository.invalidateSubscriptions(subscriptionDescriptorId, amount);
                     Validate.isTrue(amount == invalidated, "Cannot invalidate existing subscriptions. (wanted: %d got: %d)", amount, invalidated);
                 }
-                return result == 1 ? Optional.of(subscriptionDescriptor.getId()) : Optional.empty();
+                if(original.getPrice() != subscriptionDescriptor.getPriceCts()) {
+                    subscriptionRepository.updatePriceForSubscriptions(subscriptionDescriptorId, subscriptionDescriptor.getPriceCts());
+                }
+                return Optional.of(subscriptionDescriptorId);
             });
     }
 

@@ -190,7 +190,8 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
         var adminRequest = new AdminJobSchedule(1L, "", ZonedDateTime.now(ClockProvider.clock()), AdminJobSchedule.Status.SCHEDULED, null, metadata);
         int maxEntries = 2;
         var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, maxEntries);
-        var subscriptionIdAndPin = confirmAndLinkSubscription(descriptorId, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
+        var descriptor = subscriptionRepository.findOne(descriptorId).orElseThrow();
+        var subscriptionIdAndPin = confirmAndLinkSubscription(descriptor, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
         subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
         // 1. check that subscription descriptor is not marked as "available" because it does not support ticket generation
         assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());

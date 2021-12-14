@@ -191,7 +191,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         var event = eventAndUser.getLeft();
         int maxEntries = 2;
         var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, maxEntries);
-        var subscriptionIdAndPin = confirmAndLinkSubscription(descriptorId, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
+        var descriptor = subscriptionRepository.findOne(descriptorId).orElseThrow();
+        var subscriptionIdAndPin = confirmAndLinkSubscription(descriptor, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
         this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
         this.context = new ReservationFlowContext(event, eventAndUser.getRight() + "_owner", subscriptionIdAndPin.getLeft(), subscriptionIdAndPin.getRight());
     }

@@ -219,8 +219,9 @@ public interface SubscriptionRepository {
     @Query("select count(*) from subscription where subscription_descriptor_fk = :descriptorId and status = 'FREE'")
     int countFreeSubscriptionForDescriptor(@Bind("descriptorId") UUID subscriptionDescriptorId);
 
-    @Query("update subscription set reservation_id_fk = :reservationId, status = :status::allocation_status where id = :subscriptionId")
-    int bindSubscriptionToReservation(@Bind("reservationId") String reservationId, @Bind("status") AllocationStatus allocationStatus, @Bind("subscriptionId") UUID subscriptionId);
+    @Query("update subscription set reservation_id_fk = :reservationId, status = :status::allocation_status," +
+        " src_price_cts = :srcPriceCts where id = :subscriptionId")
+    int bindSubscriptionToReservation(@Bind("reservationId") String reservationId, @Bind("srcPriceCts") int price, @Bind("status") AllocationStatus allocationStatus, @Bind("subscriptionId") UUID subscriptionId);
 
     @Query("delete from subscription where reservation_id_fk in (:expiredReservationIds)")
     int deleteSubscriptionWithReservationId(@Bind("expiredReservationIds") List<String> expiredReservationIds);
@@ -303,4 +304,7 @@ public interface SubscriptionRepository {
         " and (:organizationId is null or organization_id = :organizationId)")
     List<AvailableSubscriptionsByEvent> loadAvailableSubscriptionsByEvent(@Bind("eventId") Integer eventId,
                                                                           @Bind("organizationId") Integer organizationId);
+
+    @Query("update subscription set src_price_cts = :price where subscription_descriptor_fk = :descriptorId and status = 'FREE'")
+    int updatePriceForSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("price") int priceCts);
 }

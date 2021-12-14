@@ -274,6 +274,27 @@ public class SubscriptionManagerIntegrationTest {
         assertEquals(1, count);
     }
 
+    @Test
+    void updatePrice() {
+        int orgId = event.getOrganizationId();
+        assertTrue(subscriptionManager.findAll(orgId).isEmpty());
+        var request = buildSubscriptionDescriptor(orgId, null, new BigDecimal("100"), 10);
+
+        var optionalDescriptorId = subscriptionManager.createSubscriptionDescriptor(request);
+        assertTrue(optionalDescriptorId.isPresent());
+        var descriptorId = optionalDescriptorId.get();
+        var paramsMap = Map.of("descriptorId", descriptorId);
+        var count = jdbcTemplate.queryForObject("select count(*) from subscription where subscription_descriptor_fk = :descriptorId and src_price_cts = 10000", paramsMap, Integer.class);
+        assertNotNull(count);
+        assertEquals(10, count);
+
+        request = buildSubscriptionDescriptor(orgId, descriptorId, new BigDecimal("200"), 10);
+        subscriptionManager.updateSubscriptionDescriptor(request);
+        count = jdbcTemplate.queryForObject("select count(*) from subscription where subscription_descriptor_fk = :descriptorId and src_price_cts = 20000", paramsMap, Integer.class);
+        assertNotNull(count);
+        assertEquals(10, count);
+    }
+
     private SubscriptionDescriptorModification buildSubscriptionDescriptor(int orgId, UUID id, BigDecimal price) {
         return buildSubscriptionDescriptor(orgId, id, price, 42);
     }

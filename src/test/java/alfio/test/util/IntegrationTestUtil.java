@@ -48,6 +48,9 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class IntegrationTestUtil {
 
     public static final int AVAILABLE_SEATS = 20;
@@ -175,20 +178,22 @@ public class IntegrationTestUtil {
         return subscriptionManager.createSubscriptionDescriptor(subscriptionModification).orElseThrow();
     }
 
-    public static Pair<UUID, String> confirmAndLinkSubscription(UUID descriptorId,
+    public static Pair<UUID, String> confirmAndLinkSubscription(SubscriptionDescriptor descriptor,
                                                                 int organizationId,
                                                                 SubscriptionRepository subscriptionRepository,
                                                                 TicketReservationRepository ticketReservationRepository,
                                                                 int maxEntries) {
+        assertTrue(subscriptionRepository.updatePriceForSubscriptions(descriptor.getId(), descriptor.getPrice() + 1) > 0);
         var zoneId = ClockProvider.clock().getZone();
-        var subscriptionId = subscriptionRepository.selectFreeSubscription(descriptorId).orElseThrow();
+        var subscriptionId = subscriptionRepository.selectFreeSubscription(descriptor.getId()).orElseThrow();
         var subscriptionReservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(ClockProvider.clock()), Date.from(Instant.now(ClockProvider.clock())), null, "en", null, new BigDecimal("7.7"), true, "CHF", organizationId, null);
-        subscriptionRepository.bindSubscriptionToReservation(subscriptionReservationId, AllocationStatus.PENDING, subscriptionId);
+        subscriptionRepository.bindSubscriptionToReservation(subscriptionReservationId, descriptor.getPrice(), AllocationStatus.PENDING, subscriptionId);
         subscriptionRepository.confirmSubscription(subscriptionReservationId, AllocationStatus.ACQUIRED,
             "Test", "Mc Test", "tickettest@test.com", maxEntries,
             null, null, ZonedDateTime.now(ClockProvider.clock()), zoneId.toString());
         var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+        assertEquals(descriptor.getPrice(), subscription.getSrcPriceCts());
         return Pair.of(subscriptionId, subscription.getPin());
     }
 }

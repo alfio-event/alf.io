@@ -286,7 +286,7 @@ public class TicketReservationManager {
             if(optionalSubscription.isEmpty()) {
                 throw new NotEnoughTicketsException();
             }
-            Validate.isTrue(subscriptionRepository.bindSubscriptionToReservation(reservationId, AllocationStatus.PENDING, optionalSubscription.get()) == 1);
+            Validate.isTrue(subscriptionRepository.bindSubscriptionToReservation(reservationId, subscriptionDescriptor.getPrice(), AllocationStatus.PENDING, optionalSubscription.get()) == 1);
         } else {
             subscriptionRepository.createSubscription(UUID.randomUUID(), subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
                 subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(),
