@@ -194,27 +194,27 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
         var subscriptionIdAndPin = confirmAndLinkSubscription(descriptor, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
         subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
         // 1. check that subscription descriptor is not marked as "available" because it does not support ticket generation
-        assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
+        assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null, ZonedDateTime.now(ClockProvider.clock())).size());
         // enable support for tickets generation
         assertEquals(1, jdbcTemplate.update("update subscription_descriptor set supports_tickets_generation = true where id = :id", Map.of("id", descriptorId)));
-        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
+        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null, ZonedDateTime.now(ClockProvider.clock())).size());
 
         // 2. trigger job schedule with flag not active
         executor.process(adminRequest);
-        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
+        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null, ZonedDateTime.now(ClockProvider.clock())).size());
         assertEquals(0, adminReservationRequestRepository.countPending());
 
         // 3. trigger job schedule with flag active
         configurationRepository.insert(ConfigurationKeys.GENERATE_TICKETS_FOR_SUBSCRIPTIONS.name(), "true", "");
         executor.process(adminRequest);
-        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
+        assertEquals(1, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null, ZonedDateTime.now(ClockProvider.clock())).size());
         assertEquals(1, adminReservationRequestRepository.countPending());
 
         // trigger reservation processing
         var result = adminReservationRequestManager.processPendingReservations();
         assertEquals(1, result.getLeft()); //  1 success
         assertEquals(0, result.getRight()); // 0 failures
-        assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null).size());
+        assertEquals(0, subscriptionRepository.loadAvailableSubscriptionsByEvent(null, null, ZonedDateTime.now(ClockProvider.clock())).size());
 
         // check ticket
         var ticketUuid = jdbcTemplate.queryForObject("select uuid from ticket where event_id = :eventId and ext_reference = :ref",

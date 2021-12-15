@@ -300,10 +300,15 @@ public interface SubscriptionRepository {
     @Query("update subscription set status = 'CANCELLED' where reservation_id_fk = :reservationId")
     int cancelSubscriptions(@Bind("reservationId") String reservationId);
 
-    @Query("select * from available_subscriptions_by_event where (:eventId is null or event_id = :eventId)" +
+    @Query("select * from available_subscriptions_by_event where" +
+        " e_end_ts > :nowTs" +
+        " and (s_validity_from is null or s_validity_from <= :nowTs)" +
+        " and (s_validity_to is null or s_validity_to > :nowTs)" +
+        " and (:eventId is null or event_id = :eventId)" +
         " and (:organizationId is null or organization_id = :organizationId)")
     List<AvailableSubscriptionsByEvent> loadAvailableSubscriptionsByEvent(@Bind("eventId") Integer eventId,
-                                                                          @Bind("organizationId") Integer organizationId);
+                                                                          @Bind("organizationId") Integer organizationId,
+                                                                          @Bind("nowTs") ZonedDateTime now);
 
     @Query("update subscription set src_price_cts = :price where subscription_descriptor_fk = :descriptorId and status = 'FREE'")
     int updatePriceForSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("price") int priceCts);

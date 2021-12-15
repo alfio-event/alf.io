@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
@@ -88,7 +89,7 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
         //     - validity_from is <= now()
         //     - validity_to is null or > now()
         //     - status = 'ACQUIRED'
-        var subscriptionsByEvent = subscriptionRepository.loadAvailableSubscriptionsByEvent((Integer) metadata.get(EVENT_ID), (Integer) metadata.get(ORGANIZATION_ID))
+        var subscriptionsByEvent = subscriptionRepository.loadAvailableSubscriptionsByEvent((Integer) metadata.get(EVENT_ID), (Integer) metadata.get(ORGANIZATION_ID), ZonedDateTime.now(clockProvider.getClock()))
             .stream()
             .collect(Collectors.groupingBy(AvailableSubscriptionsByEvent::getEventId));
         if (!subscriptionsByEvent.isEmpty()) {

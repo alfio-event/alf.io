@@ -22,32 +22,26 @@ create view available_subscriptions_by_event as (
         from subscription s
                  left join tickets_reservation t on t.subscription_id_fk = s.id
         group by 1
-    ), subscription_expiration as (
-        select id,
-               coalesce(s.validity_from, 'yesterday'::timestamp) inception,
-               coalesce(s.validity_to, 'tomorrow'::timestamp) expiration
-        from subscription s
     )
     select e.id event_id,
            e.org_id organization_id,
+           e.end_ts as e_end_ts,
            s.id as subscription_id,
            s.email_address as email_address,
            s.first_name as first_name,
            s.last_name as last_name,
-           r.user_language as user_language
+           r.user_language as user_language,
+           s.validity_from as s_validity_from,
+           s.valid_to as s_validity_to
     from event e
              join subscription_event se on se.event_id_fk = e.id
              join subscription_descriptor sd on se.subscription_descriptor_id_fk = sd.id
              join subscription s on sd.id = s.subscription_descriptor_fk
              join usage_by_subscription_id u on s.id = u.subscription_id
-             join subscription_expiration exp on s.id = exp.id
              join tickets_reservation r on r.id = s.reservation_id_fk
-    where e.end_ts > now() -- make sure that event is not in the past
-      and s.status = 'ACQUIRED'
+    where s.status = 'ACQUIRED'
       and not exists(select id from tickets_reservation tr where tr.subscription_id_fk = s.id and tr.event_id_fk = e.id)
       and sd.supports_tickets_generation is TRUE
-      and exp.inception <= now()
-      and exp.expiration > now()
       and (s.max_usage = -1 or s.max_usage > u.usage)
     order by e.id
 );
