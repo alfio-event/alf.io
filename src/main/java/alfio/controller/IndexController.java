@@ -155,6 +155,7 @@ public class IndexController {
     @GetMapping({
         "/",
         "/o/*",
+        "/o/*/events-all",
         "/events-all",
         "/event/{eventShortName}",
         "/event/{eventShortName}/reservation/{reservationId}/book",
@@ -172,6 +173,7 @@ public class IndexController {
         //
         // subscription
         "/subscriptions-all",
+        "/o/*/subscriptions-all",
         "/subscription/{subscriptionId}",
         "/subscription/{subscriptionId}/reservation/{reservationId}/book",
         "/subscription/{subscriptionId}/reservation/{reservationId}/overview",
