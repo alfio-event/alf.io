@@ -146,10 +146,10 @@ dependencies {
     compile "com.zaxxer:HikariCP:3.4.2"
 
     /* https://www.lunasec.io/docs/blog/log4j-zero-day/ */
-    implementation "org.apache.logging.log4j:log4j-api:2.16.0"
-    implementation "org.apache.logging.log4j:log4j-core:2.16.0"
-    implementation "org.apache.logging.log4j:log4j-jul:2.16.0"
-    implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.16.0"
+    implementation "org.apache.logging.log4j:log4j-api:2.17.0"
+    implementation "org.apache.logging.log4j:log4j-core:2.17.0"
+    implementation "org.apache.logging.log4j:log4j-jul:2.17.0"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:2.17.0"
     /**/
 
     compile "com.stripe:stripe-java:15.4.0"
