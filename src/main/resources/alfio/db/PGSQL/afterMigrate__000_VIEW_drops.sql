@@ -25,6 +25,7 @@ drop view if exists reservation_and_ticket_and_tx;
 drop view if exists ticket_category_with_currency;
 drop view if exists additional_service_with_currency;
 drop view if exists checkin_ticket_event_and_category_info;
+drop view if exists aggregated_ticket_field_values;
 drop view if exists subscription_descriptor_statistics;
 drop view if exists basic_event_with_optional_subscription;
 drop view if exists reservation_and_subscription_and_tx;
