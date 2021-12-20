@@ -15,13 +15,6 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create view aggregated_ticket_field_values as (
-    select ticket_id_fk, jsonb_object_agg(tfc.field_name, case tfc.field_type when 'checkbox' then tfv.field_value::jsonb else jsonb_build_array(tfv.field_value) end) as additional_info
-    from ticket_field_value tfv
-             inner join ticket_field_configuration tfc on tfv.ticket_field_configuration_id_fk = tfc.id
-    group by 1
-);
-
 create view checkin_ticket_event_and_category_info as
 (
     select
@@ -128,13 +121,15 @@ create view checkin_ticket_event_and_category_info as
         e.metadata                          e_metadata,
         e.org_id                            e_org_id,
         e.locales                           e_locales,
-        tai.additional_info                 tai_additional_info
+        (select jsonb_object_agg(tfc.field_name, case tfc.field_type when 'checkbox' then tfv.field_value::jsonb else jsonb_build_array(tfv.field_value) end) as additional_info
+            from ticket_field_value tfv
+                inner join ticket_field_configuration tfc on tfv.ticket_field_configuration_id_fk = tfc.id
+            where event_id_fk = e.id)       tai_additional_info
 
     from ticket t
              inner join tickets_reservation tr on t.tickets_reservation_id = tr.id
              inner join ticket_category tc on t.category_id = tc.id
              inner join event e on e.id = t.event_id
-             left outer join aggregated_ticket_field_values tai on tai.ticket_id_fk = t.id
     where t.status in ('ACQUIRED', 'CHECKED_IN')
       and t.first_name is not null
       and (t.first_name <> '') IS TRUE
