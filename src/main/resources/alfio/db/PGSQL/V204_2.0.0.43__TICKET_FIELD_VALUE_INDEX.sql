@@ -16,6 +16,7 @@
 --
 
 -- drop view aggregated_ticket_field_values because we've inlined the query
+drop view if exists checkin_ticket_event_and_category_info;
 drop view if exists aggregated_ticket_field_values;
 
 create index ticket_field_value_configuration
