@@ -33,7 +33,7 @@ import java.util.Set;
 @QueryRepository
 public interface AdminJobQueueRepository {
 
-    @Query("select * from admin_job_queue where status = 'SCHEDULED' and job_name in(:jobNames) and request_ts <= now() for update skip locked")
+    @Query("select * from admin_job_queue where status = 'SCHEDULED' and job_name in (:jobNames) and request_ts <= now() for update skip locked")
     List<AdminJobSchedule> loadPendingSchedules(@Bind("jobNames") Collection<String> jobNames);
 
     @Query("select * from admin_job_queue")
