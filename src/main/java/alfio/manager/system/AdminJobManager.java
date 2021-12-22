@@ -23,6 +23,7 @@ import alfio.model.system.AdminJobSchedule;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.util.ClockProvider;
 import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -35,15 +36,17 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.AdminJobSchedule.Status.EXECUTED;
 import static java.util.stream.Collectors.*;
 
 @Transactional
-@Log4j2
+@Slf4j
 public class AdminJobManager {
 
+    static final int MAX_ATTEMPTS = 17; // will retry for approximately 36h
     private final Map<JobName, List<AdminJobExecutor>> executorsByJobId;
     private final AdminJobQueueRepository adminJobQueueRepository;
     private final TransactionTemplate nestedTransactionTemplate;
@@ -67,7 +70,7 @@ public class AdminJobManager {
         this.clockProvider = clockProvider;
     }
 
-    @Scheduled(fixedDelay = 60 * 1000)
+    @Scheduled(fixedDelay = 2 * 1000)
     void processPendingRequests() {
         log.trace("Processing pending requests");
         adminJobQueueRepository.loadPendingSchedules()
@@ -79,7 +82,14 @@ public class AdminJobManager {
                 var partitionedResults = scheduleWithResults.getRight().stream().collect(Collectors.partitioningBy(Result::isSuccess));
                 if(!partitionedResults.get(false).isEmpty()) {
                     partitionedResults.get(false).forEach(r -> log.warn("Processing failed for {}: {}", schedule.getJobName(), r.getErrors()));
-                    adminJobQueueRepository.updateSchedule(schedule.getId(), AdminJobSchedule.Status.FAILED, ZonedDateTime.now(clockProvider.getClock()), Map.of());
+                    if (schedule.getJobName() != JobName.EXECUTE_EXTENSION || schedule.getAttempts() > MAX_ATTEMPTS) {
+                        adminJobQueueRepository.updateSchedule(schedule.getId(), AdminJobSchedule.Status.FAILED, ZonedDateTime.now(clockProvider.getClock()), Map.of());
+                    } else {
+                        var nextExecution = getNextExecution(schedule.getAttempts());
+                        var extensionName = schedule.getMetadata().get("extensionName");
+                        log.trace("scheduling failed extension {} to be executed at {}", extensionName, nextExecution);
+                        adminJobQueueRepository.scheduleRetry(schedule.getId(), nextExecution);
+                    }
                 } else {
                     partitionedResults.get(true).forEach(result -> {
                         if(result.getData() != null) {
@@ -90,6 +100,11 @@ public class AdminJobManager {
                 }
             });
         log.trace("done processing pending requests");
+    }
+
+    static ZonedDateTime getNextExecution(int currentAttempt) {
+        return ZonedDateTime.now(ClockProvider.clock())
+            .plusSeconds((long) Math.pow(2, currentAttempt + 1));
     }
 
     @Scheduled(cron = "#{environment.acceptsProfiles('dev') ? '0 * * * * *' : '0 0 0 * * *'}")
@@ -107,13 +122,11 @@ public class AdminJobManager {
     }
 
     public boolean scheduleExecution(JobName jobName, Map<String, Object> metadata) {
-        try {
-            adminJobQueueRepository.schedule(jobName, ZonedDateTime.now(clockProvider.getClock()).truncatedTo(ChronoUnit.MINUTES), metadata);
-            return true;
-        } catch (DataIntegrityViolationException ex) {
-            log.trace("Integrity violation", ex);
-            return false;
-        }
+        return scheduleExecution(jobName, metadata, ZonedDateTime.now(clockProvider.getClock()).truncatedTo(ChronoUnit.MINUTES));
+    }
+
+    public boolean scheduleExecution(JobName jobName, Map<String, Object> metadata, ZonedDateTime executionTime) {
+        return executionScheduler(jobName, metadata, executionTime).apply(adminJobQueueRepository);
     }
 
     private Pair<AdminJobSchedule, List<Result<String>>> processPendingRequest(AdminJobSchedule schedule) {
@@ -127,5 +140,20 @@ public class AdminJobManager {
                 }
             })
             .collect(Collectors.toList()));
+    }
+
+    public static Function<AdminJobQueueRepository, Boolean> executionScheduler(JobName jobName, Map<String, Object> metadata, ZonedDateTime executionTime) {
+        return adminJobQueueRepository -> {
+            try {
+                int result = adminJobQueueRepository.schedule(jobName, executionTime, metadata);
+                if (result == 0) {
+                    log.trace("Possible duplication detected while inserting {}", jobName);
+                }
+                return result == 1;
+            } catch (DataIntegrityViolationException ex) {
+                log.trace("Integrity violation", ex);
+                return false;
+            }
+        };
     }
 }

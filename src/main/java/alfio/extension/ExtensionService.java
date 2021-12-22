@@ -60,6 +60,7 @@ public class ExtensionService {
     private static final String EVALUATE_RESULT = "res = GSON.fromJson(JSON.stringify(res), returnClass);";
     private static final String PROCESS_EXTENSION_RESULT  = "var res = executeScript(extensionEvent); " + EVALUATE_RESULT;
     private static final String PROCESS_CAPABILITY_RESULT = "var res = executeCapability(capability); " + EVALUATE_RESULT;
+    private static final String EXECUTE_SCRIPT = "executeScript(extensionEvent);";
     private final ScriptingExecutionService scriptingExecutionService;
     private final ExtensionRepository extensionRepository;
     private final ExtensionLogRepository extensionLogRepository;
@@ -286,6 +287,7 @@ public class ExtensionService {
                 Map<String, Object> context = new HashMap<>();
                 context.put("capability", capability.name());
                 context.put("output", null);
+                context.put("executionKey", UUID.randomUUID().toString());
                 context.put("request", params);
                 context = internalExecuteScript(scriptPathNameHash, context, basePath, false, PROCESS_CAPABILITY_RESULT, resultType);
                 return resultType.cast(context.get("output"));
@@ -296,6 +298,7 @@ public class ExtensionService {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, false);
         Map<String, Object> context = new HashMap<>(payload);
         context.put("extensionEvent", event);
+        context.put("executionKey", UUID.randomUUID().toString());
         context.put("output", null);
         for (ScriptPathNameHash activePath : activePaths) {
             context = internalExecuteScript(activePath, context, basePath, false, PROCESS_EXTENSION_RESULT, clazz);
@@ -307,9 +310,17 @@ public class ExtensionService {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, true);
         Map<String, Object> input = new HashMap<>(payload);
         input.put("extensionEvent", event);
+        input.put("executionKey", UUID.randomUUID().toString());
         for (ScriptPathNameHash activePath : activePaths) {
-            input = internalExecuteScript(activePath, input, basePath, true, "executeScript(extensionEvent);", Void.class);
+            input = internalExecuteScript(activePath, input, basePath, true, EXECUTE_SCRIPT, Void.class);
         }
+    }
+
+    public void retryFailedAsyncScript(String path, String name, Map<String, Object> payload) {
+        var extensionSupport = getSingle(path, name).orElseThrow();
+        Supplier<String> scriptGetter = () -> getScript(path, name)+"\n;"+EXECUTE_SCRIPT;
+        ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, extensionSupport.getPath(), path, name);
+        scriptingExecutionService.executeScript(name, extensionSupport.getHash(), scriptGetter, payload, Void.class, extLogger);
     }
 
     private <T> Map<String, Object> internalExecuteScript(ScriptPathNameHash activePath,

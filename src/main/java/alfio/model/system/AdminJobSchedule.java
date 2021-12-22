@@ -37,18 +37,21 @@ public class AdminJobSchedule {
     private final Status status;
     private final ZonedDateTime executionTimestamp;
     private final Map<String, Object> metadata;
+    private final int attempts;
 
     public AdminJobSchedule(@Column("id") long id,
                             @Column("job_name") String jobName,
                             @Column("request_ts") ZonedDateTime requestTimestamp,
                             @Column("status") Status status,
                             @Column("execution_ts") ZonedDateTime executionTimestamp,
-                            @Column("metadata") @JSONData Map<String, Object> metadata) {
+                            @Column("metadata") @JSONData Map<String, Object> metadata,
+                            @Column("attempts") int attempts) {
         this.id = id;
         this.jobName = JobName.safeValueOf(jobName);
         this.requestTimestamp = requestTimestamp;
         this.status = status;
         this.executionTimestamp = executionTimestamp;
         this.metadata = metadata;
+        this.attempts = attempts;
     }
 }

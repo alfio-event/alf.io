@@ -22,6 +22,7 @@ import alfio.extension.ScriptingExecutionService;
 import alfio.manager.system.ExternalConfiguration;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
+import alfio.util.ClockProvider;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper;
 import ch.digitalfondue.npjt.Query;
@@ -67,7 +68,7 @@ public class V22_1_14_8__MigrateMailchimp extends BaseJavaMigration {
         ExtensionRepository extensionRepository = QueryFactory.from(ExtensionRepository.class, "PGSQL", dataSource);
         ExtensionLogRepository extensionLogRepository = QueryFactory.from(ExtensionLogRepository.class, "PGSQL", dataSource);
         PluginRepository pluginRepository = QueryFactory.from(PluginRepository.class, "PGSQL", dataSource);
-        ExtensionService extensionService = new ExtensionService(new ScriptingExecutionService(HttpClient.newHttpClient(), () -> Executors.newSingleThreadExecutor()), extensionRepository, extensionLogRepository, new DataSourceTransactionManager(dataSource), new ExternalConfiguration());
+        ExtensionService extensionService = new ExtensionService(new ScriptingExecutionService(HttpClient.newHttpClient(), null, Executors::newSingleThreadExecutor), extensionRepository, extensionLogRepository, new DataSourceTransactionManager(dataSource), new ExternalConfiguration());
 
         extensionService.createOrUpdate(null, null, new Extension("-", "mailchimp", getMailChimpScript(), true));
 

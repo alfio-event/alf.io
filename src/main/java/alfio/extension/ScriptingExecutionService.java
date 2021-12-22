@@ -19,6 +19,9 @@ package alfio.extension;
 
 import alfio.extension.exception.OutOfBoundariesException;
 import alfio.extension.support.SandboxContextFactory;
+import alfio.manager.system.AdminJobManager;
+import alfio.repository.system.AdminJobQueueRepository;
+import alfio.util.ClockProvider;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -29,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,6 +41,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static alfio.manager.system.AdminJobExecutor.JobName.EXECUTE_EXTENSION;
 
 
 // table {path, name, hash, script content, params}
@@ -50,10 +56,14 @@ import java.util.stream.Collectors;
 @Log4j2
 public class ScriptingExecutionService {
 
+    public static final String EXTENSION_NAME = "extensionName";
+    public static final String EXTENSION_PATH = "path";
+    public static final String EXTENSION_PARAMS = "params";
     static final String EXTENSION_PARAMETERS = "extensionParameters";
 
     private final Supplier<Executor> executorSupplier;
     private final ScriptableObject sealedScope;
+    private final AdminJobQueueRepository adminJobQueueRepository;
 
     private final Cache<String, Executor> asyncExecutors = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofHours(12))
@@ -68,9 +78,13 @@ public class ScriptingExecutionService {
         ContextFactory.initGlobal(new SandboxContextFactory());
     }
 
-    public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
-        var simpleHttpClient = new SimpleHttpClient(httpClient);
+
+    public ScriptingExecutionService(HttpClient httpClient,
+                                     AdminJobQueueRepository adminJobQueueRepository,
+                                     Supplier<Executor> executorSupplier) {
         this.executorSupplier = executorSupplier;
+        this.adminJobQueueRepository = adminJobQueueRepository;
+        var simpleHttpClient = new SimpleHttpClient(httpClient);
         Context cx = ContextFactory.getGlobal().enterContext();
         try {
             sealedScope = cx.initSafeStandardObjects(null, true);
@@ -89,9 +103,38 @@ public class ScriptingExecutionService {
         return executeScriptFinally(name, scriptFetcher.get(), params, clazz, extensionLogger);
     }
 
-    public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params,  ExtensionLogger extensionLogger) {
+    public void executeScriptAsync(String path,
+                                   String name,
+                                   String hash,
+                                   Supplier<String> scriptFetcher,
+                                   Map<String, Object> params,
+                                   ExtensionLogger extensionLogger) {
         Optional.ofNullable(asyncExecutors.get(path, key -> executorSupplier.get()))
-            .ifPresent(it -> it.execute(() -> executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger)));
+            .ifPresent(it -> it.execute(() -> {
+                try {
+                    executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger);
+                } catch(IllegalStateException ex) {
+                    // we got an error while executing the script. We must now re-schedule the script to be executed again
+                    // at a later time
+                    Map<String, Object> metadata = Map.of(
+                        EXTENSION_NAME, name,
+                        EXTENSION_PATH, path,
+                        EXTENSION_PARAMS, params
+                    );
+                    boolean scheduled = AdminJobManager.executionScheduler(
+                        EXECUTE_EXTENSION,
+                        metadata,
+                        ZonedDateTime.now(ClockProvider.clock()).plusSeconds(2L)
+                    ).apply(adminJobQueueRepository);
+                    if(!scheduled) {
+                        log.warn("Cannot schedule extension {} for retry", name);
+                        // throw exception only if we can't schedule the extension for later execution
+                        throw ex;
+                    } else {
+                        log.warn("Error while executing extension "+name + ", which has been scheduled for retry", ex);
+                    }
+                }
+            }));
     }
 
     public <T> T executeScript(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {

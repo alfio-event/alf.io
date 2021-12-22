@@ -18,6 +18,8 @@ package alfio.extension;
 
 import alfio.extension.exception.ExecutionTimeoutException;
 import alfio.extension.exception.OutOfBoundariesException;
+import alfio.manager.system.AdminJobManager;
+import alfio.repository.system.AdminJobQueueRepository;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
@@ -44,7 +47,7 @@ public class ScriptingExecutionServiceTest {
     @BeforeAll
     public static void init() {
         Supplier<Executor> executorSupplier = () -> Runnable::run;
-        scriptingExecutionService = new ScriptingExecutionService(Mockito.mock(HttpClient.class), executorSupplier);
+        scriptingExecutionService = new ScriptingExecutionService(Mockito.mock(HttpClient.class), Mockito.mock(AdminJobQueueRepository.class), executorSupplier);
     }
     /**
      *
@@ -55,7 +58,7 @@ public class ScriptingExecutionServiceTest {
     private String getScriptContent(String file) throws IOException {
         String concatenation;
         try(var input = getClass().getResourceAsStream("/rhino-scripts/" + file)) {
-            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(input, StandardCharsets.UTF_8));
+            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(Objects.requireNonNull(input), StandardCharsets.UTF_8));
             concatenation = String.join("\n", extensionStream)+"\n;executeScript(extensionEvent)";
         }
         return concatenation;
