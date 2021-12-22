@@ -17,6 +17,7 @@
 package alfio.repository.system;
 
 import alfio.manager.system.AdminJobExecutor.JobName;
+import alfio.model.support.EnumTypeAsString;
 import alfio.model.support.JSONData;
 import alfio.model.system.AdminJobSchedule;
 import ch.digitalfondue.npjt.Bind;
@@ -24,6 +25,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,8 +33,8 @@ import java.util.Set;
 @QueryRepository
 public interface AdminJobQueueRepository {
 
-    @Query("select * from admin_job_queue where status = 'SCHEDULED' and request_ts <= now() for update skip locked")
-    List<AdminJobSchedule> loadPendingSchedules();
+    @Query("select * from admin_job_queue where status = 'SCHEDULED' and job_name in(:jobNames) and request_ts <= now() for update skip locked")
+    List<AdminJobSchedule> loadPendingSchedules(@Bind("jobNames") Collection<String> jobNames);
 
     @Query("select * from admin_job_queue")
     List<AdminJobSchedule> loadAll();

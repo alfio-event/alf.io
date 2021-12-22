@@ -38,7 +38,6 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
-import alfio.util.Json;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -132,7 +131,7 @@ class RetryFailedExtensionJobExecutorTest {
         var invoker = new AdminJobManagerInvoker(adminJobManager);
         // try to run the jobs, this should still fail
         var expectedDate = ZonedDateTime.now(ClockProvider.clock()).plusSeconds(4).minus(100, ChronoUnit.MILLIS);
-        invoker.invokeProcessPendingRequests();
+        invoker.invokeProcessPendingExtensionRetry();
         jobs = adminJobQueueRepository.loadAll();
         job = jobs.get(0);
         assertEquals(2, job.getAttempts());
@@ -144,7 +143,7 @@ class RetryFailedExtensionJobExecutorTest {
 
         // trigger the job again
         adminJobQueueRepository.scheduleRetry(job.getId(), expectedDate);
-        invoker.invokeProcessPendingRequests();
+        invoker.invokeProcessPendingExtensionRetry();
         jobs = adminJobQueueRepository.loadAll();
         job = jobs.get(0);
         assertEquals(3, job.getAttempts());

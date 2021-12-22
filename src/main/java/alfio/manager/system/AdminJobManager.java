@@ -47,6 +47,11 @@ import static java.util.stream.Collectors.*;
 public class AdminJobManager {
 
     static final int MAX_ATTEMPTS = 17; // will retry for approximately 36h
+    private static final Set<String> ADMIN_JOBS = EnumSet.complementOf(EnumSet.of(JobName.EXECUTE_EXTENSION))
+        .stream()
+        .map(Enum::name)
+        .collect(toSet());
+    private static final Set<String> EXTENSIONS_JOB = Set.of(JobName.EXECUTE_EXTENSION.name());
     private final Map<JobName, List<AdminJobExecutor>> executorsByJobId;
     private final AdminJobQueueRepository adminJobQueueRepository;
     private final TransactionTemplate nestedTransactionTemplate;
@@ -70,11 +75,22 @@ public class AdminJobManager {
         this.clockProvider = clockProvider;
     }
 
-    @Scheduled(fixedDelay = 2 * 1000)
+    @Scheduled(fixedDelay = 1000L)
+    void processPendingExtensionRetry() {
+        log.trace("Processing pending extensions retry");
+        internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(EXTENSIONS_JOB));
+        log.trace("done processing pending extensions retry");
+    }
+
+    @Scheduled(fixedDelay = 60 * 1000)
     void processPendingRequests() {
         log.trace("Processing pending requests");
-        adminJobQueueRepository.loadPendingSchedules()
-            .stream()
+        internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(ADMIN_JOBS));
+        log.trace("done processing pending requests");
+    }
+
+    private void internalProcessPendingSchedules(List<AdminJobSchedule> pendingSchedules) {
+        pendingSchedules.stream()
             .map(this::processPendingRequest)
             .filter(p -> !p.getRight().isEmpty())
             .forEach(scheduleWithResults -> {
@@ -99,7 +115,6 @@ public class AdminJobManager {
                     adminJobQueueRepository.updateSchedule(schedule.getId(), EXECUTED, ZonedDateTime.now(clockProvider.getClock()), Map.of());
                 }
             });
-        log.trace("done processing pending requests");
     }
 
     static ZonedDateTime getNextExecution(int currentAttempt) {

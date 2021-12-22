@@ -23,7 +23,7 @@ public class AdminJobManagerInvoker {
         this.adminJobManager = adminJobManager;
     }
 
-    public void invokeProcessPendingRequests() {
-        adminJobManager.processPendingRequests();
+    public void invokeProcessPendingExtensionRetry() {
+        adminJobManager.processPendingExtensionRetry();
     }
 }
