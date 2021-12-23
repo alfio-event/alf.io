@@ -7,24 +7,47 @@ date: 2020-11-26
 description: >
   Introduction about the extensions
 ---
-# Alf.io extensions language
+
+Extensions are a powerful and flexible way to customize Alf.io's processes and flows. You can define [additional validations](../reference/reservation/#reservation-validation), [generate discounts on the fly](../reference/reservation/#dynamic-discount-application), interact with third party systems and more.
+
+## Extension types
+
+We support different kind of execution: asynchronous and synchronous
+
+#### Asynchronous
+The extension will be called in the background. They're meant to notify external systems and/or to process data without impacting on the end user.
+
+No result is expected from the call.
+
+If the execution fails, it will be retried with an exponential back-off time for a maximum of 36h.
+If the execution still fails after 36h, it will be discarded
+
+#### Synchronous
+
+Synchronous extensions affects the way users interacts with your alf.io instance. A result is usually expected from the execution and it might forbid the user to continue the process (i.e. additional parameters validation).
+
+{{% pageinfo %}}
+You should design your (sync) extensions to be small, simple, and quick.
+{{%/pageinfo%}}
+
+## Alf.io extensions language
 
 The extensions must be written in Javascript. However, we put some limitations on the functionalities of the language 
 in order to prevent misuse or just to help you avoid making some mistakes. What we do is, before compiling your script, 
 we verify that the code is legal. Then, also during compilation time, other checks are used to double verify the code.
 Towards the end of this page you can find some sample code of a valid script.
 
-# Limitations on loops
+### Limitations on loops
 
 Loops such as `while` and `do` are not permitted. In case they are used, the script fails. Instead, you can use 
 the `for`, `for/in` or `for/of` loops for any kind of iteration.
 
-# Timeout handling
+### Timeout handling
 
 Sometimes the execution can take too long because of various reasons, therefore a timeout of 5 seconds is set for
 each instruction. If it takes more than that, the script will be forcibly terminated.
 
-# `with` statement
+### `with` statement
 
 Usage of a `with` statement is forbidden. To avoid it, you can use a temporary variable. So, you can replace this:
 ```javascript
@@ -37,14 +60,14 @@ with this:
 var p = person;
 console.log("Hello " + p.firstName + " "+ p.lastName);
 ```
-# Labeled statement
+### Labeled statement
 
 Labeled statements are rarely found, because usually function calls are used. They are also not permitted when writing 
 the extensions. As mentioned above, `for`, `for/in` or `for/of` loops can be used instead.
 
-# Functions limitations
+### Functions limitations
 
-Java functions can be called from the scripts, therefore we limit some harmful usage by applying sandboxing. Access to
+Java methods can be called from the scripts, therefore we limit some harmful usage by applying sandboxing. Access to
 `java.lang.System.exit()` and `getClass()` are disabled. In general, access to Java classes is not possible. However,
 the standard objects (`Object`, `String`, `Number`, `Date`, etc.) can be used. In addition, we enable the use of
 the following classes: `GSON`, [`SimpleHttpClient`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java),
@@ -52,7 +75,7 @@ the following classes: `GSON`, [`SimpleHttpClient`](https://github.com/alfio-eve
  and [`Logger`](https://logging.apache.org/log4j/2.x/log4j-api/apidocs/org/apache/logging/log4j/Logger.html).
 
 
-# Function calls level limitation
+### Function calls level limitation
 
 Nesting more than one function call is not allowed. Below is an example of code that should ***not*** be used. 
 ```javascript
@@ -93,7 +116,7 @@ function addAndIncrement(a, b) {
 }
 ```
 
-# Example of a working script
+### Example of a working script
 
 After showing you what cannot be done, here is some sample code to give you an idea of how a typical script should look like: 
 ```javascript
@@ -135,11 +158,11 @@ function getScriptMetadata() {
  * @returns Object
  */
 function executeScript(scriptEvent) {
-    log.warn('hello from script with event: ' + scriptEvent);
-    log.warn('extension parameters are: ' + extensionParameters);
+    console.log('hello from script with event:', scriptEvent);
+    console.log('extension parameters are: ', extensionParameters);
     //this sample calls the https://csrng.net/ website and generates a random invoice number
     var randomNumber = simpleHttpClient.get('https://csrng.net/csrng/csrng.php?min=0&max=100').getJsonBody()[0].random;
-    log.warn('the invoice number will be: ' + randomNumber);
+    console.log('the invoice number will be:', randomNumber);
     return {
         invoiceNumber: randomNumber
     };

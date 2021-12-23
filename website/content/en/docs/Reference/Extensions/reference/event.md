@@ -6,58 +6,92 @@ date: 2020-11-26
 description: >
   Compatible Application Events for the "Event" entity
 ---
+### Event created
+`EVENT_CREATED`
 
-<div class="table-responsive">
-    <table class="table table-sm table-striped">
+Fired both **asynchronously** and **synchronously** when an Event is created 
+<div class="table-responsive table-hover">
+    <table class="table table-sm">
         <thead>
             <tr>
-                <th rowspan="2">Application Event</th>
-                <th colspan="2" class="text-center">Additional global variables</th>
-                <th rowspan="2">Expected result type</th>
-                <th rowspan="2">About</th>
-            </tr>
-            <tr>
+                <th>Variable</th>
                 <th>Type</th>
-                <th>Name</th>
+                <th>About</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>EVENT_CREATED</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
                 <td>`event`</td>
-                <td>`void`</td>
-                <td>Extensions will be invoked asynchronously and synchronously when an event has been created.</td>
-            </tr>
-            <tr>
-                <td rowspan="2">EVENT_STATUS_CHANGE</td>
                 <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
+                <td>The created Event</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+### Event status change
+`EVENT_STATUS_CHANGE`
+
+Fired both **asynchronously** and **synchronously** when an Event status changes 
+<div class="table-responsive table-hover">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Type</th>
+                <th>About</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
                 <td>`event`</td>
-                <td rowspan="2">`void`</td>
-                <td rowspan="2">Extensions will be invoked asynchronously and synchronously when an event status changes.</td>
-            </tr>
-            <tr>
-                <td>`Event.Status`</td>
-                <td>`status`: possible values are ‘DRAFT’, ‘PUBLIC’ and ‘DISABLED’</td>
-            </tr>
-            <tr>
-                <td rowspan="4">EVENT_METADATA_UPDATE</td>
                 <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
-                <td>`event`</td>
-                <td rowspan="4">[`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java) </td>
-                <td rowspan="4">Extensions will be invoked synchronously when metadata needs to be updated.</td>
+                <td>The Event</td>
             </tr>
             <tr>
-                <td>[`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java)</td>
+                <td>`status`</td>
+                <td>[`Event.Status`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java#L45)</td>
+                <td>updated Status</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+### Event status change
+`EVENT_METADATA_UPDATE`
+
+Fired **synchronously** when the organizer updates the metadata of an Event.
+
+A result of type [`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java) is expected. Return `null` if you want to fall back to default settings. 
+<div class="table-responsive table-hover">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Type</th>
+                <th>About</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>`event`</td>
+                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
+                <td>The Event</td>
+            </tr>
+            <tr>
                 <td>`metadata`</td>
+                <td>[`AlfioMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/AlfioMetadata.java)</td>
+                <td>existing metadata. **Might be `null`**</td>
             </tr>
             <tr>
-                <td>[`Organization`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/user/Organization.java)</td>
                 <td>`organization`</td>
+                <td>[`Organization`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/user/Organization.java)</td>
+                <td>organizer details</td>
             </tr>
             <tr>
-                <td>[`MaybeConfiguration`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/manager/system/ConfigurationManager.java)</td>
                 <td>`baseUrl`</td>
+                <td>String</td>
+                <td>The configured "Base URL" for the current organizer</td>
             </tr>
         </tbody>
     </table>

@@ -7,54 +7,94 @@ description: >
   Other Application Events
 ---
 
-<div class="table-responsive">
-    <table class="table table-sm table-striped">
+### Waiting List subscription
+`WAITING_QUEUE_SUBSCRIBED`
+
+Fired when someone subscribes to a waiting list
+<div class="table-responsive table-hover">
+    <table class="table table-sm">
         <thead>
-        <tr>
-            <th rowspan="2">Application Event</th>
-            <th colspan="2" class="text-center">Additional global variables</th>
-            <th rowspan="2">Expected result type</th>
-            <th rowspan="2">About</th>
-        </tr>
-        <tr>
-            <th>Type</th>
-            <th>Name</th>
-        </tr>
+            <tr>
+                <th>Variable</th>
+                <th>Type</th>
+                <th>About</th>
+            </tr>
         </thead>
         <tbody>
             <tr>
-                <td>WAITING_QUEUE_SUBSCRIBED</td>
-                <td>[`WaitingQueueSubscription`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/WaitingQueueSubscription.java)</td>
                 <td>`waitingQueueSubscription`</td>
-                <td>`void`</td>
-                <td>Extensions will be invoked asynchronously once someone subscribes to the waiting list.</td>
-            </tr>
-            <tr>
-                <td rowspan="3">PDF_GENERATION</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
-                <td>`event`</td>
-                <td rowspan="3">`boolean`</td>
-                <td rowspan="3">Extensions will be invoked synchronously when there is a PDF transformation. A `boolean` is returned to indicate if it was successful or not.</td>
-            </tr>
-            <tr>
-                <td>`String`</td>
-                <td>`html`</td>
-            </tr>
-            <tr>
-                <td>`OutputStream`</td>
-                <td>`outputStream`</td>
-            </tr>
-            <tr>
-                <td rowspan="2">OAUTH2_STATE_GENERATION</td>
-                <td>`int`</td>
-                <td>`organizationId`</td>
-                <td rowspan="2">`String` or `null`</td>
-                <td rowspan="2">Extensions will be invoked to generate an OAuth2 [state parameter](https://www.oauth.com/oauth2-servers/accessing-data/authorization-request/).</td>
-            </tr>
-            <tr>
-                <td>[`MaybeConfiguration`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/manager/system/ConfigurationManager.java)</td>
-                <td>`baseUrl`</td>
+                <td>[`WaitingQueueSubscription`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/WaitingQueueSubscription.java)</td>
+                <td>Details about the subscription</td>
             </tr>
         </tbody>
     </table>
 </div>
+
+### PDF Generation
+`PDF_GENERATION`
+
+Fired when a PDF needs to be generated. This is useful if you want to delegate the actual PDF generation to a dedicated service.
+
+Script is expected to save the result in a temporary file (e.g. by using the `postBodyAndSaveResponse` method of [SimpleHttpClient](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java#L84))
+
+This is a **synchronous** call. 
+A result of type [`PdfGenerationResult`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/PdfGenerationResult.java) is expected. Return `null` if the generation was not successful. 
+<div class="table-responsive table-hover">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Type</th>
+                <th>About</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>`event`</td>
+                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
+                <td>The event</td>
+            </tr>
+            <tr>
+                <td>`html`</td>
+                <td>`String`</td>
+                <td>HTML to be converted to PDF</td>
+            </tr>
+            <tr>
+                <td>`outputStream`</td>
+                <td>[`OutputStream`](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/OutputStream.html)</td>
+                <td>OutputStream used to save the produced PDF</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+### OAuth2 State param
+`OAUTH2_STATE_GENERATION`
+
+Fired when an an OAuth2 [state parameter](https://www.oauth.com/oauth2-servers/accessing-data/authorization-request/) is needed, I.e. for setting up Stripe/Mollie connect.
+
+This is a **synchronous** call. A `String` containing a valid URL must be returned, or `null` to proceed with the default settings. 
+<div class="table-responsive table-hover">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Type</th>
+                <th>About</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>`baseUrl`</td>
+                <td>String</td>
+                <td>The configured "Base URL" for the current organizer</td>
+            </tr>
+            <tr>
+                <td>`organizationId`</td>
+                <td>`int`</td>
+                <td>Organizer ID</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
