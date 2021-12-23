@@ -1,14 +1,14 @@
 
 ---
-title: "Introduction"
-linkTitle: "Introduction"
+title: "Extensions"
+linkTitle: "Extensions"
 weight: 1
 date: 2020-11-26
 description: >
-  Introduction about the extensions
+How to customize Alf.io processes and flows
 ---
 
-Extensions are a powerful and flexible way to customize Alf.io's processes and flows. You can define [additional validations](../reference/reservation/#reservation-validation), [generate discounts on the fly](../reference/reservation/#dynamic-discount-application), interact with third party systems and more.
+Extensions are a powerful and flexible way to customize Alf.io's processes and flows. You can define [additional validations](./reference/reservation/#reservation-validation), [generate discounts on the fly](./reference/reservation/#dynamic-discount-application), interact with third party systems and more.
 
 ## Extension types
 
