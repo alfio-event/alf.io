@@ -17,6 +17,7 @@
 package alfio.repository.system;
 
 import alfio.manager.system.AdminJobExecutor.JobName;
+import alfio.model.support.EnumTypeAsString;
 import alfio.model.support.JSONData;
 import alfio.model.system.AdminJobSchedule;
 import ch.digitalfondue.npjt.Bind;
@@ -24,6 +25,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,8 +33,11 @@ import java.util.Set;
 @QueryRepository
 public interface AdminJobQueueRepository {
 
-    @Query("select * from admin_job_queue where status = 'SCHEDULED' for update skip locked")
-    List<AdminJobSchedule> loadPendingSchedules();
+    @Query("select * from admin_job_queue where status = 'SCHEDULED' and job_name in (:jobNames) and request_ts <= now() for update skip locked")
+    List<AdminJobSchedule> loadPendingSchedules(@Bind("jobNames") Collection<String> jobNames);
+
+    @Query("select * from admin_job_queue")
+    List<AdminJobSchedule> loadAll();
 
     @Query("update admin_job_queue set status = :status, execution_ts = :executionDate, metadata = to_json(:metadata::json) where id = :id")
     int updateSchedule(@Bind("id") long id,
@@ -40,7 +45,13 @@ public interface AdminJobQueueRepository {
                        @Bind("executionDate")ZonedDateTime executionDate,
                        @Bind("metadata") @JSONData Map<String, Object> metadata);
 
-    @Query("insert into admin_job_queue(job_name, request_ts, metadata, status) values(:jobName, :requestTs, to_json(:metadata::json), 'SCHEDULED')")
+    @Query("update admin_job_queue set request_ts = :requestTs, attempts = attempts + 1 where id = :id")
+    int scheduleRetry(@Bind("id") long id,
+                      @Bind("requestTs") ZonedDateTime requestTs);
+
+    @Query("insert into admin_job_queue(job_name, request_ts, metadata, status, attempts)" +
+        " values(:jobName, :requestTs, to_json(:metadata::json), 'SCHEDULED', 1)" +
+        " on conflict do nothing")
     int schedule(@Bind("jobName") JobName jobName,
                  @Bind("requestTs") ZonedDateTime requestTimestamp,
                  @Bind("metadata") @JSONData Map<String, Object> metadata);

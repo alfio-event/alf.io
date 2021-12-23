@@ -187,7 +187,7 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
     }
 
     private void performTest(Map<String, Object> metadata) {
-        var adminRequest = new AdminJobSchedule(1L, "", ZonedDateTime.now(ClockProvider.clock()), AdminJobSchedule.Status.SCHEDULED, null, metadata);
+        var adminRequest = new AdminJobSchedule(1L, "", ZonedDateTime.now(ClockProvider.clock()), AdminJobSchedule.Status.SCHEDULED, null, metadata, 1);
         int maxEntries = 2;
         var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, maxEntries);
         var descriptor = subscriptionRepository.findOne(descriptorId).orElseThrow();

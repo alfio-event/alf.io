@@ -20,10 +20,12 @@ import alfio.config.support.ArrayColumnMapper;
 import alfio.config.support.EnumTypeColumnMapper;
 import alfio.config.support.JSONColumnMapper;
 import alfio.config.support.PlatformProvider;
+import alfio.extension.ExtensionService;
 import alfio.job.Jobs;
 import alfio.job.executor.AssignTicketToSubscriberJobExecutor;
 import alfio.job.executor.BillingDocumentJobExecutor;
 import alfio.job.executor.ReservationJobExecutor;
+import alfio.job.executor.RetryFailedExtensionJobExecutor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.AdminJobManager;
@@ -249,9 +251,10 @@ public class DataSourceConfiguration {
                                     ClockProvider clockProvider,
                                     ReservationJobExecutor reservationJobExecutor,
                                     BillingDocumentJobExecutor billingDocumentJobExecutor,
-                                    AssignTicketToSubscriberJobExecutor assignTicketToSubscriberJobExecutor) {
+                                    AssignTicketToSubscriberJobExecutor assignTicketToSubscriberJobExecutor,
+                                    RetryFailedExtensionJobExecutor retryFailedExtensionJobExecutor) {
         return new AdminJobManager(
-            List.of(reservationJobExecutor, billingDocumentJobExecutor, assignTicketToSubscriberJobExecutor),
+            List.of(reservationJobExecutor, billingDocumentJobExecutor, assignTicketToSubscriberJobExecutor, retryFailedExtensionJobExecutor),
             adminJobQueueRepository,
             transactionManager,
             clockProvider);
@@ -284,6 +287,11 @@ public class DataSourceConfiguration {
             eventRepository,
             clockProvider,
             ticketCategoryRepository);
+    }
+
+    @Bean
+    RetryFailedExtensionJobExecutor retryFailedExtensionJobExecutor(ExtensionService extensionService) {
+        return new RetryFailedExtensionJobExecutor(extensionService);
     }
 
     @Bean

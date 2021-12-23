@@ -44,9 +44,7 @@ import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 
 import java.io.OutputStream;
@@ -70,7 +68,6 @@ public class ExtensionManager {
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketRepository ticketRepository;
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
 
@@ -112,13 +109,13 @@ public class ExtensionManager {
         transactionRepository.loadOptionalByReservationId(reservation.getId())
             .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
-                purchaseContext,
+            purchaseContext,
             payload);
     }
 
     public void handleTicketAssignment(Ticket ticket,
-                                TicketCategory category,
-                                Map<String, List<String>> additionalInfo) {
+                                       TicketCategory category,
+                                       Map<String, List<String>> additionalInfo) {
         if(!ticket.hasBeenSold()) {
             return; // ignore tickets if the reservation is not yet confirmed
         }
@@ -283,13 +280,11 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.TICKET_REVERT_CHECKED_IN, event, payload);
     }
 
-    @Transactional(readOnly = true)
     public void handleReservationValidation(PurchaseContext purchaseContext, TicketReservation reservation, Object clientForm, BindingResult bindingResult) {
         Map<String, Object> payload = Map.of(
             "reservationId", reservation.getId(),
             "reservation", reservation,
             "form", clientForm,
-            "jdbcTemplate", jdbcTemplate,
             "bindingResult", bindingResult
         );
 
@@ -299,7 +294,6 @@ public class ExtensionManager {
     public void handleUserProfileValidation(Object clientForm, BindingResult bindingResult) {
         Map<String, Object> payload = Map.of(
             "form", clientForm,
-            "jdbcTemplate", jdbcTemplate,
             "bindingResult", bindingResult
         );
 
@@ -414,6 +408,10 @@ public class ExtensionManager {
     }
 
     private <T> T syncCall(ExtensionEvent extensionEvent, PurchaseContext purchaseContext, Map<String, Object> payload, Class<T> clazz) {
+        return syncCall(extensionEvent, purchaseContext, payload, clazz, true);
+    }
+
+    private <T> T syncCall(ExtensionEvent extensionEvent, PurchaseContext purchaseContext, Map<String, Object> payload, Class<T> clazz, boolean ignoreErrors) {
         try {
             return extensionService.executeScriptsForEvent(extensionEvent.name(),
                 toPath(purchaseContext),
@@ -421,8 +419,11 @@ public class ExtensionManager {
                 clazz);
         } catch(AlfioScriptingException ex) {
             log.warn("Unexpected exception while executing script:", ex);
-            return null;
+            if(!ignoreErrors) {
+                throw new IllegalStateException(ex);
+            }
         }
+        return null;
     }
 
     private Map<String, Object> fillWithBasicInfo(Map<String, ?> payload, PurchaseContext purchaseContext) {
@@ -440,9 +441,9 @@ public class ExtensionManager {
     }
 
     public <T> Optional<T> executeCapability(ExtensionCapability capability,
-                                   Map<String, String> params,
-                                   PurchaseContext purchaseContext,
-                                   Class<T> resultType) {
+                                             Map<String, String> params,
+                                             PurchaseContext purchaseContext,
+                                             Class<T> resultType) {
         return extensionService.executeCapability(capability,
             toPath(purchaseContext),
             fillWithBasicInfo(params, purchaseContext),
@@ -467,7 +468,7 @@ public class ExtensionManager {
         context.put("additionalInfo", ticketAdditionalInfo);
         var existingMetadata = ticketMetadataContainer.getMetadataForKey(key);
         existingMetadata.ifPresent(m -> context.put("ticketMetadata", m));
-        var result = Optional.ofNullable(syncCall(ExtensionEvent.CUSTOM_ONLINE_JOIN_URL, event, context, TicketMetadata.class));
+        var result = Optional.ofNullable(syncCall(ExtensionEvent.CUSTOM_ONLINE_JOIN_URL, event, context, TicketMetadata.class, false));
         result.ifPresent(m -> {
             // we update the value only if it's changed
             boolean changed = existingMetadata.isEmpty() || !existingMetadata.get().equals(m);

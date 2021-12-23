@@ -30,7 +30,8 @@ public interface AdminJobExecutor {
         UNKNOWN,
         SEND_OFFLINE_PAYMENT_TO_ORGANIZER,
         REGENERATE_INVOICES,
-        ASSIGN_TICKETS_TO_SUBSCRIBERS;
+        ASSIGN_TICKETS_TO_SUBSCRIBERS,
+        EXECUTE_EXTENSION;
 
         public static JobName safeValueOf(String value) {
             return Arrays.stream(values())
