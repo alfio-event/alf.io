@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('userEdit', {
         controller: ['$q', '$state', 'OrganizationService', 'UserService', 'ValidationService', UserEditCtrl],
-        templateUrl: '../resources/js/admin/feature/user-edit/user-edit.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/user-edit/user-edit.html',
         bindings: {
             userId: '<',
             type:'@',

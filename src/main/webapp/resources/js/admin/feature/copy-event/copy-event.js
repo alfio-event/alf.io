@@ -4,7 +4,7 @@
 
 
 angular.module('adminApplication').component('copyEvent', {
-    templateUrl: '/resources/js/admin/feature/copy-event/copy-event.html',
+    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/copy-event/copy-event.html',
     controller: copyEventCtrl,
     bindings: {
         dismiss: '&',

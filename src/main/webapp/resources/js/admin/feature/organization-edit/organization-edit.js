@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('organizationEdit', {
         controller: ['OrganizationService', 'ValidationService', '$state', '$q', '$scope', 'ConfigurationService', 'UserService', OrganizationEditCtrl],
-        templateUrl: '../resources/js/admin/feature/organization-edit/organization-edit.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/organization-edit/organization-edit.html',
         bindings: {
             organizationId: '<',
             type:'@'

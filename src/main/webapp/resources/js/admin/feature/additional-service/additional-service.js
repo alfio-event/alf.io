@@ -15,7 +15,7 @@
                     type: '@'
                 },
                 bindToController: true,
-                templateUrl: '../resources/js/admin/feature/additional-service/additional-services.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/additional-service/additional-services.html',
                 controller: 'AdditionalServicesController',
                 controllerAs: 'ctrl'
             };
@@ -34,7 +34,7 @@
                     type:'<'
                 },
                 bindToController: true,
-                templateUrl: '../resources/js/admin/feature/additional-service/edit-additional-service.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/additional-service/edit-additional-service.html',
                 controller: 'EditAdditionalServiceController',
                 controllerAs: 'ctrl'
             };

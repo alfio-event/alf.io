@@ -41,20 +41,20 @@
         }])
         .component('groupsContainer', {
             controller: ['$stateParams', '$state', '$scope', ContainerCtrl],
-            templateUrl: '../resources/js/admin/feature/group/all.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/group/all.html',
             bindings: {
                 organizations: '<'
             }
         })
         .component('groups', {
             controller: ['GroupService', GroupCtrl],
-            templateUrl: '../resources/js/admin/feature/group/list.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/group/list.html',
             bindings: {
                 organizationId: '<'
             }
         }).component('group', {
             controller: ['GroupService', '$timeout', 'NotificationHandler', '$state', '$window', DetailCtrl],
-            templateUrl: '../resources/js/admin/feature/group/edit.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/group/edit.html',
             bindings: {
                 organizationId: '<',
                 groupId: '<',

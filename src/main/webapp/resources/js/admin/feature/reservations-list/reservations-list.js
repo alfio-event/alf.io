@@ -7,7 +7,7 @@
             purchaseContextType: '<'
         },
         controller: ['PurchaseContextService', '$filter', '$location', '$stateParams', ReservationsListCtrl],
-        templateUrl: '../resources/js/admin/feature/reservations-list/reservations-list.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/reservations-list/reservations-list.html'
     }).component('reservationsListTable', {
         bindings: {
             purchaseContext: '<',
@@ -32,7 +32,7 @@
             }
 
         },
-        templateUrl: '../resources/js/admin/feature/reservations-list/reservations-list-table.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/reservations-list/reservations-list-table.html'
     });
     
     

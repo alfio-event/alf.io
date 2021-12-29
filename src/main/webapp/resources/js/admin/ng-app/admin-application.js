@@ -1,8 +1,7 @@
 (function () {
     "use strict";
 
-
-    var BASE_STATIC_URL = "/resources/angular-templates/admin/partials";
+    var BASE_STATIC_URL = window.ALFIO_CONTEXT_PATH + "/resources/angular-templates/admin/partials";
 
     //
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
@@ -400,7 +399,7 @@
         $rootScope.$on('ErrorNotAuthorized', function() {
             $uibModal.open({
                 size:'sm',
-                templateUrl:'/resources/angular-templates/admin/partials/error/not-authorized.html'
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/error/not-authorized.html'
             }).result.then(angular.noop, function() {
                 $state.go('index');
             });

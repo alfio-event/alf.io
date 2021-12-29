@@ -9,13 +9,13 @@
             fastCreation: '<'
         },
         controller: ReservationImportCtrl,
-        templateUrl: '../resources/js/admin/feature/reservation/import/reservation-import.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/reservation/import/reservation-import.html'
     }).component('reservationImportProgress', {
         bindings: {
             event: '<'
         },
         controller: ImportProgressCtrl,
-        templateUrl: '../resources/js/admin/feature/reservation/import/import-progress.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/reservation/import/import-progress.html'
 
     });
 

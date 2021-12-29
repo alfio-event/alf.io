@@ -7,7 +7,7 @@
             eventId: '<'
         },
         controller: ['ConfigurationService', 'EventService', '$http', '$q', InternationalizationEditorCtrl],
-        templateUrl: '../resources/js/admin/feature/internationalization-editor/internationalization-editor.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/internationalization-editor/internationalization-editor.html'
     });
 
     function hideEscaping(value) {

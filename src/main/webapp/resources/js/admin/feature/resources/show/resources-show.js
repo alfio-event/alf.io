@@ -8,7 +8,7 @@
             organizationId: '<'
         },
         controller: ResourcesShowCtrl,
-        templateUrl: '../resources/js/admin/feature/resources/show/resources-show.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/resources/show/resources-show.html'
     });
 
 

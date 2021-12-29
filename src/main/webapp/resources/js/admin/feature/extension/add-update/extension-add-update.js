@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('extensionAddUpdate', {
         controller: ['$http', '$q', '$state', 'OrganizationService', 'EventService', ExtensionAddUpdateCtrl],
-        templateUrl: '../resources/js/admin/feature/extension/add-update/extension-add-update.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/extension/add-update/extension-add-update.html',
         bindings: {
             dismiss:'&',
             close:'&',

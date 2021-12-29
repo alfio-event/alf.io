@@ -7,7 +7,7 @@
                     event: '='
                 },
                 bindToController: true,
-                templateUrl: '/resources/angular-templates/admin/partials/event/statistic/event-overview.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/statistic/event-overview.html',
                 controllerAs: 'ctrl',
                 controller: function() {
                     var ctrl = this;
@@ -37,7 +37,7 @@
                     event: '='
                 },
                 bindToController: true,
-                templateUrl: '/resources/angular-templates/admin/partials/event/statistic/tickets-pie.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/statistic/tickets-pie.html',
                 controllerAs: 'ctrl',
                 controller: function() {},
                 link: function($scope, element, attrs) {
@@ -121,7 +121,7 @@
                     event: '='
                 },
                 bindToController: true,
-                templateUrl: '/resources/angular-templates/admin/partials/event/statistic/two-weeks-bar.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/statistic/two-weeks-bar.html',
                 controller: function($element) {
                     var element = $element;
                     var ctrl = this;
@@ -176,7 +176,7 @@
                     event: '='
                 },
                 bindToController: true,
-                templateUrl: '/resources/angular-templates/admin/partials/event/statistic/tickets-by-day.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/statistic/tickets-by-day.html',
                 controller: function($element) {
                     var element = $element;
                     var ctrl = this;

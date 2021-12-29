@@ -49,13 +49,16 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     private final Environment environment;
     private final String frontendVersion;
+    private final String alfioVersion;
     private final ObjectMapper objectMapper;
 
     public MvcConfiguration(Environment environment,
                             @Value("${alfio.frontend.version}") String frontendVersion,
+                            @Value("${alfio.version}") String alfioVersion,
                             ObjectMapper objectMapper) {
         this.environment = environment;
         this.frontendVersion = frontendVersion;
+        this.alfioVersion = alfioVersion;
         this.objectMapper = objectMapper;
     }
 
@@ -66,8 +69,18 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
         var defaultCacheControl = CacheControl.maxAge(Duration.ofDays(isLive ? 10 : 0)).mustRevalidate();
 
-        registry.addResourceHandler("/resources/**")
+        registry.addResourceHandler(alfioVersion + "/resources/**")
             .addResourceLocations("/resources/")
+            .setCachePeriod(cacheMinutes * 60)
+            .setCacheControl(defaultCacheControl);
+
+        registry.addResourceHandler("/resources/font/*")
+            .addResourceLocations("/resources/font/")
+            .setCachePeriod(cacheMinutes * 60)
+            .setCacheControl(defaultCacheControl);
+
+        registry.addResourceHandler("/resources/images/**")
+            .addResourceLocations("/resources/images/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
         //
@@ -77,10 +90,14 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .setCacheControl(defaultCacheControl);
 
         registry.addResourceHandler("/assets/**")
-            .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/assets/");
+            .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/assets/")
+            .setCachePeriod(cacheMinutes * 60)
+            .setCacheControl(defaultCacheControl);
 
         registry.addResourceHandler("/*.js")
-            .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/");
+            .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/")
+            .setCachePeriod(cacheMinutes * 60)
+            .setCacheControl(defaultCacheControl);
 
     }
 

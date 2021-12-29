@@ -36,6 +36,7 @@ import alfio.util.RequestUtils;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -70,6 +71,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 @Controller
 @AllArgsConstructor
+@Slf4j
 public class IndexController {
 
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
@@ -363,11 +365,14 @@ public class IndexController {
 
     // login related
     @GetMapping("/authentication")
-    public void getLoginPage(@RequestParam(value="failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed,
+    public void getLoginPage(@RequestParam(value="failed", required = false) String failed,
+                             @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed,
                              Model model,
                              Principal principal,
                              HttpServletRequest request,
-                             HttpServletResponse response) throws IOException {
+                             HttpServletResponse response,
+                             @Value("${alfio.version}") String version) throws IOException {
+
         if(principal != null) {
             response.sendRedirect("/admin/");
             return;
@@ -377,7 +382,9 @@ public class IndexController {
         model.addAttribute("hasRecaptchaApiKey", false);
 
         //
-        addCommonModelAttributes(model, request);
+        addCommonModelAttributes(model, request, version);
+        model.addAttribute("request", request);
+
         //
 
         var configuration = configurationManager.getFor(EnumSet.of(RECAPTCHA_API_KEY, ENABLE_CAPTCHA_FOR_LOGIN), ConfigurationLevel.system());
@@ -427,7 +434,7 @@ public class IndexController {
         model.addAttribute("isOwner", isAdmin || authorities.contains(Role.OWNER.getRoleName()));
         model.addAttribute("isAdmin", isAdmin);
         //
-        addCommonModelAttributes(model, request);
+        addCommonModelAttributes(model, request, version);
         model.addAttribute("displayProjectBanner", isAdmin && configurationManager.getForSystem(SHOW_PROJECT_BANNER).getValueAsBooleanOrDefault());
         //
 
@@ -440,8 +447,9 @@ public class IndexController {
         }
     }
 
-    private void addCommonModelAttributes(Model model, HttpServletRequest request) {
-        model.addAttribute("request", request);
+    private void addCommonModelAttributes(Model model, HttpServletRequest request, String version) {
+        var contextPath = StringUtils.appendIfMissing(request.getContextPath(), "/") + version;
+        model.addAttribute("contextPath", contextPath);
         model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
         model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
         model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));

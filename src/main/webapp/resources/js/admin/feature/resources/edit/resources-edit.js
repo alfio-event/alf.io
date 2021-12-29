@@ -9,7 +9,7 @@
             resourceName: '<'
         },
         controller: ResourcesEditCtrl,
-        templateUrl: '../resources/js/admin/feature/resources/edit/resources-edit.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/resources/edit/resources-edit.html'
     })
 
 

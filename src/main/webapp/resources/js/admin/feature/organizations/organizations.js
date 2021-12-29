@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('organizations', {
         controller: ['OrganizationService', 'UserService', OrganizationsCtrl],
-        templateUrl: '../resources/js/admin/feature/organizations/organizations.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/organizations/organizations.html'
     });
 
 

@@ -4,7 +4,7 @@
     angular.module('adminApplication')
         .component('promoCodes', {
             controller: ['$window', '$uibModal', '$q', 'PromoCodeService', 'ConfigurationService', PromoCodeCtrl],
-            templateUrl: '../resources/js/admin/feature/promo-codes/promo-codes.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/promo-codes/promo-codes.html',
             bindings: {
                 forEvent: '<',
                 forOrganization: '<',
@@ -14,7 +14,7 @@
         })
         .component('promoCodeList', {
             controller: [PromoCodeListCtrl],
-            templateUrl: '../resources/js/admin/feature/promo-codes/list.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/promo-codes/list.html',
             bindings: {
                 forEvent: '<',
                 event: '<',
@@ -109,7 +109,7 @@
             //TODO: transform component style
             $uibModal.open({
                 size: 'lg',
-                templateUrl: '../resources/js/admin/feature/promo-codes/edit-date-promo-code-modal.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/promo-codes/edit-date-promo-code-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.cancel = function() {$scope.$dismiss('canceled');};
@@ -181,7 +181,7 @@
             //TODO: transform component style
             $uibModal.open({
                 size:'lg',
-                templateUrl: '../resources/js/admin/feature/promo-codes/edit-promo-code-modal.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/promo-codes/edit-promo-code-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
 

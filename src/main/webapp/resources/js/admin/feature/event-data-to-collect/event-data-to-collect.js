@@ -15,13 +15,13 @@
     angular.module('adminApplication')
         .component('eventDataToCollect', {
             controller: ['$uibModal', '$q', 'EventService', 'AdditionalServiceManager', EventDataToCollectCtrl],
-            templateUrl: '../resources/js/admin/feature/event-data-to-collect/event-data-to-collect.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.html',
             bindings: {
                 event: '<'
             }
         }).component('restrictedValuesStatistics', {
             controller: ['EventService', RestrictedValuesStatisticsCtrl],
-            templateUrl: '../resources/js/admin/feature/event-data-to-collect/restricted-values-statistics.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/event-data-to-collect/restricted-values-statistics.html',
             bindings: {
                 field: '<',
                 closeWindow: '&',
@@ -173,7 +173,7 @@
         function deleteFieldModal(field) {
             $uibModal.open({
                 size: 'lg',
-                templateUrl: '../resources/js/admin/feature/event-data-to-collect/delete-field-modal.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/event-data-to-collect/delete-field-modal.html',
                 controller: function($scope) {
                     $scope.field = field;
                     $scope.deleteField = function(id) {
@@ -204,7 +204,7 @@
         function editField (event, addNew, field) {
             $uibModal.open({
                 size:'lg',
-                templateUrl: '../resources/js/admin/feature/event-data-to-collect/edit-field-modal.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/event-data-to-collect/edit-field-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.event = event;

@@ -7,7 +7,7 @@
             categoryId: '<'
         },
         controller: ['EventService', '$location', TicketsListCtrl],
-        templateUrl: '../resources/js/admin/feature/tickets-list/tickets-list.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/tickets-list/tickets-list.html'
     });
     
     

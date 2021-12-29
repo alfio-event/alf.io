@@ -4,7 +4,7 @@
 
 
 angular.module('adminApplication').component('expiredEventsList', {
-    templateUrl: '/resources/js/admin/feature/expired-events-list/expired-events-list.html',
+    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/expired-events-list/expired-events-list.html',
     controller: expiredEventsListCtrl
 
 });

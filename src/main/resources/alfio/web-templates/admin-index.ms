@@ -6,110 +6,113 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="_csrf" content="{{_csrf.token}}"/>
     <meta name="_csrf_header" content="{{_csrf.headerName}}"/>
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/css/source-sans-pro.css" />
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/css/bootstrap-admin.min.css" />
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist/dist/chartist.min.css">
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.css">
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css?v={{alfioVersion}}" />
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.css"/>
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/dragula.js/dist/dragula.min.css"/>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/numeral/min/numeral.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angular/angular.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angular-sanitize/angular-sanitize.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angular-messages/angular-messages.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload-shim.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/chartist/dist/chartist.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/qrcode-generator/js/qrcode.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/qrcode-generator/js/qrcode_UTF8.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angular-qrcode/angular-qrcode.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/dragula.js/dist/dragula.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/bower_components/angularjs-dragula/dist/angularjs-dragula.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/filter/util.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/service/service.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/service/resource-service.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/service/organization.service.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/service/user.service.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/email/email-log.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/util/file-upload.js?v={{alfioVersion}}"></script>
+    <link rel="stylesheet" href="{{contextPath}}/resources/css/source-sans-pro.css" />
+    <link rel="stylesheet" href="{{contextPath}}/resources/css/bootstrap-admin.min.css" />
+    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/chartist/dist/chartist.min.css">
+    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.css">
+    <link rel="stylesheet" href="{{contextPath}}/resources/css/admin.css" />
+    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker-bs3.css" />
+    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
+    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
+    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.css"/>
+    <link rel="stylesheet" href="{{contextPath}}/resources/bower_components/dragula.js/dist/dragula.min.css"/>
+    <script nonce="{{nonce}}">
+        window.ALFIO_CONTEXT_PATH = "{{contextPath}}";
+    </script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/numeral/min/numeral.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular/angular.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-sanitize/angular-sanitize.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-messages/angular-messages.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload-shim.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/ng-file-upload/ng-file-upload.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist/dist/chartist.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-accessibility/dist/chartist-plugin-accessibility.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/qrcode-generator/js/qrcode.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/qrcode-generator/js/qrcode_UTF8.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angular-qrcode/angular-qrcode.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/dragula.js/dist/dragula.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/bower_components/angularjs-dragula/dist/angularjs-dragula.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/filter/util.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/service.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/resource-service.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/organization.service.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/service/user.service.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/email/email-log.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/file-upload.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/configuration/configuration.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/configuration/configuration.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/additional-service/additional-service.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/additional-service/additional-service.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/active-events-list/active-events-list.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/active-events-list/active-events-list.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/promo-codes/promo-codes.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/promo-codes/promo-codes.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/tickets-remove/tickets-remove.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-remove/tickets-remove.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/reservation-cancel/reservation-cancel.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation-cancel/reservation-cancel.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/users/users.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/user-edit/user-edit.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/apikey-bulk-import/apikey-bulk-import.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/users/users.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/user-edit/user-edit.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/apikey-bulk-import/apikey-bulk-import.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/organizations/organizations.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/organization-edit/organization-edit.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/organizations/organizations.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/organization-edit/organization-edit.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/resources/show/resources-show.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/show/resources-show.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/resources/edit/resources-edit.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/reservation/reservation.service.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/reservation/import/reservation-import.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/import/reservation-import.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/label-template/label-template.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
 
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/extension/extension.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/extension/extension.service.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/extension/add-update/extension-add-update.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/extension/log/extension-log.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/ticket-category/ticket-category.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/group/groups.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/subscriptions/subscriptions.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/util/reservation-identifier.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/copy-event/copy-event.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/metadata-editor/metadata-editor.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/project-banner/project-banner.js?v={{alfioVersion}}"></script>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/polls/polls.js?v={{alfioVersion}}"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/extension.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/extension.service.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/add-update/extension-add-update.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/extension/log/extension-log.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/ticket-category/ticket-category.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/group/groups.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/subscriptions/subscriptions.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/util/reservation-identifier.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/copy-event/copy-event.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/metadata-editor/metadata-editor.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/project-banner/project-banner.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/polls/polls.js"></script>
 
 
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css?v={{alfioVersion}}" />
+    <link rel="stylesheet" href="{{contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 
-    <script nonce="{{nonce}}" type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{request.contextPath}}/resources/bower_components/ace-builds/src-min-noconflict/ace.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{request.contextPath}}/resources/bower_components/angular-ui-ace/ui-ace.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{request.contextPath}}/resources/bower_components/dexie/dist/dexie.min.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{request.contextPath}}/resources/bower_components/papaparse/papaparse.min.js"></script>
-    <script nonce="{{nonce}}" type="text/javascript" src="{{request.contextPath}}/resources/bower_components/checklist-model/checklist-model.js"></script>
+    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
+    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/ace-builds/src-min-noconflict/ace.js"></script>
+    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/angular-ui-ace/ui-ace.js"></script>
+    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/dexie/dist/dexie.min.js"></script>
+    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/papaparse/papaparse.min.js"></script>
+    <script nonce="{{nonce}}" type="text/javascript" src="{{contextPath}}/resources/bower_components/checklist-model/checklist-model.js"></script>
     <title>Alf.io Admin</title>
 </head>
 <body>
@@ -124,7 +127,7 @@
                             <span class="icon-bar"></span>
                             <span class="icon-bar"></span>
                         </button>
-                        <a data-ui-sref="index" style="margin-right: 10px;"><img alt="Alf.io" src="{{request.contextPath}}/resources/images/alfio-logo.svg" width="100" height="50"></a>
+                        <a data-ui-sref="index" style="margin-right: 10px;"><img alt="Alf.io" src="{{contextPath}}/resources/images/alfio-logo.svg" width="100" height="50"></a>
                     </div>
                     <div class="navbar-left">
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
@@ -229,6 +232,6 @@
             </footer>
         </div>
     </div>
-    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
 </body>
 </html>

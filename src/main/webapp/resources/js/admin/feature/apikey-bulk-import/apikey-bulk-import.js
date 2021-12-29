@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('apiKeyBulkImport', {
         controller: ['$q', '$state', 'OrganizationService', 'UserService', '$timeout', BulkImportCtrl],
-        templateUrl: '../resources/js/admin/feature/apikey-bulk-import/import.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/apikey-bulk-import/import.html',
         bindings: {},
         require: {
             usersCtrl: '^?users'

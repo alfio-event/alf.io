@@ -11,7 +11,7 @@
             onConfirm: '<'
         },
         controller: ['AdminReservationService', 'EventService', 'ReservationCancelService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', 'ConfigurationService', ReservationViewCtrl],
-        templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
@@ -300,7 +300,7 @@
         function openCheckInLog(attendee) {
             $uibModal.open({
                 size: 'md',
-                templateUrl: '../resources/js/admin/feature/reservation/view/check-in-log-modal.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/reservation/view/check-in-log-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.cancel = function() {$scope.$dismiss('cancelled');};
@@ -329,7 +329,7 @@
         ctrl.notifyAttendees = function() {
             var m = $uibModal.open({
                 size: 'lg',
-                templateUrl: '../resources/js/admin/feature/reservation/view/send-ticket-email.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/reservation/view/send-ticket-email.html',
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.cancel = function() {$scope.$dismiss('cancelled');};

@@ -11,7 +11,7 @@
             parentId: '<'
         },
         controller: MetadataViewerCtrl,
-        templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-viewer.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/metadata-editor/metadata-viewer.html'
     }).component('metadataEditor', {
         bindings: {
             event: '<',
@@ -23,7 +23,7 @@
             parentId: '<'
         },
         controller: MetadataEditorCtrl,
-        templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
     });
 
     var ONLINE_EVENT_CAPABILITIES = [
@@ -232,7 +232,7 @@
 
     function requestGuestData($uibModal) {
         return $uibModal.open({
-            templateUrl:'../resources/js/admin/feature/metadata-editor/join-link-details-modal.html',
+            templateUrl:window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/metadata-editor/join-link-details-modal.html',
             backdrop: 'static',
             controllerAs: '$ctrl',
             controller: function($scope) {
