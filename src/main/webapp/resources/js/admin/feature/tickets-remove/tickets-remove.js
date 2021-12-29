@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('ticketsRemove', {
         controller: ['AdminReservationService', 'EventService', TicketsRemoveCtrl],
-        templateUrl: '../resources/js/admin/feature/tickets-remove/tickets-remove.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/tickets-remove/tickets-remove.html',
         bindings: {
             event: '<',
             reservationId: '<',

@@ -9,7 +9,7 @@
             fastCreation: '<'
         },
         controller: ReservationEditCtrl,
-        templateUrl: '../resources/js/admin/feature/reservation/create/reservation-create.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/reservation/create/reservation-create.html'
     });
 
 

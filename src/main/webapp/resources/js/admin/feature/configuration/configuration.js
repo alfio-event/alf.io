@@ -14,25 +14,25 @@
                 })
                 .state('configuration.system', {
                     url: '/system',
-                    templateUrl: '/resources/angular-templates/admin/partials/configuration/system.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/system.html',
                     controller: 'SystemConfigurationController',
                     controllerAs: 'systemConf'
                 })
                 .state('configuration.organization', {
                     url: '/organization/:organizationId',
-                    templateUrl: '/resources/angular-templates/admin/partials/configuration/organization.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/organization.html',
                     controller: 'OrganizationConfigurationController',
                     controllerAs: 'organizationConf'
                 })
                 .state('configuration.event', {
                     url: '/organization/:organizationId/event/:eventId',
-                    templateUrl: '/resources/angular-templates/admin/partials/configuration/event.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/event.html',
                     controller: 'EventConfigurationController',
                     controllerAs: 'eventConf'
                 })
                 .state('events.single.configuration', {
                     url: '/configuration',
-                    templateUrl: '/resources/angular-templates/admin/partials/configuration/event.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/event.html',
                     controller: 'EventConfigurationController',
                     controllerAs: 'eventConf'
                 });
@@ -55,7 +55,7 @@
             }
         }).component('regenerateInvoices', {
             controller: ['$scope', 'ConfigurationService', 'NotificationHandler', RegenerateInvoicesController],
-            templateUrl: '../resources/js/admin/feature/configuration/regenerate-invoices.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/configuration/regenerate-invoices.html',
             bindings: {
                 event: '<'
             }
@@ -658,7 +658,7 @@
             bindToController: true,
             controller: ['ConfigurationService', '$rootScope', 'GroupService', '$q', CategoryConfigurationController],
             controllerAs: 'categoryConf',
-            templateUrl: '/resources/angular-templates/admin/partials/configuration/category.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/category.html'
         };
     }
 
@@ -725,7 +725,7 @@
             link: function() {
                 var m = $uibModal.open({
                     size:'lg',
-                    templateUrl:'/resources/angular-templates/admin/partials/configuration/basic-settings.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/basic-settings.html',
                     backdrop: 'static',
                     controllerAs: 'ctrl',
                     controller: function($scope) {
@@ -814,7 +814,7 @@
                 };
                 ctrl.paymentMethods = paymentMethods;
             }],
-            templateUrl: '../resources/js/admin/feature/configuration/payment-method-blacklist.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/configuration/payment-method-blacklist.html'
         }
     }
 })();

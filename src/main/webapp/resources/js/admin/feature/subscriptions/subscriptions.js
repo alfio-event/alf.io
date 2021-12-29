@@ -85,19 +85,19 @@
     }])
     .component('subscriptionsContainer', {
         controller: ['$stateParams', '$state', '$scope', ContainerCtrl],
-        templateUrl: '../resources/js/admin/feature/subscriptions/container.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/subscriptions/container.html',
         bindings: { organizations: '<'}
     })
     .component('subscriptionsList', {
         controller: ['SubscriptionService', 'ConfigurationService', '$q', 'NotificationHandler', '$uibModal', SubscriptionsListCtrl],
-        templateUrl: '../resources/js/admin/feature/subscriptions/list.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/subscriptions/list.html',
         bindings: {
             organizationId: '<'
         }
     })
     .component('singleSubscriptionContainer', {
         controller: ['$stateParams', '$state', '$scope', function($stateParams, $state, $scope) {}],
-        templateUrl: '../resources/js/admin/feature/subscriptions/detail.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/subscriptions/detail.html',
         bindings: {
             organizationId: '<',
             subscriptionDescriptor: '<'
@@ -105,7 +105,7 @@
     })
     .component('subscriptionsEdit', {
         controller: ['$state', 'SubscriptionService', 'EventService', 'UtilsService', '$q', 'ImageTransformService', '$scope', 'PaymentProxyService', 'PAYMENT_PROXY_DESCRIPTIONS', 'NotificationHandler', 'ConfigurationService', 'LocationService', SubscriptionsEditCtrl],
-        templateUrl: '../resources/js/admin/feature/subscriptions/edit.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/subscriptions/edit.html',
         bindings: {
             organizationId: '<',
             subscriptionId: '<'
@@ -169,7 +169,7 @@
                 }
                 $uibModal.open({
                     size: 'lg',
-                    templateUrl: '../resources/js/admin/feature/subscriptions/linked-events.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/subscriptions/linked-events.html',
                     controllerAs: '$ctrl',
                     backdrop: 'static',
                     controller: function($scope) {

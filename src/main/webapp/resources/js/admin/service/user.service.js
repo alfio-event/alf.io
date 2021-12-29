@@ -47,7 +47,7 @@
             showUserData: function(user) {
                 return $uibModal.open({
                     size:'sm',
-                    templateUrl:'/resources/angular-templates/admin/partials/event/fragment/show-user-data-modal.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/show-user-data-modal.html',
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.baseUrl = $window.location.origin;

@@ -6,25 +6,25 @@
             $stateProvider
                 .state('events.single.email-log', {
                     url: '/email-log',
-                    templateUrl: '/resources/angular-templates/admin/partials/email/log.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/email/log.html',
                     controller: EmailLogController,
                     controllerAs: 'ctrl'
                 })
                 .state('subscriptions.single.email-log', {
                     url: '/email-log',
-                    templateUrl: '/resources/angular-templates/admin/partials/email/log.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/email/log.html',
                     controller: EmailLogController,
                     controllerAs: 'ctrl'
                 })
                 .state('events.single.email-log-detail', {
                     url: '/email-log/:messageId',
-                    templateUrl: '/resources/angular-templates/admin/partials/email/entry-detail.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/email/entry-detail.html',
                     controller: EmailDetailController,
                     controllerAs: 'detailCtrl'
                 })
                 .state('subscriptions.single.email-log-detail', {
                     url: '/email-log/:messageId',
-                    templateUrl: '/resources/angular-templates/admin/partials/email/entry-detail.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/email/entry-detail.html',
                     controller: EmailDetailController,
                     controllerAs: 'detailCtrl'
                 })

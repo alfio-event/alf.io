@@ -8,34 +8,34 @@
                 event:'<'
             },
             controller: function() {},
-            templateUrl: '../resources/js/admin/feature/polls/index.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/index.html'
         })
         .component('pollsList', {
             bindings: {
                 event:'<'
             },
             controller: ['$uibModal', 'PollService', PollListCtrl],
-            templateUrl: '../resources/js/admin/feature/polls/polls-list.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/polls-list.html'
         })
         .component('pollEdit', {
             bindings: {
                 event:'<'
             },
             controller: ['PollService', 'EventService', '$state', '$stateParams', '$q', PollEditCtrl],
-            templateUrl: '../resources/js/admin/feature/polls/poll-edit.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/poll-edit.html'
         })
         .component('pollDetail', {
             bindings: {
                 event:'<'
             },
             controller: ['PollService', 'EventService', '$q', '$stateParams', '$interval', '$uibModal', '$scope', '$window', '$state', PollDetailCtrl],
-            templateUrl: '../resources/js/admin/feature/polls/poll-detail.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/poll-detail.html'
         }).component('pollParticipants', {
             bindings: {
                 event:'<'
             },
             controller: ['PollService', 'EventService', '$q', '$stateParams', 'NotificationHandler', PollParticipantsCtrl],
-            templateUrl: '../resources/js/admin/feature/polls/poll-participants.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/poll-participants.html'
         }).component('pollVotesTable', {
             bindings: {
                 votes: '<',
@@ -50,7 +50,7 @@
                     return option[keys[0]];
                 };
             },
-            templateUrl: '../resources/js/admin/feature/polls/poll-votes-table.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/poll-votes-table.html'
         });
 
 
@@ -253,7 +253,7 @@
                 var parent = ctrl;
                 $uibModal.open({
                     size: 'lg',
-                    templateUrl: '../resources/js/admin/feature/polls/poll-result-modal.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/poll-result-modal.html',
                     backdrop: 'static',
                     controllerAs: '$ctrl',
                     controller: function ($scope) {
@@ -423,7 +423,7 @@
             selectParticipants: function(eventName, pollId) {
                 var modal = $uibModal.open({
                     size: 'lg',
-                    templateUrl: '../resources/js/admin/feature/polls/select-participants-modal.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/select-participants-modal.html',
                     backdrop: 'static',
                     controllerAs: '$ctrl',
                     controller: function ($scope) {
@@ -491,7 +491,7 @@
             editOption: function(option, languages) {
                 var modal = $uibModal.open({
                     size: 'lg',
-                    templateUrl: '../resources/js/admin/feature/polls/edit-option-modal.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/polls/edit-option-modal.html',
                     backdrop: 'static',
                     controllerAs: '$ctrl',
                     controller: function ($scope) {

@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('users', {
         controller: ['$window', 'UserService', '$uibModal', '$q', UsersCtrl],
-        templateUrl: '../resources/js/admin/feature/users/users.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/users/users.html',
         bindings: {
             title: '@',
             type: '@'
@@ -98,7 +98,7 @@
         function viewApiKeyQR(user) {
             var modal = $uibModal.open({
                 size:'sm',
-                templateUrl:'../resources/js/admin/feature/users/api-key-qr.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/users/api-key-qr.html',
                 backdrop: 'static',
                 controllerAs: 'ctrl',
                 controller: function() {

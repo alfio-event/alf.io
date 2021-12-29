@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('extensionLog', {
         controller: ['$http', ExtensionLogCtrl],
-        templateUrl: '../resources/js/admin/feature/extension/log/extension-log.html',
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/extension/log/extension-log.html',
         bindings: {
         }
     });

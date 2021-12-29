@@ -15,7 +15,7 @@
             isLast: '<'
         },
         controller: [TicketCategoryDetailCtrl],
-        templateUrl: '../resources/js/admin/feature/ticket-category/ticket-category-detail.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/ticket-category/ticket-category-detail.html'
     }).service('TicketCategoryEditorService', TicketCategoryEditorService);
 
     function TicketCategoryDetailCtrl() {
@@ -92,7 +92,7 @@
         this.openCategoryDialog = function(parentScope, category, event, validationErrorHandler, reloadIfSeatsModification) {
             var editCategory = $uibModal.open({
                 size:'lg',
-                templateUrl:'/resources/angular-templates/admin/partials/event/fragment/edit-category-modal.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/edit-category-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.allLanguagesMapping = parentScope.allLanguagesMapping;

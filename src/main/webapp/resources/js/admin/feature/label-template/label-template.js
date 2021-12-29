@@ -7,7 +7,7 @@
             deleteHandler: '&'
         },
         controller: LabelTemplateCtrl,
-        templateUrl: '../resources/js/admin/feature/label-template/label-template.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/label-template/label-template.html'
     });
 
     var DEFAULT_CONFIG = {

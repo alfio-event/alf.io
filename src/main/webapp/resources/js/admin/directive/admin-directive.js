@@ -252,7 +252,7 @@
     directives.directive('controlButtons', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/form/control-buttons.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/form/control-buttons.html',
             scope: {
                 formObj: '=',
                 cancelHandler: '=',
@@ -286,7 +286,7 @@
     directives.directive('fieldError', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/form/field-error.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/form/field-error.html',
             scope: {
                 formObj: '=',
                 fieldObj: '=',
@@ -305,7 +305,7 @@
     directives.directive('eventHeader', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/event-header.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/event-header.html',
             link: angular.noop,
             transclude: true
         }
@@ -324,7 +324,7 @@
                 allLanguagesMapping: '='
             },
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
             controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService, ImageTransformService) {
 
                 ConfigurationService.loadInstanceSettings().then(function(result) {
@@ -559,7 +559,7 @@
                 showExistingErrors: '='
             },
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-prices.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/edit-prices.html',
             controller: function EditPricesController($scope, PriceCalculator) {
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','freeOfCharge', 'allowedPaymentProxies', 'availableSeats',
@@ -619,7 +619,7 @@
     directives.directive('prices', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/prices.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/prices.html',
             transclude:true,
             controller: function ViewPricesController($scope, PriceCalculator, UtilsService) {
                 $scope.calculateTotalPrice = function(event) {
@@ -633,7 +633,7 @@
     directives.directive('editCategory', function() {
         return {
             restrict: 'E',
-            templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/edit-category.html',
             controller: function($scope, ConfigurationService) {
 
                 if($scope.event.id !== undefined) {
@@ -968,7 +968,7 @@
                 listValues: '=',
                 updateHandler: '&'
             },
-            templateUrl:'/resources/angular-templates/admin/partials/configuration/setting.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/configuration/setting.html',
             link: angular.noop,
             controller: function($scope, $rootScope, ConfigurationService) {
                 $scope.displayDelete = $scope.displayDeleteIfNeeded && angular.isDefined($scope.setting) && !angular.isDefined($scope.setting.pluginId);
@@ -997,7 +997,7 @@
                messages: '=',
                online: '='
            },
-           templateUrl: '/resources/angular-templates/admin/partials/custom-message/edit-messages.html',
+           templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/custom-message/edit-messages.html',
            controller: ['$scope', function($scope) {
                $scope.attachTicketFlag = false;
                $scope.updateTicketFlag = function() {
@@ -1051,7 +1051,7 @@
                     WaitingQueueService.setPaused(ctrl.eventName, !ctrl.paused).then(storeStatus);
                 }
             }],
-            templateUrl: '/resources/angular-templates/admin/partials/waiting-queue/status.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/waiting-queue/status.html'
         }
     });
 
@@ -1130,7 +1130,7 @@
             bindToController: true,
             scope: {},
             controllerAs: 'ctrl',
-            templateUrl: '/resources/angular-templates/admin/partials/main/sidebar.html',
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/main/sidebar.html',
             controller: ['$location', '$anchorScroll', '$scope', 'MenuButtonService', function($location, $anchorScroll, $scope, MenuButtonService) {
                 var ctrl = this;
                 var toUnbind = [];

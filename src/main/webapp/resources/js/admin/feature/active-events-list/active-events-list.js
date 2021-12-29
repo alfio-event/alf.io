@@ -4,7 +4,7 @@
 
 
 angular.module('adminApplication').component('activeEventsList', {
-    templateUrl: '/resources/js/admin/feature/active-events-list/active-events-list.html',
+    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/active-events-list/active-events-list.html',
     controller: activeEventsListCtrl
 
 });

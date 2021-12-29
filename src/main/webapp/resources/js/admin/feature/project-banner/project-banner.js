@@ -8,7 +8,7 @@
                 alfioVersion: '<'
             },
             controller: ['ConfigurationService', '$window', ProjectBannerController],
-            templateUrl: '../resources/js/admin/feature/project-banner/project-banner.html'
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/project-banner/project-banner.html'
         });
 
     function ProjectBannerController(ConfigurationService, $window) {

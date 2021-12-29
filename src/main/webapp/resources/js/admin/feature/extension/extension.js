@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('extension', {
         controller: ['$http', '$q', 'OrganizationService', 'EventService', ExtensionCtrl],
-        templateUrl: '../resources/js/admin/feature/extension/extension.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/extension/extension.html'
     });
 
     function ExtensionCtrl($http, $q, OrganizationService, EventService) {

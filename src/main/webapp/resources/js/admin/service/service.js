@@ -131,7 +131,7 @@
 
                 var modal = $uibModal.open({
                     size:'md',
-                    templateUrl: '/resources/angular-templates/admin/partials/event/fragment/delete-category-modal.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/delete-category-modal.html',
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.cancel = function() {
@@ -263,7 +263,7 @@
             deleteEvent: function(event) {
                 var modal = $uibModal.open({
                     size:'lg',
-                    templateUrl: '/resources/angular-templates/admin/partials/event/fragment/delete-event-modal.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/delete-event-modal.html',
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.cancel = function() {
@@ -284,7 +284,7 @@
             exportAttendees: function(event) {
                 var modal = $uibModal.open({
                     size:'lg',
-                    templateUrl:'/resources/angular-templates/admin/partials/event/fragment/select-field-modal.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/select-field-modal.html',
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.selected = {};
@@ -369,7 +369,7 @@
             rearrangeCategories: function(event) {
                 var modal = $uibModal.open({
                     size:'lg',
-                    templateUrl:'/resources/angular-templates/admin/partials/event/rearrange-categories.html',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/rearrange-categories.html',
                     backdrop: 'static',
                     controller: function($scope) {
                         var ctrl = this;
@@ -864,7 +864,7 @@
                     var outCtrl = ctrl;
                     var modal = $uibModal.open({
                         size:'lg',
-                        templateUrl: '/resources/angular-templates/admin/partials/event/fragment/download-waiting-queue.html',
+                        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/event/fragment/download-waiting-queue.html',
                         backdrop: 'static',
                         controllerAs: 'ctrl',
                         controller: function($scope) {

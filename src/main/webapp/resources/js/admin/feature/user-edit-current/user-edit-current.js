@@ -3,7 +3,7 @@
 
     angular.module('adminApplication').component('userEditCurrent', {
         controller: ['UserService', '$timeout', UserEditCurrentCtrl],
-        templateUrl: '../resources/js/admin/feature/user-edit-current/user-edit-current.html'
+        templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/user-edit-current/user-edit-current.html'
     });
 
 
