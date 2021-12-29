@@ -22,7 +22,6 @@ import alfio.model.result.Result;
 import alfio.model.system.AdminJobSchedule;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.util.ClockProvider;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -78,14 +77,19 @@ public class AdminJobManager {
     @Scheduled(fixedDelay = 1000L)
     void processPendingExtensionRetry() {
         log.trace("Processing pending extensions retry");
-        internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(EXTENSIONS_JOB));
+        processPendingExtensionRetry(ZonedDateTime.now(clockProvider.getClock()));
         log.trace("done processing pending extensions retry");
+    }
+
+    // internal method invoked by tests
+    void processPendingExtensionRetry(ZonedDateTime timestamp) {
+        internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(EXTENSIONS_JOB, timestamp));
     }
 
     @Scheduled(fixedDelay = 60 * 1000)
     void processPendingRequests() {
         log.trace("Processing pending requests");
-        internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(ADMIN_JOBS));
+        internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(ADMIN_JOBS, ZonedDateTime.now(clockProvider.getClock())));
         log.trace("done processing pending requests");
     }
 
@@ -103,7 +107,7 @@ public class AdminJobManager {
                     } else {
                         var nextExecution = getNextExecution(schedule.getAttempts());
                         var extensionName = schedule.getMetadata().get("extensionName");
-                        log.trace("scheduling failed extension {} to be executed at {}", extensionName, nextExecution);
+                        log.debug("scheduling failed extension {} to be executed at {}", extensionName, nextExecution);
                         adminJobQueueRepository.scheduleRetry(schedule.getId(), nextExecution);
                     }
                 } else {

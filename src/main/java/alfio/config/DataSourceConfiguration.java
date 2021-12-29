@@ -48,6 +48,7 @@ import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
 import ch.digitalfondue.npjt.mapper.ParameterConverter;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.context.annotation.*;
@@ -218,7 +219,9 @@ public class DataSourceConfiguration {
     public HttpClient getHttpClient() {
         return HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_1_1)
-            .executor(Executors.newCachedThreadPool())
+            .executor(Executors.newCachedThreadPool(new BasicThreadFactory.Builder()
+                .namingPattern("httpClient-thread-%d")
+                .build()))
             .build();
     }
 

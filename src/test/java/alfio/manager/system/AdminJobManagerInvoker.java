@@ -16,6 +16,8 @@
  */
 package alfio.manager.system;
 
+import java.time.ZonedDateTime;
+
 public class AdminJobManagerInvoker {
     private final AdminJobManager adminJobManager;
 
@@ -23,7 +25,7 @@ public class AdminJobManagerInvoker {
         this.adminJobManager = adminJobManager;
     }
 
-    public void invokeProcessPendingExtensionRetry() {
-        adminJobManager.processPendingExtensionRetry();
+    public void invokeProcessPendingExtensionRetry(ZonedDateTime timestamp) {
+        adminJobManager.processPendingExtensionRetry(timestamp);
     }
 }

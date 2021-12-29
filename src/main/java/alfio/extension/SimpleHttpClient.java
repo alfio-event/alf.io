@@ -160,11 +160,15 @@ public class SimpleHttpClient {
             Thread.currentThread().interrupt();
             logInterruption(exception);
         }
-        return new SimpleHttpClientResponse(
-            HttpUtils.callSuccessful(response),
-            response.statusCode(),
-            response.headers().map(),
-            response.body());
+        if (response != null) {
+            return new SimpleHttpClientResponse(
+                HttpUtils.callSuccessful(response),
+                response.statusCode(),
+                response.headers().map(),
+                response.body());
+        } else {
+            return new SimpleHttpClientResponse(false, 0, Map.of(), "");
+        }
     }
 
     private static void logInterruption(InterruptedException exception) {

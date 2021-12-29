@@ -318,7 +318,7 @@ public class ExtensionService {
 
     public void retryFailedAsyncScript(String path, String name, Map<String, Object> payload) {
         var extensionSupport = getSingle(path, name).orElseThrow();
-        Supplier<String> scriptGetter = () -> getScript(path, name)+"\n;"+EXECUTE_SCRIPT;
+        Supplier<String> scriptGetter = () -> getScript(path, name)+"\n;"+EXECUTE_SCRIPT+"\nvar res = null;";
         ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, extensionSupport.getPath(), path, name);
         scriptingExecutionService.executeScript(name, extensionSupport.getHash(), scriptGetter, payload, Void.class, extLogger);
     }

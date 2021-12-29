@@ -126,12 +126,10 @@ class RetryFailedExtensionJobExecutorTest {
         assertNotNull(params.get("eventId"));
         assertTrue(((Integer) params.get("eventId")) > 0);
 
-        // wait for the scheduled job to be executable
-        Thread.sleep(2000L);
         var invoker = new AdminJobManagerInvoker(adminJobManager);
         // try to run the jobs, this should still fail
         var expectedDate = ZonedDateTime.now(ClockProvider.clock()).plusSeconds(4).minus(100, ChronoUnit.MILLIS);
-        invoker.invokeProcessPendingExtensionRetry();
+        invoker.invokeProcessPendingExtensionRetry(ZonedDateTime.now(ClockProvider.clock()).plus(2001L, ChronoUnit.MILLIS));
         jobs = adminJobQueueRepository.loadAll();
         job = jobs.get(0);
         assertEquals(2, job.getAttempts());
@@ -143,7 +141,7 @@ class RetryFailedExtensionJobExecutorTest {
 
         // trigger the job again
         adminJobQueueRepository.scheduleRetry(job.getId(), expectedDate);
-        invoker.invokeProcessPendingExtensionRetry();
+        invoker.invokeProcessPendingExtensionRetry(expectedDate.plus(1L, ChronoUnit.MILLIS));
         jobs = adminJobQueueRepository.loadAll();
         job = jobs.get(0);
         assertEquals(3, job.getAttempts());
