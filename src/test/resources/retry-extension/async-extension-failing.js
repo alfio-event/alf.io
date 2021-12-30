@@ -22,5 +22,7 @@ function getScriptMetadata() {
  * @returns Object
  */
 function executeScript(scriptEvent) {
+    console.warn('this is a warning message');
+    console.log('parsed event dates are: begin', ExtensionUtils.formatDateTime(event.begin, "yyyy-MM-dd'T'HH:mm:ss", false), 'end', ExtensionUtils.formatDateTime(event.end, "yyyy-MM-dd'T'HH:mm:ss", false))
     throw 'failing script';
 }

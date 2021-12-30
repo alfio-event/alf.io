@@ -64,6 +64,15 @@ public class ExtensionUtils {
         return new HmacUtils(HmacAlgorithms.HMAC_SHA_256, secret).hmacHex(text);
     }
 
+    /**
+     * This method overload exists to allow usage of formatDateTime when retrying a failed execution.
+     * In this particular context, ZoneDateTime(s) are serialized as String(s), so we need to deserialize the value
+     * before formatting it.
+     */
+    public static String formatDateTime(String dateTimeAsString, String formatPattern, boolean utc) {
+        return formatDateTime(ZonedDateTime.parse(dateTimeAsString), formatPattern, utc);
+    }
+
     public static String formatDateTime(ZonedDateTime dateTime, String formatPattern, boolean utc) {
         var dateTimeToFormat = utc ? dateTime.withZoneSameInstant(ZoneId.of("UTC")) : dateTime;
         return dateTimeToFormat.format(DateTimeFormatter.ofPattern(formatPattern));

@@ -20,11 +20,13 @@ import alfio.extension.ExtensionService;
 import alfio.extension.ScriptingExecutionService;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.model.system.AdminJobSchedule;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 public class RetryFailedExtensionJobExecutor implements AdminJobExecutor {
     private final ExtensionService extensionService;
 
@@ -44,7 +46,12 @@ public class RetryFailedExtensionJobExecutor implements AdminJobExecutor {
         var path = (String) metadata.get(ScriptingExecutionService.EXTENSION_PATH);
         @SuppressWarnings("unchecked")
         var payload = (Map<String, Object>) metadata.get(ScriptingExecutionService.EXTENSION_PARAMS);
-        extensionService.retryFailedAsyncScript(path, name, payload);
+        try {
+            extensionService.retryFailedAsyncScript(path, name, payload);
+        } catch (RuntimeException ex) {
+            log.warn("Caught error while retrying extension " + name, ex);
+            throw ex;
+        }
         return "OK";
     }
 }

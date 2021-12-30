@@ -30,4 +30,5 @@ function executeScript(scriptEvent) {
     console.log('event timezone:', event.timeZone);
     console.log('organization ID', organizationId);
     console.log('purchaseContext title en:', purchaseContext.title['en']);
+    console.log('parsed event dates are: begin', ExtensionUtils.formatDateTime(event.begin, "yyyy-MM-dd'T'HH:mm:ss", false), 'end', ExtensionUtils.formatDateTime(event.end, "yyyy-MM-dd'T'HH:mm:ss", false))
 }

@@ -46,7 +46,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static alfio.extension.ScriptingExecutionService.EXTENSION_PARAMETERS;
+import static alfio.extension.ScriptingExecutionService.EXTENSION_CONFIGURATION_PARAMETERS;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
@@ -317,10 +317,22 @@ public class ExtensionService {
     }
 
     public void retryFailedAsyncScript(String path, String name, Map<String, Object> payload) {
-        var extensionSupport = getSingle(path, name).orElseThrow();
-        Supplier<String> scriptGetter = () -> getScript(path, name)+"\n;"+EXECUTE_SCRIPT+"\nvar res = null;";
-        ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, extensionSupport.getPath(), path, name);
-        scriptingExecutionService.executeScript(name, extensionSupport.getHash(), scriptGetter, payload, Void.class, extLogger);
+        var extensionEvent = (String) payload.get("extensionEvent");
+        var activePath = getActiveScriptsForEvent(extensionEvent, path, true).stream()
+            .filter(nh -> nh.getName().equals(name))
+            .findFirst()
+            .orElseThrow();
+
+        internalExecuteScript(activePath, payload, path, false, EXECUTE_SCRIPT+"\nvar res = null;", Void.class, true);
+    }
+
+    private <T> Map<String, Object> internalExecuteScript(ScriptPathNameHash activePath,
+                                                          Map<String, Object> input,
+                                                          String basePath,
+                                                          boolean async,
+                                                          String executeInstruction,
+                                                          Class<T> expectedResult) {
+        return internalExecuteScript(activePath, input, basePath, async, executeInstruction, expectedResult, false);
     }
 
     private <T> Map<String, Object> internalExecuteScript(ScriptPathNameHash activePath,
@@ -328,7 +340,8 @@ public class ExtensionService {
                                            String basePath,
                                            boolean async,
                                            String executeInstruction,
-                                           Class<T> expectedResult) {
+                                           Class<T> expectedResult,
+                                           boolean throwErrorIfNotExecuted) {
         String path = activePath.getPath();
         String name = activePath.getName();
         Pair<Set<String>, Map<String, Object>> params = addExtensionParameters(input, basePath, activePath);
@@ -344,7 +357,10 @@ public class ExtensionService {
                 context.put("output", res);
             }
         } else {
-            extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
+            extLogger.logWarning("script not run, missing parameters: " + params.getLeft());
+            if (throwErrorIfNotExecuted) {
+                throw new IllegalStateException("Script not run, missing parameters: "+ params.getLeft());
+            }
         }
         return context;
     }
@@ -363,7 +379,7 @@ public class ExtensionService {
     private Pair<Set<String>, Map<String, Object>> getExternalExtensionParameters(Map<String, Object> input, ScriptPathNameHash activePath) {
         Map<String, Object> copy = new HashMap<>(input);
         // we assume that external parameters are defined correctly.
-        copy.put(EXTENSION_PARAMETERS, externalConfiguration.getParametersForExtension(activePath.getName()));
+        copy.put(EXTENSION_CONFIGURATION_PARAMETERS, externalConfiguration.getParametersForExtension(activePath.getName()));
         return Pair.of(Set.of(), copy);
     }
 
@@ -378,7 +394,7 @@ public class ExtensionService {
 
         mandatory.removeAll(nameAndValues.keySet());
 
-        copy.put(EXTENSION_PARAMETERS, nameAndValues);
+        copy.put(EXTENSION_CONFIGURATION_PARAMETERS, nameAndValues);
         return Pair.of(mandatory, copy);
     }
 

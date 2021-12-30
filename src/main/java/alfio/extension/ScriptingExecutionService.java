@@ -59,7 +59,7 @@ public class ScriptingExecutionService {
     public static final String EXTENSION_NAME = "extensionName";
     public static final String EXTENSION_PATH = "path";
     public static final String EXTENSION_PARAMS = "params";
-    static final String EXTENSION_PARAMETERS = "extensionParameters";
+    public static final String EXTENSION_CONFIGURATION_PARAMETERS = "extensionParameters";
 
     private final Supplier<Executor> executorSupplier;
     private final ScriptableObject sealedScope;
@@ -116,10 +116,13 @@ public class ScriptingExecutionService {
                 } catch(IllegalStateException ex) {
                     // we got an error while executing the script. We must now re-schedule the script to be executed again
                     // at a later time
+                    var paramsCopy = new HashMap<>(params);
+                    // do not persist extension parameters because they could contain sensitive information
+                    paramsCopy.remove(EXTENSION_CONFIGURATION_PARAMETERS);
                     Map<String, Object> metadata = Map.of(
                         EXTENSION_NAME, name,
                         EXTENSION_PATH, path,
-                        EXTENSION_PARAMS, params
+                        EXTENSION_PARAMS, paramsCopy
                     );
                     boolean scheduled = AdminJobManager.executionScheduler(
                         EXECUTE_EXTENSION,
@@ -181,7 +184,7 @@ public class ScriptingExecutionService {
 
             for (var entry : params.entrySet()) {
                 var value = entry.getValue();
-                if(entry.getKey().equals(EXTENSION_PARAMETERS)) {
+                if(entry.getKey().equals(EXTENSION_CONFIGURATION_PARAMETERS)) {
                     scope.put(entry.getKey(), scope, convertExtensionParameters(scope, value));
                 } else {
                     scope.put(entry.getKey(), scope, Context.javaToJS(value, scope));

@@ -125,6 +125,7 @@ class RetryFailedExtensionJobExecutorTest {
         assertTrue(params.containsKey("eventId"));
         assertNotNull(params.get("eventId"));
         assertTrue(((Integer) params.get("eventId")) > 0);
+        assertFalse(params.containsKey(ScriptingExecutionService.EXTENSION_CONFIGURATION_PARAMETERS));
 
         var invoker = new AdminJobManagerInvoker(adminJobManager);
         // try to run the jobs, this should still fail
