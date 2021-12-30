@@ -160,6 +160,11 @@ function getScriptMetadata() {
 function executeScript(scriptEvent) {
     console.log('hello from script with event:', scriptEvent);
     console.log('extension parameters are: ', extensionParameters);
+    
+    // you can log warning and errors too
+    // console.warn('this is a warning related to ', executionKey);
+    // console.error('uh oh, something happened');
+    
     //this sample calls the https://csrng.net/ website and generates a random invoice number
     var randomNumber = simpleHttpClient.get('https://csrng.net/csrng/csrng.php?min=0&max=100').getJsonBody()[0].random;
     console.log('the invoice number will be:', randomNumber);
