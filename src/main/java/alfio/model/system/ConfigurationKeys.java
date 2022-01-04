@@ -209,7 +209,7 @@ public enum ConfigurationKeys {
     INVOICE_ADDRESS("Invoice address", false, SettingCategory.INVOICE, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     USE_INVOICE_NUMBER_AS_ID("Use invoice number for public references (instead of Reservation ID, default: false)", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
     VAT_NUMBER_IS_REQUIRED("VAT/GST Number is required for Business Customers (default: false)", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    GENERATE_ONLY_INVOICE("Generate only invoice", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
+    GENERATE_ONLY_INVOICE("Always generate an invoice for paid reservations", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
     ENABLE_ITALY_E_INVOICING("Enable the support for italian e-invoicing", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
     ENABLE_EU_VAT_DIRECTIVE("Enable VAT Reverse Charge (default: false)", false, SettingCategory.INVOICE_EU, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
     ENABLE_REVERSE_CHARGE_ONLINE("Enable VAT Reverse Charge for online tickets (if set overrides global reverse charge, default: true)", false, SettingCategory.INVOICE_EU, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "true"),
