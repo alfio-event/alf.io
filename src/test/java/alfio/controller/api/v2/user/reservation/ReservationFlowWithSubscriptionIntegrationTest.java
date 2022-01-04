@@ -212,11 +212,13 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         super.testAddSubscription(modifiedContext, 1);
         var eventInfo = eventStatisticsManager.getEventWithAdditionalInfo(context.event.getShortName(), context.userId);
         assertEquals(BigDecimal.ZERO, eventInfo.getGrossIncome());
+        assertErrorWhenTransferEvent();
     }
 
     @Test
     public void inPersonEventWithSubscriptionUsingPin() {
         super.testAddSubscription(context, 1);
+        assertErrorWhenTransferEvent();
     }
 
     @Test
@@ -260,5 +262,24 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         assertEquals(SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT, subscriptionById.getUsageType());
         jdbcTemplate.update("update subscription_descriptor set usage_type = 'UNLIMITED' where id = :id", Map.of("id", subscriptionById.getId()));
         super.testAddSubscription(context, 2);
+        assertErrorWhenTransferEvent();
+    }
+
+    @Test
+    void unlinkSubscriptionAndTransferEvent() {
+        int eventId = context.event.getId();
+        int orgId = context.event.getOrganizationId();
+        subscriptionRepository.removeAllSubscriptionsForEvent(eventId, orgId);
+        BaseIntegrationTest.testTransferEventToAnotherOrg(eventId, orgId, context.userId, jdbcTemplate);
+    }
+
+    private void assertErrorWhenTransferEvent() {
+        try {
+            var event = context.event;
+            BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), context.userId, jdbcTemplate);
+        } catch (UncategorizedSQLException uex) {
+            var error = SqlUtils.findServerError(uex).orElseThrow();
+            assertEquals("CANNOT_TRANSFER_SUBSCRIPTION_LINK", error.getMessage());
+        }
     }
 }

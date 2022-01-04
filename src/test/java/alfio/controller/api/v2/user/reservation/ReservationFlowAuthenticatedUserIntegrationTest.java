@@ -47,6 +47,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
@@ -190,5 +191,8 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
         assertNotNull(reservationsResponse.getBody());
         assertFalse(reservationsResponse.getBody().isEmpty());
         assertEquals(1, reservationsResponse.getBody().size());
+
+        var event = reservationFlowContext.event;
+        BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), reservationFlowContext.userId, jdbcTemplate);
     }
 }
