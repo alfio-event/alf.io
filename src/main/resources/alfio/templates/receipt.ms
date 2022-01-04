@@ -94,7 +94,7 @@
         {{/orderSummary.free}}
     </tfoot>
 </table>
-<p>{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatNr}}] [{{vatTranslation}}]{{/i18n}}{{/hasVat}}</p>
+<p>{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatTranslation}}]{{/i18n}} {{vatNr}}{{/hasVat}}</p>
 
 
     </body>
