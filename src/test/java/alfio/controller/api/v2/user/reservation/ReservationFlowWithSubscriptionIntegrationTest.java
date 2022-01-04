@@ -38,6 +38,7 @@ import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.subscription.MaxEntriesOverageDetails;
@@ -68,9 +69,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
+import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -281,5 +284,61 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
             var error = SqlUtils.findServerError(uex).orElseThrow();
             assertEquals("CANNOT_TRANSFER_SUBSCRIPTION_LINK", error.getMessage());
         }
+    }
+
+    @Test
+    public void testUpdateEventHeaderError() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = pair.getLeft();
+        String username = pair.getRight();
+
+        Map<String, String> desc = new HashMap<>();
+        desc.put("en", "muh description new");
+        desc.put("it", "muh description new");
+        desc.put("de", "muh description new");
+
+        var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, 10);
+        this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
+        int newOrgId = BaseIntegrationTest.createNewOrg(username, jdbcTemplate);
+
+        EventModification em = new EventModification(event.getId(),
+            Event.EventFormat.IN_PERSON,
+            "http://example.com/new",
+            null,
+            "http://example.com/tc",
+            "http://example.com/pp",
+            "https://example.com/img.png",
+            null,
+            event.getShortName(),
+            "new display name",
+            newOrgId,
+            event.getLocation(),
+            "0.0",
+            "0.0",
+            ZoneId.systemDefault().getId(),
+            desc,
+            DateTimeModification.fromZonedDateTime(event.getBegin()),
+            DateTimeModification.fromZonedDateTime(event.getEnd().plusDays(42)),
+            event.getRegularPrice(),
+            event.getCurrency(),
+            eventRepository.countExistingTickets(event.getId()),
+            event.getVat(),
+            event.isVatIncluded(),
+            event.getAllowedPaymentProxies(),
+            Collections.emptyList(),
+            false,
+            null,
+            7,
+            null,
+            null,
+            AlfioMetadata.empty(),
+            List.of());
+
+        assertThrows(IllegalArgumentException.class, () -> eventManager.updateEventHeader(event, em, username));
     }
 }

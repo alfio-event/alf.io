@@ -338,6 +338,7 @@ public class EventManager {
         Validate.isTrue(ownershipChecker.test(original.getOrganizationId()) && (sameOrganization || ownershipChecker.test(em.getOrganizationId())), "Invalid organizationId");
         int eventId = original.getId();
         Validate.isTrue(sameOrganization || groupRepository.countByEventId(eventId) == 0, "Cannot change organization because there is a group linked to this event.");
+        Validate.isTrue(sameOrganization || !subscriptionRepository.hasLinkedSubscription(eventId), "Cannot change organization because there are one or more subscriptions linked.");
 
         boolean formatUpdated = em.getFormat() != original.getFormat();
         if(em.getFormat() == EventFormat.ONLINE && formatUpdated) {

@@ -35,16 +35,7 @@ public class BaseIntegrationTest {
                                                      int currentOrgId,
                                                      String username,
                                                      NamedParameterJdbcTemplate jdbcTemplate) {
-        var keyHolder = new GeneratedKeyHolder();
-        var parameterSource = new MapSqlParameterSource("name", UUID.randomUUID().toString());
-        jdbcTemplate.update("INSERT INTO organization(name, description, email, name_openid, slug) VALUES (:name, '', '', null, null)", parameterSource, keyHolder);
-        assertNotNull(keyHolder.getKeys());
-        Integer newOrgId = (Integer) keyHolder.getKeys().get("id");
-        assertNotNull(newOrgId);
-        Integer userId = jdbcTemplate.queryForObject("select id from ba_user where username = :username and enabled = true", Map.of("username", username), Integer.class);
-        assertNotNull(userId, "user not found");
-        assertEquals(1, jdbcTemplate.update("insert into j_user_organization (user_id, org_id) values(:userId, :organizationId)", Map.of("userId", userId, "organizationId", newOrgId)));
-
+        int newOrgId = createNewOrg(username, jdbcTemplate);
         // update event set org id
         assertEquals(1, jdbcTemplate.update("update event set org_id = :orgId where id = :id", Map.of("orgId", newOrgId, "id", eventId)));
 
@@ -55,5 +46,19 @@ public class BaseIntegrationTest {
             String.class
         );
         assertTrue(errors.isEmpty(), () -> "Found stale resources in " + String.join(", ", errors));
+    }
+
+    public static int createNewOrg(String username,
+                                   NamedParameterJdbcTemplate jdbcTemplate) {
+        var keyHolder = new GeneratedKeyHolder();
+        var parameterSource = new MapSqlParameterSource("name", UUID.randomUUID().toString());
+        jdbcTemplate.update("INSERT INTO organization(name, description, email, name_openid, slug) VALUES (:name, '', '', null, null)", parameterSource, keyHolder);
+        assertNotNull(keyHolder.getKeys());
+        Integer newOrgId = (Integer) keyHolder.getKeys().get("id");
+        assertNotNull(newOrgId);
+        Integer userId = jdbcTemplate.queryForObject("select id from ba_user where username = :username and enabled = true", Map.of("username", username), Integer.class);
+        assertNotNull(userId, "user not found");
+        assertEquals(1, jdbcTemplate.update("insert into j_user_organization (user_id, org_id) values(:userId, :organizationId)", Map.of("userId", userId, "organizationId", newOrgId)));
+        return newOrgId;
     }
 }
