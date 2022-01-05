@@ -96,7 +96,17 @@
         }
     })
     .component('singleSubscriptionContainer', {
-        controller: ['$stateParams', '$state', '$scope', function($stateParams, $state, $scope) {}],
+        controller: ['$stateParams', '$state', '$rootScope', function($stateParams, $state, $rootScope) {
+            var ctrl = this;
+            ctrl.backToReservationList = $state.is('subscriptions.single.view-reservation');
+            var unbind = $rootScope.$on('$stateChangeSuccess', function() {
+                ctrl.backToReservationList = $state.is('subscriptions.single.view-reservation');
+            });
+            ctrl.subscriptionId = this.subscriptionDescriptor.id;
+            ctrl.$onDestroy = function() {
+                unbind();
+            }
+        }],
         templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/subscriptions/detail.html',
         bindings: {
             organizationId: '<',
