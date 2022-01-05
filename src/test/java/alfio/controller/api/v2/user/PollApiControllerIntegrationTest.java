@@ -37,6 +37,7 @@ import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import alfio.util.PinGenerator;
 import org.apache.commons.lang3.time.DateUtils;
@@ -48,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,12 +91,15 @@ class PollApiControllerIntegrationTest {
     private TicketRepository ticketRepository;
     @Autowired
     private EventDeleterRepository eventDeleterRepository;
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     private Event event;
     private Long pollId;
     private Ticket ticket;
     private Long firstOptionId;
     private Long secondOptionId;
+    private String username;
 
 
     @BeforeEach
@@ -108,7 +113,7 @@ class PollApiControllerIntegrationTest {
                 DESCRIPTION, BigDecimal.ZERO, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
-
+        username = eventAndUser.getRight();
         event = eventAndUser.getKey();
         var rowCountAndKey = pollRepository.insert(Map.of("en", "test poll"), null, List.of(), 0, event.getId(), event.getOrganizationId());
         pollId = rowCountAndKey.getKey();
@@ -128,6 +133,7 @@ class PollApiControllerIntegrationTest {
 
     @AfterEach
     void deleteAll() {
+        BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), username, jdbcTemplate);
         eventDeleterRepository.deleteAllForEvent(event.getId());
     }
 

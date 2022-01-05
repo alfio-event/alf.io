@@ -44,6 +44,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -165,5 +166,11 @@ public class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
     @Test
     public void inPersonEvent() throws Exception {
         super.testBasicFlow(this::createContext);
+    }
+
+    @Override
+    protected void performAdditionalTests(ReservationFlowContext context) {
+        var event = context.event;
+        BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), context.userId, jdbcTemplate);
     }
 }

@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,6 +90,8 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private ClockProvider clockProvider;
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     @Test
     public void testUnboundedTicketsGeneration() {
@@ -97,12 +100,14 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
+        var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
         assertEquals(AVAILABLE_SEATS, tickets.size());
         assertTrue(tickets.stream().allMatch(t -> t.getCategoryId() == null));
+        BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), eventAndUsername.getRight(), jdbcTemplate);
     }
 
     @Test
@@ -115,13 +120,15 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
+        var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
         assertTrue(eventManager.eventExistsById(event.getId()));
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
         assertEquals(AVAILABLE_SEATS, tickets.size());
         assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() == null).count());
+        BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), eventAndUsername.getRight(), jdbcTemplate);
     }
 
     @Test
@@ -131,7 +138,8 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
-        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
+        var eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -140,6 +148,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(1, ticketCategories.size());
         assertEquals(0, ticketCategories.get(0).getMaxTickets());
+        BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), eventAndUsername.getRight(), jdbcTemplate);
     }
 
     @Test
@@ -974,7 +983,9 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, event.getAllowedPaymentProxies(), null), username);
         // we expect all the access types to be INHERIT
         assertTrue(ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().allMatch(tc -> tc.getTicketAccessType() == TicketCategory.TicketAccessType.INHERIT));
+        BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), username, jdbcTemplate);
     }
+
 
     private Pair<Event, String> generateAndEditEvent(int newEventSize) {
         List<TicketCategoryModification> categories = Collections.singletonList(

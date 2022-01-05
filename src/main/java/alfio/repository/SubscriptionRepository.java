@@ -238,6 +238,9 @@ public interface SubscriptionRepository {
     @Query("select exists (select id from subscription_event where event_id_fk  = :eventId)")
     boolean hasLinkedSubscription(@Bind("eventId") int eventId);
 
+    @Query("select exists (select id from subscription_event where subscription_descriptor_id_fk  = :descriptorId::uuid)")
+    boolean hasLinkedEvents(@Bind("descriptorId") UUID subscriptionDescriptorId);
+
     @Query("select * from subscription where id = :id for update")
     Subscription findSubscriptionByIdForUpdate(@Bind("id") UUID id);
 

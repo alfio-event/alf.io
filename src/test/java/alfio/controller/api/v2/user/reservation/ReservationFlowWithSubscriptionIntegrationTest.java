@@ -38,6 +38,7 @@ import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.subscription.MaxEntriesOverageDetails;
@@ -63,11 +64,16 @@ import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
@@ -84,6 +90,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     private final SubscriptionManager subscriptionManager;
     private final SubscriptionRepository subscriptionRepository;
     private final FileUploadManager fileUploadManager;
+    private final PlatformTransactionManager platformTransactionManager;
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
 
@@ -126,7 +133,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
                                                           SubscriptionManager subscriptionManager,
                                                           SubscriptionRepository subscriptionRepository,
                                                           FileUploadManager fileUploadManager,
-                                                          UserRepository userRepository) {
+                                                          UserRepository userRepository,
+                                                          PlatformTransactionManager platformTransactionManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -164,6 +172,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         this.subscriptionManager = subscriptionManager;
         this.subscriptionRepository = subscriptionRepository;
         this.fileUploadManager = fileUploadManager;
+        this.platformTransactionManager = platformTransactionManager;
     }
 
     @BeforeEach
@@ -212,11 +221,13 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         super.testAddSubscription(modifiedContext, 1);
         var eventInfo = eventStatisticsManager.getEventWithAdditionalInfo(context.event.getShortName(), context.userId);
         assertEquals(BigDecimal.ZERO, eventInfo.getGrossIncome());
+        assertErrorWhenTransferToAnotherOrg();
     }
 
     @Test
     public void inPersonEventWithSubscriptionUsingPin() {
         super.testAddSubscription(context, 1);
+        assertErrorWhenTransferToAnotherOrg();
     }
 
     @Test
@@ -260,5 +271,101 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         assertEquals(SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT, subscriptionById.getUsageType());
         jdbcTemplate.update("update subscription_descriptor set usage_type = 'UNLIMITED' where id = :id", Map.of("id", subscriptionById.getId()));
         super.testAddSubscription(context, 2);
+        assertErrorWhenTransferToAnotherOrg();
+    }
+
+    @Test
+    void unlinkSubscriptionAndTransferResources() {
+        int eventId = context.event.getId();
+        int orgId = context.event.getOrganizationId();
+        subscriptionRepository.removeAllSubscriptionsForEvent(eventId, orgId);
+        BaseIntegrationTest.testTransferEventToAnotherOrg(eventId, orgId, context.userId, jdbcTemplate);
+        var descriptor = subscriptionRepository.findDescriptorBySubscriptionId(context.subscriptionId);
+        BaseIntegrationTest.testTransferSubscriptionDescriptorToAnotherOrg(descriptor.getId(), orgId, context.userId, jdbcTemplate);
+    }
+
+    private void assertErrorWhenTransferToAnotherOrg() {
+        var definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED);
+        var template = new TransactionTemplate(platformTransactionManager, definition);
+        template.execute(status -> {
+            var savepoint = status.createSavepoint();
+            try {
+                var event = context.event;
+                BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), context.userId, jdbcTemplate);
+            } catch (UncategorizedSQLException uex) {
+                var error = SqlUtils.findServerError(uex).orElseThrow();
+                assertEquals("CANNOT_TRANSFER_SUBSCRIPTION_LINK", error.getMessage());
+                status.rollbackToSavepoint(savepoint);
+            }
+            return null;
+        });
+        template.execute(status -> {
+            var savepoint = status.createSavepoint();
+            try {
+                var descriptor = subscriptionRepository.findDescriptorBySubscriptionId(context.subscriptionId);
+                BaseIntegrationTest.testTransferSubscriptionDescriptorToAnotherOrg(descriptor.getId(), descriptor.getOrganizationId(), context.userId, jdbcTemplate);
+            } catch (UncategorizedSQLException uex) {
+                var error = SqlUtils.findServerError(uex).orElseThrow();
+                assertEquals("CANNOT_TRANSFER_SUBSCRIPTION_LINK", error.getMessage());
+                status.rollbackToSavepoint(savepoint);
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void testUpdateEventHeaderError() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = pair.getLeft();
+        String username = pair.getRight();
+
+        Map<String, String> desc = new HashMap<>();
+        desc.put("en", "muh description new");
+        desc.put("it", "muh description new");
+        desc.put("de", "muh description new");
+
+        var descriptorId = createSubscriptionDescriptor(event.getOrganizationId(), fileUploadManager, subscriptionManager, 10);
+        this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
+        int newOrgId = BaseIntegrationTest.createNewOrg(username, jdbcTemplate);
+
+        EventModification em = new EventModification(event.getId(),
+            Event.EventFormat.IN_PERSON,
+            "http://example.com/new",
+            null,
+            "http://example.com/tc",
+            "http://example.com/pp",
+            "https://example.com/img.png",
+            null,
+            event.getShortName(),
+            "new display name",
+            newOrgId,
+            event.getLocation(),
+            "0.0",
+            "0.0",
+            ZoneId.systemDefault().getId(),
+            desc,
+            DateTimeModification.fromZonedDateTime(event.getBegin()),
+            DateTimeModification.fromZonedDateTime(event.getEnd().plusDays(42)),
+            event.getRegularPrice(),
+            event.getCurrency(),
+            eventRepository.countExistingTickets(event.getId()),
+            event.getVat(),
+            event.isVatIncluded(),
+            event.getAllowedPaymentProxies(),
+            Collections.emptyList(),
+            false,
+            null,
+            7,
+            null,
+            null,
+            AlfioMetadata.empty(),
+            List.of());
+
+        assertThrows(IllegalArgumentException.class, () -> eventManager.updateEventHeader(event, em, username));
     }
 }

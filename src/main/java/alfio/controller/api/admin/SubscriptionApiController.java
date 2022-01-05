@@ -83,10 +83,10 @@ public class SubscriptionApiController {
     }
 
     @PostMapping("/{subscriptionId}")
-    ResponseEntity<UUID> create(@PathVariable("organizationId") int organizationId,
-                                       @PathVariable("subscriptionId") UUID subscriptionId,
-                                       @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
-                                       Principal principal) {
+    ResponseEntity<UUID> update(@PathVariable("organizationId") int organizationId,
+                                @PathVariable("subscriptionId") UUID subscriptionId,
+                                @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
+                                Principal principal) {
         if (organizationId == subscriptionDescriptor.getOrganizationId()
             && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())
             && subscriptionId.equals(subscriptionDescriptor.getId())
