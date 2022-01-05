@@ -16,7 +16,7 @@
 --
 
 -- this function propagates organization id change to event's descendant resources
-create or replace function propagate_organization_change() returns trigger
+create or replace function propagate_event_organization_change() returns trigger
 as $$
 DECLARE
     subscription_links_count numeric;
@@ -128,7 +128,7 @@ BEGIN
 END
 $$ language plpgsql;
 
-create trigger ticket_insert_org_id_fk_trigger
+create trigger event_update_org_id_fk_trigger
     after update on event
-    for each row execute procedure propagate_organization_change();
+    for each row execute procedure propagate_event_organization_change();
 

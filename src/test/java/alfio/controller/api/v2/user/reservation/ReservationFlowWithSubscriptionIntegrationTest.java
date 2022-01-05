@@ -64,7 +64,11 @@ import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -73,7 +77,6 @@ import java.time.ZoneId;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
-import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -87,6 +90,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     private final SubscriptionManager subscriptionManager;
     private final SubscriptionRepository subscriptionRepository;
     private final FileUploadManager fileUploadManager;
+    private final PlatformTransactionManager platformTransactionManager;
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
 
@@ -129,7 +133,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
                                                           SubscriptionManager subscriptionManager,
                                                           SubscriptionRepository subscriptionRepository,
                                                           FileUploadManager fileUploadManager,
-                                                          UserRepository userRepository) {
+                                                          UserRepository userRepository,
+                                                          PlatformTransactionManager platformTransactionManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -167,6 +172,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         this.subscriptionManager = subscriptionManager;
         this.subscriptionRepository = subscriptionRepository;
         this.fileUploadManager = fileUploadManager;
+        this.platformTransactionManager = platformTransactionManager;
     }
 
     @BeforeEach
@@ -215,13 +221,13 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         super.testAddSubscription(modifiedContext, 1);
         var eventInfo = eventStatisticsManager.getEventWithAdditionalInfo(context.event.getShortName(), context.userId);
         assertEquals(BigDecimal.ZERO, eventInfo.getGrossIncome());
-        assertErrorWhenTransferEvent();
+        assertErrorWhenTransferToAnotherOrg();
     }
 
     @Test
     public void inPersonEventWithSubscriptionUsingPin() {
         super.testAddSubscription(context, 1);
-        assertErrorWhenTransferEvent();
+        assertErrorWhenTransferToAnotherOrg();
     }
 
     @Test
@@ -265,25 +271,46 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         assertEquals(SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT, subscriptionById.getUsageType());
         jdbcTemplate.update("update subscription_descriptor set usage_type = 'UNLIMITED' where id = :id", Map.of("id", subscriptionById.getId()));
         super.testAddSubscription(context, 2);
-        assertErrorWhenTransferEvent();
+        assertErrorWhenTransferToAnotherOrg();
     }
 
     @Test
-    void unlinkSubscriptionAndTransferEvent() {
+    void unlinkSubscriptionAndTransferResources() {
         int eventId = context.event.getId();
         int orgId = context.event.getOrganizationId();
         subscriptionRepository.removeAllSubscriptionsForEvent(eventId, orgId);
         BaseIntegrationTest.testTransferEventToAnotherOrg(eventId, orgId, context.userId, jdbcTemplate);
+        var descriptor = subscriptionRepository.findDescriptorBySubscriptionId(context.subscriptionId);
+        BaseIntegrationTest.testTransferSubscriptionDescriptorToAnotherOrg(descriptor.getId(), orgId, context.userId, jdbcTemplate);
     }
 
-    private void assertErrorWhenTransferEvent() {
-        try {
-            var event = context.event;
-            BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), context.userId, jdbcTemplate);
-        } catch (UncategorizedSQLException uex) {
-            var error = SqlUtils.findServerError(uex).orElseThrow();
-            assertEquals("CANNOT_TRANSFER_SUBSCRIPTION_LINK", error.getMessage());
-        }
+    private void assertErrorWhenTransferToAnotherOrg() {
+        var definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED);
+        var template = new TransactionTemplate(platformTransactionManager, definition);
+        template.execute(status -> {
+            var savepoint = status.createSavepoint();
+            try {
+                var event = context.event;
+                BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), context.userId, jdbcTemplate);
+            } catch (UncategorizedSQLException uex) {
+                var error = SqlUtils.findServerError(uex).orElseThrow();
+                assertEquals("CANNOT_TRANSFER_SUBSCRIPTION_LINK", error.getMessage());
+                status.rollbackToSavepoint(savepoint);
+            }
+            return null;
+        });
+        template.execute(status -> {
+            var savepoint = status.createSavepoint();
+            try {
+                var descriptor = subscriptionRepository.findDescriptorBySubscriptionId(context.subscriptionId);
+                BaseIntegrationTest.testTransferSubscriptionDescriptorToAnotherOrg(descriptor.getId(), descriptor.getOrganizationId(), context.userId, jdbcTemplate);
+            } catch (UncategorizedSQLException uex) {
+                var error = SqlUtils.findServerError(uex).orElseThrow();
+                assertEquals("CANNOT_TRANSFER_SUBSCRIPTION_LINK", error.getMessage());
+                status.rollbackToSavepoint(savepoint);
+            }
+            return null;
+        });
     }
 
     @Test

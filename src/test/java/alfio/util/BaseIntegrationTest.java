@@ -41,11 +41,30 @@ public class BaseIntegrationTest {
 
         // check that all the resources have been migrated
         var params = Map.of("eventId", eventId, "orgId", currentOrgId);
+        // the following view is created when the tests start
         var errors = jdbcTemplate.queryForList("select entity || ' (' || cnt || ')' from count_resources_assigned_to_event_org where ev = :eventId and org = :orgId and cnt > 0",
             params,
             String.class
         );
-        assertTrue(errors.isEmpty(), () -> "Found stale resources in " + String.join(", ", errors));
+        assertTrue(errors.isEmpty(), () -> "[Event] Found stale resources in " + String.join(", ", errors));
+    }
+
+    public static void testTransferSubscriptionDescriptorToAnotherOrg(UUID subscriptionDescriptorId,
+                                                                      int currentOrgId,
+                                                                      String username,
+                                                                      NamedParameterJdbcTemplate jdbcTemplate) {
+        int newOrgId = createNewOrg(username, jdbcTemplate);
+        // update event set org id
+        assertEquals(1, jdbcTemplate.update("update subscription_descriptor set organization_id_fk = :orgId where id = :id::uuid", Map.of("orgId", newOrgId, "id", subscriptionDescriptorId)));
+
+        // check that all the resources have been migrated
+        var params = Map.of("descriptorId", subscriptionDescriptorId, "orgId", currentOrgId);
+        // the following view is created when the tests start
+        var errors = jdbcTemplate.queryForList("select entity || ' (' || cnt || ')' from count_resources_assigned_to_subscription_org where sid = :descriptorId::uuid and org = :orgId and cnt > 0",
+            params,
+            String.class
+        );
+        assertTrue(errors.isEmpty(), () -> "[SubscriptionDescriptor] Found stale resources in " + String.join(", ", errors));
     }
 
     public static int createNewOrg(String username,
