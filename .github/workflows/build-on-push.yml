@@ -40,7 +40,7 @@ jobs:
             - name: Set up DB
               run: |
                   sudo apt-get install --yes postgresql-client
-                  psql -h 127.0.0.1 -U postgres postgres -c 'create database alfio;' -f src/test/init-db-user.sql
+                  psql -h 127.0.0.1 -U postgres postgres -c 'create database alfio;' -f src/test/resources/init-db-user.sql
               env:
                   PGPASSWORD: postgres
             - name: Build with Gradle
