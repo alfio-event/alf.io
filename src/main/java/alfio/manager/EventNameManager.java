@@ -16,7 +16,7 @@
  */
 package alfio.manager;
 
-import alfio.repository.EventRepository;
+import alfio.repository.EventAdminRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +40,7 @@ public class EventNameManager {
     private static final Pattern NUMBER_MATCHER = Pattern.compile("^\\d+$");
     private static final String SPACES_AND_PUNCTUATION = "[\\s\\p{Punct}]";
     private static final String FIND_EVIL_CHARACTERS = "[^\\sA-Z\\-a-z0-9]";
-    private final EventRepository eventRepository;
+    private final EventAdminRepository eventAdminRepository;
 
     /**
      * Generates and returns a short name based on the given display name.<br>
@@ -100,6 +100,6 @@ public class EventNameManager {
     }
 
     public boolean isUnique(String shortName) {
-        return eventRepository.countByShortName(shortName) == 0;
+        return !eventAdminRepository.existsBySlug(shortName);
     }
 }
