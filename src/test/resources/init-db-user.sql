@@ -16,5 +16,4 @@
 --
 
 create role alfio_user with NOSUPERUSER NOINHERIT LOGIN ENCRYPTED PASSWORD 'password';
--- create database alfio;
 alter database alfio owner to alfio_user;

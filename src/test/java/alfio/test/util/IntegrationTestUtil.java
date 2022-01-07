@@ -60,7 +60,7 @@ public class IntegrationTestUtil {
 
     static {
         DB_CONF.put("PGSQL", generateDBConfig("jdbc:postgresql://localhost:5432/alfio", "postgres", "password"));
-        DB_CONF.put("PGSQL-TRAVIS", generateDBConfig("jdbc:postgresql://localhost:5432/alfio", "postgres", "postgres"));
+        DB_CONF.put("PGSQL-TRAVIS", generateDBConfig("jdbc:postgresql://localhost:5432/alfio", "alfio_user", "password"));
     }
 
     public static Map<String, String> generateDBConfig(String url, String username, String password) {
