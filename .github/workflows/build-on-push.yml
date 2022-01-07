@@ -39,7 +39,7 @@ jobs:
                   java-version: 11
             - name: Set up DB
               run: |
-                  apt-get install --yes postgresql-client
+                  sudo apt-get install --yes postgresql-client
                   psql -h 127.0.0.1 -U postgres postgres -c 'create database alfio;' -f src/test/init-db-user.sql
               env:
                   PGPASSWORD: postgres
