@@ -119,7 +119,7 @@ public class DataSourceConfiguration {
             // check
             boolean isSuperAdmin = Boolean.TRUE.equals(new NamedParameterJdbcTemplate(dataSource)
                 .queryForObject("select usesuper from pg_user where usename = CURRENT_USER",
-                    new EmptySqlParameterSource(),
+                    EmptySqlParameterSource.INSTANCE,
                     Boolean.class));
 
             if (isSuperAdmin) {

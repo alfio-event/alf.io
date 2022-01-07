@@ -266,7 +266,7 @@ public class DataMigrator {
 
     void fillReservationsLanguage() {
         transactionTemplate.execute(s -> {
-            jdbc.queryForList("select id from tickets_reservation where user_language is null", new EmptySqlParameterSource(), String.class)
+            jdbc.queryForList("select id from tickets_reservation where user_language is null", EmptySqlParameterSource.INSTANCE, String.class)
                     .forEach(id -> {
                         MapSqlParameterSource param = new MapSqlParameterSource("reservationId", id);
                         String language = optionally(() -> jdbc.queryForObject("select user_language from ticket where tickets_reservation_id = :reservationId limit 1", param, String.class)).orElse("en");

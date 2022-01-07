@@ -80,6 +80,12 @@ public class EventNameManagerIntegrationTest  extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
+
+        // ensure that the current user is not a superuser
+        assertEquals(Boolean.FALSE, jdbcTemplate.queryForObject("select usesuper from pg_user where usename = CURRENT_USER",
+                EmptySqlParameterSource.INSTANCE,
+                Boolean.class));
+
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),
@@ -94,14 +100,14 @@ public class EventNameManagerIntegrationTest  extends BaseIntegrationTest {
 
     @Test
     void testValidSlug() {
-        assertEquals(Boolean.TRUE, jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'true', true)", new EmptySqlParameterSource(), Boolean.class));
+        assertEquals(Boolean.TRUE, jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'true', true)", EmptySqlParameterSource.INSTANCE, Boolean.class));
         assertEquals(String.valueOf(secondOrgId), jdbcTemplate.queryForObject("select set_config('alfio.currentUserOrgs', :orgs, true)", new MapSqlParameterSource("orgs", String.valueOf(secondOrgId)), String.class));
         assertTrue(eventNameManager.isUnique(event.getShortName() + "1"));
     }
 
     @Test
     void testAlreadyUsedSlug() {
-        assertEquals(Boolean.TRUE, jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'true', true)", new EmptySqlParameterSource(), Boolean.class));
+        assertEquals(Boolean.TRUE, jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'true', true)", EmptySqlParameterSource.INSTANCE, Boolean.class));
         assertEquals(String.valueOf(secondOrgId), jdbcTemplate.queryForObject("select set_config('alfio.currentUserOrgs', :orgs, true)", new MapSqlParameterSource("orgs", String.valueOf(secondOrgId)), String.class));
         assertFalse(eventNameManager.isUnique(event.getShortName()));
     }

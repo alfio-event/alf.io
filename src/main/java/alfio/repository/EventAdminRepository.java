@@ -37,9 +37,9 @@ public interface EventAdminRepository {
      */
     default boolean existsBySlug(String slug) {
         var jdbcTemplate = getJdbcTemplate();
-        boolean rlsEnabled = Boolean.TRUE.equals(jdbcTemplate.queryForObject("select coalesce(current_setting('alfio.checkRowAccess', true), 'false')", new EmptySqlParameterSource(), Boolean.class));
+        boolean rlsEnabled = Boolean.TRUE.equals(jdbcTemplate.queryForObject("select coalesce(current_setting('alfio.checkRowAccess', true), 'false')", EmptySqlParameterSource.INSTANCE, Boolean.class));
         if (rlsEnabled) {
-            jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'false', true)", new EmptySqlParameterSource(), Boolean.class);
+            jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'false', true)", EmptySqlParameterSource.INSTANCE, Boolean.class);
         }
         boolean exists = Boolean.TRUE.equals(jdbcTemplate.queryForObject(
             "select exists(select 1 from event where short_name = :slug)",
@@ -47,7 +47,7 @@ public interface EventAdminRepository {
             Boolean.class));
 
         if (rlsEnabled) {
-            jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'true', true)", new EmptySqlParameterSource(), Boolean.class);
+            jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'true', true)", EmptySqlParameterSource.INSTANCE, Boolean.class);
         }
         return exists;
     }
