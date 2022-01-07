@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 public class DataSourceConfigurationTest {
 
     private Environment environment;
-    private DataSourceConfiguration configuration = new DataSourceConfiguration();
+    private final DataSourceConfiguration configuration = new DataSourceConfiguration();
 
     @BeforeEach
     void init() {

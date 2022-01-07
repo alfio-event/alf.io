@@ -24,12 +24,14 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ByteArrayResource;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
@@ -47,29 +49,28 @@ import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
 
 @Configuration(proxyBeanMethods = false)
 public class BaseTestConfiguration {
-    private final String POSTGRES_USERNAME = "alfio";
-    private final String POSTGRES_PASSWORD = "postgres";
-    private final String POSTGRES_DB = "alfio";
-    private final String TC_URL = "jdbc:tc:postgresql:13:///"+POSTGRES_DB;
-
 
     @Bean
     @Profile("!travis")
     public PlatformProvider getCloudProvider() {
-        IntegrationTestUtil.generateDBConfig(TC_URL, POSTGRES_USERNAME, POSTGRES_PASSWORD)
-            .forEach(System::setProperty);
         return PlatformProvider.DEFAULT;
     }
 
     @Bean
     @Profile("!travis")
     public DataSource getDataSource() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(TC_URL);
-        dataSource.setUsername(POSTGRES_USERNAME);
-        dataSource.setPassword(POSTGRES_PASSWORD);
-        dataSource.setMaximumPoolSize(5);
-        return dataSource;
+        String POSTGRES_DB = "alfio";
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:14")
+            .withDatabaseName(POSTGRES_DB)
+            .withInitScript("init-db-user.sql");
+        postgres.start();
+        var config = new HikariConfig();
+        config.setJdbcUrl(postgres.getJdbcUrl());
+        config.setUsername("alfio_user");
+        config.setPassword("password");
+        config.setDriverClassName(postgres.getDriverClassName());
+        config.setMaximumPoolSize(5);
+        return new HikariDataSource(config);
     }
 
     @Bean

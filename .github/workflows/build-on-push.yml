@@ -7,14 +7,14 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                postgresql: ['9.6','13']
+                postgresql: ['9.6','14']
         services:
             postgres:
                 image: postgres:${{ matrix.postgresql }}
                 env:
                     POSTGRES_USER: postgres
                     POSTGRES_PASSWORD: postgres
-                    POSTGRES_DB: alfio
+                    POSTGRES_DB: postgres
                 ports:
                     - 5432:5432
                 # needed because the postgres container does not provide a healthcheck
@@ -37,6 +37,12 @@ jobs:
               uses: actions/setup-java@v1
               with:
                   java-version: 11
+            - name: Set up DB
+              run: |
+                  sudo apt-get install --yes postgresql-client
+                  psql -h 127.0.0.1 -U postgres postgres -c 'create database alfio;' -f src/test/resources/init-db-user.sql
+              env:
+                  PGPASSWORD: postgres
             - name: Build with Gradle
               run: ./gradlew build distribution jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
 #            - name: upload-to-coveralls

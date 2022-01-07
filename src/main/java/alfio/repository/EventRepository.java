@@ -21,6 +21,9 @@ import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.*;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -156,9 +159,6 @@ public interface EventRepository {
 
     @Query("update event set display_name = short_name where id = :eventId and display_name is null")
     int fillDisplayNameIfRequired(@Bind("eventId") int eventId);
-
-    @Query("select count(*) from event where short_name = :shortName")
-    Integer countByShortName(@Bind("shortName") String shortName);
 
     @Query("select id from event where end_ts > :now")
     List<Integer> findAllActiveIds(@Bind("now") ZonedDateTime now);
