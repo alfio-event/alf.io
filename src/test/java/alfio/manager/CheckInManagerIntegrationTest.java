@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class CheckInManagerIntegrationTest {
+class CheckInManagerIntegrationTest {
 
     @Autowired
     private CheckInManager checkInManager;
@@ -83,7 +83,7 @@ public class CheckInManagerIntegrationTest {
     private TicketRepository ticketRepository;
 
     @Test
-    public void testReturnOnlyOnce() {
+    void testReturnOnlyOnce() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,

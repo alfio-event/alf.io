@@ -50,6 +50,7 @@ jobs:
               run: ./gradlew sonarqube
               env:
                   SONARCLOUD_TOKEN: ${{ secrets.SONAR_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #            - name: upload-to-coveralls
 #              if: matrix.postgresql == '13' # run only once

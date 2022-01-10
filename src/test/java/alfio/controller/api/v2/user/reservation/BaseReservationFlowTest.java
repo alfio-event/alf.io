@@ -1183,7 +1183,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         String hashedTicketKey = DigestUtils.sha256Hex(ticketKey);
         String encJson = payload.get(hashedTicketKey);
         assertNotNull(encJson);
-        String ticketPayload = CheckInManager.decrypt(ticketwc.getUuid() + "/" + ticketKey, encJson);
+        String ticketPayload = CheckInManagerInvoker.decrypt(ticketwc.getUuid() + "/" + ticketKey, encJson);
         Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<>() {
         });
         assertNotNull(jsonPayload);

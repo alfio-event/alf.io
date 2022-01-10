@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
-public class CheckInManagerTest {
+class CheckInManagerTest {
 
     private EventRepository eventRepository;
     private ConfigurationManager configurationManager;
@@ -46,7 +46,6 @@ public class CheckInManagerTest {
     private static final String USERNAME = "username";
     private static final int EVENT_ID = 0;
     private static final int ORG_ID = 1;
-    private Event event;
 
 
     @BeforeEach
@@ -54,7 +53,7 @@ public class CheckInManagerTest {
         eventRepository = mock(EventRepository.class);
         configurationManager = mock(ConfigurationManager.class);
         OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
-        event = mock(Event.class);
+        Event event = mock(Event.class);
         Organization organization = mock(Organization.class);
         ConfigurationLevel cl = ConfigurationLevel.event(event);
         when(event.getConfigurationLevel()).thenReturn(cl);
@@ -69,7 +68,7 @@ public class CheckInManagerTest {
     }
 
     @Test
-    public void getStatistics() {
+    void getStatistics() {
         when(configurationManager.getFor(eq(CHECK_IN_STATS), any(ConfigurationLevel.class)))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(CHECK_IN_STATS, new ConfigurationKeyValuePathLevel(null, "true", null)));
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
@@ -78,7 +77,7 @@ public class CheckInManagerTest {
     }
 
     @Test
-    public void getStatisticsDisabled() {
+    void getStatisticsDisabled() {
         when(configurationManager.getFor(eq(CHECK_IN_STATS), any(ConfigurationLevel.class)))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(CHECK_IN_STATS, new ConfigurationKeyValuePathLevel(null, "false", null)));
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);

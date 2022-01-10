@@ -70,7 +70,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 @AllArgsConstructor
 public class CheckInManager {
 
-    private static final Pattern CYPHER_SPLITTER = Pattern.compile("\\|");
+    static final Pattern CYPHER_SPLITTER = Pattern.compile("\\|");
     private final TicketRepository ticketRepository;
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
@@ -309,7 +309,7 @@ public class CheckInManager {
         return Optional.ofNullable(in).map(d -> d.withZoneSameInstant(zoneId));
     }
 
-    private static Pair<Cipher, SecretKeySpec>  getCypher(String key) {
+    static Pair<Cipher, SecretKeySpec>  getCypher(String key) {
         try {
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
             int iterations = 1000;
@@ -332,21 +332,6 @@ public class CheckInManager {
             byte[] data = cipher.doFinal(payload.getBytes(StandardCharsets.UTF_8));
             byte[] iv = cipher.getIV();
             return Base64.encodeBase64URLSafeString(iv) + "|" + Base64.encodeBase64URLSafeString(data);
-        } catch (GeneralSecurityException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    public static String decrypt(String key, String payload) {
-        try {
-            Pair<Cipher, SecretKeySpec> cipherAndSecret = getCypher(key);
-            Cipher cipher = cipherAndSecret.getKey();
-            String[] split = CYPHER_SPLITTER.split(payload);
-            byte[] iv = Base64.decodeBase64(split[0]);
-            byte[] body = Base64.decodeBase64(split[1]);
-            cipher.init(Cipher.DECRYPT_MODE, cipherAndSecret.getRight(), new IvParameterSpec(iv));
-            byte[] decrypted = cipher.doFinal(body);
-            return new String(decrypted, StandardCharsets.UTF_8);
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException(e);
         }
