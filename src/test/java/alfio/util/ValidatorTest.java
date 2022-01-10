@@ -27,6 +27,8 @@ import alfio.model.result.ValidationResult;
 import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
@@ -41,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ValidatorTest {
+class ValidatorTest {
 
     private static final DateTimeModification VALID_EXPIRATION;
     private static final DateTimeModification VALID_INCEPTION;
@@ -55,11 +57,11 @@ public class ValidatorTest {
     private EventModification eventModification;
     private Errors errors;
     private TicketCategoryModification ticketCategoryModification;
-    private EventModification.AdditionalServiceText title = new EventModification.AdditionalServiceText(0, "it", "titolo", AdditionalServiceText.TextType.TITLE);
-    private EventModification.AdditionalServiceText description = new EventModification.AdditionalServiceText(0, "it", "descrizione", AdditionalServiceText.TextType.DESCRIPTION);
+    private final EventModification.AdditionalServiceText title = new EventModification.AdditionalServiceText(0, "it", "titolo", AdditionalServiceText.TextType.TITLE);
+    private final EventModification.AdditionalServiceText description = new EventModification.AdditionalServiceText(0, "it", "descrizione", AdditionalServiceText.TextType.DESCRIPTION);
 
     @BeforeEach
-    public void init() {
+    void init() {
         eventModification = mock(EventModification.class);
         errors = new MapBindingResult(new HashMap<>(), "test");
         ticketCategoryModification = mock(TicketCategoryModification.class);
@@ -104,7 +106,7 @@ public class ValidatorTest {
     }
 
     @Test
-    public void testValidationSuccess() {
+    void testValidationSuccess() {
         EventModification.AdditionalService valid1 = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);
         EventModification.AdditionalService valid2 = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);
         assertTrue(Stream.of(valid1, valid2).map(as -> Validator.validateAdditionalService(as, errors)).allMatch(ValidationResult::isSuccess));
@@ -112,7 +114,7 @@ public class ValidatorTest {
     }
 
     @Test
-    public void testValidationErrorExpirationBeforeInception() {
+    void testValidationErrorExpirationBeforeInception() {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_EXPIRATION, VALID_INCEPTION, null, AdditionalService.VatType.NONE, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
@@ -120,7 +122,7 @@ public class ValidatorTest {
     }
 
     @Test
-    public void testValidationErrorInceptionNull() {
+    void testValidationErrorInceptionNull() {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, null, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
@@ -128,7 +130,7 @@ public class ValidatorTest {
     }
 
     @Test
-    public void testValidationExpirationNull() {
+    void testValidationExpirationNull() {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, null, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
@@ -136,7 +138,7 @@ public class ValidatorTest {
     }
 
     @Test
-    public void testValidationInceptionExpirationNull() {
+    void testValidationInceptionExpirationNull() {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, null, null, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);
         assertFalse(Validator.validateAdditionalService(invalid, errors).isSuccess());
         assertTrue(errors.hasFieldErrors());
@@ -144,7 +146,7 @@ public class ValidatorTest {
     }
 
     @Test
-    public void testValidationFailedDescriptionsDontMatchTitles() {
+    void testValidationFailedDescriptionsDontMatchTitles() {
         EventModification.AdditionalService invalid = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), emptyList(), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);
         EventModification.AdditionalService valid = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);
         assertTrue(Validator.validateAdditionalService(valid, errors).isSuccess());
@@ -154,7 +156,7 @@ public class ValidatorTest {
     }
 
     @Test
-    public void testValidationFailedDescription() {
+    void testValidationFailedDescription() {
         EventModification.AdditionalService invalid1 = new EventModification.AdditionalService(0, BigDecimal.ZERO, false, 0, -1, 1, VALID_INCEPTION, VALID_EXPIRATION, null, AdditionalService.VatType.NONE, Collections.emptyList(), emptyList(), singletonList(description), AdditionalService.AdditionalServiceType.DONATION, null);//English is required here
         EventModification.AdditionalService invalid2 = new EventModification.AdditionalService(0, BigDecimal.ONE, true, 1, 100, 1, VALID_INCEPTION, VALID_EXPIRATION, BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), singletonList(title), singletonList(new EventModification.AdditionalServiceText(0, "en", "", AdditionalServiceText.TextType.DESCRIPTION)), AdditionalService.AdditionalServiceType.DONATION, null);
         assertFalse(Validator.validateAdditionalService(invalid1, errors).isSuccess());
@@ -174,5 +176,48 @@ public class ValidatorTest {
         Validator.validateTicketCategories(eventModification, errors);
         assertTrue(errors.hasFieldErrors());
         assertNotNull(errors.getFieldError("ticketCategories"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "test@example.org",
+        "test@sub.example.org",
+        "test_test-test@sub.sub.example-example.org",
+        "test@example.เน็ต.ไทย"
+    })
+    void validCanonicalEmails(String address) {
+        assertTrue(Validator.isCanonicalMailAddress(address));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "test@example.o",
+        "test@example.org.",
+        "test@example.org<",
+        "test@localhost",
+        "test_test-test@sub.sub.o"
+    })
+    void invalidCanonicalEmails(String address) {
+        assertFalse(Validator.isCanonicalMailAddress(address));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "test@example.org",
+        "test@localhost",
+        "test_test-test@sub.sub.example-example.org",
+        "test@example.เน็ต.ไทย"
+    })
+    void validEmails(String address) {
+        assertTrue(Validator.isEmailValid(address));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "test.example.org",
+        "test_test-test"
+    })
+    void invalidEmails(String address) {
+        assertFalse(Validator.isEmailValid(address));
     }
 }

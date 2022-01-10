@@ -26,12 +26,14 @@ import alfio.repository.EventRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
 
 /**
  * Class SpecialPriceTokenGenerator.
@@ -43,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class SpecialPriceTokenGenerator {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
     private static final char[] ADMITTED_CHARACTERS = new char[]{
             'A', 'B', 'C', 'D', 'E', 'F',
             'G', 'H', 'J', 'K', 'M', 'N',
@@ -50,6 +53,10 @@ public class SpecialPriceTokenGenerator {
             'X', 'Y', 'Z', '2', '3', '4',
             '5', '6', '7', '8', '9'
     };
+    private static final RandomStringGenerator RANDOM_STRING_GENERATOR = new RandomStringGenerator.Builder()
+        .selectFrom(ADMITTED_CHARACTERS)
+        .usingRandom(RANDOM::nextInt)
+        .build();
 
     private final SpecialPriceRepository specialPriceRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -108,7 +115,7 @@ public class SpecialPriceTokenGenerator {
     }
 
     private String generateRandomCode(int maxLength) {
-        return RandomStringUtils.random(maxLength, ADMITTED_CHARACTERS);
+        return RANDOM_STRING_GENERATOR.generate(maxLength);
     }
 
 
