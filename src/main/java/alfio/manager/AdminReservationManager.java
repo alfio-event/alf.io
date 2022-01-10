@@ -847,6 +847,7 @@ public class AdminReservationManager {
     }
 
 
+    @Transactional
     public Result<List<LightweightMailMessage>> getEmailsForReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, String username) {
         return loadReservation(purchaseContextType, publicIdentifier, reservationId, username)
             .map(res -> notificationManager.loadAllMessagesForReservationId(res.getRight(), reservationId));
