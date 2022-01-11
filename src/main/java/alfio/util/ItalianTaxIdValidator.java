@@ -118,7 +118,7 @@ public class ItalianTaxIdValidator {
         lastNameParts.consonants.stream().limit(3).forEach(code::append);
         int chars = code.length();
         if(chars < 3) {
-            lastNameParts.vowels.stream().limit(3 - chars).forEach(code::append);
+            lastNameParts.vowels.stream().limit(3L - chars).forEach(code::append);
         }
         chars = code.length();
         code.append("X".repeat(Math.max(0, (3 - chars))));

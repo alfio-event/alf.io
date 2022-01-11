@@ -83,10 +83,9 @@ public class FileUploadManager {
     public String insertFile(UploadBase64FileModification file) {
         Validate.exclusiveBetween(1, MAXIMUM_ALLOWED_SIZE, file.getFile().length);
         String digest = DigestUtils.sha256Hex(file.getFile());
-        if (Integer.valueOf(1).equals(repository.isPresent(digest))) {
-            return digest;
+        if (Integer.valueOf(0).equals(repository.isPresent(digest))) {
+            repository.upload(file, digest, getAttributes(file));
         }
-        repository.upload(file, digest, getAttributes(file));
         return digest;
     }
 

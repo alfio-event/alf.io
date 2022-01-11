@@ -33,7 +33,7 @@ public enum ConfigurationKeys {
 
     NOT_RECOGNIZED("option not recognized", true, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
 
-    INIT_COMPLETED("init succeeded", true, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class), "false"),
+    INIT_COMPLETED("init succeeded", true, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class), Constants.FALSE),
     SHOW_PROJECT_BANNER("project banner dismissed", true, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class), "true"),
     @Deprecated
     SUPPORTED_LANGUAGES("supported languages", true, SettingCategory.GENERAL, ComponentType.LIST, false, EnumSet.of(SYSTEM)),
@@ -60,7 +60,7 @@ public enum ConfigurationKeys {
     DISPLAY_STATS_IN_EVENT_DETAIL("Display stats (sold tickets, gross income, pending reservations) in event detail (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
 
     DEMO_MODE_ACCOUNT_EXPIRATION_DAYS("Account expiration days", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    PLATFORM_MODE_ENABLED("Enable Platform mode", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    PLATFORM_MODE_ENABLED("Enable Platform mode", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
     @Deprecated
     PLATFORM_FEE("Platform fee to apply for each ticket sold", true, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PLATFORM_FIXED_FEE("Platform fee to apply for each ticket sold", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
@@ -69,7 +69,7 @@ public enum ConfigurationKeys {
     PLATFORM_MAXIMUM_FEE("Platform maximum fee to apply for each ticket", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PAYMENT_METHODS_BLACKLIST("Payment methods blacklist. Comma-separated list of methods", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM, TICKET_CATEGORY)),
 
-    STRIPE_CC_ENABLED("Stripe enabled", false, SettingCategory.PAYMENT_STRIPE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    STRIPE_CC_ENABLED("Stripe enabled", false, SettingCategory.PAYMENT_STRIPE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
     STRIPE_PUBLIC_KEY("Stripe's public key", false, SettingCategory.PAYMENT_STRIPE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     STRIPE_SECRET_KEY("Stripe's secret key", false, SettingCategory.PAYMENT_STRIPE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     STRIPE_CONNECT_CLIENT_ID("Stripe Connect Client ID", false, SettingCategory.PAYMENT_STRIPE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
@@ -77,11 +77,11 @@ public enum ConfigurationKeys {
     STRIPE_WEBHOOK_KEY("Stripe Signature key for Account-related events", false, SettingCategory.PAYMENT_STRIPE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     STRIPE_WEBHOOK_PAYMENT_KEY("Payment Webhook signing secret", false, SettingCategory.PAYMENT_STRIPE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     STRIPE_CONNECTED_ID("Connected ID", true, SettingCategory.PAYMENT_STRIPE, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
-    STRIPE_ENABLE_SCA("Enable Strong Customer Authentication", false, SettingCategory.PAYMENT_STRIPE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    STRIPE_ENABLE_SCA("Enable Strong Customer Authentication", false, SettingCategory.PAYMENT_STRIPE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
 
     // Saferpay by SIX
-    SAFERPAY_ENABLED("Saferpay enabled", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
-    SAFERPAY_LIVE_MODE("Live Mode (default false)", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    SAFERPAY_ENABLED("Saferpay enabled", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
+    SAFERPAY_LIVE_MODE("Live Mode (default false)", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
     SAFERPAY_API_USERNAME("API Username", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     SAFERPAY_API_PASSWORD("API Password", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     SAFERPAY_CUSTOMER_ID("Customer ID", false, SettingCategory.PAYMENT_SAFERPAY, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
@@ -95,21 +95,21 @@ public enum ConfigurationKeys {
     OPTIONAL_DATA_REMINDER_ENABLED("Send a reminder for optional data? (default: true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
     RESERVATION_TIMEOUT("The amount of time, in MINUTES, that the user have to complete the reservation process (default: 25)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT("The minimum amount of time, in MINUTES, that we grant to the user after a failed payment attempt (default: 10)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS("Receive a mail for all failed payment attempts (provider dependant, default: false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
+    NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS("Receive a mail for all failed payment attempts (provider dependant, default: false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
 
-    DISPLAY_TICKETS_LEFT_INDICATOR("Display how many tickets are left for the event (default false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    ENABLE_CAPTCHA_FOR_TICKET_SELECTION("Enable captcha for ticket selection (default false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    DISPLAY_TICKETS_LEFT_INDICATOR("Display how many tickets are left for the event (default false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
+    ENABLE_CAPTCHA_FOR_TICKET_SELECTION("Enable captcha for ticket selection (default false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
     DISPLAY_EXPIRED_CATEGORIES("Display expired categories in the Event page (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
     DISPLAY_DISCOUNT_CODE_BOX("Display discount code box in the Event page (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
-    USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL("Wording: Use 'Partner Code' instead of 'Promotional Code' (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    ENABLE_CUSTOMER_REFERENCE("Enable Customer Reference (Purchase Order) field in contact detail (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
+    USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL("Wording: Use 'Partner Code' instead of 'Promotional Code' (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
+    ENABLE_CUSTOMER_REFERENCE("Enable Customer Reference (Purchase Order) field in contact detail (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
     ENABLE_ATTENDEE_AUTOCOMPLETE("Enable attendee autocomplete for 1-ticket reservations (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
-    FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION("Force ticket owner assignment at reservation time", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
+    FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION("Force ticket owner assignment at reservation time", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
     SEND_TICKETS_AUTOMATICALLY("Send tickets to attendees automatically (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, EVENT), "true"),
     ALLOW_TICKET_DOWNLOAD("Allow tickets to be downloaded as PDF (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, EVENT), "true"),
     SEND_RESERVATION_EMAIL_IF_NECESSARY("Send reservation email only if there is a transaction or if contact person differs from ticket holder (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, EVENT), "true"),
     ENABLE_TICKET_TRANSFER("Enable ticket transfer after confirmation (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
-    ALLOW_FREE_TICKETS_CANCELLATION("Allow cancellation for free tickets (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT, TICKET_CATEGORY), "false"),
+    ALLOW_FREE_TICKETS_CANCELLATION("Allow cancellation for free tickets (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT, TICKET_CATEGORY), Constants.FALSE),
     INCLUDE_CHECK_IN_URL_ICAL("Include check-in URL for online tickets in the iCal invitation (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
 
     //
@@ -131,21 +131,21 @@ public enum ConfigurationKeys {
     SMTP_FROM_EMAIL("E-Mail sender", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     SMTP_PROPERTIES("SMTP Properties", false, SettingCategory.MAIL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
 
-    BANK_TRANSFER_ENABLED("Bank transfer enabled", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
-    DEFERRED_BANK_TRANSFER_ENABLED("Send payment instructions manually (default false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
+    BANK_TRANSFER_ENABLED("Bank transfer enabled", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
+    DEFERRED_BANK_TRANSFER_ENABLED("Send payment instructions manually (default false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
     DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL("Send payment confirmation email (default true)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
     OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
 
 
-    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS("Enable captcha for offline payments / free of charge tickets (default false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS("Enable captcha for offline payments / free of charge tickets (default false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
     BANK_ACCOUNT_NR("Bank Account number", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     BANK_ACCOUNT_OWNER("Bank Account owner", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT("Cancel Reservation automatically when payment is overdue (default: false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
+    AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT("Cancel Reservation automatically when payment is overdue (default: false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
     PARTIAL_RESERVATION_ID_LENGTH("Partial reservationID length", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    REVOLUT_ENABLED("Revolut integration enabled", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
+    REVOLUT_ENABLED("Revolut integration enabled", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
     REVOLUT_MANUAL_REVIEW("Review matching transactions manually (default true)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
-    REVOLUT_LIVE_MODE("Revolut live mode", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    REVOLUT_LIVE_MODE("Revolut live mode", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
     REVOLUT_API_KEY("Revolut Api Key", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     //
 
@@ -153,7 +153,7 @@ public enum ConfigurationKeys {
     MAILGUN_KEY("Mailgun key", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MAILGUN_DOMAIN("Mailgun domain", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MAILGUN_FROM("Mailgun E-Mail sender", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    MAILGUN_EU("Use Mailgun EU region", false, SettingCategory.MAIL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    MAILGUN_EU("Use Mailgun EU region", false, SettingCategory.MAIL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
 
     // sendgrid related config
     SENDGRID_API_KEY("Sendgrid api key", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
@@ -168,50 +168,50 @@ public enum ConfigurationKeys {
     GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     GOOGLE_ANALYTICS_ANONYMOUS_MODE("Run Google Analytics without cookies and scrambling the client IP address (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "true"),
 
-    ENABLE_WAITING_QUEUE("Enable waiting list in case of sold-out (default: false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    ENABLE_PRE_REGISTRATION("Enable pre-registration (default false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    ENABLE_WAITING_QUEUE_NOTIFICATION("Do you want to receive an e-mail when someone subscribes to the waiting list? (default: false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
+    ENABLE_WAITING_QUEUE("Enable waiting list in case of sold-out (default: false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
+    ENABLE_PRE_REGISTRATION("Enable pre-registration (default false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
+    ENABLE_WAITING_QUEUE_NOTIFICATION("Do you want to receive an e-mail when someone subscribes to the waiting list? (default: false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
     WAITING_QUEUE_RESERVATION_TIMEOUT("The maximum time, in hours, before the \"waiting list\" reservation would expire (default: 4)", false, SettingCategory.WAITING_LIST, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    STOP_WAITING_QUEUE_SUBSCRIPTIONS("Stop subscriptions", true, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class), "false"),
+    STOP_WAITING_QUEUE_SUBSCRIPTIONS("Stop subscriptions", true, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class), Constants.FALSE),
 
     //
     ENABLE_HTML_EMAILS("Enable HTML emails (default: true, if disabled only plain text emails will be sent)", false, SettingCategory.MAIL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "true"),
     MAIL_ATTEMPTS_COUNT("The number of attempts when trying to sending an email (default: 10)", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
 
     //
-    PAYPAL_ENABLED("Paypal enabled", false, SettingCategory.PAYMENT_PAYPAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    PAYPAL_ENABLED("Paypal enabled", false, SettingCategory.PAYMENT_PAYPAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
     PAYPAL_CLIENT_ID("Paypal REST API client ID", false, SettingCategory.PAYMENT_PAYPAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     PAYPAL_CLIENT_SECRET("Paypal REST API client secret", false, SettingCategory.PAYMENT_PAYPAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
-    PAYPAL_LIVE_MODE("Enable live mode for Paypal", false, SettingCategory.PAYMENT_PAYPAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    PAYPAL_LIVE_MODE("Enable live mode for Paypal", false, SettingCategory.PAYMENT_PAYPAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
     PAYPAL_DEMO_MODE_USERNAME("Paypal demo mode username", false, SettingCategory.PAYMENT_PAYPAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PAYPAL_DEMO_MODE_PASSWORD("Paypal demo mode password", false, SettingCategory.PAYMENT_PAYPAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     //
 
     //
-    MOLLIE_CC_ENABLED("Enabled", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    MOLLIE_CC_ENABLED("Enabled", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
     MOLLIE_API_KEY("API key", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     MOLLIE_CONNECT_CLIENT_ID("Mollie Connect Client ID", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MOLLIE_CONNECT_REFRESH_TOKEN("Mollie Connect Refresh Token", true, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
     MOLLIE_CONNECT_CLIENT_SECRET("Mollie Connect Client Secret", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MOLLIE_CONNECT_CALLBACK("Mollie Connect Callback URL", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MOLLIE_CONNECT_PROFILE_ID("Profile ID", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
-    MOLLIE_CONNECT_LIVE_MODE("Live mode (default false)", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    MOLLIE_CONNECT_LIVE_MODE("Live mode (default false)", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
     //
 
-    ON_SITE_ENABLED("On site enabled", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    ON_SITE_ENABLED("On site enabled", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
 
-    SEND_TICKETS_AFTER_IMPORT_ATTENDEE("Send tickets after importing attendees", false, SettingCategory.IMPORT_ATTENDEE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
-    CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE("Create a reservation for each attendee imported", false, SettingCategory.IMPORT_ATTENDEE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    SEND_TICKETS_AFTER_IMPORT_ATTENDEE("Send tickets after importing attendees", false, SettingCategory.IMPORT_ATTENDEE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
+    CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE("Create a reservation for each attendee imported", false, SettingCategory.IMPORT_ATTENDEE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
 
     //
     VAT_NR("VAT number", false, SettingCategory.INVOICE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     INVOICE_NUMBER_PATTERN("Invoice number pattern, example: INVOICE-%d", false, SettingCategory.INVOICE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     INVOICE_ADDRESS("Invoice address", false, SettingCategory.INVOICE, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    USE_INVOICE_NUMBER_AS_ID("Use invoice number for public references (instead of Reservation ID, default: false)", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    VAT_NUMBER_IS_REQUIRED("VAT/GST Number is required for Business Customers (default: false)", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    GENERATE_ONLY_INVOICE("Always generate an invoice for paid reservations", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    ENABLE_ITALY_E_INVOICING("Enable the support for italian e-invoicing", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), "false"),
-    ENABLE_EU_VAT_DIRECTIVE("Enable VAT Reverse Charge (default: false)", false, SettingCategory.INVOICE_EU, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false"),
+    USE_INVOICE_NUMBER_AS_ID("Use invoice number for public references (instead of Reservation ID, default: false)", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
+    VAT_NUMBER_IS_REQUIRED("VAT/GST Number is required for Business Customers (default: false)", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
+    GENERATE_ONLY_INVOICE("Always generate an invoice for paid reservations", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
+    ENABLE_ITALY_E_INVOICING("Enable the support for italian e-invoicing", false, SettingCategory.INVOICE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), Constants.FALSE),
+    ENABLE_EU_VAT_DIRECTIVE("Enable VAT Reverse Charge (default: false)", false, SettingCategory.INVOICE_EU, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE),
     ENABLE_REVERSE_CHARGE_ONLINE("Enable VAT Reverse Charge for online tickets (if set overrides global reverse charge, default: true)", false, SettingCategory.INVOICE_EU, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "true"),
     ENABLE_REVERSE_CHARGE_IN_PERSON("Enable VAT Reverse Charge for in-person tickets (if set overrides global reverse charge, default: true)", false, SettingCategory.INVOICE_EU, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "true"),
     ENABLE_VIES_VALIDATION("Validate EU VAT numbers using EU VIES Webservice (default: true)", false, SettingCategory.INVOICE_EU, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "true"),
@@ -224,7 +224,7 @@ public enum ConfigurationKeys {
     //
 
     //PASSBOOK
-    ENABLE_PASS("Enable Apple(tm) Wallet integration", false, SettingCategory.PASS_INTEGRATION, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    ENABLE_PASS("Enable Apple(tm) Wallet integration", false, SettingCategory.PASS_INTEGRATION, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
     PASSBOOK_TYPE_IDENTIFIER("Passbook type identifier", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PASSBOOK_TEAM_IDENTIFIER("Passbook team identifier", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PASSBOOK_KEYSTORE("Passbook keystore(base64 encoded keystore)", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
@@ -243,7 +243,7 @@ public enum ConfigurationKeys {
     //
 
     //
-    SECURITY_CSP_REPORT_ENABLED("Enable Content-Security-Policy reporting (default: false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    SECURITY_CSP_REPORT_ENABLED("Enable Content-Security-Policy reporting (default: false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
     SECURITY_CSP_REPORT_URI("Define Content-Security-Policy reporting URI (default: /report-csp-violation)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
     EMBED_ALLOWED_ORIGINS("Allowed origins for embedding the reservation process in an iFrame. Separate different origins with a newline", false, SettingCategory.GENERAL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
@@ -256,10 +256,10 @@ public enum ConfigurationKeys {
 
     DESCRIPTION_MAXLENGTH("Max characters in descriptions (default 4000)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
-    OPENID_PUBLIC_ENABLED("Enable OpenID for public users (default: false)", false, SettingCategory.OPENID, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), "false"),
+    OPENID_PUBLIC_ENABLED("Enable OpenID for public users (default: false)", false, SettingCategory.OPENID, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), Constants.FALSE),
     OPENID_CONFIGURATION_JSON("OpenID configuration", false, SettingCategory.OPENID, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
 
-    GENERATE_TICKETS_FOR_SUBSCRIPTIONS("Generate and send tickets automatically to subscription holders for compatible events (default: false)", false, SettingCategory.SUBSCRIPTIONS, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), "false")
+    GENERATE_TICKETS_FOR_SUBSCRIPTIONS("Generate and send tickets automatically to subscription holders for compatible events (default: false)", false, SettingCategory.SUBSCRIPTIONS, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION), Constants.FALSE)
     ;
 
     @Getter
@@ -295,7 +295,7 @@ public enum ConfigurationKeys {
         GOOGLE, HERE, NONE
     }
 
-    private static final Predicate<ConfigurationKeys> INTERNAL = ConfigurationKeys::isInternal;
+    private static final Predicate<ConfigurationKeys> INTERNAL_PREDICATE = ConfigurationKeys::isInternal;
     private final String description;
     private final boolean internal;
     private final SettingCategory category;
@@ -354,7 +354,7 @@ public enum ConfigurationKeys {
     }
 
     private static Stream<ConfigurationKeys> visibleStream() {
-        return Arrays.stream(values()).filter(INTERNAL.negate());
+        return Arrays.stream(values()).filter(INTERNAL_PREDICATE.negate());
     }
 
     public static List<ConfigurationKeys> basic() {
@@ -379,4 +379,7 @@ public enum ConfigurationKeys {
             .orElse(ConfigurationKeys.NOT_RECOGNIZED);
     }
 
+    private static class Constants {
+        private static final String FALSE = "false";
+    }
 }

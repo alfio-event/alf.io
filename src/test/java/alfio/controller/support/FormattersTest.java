@@ -17,6 +17,7 @@
 package alfio.controller.support;
 
 import alfio.model.ContentLanguage;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -42,7 +43,7 @@ class FormattersTest {
         messageSource.setBasename("alfio.i18n.public");
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
         ContentLanguage.ALL_LANGUAGES.forEach(cl ->
-            FORMATTER_CODES.forEach(code -> Formatters.formatDateForLocale(now, code, messageSource, (a, b) -> {}, cl, true))
+            FORMATTER_CODES.forEach(code -> Formatters.formatDateForLocale(now, code, messageSource, (a, b) -> Assertions.assertNotNull(b), cl, true))
         );
     }
 }

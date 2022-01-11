@@ -123,7 +123,7 @@ public class AdminJobManager {
 
     static ZonedDateTime getNextExecution(int currentAttempt) {
         return ZonedDateTime.now(ClockProvider.clock())
-            .plusSeconds((long) Math.pow(2, currentAttempt + 1));
+            .plusSeconds((long) Math.pow(2, currentAttempt + 1D));
     }
 
     @Scheduled(cron = "#{environment.acceptsProfiles('dev') ? '0 * * * * *' : '0 0 0 * * *'}")

@@ -72,18 +72,16 @@ import static java.util.Objects.requireNonNullElseGet;
 @Log4j2
 public class NotificationManager {
 
+    private static final String EVENT_ID = "eventId";
     private final Mailer mailer;
     private final MessageSourceManager messageSourceManager;
     private final EmailMessageRepository emailMessageRepository;
     private final TransactionTemplate tx;
-    private final EventRepository eventRepository;
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
     private final Gson gson;
-    private final TicketCategoryRepository ticketCategoryRepository;
     private final ClockProvider clockProvider;
     private final PurchaseContextManager purchaseContextManager;
-    private final ExtensionManager extensionManager;
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
@@ -110,9 +108,7 @@ public class NotificationManager {
         this.messageSourceManager = messageSourceManager;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
-        this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
-        this.ticketCategoryRepository = ticketCategoryRepository;
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED);
         this.tx = new TransactionTemplate(transactionManager, definition);
         this.configurationManager = configurationManager;
@@ -121,7 +117,6 @@ public class NotificationManager {
         this.gson = builder.create();
         this.clockProvider = clockProvider;
         this.purchaseContextManager = purchaseContextManager;
-        this.extensionManager = extensionManager;
         attachmentTransformer = new EnumMap<>(Mailer.AttachmentIdentifier.class);
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository, organizationRepository, messageSourceManager, configurationManager));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(purchaseContextManager, eventRepository,
@@ -172,9 +167,9 @@ public class NotificationManager {
             Event event;
             Locale locale;
             Integer categoryId;
-            if(model.containsKey("eventId")) {
+            if(model.containsKey(EVENT_ID)) {
                 //legacy branch, now we generate the ics as a reinterpreted ticket
-                event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+                event = eventRepository.findById(Integer.valueOf(model.get(EVENT_ID), 10));
                 locale = Json.fromJson(model.get("locale"), Locale.class);
                 categoryId = null;
             } else {
@@ -233,10 +228,10 @@ public class NotificationManager {
                 @SuppressWarnings("unchecked")
                 var purchaseContextModel = (Map<String, String>) reservationEmailModel.get("purchaseContext");
                 // FIXME hack
-                var purchaseContextType = model.get("eventId") != null ? PurchaseContextType.event : PurchaseContextType.subscription;
+                var purchaseContextType = model.get(EVENT_ID) != null ? PurchaseContextType.event : PurchaseContextType.subscription;
                 purchaseContext = purchaseContextManager.findBy(purchaseContextType, purchaseContextModel.get("publicIdentifier")).orElseThrow();
             } else {
-                purchaseContext = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
+                purchaseContext = eventRepository.findById(Integer.valueOf(model.get(EVENT_ID), 10));
             }
             Locale language = Json.fromJson(model.get("language"), Locale.class);
 
@@ -405,7 +400,7 @@ public class NotificationManager {
                 log.debug("no messages have been updated on DB for the following criteria: id: {}, checksum: {}", messageId, message.getChecksum());
             }
         } catch(Exception e) {
-            tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(message.getId(), RETRY.name(), ZonedDateTime.now(clockProvider.getClock()).plusMinutes(message.getAttempts() + 1), message.getAttempts() + 1, Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
+            tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(message.getId(), RETRY.name(), ZonedDateTime.now(clockProvider.getClock()).plusMinutes(message.getAttempts() + 1L), message.getAttempts() + 1, Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("could not send message: ",e);
         }
         return 0;
@@ -477,14 +472,18 @@ public class NotificationManager {
 
     private static final class AttachmentConverter implements JsonSerializer<Mailer.Attachment>, JsonDeserializer<Mailer.Attachment> {
 
+        private static final String SOURCE = "source";
+        private static final String IDENTIFIER = "identifier";
+        private static final String MODEL = "model";
+
         @Override
         public JsonElement serialize(Mailer.Attachment src, Type typeOfSrc, JsonSerializationContext context) {
             JsonObject obj = new JsonObject();
             obj.addProperty("filename", src.getFilename());
-            obj.addProperty("source", src.getSource() != null ? Base64.getEncoder().encodeToString(src.getSource()) : null);
+            obj.addProperty(SOURCE, src.getSource() != null ? Base64.getEncoder().encodeToString(src.getSource()) : null);
             obj.addProperty("contentType", src.getContentType());
-            obj.addProperty("identifier", src.getIdentifier() != null ? src.getIdentifier().name() : null);
-            obj.addProperty("model", src.getModel() != null ? Json.toJson(src.getModel()) : null);
+            obj.addProperty(IDENTIFIER, src.getIdentifier() != null ? src.getIdentifier().name() : null);
+            obj.addProperty(MODEL, src.getModel() != null ? Json.toJson(src.getModel()) : null);
             return obj;
         }
 
@@ -492,10 +491,10 @@ public class NotificationManager {
         public Mailer.Attachment deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
             JsonObject jsonObject = json.getAsJsonObject();
             String filename = jsonObject.getAsJsonPrimitive("filename").getAsString();
-            byte[] source =  jsonObject.has("source") ? Base64.getDecoder().decode(jsonObject.getAsJsonPrimitive("source").getAsString()) : null;
+            byte[] source =  jsonObject.has(SOURCE) ? Base64.getDecoder().decode(jsonObject.getAsJsonPrimitive(SOURCE).getAsString()) : null;
             String contentType = jsonObject.getAsJsonPrimitive("contentType").getAsString();
-            Mailer.AttachmentIdentifier identifier =  jsonObject.has("identifier") ? Mailer.AttachmentIdentifier.valueOf(jsonObject.getAsJsonPrimitive("identifier").getAsString()) : null;
-            Map<String, String> model = jsonObject.has("model")  ? Json.fromJson(jsonObject.getAsJsonPrimitive("model").getAsString(), new TypeReference<>() {}) : null;
+            Mailer.AttachmentIdentifier identifier =  jsonObject.has(IDENTIFIER) ? Mailer.AttachmentIdentifier.valueOf(jsonObject.getAsJsonPrimitive(IDENTIFIER).getAsString()) : null;
+            Map<String, String> model = jsonObject.has(MODEL)  ? Json.fromJson(jsonObject.getAsJsonPrimitive(MODEL).getAsString(), new TypeReference<>() {}) : null;
             return new Mailer.Attachment(filename, source, contentType, model, identifier);
         }
     }
