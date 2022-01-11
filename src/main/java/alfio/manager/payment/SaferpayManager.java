@@ -35,6 +35,7 @@ import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
 import alfio.util.MonetaryUtil;
+import alfio.util.oauth2.AccessTokenResponseDetails;
 import com.google.gson.JsonParser;
 import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
@@ -66,6 +67,9 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     private static final String LIVE_ENDPOINT = "https://www.saferpay.com/api";
     private static final String TEST_ENDPOINT = "https://test.saferpay.com/api";
     private static final Logger LOGGER = LoggerFactory.getLogger(SaferpayManager.class);
+    private static final String RETRY_COUNT = "retryCount";
+    private static final String TRANSACTION = "Transaction";
+    private static final String STATUS = "Status";
 
     private final ConfigurationManager configurationManager;
     private final HttpClient httpClient;
@@ -129,7 +133,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             if(processResult.getType() == PaymentWebhookResult.Type.SUCCESSFUL) {
                 return PaymentResult.successful(processResult.getPaymentToken().getToken());
             } else {
-                retryCount = Integer.parseInt(transaction.getMetadata().getOrDefault("retryCount", "0")) + 1;
+                retryCount = Integer.parseInt(transaction.getMetadata().getOrDefault(RETRY_COUNT, "0")) + 1;
             }
         }
 
@@ -149,6 +153,10 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             }
             LOGGER.debug("received successful response {}", response.body());
             return PaymentResult.redirect(processPaymentInitializationResponse(response, spec, retryCount));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.error("Payment init interrupted", e);
+            return PaymentResult.failed(e.getMessage());
         } catch (Exception ex) {
             LOGGER.error("unexpected error while calling payment init", ex);
             return PaymentResult.failed(ex.getMessage());
@@ -175,7 +183,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
     }
 
     PaymentWebhookResult internalProcessWebhook(Transaction transaction, PaymentContext paymentContext) {
-        int retryCount = Integer.parseInt(transaction.getMetadata().getOrDefault("retryCount", "0"));
+        int retryCount = Integer.parseInt(transaction.getMetadata().getOrDefault(RETRY_COUNT, "0"));
         var configuration = loadConfiguration(paymentContext.getPurchaseContext());
         var paymentStatus = retrievePaymentStatus(configuration, transaction.getPaymentId(), transaction.getReservationId(), retryCount);
         if(paymentStatus.isEmpty()) {
@@ -222,10 +230,13 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             }
             LOGGER.debug("received successful response {}", response.body());
             var responseBody = JsonParser.parseString(response.body()).getAsJsonObject();
-            var amount = responseBody.get("Transaction").getAsJsonObject().get("Amount").getAsJsonObject();
+            var amount = responseBody.get(TRANSACTION).getAsJsonObject().get("Amount").getAsJsonObject();
             var centsAsString = amount.get("Value").getAsString();
             var formattedAmount = MonetaryUtil.formatCents(Integer.parseInt(centsAsString), amount.get("CurrencyCode").getAsString());
             return Optional.of(new PaymentInformation(formattedAmount, null, null, null));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.error("Request interrupted while calling getInfo", e);
         } catch (Exception ex) {
             LOGGER.error("unexpected error while calling getInfo", ex);
         }
@@ -245,13 +256,17 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
                 LOGGER.warn("Cannot refund transaction. Status {}, body {}", response.statusCode(), response.body());
                 return false;
             }
-            var transactionResponse = JsonParser.parseString(response.body()).getAsJsonObject().get("Transaction").getAsJsonObject();
+            var transactionResponse = JsonParser.parseString(response.body()).getAsJsonObject().get(TRANSACTION).getAsJsonObject();
             Validate.isTrue("REFUND".equals(transactionResponse.get("Type").getAsString()), "Unexpected transaction type");
-            if("AUTHORIZED".equals(transactionResponse.get("Status").getAsString())) {
+            if("AUTHORIZED".equals(transactionResponse.get(STATUS).getAsString())) {
                 return confirmTransaction(configuration, transactionResponse.get("Id").getAsString(), null, UUID.randomUUID().toString(), 0).isSuccessful();
             }
             LOGGER.debug("received successful response {}", response.body());
             return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.warn("Refund request interrupted", e);
+            return false;
         } catch(Exception ex) {
             LOGGER.error("unexpected error while trying to refund transaction {}", transaction.getTransactionId(), ex);
             return false;
@@ -270,8 +285,8 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (HttpUtils.callSuccessful(response)) {
                 var responseBody = JsonParser.parseString(response.body()).getAsJsonObject();
-                var transaction = responseBody.get("Transaction").getAsJsonObject();
-                var paymentStatus = transaction.get("Status").getAsString();
+                var transaction = responseBody.get(TRANSACTION).getAsJsonObject();
+                var paymentStatus = transaction.get(STATUS).getAsString();
                 var transactionId = transaction.get("Id").getAsString();
                 switch (paymentStatus) {
                     case "CAPTURED":
@@ -294,6 +309,9 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             return PaymentStatus.EMPTY;
         } catch(IllegalStateException e) {
             throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -313,7 +331,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (HttpUtils.callSuccessful(response)) {
                 var responseBody = JsonParser.parseString(response.body()).getAsJsonObject();
-                var paymentStatus = responseBody.get("Status").getAsString();
+                var paymentStatus = responseBody.get(STATUS).getAsString();
                 Validate.isTrue(paymentStatus.equals("CAPTURED"), "Expected CAPTURED Payment Status, got %s", paymentStatus);
                 var captureId = responseBody.get("CaptureId").getAsString();
                 var timestamp = ZonedDateTime.parse(responseBody.get("Date").getAsString());
@@ -321,6 +339,9 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
             }
         } catch (IllegalArgumentException ex) {
             throw ex;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }
@@ -357,7 +378,7 @@ public class SaferpayManager implements PaymentProvider, /*RefundRequest,*/ Paym
         transactionRepository.insert(paymentToken, paymentToken,
             reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getPurchaseContext().getZoneId())),
             spec.getPriceWithVAT(), spec.getPurchaseContext().getCurrency(), "Saferpay Payment",
-            PaymentProxy.SAFERPAY.name(), 0L,0L, Transaction.Status.PENDING, Map.of("retryCount", String.valueOf(retryCount)));
+            PaymentProxy.SAFERPAY.name(), 0L,0L, Transaction.Status.PENDING, Map.of(RETRY_COUNT, String.valueOf(retryCount)));
 
         return responseBody.get("RedirectUrl").getAsString();
     }

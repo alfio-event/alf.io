@@ -55,7 +55,10 @@ public class RecaptchaService {
             HttpResponse<String> httpResponse = HttpUtils.postForm(client, "https://www.google.com/recaptcha/api/siteverify", params);
             String body = httpResponse.body();
             return body != null && Json.fromJson(body, RecatpchaResponse.class).success;
-        } catch (IOException | InterruptedException e) {
+        } catch(InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (IOException e) {
             return false;
         }
     }

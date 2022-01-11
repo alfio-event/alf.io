@@ -83,6 +83,10 @@ public class StripeConnectManager implements OAuthPaymentProviderConnector {
                 configurationManager.saveConfig(Configuration.from(organizationId, ConfigurationKeys.STRIPE_CONNECTED_ID), accountId);
             }
             return new AccessTokenResponseDetails(accountId, null, token.get("error_message"), accountId != null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Request interrupted while retrieving access token", e);
+            return new AccessTokenResponseDetails(null, null, e.getMessage(), false);
         } catch (Exception e) {
             log.error("cannot retrieve account ID", e);
             return new AccessTokenResponseDetails(null, null, e.getMessage(), false);

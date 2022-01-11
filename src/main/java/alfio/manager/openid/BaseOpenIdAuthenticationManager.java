@@ -59,6 +59,8 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     protected static final String ID_TOKEN = "id_token";
     protected static final String SUBJECT = "sub";
     protected static final String EMAIL = "email";
+    private static final String HTTPS = "https";
+    private static final String REDIRECT_URI = "redirect_uri";
 
     protected final HttpClient httpClient;
     private final UserManager userManager;
@@ -219,10 +221,10 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         String scopeParameter = String.join("+", getScopes());
 
         UriComponents uri = UriComponentsBuilder.newInstance()
-            .scheme("https")
+            .scheme(HTTPS)
             .host(openIdConfiguration().getDomain())
             .path(openIdConfiguration().getAuthenticationUrl())
-            .queryParam("redirect_uri", openIdConfiguration().getCallbackURI())
+            .queryParam(REDIRECT_URI, openIdConfiguration().getCallbackURI())
             .queryParam("client_id", openIdConfiguration().getClientId())
             .queryParam("state", state)
             .queryParam("scope", scopeParameter)
@@ -234,7 +236,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     @Override
     public String buildClaimsRetrieverUrl() {
         UriComponents uri = UriComponentsBuilder.newInstance()
-            .scheme("https")
+            .scheme(HTTPS)
             .host(openIdConfiguration().getDomain())
             .path(openIdConfiguration().getTokenEndpoint())
             .build();
@@ -244,10 +246,10 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     @Override
     public String buildLogoutUrl() {
         UriComponents uri = UriComponentsBuilder.newInstance()
-            .scheme("https")
+            .scheme(HTTPS)
             .host(openIdConfiguration().getDomain())
             .path(openIdConfiguration().getLogoutUrl())
-            .queryParam("redirect_uri", openIdConfiguration().getLogoutRedirectUrl())
+            .queryParam(REDIRECT_URI, openIdConfiguration().getLogoutRedirectUrl())
             .build();
         return uri.toString();
     }
@@ -261,7 +263,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         if (contentType.equals(APPLICATION_FORM_URLENCODED)) {
             return buildAccessTokenUrlForm(code);
         }
-        throw new RuntimeException("the Content-Type specified is not supported");
+        throw new OpenIdAuthenticationException("the Content-Type specified is not supported");
     }
 
     private String buildAccessTokenUrlJson(String code) {
@@ -270,7 +272,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             "code", code,
             "client_id", openIdConfiguration().getClientId(),
             "client_secret", openIdConfiguration().getClientSecret(),
-            "redirect_uri", openIdConfiguration().getCallbackURI()
+            REDIRECT_URI, openIdConfiguration().getCallbackURI()
         );
         return json.asJsonString(body);
     }
@@ -297,11 +299,17 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
                 return Json.fromJson(response.body(), new TypeReference<>() {});
             } else {
                 log.warn("cannot retrieve access token");
-                throw new IllegalStateException("cannot retrieve access token. Response from server: " +response.body());
+                throw new OpenIdAuthenticationException("cannot retrieve access token. Response from server: " +response.body());
             }
+        } catch(OpenIdAuthenticationException e) {
+            throw e;
+        } catch(InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Request was interrupted while retrieving access token", e);
+            throw new OpenIdAuthenticationException(e);
         } catch (Exception e) {
             log.error("There has been an error retrieving the access token from the idp using the authorization code", e);
-            throw new RuntimeException(e);
+            throw new OpenIdAuthenticationException(e);
         }
     }
 }

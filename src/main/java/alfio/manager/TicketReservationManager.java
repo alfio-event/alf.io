@@ -85,6 +85,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
@@ -948,7 +949,7 @@ public class TicketReservationManager {
                                                                              BillingDocument.Type documentType) {
         Map<String, String> model = new HashMap<>();
         model.put("reservationId", ticketReservation.getId());
-        purchaseContext.event().map(event -> model.put("eventId", Integer.toString(event.getId())));
+        purchaseContext.event().ifPresent(event -> model.put("eventId", Integer.toString(event.getId())));
         model.put("language", json.asJsonString(language));
         model.put("reservationEmailModel", json.asJsonString(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
         switch (documentType) {
@@ -1010,8 +1011,8 @@ public class TicketReservationManager {
         }
     }
 
-    @Transactional
     void issuePartialCreditNoteForReservation(Event event, TicketReservation reservation, String username, List<Integer> ticketsId) {
+        Validate.isTrue(TransactionSynchronizationManager.isActualTransactionActive(), "issuePartialCreditNoteForReservation() needs to be called within an active transaction");
         log.trace("about to issue a partial credit note for reservation {}", reservation.getId());
         var reservationId = reservation.getId();
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
@@ -1023,8 +1024,8 @@ public class TicketReservationManager {
         extensionManager.handleCreditNoteGenerated(reservation, event, orderSummary.getOriginalTotalPrice(), billingDocument.getId(), Map.of("organization", organization));
     }
 
-    @Transactional
     void issueCreditNoteForRefund(PurchaseContext purchaseContext, TicketReservation reservation, BigDecimal refundAmount, String username) {
+        Validate.isTrue(TransactionSynchronizationManager.isActualTransactionActive(), "issueCreditNoteForRefund() needs to be called within an active transaction");
         var currencyCode = reservation.getCurrencyCode();
         var priceContainer = new RefundPriceContainer(unitToCents(refundAmount, currencyCode), currencyCode, reservation.getVatStatus(), reservation.getVatPercentageOrZero());
         var summaryRowTitle = messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("invoice.refund.line-item", null, Locale.forLanguageTag(reservation.getUserLanguage()));
@@ -2770,7 +2771,7 @@ public class TicketReservationManager {
         var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(purchaseContext, categoriesInReservation);
         var transactionRequest = new TransactionRequest(totalPrice, ticketReservationRepository.getBillingDetailsForReservation(reservationId));
         var availableMethods = paymentManager.getPaymentMethods(purchaseContext, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
-        if(availableMethods.size() == 0  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
+        if(availableMethods.isEmpty()  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
             log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
             return false;
         }
@@ -2855,14 +2856,13 @@ public class TicketReservationManager {
 
     private void processResults(Event event, Map<String, TicketReservationWithTransaction> pendingReservationsMap, ArrayList<String> errors, ArrayList<String> confirmed, ArrayList<String> pendingReview, Result<List<String>> matching) {
         var reservations = ticketSearchRepository.findOfflineReservationsWithTransaction(matching.getData());
-        var byStatus = reservations.stream()
-            .peek(tr -> {
-                var reservationId = tr.getTicketReservation().getId();
-                auditingRepository.insert(reservationId, null, event.getId(),
-                    MATCHING_PAYMENT_FOUND, new Date(), RESERVATION, reservationId, json.asJsonString(List.of(tr.getTransaction().getMetadata())));
-                pendingReservationsMap.remove(reservationId);
-            })
-            .collect(groupingBy(tr -> tr.getTransaction().getStatus()));
+        reservations.forEach(tr -> {
+            var reservationId = tr.getTicketReservation().getId();
+            auditingRepository.insert(reservationId, null, event.getId(),
+                MATCHING_PAYMENT_FOUND, new Date(), RESERVATION, reservationId, json.asJsonString(List.of(tr.getTransaction().getMetadata())));
+            pendingReservationsMap.remove(reservationId);
+        });
+        var byStatus = reservations.stream().collect(groupingBy(tr -> tr.getTransaction().getStatus()));
 
         byStatus.getOrDefault(Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND, List.of()).forEach(tr -> {
             var reservationId = tr.getTicketReservation().getId();

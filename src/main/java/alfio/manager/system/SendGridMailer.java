@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 public class SendGridMailer implements Mailer {
 
+    private static final String EMAIL = "email";
     private final HttpClient client;
 
     private final ConfigurationManager configurationManager;
@@ -53,7 +54,7 @@ public class SendGridMailer implements Mailer {
         if (ArrayUtils.isNotEmpty(attachment)) {
             addAttachments(payload, attachment);
         }
-        payload.put("from", Map.of("email", from, "name", fromName));
+        payload.put("from", Map.of(EMAIL, from, "name", fromName));
         payload.put("personalizations", personalizations);
         payload.put("content", contents);
         //prepare request
@@ -78,9 +79,9 @@ public class SendGridMailer implements Mailer {
 
     private List<Map<String, Object>> createPersonalizations(final String to, final List<String> cc, final String subject) {
         final var recipients = new ArrayList<>();
-        recipients.add(Map.of("email", to));
+        recipients.add(Map.of(EMAIL, to));
         if (CollectionUtils.isNotEmpty(cc)) {
-            recipients.addAll(cc.stream().map(email -> Map.of("email", email)).collect(Collectors.toList()));
+            recipients.addAll(cc.stream().map(email -> Map.of(EMAIL, email)).collect(Collectors.toList()));
         }
         return List.of(Map.of("to", recipients, "subject", subject));
     }
@@ -88,9 +89,7 @@ public class SendGridMailer implements Mailer {
     private List<Map<String, String>> createContents(final String text, final Optional<String> html) {
         final var contents = new ArrayList<Map<String, String>>();
         contents.add(Map.of("type", MediaType.TEXT_PLAIN_VALUE, "value", text));
-        if (html != null) {
-            html.ifPresent(htmlContent -> contents.add(Map.of("type", MediaType.TEXT_HTML_VALUE, "value", htmlContent)));
-        }
+        Objects.requireNonNull(html).ifPresent(htmlContent -> contents.add(Map.of("type", MediaType.TEXT_HTML_VALUE, "value", htmlContent)));
         return contents;
     }
 

@@ -31,6 +31,7 @@ import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import alfio.util.oauth2.AccessTokenResponseDetails;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -63,6 +64,7 @@ import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
 @AllArgsConstructor
 public class RevolutBankTransferManager implements PaymentProvider, OfflineProcessor, PaymentInfo {
 
+    private static final String GENERIC_ERROR = "error";
     private final BankTransferManager bankTransferManager;
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
@@ -196,9 +198,13 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
                         .collect(Collectors.toList()));
             }
             return Result.error(ErrorCode.custom("no data received", "No data received from Revolut. Status code is "+response.statusCode()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Request interrupted while calling Revolut API", e);
+            return Result.error(ErrorCode.custom(GENERIC_ERROR, "Cannot call Revolut API"));
         } catch (Exception e) {
             log.warn("cannot call Revolut APIs", e);
-            return Result.error(ErrorCode.custom("error", "Cannot call Revolut API"));
+            return Result.error(ErrorCode.custom(GENERIC_ERROR, "Cannot call Revolut API"));
         }
     }
 
@@ -207,7 +213,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         try {
             return Result.success(accountsCache.get(key, k -> loadAccountsFromAPI(revolutKey, baseUrl)));
         } catch (Exception e) {
-            return Result.error(ErrorCode.custom("error", e.getMessage()));
+            return Result.error(ErrorCode.custom(GENERIC_ERROR, e.getMessage()));
         }
     }
 
@@ -218,11 +224,18 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             .build();
         try {
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if(response.statusCode() == HttpStatus.OK.value()) {
-                List<Map<String, ?>> result = Json.fromJson(response.body(), new TypeReference<>() {});
+            if (response.statusCode() == HttpStatus.OK.value()) {
+                List<Map<String, ?>> result = Json.fromJson(response.body(), new TypeReference<>() {
+                });
                 return result.stream().filter(m -> "active".equals(m.get("state"))).map(m -> (String) m.get("id")).collect(Collectors.toList());
             }
             throw new IllegalStateException("cannot retrieve accounts");
+        } catch (IllegalStateException ex) {
+            throw ex;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Request interrupted while retrieving accounts", e);
+            throw new IllegalStateException(e);
         } catch (Exception e) {
             log.warn("got error while retrieving accounts", e);
             throw new IllegalStateException(e);

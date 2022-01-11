@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import alfio.util.HttpUtils;
+import alfio.util.oauth2.AccessTokenResponseDetails;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
@@ -89,7 +90,7 @@ class MailgunMailer implements Mailer {
             } else {
                 var mpb = new HttpUtils.MultiPartBodyPublisher();
                 requestBuilder.header(HttpUtils.CONTENT_TYPE, HttpUtils.MULTIPART_FORM_DATA+";boundary=\""+mpb.getBoundary()+"\"");
-                emailData.forEach((k, v) -> mpb.addPart(k, v));
+                emailData.forEach(mpb::addPart);
                 Stream.of(attachment).forEach(a -> mpb.addPart("attachment", () -> new ByteArrayInputStream(a.getSource()), a.getFilename(), a.getContentType()));
                 requestBuilder.POST(mpb.build());
             }
@@ -101,8 +102,13 @@ class MailgunMailer implements Mailer {
                 log.warn("sending email was not successful:" + response);
                 throw new IllegalStateException("Attempt to send a message failed. Result is: "+response.statusCode());
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Request interrupted while calling Mailgun API", e);
+            throw new IllegalStateException(e);
+        } catch (IOException e) {
             log.warn("error while sending email", e);
+            throw new IllegalStateException(e);
         }
     }
 }

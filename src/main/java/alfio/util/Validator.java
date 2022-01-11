@@ -47,7 +47,7 @@ import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 public final class Validator {
 
     // source: https://commons.apache.org/proper/commons-validator/apidocs/src-html/org/apache/commons/validator/routines/EmailValidator.html
-    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^(.+)@(\\S+)$");
+    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^.+@[^\\s]+$");
     // this regex validates the e-mail to be a canonical address (i.e. test@example.org)
     private static final Pattern CANONICAL_MAIL_VALIDATOR = Pattern.compile("^.+@[^\\s@]+\\.\\p{javaAlphabetic}{2,}$");
     private static final String ERROR_DESCRIPTION = "error.description";
@@ -281,64 +281,69 @@ public final class Validator {
         //
         final String prefixForLambda = prefix;
         for(TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
-
-            boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
-
-            if(!isField) {
-                if (fieldConf.isRequired()) { // sometimes the field is not propagated, so, if it's required, we need to do some additional work
-                    if (form.getAdditional() == null) {
-                        form.setAdditional(new HashMap<>());
-                    }
-                    form.getAdditional().put(fieldConf.getName(), Collections.singletonList(""));
-                    errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX +fieldConf.getName()+"][0]", ErrorsCode.EMPTY_FIELD);
-                }
-                continue;
-            }
-            
-            List<String> values = Optional.ofNullable(form.getAdditional().get(fieldConf.getName())).orElse(Collections.emptyList());
-
-            //handle required for multiple choice (checkbox) where required is interpreted as at least one!
-            if (fieldConf.isRequired() && fieldConf.getCount() > 1  && values.stream().allMatch(StringUtils::isBlank)) {
-                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX +fieldConf.getName()+"]", ErrorsCode.EMPTY_FIELD);
-            }
-
-            for(int i = 0; i < values.size(); i++) {
-                String formValue = values.get(i);
-                if(fieldConf.isMaxLengthDefined()) {
-                    validateMaxLength(formValue, prefixForLambda + ADDITIONAL_PREFIX +fieldConf.getName()+"]["+i+"]", "error.tooLong", fieldConf.getMaxLength(), errors);
-                }
-
-                if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
-                    errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX +fieldConf.getName()+"]["+i+"]", "error.tooShort", new Object[] { fieldConf.getMinLength() }, null);
-                }
-
-                if(!fieldConf.getRestrictedValues().isEmpty()) {
-                    validateRestrictedValue(formValue, prefixForLambda + ADDITIONAL_PREFIX +fieldConf.getName()+"]["+i+"]",
-                        "error.restrictedValue", fieldConf.getRestrictedValues(), errors);
-                }
-
-                if(fieldConf.isRequired() && fieldConf.getCount() == 1 && StringUtils.isBlank(formValue)){
-                    errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX +fieldConf.getName()+"]["+i+"]", ErrorsCode.EMPTY_FIELD);
-                }
-
-                if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
-                    errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX +fieldConf.getName()+"]["+i+"]",
-                        "error.disabledValue", null, null);
-                }
-
-                try {
-                    if (fieldConf.isEuVat() && !vatValidator.test(formValue)) {
-                        errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+i+"]", ErrorsCode.STEP_2_INVALID_VAT);
-                    }
-                } catch (IllegalStateException e) {
-                    errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+i+"]", ErrorsCode.VIES_IS_DOWN);
-                }
-            }
-
-
+            validateFieldConfiguration(form, vatValidator, errors, prefixForLambda, fieldConf);
         }
 
         return evaluateValidationResult(errors);
+    }
+
+    private static void validateFieldConfiguration(UpdateTicketOwnerForm form, SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf) {
+        boolean isField = form.getAdditional() != null && form.getAdditional().containsKey(fieldConf.getName());
+
+        if(!isField) {
+            if (fieldConf.isRequired()) { // sometimes the field is not propagated, so, if it's required, we need to do some additional work
+                if (form.getAdditional() == null) {
+                    form.setAdditional(new HashMap<>());
+                }
+                form.getAdditional().put(fieldConf.getName(), Collections.singletonList(""));
+                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"][0]", ErrorsCode.EMPTY_FIELD);
+            }
+            return;
+        }
+
+        List<String> values = Optional.ofNullable(form.getAdditional().get(fieldConf.getName())).orElse(Collections.emptyList());
+
+        //handle required for multiple choice (checkbox) where required is interpreted as at least one!
+        if (fieldConf.isRequired() && fieldConf.getCount() > 1  && values.stream().allMatch(StringUtils::isBlank)) {
+            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]", ErrorsCode.EMPTY_FIELD);
+        }
+
+        for(int i = 0; i < values.size(); i++) {
+            validateFieldValue(vatValidator, errors, prefixForLambda, fieldConf, values, i);
+        }
+    }
+
+    private static void validateFieldValue(SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf, List<String> values, int i) {
+        String formValue = values.get(i);
+        if(fieldConf.isMaxLengthDefined()) {
+            validateMaxLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", "error.tooLong", fieldConf.getMaxLength(), errors);
+        }
+
+        if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
+            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", "error.tooShort", new Object[] { fieldConf.getMinLength() }, null);
+        }
+
+        if(!fieldConf.getRestrictedValues().isEmpty()) {
+            validateRestrictedValue(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]",
+                "error.restrictedValue", fieldConf.getRestrictedValues(), errors);
+        }
+
+        if(fieldConf.isRequired() && fieldConf.getCount() == 1 && StringUtils.isBlank(formValue)){
+            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", ErrorsCode.EMPTY_FIELD);
+        }
+
+        if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
+            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]",
+                "error.disabledValue", null, null);
+        }
+
+        try {
+            if (fieldConf.isEuVat() && !vatValidator.test(formValue)) {
+                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.STEP_2_INVALID_VAT);
+            }
+        } catch (IllegalStateException e) {
+            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.VIES_IS_DOWN);
+        }
     }
 
     private static void validateRestrictedValue(String value, String fieldName, String errorCode, List<String> restrictedValues, Errors errors) {

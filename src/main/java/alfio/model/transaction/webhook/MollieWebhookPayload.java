@@ -30,7 +30,7 @@ public class MollieWebhookPayload implements TransactionWebhookPayload {
 
     @Override
     public String getPayload() {
-        return paymentId;
+        return getPaymentId();
     }
 
     @Override

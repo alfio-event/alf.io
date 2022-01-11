@@ -72,11 +72,13 @@ public class MollieConnectManager implements OAuthPaymentProviderConnector {
             OAuth2AccessToken accessTokenResponse = service.getAccessToken(code);
             var refreshToken = accessTokenResponse.getRefreshToken();
             if(refreshToken != null) {
-                //var mollieProfileId = retrieveProfileId(accessTokenResponse.getAccessToken());
                 configurationManager.saveConfig(Configuration.from(organizationId, MOLLIE_CONNECT_REFRESH_TOKEN), refreshToken);
-                //configurationManager.saveConfig(Configuration.from(organizationId, MOLLIE_PROFILE_ID), mollieProfileId);
             }
             return new AccessTokenResponseDetails(accessTokenResponse.getAccessToken(), refreshToken, null, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Request interrupted while retrieving access token", e);
+            return new AccessTokenResponseDetails(null, null, e.getMessage(), false);
         } catch (Exception e) {
             log.warn("Got exception while retrieving access token", e);
             return new AccessTokenResponseDetails(null, null, e.getMessage(), false);
@@ -92,6 +94,10 @@ public class MollieConnectManager implements OAuthPaymentProviderConnector {
             String refreshToken = options.get(MOLLIE_CONNECT_REFRESH_TOKEN).getRequiredValue();
             OAuth2AccessToken accessTokenResponse = service.refreshAccessToken(refreshToken);
             return new AccessTokenResponseDetails(accessTokenResponse.getAccessToken(), refreshToken, null, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Request interrupted while retrieving access token", e);
+            return new AccessTokenResponseDetails(null, null, e.getMessage(), false);
         } catch (Exception e) {
             log.warn("Got exception while retrieving access token", e);
             return new AccessTokenResponseDetails(null, null, e.getMessage(), false);
