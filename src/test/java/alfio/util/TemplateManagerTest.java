@@ -18,6 +18,8 @@ package alfio.util;
 
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.StaticMessageSource;
 
 import java.util.Locale;
@@ -83,8 +85,17 @@ class TemplateManagerTest {
         assertEquals("3-2-1", TemplateManager.translate("{{#i18n}}parameter [1] [2] [3]{{/i18n}}", Locale.ENGLISH, messageSource));
     }
 
-    @Test
-    void paramsNoSpace() {
-        assertEquals("3-2-1", TemplateManager.translate("{{#i18n}}parameter[1][2][3]{{/i18n}}", Locale.ENGLISH, messageSource));
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{{#i18n}}parameter[1][2][3]{{/i18n}}",
+        "{{#i18n}} parameter[1][2][3]{{/i18n}}",
+        "{{#i18n}}parameter [1][2][3]{{/i18n}}",
+        "{{#i18n}}parameter [1] [2][3]{{/i18n}}",
+        "{{#i18n}}parameter [1] [2] [3]{{/i18n}}",
+        "{{#i18n}}parameter [1] [2] [3] {{/i18n}}",
+        "{{#i18n}} parameter [1] [2] [3] {{/i18n}}",
+    })
+    void simpleParams(String input) {
+        assertEquals("3-2-1", TemplateManager.translate(input, Locale.ENGLISH, messageSource));
     }
 }

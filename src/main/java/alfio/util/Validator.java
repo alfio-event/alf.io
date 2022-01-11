@@ -47,9 +47,9 @@ import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 public final class Validator {
 
     // source: https://commons.apache.org/proper/commons-validator/apidocs/src-html/org/apache/commons/validator/routines/EmailValidator.html
-    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^.+@[^\\s]+$");
+    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^\\p{javaLetterOrDigit}[^\\s@]*@\\p{javaLetterOrDigit}[^\\s]*$");
     // this regex validates the e-mail to be a canonical address (i.e. test@example.org)
-    private static final Pattern CANONICAL_MAIL_VALIDATOR = Pattern.compile("^.+@[^\\s@]+\\.\\p{javaAlphabetic}{2,}$");
+    private static final Pattern CANONICAL_MAIL_VALIDATOR = Pattern.compile("^\\p{javaLetterOrDigit}[^\\s@]*@\\p{javaLetterOrDigit}[^\\s@]*\\.\\p{javaAlphabetic}{2,}$");
     private static final String ERROR_DESCRIPTION = "error.description";
     private static final String EMAIL_KEY = "email";
     private static final String ERROR_EMAIL = "error.email";

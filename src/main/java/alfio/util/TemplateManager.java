@@ -170,7 +170,7 @@ public class TemplateManager {
         }
     }
 
-    private static final Pattern KEY_PATTERN = Pattern.compile("([^\\s\\[]*)[\\s\\[]");
+    private static final Pattern KEY_PATTERN = Pattern.compile("^([^\\[]+)[\\s\\[]");
     private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)]");
 
     /**
@@ -182,10 +182,10 @@ public class TemplateManager {
     private static String extractKey(String key) {
         Matcher matcher = KEY_PATTERN.matcher(key);
         if (matcher.find()) {
-            return matcher.group(1);
+            return matcher.group(1).strip();
         }
 
-        return key;
+        return key.strip();
     }
 
     /**
