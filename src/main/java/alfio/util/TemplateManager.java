@@ -145,7 +145,8 @@ public class TemplateManager {
 
     private String render(Resource resource, Map<String, Object> model, Locale locale, PurchaseContext purchaseContext, TemplateOutput templateOutput) {
         try {
-            ModelAndView mv = new ModelAndView((String) null, model);
+            ModelAndView mv = new ModelAndView();
+            mv.getModelMap().addAllAttributes(model);
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
             mv.addObject("country-name", COUNTRY_NAME);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
@@ -169,13 +170,13 @@ public class TemplateManager {
         }
     }
 
-    private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
+    private static final Pattern KEY_PATTERN = Pattern.compile("([^\\s\\[]*)[\\s\\[]");
     private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)]");
 
     /**
      * Split key from (optional) arguments.
      *
-     * @param key
+     * @param key key
      * @return localization key
      */
     private static String extractKey(String key) {
@@ -192,7 +193,7 @@ public class TemplateManager {
      * <p/>
      * localization_key [param1] [param2] [param3]
      *
-     * @param key
+     * @param key key
      * @return List of extracted parameters
      */
     private static List<String> extractParameters(String key) {
