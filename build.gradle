@@ -37,7 +37,6 @@ plugins {
     id 'java'
     id 'idea'
     id 'org.kordamp.gradle.jacoco' version '0.45.0'
-    id 'org.kordamp.gradle.coveralls' version '0.45.0'
     id 'com.github.ben-manes.versions' version '0.38.0'
     id 'com.github.hierynomus.license' version '0.16.1'
     id 'net.researchgate.release' version '2.8.1'
@@ -217,7 +216,7 @@ dependencies {
     }
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    testImplementation 'org.seleniumhq.selenium:selenium-java:4.1.0'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.1.1'
 
     errorprone('com.google.errorprone:error_prone_core:2.4.0')
 }
@@ -362,7 +361,7 @@ bootWar {
 // -- code-coverage
 
 jacoco {
-    toolVersion = '0.8.2'
+    toolVersion = '0.8.7'
 }
 
 jacocoTestReport {

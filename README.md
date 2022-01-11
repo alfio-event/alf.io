@@ -6,9 +6,9 @@ The open source ticket reservation system.
 [Alf.io](https://alf.io) is a free and open source event attendance management system, developed for event organizers who care about privacy, security and fair pricing policy for their customers.
 
 [![Build Status](https://github.com/alfio-event/alf.io/workflows/build/badge.svg)](https://github.com/alfio-event/alf.io/actions)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=alfio-event_alf.io)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=alfio-event_alf.io)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=coverage)](https://sonarcloud.io/summary/new_code?id=alfio-event_alf.io)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=security_rating)](https://sonarcloud.io/summary/overall?id=alfio-event_alf.io)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=reliability_rating)](https://sonarcloud.io/summary/overall?id=alfio-event_alf.io)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=coverage)](https://sonarcloud.io/summary/overall?id=alfio-event_alf.io)
 
 [![Financial Contributors on Open Collective](https://opencollective.com/alfio/all/badge.svg?label=financial+contributors)](https://opencollective.com/alfio)
 [![Docker Hub Pulls](https://img.shields.io/docker/pulls/alfio/alf.io.svg)](https://hub.docker.com/r/alfio/alf.io/tags)
