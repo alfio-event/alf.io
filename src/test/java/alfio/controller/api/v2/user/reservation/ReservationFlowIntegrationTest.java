@@ -70,7 +70,7 @@ import static alfio.test.util.IntegrationTestUtil.initEvent;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
+class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;
@@ -164,7 +164,7 @@ public class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
     }
 
     @Test
-    public void inPersonEvent() throws Exception {
+    void inPersonEvent() throws Exception {
         super.testBasicFlow(this::createContext);
     }
 

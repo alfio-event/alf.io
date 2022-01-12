@@ -302,7 +302,7 @@ public class EventApiV2Controller {
 
             Locale locale = LocaleUtil.forLanguageTag(lang, event);
 
-            Optional<String> promoCodeDiscount = ReservationUtil.checkPromoCode(reservation, event, promoCodeRequestManager, bindingResult);;
+            Optional<String> promoCodeDiscount = ReservationUtil.checkPromoCode(reservation, event, promoCodeRequestManager, bindingResult);
             var configurationValues = configurationManager.getFor(List.of(
                 ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
                 RECAPTCHA_API_KEY), event.getConfigurationLevel());

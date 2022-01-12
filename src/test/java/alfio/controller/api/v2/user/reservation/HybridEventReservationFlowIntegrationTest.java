@@ -67,7 +67,7 @@ import static alfio.test.util.IntegrationTestUtil.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class HybridEventReservationFlowIntegrationTest extends BaseReservationFlowTest {
+class HybridEventReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;
@@ -159,7 +159,7 @@ public class HybridEventReservationFlowIntegrationTest extends BaseReservationFl
     }
 
     @Test
-    public void hybridEvent() throws Exception {
+    void hybridEvent() throws Exception {
         super.testBasicFlow(this::createContext);
     }
 

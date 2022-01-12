@@ -43,7 +43,7 @@ public interface BillingDocumentRepository {
                                              @Bind("currentId") Long currentId,
                                              @Bind("reservationId") String reservationId);
 
-    @Query("select * from billing_document where reservation_id_fk = :reservationId order by generation_ts desc")
+    @Query("select * from billing_document where reservation_id_fk = :reservationId order by generation_ts desc, id desc")
     List<BillingDocument> findAllByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("insert into billing_document(event_id_fk, number, reservation_id_fk, type, model, generation_ts, status, organization_id_fk)" +

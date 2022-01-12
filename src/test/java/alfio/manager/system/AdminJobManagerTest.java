@@ -16,17 +16,14 @@
  */
 package alfio.manager.system;
 
-import alfio.test.util.TestUtil;
-import alfio.util.ClockProvider;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 
-import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
 import static alfio.test.util.TestUtil.clockProvider;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AdminJobManagerTest {
 
