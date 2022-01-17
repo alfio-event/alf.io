@@ -31,6 +31,7 @@ import alfio.model.checkin.EventWithCheckInInfo;
 import alfio.model.extension.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.TicketMetadata;
+import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.model.user.PublicUserProfile;
@@ -64,6 +65,17 @@ import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 @Log4j2
 public class ExtensionManager {
 
+    private static final String TICKET = "ticket";
+    private static final String EVENT_METADATA = "eventMetadata";
+    private static final String ORGANIZATION = "organization";
+    private static final String RESERVATION = "reservation";
+    private static final String BILLING_DETAILS = "billingDetails";
+    private static final String ADDITIONAL_INFO = "additionalInfo";
+    private static final String RESERVATIONS = "reservations";
+    private static final String RESERVATION_IDS = "reservationIds";
+    private static final String ORGANIZATION_ID = "organizationId";
+    private static final String RESERVATION_ID = "reservationId";
+    private static final String EVENT = "event";
     private final ExtensionService extensionService;
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
@@ -96,16 +108,16 @@ public class ExtensionManager {
     AlfioMetadata handleMetadataUpdate(Event event, Organization organization, AlfioMetadata metadata) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("metadata", metadata);
-        payload.put("organization", organization);
+        payload.put(ORGANIZATION, organization);
         payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organization.getId())).getRequiredValue());
         return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
     }
 
     void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, PurchaseContext purchaseContext) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("reservation", reservation);
-        payload.put("billingDetails", billingDetails);
-        payload.put("additionalInfo", Map.of());
+        payload.put(RESERVATION, reservation);
+        payload.put(BILLING_DETAILS, billingDetails);
+        payload.put(ADDITIONAL_INFO, Map.of());
         transactionRepository.loadOptionalByReservationId(reservation.getId())
             .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
@@ -124,9 +136,9 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.TICKET_ASSIGNED,
             event,
             Map.of(
-                "ticket", ticket,
-                "additionalInfo", additionalInfo,
-                "eventMetadata", eventRepository.getMetadataForEvent(event.getId()),
+                TICKET, ticket,
+                ADDITIONAL_INFO, additionalInfo,
+                EVENT_METADATA, eventRepository.getMetadataForEvent(event.getId()),
                 "onlineAccessTicket", EventUtil.isAccessOnline(category, event)
             ));
     }
@@ -135,7 +147,7 @@ public class ExtensionManager {
         Event event = eventRepository.findById(waitingQueueSubscription.getEventId());
         asyncCall(ExtensionEvent.WAITING_QUEUE_SUBSCRIBED,
             event,
-            Map.of("waitingQueueSubscription", waitingQueueSubscription, "additionalInfo", Map.of()));
+            Map.of("waitingQueueSubscription", waitingQueueSubscription, ADDITIONAL_INFO, Map.of()));
     }
 
     void handleReservationsExpiredForEvent(PurchaseContext purchaseContext, Collection<String> reservationIdsToRemove) {
@@ -149,25 +161,25 @@ public class ExtensionManager {
     void handleTicketCancelledForEvent(Event event, Collection<String> ticketUUIDs) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("ticketUUIDs", ticketUUIDs);
-        payload.put("eventMetadata", eventRepository.getMetadataForEvent(event.getId()));
+        payload.put(EVENT_METADATA, eventRepository.getMetadataForEvent(event.getId()));
         syncCall(ExtensionEvent.TICKET_CANCELLED, event, payload, Boolean.class);
     }
 
     void handleOfflineReservationsWillExpire(Event event, List<TicketReservationInfo> reservations) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("reservations", reservations);
+        payload.put(RESERVATIONS, reservations);
         asyncCall(ExtensionEvent.OFFLINE_RESERVATIONS_WILL_EXPIRE, event, payload);
     }
 
     void handleStuckReservations(Event event, List<String> stuckReservationsId) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("reservationIds", stuckReservationsId);
+        payload.put(RESERVATION_IDS, stuckReservationsId);
         asyncCall(ExtensionEvent.STUCK_RESERVATIONS, event, payload);
     }
 
     Optional<CustomEmailText> handleReservationEmailCustomText(PurchaseContext purchaseContext, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
         Map<String, Object> payload = Map.of(
-            "reservation", reservation,
+            RESERVATION, reservation,
             "purchaseContext", purchaseContext,
             "billingData", additionalInfo
         );
@@ -181,8 +193,8 @@ public class ExtensionManager {
 
     public Optional<CustomEmailText> handleTicketEmailCustomText(Event event, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo, List<TicketFieldValue> fields) {
         Map<String, Object> payload = Map.of(
-            "reservation", reservation,
-            "event", event,
+            RESERVATION, reservation,
+            EVENT, event,
             "billingData", additionalInfo,
             "additionalFields", fields
         );
@@ -196,17 +208,17 @@ public class ExtensionManager {
 
     private void handleReservationRemoval(PurchaseContext purchaseContext, Collection<String> reservationIds, ExtensionEvent extensionEvent) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("reservationIds", reservationIds);
-        payload.put("reservations", ticketReservationRepository.findByIds(reservationIds));
+        payload.put(RESERVATION_IDS, reservationIds);
+        payload.put(RESERVATIONS, ticketReservationRepository.findByIds(reservationIds));
 
         syncCall(extensionEvent, purchaseContext, payload, Boolean.class);
     }
 
     public void handleCreditNoteGenerated(TicketReservation reservation, PurchaseContext purchaseContext, TotalPrice cost, Long billingDocumentId, Map<String, Object> contextData) {
         Map<String, Object> payload = new HashMap<>(contextData);
-        payload.put("reservationId", reservation.getId());
-        payload.put("reservation", reservation);
-        payload.put("billingDetails", ticketReservationRepository.getBillingDetailsForReservation(reservation.getId()));
+        payload.put(RESERVATION_ID, reservation.getId());
+        payload.put(RESERVATION, reservation);
+        payload.put(BILLING_DETAILS, ticketReservationRepository.getBillingDetailsForReservation(reservation.getId()));
         payload.put("reservationCost", cost);
         payload.put("billingDocumentId", billingDocumentId);
         asyncCall(ExtensionEvent.CREDIT_NOTE_GENERATED, purchaseContext, payload);
@@ -214,12 +226,12 @@ public class ExtensionManager {
 
     public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails, Map<String, Object> contextData) {
         Map<String, Object> payload = new HashMap<>(contextData);
-        payload.put("reservationId", spec.getReservationId());
+        payload.put(RESERVATION_ID, spec.getReservationId());
         payload.put("email", spec.getEmail());
         payload.put("customerName", spec.getCustomerName());
         payload.put("userLanguage", spec.getLocale().getLanguage());
         payload.put("billingAddress", spec.getBillingAddress());
-        payload.put("billingDetails", billingDetails);
+        payload.put(BILLING_DETAILS, billingDetails);
         payload.put("customerReference", spec.getCustomerReference());
         payload.put("reservationCost", reservationCost);
         payload.put("invoiceRequested", spec.isInvoiceRequested());
@@ -235,9 +247,9 @@ public class ExtensionManager {
                                                                      String invoiceNumber,
                                                                      Organization organization) {
         return Optional.ofNullable(syncCall(ExtensionEvent.CREDIT_NOTE_GENERATION, purchaseContext, Map.of(
-            "reservationId", reservationId,
+            RESERVATION_ID, reservationId,
             "invoiceNumber", invoiceNumber,
-            "organization", organization
+            ORGANIZATION, organization
         ), CreditNoteGeneration.class));
     }
 
@@ -246,12 +258,12 @@ public class ExtensionManager {
                                                     EventWithCheckInInfo event,
                                                     Map<String, List<String>> additionalInfo) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("event", event);
+        payload.put(EVENT, event);
         payload.put("eventId", event.getId());
-        payload.put("organizationId", event.getOrganizationId());
-        payload.put("ticket", ticket);
+        payload.put(ORGANIZATION_ID, event.getOrganizationId());
+        payload.put(TICKET, ticket);
         payload.put("originalURL", originalUrl);
-        payload.put("additionalInfo", Objects.requireNonNullElse(additionalInfo, Map.of()));
+        payload.put(ADDITIONAL_INFO, Objects.requireNonNullElse(additionalInfo, Map.of()));
 
         return Optional.ofNullable(extensionService.executeScriptsForEvent(ONLINE_CHECK_IN_REDIRECT.name(),
             toPath(event),
@@ -269,21 +281,21 @@ public class ExtensionManager {
     void handleTicketCheckedIn(Ticket ticket) {
         Map<String, Object> payload = new HashMap<>();
         Event event = eventRepository.findById(ticket.getEventId());
-        payload.put("ticket", ticket);
+        payload.put(TICKET, ticket);
         asyncCall(ExtensionEvent.TICKET_CHECKED_IN, event, payload);
     }
 
     void handleTicketRevertCheckedIn(Ticket ticket) {
         Map<String, Object> payload = new HashMap<>();
         Event event = eventRepository.findById(ticket.getEventId());
-        payload.put("ticket", ticket);
+        payload.put(TICKET, ticket);
         asyncCall(ExtensionEvent.TICKET_REVERT_CHECKED_IN, event, payload);
     }
 
     public void handleReservationValidation(PurchaseContext purchaseContext, TicketReservation reservation, Object clientForm, BindingResult bindingResult) {
         Map<String, Object> payload = Map.of(
-            "reservationId", reservation.getId(),
-            "reservation", reservation,
+            RESERVATION_ID, reservation.getId(),
+            RESERVATION, reservation,
             "form", clientForm,
             "bindingResult", bindingResult
         );
@@ -302,23 +314,23 @@ public class ExtensionManager {
 
     void handleEventHeaderUpdate(Event event, Organization organization) {
         Map<String, Object> payload = Map.of(
-            "eventMetadata", eventRepository.getMetadataForEvent(event.getId()),
-            "organization", organization
+            EVENT_METADATA, eventRepository.getMetadataForEvent(event.getId()),
+            ORGANIZATION, organization
         );
         asyncCall(ExtensionEvent.EVENT_HEADER_UPDATED, event, payload);
     }
 
     void handleReservationsCreditNoteIssuedForEvent(Event event, List<String> reservationIds) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("reservationIds", reservationIds);
-        payload.put("reservations", ticketReservationRepository.findByIds(reservationIds));
+        payload.put(RESERVATION_IDS, reservationIds);
+        payload.put(RESERVATIONS, ticketReservationRepository.findByIds(reservationIds));
 
         syncCall(ExtensionEvent.RESERVATION_CREDIT_NOTE_ISSUED, event, payload, Boolean.class);
     }
 
     void handleRefund(PurchaseContext purchaseContext, TicketReservation reservation, TransactionAndPaymentInfo info) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("reservation", reservation);
+        payload.put(RESERVATION, reservation);
         payload.put("transaction", info.getTransaction());
         payload.put("paymentInfo", info.getPaymentInformation());
         asyncCall(ExtensionEvent.REFUND_ISSUED, purchaseContext, payload);
@@ -330,7 +342,7 @@ public class ExtensionManager {
      * @param purchaseContext the current Purchase Context
      * @param userAdditionalData user data to filter
      * @param userProfile existing user profile, may be null
-     * @return the keys to persist
+     * @return the keys to persist, or {@code null}
      */
     public List<AdditionalInfoItem> filterAdditionalInfoToSave(PurchaseContext purchaseContext,
                                                                Map<String, List<String>> userAdditionalData,
@@ -369,7 +381,7 @@ public class ExtensionManager {
         try {
             return Optional.ofNullable(extensionService.executeScriptsForEvent(ExtensionEvent.OAUTH2_STATE_GENERATION.name(),
                 "-" + organizationId,
-                Map.of("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organizationId)).getRequiredValue(), "organizationId", organizationId),
+                Map.of("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organizationId)).getRequiredValue(), ORGANIZATION_ID, organizationId),
                 String.class));
         } catch (Exception ex) {
             log.error("got exception while generating OAuth2 State Param", ex);
@@ -381,7 +393,7 @@ public class ExtensionManager {
         try {
             var values = new HashMap<String, Object>();
             values.put("quantityByCategory", quantityByCategory);
-            values.put("reservationId", reservationId);
+            values.put(RESERVATION_ID, reservationId);
             var dynamicDiscountResult = syncCall(ExtensionEvent.DYNAMIC_DISCOUNT_APPLICATION, event,
                 values, DynamicDiscount.class);
             if(dynamicDiscountResult == null || dynamicDiscountResult.getDiscountType() == PromoCodeDiscount.DiscountType.NONE) {
@@ -431,11 +443,11 @@ public class ExtensionManager {
         if(purchaseContext != null) {
             //FIXME ugly
             purchaseContext.event().ifPresent(event -> {
-                payloadCopy.put("event", event);
+                payloadCopy.put(EVENT, event);
                 payloadCopy.put("eventId", event.getId());
             });
             payloadCopy.put("purchaseContext", purchaseContext);
-            payloadCopy.put("organizationId", purchaseContext.getOrganizationId());
+            payloadCopy.put(ORGANIZATION_ID, purchaseContext.getOrganizationId());
         }
         return payloadCopy;
     }
@@ -461,11 +473,11 @@ public class ExtensionManager {
     public Optional<TicketMetadata> handleCustomOnlineJoinUrl(Event event,
                                                               Ticket ticket,
                                                               Map<String, List<String>> ticketAdditionalInfo) {
-        var ticketMetadataContainer = ticketRepository.getTicketMetadata(ticket.getId());
+        var ticketMetadataContainer = Objects.requireNonNullElseGet(ticketRepository.getTicketMetadata(ticket.getId()), TicketMetadataContainer::empty);
         var context = new HashMap<String, Object>();
         var key = ExtensionEvent.CUSTOM_ONLINE_JOIN_URL.name();
-        context.put("ticket", ticket);
-        context.put("additionalInfo", ticketAdditionalInfo);
+        context.put(TICKET, ticket);
+        context.put(ADDITIONAL_INFO, ticketAdditionalInfo);
         var existingMetadata = ticketMetadataContainer.getMetadataForKey(key);
         existingMetadata.ifPresent(m -> context.put("ticketMetadata", m));
         var result = Optional.ofNullable(syncCall(ExtensionEvent.CUSTOM_ONLINE_JOIN_URL, event, context, TicketMetadata.class, false));
