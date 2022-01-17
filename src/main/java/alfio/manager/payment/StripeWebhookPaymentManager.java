@@ -67,6 +67,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     private static final String PAYMENT_INTENT_PAYMENT_FAILED = "payment_intent.payment_failed";
     private static final String PAYMENT_INTENT_CREATED = "payment_intent.created";
     private static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY);
+    private static final String REQUIRES_PAYMENT_METHOD = "requires_payment_method";
     private final ConfigurationManager configurationManager;
     private final BaseStripeManager baseStripeManager;
     private final TransactionRepository transactionRepository;
@@ -75,7 +76,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     private final AuditingRepository auditingRepository;
     private final ClockProvider clockProvider;
     private final List<String> interestingEventTypes = List.of(PAYMENT_INTENT_SUCCEEDED, PAYMENT_INTENT_PAYMENT_FAILED, PAYMENT_INTENT_CREATED);
-    private final Set<String> cancellableStatuses = Set.of("requires_payment_method", "requires_confirmation", "requires_action");
+    private final Set<String> cancellableStatuses = Set.of(REQUIRES_PAYMENT_METHOD, "requires_confirmation", "requires_action");
 
     public StripeWebhookPaymentManager(ConfigurationManager configurationManager,
                                        TicketRepository ticketRepository,
@@ -176,7 +177,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
                     log.info("marking reservation {} as paid, because PaymentIntent reports success", transaction.getReservationId());
                     processSuccessfulPaymentIntent(transaction, paymentIntent, ticketReservationRepository.findReservationById(transaction.getReservationId()), purchaseContext);
                     return errorToken("Reservation status changed", true);
-                } else if(!status.equals("requires_payment_method")) {
+                } else if(!status.equals(REQUIRES_PAYMENT_METHOD)) {
                     return errorToken("Payment in process", true);
                 }
             } catch (StripeException e) {
@@ -251,7 +252,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     @Override
     public PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction, PaymentContext paymentContext) {
 
-        // first of all, we check if we're interested in the current event
+        // first we check if we're interested in the current event
         if(!interestingEventTypes.contains(payload.getType())) {
             //we're not interested to other kind of events yet...
             return PaymentWebhookResult.notRelevant(payload.getType());
@@ -286,13 +287,14 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
                 case PAYMENT_INTENT_PAYMENT_FAILED: {
                     return processFailedPaymentIntent(transaction, reservation, purchaseContext);
                 }
+                default:
+                    return PaymentWebhookResult.notRelevant("event is not relevant");
             }
 
         } catch (Exception e) {
             log.error("Error while trying to confirm the reservation", e);
             return PaymentWebhookResult.error("unexpected error");
         }
-        return PaymentWebhookResult.notRelevant("event is not relevant");
     }
 
     /**
@@ -361,7 +363,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
 
     @Override
     public boolean accept(Transaction transaction) {
-        var isWebHookManager = STRIPE_MANAGER.equals(transaction.getMetadata().get(STRIPE_MANAGER_TYPE_KEY)) || transaction.getMetadata().get("clientSecret") != null;
+        var isWebHookManager = STRIPE_MANAGER.equals(transaction.getMetadata().get(STRIPE_MANAGER_TYPE_KEY)) || transaction.getMetadata().get(CLIENT_SECRET_METADATA) != null;
         return transaction.getPaymentProxy() == PaymentProxy.STRIPE && isWebHookManager;
     }
 
@@ -425,11 +427,12 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
                     return PaymentWebhookResult.pending();
                 case "succeeded":
                     return processSuccessfulPaymentIntent(transaction, intent, reservation, purchaseContext);
-                case "requires_payment_method":
+                case REQUIRES_PAYMENT_METHOD:
                     //payment is failed.
                     return processFailedPaymentIntent(transaction, reservation, purchaseContext);
+                default:
+                    return null;
             }
-            return null;
         } catch(Exception ex) {
             log.error("Error trying to check PaymentIntent status", ex);
             return PaymentWebhookResult.error("failed");

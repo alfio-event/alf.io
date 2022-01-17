@@ -69,4 +69,8 @@ public class TicketMetadataContainer {
         }
         return false;
     }
+
+    public static TicketMetadataContainer empty() {
+        return new TicketMetadataContainer(new HashMap<>());
+    }
 }

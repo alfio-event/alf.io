@@ -1404,16 +1404,50 @@ public class TicketReservationManager {
             return;
         }
 
-        subscriptionRepository.deleteSubscriptionWithReservationId(expiredReservationIds);
-        specialPriceRepository.resetToFreeAndCleanupForReservation(expiredReservationIds);
-        ticketRepository.resetCategoryIdForUnboundedCategories(expiredReservationIds);
-        ticketFieldRepository.deleteAllValuesForReservations(expiredReservationIds);
-        ticketRepository.freeFromReservation(expiredReservationIds);
-        waitingQueueManager.cleanExpiredReservations(expiredReservationIds);
+        List<String> reservationsToIgnore = new ArrayList<>();
+        // check if any of the above reservation has a pending transaction with a webhook-capable payment provider.
+        // if so, we'll force the remote status check in order to prevent deletion of paid (or pending) reservations
+        ticketReservationRepository.findReservationsWithPendingTransaction(expiredReservationIds)
+            .forEach(reservation -> {
+                var purchaseContextOptional = purchaseContextManager.findByReservationId(reservation.getId());
+                if (purchaseContextOptional.isPresent()) {
+                    var purchaseContext = purchaseContextOptional.get();
+                    var resultOptional = forceTransactionCheck(purchaseContext, reservation);
+                    var reservationId = reservation.getId();
+                    if (resultOptional.isPresent()) {
+                        var result = resultOptional.get();
+                        if (result.isSuccessful()) {
+                            // payment is successful, so reservation must not be deleted
+                            log.debug("Force check for expired reservation ID {} revealed a completed transaction. Will not delete.", reservationId);
+                            reservationsToIgnore.add(reservationId);
+                        } else {
+                            // we need to cancel the pending payment, otherwise we could end up with a mismatch
+                            boolean cancelPendingPaymentResult = cancelPendingPayment(reservationId, purchaseContext);
+                            log.warn("Trying to force pending payment cancellation for reservation ID {}. Successful: {}", reservationId, cancelPendingPaymentResult);
+                        }
+                    } else {
+                        log.trace("No result from forceTransactionCheck for reservation ID {}", reservationId);
+                    }
+
+                } else {
+                    log.warn("PurchaseContext not found for reservation ID {}", reservation.getId());
+                }
+            });
+
+        var toDelete = expiredReservationIds.stream()
+            .filter(id -> !reservationsToIgnore.contains(id))
+            .collect(toList());
+
+        subscriptionRepository.deleteSubscriptionWithReservationId(toDelete);
+        specialPriceRepository.resetToFreeAndCleanupForReservation(toDelete);
+        ticketRepository.resetCategoryIdForUnboundedCategories(toDelete);
+        ticketFieldRepository.deleteAllValuesForReservations(toDelete);
+        ticketRepository.freeFromReservation(toDelete);
+        waitingQueueManager.cleanExpiredReservations(toDelete);
 
         //
         Map<Integer, List<ReservationIdAndEventId>> reservationIdsByEvent = ticketReservationRepository
-            .getReservationIdAndEventId(expiredReservationIds)
+            .getReservationIdAndEventId(toDelete)
             .stream()
             .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
         reservationIdsByEvent.forEach((eventId, reservations) -> {
@@ -1424,7 +1458,7 @@ public class TicketReservationManager {
             transactionRepository.deleteForReservations(reservationIds);
         });
         //
-        ticketReservationRepository.remove(expiredReservationIds);
+        ticketReservationRepository.remove(toDelete);
     }
 
     public void cleanupExpiredOfflineReservations(Date expirationDate) {
@@ -2293,7 +2327,7 @@ public class TicketReservationManager {
         TicketReservation reservation = findByPartialID(reservationId);
         Optional<OrderSummary> optionalOrderSummary = optionally(() -> orderSummaryForReservationId(reservation.getId(), event));
         Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
-        OrderSummary orderSummary = optionalOrderSummary.get();
+        OrderSummary orderSummary = optionalOrderSummary.orElseThrow();
         var currencyCode = orderSummary.getOriginalTotalPrice().getCurrencyCode();
         Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT(), currencyCode).compareTo(paidAmount) == 0, "paid price differs from due price");
         confirmOfflinePayment(event, reservation.getId(), username);
