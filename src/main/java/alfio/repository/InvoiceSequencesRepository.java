@@ -16,6 +16,8 @@
  */
 package alfio.repository;
 
+import alfio.model.BillingDocument;
+import alfio.model.support.EnumTypeAsString;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -23,12 +25,25 @@ import ch.digitalfondue.npjt.QueryRepository;
 @QueryRepository
 public interface InvoiceSequencesRepository {
 
-    @Query("select invoice_sequence from invoice_sequences where organization_id_fk = :orgId for update")
-    int lockReservationForUpdate(@Bind("orgId") int orgId);
+    @Query("select invoice_sequence from invoice_sequences where organization_id_fk = :orgId and document_type = :documentType::BILLING_DOCUMENT_TYPE for update")
+    int lockSequenceForUpdate(@Bind("orgId") int orgId, @Bind("documentType") @EnumTypeAsString BillingDocument.Type billingDocumentType);
 
-    @Query("update invoice_sequences set invoice_sequence = invoice_sequence + 1 where organization_id_fk = :orgId")
-    int incrementSequenceFor(@Bind("orgId") int orgId);
+    default int lockSequenceForUpdate(@Bind("orgId") int orgId) {
+        return lockSequenceForUpdate(orgId, BillingDocument.Type.INVOICE);
+    }
 
-    @Query("insert into invoice_sequences(organization_id_fk, invoice_sequence) values (:orgId, 1)")
+    @Query("update invoice_sequences set invoice_sequence = invoice_sequence + 1 where organization_id_fk = :orgId and document_type = :documentType::BILLING_DOCUMENT_TYPE")
+    int incrementSequenceFor(@Bind("orgId") int orgId, @Bind("documentType") @EnumTypeAsString BillingDocument.Type billingDocumentType);
+
+
+    default int incrementSequenceFor(@Bind("orgId") int orgId) {
+        return incrementSequenceFor(orgId, BillingDocument.Type.INVOICE);
+    }
+
+
+
+    @Query("insert into invoice_sequences(organization_id_fk, invoice_sequence, document_type) values" +
+        " (:orgId, 1, 'INVOICE')," +
+        " (:orgId, 1, 'CREDIT_NOTE')")
     int initFor(@Bind("orgId") int orgId);
 }

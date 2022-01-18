@@ -416,7 +416,7 @@ public class TicketReservationManager {
         List<SpecialPrice> specialPrices;
         if(accessCodeOrDiscount != null && accessCodeOrDiscount.getCodeType() == CodeType.ACCESS
             && ticketReservation.getTicketCategoryId().equals(accessCodeOrDiscount.getHiddenCategoryId())
-            && ticketCategoryRepository.isAccessRestricted(accessCodeOrDiscount.getHiddenCategoryId())
+            && Boolean.TRUE.equals(ticketCategoryRepository.isAccessRestricted(accessCodeOrDiscount.getHiddenCategoryId()))
         ) {
             specialPrices = reserveTokensForAccessCode(ticketReservation, accessCodeOrDiscount);
         } else {

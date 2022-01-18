@@ -173,7 +173,7 @@ public class UserManager {
     public int createOrganization(OrganizationModification om) {
         var affectedRowNumAndKey = organizationRepository.create(om.getName(), om.getDescription(), om.getEmail(), om.getExternalId(), om.getSlug());
         int orgId = affectedRowNumAndKey.getKey();
-        invoiceSequencesRepository.initFor(orgId);
+        Validate.isTrue(invoiceSequencesRepository.initFor(orgId) == 2);
         return orgId;
     }
 

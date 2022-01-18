@@ -21,7 +21,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
-import alfio.model.extension.CreditNoteGeneration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -43,6 +42,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
+import static alfio.model.Audit.EventType.EXTERNAL_CREDIT_NOTE_NUMBER;
 import static alfio.model.Audit.EventType.EXTERNAL_INVOICE_NUMBER;
 import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.TicketReservation.TicketReservationStatus.CANCELLED;
@@ -58,7 +58,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @AllArgsConstructor
 @Log4j2
 public class BillingDocumentManager {
-    private static final String CREDIT_NOTE_NUMBER = "creditNoteNumber";
+    static final String CREDIT_NOTE_NUMBER = "creditNoteNumber";
     private static final String APPLICATION_PDF = "application/pdf";
     private final BillingDocumentRepository billingDocumentRepository;
     private final Json json;
@@ -169,23 +169,46 @@ public class BillingDocumentManager {
         });
 
         return optionalInvoiceNumber.or(() -> {
-            int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getPurchaseContext().getOrganizationId());
+            int invoiceSequence = invoiceSequencesRepository.lockSequenceForUpdate(spec.getPurchaseContext().getOrganizationId());
             invoiceSequencesRepository.incrementSequenceFor(spec.getPurchaseContext().getOrganizationId());
-            String pattern = configurationManager
-                .getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, spec.getPurchaseContext().getConfigurationLevel())
-                .getValueOrDefault("%d");
-            return Optional.of(String.format(ObjectUtils.firstNonNull(StringUtils.trimToNull(pattern), "%d"), invoiceSequence));
+            return Optional.of(formatDocumentNumber(spec.getPurchaseContext(), invoiceSequence));
         });
+    }
+
+    String generateCreditNoteNumber(PurchaseContext purchaseContext, TicketReservation reservation) {
+
+        return extensionManager.handleCreditNoteGeneration(purchaseContext, reservation.getId(), reservation.getInvoiceNumber(), organizationRepository.getById(purchaseContext.getOrganizationId()))
+            .map(cng -> {
+                var reservationId = reservation.getId();
+                var creditNoteNumber = cng.getCreditNoteNumber();
+                auditingRepository.insert(reservationId, null, purchaseContext, EXTERNAL_CREDIT_NOTE_NUMBER, new Date(), RESERVATION, reservationId, List.of(Map.of(CREDIT_NOTE_NUMBER, creditNoteNumber)));
+                return creditNoteNumber;
+            })
+            .orElseGet(() -> {
+                if (configurationManager.getFor(REUSE_INVOICE_NUMBER_FOR_CREDIT_NOTE, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault()) {
+                    return reservation.getInvoiceNumber();
+                } else {
+                    int creditNoteSequence = invoiceSequencesRepository.lockSequenceForUpdate(purchaseContext.getOrganizationId(), CREDIT_NOTE);
+                    invoiceSequencesRepository.incrementSequenceFor(purchaseContext.getOrganizationId(), CREDIT_NOTE);
+                    return formatDocumentNumber(purchaseContext, creditNoteSequence);
+                }
+            });
+    }
+
+    private String formatDocumentNumber(PurchaseContext purchaseContext, int sequence) {
+        String pattern = configurationManager
+            .getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, purchaseContext.getConfigurationLevel())
+            .getValueOrDefault("%d");
+        return String.format(ObjectUtils.firstNonNull(StringUtils.trimToNull(pattern), "%d"), sequence);
     }
 
     private Map<String, Object> prepareModelForBillingDocument(PurchaseContext purchaseContext, TicketReservation reservation, OrderSummary summary, BillingDocument.Type type) {
         Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
 
-        String creditNoteNumber = reservation.getInvoiceNumber();
+        String creditNoteNumber = null;
         if(type == CREDIT_NOTE) {
             // override credit note number
-            creditNoteNumber = extensionManager.handleCreditNoteGeneration(purchaseContext, reservation.getId(), reservation.getInvoiceNumber(), organizationRepository.getById(purchaseContext.getOrganizationId()))
-                .map(CreditNoteGeneration::getCreditNoteNumber).orElse(creditNoteNumber);
+            creditNoteNumber = generateCreditNoteNumber(purchaseContext, reservation);
         }
 
         var bankingInfo = configurationManager.getFor(Set.of(VAT_NR, INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), purchaseContext.getConfigurationLevel());
