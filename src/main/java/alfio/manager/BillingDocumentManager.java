@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -32,6 +33,7 @@ import alfio.util.TemplateResource;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static alfio.model.Audit.EntityType.RESERVATION;
+import static alfio.model.Audit.EventType.EXTERNAL_INVOICE_NUMBER;
 import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.TicketReservation.TicketReservationStatus.CANCELLED;
 import static alfio.model.TicketReservation.TicketReservationStatus.PENDING;
@@ -48,12 +52,14 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
 @AllArgsConstructor
 @Log4j2
 public class BillingDocumentManager {
     private static final String CREDIT_NOTE_NUMBER = "creditNoteNumber";
+    private static final String APPLICATION_PDF = "application/pdf";
     private final BillingDocumentRepository billingDocumentRepository;
     private final Json json;
     private final ConfigurationManager configurationManager;
@@ -65,6 +71,7 @@ public class BillingDocumentManager {
     private final TicketReservationRepository ticketReservationRepository;
     private final ClockProvider clockProvider;
     private final ExtensionManager extensionManager;
+    private final InvoiceSequencesRepository invoiceSequencesRepository;
 
 
     public Optional<ZonedDateTime> findFirstInvoiceDate(int eventId) {
@@ -92,11 +99,11 @@ public class BillingDocumentManager {
         model.put("reservationEmailModel", json.asJsonString(getOrCreateBillingDocument(purchaseContext, ticketReservation, username, orderSummary).getModel()));
         switch (documentType) {
             case INVOICE:
-                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.INVOICE_PDF));
             case RECEIPT:
-                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
             case CREDIT_NOTE:
-                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
+                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
             default:
                 throw new IllegalStateException(documentType+" is not supported");
         }
@@ -143,6 +150,32 @@ public class BillingDocumentManager {
 
     public Optional<BillingDocument> getDocumentById(long id) {
         return billingDocumentRepository.findById(id);
+    }
+
+    @Transactional
+    public Optional<String> generateInvoiceNumber(PaymentSpecification spec, TotalPrice reservationCost) {
+        if(!reservationCost.requiresPayment() || !spec.isInvoiceRequested() || !configurationManager.hasAllConfigurationsForInvoice(spec.getPurchaseContext())) {
+            return Optional.empty();
+        }
+
+        String reservationId = spec.getReservationId();
+        var billingDetails = ticketReservationRepository.getBillingDetailsForReservation(reservationId);
+        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, billingDetails, Map.of("organization", organizationRepository.getById(spec.getPurchaseContext().getOrganizationId())))
+            .flatMap(invoiceGeneration -> Optional.ofNullable(trimToNull(invoiceGeneration.getInvoiceNumber())));
+
+        optionalInvoiceNumber.ifPresent(invoiceNumber -> {
+            List<Map<String, Object>> modifications = List.of(Map.of("invoiceNumber", invoiceNumber));
+            auditingRepository.insert(reservationId, null, spec.getPurchaseContext(), EXTERNAL_INVOICE_NUMBER, new Date(), RESERVATION, reservationId, modifications);
+        });
+
+        return optionalInvoiceNumber.or(() -> {
+            int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getPurchaseContext().getOrganizationId());
+            invoiceSequencesRepository.incrementSequenceFor(spec.getPurchaseContext().getOrganizationId());
+            String pattern = configurationManager
+                .getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, spec.getPurchaseContext().getConfigurationLevel())
+                .getValueOrDefault("%d");
+            return Optional.of(String.format(ObjectUtils.firstNonNull(StringUtils.trimToNull(pattern), "%d"), invoiceSequence));
+        });
     }
 
     private Map<String, Object> prepareModelForBillingDocument(PurchaseContext purchaseContext, TicketReservation reservation, OrderSummary summary, BillingDocument.Type type) {

@@ -136,6 +136,7 @@ public class TicketReservationManager {
     public static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
     private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
     private static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
+    private static final String ORGANIZATION = "organization";
 
     private final EventRepository eventRepository;
     private final OrganizationRepository organizationRepository;
@@ -159,7 +160,6 @@ public class TicketReservationManager {
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
-    private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
@@ -214,7 +214,6 @@ public class TicketReservationManager {
                                     AdditionalServiceRepository additionalServiceRepository,
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
                                     AdditionalServiceTextRepository additionalServiceTextRepository,
-                                    InvoiceSequencesRepository invoiceSequencesRepository,
                                     AuditingRepository auditingRepository,
                                     UserRepository userRepository,
                                     ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
@@ -251,7 +250,6 @@ public class TicketReservationManager {
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceItemRepository = additionalServiceItemRepository;
         this.additionalServiceTextRepository = additionalServiceTextRepository;
-        this.invoiceSequencesRepository = invoiceSequencesRepository;
         this.auditingRepository = auditingRepository;
         this.userRepository = userRepository;
         this.extensionManager = extensionManager;
@@ -707,36 +705,10 @@ public class TicketReservationManager {
     private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, PaymentProxy paymentProxy, String username) {
         var status = ticketReservationRepository.findOptionalStatusAndValidationById(spec.getReservationId()).orElseThrow().getStatus();
         if(status != COMPLETE) {
-            generateInvoiceNumber(spec, reservationCost);
+            billingDocumentManager.generateInvoiceNumber(spec, reservationCost)
+                .ifPresent(invoiceNumber -> ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceNumber));
             completeReservation(spec, paymentProxy, true, true, username);
         }
-    }
-
-    private void generateInvoiceNumber(PaymentSpecification spec, TotalPrice reservationCost) {
-        if(!reservationCost.requiresPayment() || !spec.isInvoiceRequested() || !configurationManager.hasAllConfigurationsForInvoice(spec.getPurchaseContext())) {
-            return;
-        }
-
-        String reservationId = spec.getReservationId();
-        var billingDetails = ticketReservationRepository.getBillingDetailsForReservation(reservationId);
-        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, billingDetails, Map.of("organization", organizationRepository.getById(spec.getPurchaseContext().getOrganizationId())))
-            .flatMap(invoiceGeneration -> Optional.ofNullable(trimToNull(invoiceGeneration.getInvoiceNumber())));
-
-        optionalInvoiceNumber.ifPresent(invoiceNumber -> {
-            List<Map<String, Object>> modifications = List.of(Map.of("invoiceNumber", invoiceNumber));
-            auditingRepository.insert(reservationId, null, spec.getPurchaseContext(), EXTERNAL_INVOICE_NUMBER, new Date(), RESERVATION, reservationId, modifications);
-        });
-
-        String invoiceNumber = optionalInvoiceNumber.orElseGet(() -> {
-                int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getPurchaseContext().getOrganizationId());
-                invoiceSequencesRepository.incrementSequenceFor(spec.getPurchaseContext().getOrganizationId());
-                String pattern = configurationManager
-                    .getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, spec.getPurchaseContext().getConfigurationLevel())
-                    .getValueOrDefault("%d");
-                return String.format(ObjectUtils.firstNonNull(StringUtils.trimToNull(pattern), "%d"), invoiceSequence);
-        });
-
-        ticketReservationRepository.setInvoiceNumber(reservationId, invoiceNumber);
     }
 
     private boolean isDiscountCodeUsageExceeded(String reservationId) {
@@ -998,7 +970,7 @@ public class TicketReservationManager {
         var model = prepareModelForReservationEmail(purchaseContext, reservation, getVAT(purchaseContext), orderSummaryForReservation(reservation, purchaseContext), ticketRepository.findTicketsInReservation(reservation.getId()), Map.of());
         BillingDocument billingDocument = billingDocumentManager.createBillingDocument(purchaseContext, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummaryForReservation(reservation, purchaseContext));
         var organization = organizationRepository.getById(purchaseContext.getOrganizationId());
-        extensionManager.handleCreditNoteGenerated(reservation, purchaseContext, ((OrderSummary) model.get("orderSummary")).getOriginalTotalPrice(), billingDocument.getId(), Map.of("organization", organization));
+        extensionManager.handleCreditNoteGenerated(reservation, purchaseContext, ((OrderSummary) model.get("orderSummary")).getOriginalTotalPrice(), billingDocument.getId(), Map.of(ORGANIZATION, organization));
 
         if(sendEmail) {
             notificationManager.sendSimpleEmail(purchaseContext,
@@ -1021,7 +993,7 @@ public class TicketReservationManager {
         var orderSummary = (OrderSummary) model.get("orderSummary");
         var billingDocument = billingDocumentManager.createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummary);
         var organization = organizationRepository.getById(event.getOrganizationId());
-        extensionManager.handleCreditNoteGenerated(reservation, event, orderSummary.getOriginalTotalPrice(), billingDocument.getId(), Map.of("organization", organization));
+        extensionManager.handleCreditNoteGenerated(reservation, event, orderSummary.getOriginalTotalPrice(), billingDocument.getId(), Map.of(ORGANIZATION, organization));
     }
 
     void issueCreditNoteForRefund(PurchaseContext purchaseContext, TicketReservation reservation, BigDecimal refundAmount, String username) {
@@ -1048,7 +1020,7 @@ public class TicketReservationManager {
         log.trace("model for partial credit note created");
         var billingDocument = billingDocumentManager.createBillingDocument(purchaseContext, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummary);
         var organization = organizationRepository.getById(purchaseContext.getOrganizationId());
-        extensionManager.handleCreditNoteGenerated(reservation, purchaseContext, cost, billingDocument.getId(), Map.of("organization", organization));
+        extensionManager.handleCreditNoteGenerated(reservation, purchaseContext, cost, billingDocument.getId(), Map.of(ORGANIZATION, organization));
     }
 
     @Transactional(readOnly = true)
@@ -2678,7 +2650,7 @@ public class TicketReservationManager {
         var shortReservationID = getShortReservationID(purchaseContext, reservation);
         var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
         Map<String, Object> model = Map.of(
-        "organization", organizationRepository.getById(purchaseContext.getOrganizationId()),
+            ORGANIZATION, organizationRepository.getById(purchaseContext.getOrganizationId()),
         "reservationCancelled", cancelReservation,
         "reservation", reservation,
         "reservationId", shortReservationID,

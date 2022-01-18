@@ -44,7 +44,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-public class TicketReservationManagerUnitTest {
+class TicketReservationManagerUnitTest {
     private static final String TICKET_RESERVATION_ID = "abcdef";
 
     private TicketReservationManager manager;
@@ -146,7 +146,6 @@ public class TicketReservationManagerUnitTest {
             additionalServiceRepository,
             additionalServiceItemRepository,
             additionalServiceTextRepository,
-            invoiceSequencesRepository,
             auditingRepository,
             userRepository,
             extensionManager,
@@ -164,7 +163,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void calcReservationCostOnlyTickets() {
+    void calcReservationCostOnlyTickets() {
         when(event.isVatIncluded()).thenReturn(true, false);
         when(event.getVat()).thenReturn(BigDecimal.TEN);
         when(eventRepository.findByReservationId(eq(TICKET_RESERVATION_ID))).thenReturn(event);
@@ -191,7 +190,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void calcReservationCostWithASVatIncludedInherited() {
+    void calcReservationCostWithASVatIncludedInherited() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 10, 10);
         //first: event price vat included, additional service VAT inherited
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
@@ -202,7 +201,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void calcReservationCostWithASVatIncludedASNoVat() {
+    void calcReservationCostWithASVatIncludedASNoVat() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 10, 10);
         //second: event price vat included, additional service VAT n/a
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
@@ -213,7 +212,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void calcReservationCostWithASVatNotIncludedASInherited() {
+    void calcReservationCostWithASVatNotIncludedASInherited() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 10, 10);
         //third: event price vat not included, additional service VAT inherited
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
@@ -224,7 +223,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void calcReservationCostWithASVatNotIncludedASNone() {
+    void calcReservationCostWithASVatNotIncludedASNone() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 10, 10);
         //fourth: event price vat not included, additional service VAT n/a
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
@@ -235,7 +234,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void testExtractSummaryVatNotIncluded() {
+    void testExtractSummaryVatNotIncluded() {
         initReservationWithTicket(1000, false);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0, "CHF"));
         Assertions.assertEquals(1, summaryRows.size());
@@ -243,7 +242,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void testExtractSummaryVatIncluded() {
+    void testExtractSummaryVatIncluded() {
         initReservationWithTicket(1000, true);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(1, summaryRows.size());
@@ -251,7 +250,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void testExtractSummaryVatIncludedExempt() {
+    void testExtractSummaryVatIncludedExempt() {
         initReservationWithTicket(1000, true);
         when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED_EXEMPT);
         when(ticket.getFinalPriceCts()).thenReturn(909);
@@ -261,7 +260,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void testExtractSummaryVatNotIncludedExempt() {
+    void testExtractSummaryVatNotIncludedExempt() {
         initReservationWithTicket(1000, false);
         when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT);
         when(ticket.getFinalPriceCts()).thenReturn(1000);
@@ -271,7 +270,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void testExtractSummaryVatNotIncludedASInherited() {
+    void testExtractSummaryVatNotIncludedASInherited() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 1000, 1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0, "CHF"));
         Assertions.assertEquals(2, summaryRows.size());
@@ -279,7 +278,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void testExtractSummaryVatIncludedASInherited() {
+    void testExtractSummaryVatIncludedASInherited() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 1000, 1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0, "CHF"));
         Assertions.assertEquals(2, summaryRows.size());
@@ -287,7 +286,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void testExtractSummaryVatNotIncludedASNone() {
+    void testExtractSummaryVatNotIncludedASNone() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 1000, 1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(2, summaryRows.size());
@@ -295,7 +294,7 @@ public class TicketReservationManagerUnitTest {
     }
 
     @Test
-    public void testExtractSummaryVatIncludedASNone() {
+    void testExtractSummaryVatIncludedASNone() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 1000, 1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(2, summaryRows.size());

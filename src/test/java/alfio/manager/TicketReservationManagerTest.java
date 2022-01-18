@@ -31,11 +31,13 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
-import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.*;
+import alfio.model.transaction.PaymentContext;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.Transaction;
 import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
 import alfio.model.transaction.capabilities.WebhookHandler;
 import alfio.model.transaction.token.StripeCreditCardToken;
@@ -48,9 +50,10 @@ import alfio.test.util.TestUtil;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.*;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -134,6 +137,7 @@ class TicketReservationManagerTest {
         BANK_ACCOUNT_NR, new MaybeConfiguration(BANK_ACCOUNT_NR),
         BANK_ACCOUNT_OWNER,  new MaybeConfiguration(BANK_ACCOUNT_OWNER));
     private PromoCodeDiscountRepository promoCodeDiscountRepository;
+    private BillingDocumentManager billingDocumentManager;
 
     @BeforeEach
     void init() {
@@ -158,7 +162,6 @@ class TicketReservationManagerTest {
         AdditionalServiceRepository additionalServiceRepository = mock(AdditionalServiceRepository.class);
         AdditionalServiceTextRepository additionalServiceTextRepository = mock(AdditionalServiceTextRepository.class);
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
-        InvoiceSequencesRepository invoiceSequencesRepository = mock(InvoiceSequencesRepository.class);
         auditingRepository = mock(AuditingRepository.class);
         event = mock(Event.class);
         specialPrice = mock(SpecialPrice.class);
@@ -205,6 +208,7 @@ class TicketReservationManagerTest {
         purchaseContextManager = mock(PurchaseContextManager.class);
         when(purchaseContextManager.findByReservationId(anyString())).thenReturn(Optional.of(event));
 
+        billingDocumentManager = mock(BillingDocumentManager.class);
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
@@ -225,7 +229,6 @@ class TicketReservationManagerTest {
             additionalServiceRepository,
             additionalServiceItemRepository,
             additionalServiceTextRepository,
-            invoiceSequencesRepository,
             auditingRepository,
             userRepository,
             extensionManager,
@@ -234,7 +237,7 @@ class TicketReservationManagerTest {
             billingDocumentRepository,
             jdbcTemplate,
             json,
-            mock(BillingDocumentManager.class),
+            billingDocumentManager,
             TestUtil.clockProvider(),
             purchaseContextManager,
             mock(SubscriptionRepository.class),
@@ -876,7 +879,8 @@ class TicketReservationManagerTest {
             verify(specialPriceRepository, verificationMode).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
             verify(ticketReservationRepository, verificationMode).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
             verify(waitingQueueManager, verificationMode).fireReservationConfirmed(eq(RESERVATION_ID));
-            verify(configurationManager, verificationMode).hasAllConfigurationsForInvoice(eq(event));
+            verify(billingDocumentManager, verificationMode).generateInvoiceNumber(eq(spec), any());
+            verify(ticketReservationRepository, never()).setInvoiceNumber(eq(RESERVATION_ID), any());
         } else {
             Assertions.assertFalse(result.isSuccessful());
             Assertions.assertTrue(result.isFailed());
@@ -938,7 +942,7 @@ class TicketReservationManagerTest {
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
-        verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
+        verify(billingDocumentManager).generateInvoiceNumber(eq(spec), any());
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
     }
@@ -957,12 +961,15 @@ class TicketReservationManagerTest {
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()),
             "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+        var invoiceNumber = "1234";
+        when(billingDocumentManager.generateInvoiceNumber(eq(spec), any())).thenReturn(Optional.of(invoiceNumber));
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0,"CHF"), PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         Assertions.assertTrue(result.isSuccessful());
         Assertions.assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
-        verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
+        verify(billingDocumentManager).generateInvoiceNumber(eq(spec), any());
+        verify(ticketReservationRepository).setInvoiceNumber(RESERVATION_ID, invoiceNumber);
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
 
