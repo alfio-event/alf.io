@@ -27,6 +27,7 @@ import alfio.manager.support.PaymentWebhookResult;
 import alfio.manager.support.TemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
+import alfio.manager.testSupport.MaybeConfigurationBuilder;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
@@ -582,7 +583,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eq(EVENT_ID), eq(2), eq(List.of("FREE")))).thenReturn(List.of(TICKET_ID,2));
         when(ticketRepository.findById(eq(TICKET_ID), eq(TICKET_CATEGORY_ID))).thenReturn(ticket);
         String query = "batch-reserve-tickets";
-        when(ticketRepository.batchReserveTicket()).thenReturn(query);
+        when(ticketRepository.batchReserveTicketsForSpecialPrice()).thenReturn(query);
         trm.reserveTicketsForCategory(event, RESERVATION_ID, reservationModification, Locale.ENGLISH, false, discount, null);
         verify(jdbcTemplate).batchUpdate(eq(query), any(SqlParameterSource[].class));
         verify(specialPriceRepository).batchUpdateStatus(eq(List.of(1,2)), eq(SpecialPrice.Status.PENDING), eq(accessCodeId));
@@ -599,8 +600,10 @@ class TicketReservationManagerTest {
         when(reservationModification.getQuantity()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
+        when(ticketRepository.reserveTickets(eq("trid"), eq(ids), same(ticketCategory), eq(Locale.ENGLISH.getLanguage()), any(), any()))
+            .thenReturn(1);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, false, null, null);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0, CATEGORY_CURRENCY);
+        verify(ticketRepository).reserveTickets(eq("trid"), eq(ids), eq(ticketCategory), eq(Locale.ENGLISH.getLanguage()), any(), any());
     }
 
     @Test
@@ -611,8 +614,10 @@ class TicketReservationManagerTest {
         when(reservationModification.getQuantity()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
+        when(ticketRepository.reserveTickets(eq("trid"), eq(ids), same(ticketCategory), eq(Locale.ENGLISH.getLanguage()), any(), any()))
+            .thenReturn(1);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, true, null, null);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0, CATEGORY_CURRENCY);
+        verify(ticketRepository).reserveTickets(eq("trid"), eq(ids), eq(ticketCategory), eq(Locale.ENGLISH.getLanguage()), any(), any());
     }
 
     @Test
@@ -623,8 +628,10 @@ class TicketReservationManagerTest {
         when(reservationModification.getQuantity()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
+        when(ticketRepository.reserveTickets(eq("trid"), eq(ids), eq(ticketCategory), eq(Locale.ENGLISH.getLanguage()), any(), any()))
+            .thenReturn(1);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, false, null, null);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0, CATEGORY_CURRENCY);
+        verify(ticketRepository).reserveTickets(eq("trid"), eq(ids), eq(ticketCategory), eq(Locale.ENGLISH.getLanguage()), any(), any());
     }
 
     @Test
@@ -635,8 +642,10 @@ class TicketReservationManagerTest {
         when(reservationModification.getQuantity()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
+        when(ticketRepository.reserveTickets(eq("trid"), eq(ids), same(ticketCategory), eq(Locale.ENGLISH.getLanguage()), any(), any()))
+            .thenReturn(1);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, true, null, null);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0, CATEGORY_CURRENCY);
+        verify(ticketRepository).reserveTickets(eq("trid"), eq(ids), eq(ticketCategory), eq(Locale.ENGLISH.getLanguage()), any(), any());
     }
 
     //cleanup expired reservations
@@ -1159,8 +1168,6 @@ class TicketReservationManagerTest {
         initReminder();
         when(event.getId()).thenReturn(EVENT_ID);
         when(configurationManager.getFor(eq(ASSIGNMENT_REMINDER_START), any())).thenReturn(new MaybeConfiguration(ASSIGNMENT_REMINDER_START));
-//        when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
-//        when(configurationManager.getBooleanConfigValue(any(), eq(true))).thenReturn(true);
         when(ticketReservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticket.getTicketsReservationId()).thenReturn(RESERVATION_ID);
@@ -1180,7 +1187,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.findByUUID(anyString())).thenReturn(ticket);
         when(messageSource.getMessage(eq("reminder.ticket-additional-info.subject"), any(), any())).thenReturn("subject");
         when(configurationManager.getFor(eq(OPTIONAL_DATA_REMINDER_ENABLED), any())).thenReturn(
-            new MaybeConfiguration(OPTIONAL_DATA_REMINDER_ENABLED)
+            MaybeConfigurationBuilder.existing(OPTIONAL_DATA_REMINDER_ENABLED, "true")
         );
         trm.sendReminderForOptionalData();
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq("ciccio"), eq("subject"), any(TemplateGenerator.class));
@@ -1193,7 +1200,7 @@ class TicketReservationManagerTest {
         when(configurationManager.getFor(eq(ASSIGNMENT_REMINDER_START), any())).thenReturn(new MaybeConfiguration(ASSIGNMENT_REMINDER_START));
 //        when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
         when(configurationManager.getFor(eq(OPTIONAL_DATA_REMINDER_ENABLED), any())).thenReturn(
-            new MaybeConfiguration(OPTIONAL_DATA_REMINDER_ENABLED)
+            MaybeConfigurationBuilder.existing(OPTIONAL_DATA_REMINDER_ENABLED, "true")
         );
         when(ticketReservation.latestNotificationTimestamp(any())).thenReturn(Optional.of(ZonedDateTime.now(ClockProvider.clock()).minusDays(10)));
         String RESERVATION_ID = "abcd";
@@ -1220,7 +1227,7 @@ class TicketReservationManagerTest {
         when(configurationManager.getFor(eq(ASSIGNMENT_REMINDER_START), any())).thenReturn(new MaybeConfiguration(ASSIGNMENT_REMINDER_START));
 //        when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
         when(configurationManager.getFor(eq(OPTIONAL_DATA_REMINDER_ENABLED), any())).thenReturn(
-            new MaybeConfiguration(OPTIONAL_DATA_REMINDER_ENABLED)
+            MaybeConfigurationBuilder.existing(OPTIONAL_DATA_REMINDER_ENABLED, "true")
         );
         when(ticketReservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
         String RESERVATION_ID = "abcd";

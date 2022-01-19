@@ -54,9 +54,11 @@ import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
 public class TemplateManager {
 
 
-    private final MessageSourceManager messageSourceManager;
-
+    public static final String METADATA_ATTRIBUTES_KEY = "metadata-attributes";
+    public static final String ADDITIONAL_FIELDS_KEY = "additional-fields";
     public static final String VAT_TRANSLATION_TEMPLATE_KEY = "vatTranslation";
+
+    private final MessageSourceManager messageSourceManager;
 
     public enum TemplateOutput {
         TEXT, HTML
@@ -149,7 +151,8 @@ public class TemplateManager {
             mv.getModelMap().addAllAttributes(model);
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
             mv.addObject("country-name", COUNTRY_NAME);
-            mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
+            mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get(ADDITIONAL_FIELDS_KEY)));
+            mv.addObject("metadata-value", ADDITIONAL_FIELD_VALUE.apply(model.get(METADATA_ATTRIBUTES_KEY)));
             mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceFor(purchaseContext)).createTranslator());
             var updatedModel = mv.getModel();
             updatedModel.putIfAbsent("custom-header-text", "");

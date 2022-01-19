@@ -33,6 +33,10 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 @QueryRepository
 public interface TicketRepository {
@@ -107,14 +111,39 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status = 'RELEASED' and category_id = :categoryId and event_id = :eventId")
     Integer countReleasedTicketInCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-    @Query("update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', category_id = :categoryId, user_language = :userLanguage, src_price_cts = :srcPriceCts, currency_code = :currencyCode where id in (:reservedForUpdate)")
-    int reserveTickets(@Bind("reservationId") String reservationId, @Bind("reservedForUpdate") List<Integer> reservedForUpdate, @Bind("categoryId") int categoryId, @Bind("userLanguage") String userLanguage, @Bind("srcPriceCts") int srcPriceCts, @Bind("currencyCode") String currencyCode);
+    default int reserveTickets(String reservationId,
+                               List<Integer> ticketIds,
+                               TicketCategory category,
+                               String userLanguage,
+                               PriceContainer.VatStatus vatStatus,
+                               IntFunction<String> ticketMetadataSupplier) {
+        var idx = new AtomicInteger();
+        var batchReserveParameters = ticketIds.stream()
+            .map(id -> new MapSqlParameterSource("reservationId", reservationId)
+                .addValue("id", id)
+                .addValue("categoryId", category.getId())
+                .addValue("userLanguage", userLanguage)
+                .addValue("srcPriceCts", category.getSrcPriceCts())
+                .addValue("currencyCode", category.getCurrencyCode())
+                .addValue("ticketMetadata", Objects.requireNonNullElse(ticketMetadataSupplier.apply(idx.getAndIncrement()), "{}"))
+                .addValue("vatStatus", vatStatus.name())).toArray(MapSqlParameterSource[]::new);
+        return (int) Arrays.stream(getNamedParameterJdbcTemplate().batchUpdate(batchReserveTickets(), batchReserveParameters))
+            .asLongStream()
+            .sum();
+    }
+
+    @Query(type = QueryType.TEMPLATE,
+        value = "update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', category_id = :categoryId, " +
+            "user_language = :userLanguage, src_price_cts = :srcPriceCts, currency_code = :currencyCode, metadata = :ticketMetadata::jsonb, " +
+            "vat_status = :vatStatus::VAT_STATUS where id = :id")
+    String batchReserveTickets();
 
     @Query(type = QueryType.TEMPLATE,
         value = "update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
             " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts," +
-            " currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS, metadata = :ticketMetadata::jsonb where id = :ticketId")
-    String batchReserveTicket();
+            " currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS," +
+            " metadata = :ticketMetadata::jsonb where id = :ticketId")
+    String batchReserveTicketsForSpecialPrice();
 
     @Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
         " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts, currency_code = :currencyCode," +
@@ -126,7 +155,7 @@ public interface TicketRepository {
                        @Bind("srcPriceCts") int srcPriceCts,
                        @Bind("currencyCode") String currencyCode,
                        @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus,
-                       @Bind("ticketMetadata") @JSONData TicketMetadata ticketMetadata);
+                       @Bind("ticketMetadata") @JSONData TicketMetadataContainer ticketMetadata);
 
     @Query("update ticket set status = :status where tickets_reservation_id = :reservationId")
     int updateTicketsStatusWithReservationId(@Bind("reservationId") String reservationId, @Bind("status") String status);

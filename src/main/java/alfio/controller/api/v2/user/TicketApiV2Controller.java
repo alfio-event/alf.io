@@ -31,13 +31,11 @@ import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
@@ -46,6 +44,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -79,6 +78,7 @@ public class TicketApiV2Controller {
     private final TemplateManager templateManager;
     private final NotificationManager notificationManager;
     private final BookingInfoTicketLoader bookingInfoTicketLoader;
+    private final TicketRepository ticketRepository;
 
 
     @GetMapping(value = {
@@ -116,14 +116,15 @@ public class TicketApiV2Controller {
             Event event = data.getLeft();
             TicketReservation ticketReservation = data.getMiddle();
 
-            response.setContentType("application/pdf");
+            response.setContentType(MediaType.APPLICATION_PDF_VALUE);
             response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
             try (OutputStream os = response.getOutputStream()) {
                 TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
+                var ticketWithMetadata = new TicketWithMetadataAttributes(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
                 TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(ticketReservation.getUserLanguage(), event)), event, ticketReservation,
-                    ticket, ticketCategory, organization,
+                    ticketWithMetadata, ticketCategory, organization,
                     templateManager, fileUploadManager,
                     reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager);
             } catch (IOException ioe) {

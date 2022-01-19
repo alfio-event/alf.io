@@ -24,8 +24,9 @@ import java.util.*;
 
 public class TicketMetadataContainer {
 
+    public static final String GENERAL = "general";
     private static final Set<String> ALLOWED_KEYS = Set.of(
-        "general",
+        GENERAL,
         ExtensionEvent.CUSTOM_ONLINE_JOIN_URL.name()
     );
 
@@ -72,5 +73,14 @@ public class TicketMetadataContainer {
 
     public static TicketMetadataContainer empty() {
         return new TicketMetadataContainer(new HashMap<>());
+    }
+
+    public static TicketMetadataContainer fromMetadata(TicketMetadata metadata) {
+        if (metadata != null) {
+            var map = new HashMap<String, TicketMetadata>();
+            map.put(GENERAL, metadata);
+            return new TicketMetadataContainer(map);
+        }
+        return null;
     }
 }

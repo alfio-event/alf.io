@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.controller.api.support.TicketHelper;
-import alfio.controller.form.ReservationCodeForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
@@ -47,6 +46,7 @@ import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.extension.CustomEmailText;
 import alfio.model.group.LinkedGroup;
 import alfio.model.metadata.TicketMetadata;
+import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
@@ -89,7 +89,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.Errors;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
@@ -137,6 +136,7 @@ public class TicketReservationManager {
     private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
     private static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
     private static final String ORGANIZATION = "organization";
+    private static final String RESERVATION_ID = "reservationId";
 
     private final EventRepository eventRepository;
     private final OrganizationRepository organizationRepository;
@@ -432,13 +432,13 @@ public class TicketReservationManager {
         }
 
         TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticketReservation.getTicketCategoryId(), event.getId());
+        List<Map<String, String>> ticketMetadata = requireNonNullElse(ticketReservation.getMetadata(), List.of());
         if (!specialPrices.isEmpty()) {
             if(specialPrices.size() != reservedForUpdate.size()) {
                 throw new NotEnoughTicketsException();
             }
 
             AtomicInteger counter = new AtomicInteger(0);
-            List<Map<String, String>> ticketMetadata = requireNonNullElse(ticketReservation.getMetadata(), List.of());
             var ticketsAndSpecialPrices = specialPrices.stream()
                 .map(sp -> {
                     int index = counter.getAndIncrement();
@@ -461,16 +461,16 @@ public class TicketReservationManager {
                     category.getSrcPriceCts(),
                     category.getCurrencyCode(),
                     event.getVatStatus(),
-                    metadata);
+                    TicketMetadataContainer.fromMetadata(metadata));
                 specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), null, accessCodeId);
             } else {
-                jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicket(), ticketsAndSpecialPrices.stream().map(
+                jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicketsForSpecialPrice(), ticketsAndSpecialPrices.stream().map(
                     triple -> {
-                        TicketMetadata metadata = null;
+                        TicketMetadataContainer metadata = null;
                         if(triple.getRight() != null) {
-                            metadata = new TicketMetadata(null, null, triple.getRight());
+                            metadata = TicketMetadataContainer.fromMetadata(new TicketMetadata(null, null, triple.getRight()));
                         }
-                        return new MapSqlParameterSource("reservationId", reservationId)
+                        return new MapSqlParameterSource(RESERVATION_ID, reservationId)
                             .addValue("ticketId", triple.getLeft())
                             .addValue("specialCodeId", triple.getMiddle().getId())
                             .addValue("userLanguage", locale.getLanguage())
@@ -486,7 +486,14 @@ public class TicketReservationManager {
                     Objects.requireNonNull(accessCodeOrDiscount).getId());
             }
         } else {
-            ticketRepository.reserveTickets(reservationId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage(), category.getSrcPriceCts(), category.getCurrencyCode());
+            int reserved = ticketRepository.reserveTickets(reservationId, reservedForUpdate, category, locale.getLanguage(), event.getVatStatus(), idx -> {
+                var metadata = getAtIndexOrNull(ticketMetadata, idx);
+                if (metadata != null) {
+                    return json.asJsonString(TicketMetadataContainer.fromMetadata(new TicketMetadata(null, null, metadata)));
+                }
+                return null;
+            });
+            Validate.isTrue(reserved == reservedForUpdate.size(), "Cannot reserve all tickets");
         }
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), category.getId());
         var discountToApply = ObjectUtils.firstNonNull(dynamicDiscount, accessCodeOrDiscount);
@@ -920,7 +927,7 @@ public class TicketReservationManager {
                                                                              Map<String, Object> billingDocumentModel,
                                                                              BillingDocument.Type documentType) {
         Map<String, String> model = new HashMap<>();
-        model.put("reservationId", ticketReservation.getId());
+        model.put(RESERVATION_ID, ticketReservation.getId());
         purchaseContext.event().ifPresent(event -> model.put("eventId", Integer.toString(event.getId())));
         model.put("language", json.asJsonString(language));
         model.put("reservationEmailModel", json.asJsonString(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
@@ -2653,7 +2660,7 @@ public class TicketReservationManager {
             ORGANIZATION, organizationRepository.getById(purchaseContext.getOrganizationId()),
         "reservationCancelled", cancelReservation,
         "reservation", reservation,
-        "reservationId", shortReservationID,
+            RESERVATION_ID, shortReservationID,
         "eventName", purchaseContext.getDisplayName(),
         "provider", requireNonNullElse(paymentMethod.name(), ""),
         "reason", paymentWebhookResult.getReason(),

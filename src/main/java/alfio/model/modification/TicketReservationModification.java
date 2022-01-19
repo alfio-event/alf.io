@@ -29,12 +29,12 @@ public class TicketReservationModification implements Serializable {
     private List<Map<String, String>> metadata;
 
     // temporary until we replace the public front-end
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public Integer getAmount() {
         return quantity;
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public void setAmount(Integer amount) {
         this.quantity = amount;
     }

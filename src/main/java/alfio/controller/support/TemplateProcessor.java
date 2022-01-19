@@ -83,7 +83,7 @@ public final class TemplateProcessor {
     public static void renderPDFTicket(Locale language,
                                        Event event,
                                        TicketReservation ticketReservation,
-                                       Ticket ticket,
+                                       TicketWithMetadataAttributes ticketWithMetadata,
                                        TicketCategory ticketCategory,
                                        Organization organization,
                                        TemplateManager templateManager,
@@ -93,8 +93,8 @@ public final class TemplateProcessor {
                                        Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                        ExtensionManager extensionManager) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
-        List<TicketFieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticket);
-        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID,
+        List<TicketFieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticketWithMetadata.getTicket());
+        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticketWithMetadata, imageData, reservationID,
             fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription)));
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language).getTextPart();

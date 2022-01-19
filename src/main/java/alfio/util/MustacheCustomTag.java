@@ -60,6 +60,8 @@ import static org.apache.commons.lang3.StringUtils.substring;
 @Log4j2
 public class MustacheCustomTag {
 
+    private MustacheCustomTag() {}
+
     private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)]");
     private static final String LOCALE_LABEL = "locale:";
 

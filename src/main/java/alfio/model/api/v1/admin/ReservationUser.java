@@ -27,7 +27,7 @@ public class ReservationUser {
     private final String id;
 
     @JsonCreator
-    ReservationUser(@JsonProperty("username") String username,
+    public ReservationUser(@JsonProperty("username") String username,
                     @JsonProperty("firstName") String firstName,
                     @JsonProperty("lastName") String lastName,
                     @JsonProperty("email") String email,

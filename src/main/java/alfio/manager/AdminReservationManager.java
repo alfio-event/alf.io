@@ -478,7 +478,7 @@ public class AdminReservationManager {
             return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
         }
         var currencyCode = category.getCurrencyCode();
-        ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts(), currencyCode);
+        ticketRepository.reserveTickets(reservationId, reservedForUpdate, category, arm.getLanguage(), event.getVatStatus(), i -> null);
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), null);
         ticketRepository.updateTicketPrice(reservedForUpdate,

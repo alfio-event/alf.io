@@ -19,8 +19,6 @@ package alfio.controller.api.v1.admin;
 import alfio.manager.EventManager;
 import alfio.manager.PromoCodeRequestManager;
 import alfio.manager.TicketReservationManager;
-import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
 import alfio.model.api.v1.admin.ReservationCreationRequest;
 import alfio.model.result.ErrorCode;
 import alfio.util.ReservationUtil;
@@ -28,7 +26,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,22 +42,16 @@ import static java.util.Objects.requireNonNullElseGet;
 public class ReservationApiV1Controller {
 
     private final TicketReservationManager ticketReservationManager;
-    private final ConfigurationManager configurationManager;
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
-    private final UserManager userManager;
 
     @Autowired
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
-                                      ConfigurationManager configurationManager,
                                       EventManager eventManager,
-                                      PromoCodeRequestManager promoCodeRequestManager,
-                                      UserManager userManager) {
+                                      PromoCodeRequestManager promoCodeRequestManager) {
         this.ticketReservationManager = ticketReservationManager;
-        this.configurationManager = configurationManager;
         this.eventManager = eventManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
-        this.userManager = userManager;
     }
 
     @PostMapping("/{slug}/reservation")
@@ -94,7 +85,7 @@ public class ReservationApiV1Controller {
         }
     }
 
-    static class CreationResponse {
+    public static class CreationResponse {
         private final String id;
         private final String href;
         private final List<ErrorCode> errors;

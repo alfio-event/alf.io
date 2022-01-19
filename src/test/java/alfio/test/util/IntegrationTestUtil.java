@@ -57,6 +57,7 @@ public class IntegrationTestUtil {
 
     public static final Map<String, Map<String, String>> DB_CONF = new HashMap<>();
     public static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
+    public static final String BASE_URL = "http://localhost:8080";
 
     static {
         DB_CONF.put("PGSQL", generateDBConfig("jdbc:postgresql://localhost:5432/alfio", "postgres", "password"));
@@ -75,7 +76,7 @@ public class IntegrationTestUtil {
         configurationRepository.deleteByKey(ConfigurationKeys.BASE_URL.getValue());
         configurationRepository.deleteByKey(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue());
 
-        configurationRepository.insert(ConfigurationKeys.BASE_URL.getValue(), "http://localhost:8080", "");
+        configurationRepository.insert(ConfigurationKeys.BASE_URL.getValue(), BASE_URL, "");
         configurationRepository.insert(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue(), "7", "");
 
 

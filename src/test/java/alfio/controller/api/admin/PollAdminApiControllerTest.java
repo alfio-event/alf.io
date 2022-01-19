@@ -153,11 +153,12 @@ class PollAdminApiControllerTest {
 
         var reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(event.getZoneId()), DateUtils.addMinutes(new Date(), 1), null, "en", event.getId(), null, null, null, event.getOrganizationId(), null);
-        int categoryId = CollectionUtils.get(ticketCategoryRepository.findByEventIdAsMap(event.getId()), 0).getKey();
+        var firstCategory = CollectionUtils.get(ticketCategoryRepository.findByEventIdAsMap(event.getId()), 0);
+        int categoryId = firstCategory.getKey();
         var tickets = ticketRepository.findFreeByEventId(event.getId());
         var firstTicket = tickets.get(0);
         int ticketId = firstTicket.getId();
-        ticketRepository.reserveTickets(reservationId, List.of(ticketId), categoryId, "en", 0, null);
+        ticketRepository.reserveTickets(reservationId, List.of(ticketId), firstCategory.getValue(), "en", event.getVatStatus(), i -> null);
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservation.TicketReservationStatus.COMPLETE.name());
         ticketRepository.updateTicketOwner(firstTicket.getUuid(), "test@test.ch", "First Last", "First", "Last");
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
