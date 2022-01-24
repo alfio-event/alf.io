@@ -24,16 +24,20 @@ create view extension_capabilities as (
            es.async,
            es.script,
            es.display_name,
-           cap.value capability,
-           events
+           cap.value as capability,
+           ev.events,
+           (select jsonb_agg(value) from jsonb_array_elements(es.metadata -> 'capabilityDetails') as capd(value)
+              where jsonb_typeof(es.metadata -> 'capabilityDetails') = 'array'
+              and (capd.value is null or capd.value @> ('{"key": "' || cap.value || '"}')::jsonb)) as capability_detail
     from extension_support es
     cross join lateral (
-        select * from jsonb_array_elements_text(es.metadata->'capabilities') as cap
+        select * from jsonb_array_elements_text(es.metadata -> 'capabilities') as cap(value)
             where jsonb_typeof(es.metadata -> 'capabilities') = 'array'
-    ) cap
-    cross join lateral (
-        select array_agg(value::text) as events from jsonb_array_elements_text(es.metadata->'events')
+    ) cap,
+    lateral (
+        select jsonb_agg(value) as events from jsonb_array_elements_text(es.metadata->'events')
             where jsonb_typeof(es.metadata -> 'events') = 'array'
     ) ev
-    where enabled = true and metadata is not null
+    where enabled = true
+      and metadata is not null
 );

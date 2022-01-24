@@ -117,7 +117,7 @@ public class EventStatisticsManager {
             .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId()), metadata.get(t.getId())))
             .collect(Collectors.toList());
 
-        Set<ExtensionCapability> supportedCapabilities;
+        Set<ExtensionCapabilitySummary> supportedCapabilities;
         if(event.getFormat() != Event.EventFormat.IN_PERSON) {
             supportedCapabilities = extensionManager.getSupportedCapabilities(EnumSet.allOf(ExtensionCapability.class), event);
         } else {

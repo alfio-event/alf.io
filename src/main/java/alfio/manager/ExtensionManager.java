@@ -88,7 +88,7 @@ public class ExtensionManager {
         return extensionService.isCapabilitySupported(extensionCapability, purchaseContext);
     }
 
-    Set<ExtensionCapability> getSupportedCapabilities(Set<ExtensionCapability> requested, PurchaseContext purchaseContext) {
+    Set<ExtensionCapabilitySummary> getSupportedCapabilities(Set<ExtensionCapability> requested, PurchaseContext purchaseContext) {
         return extensionService.getSupportedCapabilities(requested, purchaseContext);
     }
 
@@ -106,11 +106,26 @@ public class ExtensionManager {
     }
 
     AlfioMetadata handleMetadataUpdate(Event event, Organization organization, AlfioMetadata metadata) {
+        Map<String, Object> payload = buildMetadataUpdatePayload(organization, metadata);
+        return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
+    }
+
+
+    Optional<AlfioMetadata> handleGenerateMeetingLinkCapability(Event event,
+                                                                Organization organization,
+                                                                AlfioMetadata existingMetadata,
+                                                                Map<String, String> params) {
+        Map<String, Object> context = buildMetadataUpdatePayload(organization, existingMetadata);
+        context.putAll(params);
+        return executeCapability(ExtensionCapability.GENERATE_MEETING_LINK, context, event, AlfioMetadata.class);
+    }
+
+    private Map<String, Object> buildMetadataUpdatePayload(Organization organization, AlfioMetadata metadata) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("metadata", metadata);
         payload.put(ORGANIZATION, organization);
         payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organization.getId())).getRequiredValue());
-        return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
+        return payload;
     }
 
     void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, PurchaseContext purchaseContext) {
@@ -453,7 +468,7 @@ public class ExtensionManager {
     }
 
     public <T> Optional<T> executeCapability(ExtensionCapability capability,
-                                             Map<String, String> params,
+                                             Map<String, ?> params,
                                              PurchaseContext purchaseContext,
                                              Class<T> resultType) {
         return extensionService.executeCapability(capability,

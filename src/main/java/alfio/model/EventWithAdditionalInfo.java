@@ -47,7 +47,7 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
     private final AlfioMetadata metadata;
     private final List<UUID> linkedSubscriptions;
 
-    private final Set<ExtensionCapability> supportedCapabilities;
+    private final Set<ExtensionCapabilitySummary> supportedCapabilities;
 
     @JsonIgnore
     public Event getEvent() {

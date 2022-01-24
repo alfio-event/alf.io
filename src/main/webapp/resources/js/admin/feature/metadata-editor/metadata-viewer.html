@@ -39,7 +39,7 @@
             </button>
             <ul class="dropdown-menu" uib-dropdown-menu aria-labelledby="capabilities">
                 <li ng-repeat="capability in $ctrl.capabilities" role="menuitem">
-                    <a ng-click="$ctrl.capabilitySelected(capability.id, $event)" href="#">{{capability.text}}</a>
+                    <a ng-click="$ctrl.capabilitySelected(capability, $event)" href="#">{{capability.text}}</a>
                 </li>
             </ul>
         </div>

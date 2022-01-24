@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.config.Initializer;
 import alfio.controller.form.SearchOptions;
 import alfio.manager.support.CategoryEvaluator;
+import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -1150,4 +1151,26 @@ public class EventManager {
     public AlfioMetadata getMetadataForCategory(EventAndOrganizationId event, int categoryId) {
         return ticketCategoryRepository.getMetadata(event.getId(), categoryId);
     }
+
+    public Optional<String> executeCapability(String eventName,
+                                              String username,
+                                              ExtensionCapability capability,
+                                              Map<String, String> params) {
+        return getOptionalByName(eventName, username)
+            .flatMap(event -> {
+                if (capability == ExtensionCapability.GENERATE_MEETING_LINK) {
+                    var organization = organizationRepository.getById(event.getOrganizationId());
+                    return extensionManager.handleGenerateMeetingLinkCapability(event, organization, getMetadataForEvent(event), params)
+                        .map(metadata -> {
+                            eventRepository.updateMetadata(requireNonNullElseGet(metadata, AlfioMetadata::empty), event.getId());
+                            return "metadata updated";
+                        });
+                } else {
+                    return extensionManager.executeCapability(capability, params, event, String.class);
+                }
+
+            });
+    }
+
+
 }

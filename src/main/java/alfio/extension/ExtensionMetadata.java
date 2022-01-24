@@ -34,6 +34,7 @@ public class ExtensionMetadata {
     private final List<String> events;
     private final Parameters parameters;
     private final List<String> capabilities;
+    private final List<CapabilityDetail> capabilityDetails;
 
     @JsonCreator
     public ExtensionMetadata(@JsonProperty("id") String id,
@@ -42,7 +43,8 @@ public class ExtensionMetadata {
                              @JsonProperty("async") boolean async,
                              @JsonProperty("events") List<String> events,
                              @JsonProperty("parameters") Parameters parameters,
-                             @JsonProperty("capabilities") List<String> capabilities) {
+                             @JsonProperty("capabilities") List<String> capabilities,
+                             @JsonProperty("capabilityDetails") List<CapabilityDetail> capabilityDetails) {
         this.id = id;
         this.displayName = displayName;
         this.version = version;
@@ -50,6 +52,7 @@ public class ExtensionMetadata {
         this.events = requireNonNullElse(events, List.of());
         this.parameters = parameters;
         this.capabilities = requireNonNullElse(capabilities, List.of());
+        this.capabilityDetails = requireNonNullElse(capabilityDetails, List.of());
     }
 
     @Getter
@@ -82,6 +85,25 @@ public class ExtensionMetadata {
             this.description = description;
             this.type = type;
             this.required = required;
+        }
+    }
+
+    @Getter
+    public static class CapabilityDetail {
+        private final String key;
+        private final String label;
+        private final String description;
+        private final String selector;
+
+        @JsonCreator
+        public CapabilityDetail(@JsonProperty("key") String key,
+                                @JsonProperty("label") String label,
+                                @JsonProperty("description") String description,
+                                @JsonProperty("selector") String selector) {
+            this.key = key;
+            this.label = label;
+            this.description = description;
+            this.selector = selector;
         }
     }
 }

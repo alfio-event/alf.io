@@ -27,6 +27,7 @@
     });
 
     var ONLINE_EVENT_CAPABILITIES = [
+        { id: 'GENERATE_MEETING_LINK', text: 'Generate Meeting link' },
         { id: 'CREATE_VIRTUAL_ROOM', text: 'Init Virtual Room' },
         { id: 'CREATE_GUEST_LINK', text: 'Create Join Link for Guest' },
         { id: 'CREATE_ANONYMOUS_GUEST_LINK', text: 'Create Join Link for Anonymous Guest' }
@@ -34,18 +35,23 @@
 
     function MetadataViewerCtrl($uibModal, EventService, NotificationHandler, $q) {
         var ctrl = this;
-        function executeCapability(id, event) {
+        function executeCapability(capability, event) {
             event.preventDefault();
             var promise;
-            if (id === 'CREATE_GUEST_LINK') {
+            if (capability.id === 'CREATE_GUEST_LINK') {
                 promise = requestGuestData($uibModal);
             } else {
                 promise = $q.resolve({});
             }
             promise.then(function(params) {
-                EventService.executeCapability(ctrl.event.shortName, id, params)
+                params.selector = capability.selector;
+                EventService.executeCapability(ctrl.event.shortName, capability.id, params)
                     .then(res => {
-                        ctrl.capabilityResult = res.data;
+                        if (capability.id === 'GENERATE_MEETING_LINK') {
+                            window.location.reload();
+                        } else {
+                            ctrl.capabilityResult = res.data;
+                        }
                     });
             });
         }
@@ -53,9 +59,28 @@
             ctrl.categoryLevel = ctrl.level === 'category';
             ctrl.languageDescription = languageDescription(ctrl.availableLanguages);
             if(!ctrl.categoryLevel && ctrl.event.supportedCapabilities && ctrl.event.supportedCapabilities.length > 0) {
-                ctrl.capabilities = ONLINE_EVENT_CAPABILITIES.filter(function(cap) {
-                    return ctrl.event.supportedCapabilities.indexOf(cap.id) > -1;
-                });
+                ctrl.capabilities = ctrl.event.supportedCapabilities
+                    .flatMap(function(supportedCapability) {
+                        if (supportedCapability.details && supportedCapability.details.length > 0) {
+                            return supportedCapability.details.map(function(details) {
+                                return {
+                                    id: details.key,
+                                    text: details.label,
+                                    selector: details.selector
+                                };
+                            });
+                        }
+                        var staticCapability = ONLINE_EVENT_CAPABILITIES.find(function(c) { return c.id === supportedCapability.capability });
+                        if (staticCapability) {
+                            return [{
+                                id: supportedCapability.capability,
+                                text: staticCapability.text,
+                                selector: ''
+                            }];
+                        }
+                        return [];
+
+                    });
                 ctrl.showCapabilitiesMenu = ctrl.capabilities.length > 0;
             }
             ctrl.normalLayout = !ctrl.categoryLevel && !ctrl.showCapabilitiesMenu;

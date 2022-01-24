@@ -18,6 +18,7 @@
 package alfio.repository;
 
 import alfio.extension.ExtensionMetadata;
+import alfio.model.ExtensionCapabilitySummary;
 import alfio.model.ExtensionSupport;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.*;
@@ -130,6 +131,9 @@ public interface ExtensionRepository {
     @Query("insert into extension_configuration_metadata_value(fk_ecm_id, conf_path, conf_value) values (:ecmId, :confPath, :value)")
     int insertSettingValue(@Bind("ecmId") int ecmId, @Bind("confPath") String confPath, @Bind("value") String value);
 
+    @Query(type = QueryType.TEMPLATE, value = "insert into extension_configuration_metadata_value(fk_ecm_id, conf_path, conf_value) values (:ecmId, :confPath, :value)")
+    String bulkInsertSettingValue();
+
     @Query("select ecm_name, conf_value from " +
         "" +
         "(select ecm_name, conf_value, ecm_configuration_level, conf_path, " +
@@ -160,13 +164,13 @@ public interface ExtensionRepository {
     int countScriptsSupportingCapability(@Bind("possiblePaths") Set<String> paths,
                                          @Bind("capabilities") List<String> capabilities);
 
-    @Query("select distinct a3.capability from " +
-        " (select a1.es_id, a1.capability from " +
-        " (select es_id, path, capability from extension_capabilities where (path in (:possiblePaths)) and capability in(:capabilities)) a1 " +
-        " left outer join (select es_id, path, capability from extension_capabilities where (path in (:possiblePaths)) and capability in(:capabilities)) a2 on " +
+    @Query("select distinct a3.capability, a3.capability_detail from " +
+        " (select a1.es_id, a1.capability, a1.capability_detail from " +
+        " (select es_id, path, capability, capability_detail from extension_capabilities where (path in (:possiblePaths)) and capability in(:capabilities)) a1 " +
+        " left outer join (select es_id, path, capability, capability_detail from extension_capabilities where (path in (:possiblePaths)) and capability in(:capabilities)) a2 on " +
         " (a1.es_id = a2.es_id) and length(a1.path) < length(a2.path) where a2.path is null) a3 ")
-    List<String> getSupportedCapabilities(@Bind("possiblePaths") Set<String> paths,
-                                          @Bind("capabilities") Collection<String> capabilities);
+    List<ExtensionCapabilitySummary> getSupportedCapabilities(@Bind("possiblePaths") Set<String> paths,
+                                                              @Bind("capabilities") Collection<String> capabilities);
 
     @Query("select a3.es_id, a3.path, a3.name, a3.hash from " +
         " (select a1.es_id, a1.path, a1.name, a1.hash from " +

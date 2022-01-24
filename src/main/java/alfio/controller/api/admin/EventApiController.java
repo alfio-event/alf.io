@@ -842,9 +842,7 @@ public class EventApiController {
                                                             @PathVariable("capability") ExtensionCapability capability,
                                                             @RequestBody Map<String, String> params,
                                                             Principal principal) {
-        return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName())
-            .flatMap(event -> extensionManager.executeCapability(capability, params, event, String.class)));
-
+        return ResponseEntity.of(eventManager.executeCapability(eventName, principal.getName(), capability, params));
     }
 
     private Event loadEvent(String eventName, Principal principal) {

@@ -22,7 +22,6 @@ import alfio.extension.ScriptingExecutionService;
 import alfio.manager.system.ExternalConfiguration;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
-import alfio.util.ClockProvider;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper;
 import ch.digitalfondue.npjt.Query;
@@ -31,6 +30,7 @@ import org.flywaydb.core.api.migration.BaseJavaMigration;
 import org.flywaydb.core.api.migration.Context;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.util.StreamUtils;
@@ -68,7 +68,13 @@ public class V22_1_14_8__MigrateMailchimp extends BaseJavaMigration {
         ExtensionRepository extensionRepository = QueryFactory.from(ExtensionRepository.class, "PGSQL", dataSource);
         ExtensionLogRepository extensionLogRepository = QueryFactory.from(ExtensionLogRepository.class, "PGSQL", dataSource);
         PluginRepository pluginRepository = QueryFactory.from(PluginRepository.class, "PGSQL", dataSource);
-        ExtensionService extensionService = new ExtensionService(new ScriptingExecutionService(HttpClient.newHttpClient(), null, Executors::newSingleThreadExecutor), extensionRepository, extensionLogRepository, new DataSourceTransactionManager(dataSource), new ExternalConfiguration());
+        ExtensionService extensionService = new ExtensionService(
+            new ScriptingExecutionService(HttpClient.newHttpClient(), null, Executors::newSingleThreadExecutor),
+            extensionRepository,
+            extensionLogRepository,
+            new DataSourceTransactionManager(dataSource),
+            new ExternalConfiguration(),
+            new NamedParameterJdbcTemplate(jdbcTemplate));
 
         extensionService.createOrUpdate(null, null, new Extension("-", "mailchimp", getMailChimpScript(), true));
 

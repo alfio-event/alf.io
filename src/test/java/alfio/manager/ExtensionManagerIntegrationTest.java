@@ -24,6 +24,7 @@ import alfio.extension.ExtensionService;
 import alfio.extension.ExtensionUtils;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.ExtensionCapabilitySummary;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
@@ -41,6 +42,8 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -57,6 +60,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static alfio.manager.support.extension.ExtensionCapability.*;
 import static alfio.test.util.IntegrationTestUtil.*;
@@ -66,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class ExtensionManagerIntegrationTest {
+class ExtensionManagerIntegrationTest {
 
     @Autowired
     private ExtensionManager extensionManager;
@@ -127,6 +131,7 @@ public class ExtensionManagerIntegrationTest {
     void capabilitiesSaved() {
         var extension = extensionRepository.getSingle("-", "test").orElseThrow();
         assertEquals(List.of(CREATE_VIRTUAL_ROOM.name(), CREATE_GUEST_LINK.name()), extension.getExtensionMetadata().getCapabilities());
+        assertFalse(extension.getExtensionMetadata().getCapabilityDetails().isEmpty());
         var results = jdbcTemplate.queryForList("select * from extension_capabilities", Map.of());
         assertEquals(2, results.size());
     }
@@ -145,14 +150,15 @@ public class ExtensionManagerIntegrationTest {
     @Test
     void requestSupportedCapabilities() {
         var requested = Set.of(CREATE_VIRTUAL_ROOM, CREATE_ANONYMOUS_GUEST_LINK, CREATE_GUEST_LINK);
-        assertEquals(Set.of(CREATE_VIRTUAL_ROOM, CREATE_GUEST_LINK), extensionManager.getSupportedCapabilities(requested, event));
+        assertEquals(Set.of(CREATE_VIRTUAL_ROOM, CREATE_GUEST_LINK), extensionManager.getSupportedCapabilities(requested, event).stream().map(ExtensionCapabilitySummary::getCapability).collect(Collectors.toSet()));
     }
 
-    @Test
-    void executeCapability() {
-        var optionalResult = extensionManager.executeCapability(CREATE_VIRTUAL_ROOM, Map.of(), event, String.class);
+    @ParameterizedTest
+    @ValueSource(strings = { "room1", "room2" })
+    void executeCapability(String selector) {
+        var optionalResult = extensionManager.executeCapability(CREATE_VIRTUAL_ROOM, Map.of("selector", selector), event, String.class);
         assertTrue(optionalResult.isPresent());
-        assertEquals("https://alf.io", optionalResult.get());
+        assertEquals("https://alf.io/"+selector, optionalResult.get());
     }
 
     @Test

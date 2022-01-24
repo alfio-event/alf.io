@@ -21,6 +21,7 @@ import alfio.manager.support.extension.ExtensionEvent;
 import alfio.manager.system.ExternalConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Collection;
@@ -40,7 +41,7 @@ class ExtensionServiceTest {
 
     @BeforeEach
     void setUp() {
-        extensionService = new ExtensionService(null, null, null, mock(PlatformTransactionManager.class), mock(ExternalConfiguration.class));
+        extensionService = new ExtensionService(null, null, null, mock(PlatformTransactionManager.class), mock(ExternalConfiguration.class), mock(NamedParameterJdbcTemplate.class));
     }
 
     @Test
@@ -68,6 +69,8 @@ class ExtensionServiceTest {
             true,
             events.stream().map(ExtensionEvent::name).collect(Collectors.toList()),
             null,
-            capabilities.stream().map(ExtensionCapability::name).collect(Collectors.toList()));
+            capabilities.stream().map(ExtensionCapability::name).collect(Collectors.toList()),
+            capabilities.stream().map(ec -> new ExtensionMetadata.CapabilityDetail(ec.name(), ec.name() + " label", ec.name() + " description", null)).collect(Collectors.toList())
+        );
     }
 }
