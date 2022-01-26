@@ -1155,18 +1155,18 @@ public class EventManager {
     public Optional<String> executeCapability(String eventName,
                                               String username,
                                               ExtensionCapability capability,
-                                              Map<String, String> params) {
+                                              Map<String, String> requestParams) {
         return getOptionalByName(eventName, username)
             .flatMap(event -> {
                 if (capability == ExtensionCapability.GENERATE_MEETING_LINK) {
                     var organization = organizationRepository.getById(event.getOrganizationId());
-                    return extensionManager.handleGenerateMeetingLinkCapability(event, organization, getMetadataForEvent(event), params)
+                    return extensionManager.handleGenerateMeetingLinkCapability(event, organization, getMetadataForEvent(event), requestParams)
                         .map(metadata -> {
                             eventRepository.updateMetadata(requireNonNullElseGet(metadata, AlfioMetadata::empty), event.getId());
                             return "metadata updated";
                         });
                 } else {
-                    return extensionManager.executeCapability(capability, params, event, String.class);
+                    return extensionManager.executeCapability(capability, requestParams, event, String.class);
                 }
 
             });

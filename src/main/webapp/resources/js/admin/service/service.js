@@ -439,7 +439,7 @@
                 return $http.get('/admin/api/events/'+eventName+'/category/'+categoryId+'/metadata').error(HttpErrorHandler.handle);
             },
             executeCapability: function(eventName, capability, parameters) {
-                return $http.post('/admin/api/events/'+eventName+'/capability/'+capability, parameters).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/events/'+eventName+'/capability/'+capability, parameters);
             }
         };
         return service;

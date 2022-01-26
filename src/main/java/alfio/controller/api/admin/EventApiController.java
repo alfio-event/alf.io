@@ -20,6 +20,7 @@ import alfio.controller.api.support.EventListItem;
 import alfio.controller.api.support.PageAndContent;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.support.TemplateProcessor;
+import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.extension.ExtensionCapability;
@@ -308,9 +309,12 @@ public class EventApiController {
         return ResponseEntity.ok(OK);
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", "Payment Method");
+    private static final String PAYMENT_METHOD = "Payment Method";
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", PAYMENT_METHOD);
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
-    private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of("Fiscal Code", "Reference Type", "Addressee Code", "PEC");
+    private static final String FISCAL_CODE = "Fiscal Code";
+    private static final String REFERENCE_TYPE = "Reference Type";
+    private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of(FISCAL_CODE, REFERENCE_TYPE, "Addressee Code", "PEC");
 
     @GetMapping("/events/{eventName}/export")
     public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
@@ -378,7 +382,7 @@ public class EventApiController {
             if(fields.contains("Billing Address")) {line.add(reservation.getBillingAddress());}
             if(fields.contains("Country Code")) {line.add(reservation.getVatCountryCode());}
             boolean paymentIdRequested = fields.contains("Payment ID");
-            boolean paymentGatewayRequested = fields.contains("Payment Method");
+            boolean paymentGatewayRequested = fields.contains(PAYMENT_METHOD);
             if((paymentIdRequested || paymentGatewayRequested)) {
                 Optional<Transaction> transaction = trs.getTransaction();
                 if(paymentIdRequested) { line.add(defaultString(transaction.map(Transaction::getPaymentId).orElse(null), transaction.map(Transaction::getTransactionId).orElse(""))); }
@@ -388,8 +392,8 @@ public class EventApiController {
             if(eInvoicingEnabled) {
                 var billingDetails = trs.getBillingDetails();
                 var optionalInvoicingData = Optional.ofNullable(billingDetails.getInvoicingAdditionalInfo()).map(TicketReservationInvoicingAdditionalInfo::getItalianEInvoicing);
-                if(fields.contains("Fiscal Code")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getFiscalCode).orElse(""));}
-                if(fields.contains("Reference Type")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getReferenceTypeAsString).orElse(""));}
+                if(fields.contains(FISCAL_CODE)) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getFiscalCode).orElse(""));}
+                if(fields.contains(REFERENCE_TYPE)) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getReferenceTypeAsString).orElse(""));}
                 if(fields.contains("Addressee Code")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getAddresseeCode).orElse(""));}
                 if(fields.contains("PEC")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getPec).orElse(""));}
             }
@@ -401,7 +405,7 @@ public class EventApiController {
 
             fields.stream().filter(contains.negate()).filter(f -> f.startsWith(CUSTOM_FIELDS_PREFIX)).forEachOrdered(field -> {
                 String customFieldName = field.substring(CUSTOM_FIELDS_PREFIX.length());
-                line.add(additionalValues.getOrDefault(customFieldName, "").replaceAll("\"", ""));
+                line.add(additionalValues.getOrDefault(customFieldName, "").replace("\"", ""));
             });
 
             return line.toArray(new String[0]);
@@ -679,8 +683,8 @@ public class EventApiController {
         header.add("Tax ID");
 
         if(italianEInvoicingEnabled) {
-            header.add("Fiscal Code");
-            header.add("Reference Type");
+            header.add(FISCAL_CODE);
+            header.add(REFERENCE_TYPE);
             header.add("Reference");
             header.add("Split Payment");
         }
@@ -689,7 +693,7 @@ public class EventApiController {
         header.add("Tax");
         header.add("Total");
         header.add("Currency");
-        header.add("Payment Method");
+        header.add(PAYMENT_METHOD);
         header.add("Generated on");
 
         ExportUtils.exportExcel(event.getShortName() + "-billing-documents.xlsx", "Documents", header.toArray(String[]::new),
@@ -842,13 +846,19 @@ public class EventApiController {
                                                             @PathVariable("capability") ExtensionCapability capability,
                                                             @RequestBody Map<String, String> params,
                                                             Principal principal) {
-        return ResponseEntity.of(eventManager.executeCapability(eventName, principal.getName(), capability, params));
+        try {
+            return ResponseEntity.of(eventManager.executeCapability(eventName, principal.getName(), capability, params));
+        } catch (AlfioScriptingException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header("Alfio-Extension-Error-Class", ex.getClass().getSimpleName())
+                .body(ex.getMessage());
+        }
     }
 
     private Event loadEvent(String eventName, Principal principal) {
         Optional<Event> singleEvent = eventManager.getOptionalByName(eventName, principal.getName());
         Validate.isTrue(singleEvent.isPresent(), "event not found");
-        return singleEvent.get();
+        return singleEvent.orElseThrow();
     }
 
     @Data

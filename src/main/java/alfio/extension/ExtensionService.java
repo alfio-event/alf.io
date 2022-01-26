@@ -120,7 +120,7 @@ public class ExtensionService {
     }
 
     @Transactional
-    public void createOrUpdate(String previousPath, String previousName, Extension script) throws Exception {
+    public void createOrUpdate(String previousPath, String previousName, Extension script) {
         Validate.notBlank(script.getName(), "Name is mandatory");
         Validate.notBlank(script.getPath(), "Path must be defined");
         ScriptValidation validation = new ScriptValidation(script.getScript());
@@ -292,11 +292,10 @@ public class ExtensionService {
                                              Class<T> resultType) {
         return getFirstScriptSupportingCapability(capability, basePath)
             .map(scriptPathNameHash -> {
-                Map<String, Object> context = new HashMap<>();
+                Map<String, Object> context = new HashMap<>(params);
                 context.put("capability", capability.name());
                 context.put(OUTPUT, null);
                 context.put(EXECUTION_KEY, UUID.randomUUID().toString());
-                context.put("request", params);
                 context = internalExecuteScript(scriptPathNameHash, context, basePath, false, PROCESS_CAPABILITY_RESULT, resultType);
                 return resultType.cast(context.get(OUTPUT));
             });

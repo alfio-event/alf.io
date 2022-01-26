@@ -33,7 +33,7 @@
         { id: 'CREATE_ANONYMOUS_GUEST_LINK', text: 'Create Join Link for Anonymous Guest' }
     ];
 
-    function MetadataViewerCtrl($uibModal, EventService, NotificationHandler, $q) {
+    function MetadataViewerCtrl($uibModal, EventService, NotificationHandler, $q, HttpErrorHandler) {
         var ctrl = this;
         function executeCapability(capability, event) {
             event.preventDefault();
@@ -52,6 +52,12 @@
                         } else {
                             ctrl.capabilityResult = res.data;
                         }
+                    }, function(err) {
+                        if (err.status === 500 && err.headers('Alfio-Extension-Error-Class')) {
+                            NotificationHandler.showError(err.data);
+                        } else {
+                            HttpErrorHandler.handle(err.data, err.status);
+                        }
                     });
             });
         }
@@ -64,7 +70,7 @@
                         if (supportedCapability.details && supportedCapability.details.length > 0) {
                             return supportedCapability.details.map(function(details) {
                                 return {
-                                    id: details.key,
+                                    id: supportedCapability.capability,
                                     text: details.label,
                                     selector: details.selector
                                 };
@@ -137,7 +143,7 @@
         }
     }
 
-    MetadataViewerCtrl.$inject = ['$uibModal', 'EventService', 'NotificationHandler', '$q'];
+    MetadataViewerCtrl.$inject = ['$uibModal', 'EventService', 'NotificationHandler', '$q', 'HttpErrorHandler'];
 
     function MetadataEditorCtrl(EventService) {
         var ctrl = this;

@@ -114,10 +114,10 @@ public class ExtensionManager {
     Optional<AlfioMetadata> handleGenerateMeetingLinkCapability(Event event,
                                                                 Organization organization,
                                                                 AlfioMetadata existingMetadata,
-                                                                Map<String, String> params) {
+                                                                Map<String, String> requestParams) {
         Map<String, Object> context = buildMetadataUpdatePayload(organization, existingMetadata);
-        context.putAll(params);
-        return executeCapability(ExtensionCapability.GENERATE_MEETING_LINK, context, event, AlfioMetadata.class);
+        context.put("request", requestParams);
+        return internalExecuteCapability(ExtensionCapability.GENERATE_MEETING_LINK, context, event, AlfioMetadata.class);
     }
 
     private Map<String, Object> buildMetadataUpdatePayload(Organization organization, AlfioMetadata metadata) {
@@ -468,12 +468,21 @@ public class ExtensionManager {
     }
 
     public <T> Optional<T> executeCapability(ExtensionCapability capability,
-                                             Map<String, ?> params,
+                                             Map<String, String> params,
                                              PurchaseContext purchaseContext,
                                              Class<T> resultType) {
+        var contextParams = new HashMap<String, Object>();
+        contextParams.put("request", params);
+        return internalExecuteCapability(capability, contextParams, purchaseContext, resultType);
+    }
+
+    private <T> Optional<T> internalExecuteCapability(ExtensionCapability capability,
+                                                      Map<String, Object> contextParams,
+                                                      PurchaseContext purchaseContext,
+                                                      Class<T> resultType) {
         return extensionService.executeCapability(capability,
             toPath(purchaseContext),
-            fillWithBasicInfo(params, purchaseContext),
+            fillWithBasicInfo(contextParams, purchaseContext),
             resultType);
     }
 

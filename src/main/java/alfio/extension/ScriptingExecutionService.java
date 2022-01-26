@@ -17,7 +17,10 @@
 
 package alfio.extension;
 
+import alfio.extension.exception.AlfioScriptingException;
+import alfio.extension.exception.InvalidScriptException;
 import alfio.extension.exception.OutOfBoundariesException;
+import alfio.extension.exception.ScriptRuntimeException;
 import alfio.extension.support.SandboxContextFactory;
 import alfio.manager.system.AdminJobManager;
 import alfio.repository.system.AdminJobQueueRepository;
@@ -30,13 +33,11 @@ import lombok.extern.log4j.Log4j2;
 import org.mozilla.javascript.*;
 import org.springframework.stereotype.Service;
 
+import java.net.ConnectException;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -60,6 +61,8 @@ public class ScriptingExecutionService {
     public static final String EXTENSION_PATH = "path";
     public static final String EXTENSION_PARAMS = "params";
     public static final String EXTENSION_CONFIGURATION_PARAMETERS = "extensionParameters";
+    static final String CONNECT_EXCEPTION_MESSAGE = "Cannot connect to remote service. Please check your configuration";
+    static final String DEFAULT_ERROR_MESSAGE = "Error while executing extension. Please retry.";
 
     private final Supplier<Executor> executorSupplier;
     private final ScriptableObject sealedScope;
@@ -113,7 +116,7 @@ public class ScriptingExecutionService {
             .ifPresent(it -> it.execute(() -> {
                 try {
                     executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger);
-                } catch(IllegalStateException ex) {
+                } catch (AlfioScriptingException | IllegalStateException ex) {
                     // we got an error while executing the script. We must now re-schedule the script to be executed again
                     // at a later time
                     var paramsCopy = new HashMap<>(params);
@@ -201,15 +204,50 @@ public class ScriptingExecutionService {
             } else {
                 return null;
             }
-        } catch (Throwable ex) { //
-            extensionLogger.logError("Error while executing script: " + ex.getMessage());
-            if (ex instanceof EcmaError || ex instanceof OutOfBoundariesException) {
-                throw new OutOfBoundariesException("Out of boundaries class use.", ex);
+        } catch (EcmaError ex) {
+            log.warn("Syntax error detected in script " + name, ex);
+            extensionLogger.logError("Syntax error while executing script: " + ex.getMessage() + "(" + ex.lineNumber() + ":" + ex.columnNumber() + ")");
+            throw new InvalidScriptException("Syntax error in script " + name);
+        } catch (WrappedException ex) {
+            var actualException = ex.getWrappedException();
+            var message = getErrorMessage(actualException);
+            extensionLogger.logError("Error from script: " + message);
+            throw new AlfioScriptingException(message, actualException);
+        } catch (JavaScriptException ex) {
+            String message;
+            if (ex.getValue() != null) {
+                message = ex.details();
+            } else {
+                message = ex.getMessage();
             }
+            extensionLogger.logError(message);
+            throw new ScriptRuntimeException(message, ex);
+        } catch (OutOfBoundariesException ex) {
+            throw ex;
+        } catch (Exception ex) { //
+            extensionLogger.logError("Error while executing script: " + ex.getMessage());
             throw new IllegalStateException(ex);
         } finally {
             Context.exit();
         }
+    }
+
+    String getErrorMessage(Throwable ex) {
+        if (ex.getMessage() != null) {
+            return ex.getMessage();
+        }
+        Throwable root = ex;
+        String lastMessage = root.getMessage();
+        while(root.getCause() != null) {
+            root = root.getCause();
+            if (root instanceof ConnectException) {
+                return CONNECT_EXCEPTION_MESSAGE;
+            }
+            if (root.getMessage() != null) {
+                lastMessage = root.getMessage();
+            }
+        }
+        return Objects.requireNonNullElse(lastMessage, DEFAULT_ERROR_MESSAGE);
     }
 
     private Object convertExtensionParameters(Scriptable context, Object extensionParameters) {
