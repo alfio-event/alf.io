@@ -93,7 +93,7 @@ public class UploadedResourceManager {
             uploadedResourceRepository.delete(file.getName());
         }
 
-        return Optional.ofNullable(uploadedResourceRepository.upload(null, null, file, getAttributes(file)));
+        return Optional.of(uploadedResourceRepository.upload(null, null, file, getAttributes(file)));
     }
 
     public Optional<Integer> saveResource(int organizationId, UploadBase64FileModification file) {
@@ -101,7 +101,7 @@ public class UploadedResourceManager {
             uploadedResourceRepository.delete(organizationId, file.getName());
         }
 
-        return Optional.ofNullable(uploadedResourceRepository.upload(organizationId, null, file, getAttributes(file)));
+        return Optional.of(uploadedResourceRepository.upload(organizationId, null, file, getAttributes(file)));
     }
 
     public Optional<Integer> saveResource(int organizationId, int eventId, UploadBase64FileModification file) {

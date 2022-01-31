@@ -217,7 +217,7 @@ dependencies {
 
     testImplementation 'org.seleniumhq.selenium:selenium-java:4.1.1'
 
-    errorprone('com.google.errorprone:error_prone_core:2.4.0')
+    errorprone('com.google.errorprone:error_prone_core:2.10.0')
 }
 
 // -- license configuration
@@ -292,7 +292,8 @@ compileTestJava {
         'AlmostJavadoc',
         'MissingSummary',
         'EscapedEntity',
-        'EmptyBlockTag'
+        'EmptyBlockTag',
+        'SameNameButDifferent'
     )
 }
 
@@ -307,7 +308,9 @@ compileJava {
         'AlmostJavadoc',
         'MissingSummary',
         'EscapedEntity',
-        'EmptyBlockTag'
+        'EmptyBlockTag',
+        'SameNameButDifferent',
+        'ReturnValueIgnored'
     )
 }
 
