@@ -21,9 +21,9 @@ If you want to build and deploy alf.io by yourself, we strongly suggest you to u
 
 ## Prerequisites
 
-You should have installed Java version **11** (e.g. [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html), [OpenJDK](http://openjdk.java.net/install/), or any other distribution) to build and run alf.io. Please note that for the build process the JDK is required.
+You should have installed Java version **17** (e.g. [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html), [OpenJDK](http://openjdk.java.net/install/), or any other distribution) to build and run alf.io. Please note that for the build process the JDK is required.
 
-Postgresql version 9.6 or later.
+Postgresql version 10 or later.
 
 Additionally, the database user that creates and uses the tables should not be a "SUPERUSER", or else the row security policy checks will not be applied.
 
@@ -46,7 +46,7 @@ You must specify a project property at the command line, such as
 ```
 The local "bootRun" task has the following prerequisites:
 
-- a PostgreSQL (version 9.6 or later) instance up and running on localhost:5432
+- a PostgreSQL (version 10 or later) instance up and running on localhost:5432
 - a _postgres_ user having a password: _password_
 - a database named _alfio_
 

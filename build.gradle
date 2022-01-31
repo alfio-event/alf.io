@@ -56,8 +56,8 @@ apply plugin: 'project-report'
 task validate {
     //check JDK version
     def javaVersion = JavaVersion.current()
-    if (!javaVersion.isJava11Compatible()) {
-        throw new GradleException("A Java JDK 11+ is required to build the project.")
+    if (!javaVersion.isCompatibleWith(JavaVersion.VERSION_17)) {
+        throw new GradleException("A Java JDK 17+ is required to build the project.")
     }
 }
 
@@ -321,7 +321,6 @@ test {
     useJUnitPlatform()
     systemProperties = System.properties
     systemProperties.remove("java.endorsed.dirs")
-    jvmArgs("--illegal-access=warn")
     testLogging {
         events "failed"
         exceptionFormat "full"
