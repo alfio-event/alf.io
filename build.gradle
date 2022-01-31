@@ -151,7 +151,7 @@ dependencies {
     implementation 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.17.0'
     implementation 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     implementation 'com.github.ben-manes.caffeine:caffeine'
-    implementation 'com.github.scribejava:scribejava-core:5.0.0'
+    implementation 'com.github.scribejava:scribejava-core:8.3.1'
     implementation 'ch.digitalfondue.vatchecker:vatchecker:1.5.0'
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'

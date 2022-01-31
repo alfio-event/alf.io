@@ -63,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest()
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class TicketReservationManagerConcurrentTest {
+class TicketReservationManagerConcurrentTest {
 
     private static final String ACCESS_CODE = "MY_ACCESS_CODE";
 
@@ -121,14 +121,14 @@ public class TicketReservationManagerConcurrentTest {
     }
 
     @Test
-    public void testConcurrentAccessCode() throws InterruptedException {
+    void testConcurrentAccessCode() throws InterruptedException {
         var pool = Executors.newFixedThreadPool(AVAILABLE_SEATS);
         var callableList = new ArrayList<Callable<List<SpecialPrice>>>();
         for (int i = 0; i < AVAILABLE_SEATS; i++) {
             callableList.add(() -> {
                 return transactionTemplate.execute(tx -> {
                     TicketReservationModification tr = new TicketReservationModification();
-                    tr.setAmount(1);
+                    tr.setQuantity(1);
                     tr.setTicketCategoryId(firstCategoryId);
                     TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
                     return ticketReservationManager.reserveTokensForAccessCode(mod, promoCodeDiscount);
@@ -153,9 +153,9 @@ public class TicketReservationManagerConcurrentTest {
     }
 
     @Test
-    public void testExpirationDuringReservation() {
+    void testExpirationDuringReservation() {
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(1);
+        tr.setQuantity(1);
         tr.setTicketCategoryId(firstCategoryId);
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 

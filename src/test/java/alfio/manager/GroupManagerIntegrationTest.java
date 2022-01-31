@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class GroupManagerIntegrationTest extends BaseIntegrationTest {
+class GroupManagerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private EventManager eventManager;
@@ -93,7 +93,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testLinkToEvent() {
+    void testLinkToEvent() {
 
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
@@ -121,7 +121,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
 
         TicketReservationModification ticketReservation = new TicketReservationModification();
-        ticketReservation.setAmount(1);
+        ticketReservation.setQuantity(1);
         ticketReservation.setTicketCategoryId(categoryId);
 
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty())),
@@ -142,7 +142,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testDuplicates() {
+    void testDuplicates() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),

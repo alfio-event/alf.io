@@ -74,7 +74,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
+class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
 
     private final ClockProvider clockProvider;
     private final OrganizationRepository organizationRepository;
@@ -218,11 +218,11 @@ public class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
 
         var form = new ReservationForm();
         var first = new TicketReservationModification();
-        first.setAmount(2);
+        first.setQuantity(2);
         first.setTicketCategoryId(categories.get(0).getId());
 
         var second = new TicketReservationModification();
-        second.setAmount(2);
+        second.setQuantity(2);
         second.setTicketCategoryId(categories.get(1).getId());
 
         form.setReservation(List.of(first, second));

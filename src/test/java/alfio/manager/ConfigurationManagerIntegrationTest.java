@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
+class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
     public static final String USERNAME = "test";
 
@@ -90,10 +90,10 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     private TicketCategoryRepository ticketCategoryRepository;
 
     @BeforeEach
-    public void prepareEnv() {
+    void prepareEnv() {
         //setup...
         organizationRepository.create("org", "org", "email@example.com", null, null);
-        Organization organization = organizationRepository.findByName("org").get();
+        Organization organization = organizationRepository.findByName("org").orElseThrow();
 
         userManager.insertUser(organization.getId(), USERNAME, "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);
 
@@ -121,33 +121,33 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testPresentStringConfigValue() {
+    void testPresentStringConfigValue() {
         assertEquals(Optional.of("5"), configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getValue());
     }
 
     @Test
-    public void testEmptyStringConfigValue() {
+    void testEmptyStringConfigValue() {
         assertTrue(configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getValue().isEmpty());
     }
 
     @Test
-    public void testStringValueWithDefault() {
+    void testStringValueWithDefault() {
         assertEquals("5", configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getRequiredValue());
         assertEquals("-1", configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getValueOrDefault("-1"));
     }
 
     @Test
-    public void testMissingConfigValue() {
+    void testMissingConfigValue() {
         assertThrows(IllegalArgumentException.class, () -> configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getRequiredValue());
     }
 
     @Test
-    public void testRequiredValue() {
+    void testRequiredValue() {
         assertEquals("5", configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getRequiredValue());
     }
 
     @Test
-    public void testIntValue() {
+    void testIntValue() {
         assertEquals(5, configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getValueAsIntOrDefault(-1));
 
         //missing value
@@ -161,7 +161,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testBooleanValue() {
+    void testBooleanValue() {
         //missing value
         assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault());
 
@@ -175,7 +175,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testOverrideMechanism() {
+    void testOverrideMechanism() {
 
         Organization organization = organizationRepository.findByName("org").orElseThrow();
 
@@ -208,7 +208,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testBasicConfigurationNotNeeded() {
+    void testBasicConfigurationNotNeeded() {
 
         configurationRepository.deleteByKey(ConfigurationKeys.BASE_URL.getValue());
         configurationRepository.deleteByKey(ConfigurationKeys.SUPPORTED_LANGUAGES.getValue());
@@ -221,7 +221,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testSaveOnlyExistingConfiguration() {
+    void testSaveOnlyExistingConfiguration() {
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), "MY-ACCOUNT_NUMBER", "empty");
         Configuration existing = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue()).orElseThrow(IllegalStateException::new);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> all = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
@@ -239,7 +239,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testSaveOnlyValidConfiguration() {
+    void testSaveOnlyValidConfiguration() {
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), "MY-ACCOUNT_NUMBER", "empty");
         Configuration existing = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue()).orElseThrow(IllegalStateException::new);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> all = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
@@ -263,7 +263,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testLoadOrganizationConfiguration() {
+    void testLoadOrganizationConfiguration() {
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> orgConf = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
         assertEquals(ConfigurationKeys.byPathLevel(ConfigurationPathLevel.ORGANIZATION).size(), orgConf.values().stream().mapToLong(Collection::size).sum());
         String value = "MY-ACCOUNT_NUMBER";
@@ -274,13 +274,13 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testBasicConfigurationNeeded() {
+    void testBasicConfigurationNeeded() {
         configurationRepository.deleteByKey(ConfigurationKeys.BASE_URL.getValue());
         assertTrue(configurationManager.isBasicConfigurationNeeded());
     }
 
     @Test
-    public void testSaveBooleanOptions() {
+    void testSaveBooleanOptions() {
         String ftcKey = ALLOW_FREE_TICKETS_CANCELLATION.getValue();
         configurationRepository.insert(ftcKey, "false", "this should be updated to true");
         ConfigurationModification ftc = new ConfigurationModification(configurationRepository.findByKey(ftcKey).getId(), ftcKey, "true");
@@ -317,7 +317,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testBulk() {
+    void testBulk() {
         Event event = eventManager.getSingleEvent("eventShortName", "test");
 
         var res = configurationManager.getFor(Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION), ConfigurationLevel.event(event));

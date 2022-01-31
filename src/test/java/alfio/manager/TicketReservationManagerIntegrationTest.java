@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
+class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
     static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
     private static final String ACCESS_CODE = "MYACCESSCODE";
@@ -107,12 +107,12 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     private NamedParameterJdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    public void ensureConfiguration() {
+    void ensureConfiguration() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
     }
 
     @Test
-    public void testPriceIsOverridden() {
+    void testPriceIsOverridden() {
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -122,7 +122,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(2);
+        tr.setQuantity(2);
         TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
@@ -136,7 +136,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testTicketSelection() {
+    void testTicketSelection() {
         List<TicketCategoryModification> categories = List.of(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -157,11 +157,11 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId(), 0, null).size());
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(10);
+        tr.setQuantity(10);
         tr.setTicketCategoryId(bounded.getId());
 
         TicketReservationModification tr2 = new TicketReservationModification();
-        tr2.setAmount(9);
+        tr2.setQuantity(9);
         tr2.setTicketCategoryId(unbounded.getId());
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
@@ -220,7 +220,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         //-------------------
 
         TicketReservationModification trForDelete = new TicketReservationModification();
-        trForDelete.setAmount(1);
+        trForDelete.setQuantity(1);
         trForDelete.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.empty());
         String reservationId2 = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDelete), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
@@ -238,7 +238,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void deferredOfflinePayment() {
+    void deferredOfflinePayment() {
         // enable deferred payment
         configurationRepository.insert(DEFERRED_BANK_TRANSFER_ENABLED.name(), "true", "");
 
@@ -254,7 +254,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
 
         TicketReservationModification trForDeferred = new TicketReservationModification();
-        trForDeferred.setAmount(1);
+        trForDeferred.setQuantity(1);
         trForDeferred.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modForDeferred = new TicketReservationWithOptionalCodeModification(trForDeferred, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDeferred), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
@@ -297,7 +297,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testTicketWithDiscount() {
+    void testTicketWithDiscount() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -314,7 +314,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         eventManager.addPromoCode("MYFIXEDPROMO", null, event.getOrganizationId(), event.getBegin(), event.getEnd(), 5, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, null, null,"description", "email@reference.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(3);
+        tr.setQuantity(3);
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
@@ -338,7 +338,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
 
         TicketReservationModification trFixed = new TicketReservationModification();
-        trFixed.setAmount(3);
+        trFixed.setQuantity(3);
         trFixed.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modFixed = new TicketReservationWithOptionalCodeModification(trFixed, Optional.empty());
 
@@ -364,7 +364,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         //check if we try to fetch more than the limit
 
         TicketReservationModification trTooMuch = new TicketReservationModification();
-        trTooMuch.setAmount(4);
+        trTooMuch.setQuantity(4);
         trTooMuch.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
         assertThrows(TicketReservationManager.TooManyTicketsForDiscountCodeException.class,
@@ -372,7 +372,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testAdditionalServiceWithDiscount() {
+    void testAdditionalServiceWithDiscount() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -389,7 +389,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         eventManager.addPromoCode("MYPROMOCODE", event.getId(), null, event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "email@reference.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(3);
+        tr.setQuantity(3);
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
@@ -417,7 +417,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testAccessCode() {
+    void testAccessCode() {
         testTicketsWithAccessCode();
     }
 
@@ -438,7 +438,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         eventManager.addPromoCode(accessCode, event.getId(), null, event.getBegin(), event.getEnd(), 0, null, null, 3, "description", "email@reference.ch", PromoCodeDiscount.CodeType.ACCESS, category.getId());
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(3);
+        tr.setQuantity(3);
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
@@ -466,10 +466,10 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testAccessCodeLimit() {
+    void testAccessCodeLimit() {
         var triple = testTicketsWithAccessCode();
         TicketReservationModification trTooMuch = new TicketReservationModification();
-        trTooMuch.setAmount(1);
+        trTooMuch.setQuantity(1);
         trTooMuch.setTicketCategoryId(triple.getMiddle().getId());
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
         assertThrows(TicketReservationManager.TooManyTicketsForDiscountCodeException.class,
@@ -477,10 +477,10 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testAccessCodeReleaseTickets() {
+    void testAccessCodeReleaseTickets() {
         var triple = testTicketsWithAccessCode();
         TicketReservationModification trTooMuch = new TicketReservationModification();
-        trTooMuch.setAmount(1);
+        trTooMuch.setQuantity(1);
         trTooMuch.setTicketCategoryId(triple.getMiddle().getId());
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
         ticketReservationManager.cancelPendingReservation(triple.getRight(), true, null);
@@ -492,7 +492,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testWithAdditionalServices() {
+    void testWithAdditionalServices() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -507,7 +507,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(3);
+        tr.setQuantity(3);
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
@@ -540,7 +540,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testTicketSelectionNotEnoughTicketsAvailable() {
+    void testTicketSelectionNotEnoughTicketsAvailable() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -551,7 +551,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(AVAILABLE_SEATS + 1);
+        tr.setQuantity(AVAILABLE_SEATS + 1);
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
@@ -559,7 +559,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testDeletePendingPaymentUnboundedCategory() {
+    void testDeletePendingPaymentUnboundedCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -570,7 +570,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(AVAILABLE_SEATS / 2 + 1);
+        tr.setQuantity(AVAILABLE_SEATS / 2 + 1);
         tr.setTicketCategoryId(unbounded.getId());
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
@@ -600,7 +600,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
 
     @Test
-    public void testCleanupExpiredReservations() {
+    void testCleanupExpiredReservations() {
 
         var testCases = List.of(
             // 1st test case: bounded category, max 10 tickets
@@ -625,7 +625,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             boolean bounded = category.isBounded();
 
             TicketReservationModification tr = new TicketReservationModification();
-            tr.setAmount(10);
+            tr.setQuantity(10);
             tr.setTicketCategoryId(category.getId());
 
             TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
@@ -663,7 +663,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     }
 
     @Test
-    public void testCleanupOfflineExpiredReservations() {
+    void testCleanupOfflineExpiredReservations() {
         List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -676,7 +676,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(10);
+        tr.setQuantity(10);
         tr.setTicketCategoryId(bounded.getId());
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());

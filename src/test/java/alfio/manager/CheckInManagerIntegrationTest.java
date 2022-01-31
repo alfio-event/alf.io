@@ -114,7 +114,7 @@ class CheckInManagerIntegrationTest {
         var additionalService = eventManager.insertAdditionalService(event, additionalServiceRequest);
         var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(AVAILABLE_SEATS);
+        tr.setQuantity(AVAILABLE_SEATS);
         tr.setTicketCategoryId(category.getId());
 
         var tickets = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());

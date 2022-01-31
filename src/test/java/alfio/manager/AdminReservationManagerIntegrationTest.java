@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
+class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private AdminReservationManager adminReservationManager;
@@ -86,12 +86,12 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     private ConfigurationRepository configurationRepository;
 
     @BeforeEach
-    public void init() {
+    void init() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
     }
 
     @Test
-    public void testReserveFromExistingCategory() {
+    void testReserveFromExistingCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -101,7 +101,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingMultipleCategories() {
+    void testReserveFromExistingMultipleCategories() {
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -115,7 +115,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingCategoryNotEnoughSeatsNotBounded() {
+    void testReserveFromExistingCategoryNotEnoughSeatsNotBounded() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -125,7 +125,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveExistingCategoryNotEnoughSeatsNotBoundedSoldOut() {
+    void testReserveExistingCategoryNotEnoughSeatsNotBoundedSoldOut() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -135,7 +135,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingCategoryNotEnoughSeatsBounded() {
+    void testReserveFromExistingCategoryNotEnoughSeatsBounded() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -145,7 +145,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingCategoryNotEnoughSeatsNoExtensionAllowedBounded() {
+    void testReserveFromExistingCategoryNotEnoughSeatsNoExtensionAllowedBounded() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -155,7 +155,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromExistingCategoryNotEnoughSeatsNoExtensionAllowedNotBounded() {
+    void testReserveFromExistingCategoryNotEnoughSeatsNoExtensionAllowedNotBounded() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -165,7 +165,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveFromNewCategory() {
+    void testReserveFromNewCategory() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -199,7 +199,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testReserveMixed() {
+    void testReserveMixed() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -245,7 +245,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testConfirmReservation() {
+    void testConfirmReservation() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -266,7 +266,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     }
 
     @Test
-    public void testConfirmReservationSendConfirmationEmail() {
+    void testConfirmReservationSendConfirmationEmail() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -310,7 +310,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
 
         if(reservedTickets > 0) {
             TicketReservationModification trm = new TicketReservationModification();
-            trm.setAmount(reservedTickets);
+            trm.setQuantity(reservedTickets);
             trm.setTicketCategoryId(existingCategories.get(0).getId());
             TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
             ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);

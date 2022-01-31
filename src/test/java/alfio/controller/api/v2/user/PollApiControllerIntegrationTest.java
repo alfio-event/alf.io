@@ -119,7 +119,7 @@ class PollApiControllerIntegrationTest {
         pollId = rowCountAndKey.getKey();
         LOGGER.info("pollId {}", pollId);
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(1);
+        tr.setQuantity(1);
         TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());

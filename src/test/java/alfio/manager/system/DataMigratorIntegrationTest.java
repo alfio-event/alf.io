@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class DataMigratorIntegrationTest extends BaseIntegrationTest {
+class DataMigratorIntegrationTest extends BaseIntegrationTest {
 
     private static final int AVAILABLE_SEATS = 20;
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
@@ -118,7 +118,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testMigration() {
+    void testMigration() {
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -147,7 +147,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testMigrationWithExistingRecord() {
+    void testMigrationWithExistingRecord() {
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -176,7 +176,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testAlreadyMigratedEvent() {
+    void testAlreadyMigratedEvent() {
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -206,7 +206,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testUpdateDisplayName() {
+    void testUpdateDisplayName() {
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -232,7 +232,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testUpdateTicketReservation() {
+    void testUpdateTicketReservation() {
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -242,7 +242,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         Event event = eventUsername.getKey();
         try {
 	        TicketReservationModification trm = new TicketReservationModification();
-	        trm.setAmount(1);
+	        trm.setQuantity(1);
 	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
@@ -256,7 +256,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testFixCategoriesSize() {
+    void testFixCategoriesSize() {
         List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS -1,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -279,7 +279,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testFixStuckTickets() {
+    void testFixStuckTickets() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
@@ -288,7 +288,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
         TicketReservationModification trm = new TicketReservationModification();
-        trm.setAmount(1);
+        trm.setQuantity(1);
         trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
         TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
         Date expiration = DateUtils.addDays(new Date(), 1);
