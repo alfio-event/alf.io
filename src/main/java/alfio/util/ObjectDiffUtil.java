@@ -36,7 +36,7 @@ public class ObjectDiffUtil {
     }
 
     private static String formatPropertyName(String k, String propertyNameBefore, String propertyNameAfter) {
-        return new StringBuilder(propertyNameBefore).append(k).append(propertyNameAfter).toString();
+        return propertyNameBefore + k + propertyNameAfter;
     }
 
     private static List<Change> diffUntyped(Map<String, ?> before, Map<String, ?> after, String propertyNameBefore, String propertyNameAfter) {
@@ -54,7 +54,7 @@ public class ObjectDiffUtil {
 
         removed.stream().map(k -> new Change(formatPropertyName(k, propertyNameBefore, propertyNameAfter), State.REMOVED, before.get(k), null)).forEach(changes::add);
         added.stream().map(k -> new Change(formatPropertyName(k, propertyNameBefore, propertyNameAfter), State.ADDED, null, after.get(k))).forEach(changes::add);
-        changedOrUntouched.stream().forEach(k -> {
+        changedOrUntouched.forEach(k -> {
             var beforeValue = before.get(k);
             var afterValue = after.get(k);
             if(!Objects.equals(beforeValue, afterValue)) {
@@ -66,10 +66,13 @@ public class ObjectDiffUtil {
     }
 
     public static List<Change> diff(Ticket before, Ticket after) {
+        return diff(before, after, Ticket.class);
+    }
 
+    public static <T> List<Change> diff(T before, T after, Class<T> objectType) {
         var beforeAsMap = new HashMap<String, Object>();
         var afterAsMap = new HashMap<String, Object>();
-        Stream.of(BeanUtils.getPropertyDescriptors(Ticket.class)).forEach(propertyDescriptor -> {
+        Stream.of(BeanUtils.getPropertyDescriptors(objectType)).forEach(propertyDescriptor -> {
             var method = propertyDescriptor.getReadMethod();
             var name = propertyDescriptor.getName();
             if (method != null) {

@@ -51,7 +51,7 @@ class TemplateResourceTest {
         ticketReservation = mock(TicketReservation.class);
         ticketCategory = mock(TicketCategory.class);
         ticket = mock(Ticket.class);
-        ticketWithMetadata = new TicketWithMetadataAttributes(ticket, null);
+        ticketWithMetadata = TicketWithMetadataAttributes.build(ticket, null);
     }
 
     @Test

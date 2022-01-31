@@ -18,7 +18,6 @@ package alfio.repository;
 
 import alfio.model.*;
 import alfio.model.checkin.OnlineCheckInFullInfo;
-import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.poll.PollParticipant;
 import alfio.model.support.Array;
@@ -34,9 +33,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.Supplier;
 
 @QueryRepository
 public interface TicketRepository {
@@ -46,6 +43,7 @@ public interface TicketRepository {
     String RELEASED = "RELEASED";
     String REVERT_TO_FREE = "update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId";
     String SORT_TICKETS = "order by category_id asc, uuid asc";
+    String FIND_TICKETS_IN_RESERVATION = "select * from ticket where tickets_reservation_id = :reservationId " + SORT_TICKETS;
 
     String RESET_TICKET = " TICKETS_RESERVATION_ID = null, FULL_NAME = null, EMAIL_ADDRESS = null, SPECIAL_PRICE_ID_FK = null, LOCKED_ASSIGNMENT = false, USER_LANGUAGE = null, REMINDER_SENT = false, SRC_PRICE_CTS = 0, FINAL_PRICE_CTS = 0, VAT_CTS = 0, DISCOUNT_CTS = 0, FIRST_NAME = null, LAST_NAME = null, EXT_REFERENCE = null, TAGS = array[]::text[], VAT_STATUS = null, METADATA = '{}'::jsonb ";
     String RELEASE_TICKET_QUERY = "update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status in('ACQUIRED', 'PENDING', 'TO_BE_PAID') and tickets_reservation_id = :reservationId and event_id = :eventId";
@@ -211,7 +209,7 @@ public interface TicketRepository {
     @Query("update ticket set category_id = null where event_id = :eventId and category_id = :categoryId and id in (:ticketIds)")
     int unbindTicketsFromCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("ticketIds") List<Integer> ids);
 
-    @Query("select * from ticket where tickets_reservation_id = :reservationId " + SORT_TICKETS)
+    @Query(FIND_TICKETS_IN_RESERVATION)
     List<Ticket> findTicketsInReservation(@Bind("reservationId") String reservationId);
 
     @Query("select id from ticket where tickets_reservation_id = :reservationId " + SORT_TICKETS)
@@ -445,5 +443,8 @@ public interface TicketRepository {
 
     @Query("update ticket set vat_status = :vatStatus::VAT_STATUS where tickets_reservation_id = :reservationId")
     int updateVatStatusForReservation(@Bind("reservationId") String reservationId, @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus);
+
+    @Query(FIND_TICKETS_IN_RESERVATION)
+    List<TicketWithMetadataAttributes> findTicketsInReservationWithMetadata(@Bind("reservationId") String reservationId);
 
 }

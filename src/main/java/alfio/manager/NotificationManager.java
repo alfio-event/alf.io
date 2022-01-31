@@ -147,7 +147,7 @@ public class NotificationManager {
                 TicketCategory ticketCategory = Json.fromJson(model.get("ticketCategory"), TicketCategory.class);
                 Event event = eventRepository.findById(ticket.getEventId());
                 Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
-                var ticketWithMetadata = new TicketWithMetadataAttributes(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
+                var ticketWithMetadata = TicketWithMetadataAttributes.build(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
                 TemplateProcessor.renderPDFTicket(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), event, reservation,
                     ticketWithMetadata, ticketCategory, organization, templateManager, fileUploadManager,
                     configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager);

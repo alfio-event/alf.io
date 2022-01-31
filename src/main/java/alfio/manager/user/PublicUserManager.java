@@ -117,11 +117,8 @@ public class PublicUserManager {
         var userLanguage = form.getUserLanguage();
         var filteredItems = extensionManager.filterAdditionalInfoToSave(purchaseContext, form.getAdditional(), existingProfile);
         final Map<String, AdditionalInfoItem> filteredItemsByKey;
-        if(filteredItems != null) {
-            filteredItemsByKey = filteredItems.stream().collect(toMap(AdditionalInfoItem::getKey, Function.identity()));
-        } else {
-            filteredItemsByKey = null;
-        }
+        filteredItemsByKey = filteredItems.map(additionalInfoItems -> additionalInfoItems.stream().collect(toMap(AdditionalInfoItem::getKey, Function.identity())))
+            .orElse(null);
         var labels = ticketFieldRepository.findDescriptions(event.getId(), userLanguage).stream()
             .filter(f -> fieldsById.containsKey(f.getTicketFieldConfigurationId()))
             .map(f -> Map.entry(fieldsById.get(f.getTicketFieldConfigurationId()).getName(), f))

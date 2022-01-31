@@ -181,7 +181,7 @@ public enum TemplateResource {
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             var now = event.now(ClockProvider.clock());
             TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null, TicketCategory.TicketAccessType.INHERIT);
-            var ticketWithMetadata = new TicketWithMetadataAttributes(sampleTicket(event.getZoneId()), null);
+            var ticketWithMetadata = TicketWithMetadataAttributes.build(sampleTicket(event.getZoneId()), null);
             return buildModelForTicketPDF(organization, event, sampleTicketReservation(event.getZoneId()), ticketCategory, ticketWithMetadata, imageData, "ABCD", Collections.emptyMap());
         }
     },

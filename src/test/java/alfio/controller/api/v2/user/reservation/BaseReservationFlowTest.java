@@ -430,7 +430,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var form = new ReservationForm();
             var ticketReservation = new TicketReservationModification();
             form.setPromoCode("DYNAMIC_CODE");
-            ticketReservation.setAmount(1);
+            ticketReservation.setQuantity(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
             var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
@@ -464,7 +464,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var form = new ReservationForm();
             var ticketReservation = new TicketReservationModification();
             form.setPromoCode(HIDDEN_CODE);
-            ticketReservation.setAmount(1);
+            ticketReservation.setQuantity(1);
             ticketReservation.setTicketCategoryId(hiddenCat.getId());
             form.setReservation(Collections.singletonList(ticketReservation));
             var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), context.getPublicUser());
@@ -600,7 +600,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         {
             var form = new ReservationForm();
             var ticketReservation = new TicketReservationModification();
-            ticketReservation.setAmount(1);
+            ticketReservation.setQuantity(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
             var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), context.getPublicUser());
@@ -625,12 +625,12 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var categories = eventApiV2Controller.getTicketCategories(context.event.getShortName(), HIDDEN_CODE).getBody().getTicketCategories();
 
             var c1 = new TicketReservationModification();
-            c1.setAmount(1);
+            c1.setQuantity(1);
             int firstCategoryId = categories.get(0).getId();
             c1.setTicketCategoryId(firstCategoryId);
 
             var c2 = new TicketReservationModification();
-            c2.setAmount(1);
+            c2.setQuantity(1);
             c2.setTicketCategoryId(categories.get(1).getId());
 
             form.setReservation(List.of(c1, c2));
@@ -656,7 +656,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         {
             var form = new ReservationForm();
             var ticketReservation = new TicketReservationModification();
-            ticketReservation.setAmount(2);
+            ticketReservation.setQuantity(2);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
 
@@ -742,7 +742,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         {
             var form = new ReservationForm();
             var ticketReservation = new TicketReservationModification();
-            ticketReservation.setAmount(1);
+            ticketReservation.setQuantity(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
             var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), context.getPublicUser());
@@ -870,13 +870,14 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
 
             boolean online = containsOnlineTickets(context, reservationId);
-            assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 10 : 8);
-            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 10 : 8);
-            assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 10 : 8);
+            assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 12 : 10);
+            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 12 : 10);
+            assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 12 : 10);
             if(online) {
-                assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 10);
+                assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 12);
             }
-            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 10 : 8);
+            assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA, online ? 12 : 10);
+            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 10);
 
 
 

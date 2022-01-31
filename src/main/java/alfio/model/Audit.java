@@ -77,7 +77,7 @@ public class Audit {
         AUTOMATIC_PAYMENT_CONFIRMATION_FAILED,
         DYNAMIC_DISCOUNT_CODE_CREATED,
         SUBSCRIPTION_ACQUIRED,
-        WARNING_IGNORED
+        UPDATE_TICKET_METADATA, WARNING_IGNORED
     }
 
     private final String reservationId;

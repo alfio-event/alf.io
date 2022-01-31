@@ -189,3 +189,33 @@ A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/m
         </tbody>
     </table>
 </div>
+
+### Customize ticket metadata
+`TICKET_ASSIGNED_GENERATE_METADATA`
+
+Fired **synchronously** before marking a ticket as "acquired". The purpose of this extension is to allow metadata customization.
+
+A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/TicketMetadata.java) is expected. Return `null` if you don't need to modify the current metadata.
+<div class="table-responsive table-hover">
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Type</th>
+                <th>About</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>`ticket`</td>
+                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
+                <td>Details about the ticket</td>
+            </tr>
+            <tr>
+                <td>`ticketMetadata`</td>
+                <td>[`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/TicketMetadata.java)</td>
+                <td>Existing metadata for ticket.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -21,16 +21,25 @@ import org.postgresql.util.PSQLException;
 import org.postgresql.util.ServerErrorMessage;
 import org.springframework.jdbc.UncategorizedSQLException;
 
+import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 @UtilityClass
 public class SqlUtils {
-    public Optional<ServerErrorMessage> findServerError(UncategorizedSQLException exception) {
+    public static Optional<ServerErrorMessage> findServerError(UncategorizedSQLException exception) {
         for (var throwable : exception.getSQLException()) {
             if(throwable instanceof PSQLException && ((PSQLException)throwable).getServerErrorMessage() != null) {
                 return Optional.ofNullable(((PSQLException)throwable).getServerErrorMessage());
             }
         }
         return Optional.empty();
+    }
+
+    public static ZonedDateTime timestampToZoneDateTime(Timestamp timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+        return ZonedDateTime.ofInstant(timestamp.toInstant(), ClockProvider.clock().getZone());
     }
 }

@@ -83,4 +83,13 @@ public class TicketMetadataContainer {
         }
         return null;
     }
+
+    public static TicketMetadataContainer copyOf(TicketMetadataContainer src) {
+        if (src != null) {
+            Map<String, TicketMetadata> newMap = new HashMap<>();
+            src.metadataMap.forEach((key, tm) -> newMap.put(key, TicketMetadata.copyOf(tm)));
+            return new TicketMetadataContainer(newMap);
+        }
+        return null;
+    }
 }

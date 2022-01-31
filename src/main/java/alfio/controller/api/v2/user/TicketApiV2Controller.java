@@ -122,7 +122,7 @@ public class TicketApiV2Controller {
                 TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
-                var ticketWithMetadata = new TicketWithMetadataAttributes(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
+                var ticketWithMetadata = TicketWithMetadataAttributes.build(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
                 TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(ticketReservation.getUserLanguage(), event)), event, ticketReservation,
                     ticketWithMetadata, ticketCategory, organization,
                     templateManager, fileUploadManager,

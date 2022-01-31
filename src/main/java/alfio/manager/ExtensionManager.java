@@ -76,6 +76,7 @@ public class ExtensionManager {
     private static final String ORGANIZATION_ID = "organizationId";
     private static final String RESERVATION_ID = "reservationId";
     private static final String EVENT = "event";
+    public static final String TICKET_METADATA = "ticketMetadata";
     private final ExtensionService extensionService;
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
@@ -359,7 +360,7 @@ public class ExtensionManager {
      * @param userProfile existing user profile, may be null
      * @return the keys to persist, or {@code null}
      */
-    public List<AdditionalInfoItem> filterAdditionalInfoToSave(PurchaseContext purchaseContext,
+    public Optional<List<AdditionalInfoItem>> filterAdditionalInfoToSave(PurchaseContext purchaseContext,
                                                                Map<String, List<String>> userAdditionalData,
                                                                PublicUserProfile userProfile) {
         var payload = new HashMap<String, Object>();
@@ -367,9 +368,9 @@ public class ExtensionManager {
         payload.put("userProfile", userProfile);
         var result = syncCall(ExtensionEvent.USER_ADDITIONAL_INFO_FILTER, purchaseContext, payload, AdditionalInfoFilterResult.class);
         if(result != null) {
-            return result.getItems();
+            return Optional.of(result.getItems());
         }
-        return null;
+        return Optional.empty();
     }
 
     public boolean handlePdfTransformation(String html, PurchaseContext purchaseContext, OutputStream outputStream) {
@@ -503,7 +504,7 @@ public class ExtensionManager {
         context.put(TICKET, ticket);
         context.put(ADDITIONAL_INFO, ticketAdditionalInfo);
         var existingMetadata = ticketMetadataContainer.getMetadataForKey(key);
-        existingMetadata.ifPresent(m -> context.put("ticketMetadata", m));
+        existingMetadata.ifPresent(m -> context.put(TICKET_METADATA, m));
         var result = Optional.ofNullable(syncCall(ExtensionEvent.CUSTOM_ONLINE_JOIN_URL, event, context, TicketMetadata.class, false));
         result.ifPresent(m -> {
             // we update the value only if it's changed
@@ -513,5 +514,14 @@ public class ExtensionManager {
             }
         });
         return result.or(() -> existingMetadata);
+    }
+
+    public Optional<TicketMetadata> handleTicketAssignmentMetadata(TicketWithMetadataAttributes ticketWithMetadata,
+                                                                   Event event) {
+
+        var context = new HashMap<String, Object>();
+        context.put(TICKET, ticketWithMetadata.getTicket());
+        context.put(TICKET_METADATA, ticketWithMetadata.getMetadata().getMetadataForKey(TicketMetadataContainer.GENERAL).orElseGet(TicketMetadata::empty));
+        return Optional.ofNullable(syncCall(ExtensionEvent.TICKET_ASSIGNED_GENERATE_METADATA, event, context, TicketMetadata.class, false));
     }
 }

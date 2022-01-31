@@ -108,6 +108,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
+import static alfio.model.Audit.EntityType.TICKET;
 import static alfio.model.Audit.EventType.*;
 import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
@@ -1331,13 +1332,24 @@ public class TicketReservationManager {
             Validate.isTrue(updatedTickets == locked, "Expected to lock "+updatedTickets+" tickets, locked "+ locked);
             Map<Integer, Ticket> postUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
 
-            postUpdateTicket.forEach((id, ticket) -> {
-                auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId());
-            });
+            postUpdateTicket.forEach(
+                (id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId()));
         }
-        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
-        Map<Integer, Ticket> postUpdateTicket = ticketsInReservation.stream().collect(toMap(Ticket::getId, Function.identity()));
-        postUpdateTicket.forEach((id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId()));
+        var ticketsWithMetadataById = ticketRepository.findTicketsInReservationWithMetadata(reservationId)
+            .stream().collect(toMap(twm -> twm.getTicket().getId(), Function.identity()));
+        ticketsWithMetadataById.forEach((id, ticketWithMetadata) -> {
+            var newMetadataOptional = extensionManager.handleTicketAssignmentMetadata(ticketWithMetadata, event);
+            newMetadataOptional.ifPresent(metadata -> {
+                var existingContainer = TicketMetadataContainer.copyOf(ticketWithMetadata.getMetadata());
+                var general = new HashMap<>(existingContainer.getMetadataForKey(TicketMetadataContainer.GENERAL)
+                    .orElseGet(TicketMetadata::empty).getAttributes());
+                general.putAll(metadata.getAttributes());
+                existingContainer.putMetadata(TicketMetadataContainer.GENERAL, new TicketMetadata(null, null, general));
+                ticketRepository.updateTicketMetadata(id, existingContainer);
+                auditUpdateMetadata(reservationId, id, event.getId(), existingContainer, ticketWithMetadata.getMetadata());
+            });
+            auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticketWithMetadata.getTicket(), Collections.emptyMap(), event.getId());
+        });
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
     }
@@ -2045,21 +2057,38 @@ public class TicketReservationManager {
             && (!equalsIgnoreCase(original.getEmail(), updated.getEmail()) || !equalsIgnoreCase(original.getFullName(), customerName.getFullName()));
     }
 
+    private void auditUpdateMetadata(String reservationId,
+                                     int ticketId,
+                                     int eventId,
+                                     TicketMetadataContainer newMetadata,
+                                     TicketMetadataContainer oldMetadata) {
+        List<Map<String, Object>> changes = ObjectDiffUtil.diff(oldMetadata, newMetadata, TicketMetadataContainer.class).stream()
+            .map(this::processChange)
+            .collect(Collectors.toList());
+
+        auditingRepository.insert(reservationId, null, eventId, Audit.EventType.UPDATE_TICKET_METADATA, new Date(),
+            TICKET, Integer.toString(ticketId), changes);
+    }
+
     private void auditUpdateTicket(Ticket preUpdateTicket, Map<String, String> preUpdateTicketFields, Ticket postUpdateTicket, Map<String, String> postUpdateTicketFields, int eventId) {
         List<ObjectDiffUtil.Change> diffTicket = ObjectDiffUtil.diff(preUpdateTicket, postUpdateTicket);
         List<ObjectDiffUtil.Change> diffTicketFields = ObjectDiffUtil.diff(preUpdateTicketFields, postUpdateTicketFields);
 
-        List<Map<String, Object>> changes = Stream.concat(diffTicket.stream(), diffTicketFields.stream()).map(change -> {
-                var v = new HashMap<String, Object>();
-                v.put("propertyName", change.getPropertyName());
-                v.put("state", change.getState());
-                v.put("oldValue", change.getOldValue());
-                v.put("newValue", change.getNewValue());
-                return v;
-            }).collect(Collectors.toList());
+        List<Map<String, Object>> changes = Stream.concat(diffTicket.stream(), diffTicketFields.stream())
+            .map(this::processChange)
+            .collect(Collectors.toList());
 
         auditingRepository.insert(preUpdateTicket.getTicketsReservationId(), null, eventId,
-            Audit.EventType.UPDATE_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(preUpdateTicket.getId()), changes);
+            Audit.EventType.UPDATE_TICKET, new Date(), TICKET, Integer.toString(preUpdateTicket.getId()), changes);
+    }
+
+    private HashMap<String, Object> processChange(ObjectDiffUtil.Change change) {
+        var v = new HashMap<String, Object>();
+        v.put("propertyName", change.getPropertyName());
+        v.put("state", change.getState());
+        v.put("oldValue", change.getOldValue());
+        v.put("newValue", change.getNewValue());
+        return v;
     }
 
     private boolean isAdmin(Optional<UserDetails> userDetails) {
