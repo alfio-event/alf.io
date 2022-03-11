@@ -689,7 +689,8 @@ public class ConfigurationManager {
             ENABLE_EU_VAT_DIRECTIVE,
             COUNTRY_OF_BUSINESS,
             ENABLE_REVERSE_CHARGE_IN_PERSON,
-            ENABLE_REVERSE_CHARGE_ONLINE);
+            ENABLE_REVERSE_CHARGE_ONLINE,
+            ANNOUNCEMENT_BANNER_CONTENT);
         var conf = getFor(options, ConfigurationLevel.system());
 
         var analyticsConf = AnalyticsConfiguration.build(conf, session);
@@ -700,7 +701,8 @@ public class ConfigurationManager {
             analyticsConf,
             conf.get(GLOBAL_PRIVACY_POLICY).getValueOrNull(),
             conf.get(GLOBAL_TERMS).getValueOrNull(),
-            PurchaseContextInfoBuilder.invoicingInfo(this, conf));
+            PurchaseContextInfoBuilder.invoicingInfo(this, conf),
+            StringUtils.trimToNull(conf.get(ANNOUNCEMENT_BANNER_CONTENT).getValueOrNull()));
     }
 
     public Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getPublicOpenIdConfiguration() {
