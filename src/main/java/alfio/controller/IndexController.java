@@ -495,7 +495,9 @@ public class IndexController {
         }
 
         response.addHeader("Content-Security-Policy", "object-src 'none'; "+
-            "script-src 'strict-dynamic' 'nonce-" + nonce + "' 'unsafe-inline' http: https:; " +
+            "script-src 'strict-dynamic' 'nonce-" + nonce + "' 'unsafe-inline' http: https: " +
+                "'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='" // see https://github.com/angular/angular-cli/issues/20864#issuecomment-983672336
+                +"; " +
             "base-uri 'self'; " +
             "frame-ancestors " + frameAncestors + "; "
             + reportUri);
