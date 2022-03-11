@@ -42,6 +42,7 @@ public enum ConfigurationKeys {
     BASE_URL("Base application url", false, SettingCategory.GENERAL, ComponentType.TEXT, true, EnumSet.of(SYSTEM)),
     GLOBAL_PRIVACY_POLICY("Global Privacy Policy URL (to be displayed on the event list)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     GLOBAL_TERMS("Global Terms And Conditions (to be displayed on the event list)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    ANNOUNCEMENT_BANNER_CONTENT("Announcement banner content", false, SettingCategory.GENERAL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
 
     MAPS_PROVIDER("Select the maps provider (None, Google, Here)", false, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MAPS_CLIENT_API_KEY("Google maps' client api key", false, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
