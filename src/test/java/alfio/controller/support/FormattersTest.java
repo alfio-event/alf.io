@@ -24,6 +24,10 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This test checks if all the date patterns for all defined languages are correct, in order to spot errors at build
@@ -45,5 +49,26 @@ class FormattersTest {
         ContentLanguage.ALL_LANGUAGES.forEach(cl ->
             FORMATTER_CODES.forEach(code -> Formatters.formatDateForLocale(now, code, messageSource, (a, b) -> Assertions.assertNotNull(b), cl, true))
         );
+    }
+
+    @Test
+    void getFormattedLink() {
+        var messageSource = new ResourceBundleMessageSource();
+        messageSource.setBasename("alfio.i18n.public");
+        var rendered = Formatters.applyCommonMark(Map.of("en", "[link](https://alf.io)"));
+        assertFalse(rendered.isEmpty());
+        assertEquals(1, rendered.size());
+        assertEquals("<p><a href=\"https://alf.io\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">link</a></p>", rendered.get("en").trim());
+    }
+
+    @Test
+    void getFormattedLinkWithAriaLabel() {
+        var messageSource = new ResourceBundleMessageSource();
+        messageSource.setBasename("alfio.i18n.public");
+        var message = messageSource.getMessage(Formatters.LINK_NEW_TAB_KEY, null, Locale.ENGLISH);
+        var rendered = Formatters.applyCommonMark(Map.of("en", "[link](https://alf.io)"), messageSource);
+        assertFalse(rendered.isEmpty());
+        assertEquals(1, rendered.size());
+        assertEquals("<p><a href=\"https://alf.io\" target=\"_blank\" rel=\"nofollow noopener noreferrer\" aria-label=\"link "+message+"\">link</a></p>", rendered.get("en").trim());
     }
 }

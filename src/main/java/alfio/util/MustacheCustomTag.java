@@ -26,6 +26,7 @@ import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.Link;
 import org.commonmark.node.Node;
+import org.commonmark.node.Text;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.AttributeProvider;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -140,6 +141,7 @@ public class MustacheCustomTag {
     private static final Parser COMMONMARK_PARSER = Parser.builder().extensions(COMMONMARK_EXTENSIONS).build();
     private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).attributeProviderFactory((ctx) -> new TargetBlankProvider()).build();
     private static final TextContentRenderer COMMONMARK_TEXT_RENDERER = TextContentRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
+    private static final ThreadLocal<String> A11Y_NEW_TAB_LABEL = new ThreadLocal<>();
 
     //Open in a new window if the link contains an absolute url
     private static class TargetBlankProvider implements AttributeProvider {
@@ -151,14 +153,26 @@ public class MustacheCustomTag {
                 if (UrlUtils.isAbsoluteUrl(destination)) {
                     attributes.put("target", "_blank");
                     attributes.put("rel", "nofollow noopener noreferrer");
+                    var newTabLabel = A11Y_NEW_TAB_LABEL.get();
+                    if (newTabLabel != null) {
+                        attributes.put("aria-label", ((Text)node.getFirstChild()).getLiteral() + " " + newTabLabel);
+                    }
                 }
             }
         }
     }
-
     public static String renderToHtmlCommonmarkEscaped(String input) {
-        Node document = COMMONMARK_PARSER.parse(StringEscapeUtils.escapeHtml4(input));
-        return COMMONMARK_RENDERER.render(document);
+        return renderToHtmlCommonmarkEscaped(input, null);
+    }
+
+    public static String renderToHtmlCommonmarkEscaped(String input, String localizedNewWindowLabel) {
+        try {
+            A11Y_NEW_TAB_LABEL.set(localizedNewWindowLabel);
+            Node document = COMMONMARK_PARSER.parse(StringEscapeUtils.escapeHtml4(input));
+            return COMMONMARK_RENDERER.render(document);
+        } finally {
+            A11Y_NEW_TAB_LABEL.remove();
+        }
     }
 
     public static String renderToTextCommonmark(String input) {
