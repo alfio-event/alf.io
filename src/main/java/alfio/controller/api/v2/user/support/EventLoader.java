@@ -56,7 +56,7 @@ public class EventLoader {
                 var messageSource = messageSourceAndOverride.getLeft();
                 var i18nOverride = messageSourceAndOverride.getRight();
 
-                var descriptions = Formatters.applyCommonMark(eventDescriptionRepository.findDescriptionByEventIdAsMap(event.getId()));
+                var descriptions = Formatters.applyCommonMark(eventDescriptionRepository.findDescriptionByEventIdAsMap(event.getId()), messageSource);
 
                 var organization = organizationRepository.getContactById(event.getOrganizationId());
 
