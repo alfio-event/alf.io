@@ -113,6 +113,8 @@ public final class TemplateProcessor {
         builder.useProtocolsStreamImplementation(new AlfioInternalFSStreamFactory(), "alfio-internal");
         builder.useProtocolsStreamImplementation(new InvalidProtocolFSStreamFactory(), "http", "https", "file", "jar");
         builder.useFastMode();
+        builder.usePdfUaAccessbility(true);
+        builder.usePdfAConformance(PdfRendererBuilder.PdfAConformance.PDFA_3_U);
 
         var parser = new Parser();
 
