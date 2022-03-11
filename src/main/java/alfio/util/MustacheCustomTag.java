@@ -98,11 +98,10 @@ public class MustacheCustomTag {
      * prefix is optional, unless a suffix is needed.
      */
     static final Function<Object, Mustache.Lambda> ADDITIONAL_FIELD_VALUE = obj -> (frag, out) -> {
-        if( !(obj instanceof Map) || ((Map<?,?>)obj).isEmpty()) {
+        if( !(obj instanceof Map<?, ?> fieldNamesAndValues) || ((Map<?,?>)obj).isEmpty()) {
             log.warn("map not found or empty. Skipping additionalFieldValue tag");
             return;
         }
-        Map<?, ?> fieldNamesAndValues = (Map<?, ?>) obj;
         String execution = frag.execute().trim();
         Matcher matcher = ARG_PATTERN.matcher(execution);
         List<String> args = new ArrayList<>();
@@ -139,7 +138,7 @@ public class MustacheCustomTag {
 
     private static final List<Extension> COMMONMARK_EXTENSIONS = List.of(TablesExtension.create());
     private static final Parser COMMONMARK_PARSER = Parser.builder().extensions(COMMONMARK_EXTENSIONS).build();
-    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).attributeProviderFactory((ctx) -> new TargetBlankProvider()).build();
+    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).attributeProviderFactory(ctx -> new TargetBlankProvider()).build();
     private static final TextContentRenderer COMMONMARK_TEXT_RENDERER = TextContentRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
     private static final ThreadLocal<String> A11Y_NEW_TAB_LABEL = new ThreadLocal<>();
 
@@ -147,8 +146,7 @@ public class MustacheCustomTag {
     private static class TargetBlankProvider implements AttributeProvider {
         @Override
         public void setAttributes(Node node, String tagName, Map<String, String> attributes) {
-            if (node instanceof Link) {
-                Link l = (Link) node;
+            if (node instanceof Link l) {
                 String destination = StringUtils.trimToEmpty(l.getDestination());
                 if (UrlUtils.isAbsoluteUrl(destination)) {
                     attributes.put("target", "_blank");
