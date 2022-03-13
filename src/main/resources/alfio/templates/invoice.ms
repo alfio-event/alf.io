@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<html>
+<html lang="{{#i18n}}locale{{/i18n}}">
 	<head>
+	    <title>{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}</title>
+        <meta name="subject" content="{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}" />
+        <meta name="author" content="{{organization.name}}" />
+        <meta name="description" content="{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}" />
 		<style>
 
 		    @font-face {
@@ -104,7 +108,7 @@
 	<body>
         <table style="width:100%">
             <tr>
-                {{#eventImage}}<td style="width:{{imageWidth}}px; height:{{imageHeight}}px"><img style="margin:auto; width:{{imageWidth}}px; height:{{imageHeight}}px" src="{{eventImage}}"/></td>{{/eventImage}}
+                {{#eventImage}}<td style="width:{{imageWidth}}px; height:{{imageHeight}}px"><img style="margin:auto; width:{{imageWidth}}px; height:{{imageHeight}}px" src="{{eventImage}}" alt="{{purchaseContext.displayName}}"/></td>{{/eventImage}}
                 {{^eventImage}}<td style="text-align: center; vertical-align: middle;"><h1>{{purchaseContext.displayName}}</h1></td>{{/eventImage}}
                 <td style="text-align: center; vertical-align: middle;"><h1>{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}</h1></td>
             </tr>

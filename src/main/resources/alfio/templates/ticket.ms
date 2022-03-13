@@ -1,5 +1,9 @@
-<html>
+<html lang="{{#i18n}}locale{{/i18n}}">
 	<head>
+	    <title>{{#i18n}}ticket.ticket{{/i18n}}</title>
+	    <meta name="subject" content="{{#i18n}}ticket.ticket{{/i18n}}" />
+        <meta name="author" content="{{organization.name}}" />
+        <meta name="description" content="{{#i18n}}ticket.ticket{{/i18n}}" />
 		<style>
 			body {
 				font-family:"DejaVu Sans Mono";
@@ -25,7 +29,7 @@
 		<table style="width:100%">
 			<tr>
                 {{#eventImage}}
-				<td style="width:{{imageWidth}}px; height:{{imageHeight}}px"><img style="margin:auto; width:{{imageWidth}}px; height:{{imageHeight}}px" src="{{eventImage}}"/></td>
+				<td style="width:{{imageWidth}}px; height:{{imageHeight}}px"><img style="margin:auto; width:{{imageWidth}}px; height:{{imageHeight}}px" src="{{eventImage}}" alt=""/></td>
                 {{/eventImage}}
 				<td style="text-align: center; vertical-align: middle;"><h1>{{event.displayName}}</h1></td>
 			</tr>
@@ -66,7 +70,7 @@
                         </tr>
                     </table>
                 </td>
-                <td style="width:200px;"><div style="text-align:right"><img src="{{qrCodeDataUri}}"/></div></td>
+                <td style="width:200px;"><div style="text-align:right"><img src="{{qrCodeDataUri}}" alt="{{#i18n}}qr.code{{/i18n}}"/></div></td>
             </tr>
 		</table>
 		
