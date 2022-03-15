@@ -50,11 +50,12 @@ import javax.sql.DataSource;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static alfio.config.authentication.AuthenticationConstants.*;
+import static alfio.config.authentication.support.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
 
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter {
+    public static final String AUTHENTICATE = "/authenticate";
     private final Environment environment;
     private final UserManager userManager;
     private final RecaptchaService recaptchaService;
@@ -134,6 +135,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
             .headers().frameOptions().disable() // https://github.com/alfio-event/alf.io/issues/1031 X-Frame-Options has been moved to IndexController
             .and()
             .authorizeRequests()
+            .antMatchers(ADMIN_PUBLIC_API + "/**").denyAll() // Admin public API requests must be authenticated using API-Keys
             .antMatchers(HttpMethod.GET, ADMIN_API + "/users/current").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
             .antMatchers(HttpMethod.POST, ADMIN_API + "/users/check", ADMIN_API + "/users/current/edit", ADMIN_API + "/users/current/update-password").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
             .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
@@ -152,7 +154,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
             .and()
             .formLogin()
             .loginPage("/authentication")
-            .loginProcessingUrl("/authenticate")
+            .loginProcessingUrl(AUTHENTICATE)
             .failureUrl("/authentication?failed")
             .and().logout().permitAll();
 
@@ -161,7 +163,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
 
 
         //
-        http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, AUTHENTICATE, "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
 
         // call implementation-specific logic
         addAdditionalFilters(http);
@@ -186,7 +188,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
         }, RecaptchaLoginFilter.class);
 
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
-            http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, "/authenticate"), RecaptchaLoginFilter.class);
+            http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);
         }
     }
 

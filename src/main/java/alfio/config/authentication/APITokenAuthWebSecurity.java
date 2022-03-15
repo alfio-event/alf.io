@@ -16,10 +16,7 @@
  */
 package alfio.config.authentication;
 
-import alfio.config.authentication.support.APIKeyAuthFilter;
-import alfio.config.authentication.support.APITokenAuthentication;
-import alfio.config.authentication.support.RequestTypeMatchers;
-import alfio.config.authentication.support.WrongAccountTypeException;
+import alfio.config.authentication.support.*;
 import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
@@ -37,12 +34,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.time.ZonedDateTime;
 import java.util.stream.Collectors;
 
-import static alfio.config.authentication.AuthenticationConstants.*;
+import static alfio.config.authentication.support.AuthenticationConstants.*;
 
 @Configuration(proxyBeanMethods = false)
 @Order(0)
 public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
 
+    public static final String API_KEY = "Api key ";
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
 
@@ -61,15 +59,15 @@ public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
             //
             String apiKey = (String) authentication.getPrincipal();
             //check if user type ->
-            User user = userRepository.findByUsername(apiKey).orElseThrow(() -> new BadCredentialsException("Api key " + apiKey + " don't exists"));
+            User user = userRepository.findByUsername(apiKey).orElseThrow(() -> new BadCredentialsException(API_KEY + apiKey + " don't exists"));
             if (!user.isEnabled()) {
-                throw new DisabledException("Api key " + apiKey + " is disabled");
+                throw new DisabledException(API_KEY + apiKey + " is disabled");
             }
             if (User.Type.API_KEY != user.getType()) {
                 throw new WrongAccountTypeException("Wrong account type for username " + apiKey);
             }
             if (!user.isCurrentlyValid(ZonedDateTime.now(ClockProvider.clock()))) {
-                throw new DisabledException("Api key " + apiKey + " is expired");
+                throw new DisabledException(API_KEY + apiKey + " is expired");
             }
 
             return new APITokenAuthentication(

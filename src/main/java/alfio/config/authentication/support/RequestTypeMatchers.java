@@ -25,6 +25,7 @@ import java.util.Locale;
 public class RequestTypeMatchers {
     public static boolean isTokenAuthentication(HttpServletRequest request) {
         String authorization = request.getHeader("Authorization");
-        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
+        return (authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey "))
+            || request.getRequestURI().startsWith(AuthenticationConstants.ADMIN_PUBLIC_API);
     }
 }
