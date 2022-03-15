@@ -16,7 +16,7 @@
  */
 package alfio.controller.api.admin;
 
-import alfio.config.authentication.AuthenticationConstants;
+import alfio.config.authentication.support.AuthenticationConstants;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.config.authentication;
+package alfio.config.authentication.support;
 
 import lombok.experimental.UtilityClass;
 
@@ -22,11 +22,11 @@ import lombok.experimental.UtilityClass;
 public class AuthenticationConstants {
     public static final String OPERATOR = "OPERATOR";
     public static final String SPONSOR = "SPONSOR";
-    static final String ADMIN_API = "/admin/api";
-    static final String ADMIN_PUBLIC_API = "/api/v1/admin";
-    static final String SUPERVISOR = "SUPERVISOR";
-    static final String ADMIN = "ADMIN";
-    static final String OWNER = "OWNER";
-    static final String API_CLIENT = "API_CLIENT";
-    static final String X_REQUESTED_WITH = "X-Requested-With";
+    public static final String ADMIN_API = "/admin/api";
+    public static final String ADMIN_PUBLIC_API = "/api/v1/admin";
+    public static final String SUPERVISOR = "SUPERVISOR";
+    public static final String ADMIN = "ADMIN";
+    public static final String OWNER = "OWNER";
+    public static final String API_CLIENT = "API_CLIENT";
+    public static final String X_REQUESTED_WITH = "X-Requested-With";
 }
