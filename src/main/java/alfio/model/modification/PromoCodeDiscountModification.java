@@ -36,6 +36,7 @@ public class PromoCodeDiscountModification {
     private final Integer organizationId;
     private final Integer eventId;
     private final String promoCode;
+    private final String currencyCode;
     private final DateTimeModification start;
     private final DateTimeModification end;
     private final BigDecimal discountAmount;
@@ -57,6 +58,7 @@ public class PromoCodeDiscountModification {
         @JsonProperty("start") DateTimeModification start,
         @JsonProperty("end") DateTimeModification end,
         @JsonProperty("discountAmount") BigDecimal discountAmount,
+        @JsonProperty("currencyCode") String currencyCode,
         @JsonProperty("discountType") DiscountType discountType,
         @JsonProperty("categories") List<Integer> categories,
         @JsonProperty("utcOffset") Integer utcOffset,
@@ -72,6 +74,7 @@ public class PromoCodeDiscountModification {
         this.start = start;
         this.end = end;
         this.discountAmount = discountAmount;
+        this.currencyCode = currencyCode;
         this.discountType = discountType;
         this.categories = Optional.ofNullable(categories).map(l -> l.stream().filter(Objects::nonNull).collect(Collectors.toList())).orElse(Collections.emptyList());
         this.utcOffset = utcOffset;
@@ -90,7 +93,7 @@ public class PromoCodeDiscountModification {
         return MonetaryUtil.unitToCents(discountAmount, currencyCode);
     }
 
-    public int getDiscountValue(String currencyCode) {
+    public int getDiscountValue() {
         if(codeType != PromoCodeDiscount.CodeType.DISCOUNT) {
             return 0;
         }

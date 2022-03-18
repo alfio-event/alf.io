@@ -24,6 +24,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import alfio.util.ClockProvider;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.Validate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.ZoneId;
@@ -49,12 +50,17 @@ public class PromoCodeDiscountApiController {
         Integer eventId = promoCode.getEventId();
         Integer organizationId = promoCode.getOrganizationId();
         ZoneId zoneId = zoneIdFromEventId(eventId, promoCode.getUtcOffset());
-        
-        int discount = promoCode.getDiscountValue(eventRepository.getEventCurrencyCode(eventId));
+
+        if(eventId != null && PromoCodeDiscount.supportsCurrencyCode(promoCode.getCodeType(), promoCode.getDiscountType())) {
+            String eventCurrencyCode = eventRepository.getEventCurrencyCode(eventId);
+            Validate.isTrue(eventCurrencyCode.equals(promoCode.getCurrencyCode()), "Currency code does not match");
+        }
+
+        int discount = promoCode.getDiscountValue();
 
         eventManager.addPromoCode(promoCode.getPromoCode(), eventId, organizationId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories(), promoCode.getMaxUsage(),
-            promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getCodeType(), promoCode.getHiddenCategoryId());
+            promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getCodeType(), promoCode.getHiddenCategoryId(), promoCode.getCurrencyCode());
     }
 
     @PostMapping("/promo-code/{promoCodeId}")

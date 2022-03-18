@@ -136,7 +136,7 @@ public class PromoCodeRequestManager {
         ZonedDateTime now = ZonedDateTime.now(clockProvider.withZone(eventZoneId));
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
-        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPublicPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
+        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap(trimmedCode -> promoCodeRepository.findPublicPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
 
         var result = Pair.of(specialCode, promotionCodeDiscount);
 
@@ -152,15 +152,16 @@ public class PromoCodeRequestManager {
                 return errorResponse;
             }
 
-        } else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(eventZoneId, now)) {
-            return errorResponse;
-        } else if (promotionCodeDiscount.isPresent() && isDiscountCodeUsageExceeded(promotionCodeDiscount.get())){
-            return errorResponse;
-        } else if(promotionCodeDiscount.isEmpty()) {
+        } else if(promotionCodeDiscount.isPresent()) {
+            var pcd = promotionCodeDiscount.get();
+            if (!pcd.isCurrentlyValid(eventZoneId, now)
+                || isDiscountCodeUsageExceeded(pcd)
+                || (pcd.hasCurrencyCode() && !pcd.getCurrencyCode().equals(event.getCurrency()))) {
+                return errorResponse;
+            }
+        } else {
             return errorResponse;
         }
-        //
-
 
         return new ValidatedResponse<>(ValidationResult.success(), result);
     }

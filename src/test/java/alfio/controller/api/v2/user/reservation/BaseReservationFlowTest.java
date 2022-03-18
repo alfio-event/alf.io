@@ -142,11 +142,11 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
         //promo code at event level
-        eventManager.addPromoCode(PROMO_CODE, context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
+        eventManager.addPromoCode(PROMO_CODE, context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null, null);
 
         hiddenCategoryId = ticketCategoryRepository.findAllTicketCategories(context.event.getId()).stream().filter(TicketCategory::isAccessRestricted).collect(Collectors.toList()).get(0).getId();
 
-        eventManager.addPromoCode(HIDDEN_CODE, context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId);
+        eventManager.addPromoCode(HIDDEN_CODE, context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId, null);
 
 
         // add additional fields before and after, with one mandatory
@@ -423,13 +423,29 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         // dynamic promo codes can be applied only automatically
         {
-            eventManager.addPromoCode("DYNAMIC_CODE", context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DYNAMIC, null);
+            eventManager.addPromoCode("DYNAMIC_CODE", context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DYNAMIC, null, null);
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, eventApiV2Controller.validateCode(context.event.getShortName(), "DYNAMIC_CODE").getStatusCode());
 
             // try to enter it anyway
             var form = new ReservationForm();
             var ticketReservation = new TicketReservationModification();
             form.setPromoCode("DYNAMIC_CODE");
+            ticketReservation.setQuantity(1);
+            ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), null);
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, res.getStatusCode());
+        }
+
+        // promo code currency code must match with event's in order to be redeemed
+        {
+            eventManager.addPromoCode("TEST_TEST_TEST_TEST", null, context.event.getOrganizationId(), ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null, "JPY");
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, eventApiV2Controller.validateCode(context.event.getShortName(), "TEST_TEST_TEST_TEST").getStatusCode());
+
+            // try to enter it anyway
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            form.setPromoCode("TEST_TEST_TEST_TEST");
             ticketReservation.setQuantity(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(context.event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));

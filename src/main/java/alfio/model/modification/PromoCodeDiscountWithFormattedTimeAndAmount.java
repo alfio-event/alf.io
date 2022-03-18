@@ -59,8 +59,9 @@ public class PromoCodeDiscountWithFormattedTimeAndAmount {
     }
 
     public String getFormattedDiscountAmount() {
-        if(promo.getFixedAmount() && StringUtils.isNotBlank(eventCurrency)) {
-            return MonetaryUtil.formatCents(promo.getDiscountAmount(), eventCurrency);
+        var currency = StringUtils.firstNonEmpty(eventCurrency, promo.getCurrencyCode());
+        if(promo.getFixedAmount() && StringUtils.isNotBlank(currency)) {
+            return MonetaryUtil.formatCents(promo.getDiscountAmount(), currency);
         }
         return null;
     }
