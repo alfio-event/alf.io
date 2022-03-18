@@ -70,7 +70,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElemen
  *  - browserstack.access.key=
  *  - e2e.server.url=
  *  - e2e.server.apikey=
- *  - e2e.browser=ie11|safari|firefox|chrome
+ *  - e2e.browser=safari|firefox|chrome
  */
 @ContextConfiguration(classes = { BaseTestConfiguration.class, NormalFlowE2ETest.E2EConfiguration.class })
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
@@ -306,7 +306,6 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
 
         private BrowserWebDriver build(String browser, URL url, String githubBuildNumber) {
             switch (browser) {
-                case "ie11": return new BrowserWebDriver(BrowserWebDriver.Browser.IE, buildRemoteDriver(url,"Windows", "10", "IE", "11", "testFlowIE11"+githubBuildNumber));
                 case "chrome": return new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, buildRemoteDriver(url,"Windows", "10", "Chrome", "latest", "testFlowChrome"+githubBuildNumber));
                 case "firefox": return new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url,"Windows", "10", "Firefox", "latest", "testFlowFirefox"+githubBuildNumber));
                 case "safari": return new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url,"OS X", "Catalina", "Safari", "13.1", "testFlowSafari"+githubBuildNumber));
