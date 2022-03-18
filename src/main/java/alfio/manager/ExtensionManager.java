@@ -422,7 +422,7 @@ public class ExtensionManager {
             return Optional.of(new PromoCodeDiscount(Integer.MIN_VALUE, dynamicDiscountResult.getCode(), event.getId(),
                 event.getOrganizationId(), now.minusSeconds(1), event.getBegin().withZoneSameInstant(now.getZone()), discountAmountInCents,
                 dynamicDiscountResult.getDiscountType(), null, null, null,
-                null, CodeType.DYNAMIC, null));
+                null, CodeType.DYNAMIC, null, event.getCurrency()));
         } catch(Exception ex) {
             log.warn("got exception while firing DYNAMIC_DISCOUNT_APPLICATION event", ex);
         }

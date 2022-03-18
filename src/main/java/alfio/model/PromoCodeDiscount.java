@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -61,6 +62,7 @@ public class PromoCodeDiscount {
     private final String emailReference;
     private final CodeType codeType;
     private final Integer hiddenCategoryId;
+    private final String currencyCode;
     
     public PromoCodeDiscount(@Column("id")int id, 
                              @Column("promo_code") String promoCode,
@@ -75,7 +77,8 @@ public class PromoCodeDiscount {
                              @Column("description") String description,
                              @Column("email_reference") String emailReference,
                              @Column("code_type") CodeType codeType,
-                             @Column("hidden_category_id") Integer hiddenCategoryId) {
+                             @Column("hidden_category_id") Integer hiddenCategoryId,
+                             @Column("currency_code") String currencyCode) {
 
         this.id = id;
         this.promoCode = promoCode;
@@ -96,6 +99,7 @@ public class PromoCodeDiscount {
         this.emailReference = emailReference;
         this.codeType = codeType;
         this.hiddenCategoryId = hiddenCategoryId;
+        this.currencyCode = currencyCode;
     }
     
     public boolean isCurrentlyValid(ZoneId eventZoneId, ZonedDateTime now) {
@@ -125,10 +129,18 @@ public class PromoCodeDiscount {
         return codeType == CodeType.DYNAMIC;
     }
 
+    public boolean hasCurrencyCode() {
+        return StringUtils.length(currencyCode) == 3;
+    }
+
     public static String format(PromoCodeDiscount discount, String eventCurrencyCode) {
         if(discount.getDiscountType() == DiscountType.PERCENTAGE) {
             return Integer.toString(discount.getDiscountAmount());
         }
         return MonetaryUtil.formatCents(discount.getDiscountAmount(), eventCurrencyCode);
+    }
+
+    public static boolean supportsCurrencyCode(CodeType codeType, DiscountType discountType) {
+        return codeType == CodeType.DISCOUNT && discountType != DiscountType.PERCENTAGE;
     }
 }

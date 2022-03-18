@@ -215,7 +215,8 @@ public class EventApiV1Controller {
                         null,
                         null,
                         PromoCodeDiscount.CodeType.DISCOUNT,
-                        null
+                        null,
+                        pc.getDiscountType() != PromoCodeDiscount.DiscountType.PERCENTAGE ? e.getCurrency() : null
                     )
                 )
             );

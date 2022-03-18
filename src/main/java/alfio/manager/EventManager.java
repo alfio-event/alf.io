@@ -934,12 +934,14 @@ public class EventManager {
                              String description,
                              String emailReference,
                              PromoCodeDiscount.CodeType codeType,
-                             Integer hiddenCategoryId) {
+                             Integer hiddenCategoryId,
+                             String currencyCode) {
 
         Validate.isTrue(promoCode.length() >= 7, "min length is 7 chars");
         Validate.isTrue((eventId != null && organizationId == null) || (eventId == null && organizationId != null), "eventId or organizationId must be not null");
         Validate.isTrue(StringUtils.length(description) < 1025, "Description can be maximum 1024 chars");
         Validate.isTrue(StringUtils.length(emailReference) < 257, "Description can be maximum 256 chars");
+        Validate.isTrue(!PromoCodeDiscount.supportsCurrencyCode(codeType, discountType) || StringUtils.length(currencyCode) == 3, "Currency code is not valid");
 
         if(maxUsage != null) {
             Validate.isTrue(maxUsage > 0, "Invalid max usage");
@@ -967,7 +969,8 @@ public class EventManager {
             discountType = DiscountType.NONE;
         }
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType, Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId);
+        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType,
+            Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId, currencyCode);
     }
     
     public void deletePromoCode(int promoCodeId) {

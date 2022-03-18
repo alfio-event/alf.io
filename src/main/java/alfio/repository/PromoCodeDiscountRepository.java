@@ -44,8 +44,8 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where id = :id")
     Optional<PromoCodeDiscount> findOptionalById(@Bind("id") int id);
 
-    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage, description, email_reference, code_type, hidden_category_id) "
-        + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage, :description, :emailReference, :codeType, :hiddenCategoryId)")
+    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage, description, email_reference, code_type, hidden_category_id, currency_code) "
+        + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage, :description, :emailReference, :codeType, :hiddenCategoryId, :currencyCode)")
     int addPromoCode(@Bind("promoCode") String promoCode,
                      @Bind("eventId") Integer eventId,
                      @Bind("organizationId") int organizationId,
@@ -58,7 +58,8 @@ public interface PromoCodeDiscountRepository {
                      @Bind("description") String description,
                      @Bind("emailReference") String emailReference,
                      @Bind("codeType") PromoCodeDiscount.CodeType codeType,
-                     @Bind("hiddenCategoryId") Integer hiddenCategoryId);
+                     @Bind("hiddenCategoryId") Integer hiddenCategoryId,
+                     @Bind("currencyCode") String currencyCode);
 
     @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage, description, email_reference, code_type, hidden_category_id) "
         + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage, :description, :emailReference, :codeType, :hiddenCategoryId) "
