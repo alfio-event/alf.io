@@ -26,7 +26,8 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.imageio.ImageIO;
@@ -39,8 +40,9 @@ import java.util.Map;
 import static org.apache.commons.lang3.StringUtils.center;
 import static org.apache.commons.lang3.StringUtils.truncate;
 
-@Log4j2
 public final class ImageUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(ImageUtil.class);
 
     private static final Cache<String, File> FONT_CACHE = Caffeine.newBuilder()
         .removalListener((String key, File value, RemovalCause cause) -> {

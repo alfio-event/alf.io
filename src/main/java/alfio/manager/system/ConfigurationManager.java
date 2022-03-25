@@ -41,12 +41,13 @@ import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,9 +65,10 @@ import static alfio.model.system.ConfigurationPathLevel.*;
 import static java.util.stream.Collectors.toList;
 
 @Transactional
-@Log4j2
 @RequiredArgsConstructor
 public class ConfigurationManager {
+
+    private static final Logger log = LoggerFactory.getLogger(ConfigurationManager.class);
 
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);

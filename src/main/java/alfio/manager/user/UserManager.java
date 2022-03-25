@@ -30,10 +30,11 @@ import alfio.util.PasswordGenerator;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,14 +49,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional
 @RequiredArgsConstructor
-@Log4j2
 public class UserManager {
+
+    private static final Logger log = LoggerFactory.getLogger(UserManager.class);
 
     public static final String ADMIN_USERNAME = "admin";
     private static final Pattern SLUG_VALIDATOR = Pattern.compile("^[A-Za-z-_0-9]+$");

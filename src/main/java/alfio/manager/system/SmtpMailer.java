@@ -19,9 +19,10 @@ package alfio.manager.system;
 import alfio.model.Configurable;
 import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -42,9 +43,10 @@ import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
-@Log4j2
 @AllArgsConstructor
 class SmtpMailer implements Mailer {
+
+    private static final Logger log = LoggerFactory.getLogger(SmtpMailer.class);
     
     private final ConfigurationManager configurationManager;
 

@@ -33,9 +33,10 @@ import biweekly.io.text.ICalWriter;
 import biweekly.property.Method;
 import biweekly.property.Organizer;
 import biweekly.property.Status;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -57,8 +58,9 @@ import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
 
-@Log4j2
 public final class EventUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(EventUtil.class);
 
     private EventUtil() {}
 

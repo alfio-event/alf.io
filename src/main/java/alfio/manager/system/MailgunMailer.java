@@ -18,11 +18,11 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import alfio.util.HttpUtils;
-import alfio.util.oauth2.AccessTokenResponseDetails;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -35,9 +35,10 @@ import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
-@Log4j2
 @AllArgsConstructor
 class MailgunMailer implements Mailer {
+
+    private static final Logger log = LoggerFactory.getLogger(MailgunMailer.class);
 
     private final HttpClient client;
     private final ConfigurationManager configurationManager;

@@ -35,8 +35,9 @@ import alfio.util.RenderedTemplate;
 import alfio.util.TemplateManager;
 import alfio.util.checkin.TicketCheckInUtil;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
@@ -51,8 +52,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Component
 @AllArgsConstructor
-@Log4j2
 public class CustomMessageManager {
+
+    private static final Logger log = LoggerFactory.getLogger(CustomMessageManager.class);
 
     private final TemplateManager templateManager;
     private final EventManager eventManager;

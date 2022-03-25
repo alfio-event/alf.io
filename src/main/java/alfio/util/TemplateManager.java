@@ -25,8 +25,9 @@ import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Template;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
@@ -50,8 +51,9 @@ import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
 /**
  * For hiding the ugliness :)
  * */
-@Log4j2
 public class TemplateManager {
+
+    private static final Logger log = LoggerFactory.getLogger(TemplateManager.class);
 
 
     public static final String METADATA_ATTRIBUTES_KEY = "metadata-attributes";
