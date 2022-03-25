@@ -276,7 +276,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             log.warn("Request interrupted while trying to init payment", e);
             return PaymentResult.failed(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
         } catch (Exception e) {
-            log.warn(e);
+            log.warn("Error while getting the payment result", e);
             return PaymentResult.failed(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
         }
     }
@@ -549,12 +549,12 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         try {
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if(HttpUtils.callSuccessful(response)) {
-                log.trace("Received a successful response from Mollie. Body is {}", response::body);
+                log.trace("Received a successful response from Mollie. Body is {}", response.body());
                 // we ignore the answer, for now
                 return true;
             } else {
                 log.warn("got {} response while calling refund API for payment ID {}", response.statusCode(), paymentId);
-                log.trace("detailed reply from mollie: {}", response::body);
+                log.trace("detailed reply from mollie: {}", response.body());
                 return false;
             }
         } catch (InterruptedException e) {

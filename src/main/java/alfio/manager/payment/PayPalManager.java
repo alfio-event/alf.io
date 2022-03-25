@@ -351,7 +351,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             }
             return PaymentResult.redirect(createCheckoutRequest(spec));
         } catch (Exception e) {
-            log.error(e);
+            log.error("error while getting the token", e);
             return PaymentResult.failed( ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION );
         }
     }
