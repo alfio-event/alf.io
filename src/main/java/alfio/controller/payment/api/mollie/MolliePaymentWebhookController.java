@@ -20,7 +20,6 @@ import alfio.manager.PurchaseContextManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +36,17 @@ import java.util.Optional;
 import static alfio.manager.payment.MollieWebhookPaymentManager.*;
 
 @RestController
-@AllArgsConstructor
 public class MolliePaymentWebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(MolliePaymentWebhookController.class);
 
     private final TicketReservationManager ticketReservationManager;
     private final PurchaseContextManager purchaseContextManager;
+
+    public MolliePaymentWebhookController(TicketReservationManager ticketReservationManager, PurchaseContextManager purchaseContextManager) {
+        this.ticketReservationManager = ticketReservationManager;
+        this.purchaseContextManager = purchaseContextManager;
+    }
 
     @SuppressWarnings("MVCPathVariableInspection")
     @PostMapping(WEBHOOK_URL_TEMPLATE)

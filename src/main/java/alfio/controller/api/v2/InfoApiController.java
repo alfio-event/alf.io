@@ -18,7 +18,6 @@ package alfio.controller.api.v2;
 
 import alfio.controller.api.v2.model.AlfioInfo;
 import alfio.manager.system.ConfigurationManager;
-import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,10 +26,13 @@ import javax.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/v2/")
-@AllArgsConstructor
 public class InfoApiController {
 
     private final ConfigurationManager configurationManager;
+
+    public InfoApiController(ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
+    }
 
     @GetMapping("info")
     public AlfioInfo getInfo(HttpSession session) {

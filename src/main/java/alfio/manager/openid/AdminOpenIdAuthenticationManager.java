@@ -27,7 +27,7 @@ import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.Json;
 import com.auth0.jwt.interfaces.Claim;
-import lombok.SneakyThrows;
+import org.apache.commons.lang3.concurrent.ConcurrentException;
 import org.apache.commons.lang3.concurrent.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.net.http.HttpClient;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationManager {
 
@@ -98,10 +97,14 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
         return new OpenIdAlfioUser(idToken, subject, email, getUserType(), alfioRoles, alfioOrganizationAuthorizations);
     }
 
-    @SneakyThrows
+
     @Override
     protected OpenIdConfiguration openIdConfiguration() {
-        return configurationContainer.get();
+        try {
+            return configurationContainer.get();
+        } catch (ConcurrentException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private Set<Role> extractAlfioRoles(Map<String, Set<String>> alfioOrganizationAuthorizations) {
@@ -177,6 +180,5 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
             return OpenIdConfiguration.from(environment, configurationManager);
         }
     }
-
 }
 

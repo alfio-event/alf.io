@@ -19,7 +19,6 @@ package alfio.controller.payment.api.stripe;
 import alfio.manager.TicketReservationManager;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.RequestUtils;
-import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,10 +29,13 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
-@AllArgsConstructor
 public class StripePaymentWebhookController {
 
     private final TicketReservationManager ticketReservationManager;
+
+    public StripePaymentWebhookController(TicketReservationManager ticketReservationManager) {
+        this.ticketReservationManager = ticketReservationManager;
+    }
 
     @PostMapping("/api/payment/webhook/stripe/payment")
     public ResponseEntity<String> receivePaymentConfirmation(@RequestHeader(value = "Stripe-Signature") String stripeSignature,

@@ -24,7 +24,6 @@ import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.TransactionInitializationToken;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
@@ -33,12 +32,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 
 @RestController
-@AllArgsConstructor
 public class PaymentApiController {
 
     private final PaymentManager paymentManager;
     private final TicketReservationManager ticketReservationManager;
     private final PurchaseContextManager purchaseContextManager;
+
+    public PaymentApiController(PaymentManager paymentManager,
+                                TicketReservationManager ticketReservationManager,
+                                PurchaseContextManager purchaseContextManager) {
+        this.paymentManager = paymentManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.purchaseContextManager = purchaseContextManager;
+    }
 
     @PostMapping({"/api/reservation/{reservationId}/payment/{method}/init",
         "/api/events/{eventName}/reservation/{reservationId}/payment/{method}/init" //<-deprecated
