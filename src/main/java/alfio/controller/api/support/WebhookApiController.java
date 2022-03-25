@@ -19,7 +19,8 @@ package alfio.controller.api.support;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,8 +30,9 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/api/webhook")
 @AllArgsConstructor
-@Log4j2
 public class WebhookApiController {
+
+    private static final Logger log = LoggerFactory.getLogger(WebhookApiController.class);
 
     //private final MollieManager mollieManager;
     //private final TicketReservationManager ticketReservationManager;

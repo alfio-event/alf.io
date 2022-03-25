@@ -19,14 +19,16 @@ package alfio.extension;
 import alfio.util.Json;
 import com.google.gson.reflect.TypeToken;
 import lombok.experimental.UtilityClass;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
 @UtilityClass
-@Log4j2
 public class JSON {
+
+    private static final Logger log = LoggerFactory.getLogger(JSON.class);
 
     private static final Type PARSE_RETURN_TYPE = new TypeToken<Map<String, Object>>(){}.getType();
 

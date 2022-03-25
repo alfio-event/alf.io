@@ -17,7 +17,8 @@
 package alfio.controller.api;
 
 import alfio.controller.api.v2.user.support.ReservationAccessDenied;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -33,8 +34,9 @@ import javax.servlet.http.HttpServletRequest;
     "alfio.controller.api.support",
     "alfio.controller.api.v1",
     "alfio.controller.api.v2"})
-@Log4j2
 public class ApiControllerExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiControllerExceptionHandler.class);
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

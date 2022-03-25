@@ -22,9 +22,10 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTag;
 import alfio.util.Wrappers;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joda.money.CurrencyUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -41,10 +42,11 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/api/utils")
-@Log4j2
 public class UtilsApiController {
 
-    private static final List<String> CURRENCIES_BLACKLIST = Arrays.asList("USN", "USS", "CHE", "CHW");
+    private static final Logger log = LoggerFactory.getLogger(UtilsApiController.class);
+
+    private static final Set<String> CURRENCIES_BLOCKLIST = Set.of("USN", "USS", "CHE", "CHW");
     private final EventNameManager eventNameManager;
     private final String version;
     private final Environment environment;
@@ -94,7 +96,7 @@ public class UtilsApiController {
     public List<CurrencyDescriptor> getCurrencies() {
         return CurrencyUnit.registeredCurrencies().stream()
             //we don't support pseudo currencies, as it is very unlikely that payment providers would support them
-            .filter(c -> !c.isPseudoCurrency() && !CURRENCIES_BLACKLIST.contains(c.getCode()) && Wrappers.optionally(() -> Currency.getInstance(c.getCode())).isPresent())
+            .filter(c -> !c.isPseudoCurrency() && !CURRENCIES_BLOCKLIST.contains(c.getCode()) && Wrappers.optionally(() -> Currency.getInstance(c.getCode())).isPresent())
             .map(c -> new CurrencyDescriptor(c.getCode(), c.toCurrency().getDisplayName(Locale.ENGLISH), c.getSymbol(Locale.ENGLISH), c.getDecimalPlaces()))
             .collect(Collectors.toList());
     }

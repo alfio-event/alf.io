@@ -20,8 +20,9 @@ import alfio.manager.PassKitManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,9 +35,10 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/pass/event/{eventName}/v1")
-@Log4j2
 @RequiredArgsConstructor
 public class PassKitApiController {
+
+    private static final Logger log = LoggerFactory.getLogger(PassKitApiController.class);
 
     private final PassKitManager passKitManager;
 

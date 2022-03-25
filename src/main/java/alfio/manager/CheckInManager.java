@@ -30,20 +30,20 @@ import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -66,9 +66,10 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 @Component
 @Transactional
-@Log4j2
 @AllArgsConstructor
 public class CheckInManager {
+
+    private static final Logger log = LoggerFactory.getLogger(CheckInManager.class);
 
     static final Pattern CYPHER_SPLITTER = Pattern.compile("\\|");
     private final TicketRepository ticketRepository;

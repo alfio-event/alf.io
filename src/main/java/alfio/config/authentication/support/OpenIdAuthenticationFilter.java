@@ -17,7 +17,8 @@
 package alfio.config.authentication.support;
 
 import alfio.manager.openid.OpenIdAuthenticationManager;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -32,8 +33,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
 
-@Log4j2
 public class OpenIdAuthenticationFilter extends GenericFilterBean {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenIdAuthenticationFilter.class);
+
     public static final String RESERVATION_KEY = "RESERVATION";
     public static final String CONTEXT_TYPE_KEY = "CONTEXT_TYPE";
     public static final String CONTEXT_ID_KEY = "CONTEXT_ID";

@@ -29,8 +29,9 @@ import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import lombok.extern.log4j.Log4j2;
 import org.mozilla.javascript.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.net.ConnectException;
@@ -54,8 +55,9 @@ import static alfio.manager.system.AdminJobExecutor.JobName.EXECUTE_EXTENSION;
 // -organizationId-eventId
 
 @Service
-@Log4j2
 public class ScriptingExecutionService {
+
+    private static final Logger log = LoggerFactory.getLogger(ScriptingExecutionService.class);
 
     public static final String EXTENSION_NAME = "extensionName";
     public static final String EXTENSION_PATH = "path";

@@ -17,7 +17,8 @@
 package alfio.config.authentication.support;
 
 import alfio.manager.openid.OpenIdAuthenticationManager;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -34,8 +35,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@Log4j2
 public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenIdCallbackLoginFilter.class);
 
     private final RequestMatcher requestMatcher;
     private final OpenIdAuthenticationManager openIdAuthenticationManager;

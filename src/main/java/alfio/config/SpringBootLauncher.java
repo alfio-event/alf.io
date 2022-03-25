@@ -17,7 +17,8 @@
 package alfio.config;
 
 import alfio.util.DefaultExceptionHandler;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -25,8 +26,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 
-@Log4j2
 public class SpringBootLauncher {
+
+    private static final Logger log = LoggerFactory.getLogger(SpringBootLauncher.class);
 
     /**
      * Entry point for spring boot

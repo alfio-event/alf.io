@@ -19,7 +19,6 @@ package alfio.extension;
 import alfio.util.Json;
 import com.google.gson.*;
 import lombok.experimental.UtilityClass;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
@@ -36,7 +35,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Log4j2
 @UtilityClass
 public class ExtensionUtils {
 
