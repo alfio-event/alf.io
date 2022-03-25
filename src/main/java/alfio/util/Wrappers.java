@@ -16,7 +16,6 @@
  */
 package alfio.util;
 
-import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -25,10 +24,12 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-@UtilityClass
-public class Wrappers {
+public final class Wrappers {
 
     private static final Logger log = LoggerFactory.getLogger(Wrappers.class);
+
+    private Wrappers() {
+    }
 
     public static <I> void voidTransactionWrapper(Consumer<I> consumer, I input) {
         try {

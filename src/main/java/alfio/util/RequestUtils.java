@@ -18,7 +18,6 @@ package alfio.util;
 
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +38,10 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-@UtilityClass
-public class RequestUtils {
+public final class RequestUtils {
+
+    private RequestUtils() {
+    }
 
     private static final Logger log = LoggerFactory.getLogger(RequestUtils.class);
 

@@ -23,20 +23,21 @@ import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.function.Supplier;
 
-@UtilityClass
-public class TicketCheckInUtil {
+public final class TicketCheckInUtil {
 
     public static final String CUSTOM_CHECK_IN_URL = "customCheckInUrl";
     public static final String ONLINE_CHECK_IN_URL = "onlineCheckInUrl";
     public static final String CUSTOM_CHECK_IN_URL_TEXT = "customCheckInUrlText";
     public static final String CUSTOM_CHECK_IN_URL_DESCRIPTION = "customCheckInUrlDescription";
+
+    private TicketCheckInUtil() {
+    }
 
     public static String ticketOnlineCheckInUrl(Event event, Ticket ticket, String baseUrl) {
         var ticketCode = DigestUtils.sha256Hex(ticket.ticketCode(event.getPrivateKey()));

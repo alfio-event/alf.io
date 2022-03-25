@@ -16,18 +16,18 @@
  */
 package alfio.manager.payment;
 
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@UtilityClass
-class MetadataBuilder {
-
+final class MetadataBuilder {
 
     static final String RESERVATION_ID = "reservationId";
+
+    private MetadataBuilder() {
+    }
 
     static Map<String, String> buildMetadata(PaymentSpecification spec, Map<String, String> base) {
         Map<String, String> initialMetadata = new HashMap<>(base);

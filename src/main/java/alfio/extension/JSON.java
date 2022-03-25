@@ -18,15 +18,16 @@ package alfio.extension;
 
 import alfio.util.Json;
 import com.google.gson.reflect.TypeToken;
-import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
-@UtilityClass
-public class JSON {
+public final class JSON {
+
+    private JSON() {
+    }
 
     private static final Logger log = LoggerFactory.getLogger(JSON.class);
 
