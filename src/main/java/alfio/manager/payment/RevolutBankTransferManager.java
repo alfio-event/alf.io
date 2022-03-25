@@ -36,8 +36,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -60,9 +61,10 @@ import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
 @Component
 @Order(1)
 @Transactional
-@Log4j2
 @AllArgsConstructor
 public class RevolutBankTransferManager implements PaymentProvider, OfflineProcessor, PaymentInfo {
+
+    private static final Logger log = LoggerFactory.getLogger(RevolutBankTransferManager.class);
 
     private static final String GENERIC_ERROR = "error";
     private final BankTransferManager bankTransferManager;

@@ -27,8 +27,9 @@ import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
 import alfio.util.WorkingDaysAdjusters;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -40,9 +41,10 @@ import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYM
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class BankTransferManager implements PaymentProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(BankTransferManager.class);
 
     private static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(BANK_TRANSFER_ENABLED,
         DEFERRED_BANK_TRANSFER_ENABLED, OFFLINE_PAYMENT_DAYS, REVOLUT_ENABLED, REVOLUT_API_KEY,

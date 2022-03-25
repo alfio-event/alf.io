@@ -42,7 +42,8 @@ import com.stripe.model.Refund;
 import com.stripe.net.RequestOptions;
 import com.stripe.net.Webhook;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
@@ -52,9 +53,10 @@ import java.util.function.UnaryOperator;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
-@Log4j2
 @AllArgsConstructor
 class BaseStripeManager {
+
+    private static final Logger log = LoggerFactory.getLogger(BaseStripeManager.class);
 
     static final String STRIPE_MANAGER_TYPE_KEY = "stripeManagerType";
     static final String SUCCEEDED = "succeeded";

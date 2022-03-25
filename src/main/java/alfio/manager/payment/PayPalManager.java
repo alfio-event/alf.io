@@ -41,12 +41,13 @@ import com.paypal.http.exceptions.HttpException;
 import com.paypal.orders.*;
 import com.paypal.payments.CapturesRefundRequest;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -65,9 +66,10 @@ import static alfio.util.MonetaryUtil.*;
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo, ExtractPaymentTokenFromTransaction {
+
+    private static final Logger log = LoggerFactory.getLogger(PayPalManager.class);
 
     private final Cache<String, PayPalHttpClient> cachedClients = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofHours(1L))

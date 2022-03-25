@@ -19,7 +19,6 @@ package alfio.manager.payment;
 import alfio.manager.support.PaymentResult;
 import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,6 @@ import static alfio.model.TicketReservation.TicketReservationStatus.DEFERRED_OFF
 
 @Component
 @Order(0)
-@Log4j2
 public class DeferredBankTransferManager implements PaymentProvider {
 
     private final TicketReservationRepository ticketReservationRepository;
