@@ -21,7 +21,6 @@ import alfio.config.Initializer;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
-import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
@@ -152,7 +151,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
 
     @Test
     @Timeout(value = 15L, unit = TimeUnit.MINUTES)
-    public void testFlow() {
+    public void testFlow() throws InterruptedException {
         for(var browserWebDriver : webDrivers) {
             var driver = browserWebDriver.driver;
             try {
@@ -223,8 +222,8 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         driver.findElement(By.cssSelector("button[type=submit][translate='reservation-page.continue']")).sendKeys(Keys.RETURN);
     }
 
-    @SneakyThrows
-    private void page3Payment(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
+
+    private void page3Payment(BrowserWebDriver browserWebDriver, WebDriverWait wait) throws InterruptedException {
         var driver = browserWebDriver.driver;
         selectElement(driver.findElement(By.id("CREDIT_CARD-label")), browserWebDriver);
         wait.until(presenceOfElementLocated(By.cssSelector("#card-element iframe")));
@@ -244,8 +243,8 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         driver.findElement(By.cssSelector(".btn-success")).sendKeys(Keys.RETURN);
     }
 
-    @SneakyThrows
-    private void sendSlowInput(WebElement element, BrowserWebDriver browserWebDriver, CharSequence... strings) {
+
+    private void sendSlowInput(WebElement element, BrowserWebDriver browserWebDriver, CharSequence... strings) throws InterruptedException {
         if(browserWebDriver.browser == BrowserWebDriver.Browser.SAFARI || browserWebDriver.browser == BrowserWebDriver.Browser.IE) {
             for (var str : strings) {
                 element.sendKeys(str);

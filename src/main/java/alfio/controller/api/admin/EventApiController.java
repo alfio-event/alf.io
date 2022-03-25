@@ -48,7 +48,6 @@ import com.opencsv.exceptions.CsvException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
-import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -645,7 +644,6 @@ public class EventApiController {
         }
     }
 
-    @SneakyThrows
     private void addPdfToZip(Event event, ZipOutputStream zipOS, TicketReservation reservation, BillingDocument document) {
         Map<String, Object> reservationModel = document.getModel();
         Optional<byte[]> pdf;
@@ -666,8 +664,12 @@ public class EventApiController {
             String fileName = FileUtil.getBillingDocumentFileName(event.getShortName(), reservation.getId(), document);
             var entry = new ZipEntry(fileName);
             entry.setTimeLocal(document.getGenerationTimestamp().withZoneSameInstant(event.getZoneId()).toLocalDateTime());
-            zipOS.putNextEntry(entry);
-            StreamUtils.copy(pdf.get(), zipOS);
+            try {
+                zipOS.putNextEntry(entry);
+                StreamUtils.copy(pdf.get(), zipOS);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 
