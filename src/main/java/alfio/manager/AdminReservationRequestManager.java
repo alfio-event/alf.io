@@ -91,8 +91,7 @@ public class AdminReservationRequestManager {
             .entrySet().stream()
             .filter(e -> e.getValue() > 1)
             .map(Map.Entry::getKey)
-            .limit(5) // return max 5 codes
-            .collect(Collectors.toList());
+            .limit(5).toList();
 
         if(!attendeesWithDuplicateReference.isEmpty()) {
             return Result.error(ErrorCode.custom("DUPLICATE_REFERENCE", "The following codes are duplicate:" + attendeesWithDuplicateReference));

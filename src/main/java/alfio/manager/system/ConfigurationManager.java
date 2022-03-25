@@ -281,8 +281,7 @@ public class ConfigurationManager {
         List<SettingCategory> toBeRemoved = PaymentProxy.availableProxies()
             .stream()
             .filter(pp -> paymentMethodsBlacklist.contains(pp.getKey()))
-            .flatMap(pp -> pp.getSettingCategories().stream())
-            .collect(toList());
+            .flatMap(pp -> pp.getSettingCategories().stream()).toList();
 
         if(toBeRemoved.isEmpty()) {
             return result;
@@ -393,13 +392,11 @@ public class ConfigurationManager {
             return Collections.emptyMap();
         }
         final List<Configuration> existing = configurationRepository.findSystemConfiguration()
-                .stream()
-                .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal())
-                .collect(toList());
+            .stream()
+            .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal()).toList();
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
-                .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
-                .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM))
-                .collect(toList());
+            .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
+            .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM)).toList();
         List<Configuration> result = new ArrayList<>(existing);
         result.addAll(missing);
         return result.stream().sorted().collect(groupByCategory());

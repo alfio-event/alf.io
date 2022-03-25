@@ -35,7 +35,7 @@ public class JSErrorReporter implements ErrorReporter {
 
     @Override
     public void warning(String message, String sourceName, int line, String lineSource, int lineOffset) {
-        log.warn("Warning : " + message);
+        log.warn("Warning : {}", message);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class JSErrorReporter implements ErrorReporter {
 
     @Override
     public void error(String message, String sourceName, int line, String lineSource, int lineOffset) {
-        log.warn("Error : " + message);
+        log.warn("Error : {}", message);
     }
 
 }

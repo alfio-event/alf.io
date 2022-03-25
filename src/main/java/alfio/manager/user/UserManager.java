@@ -16,7 +16,6 @@
  */
 package alfio.manager.user;
 
-import alfio.model.TicketReservationAdditionalInfo;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;

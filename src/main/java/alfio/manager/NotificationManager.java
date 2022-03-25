@@ -154,7 +154,7 @@ public class NotificationManager {
                     ticketWithMetadata, ticketCategory, organization, templateManager, fileUploadManager,
                     configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager);
             } catch (IOException e) {
-                log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
+                log.warn("was not able to generate ticket pdf for ticket with id {}", ticket.getId(), e);
             }
             return baos.toByteArray();
         };
@@ -244,7 +244,7 @@ public class NotificationManager {
             reservationEmailModel.put("event", purchaseContext);
 
             if(receipt.isEmpty()) {
-                log.warn("was not able to generate the receipt for reservation id " + reservationId + " for locale " + language);
+                log.warn("was not able to generate the receipt for reservation id {} for locale {}", reservationId, language);
             }
             return receipt.orElse(null);
         };

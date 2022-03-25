@@ -580,8 +580,8 @@ public class AdminReservationManager {
         try {
             ticketRepository.updateExternalReferenceAndLocking(ticketId, categoryId, StringUtils.trimToNull(attendee.getReference()), attendee.isReassignmentForbidden());
         } catch (DataIntegrityViolationException ex) {
-            log.warn("Duplicate found for external reference: "+attendee.getReference()+" and ticketID: " + ticketId);
-            throw new DuplicateReferenceException("Duplicated Reference: "+attendee.getReference(), ex);
+            log.warn("Duplicate found for external reference: {} and ticketID: {}", attendee.getReference(), ticketId);
+            throw new DuplicateReferenceException("Duplicated Reference: " + attendee.getReference(), ex);
         }
     }
 

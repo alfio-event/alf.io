@@ -67,7 +67,7 @@ public class FileDownloadManager {
                 return null;
             }
         } else {
-            log.warn("downloading file not successful:" + response);
+            log.warn("downloading file not successful: {}", response);
             return null;
         }
     }

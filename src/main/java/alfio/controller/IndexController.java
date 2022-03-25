@@ -430,7 +430,7 @@ public class IndexController {
         }
 
         Collection<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-            .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+            .stream().map(GrantedAuthority::getAuthority).toList();
 
         boolean isAdmin = authorities.contains(Role.ADMIN.getRoleName());
         model.addAttribute("isOwner", isAdmin || authorities.contains(Role.OWNER.getRoleName()));

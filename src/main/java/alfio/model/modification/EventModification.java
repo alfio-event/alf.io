@@ -390,7 +390,7 @@ public class EventModification {
 
             private final alfio.model.AdditionalService src;
             private ZoneId zoneId;
-            private List<AdditionalField> additionalServiceFields = new ArrayList<>();
+            private final List<AdditionalField> additionalServiceFields = new ArrayList<>();
             private List<AdditionalServiceText> title = new ArrayList<>();
             private List<AdditionalServiceText> description = new ArrayList<>();
             private PriceContainer priceContainer;

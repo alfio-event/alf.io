@@ -75,7 +75,7 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
     protected OpenIdAlfioUser fromToken(String idToken, String subject, String email, Map<String, Claim> idTokenClaims) {
         List<String> groupsList = idTokenClaims.get(openIdConfiguration().getRolesParameter()).asList(String.class);
         log.trace("IdToken contains the following groups: {}", groupsList);
-        List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
+        List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).toList();
         boolean isAdmin = groups.contains(ALFIO_ADMIN);
 
         if (isAdmin) {

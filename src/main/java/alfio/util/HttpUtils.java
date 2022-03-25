@@ -132,7 +132,7 @@ public final class HttpUtils {
 
         class PartsIterator implements Iterator<byte[]> {
 
-            private Iterator<PartsSpecification> iter;
+            private final Iterator<PartsSpecification> iter;
             private InputStream currentFileInput;
 
             private boolean done;
