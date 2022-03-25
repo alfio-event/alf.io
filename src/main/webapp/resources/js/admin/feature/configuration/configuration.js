@@ -159,7 +159,8 @@
                         cc: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_SYSTEM_NOTIFICATION_CC';}),
                         mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';}),
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';}),
-                        enableHtmlEmails: _.find(original['MAIL'], function(e) {return e.configurationKey === 'ENABLE_HTML_EMAILS';})
+                        enableHtmlEmails: _.find(original['MAIL'], function(e) {return e.configurationKey === 'ENABLE_HTML_EMAILS';}),
+                        mailFooter: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_FOOTER';})
                     };
                 }
 

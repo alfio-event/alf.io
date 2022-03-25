@@ -10,3 +10,4 @@
 {{#i18n}}email.kind-regards{{/i18n}}
 
 {{organization.name}} <{{organization.email}}>
+{{#hasMailFooter}}{{#render-markdown}}{{mailFooter}}.text{{/render-markdown}}{{/hasMailFooter}}

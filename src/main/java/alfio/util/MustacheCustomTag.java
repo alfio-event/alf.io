@@ -79,6 +79,24 @@ public class MustacheCustomTag {
         }
     };
 
+    /**
+     * {{#render-markdown}}[markdown][.html|.text]{{/render-markdown}}
+     * The string must end with either .html or .text, otherwise Markdown won't be parsed
+     * e.g.
+     * {{#render-markdown}}(link)[description].html{{/render-markdown}} will produce HTML output
+     * {{#render-markdown}}(link)[description].text{{/render-markdown}} will produce text/plain output
+     */
+    static final Mustache.Lambda RENDER_MARKDOWN = (frag, out) -> {
+        String execution = frag.execute().strip();
+        if(execution.endsWith(".html")) {
+            out.write(renderToHtmlCommonmarkEscaped(StringUtils.removeEnd(execution, ".html")));
+        } else if(execution.endsWith(".text")) {
+            out.write(renderToTextCommonmark(StringUtils.removeEnd(execution, ".text")));
+        } else {
+            out.write(execution);
+        }
+    };
+
     static final Mustache.Lambda COUNTRY_NAME = (frag, out) -> {
         String execution = frag.execute().trim();
         String code = substring(execution, 0, 2);
