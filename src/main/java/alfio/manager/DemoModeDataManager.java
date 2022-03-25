@@ -26,8 +26,9 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +37,10 @@ import java.util.Date;
 import java.util.List;
 
 @AllArgsConstructor
-@Log4j2
 public class DemoModeDataManager {
+
+    private static final Logger log = LoggerFactory.getLogger(DemoModeDataManager.class);
+
     private final UserRepository userRepository;
     private final UserOrganizationRepository userOrganizationRepository;
     private final OrganizationRepository organizationRepository;

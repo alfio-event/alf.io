@@ -26,26 +26,27 @@ import ch.digitalfondue.vatchecker.EUVatChecker;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class EuVatChecker {
+
+    private static final Logger log = LoggerFactory.getLogger(EuVatChecker.class);
 
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;

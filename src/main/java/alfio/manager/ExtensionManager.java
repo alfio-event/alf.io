@@ -44,7 +44,8 @@ import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 
@@ -62,8 +63,9 @@ import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 
 @Component
 @AllArgsConstructor
-@Log4j2
 public class ExtensionManager {
+
+    private static final Logger log = LoggerFactory.getLogger(ExtensionManager.class);
 
     private static final String TICKET = "ticket";
     private static final String EVENT_METADATA = "eventMetadata";
