@@ -37,7 +37,7 @@ public interface EventAdminRepository {
      */
     default boolean existsBySlug(String slug) {
         var jdbcTemplate = getJdbcTemplate();
-        boolean rlsEnabled = Boolean.TRUE.equals(jdbcTemplate.queryForObject("select coalesce(current_setting('alfio.checkRowAccess', true), 'false')", EmptySqlParameterSource.INSTANCE, Boolean.class));
+        boolean rlsEnabled = Boolean.TRUE.equals(jdbcTemplate.queryForObject("select coalesce(current_setting('alfio.checkRowAccess', true), 'false') = 'true'", EmptySqlParameterSource.INSTANCE, Boolean.class));
         if (rlsEnabled) {
             jdbcTemplate.queryForObject("select set_config('alfio.checkRowAccess', 'false', true)", EmptySqlParameterSource.INSTANCE, Boolean.class);
         }

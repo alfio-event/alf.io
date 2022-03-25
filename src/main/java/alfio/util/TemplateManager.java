@@ -44,8 +44,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static alfio.util.MustacheCustomTag.ADDITIONAL_FIELD_VALUE;
-import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
+import static alfio.util.MustacheCustomTag.*;
 
 /**
  * For hiding the ugliness :)
@@ -57,6 +56,7 @@ public class TemplateManager {
     public static final String METADATA_ATTRIBUTES_KEY = "metadata-attributes";
     public static final String ADDITIONAL_FIELDS_KEY = "additional-fields";
     public static final String VAT_TRANSLATION_TEMPLATE_KEY = "vatTranslation";
+    public static final String MAIL_FOOTER = "mailFooter";
 
     private final MessageSourceManager messageSourceManager;
 
@@ -103,16 +103,22 @@ public class TemplateManager {
     
     private RenderedTemplate renderMultipartTemplate(PurchaseContext purchaseContext, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
     	var enrichedModel = modelEnricher(model, purchaseContext, locale);
+        var options = configurationManager.getFor(EnumSet.of(ConfigurationKeys.MAIL_FOOTER, ConfigurationKeys.ENABLE_HTML_EMAILS), purchaseContext.getConfigurationLevel());
+        var mailFooter = options.get(ConfigurationKeys.MAIL_FOOTER);
+        enrichedModel.put("hasMailFooter", mailFooter.isPresent());
+        enrichedModel.put(MAIL_FOOTER, mailFooter.getValueOrNull());
     	var isMultipart = templateResource.isMultipart();
     	
         var textRender = render(new ClassPathResource(templateResource.classPath()), enrichedModel, locale, purchaseContext, isMultipart ? TemplateOutput.TEXT : templateResource.getTemplateOutput());
         
-        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault();
-        
-        var htmlRender = isMultipart && htmlEnabled ? 
-        		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, purchaseContext, TemplateOutput.HTML) :
-        		null;
-        		
+        boolean htmlEnabled = options.get(ConfigurationKeys.ENABLE_HTML_EMAILS).getValueAsBooleanOrDefault();
+
+        String htmlRender = null;
+
+        if(isMultipart && htmlEnabled) {
+            htmlRender = render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, purchaseContext, TemplateOutput.HTML);
+        }
+
     	return RenderedTemplate.multipart(textRender, htmlRender, model);
     }
 
@@ -151,6 +157,7 @@ public class TemplateManager {
             mv.getModelMap().addAllAttributes(model);
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
             mv.addObject("country-name", COUNTRY_NAME);
+            mv.addObject("render-markdown", RENDER_MARKDOWN);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get(ADDITIONAL_FIELDS_KEY)));
             mv.addObject("metadata-value", ADDITIONAL_FIELD_VALUE.apply(model.get(METADATA_ATTRIBUTES_KEY)));
             mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceFor(purchaseContext)).createTranslator());

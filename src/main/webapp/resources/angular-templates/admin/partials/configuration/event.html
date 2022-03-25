@@ -105,6 +105,9 @@
                         <setting obj="eventConf.mail.enableHtmlEmails" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                     </div>
                 </div>
+                <div>
+                    <setting obj="eventConf.mail.mailFooter" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                </div>
                 <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                 </div>
