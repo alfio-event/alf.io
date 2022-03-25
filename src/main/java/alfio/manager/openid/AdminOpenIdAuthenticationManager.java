@@ -28,7 +28,6 @@ import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.Json;
 import com.auth0.jwt.interfaces.Claim;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.concurrent.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,10 +40,10 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@Log4j2
 public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationManager {
 
-    private final Logger logger = LoggerFactory.getLogger(AdminOpenIdAuthenticationManager.class);
+    private static final Logger log = LoggerFactory.getLogger(AdminOpenIdAuthenticationManager.class);
+
     private static final String ALFIO_ADMIN = "ALFIO_ADMIN";
 
     private final LazyConfigurationContainer configurationContainer;
@@ -76,7 +75,7 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
     protected OpenIdAlfioUser fromToken(String idToken, String subject, String email, Map<String, Claim> idTokenClaims) {
         List<String> groupsList = idTokenClaims.get(openIdConfiguration().getRolesParameter()).asList(String.class);
         log.trace("IdToken contains the following groups: {}", groupsList);
-        List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
+        List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).toList();
         boolean isAdmin = groups.contains(ALFIO_ADMIN);
 
         if (isAdmin) {
@@ -88,7 +87,7 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
 
         if(groups.isEmpty()){
             String message = "Users must have at least a group called ALFIO_ADMIN or ALFIO_BACKOFFICE";
-            logger.error(message);
+            log.error(message);
             throw new RuntimeException(message);
         }
 

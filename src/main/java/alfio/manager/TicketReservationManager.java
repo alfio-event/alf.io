@@ -68,7 +68,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import alfio.util.checkin.TicketCheckInUtil;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -76,6 +75,8 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -129,9 +130,10 @@ import static org.apache.commons.lang3.time.DateUtils.truncate;
 
 @Component
 @Transactional
-@Log4j2
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class TicketReservationManager {
+
+    private static final Logger log = LoggerFactory.getLogger(TicketReservationManager.class);
     
     public static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
     private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";

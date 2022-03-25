@@ -19,7 +19,8 @@ package alfio.manager;
 import alfio.model.modification.UploadBase64FileModification;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -30,8 +31,9 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 
-@Log4j2
 public class FileDownloadManager {
+
+    private static final Logger log = LoggerFactory.getLogger(FileDownloadManager.class);
 
     private final HttpClient httpClient;
 
@@ -65,7 +67,7 @@ public class FileDownloadManager {
                 return null;
             }
         } else {
-            log.warn("downloading file not successful:" + response);
+            log.warn("downloading file not successful: {}", response);
             return null;
         }
     }

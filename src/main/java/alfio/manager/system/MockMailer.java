@@ -18,7 +18,8 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 
 import java.util.Arrays;
@@ -29,9 +30,10 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
 
-@Log4j2
 @AllArgsConstructor
 public class MockMailer implements Mailer {
+
+    private static final Logger log = LoggerFactory.getLogger(MockMailer.class);
 
     private final ConfigurationManager configurationManager;
     private final Environment environment;

@@ -31,10 +31,11 @@ import alfio.repository.GroupRepository;
 import alfio.repository.TicketRepository;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -51,8 +52,9 @@ import static alfio.model.group.LinkedGroup.Type.*;
 import static java.util.Collections.singletonList;
 
 @Component
-@Log4j2
 public class GroupManager {
+
+    private static final Logger log = LoggerFactory.getLogger(GroupManager.class);
 
     private final GroupRepository groupRepository;
     private final TicketRepository ticketRepository;

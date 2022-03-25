@@ -29,7 +29,8 @@ import com.github.scribejava.core.builder.api.DefaultApi20;
 import com.github.scribejava.core.model.OAuth2AccessToken;
 import com.github.scribejava.core.oauth.OAuth20Service;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.net.http.HttpClient;
@@ -41,9 +42,11 @@ import java.util.UUID;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @AllArgsConstructor
-@Log4j2
 @Component
 public class MollieConnectManager implements OAuthPaymentProviderConnector {
+
+    private static final Logger log = LoggerFactory.getLogger(MollieConnectManager.class);
+
     public static final String MOLLIE_CONNECT_REDIRECT_PATH = "/admin/configuration/payment/mollie/authorize";
     private static final String SCOPES = "payments.read payments.write refunds.read refunds.write";
     private final ExtensionManager extensionManager;

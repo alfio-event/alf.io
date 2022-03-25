@@ -23,7 +23,8 @@ import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
@@ -39,8 +40,9 @@ import javax.sql.DataSource;
 @Profile("openid")
 @Configuration(proxyBeanMethods = false)
 @Order(1)
-@Log4j2
 public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenIdAdminWebSecurity.class);
 
     private final AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager;
 

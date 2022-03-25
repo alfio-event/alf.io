@@ -16,7 +16,6 @@
  */
 package alfio.util;
 
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.Assert;
 
@@ -24,13 +23,14 @@ import java.math.BigInteger;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-@UtilityClass
-public class PinGenerator {
+public final class PinGenerator {
 
     private static final String ALLOWED_CHARS = "ACDEFGHJKLMNPQRTUVWXY34679";
     private static final Pattern VALIDATION_PATTERN = Pattern.compile("^["+ALLOWED_CHARS+"]+$");
     private static final int PIN_LENGTH = 6;
 
+    private PinGenerator() {
+    }
 
     public static String uuidToPin(String uuid, int pinLength) {
         var src = new BigInteger(uuid.replace("-", "").substring(0, pinLength+1), 16);

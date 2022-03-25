@@ -19,7 +19,8 @@ package alfio.controller.api.support;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,9 +34,10 @@ import static alfio.model.system.ConfigurationKeys.SECURITY_CSP_REPORT_URI;
 
 
 @RestController
-@Log4j2
 @AllArgsConstructor
 public class CspReportApiController {
+
+    private static final Logger log = LoggerFactory.getLogger(CspReportApiController.class);
 
 
     private final ConfigurationManager configurationManager;

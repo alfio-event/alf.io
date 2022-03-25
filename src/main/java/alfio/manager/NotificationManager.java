@@ -34,10 +34,11 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.*;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
@@ -69,8 +70,9 @@ import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
 @Component
-@Log4j2
 public class NotificationManager {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationManager.class);
 
     private static final String EVENT_ID = "eventId";
     private final Mailer mailer;
@@ -152,7 +154,7 @@ public class NotificationManager {
                     ticketWithMetadata, ticketCategory, organization, templateManager, fileUploadManager,
                     configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager);
             } catch (IOException e) {
-                log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
+                log.warn("was not able to generate ticket pdf for ticket with id {}", ticket.getId(), e);
             }
             return baos.toByteArray();
         };
@@ -242,7 +244,7 @@ public class NotificationManager {
             reservationEmailModel.put("event", purchaseContext);
 
             if(receipt.isEmpty()) {
-                log.warn("was not able to generate the receipt for reservation id " + reservationId + " for locale " + language);
+                log.warn("was not able to generate the receipt for reservation id {} for locale {}", reservationId, language);
             }
             return receipt.orElse(null);
         };

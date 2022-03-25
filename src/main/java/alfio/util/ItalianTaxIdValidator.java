@@ -17,7 +17,6 @@
 package alfio.util;
 
 import lombok.AllArgsConstructor;
-import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -25,8 +24,7 @@ import java.util.*;
 import static java.util.Map.entry;
 import static org.apache.commons.lang3.StringUtils.*;
 
-@UtilityClass
-public class ItalianTaxIdValidator {
+public final class ItalianTaxIdValidator {
     private static final char[] CONTROL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
     private static final String VOWELS = "AEIOU";
     private static final int COMPANY_TAX_ID_LENGTH = 11;
@@ -68,6 +66,9 @@ public class ItalianTaxIdValidator {
         entry('8', new EvenOddValueContainer(8,19)),
         entry('9', new EvenOddValueContainer(9,21))
     );
+
+    private ItalianTaxIdValidator() {
+    }
 
     public static boolean validateFiscalCode(String fiscalCode) {
         var code = StringUtils.upperCase(trimToNull(fiscalCode));

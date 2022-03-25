@@ -16,10 +16,11 @@
  */
 package alfio.config.authentication.support;
 
-import lombok.experimental.UtilityClass;
+public final class AuthenticationConstants {
 
-@UtilityClass
-public class AuthenticationConstants {
+    private AuthenticationConstants() {
+    }
+
     public static final String OPERATOR = "OPERATOR";
     public static final String SPONSOR = "SPONSOR";
     public static final String ADMIN_API = "/admin/api";

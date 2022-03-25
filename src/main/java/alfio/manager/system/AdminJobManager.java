@@ -22,8 +22,9 @@ import alfio.model.result.Result;
 import alfio.model.system.AdminJobSchedule;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.util.ClockProvider;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -42,8 +43,9 @@ import static alfio.model.system.AdminJobSchedule.Status.EXECUTED;
 import static java.util.stream.Collectors.*;
 
 @Transactional
-@Slf4j
 public class AdminJobManager {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminJobManager.class);
 
     static final int MAX_ATTEMPTS = 17; // will retry for approximately 36h
     private static final Set<String> ADMIN_JOBS = EnumSet.complementOf(EnumSet.of(JobName.EXECUTE_EXTENSION))

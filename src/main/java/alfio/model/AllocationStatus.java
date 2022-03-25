@@ -19,5 +19,5 @@ package alfio.model;
 public enum AllocationStatus {
     FREE, PRE_RESERVED, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED,
     CHECKED_IN, EXPIRED,
-    INVALIDATED, RELEASED;
+    INVALIDATED, RELEASED
 }

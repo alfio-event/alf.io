@@ -20,8 +20,9 @@ import alfio.manager.CheckInManager;
 import alfio.manager.ExtensionManager;
 import alfio.manager.TicketReservationManager;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,8 +37,9 @@ import static alfio.util.EventUtil.findMatchingLink;
 
 @Controller
 @AllArgsConstructor
-@Log4j2
 public class OnlineCheckInController {
+
+    private static final Logger log = LoggerFactory.getLogger(OnlineCheckInController.class);
 
     private final TicketReservationManager ticketReservationManager;
     private final CheckInManager checkInManager;

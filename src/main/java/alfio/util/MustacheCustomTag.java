@@ -18,7 +18,6 @@ package alfio.util;
 
 import alfio.controller.api.support.TicketHelper;
 import com.samskivert.mustache.Mustache;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
@@ -31,6 +30,8 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.AttributeProvider;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.commonmark.renderer.text.TextContentRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.web.util.UrlUtils;
 
 import java.time.ZonedDateTime;
@@ -58,8 +59,9 @@ import static org.apache.commons.lang3.StringUtils.substring;
  * <li>optional: locale:YOUR_LOCALE you can define the locale</li>
  * </ul>
  */
-@Log4j2
 public class MustacheCustomTag {
+
+    private static final Logger log = LoggerFactory.getLogger(MustacheCustomTag.class);
 
     private MustacheCustomTag() {}
 

@@ -17,17 +17,18 @@
 package alfio.test.util;
 
 import alfio.util.ClockProvider;
-import lombok.experimental.UtilityClass;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-@UtilityClass
-public class TestUtil {
+public final class TestUtil {
 
     public static final ClockProvider FIXED_TIME_CLOCK;
+
+    private TestUtil() {
+    }
 
     static {
         var todayAt10Sharp = LocalDateTime.now(Clock.systemUTC())

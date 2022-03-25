@@ -35,9 +35,10 @@ import alfio.model.user.Organization;
 import alfio.repository.ExtensionRepository;
 import alfio.util.Json;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -60,8 +61,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 @RestController
 @RequestMapping("/api/v1/admin/event")
 @AllArgsConstructor
-@Log4j2
 public class EventApiV1Controller {
+
+    private static final Logger log = LoggerFactory.getLogger(EventApiV1Controller.class);
 
     private final EventManager eventManager;
     private final EventNameManager eventNameManager;

@@ -48,7 +48,6 @@ import alfio.util.MonetaryUtil;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -56,6 +55,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -92,9 +93,10 @@ import static java.util.stream.Collectors.*;
 
 @Component
 @Transactional
-@Log4j2
 @AllArgsConstructor
 public class EventManager {
+
+    private static final Logger log = LoggerFactory.getLogger(EventManager.class);
 
     private static final Predicate<TicketCategory> IS_CATEGORY_BOUNDED = TicketCategory::isBounded;
     static final String ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE = "Cannot switch to Online. Please remove On-Site payment method first.";

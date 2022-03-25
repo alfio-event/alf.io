@@ -26,7 +26,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.Json;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -41,7 +40,6 @@ import java.net.http.HttpClient;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
-@Log4j2
 public class WebSecurityConfig {
 
     public static final String CSRF_PARAM_NAME = "_csrf";

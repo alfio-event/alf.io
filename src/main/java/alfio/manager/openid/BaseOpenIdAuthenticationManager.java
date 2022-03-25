@@ -32,8 +32,9 @@ import alfio.util.PasswordGenerator;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.GrantedAuthority;
@@ -53,8 +54,10 @@ import java.util.stream.Collectors;
 import static alfio.util.HttpUtils.APPLICATION_FORM_URLENCODED;
 import static alfio.util.HttpUtils.APPLICATION_JSON;
 
-@Log4j2
 abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationManager {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenIdAuthenticationManager.class);
+
     protected static final String CODE = "code";
     protected static final String ID_TOKEN = "id_token";
     protected static final String SUBJECT = "sub";
@@ -217,7 +220,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
 
     @Override
     public String buildAuthorizeUrl(String state) {
-        log.trace("buildAuthorizeUrl, configuration: {}", this::openIdConfiguration);
+        log.trace("buildAuthorizeUrl, configuration: {}", openIdConfiguration());
         String scopeParameter = String.join("+", getScopes());
 
         UriComponents uri = UriComponentsBuilder.newInstance()

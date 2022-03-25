@@ -17,9 +17,10 @@
 
 package alfio.extension;
 
-import lombok.extern.log4j.Log4j2;
 import org.mozilla.javascript.ErrorReporter;
 import org.mozilla.javascript.EvaluatorException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -28,12 +29,13 @@ import org.mozilla.javascript.EvaluatorException;
  *
  * Implements ErrorReporter interface of Rhino and prints syntax errors in the JS script.
  */
-@Log4j2
 public class JSErrorReporter implements ErrorReporter {
+
+    private static final Logger log = LoggerFactory.getLogger(JSErrorReporter.class);
 
     @Override
     public void warning(String message, String sourceName, int line, String lineSource, int lineOffset) {
-        log.warn("Warning : " + message);
+        log.warn("Warning : {}", message);
     }
 
     @Override
@@ -43,7 +45,7 @@ public class JSErrorReporter implements ErrorReporter {
 
     @Override
     public void error(String message, String sourceName, int line, String lineSource, int lineOffset) {
-        log.warn("Error : " + message);
+        log.warn("Error : {}", message);
     }
 
 }

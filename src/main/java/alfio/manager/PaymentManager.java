@@ -31,8 +31,9 @@ import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -41,11 +42,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class PaymentManager {
 
     public static final String PAYMENT_TOKEN = "PAYMENT_TOKEN";
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentManager.class);
 
     private final TransactionRepository transactionRepository;
     private final ConfigurationManager configurationManager;

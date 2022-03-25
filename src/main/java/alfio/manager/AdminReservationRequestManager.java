@@ -26,11 +26,12 @@ import alfio.repository.AdminReservationRequestRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Component;
@@ -52,9 +53,10 @@ import static java.util.Optional.ofNullable;
 
 @Component
 @Transactional
-@Log4j2
 @RequiredArgsConstructor
 public class AdminReservationRequestManager {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminReservationRequestManager.class);
 
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
@@ -89,8 +91,7 @@ public class AdminReservationRequestManager {
             .entrySet().stream()
             .filter(e -> e.getValue() > 1)
             .map(Map.Entry::getKey)
-            .limit(5) // return max 5 codes
-            .collect(Collectors.toList());
+            .limit(5).toList();
 
         if(!attendeesWithDuplicateReference.isEmpty()) {
             return Result.error(ErrorCode.custom("DUPLICATE_REFERENCE", "The following codes are duplicate:" + attendeesWithDuplicateReference));
@@ -120,7 +121,7 @@ public class AdminReservationRequestManager {
             try {
                 adminReservationRequestRepository.updateStatus(list);
             } catch(Exception e) {
-                log.fatal("cannot update the status of "+list.size()+" reservations", e);
+                log.error("cannot update the status of "+list.size()+" reservations", e);
             }
         });
 

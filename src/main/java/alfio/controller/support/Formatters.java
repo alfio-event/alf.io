@@ -20,8 +20,8 @@ import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.LocalizedContent;
 import alfio.util.MustacheCustomTag;
-import lombok.experimental.UtilityClass;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 
 import java.time.ZonedDateTime;
@@ -29,9 +29,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-@UtilityClass
-@Log4j2
-public class Formatters {
+public final class Formatters {
+
+    private Formatters() {
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(Formatters.class);
 
     public static final String LINK_NEW_TAB_KEY = "link.new-tab";
 

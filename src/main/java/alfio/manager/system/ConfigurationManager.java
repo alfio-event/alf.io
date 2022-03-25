@@ -41,12 +41,13 @@ import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,9 +65,10 @@ import static alfio.model.system.ConfigurationPathLevel.*;
 import static java.util.stream.Collectors.toList;
 
 @Transactional
-@Log4j2
 @RequiredArgsConstructor
 public class ConfigurationManager {
+
+    private static final Logger log = LoggerFactory.getLogger(ConfigurationManager.class);
 
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
@@ -279,8 +281,7 @@ public class ConfigurationManager {
         List<SettingCategory> toBeRemoved = PaymentProxy.availableProxies()
             .stream()
             .filter(pp -> paymentMethodsBlacklist.contains(pp.getKey()))
-            .flatMap(pp -> pp.getSettingCategories().stream())
-            .collect(toList());
+            .flatMap(pp -> pp.getSettingCategories().stream()).toList();
 
         if(toBeRemoved.isEmpty()) {
             return result;
@@ -391,13 +392,11 @@ public class ConfigurationManager {
             return Collections.emptyMap();
         }
         final List<Configuration> existing = configurationRepository.findSystemConfiguration()
-                .stream()
-                .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal())
-                .collect(toList());
+            .stream()
+            .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal()).toList();
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
-                .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
-                .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM))
-                .collect(toList());
+            .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
+            .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM)).toList();
         List<Configuration> result = new ArrayList<>(existing);
         result.addAll(missing);
         return result.stream().sorted().collect(groupByCategory());

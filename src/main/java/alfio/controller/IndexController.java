@@ -36,10 +36,11 @@ import alfio.util.RequestUtils;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -71,8 +72,9 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 @Controller
 @AllArgsConstructor
-@Slf4j
 public class IndexController {
+
+    private static final Logger log = LoggerFactory.getLogger(IndexController.class);
 
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
     private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
@@ -428,7 +430,7 @@ public class IndexController {
         }
 
         Collection<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-            .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+            .stream().map(GrantedAuthority::getAuthority).toList();
 
         boolean isAdmin = authorities.contains(Role.ADMIN.getRoleName());
         model.addAttribute("isOwner", isAdmin || authorities.contains(Role.OWNER.getRoleName()));

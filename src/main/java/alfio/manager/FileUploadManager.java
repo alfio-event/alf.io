@@ -23,10 +23,11 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +39,10 @@ import java.util.*;
 
 @Component
 @Transactional
-@Log4j2
 @RequiredArgsConstructor
 public class FileUploadManager {
+
+    private static final Logger log = LoggerFactory.getLogger(FileUploadManager.class);
 
     /**
      * Maximum allowed file size is 200kb
