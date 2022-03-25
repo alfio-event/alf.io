@@ -24,7 +24,6 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.LocaleUtil;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,13 +34,18 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@AllArgsConstructor
 @RequestMapping("/api/v2/")
 public class TranslationsApiController {
 
     private final MessageSourceManager messageSourceManager;
     private final ConfigurationManager configurationManager;
     private final I18nManager i18nManager;
+
+    public TranslationsApiController(MessageSourceManager messageSourceManager, ConfigurationManager configurationManager, I18nManager i18nManager) {
+        this.messageSourceManager = messageSourceManager;
+        this.configurationManager = configurationManager;
+        this.i18nManager = i18nManager;
+    }
 
     @GetMapping("/public/i18n/bundle/{lang}")
     public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang,

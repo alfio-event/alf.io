@@ -35,12 +35,9 @@ import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.jfiveparse.*;
-import lombok.AllArgsConstructor;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -66,15 +63,11 @@ import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Controller
-@AllArgsConstructor
 public class IndexController {
-
-    private static final Logger log = LoggerFactory.getLogger(IndexController.class);
 
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
     private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
@@ -110,6 +103,32 @@ public class IndexController {
     private final SubscriptionRepository subscriptionRepository;
     private final EventLoader eventLoader;
     private final PurchaseContextManager purchaseContextManager;
+
+    public IndexController(ConfigurationManager configurationManager,
+                           EventRepository eventRepository,
+                           Environment environment,
+                           TemplateManager templateManager,
+                           FileUploadRepository fileUploadRepository,
+                           MessageSourceManager messageSourceManager,
+                           EventDescriptionRepository eventDescriptionRepository,
+                           OrganizationRepository organizationRepository,
+                           TicketReservationRepository ticketReservationRepository,
+                           SubscriptionRepository subscriptionRepository,
+                           EventLoader eventLoader,
+                           PurchaseContextManager purchaseContextManager) {
+        this.configurationManager = configurationManager;
+        this.eventRepository = eventRepository;
+        this.environment = environment;
+        this.templateManager = templateManager;
+        this.fileUploadRepository = fileUploadRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.organizationRepository = organizationRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        this.eventLoader = eventLoader;
+        this.purchaseContextManager = purchaseContextManager;
+    }
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)

@@ -21,7 +21,6 @@ import alfio.manager.payment.OAuthPaymentProviderConnector;
 import alfio.manager.payment.StripeConnectManager;
 import alfio.manager.user.UserManager;
 import alfio.util.oauth2.AccessTokenResponseDetails;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,6 @@ import static alfio.manager.payment.MollieConnectManager.MOLLIE_CONNECT_REDIRECT
 import static alfio.manager.payment.StripeConnectManager.STRIPE_CONNECT_REDIRECT_PATH;
 
 @Controller
-@AllArgsConstructor
 public class AdminConfigurationController {
 
     private static final Logger log = LoggerFactory.getLogger(AdminConfigurationController.class);
@@ -55,6 +53,14 @@ public class AdminConfigurationController {
     private final StripeConnectManager stripeConnectManager;
     private final MollieConnectManager mollieConnectManager;
     private final UserManager userManager;
+
+    public AdminConfigurationController(StripeConnectManager stripeConnectManager,
+                                        MollieConnectManager mollieConnectManager,
+                                        UserManager userManager) {
+        this.stripeConnectManager = stripeConnectManager;
+        this.mollieConnectManager = mollieConnectManager;
+        this.userManager = userManager;
+    }
 
     @GetMapping("/admin/configuration/payment/{provider}/connect/{orgId}")
     public String oAuthRedirectToAuthorizationURL(Principal principal,
