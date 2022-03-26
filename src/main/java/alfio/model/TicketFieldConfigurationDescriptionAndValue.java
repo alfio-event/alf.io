@@ -26,11 +26,14 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @AllArgsConstructor
 public class TicketFieldConfigurationDescriptionAndValue {
@@ -41,6 +44,14 @@ public class TicketFieldConfigurationDescriptionAndValue {
     private final TicketFieldDescription ticketFieldDescription;
     private final int count;
     private final String value;
+
+    private static final List<String> TEXT_FIELD_TYPES = List.of(
+        "text",
+        "tel",
+        "textarea",
+        "vat:eu"
+    );
+    private static final Pattern CHECKBOX_VALUES_PATTERN = Pattern.compile("\"(.*?)\",?");
 
     public String getTranslatedValue() {
         if(StringUtils.isBlank(value)) {
@@ -71,16 +82,36 @@ public class TicketFieldConfigurationDescriptionAndValue {
 
     }
 
+    private boolean isText() {
+        return TEXT_FIELD_TYPES.contains(getType());
+    }
+
     public String getValueDescription() {
-        if(isSelectField()) {
-            return getTranslatedRestrictedValue().stream()
-                .filter(t -> StringUtils.equals(t.getLeft(), value))
-                .map(Triple::getMiddle)
-                .findFirst()
-                .orElse("");
-        } else {
+        if(isText()) {
             return value;
+        } else if(isCheckboxField()) {
+            var matches = new ArrayList<String>();
+            var matcher = CHECKBOX_VALUES_PATTERN.matcher(value);
+            while(matcher.find()) {
+                matches.add(matcher.group(1));
+            }
+            var restrictedValues = getTranslatedRestrictedValue();
+            return matches.stream()
+                .map(v -> findValueDescription(restrictedValues, v))
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.joining(", "));
+        } else {
+            return findValueDescription(getTranslatedRestrictedValue(), value);
         }
+    }
+
+    private String findValueDescription(List<Triple<String, String, Boolean>> translateRestrictedValues,
+                                        String value) {
+        return translateRestrictedValues.stream()
+            .filter(t -> StringUtils.equals(t.getLeft(), value))
+            .map(Triple::getMiddle)
+            .findFirst()
+            .orElse("");
     }
 
     public String getValue() {
