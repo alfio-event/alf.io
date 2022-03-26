@@ -97,6 +97,10 @@ public class TicketFieldConfiguration {
         return "select".equals(type);
     }
 
+    public boolean isCheckboxField() {
+        return "checkbox".equals(type);
+    }
+
     public int getCount() {
         if ("checkbox".equals(type) && this.restrictedValues != null) {
             return Math.max(this.restrictedValues.size(), 1);
