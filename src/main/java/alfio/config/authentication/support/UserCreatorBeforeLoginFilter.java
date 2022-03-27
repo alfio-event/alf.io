@@ -30,8 +30,9 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.UUID;
 
-// generate a user if it does not exists, to be used by the demo profile
+// generate a user if it does not exist, to be used by the demo profile
 public class UserCreatorBeforeLoginFilter extends GenericFilterBean {
 
     private final UserManager userManager;
@@ -51,7 +52,7 @@ public class UserCreatorBeforeLoginFilter extends GenericFilterBean {
         if (requestMatcher.matches(req) && req.getParameter("username") != null && req.getParameter("password") != null) {
             String username = req.getParameter("username");
             if (!userManager.usernameExists(username)) {
-                var organizationModification = new OrganizationModification(null, "Demo organization", username, username, null, null);
+                var organizationModification = new OrganizationModification(null, UUID.randomUUID().toString(), username, username, null, null);
                 int orgId = userManager.createOrganization(organizationModification);
                 userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null, null);
             }
