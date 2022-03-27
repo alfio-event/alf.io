@@ -22,6 +22,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.User;
 import alfio.repository.EventDeleterRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.OrganizationDeleterRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
@@ -44,6 +45,7 @@ public class DemoModeDataManager {
     private final EventDeleterRepository eventDeleterRepository;
     private final EventRepository eventRepository;
     private final ConfigurationManager configurationManager;
+    private final OrganizationDeleterRepository organizationDeleterRepository;
 
     public List<Integer> findExpiredUsers(Date date) {
         return userRepository.findUsersToDeleteOlderThan(date, User.Type.DEMO);
@@ -57,8 +59,7 @@ public class DemoModeDataManager {
             log.info("found {} events to delete", disabledEventIds.size());
             disabledEventIds.forEach(eventDeleterRepository::deleteAllForEvent);
             userIds.forEach(userRepository::deleteUserAndReferences);
-            int deletedOrganizations = organizationRepository.deleteOrganizationsIfEmpty(organizationIds);
-            log.info("deleted {} empty organizations", deletedOrganizations);
+            organizationDeleterRepository.deleteEmptyOrganizations(organizationIds);
         }
     }
 

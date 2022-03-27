@@ -30,10 +30,7 @@ import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.repository.EventDeleterRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.SubscriptionRepository;
-import alfio.repository.TicketCategoryRepository;
+import alfio.repository.*;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -304,9 +301,10 @@ public class DataSourceConfiguration {
                                             OrganizationRepository organizationRepository,
                                             EventDeleterRepository eventDeleterRepository,
                                             EventRepository eventRepository,
-                                            ConfigurationManager configurationManager) {
+                                            ConfigurationManager configurationManager,
+                                            OrganizationDeleterRepository organizationDeleterRepository) {
         return new DemoModeDataManager(userRepository, userOrganizationRepository, organizationRepository,
-            eventDeleterRepository, eventRepository, configurationManager);
+            eventDeleterRepository, eventRepository, configurationManager, organizationDeleterRepository);
     }
 
     /**
