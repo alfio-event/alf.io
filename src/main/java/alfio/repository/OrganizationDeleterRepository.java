@@ -1,0 +1,86 @@
+/**
+ * This file is part of alf.io.
+ *
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package alfio.repository;
+
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
+@QueryRepository
+public interface OrganizationDeleterRepository {
+
+    Logger LOGGER = LoggerFactory.getLogger(OrganizationDeleterRepository.class);
+    String SELECT_EMPTY_ORGANIZATIONS = "select distinct(org_id) from j_user_organization where org_id in(:organizationIds)";
+
+    @Query("delete from auditing where organization_id_fk in(:organizationIds)" +
+        " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
+    int deleteAuditingForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from invoice_sequences where organization_id_fk in(:organizationIds)" +
+        " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
+    int deleteInvoiceSequencesForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from a_group where organization_id_fk in(:organizationIds)" +
+        " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
+    int deleteGroupsForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from group_member where organization_id_fk in(:organizationIds)" +
+        " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
+    int deleteGroupMembersForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from configuration_organization where organization_id_fk in(:organizationIds)" +
+        " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
+    int deleteConfigurationForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from resource_organizer where organization_id_fk in(:organizationIds)" +
+        " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
+    int deleteResourcesForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from organization where id in(:organizationIds)" +
+        " and id not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
+    int deleteOrganizationsIfEmpty(@Bind("organizationIds") List<Integer> organizationIds);
+
+
+    default void deleteEmptyOrganizations(List<Integer> organizationIds) {
+        // delete invoice sequences
+        int deletedSequences = deleteInvoiceSequencesForEmptyOrganizations(organizationIds);
+        LOGGER.info("deleted {} invoice sequences", deletedSequences);
+        // delete auditing
+        int deletedAuditing = deleteAuditingForEmptyOrganizations(organizationIds);
+        LOGGER.info("deleted {} auditing rows", deletedAuditing);
+        // delete groups
+        int deletedGroupMembers = deleteGroupMembersForEmptyOrganizations(organizationIds);
+        int deletedGroups = deleteGroupsForEmptyOrganizations(organizationIds);
+        LOGGER.info("deleted {} groups and {} members", deletedGroups, deletedGroupMembers);
+
+        // delete configuration
+        int deletedConfigurations = deleteConfigurationForEmptyOrganizations(organizationIds);
+        LOGGER.info("deleted {} configurations", deletedConfigurations);
+
+        // delete resources
+        int deletedResources = deleteResourcesForEmptyOrganizations(organizationIds);
+        LOGGER.info("deleted {} resources", deletedResources);
+
+        int deletedOrganizations = deleteOrganizationsIfEmpty(organizationIds);
+        LOGGER.info("deleted {} empty organizations", deletedOrganizations);
+
+    }
+}
