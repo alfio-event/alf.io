@@ -22,7 +22,6 @@ import alfio.repository.FileUploadRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -39,7 +38,6 @@ import java.util.*;
 
 @Component
 @Transactional
-@RequiredArgsConstructor
 public class FileUploadManager {
 
     private static final Logger log = LoggerFactory.getLogger(FileUploadManager.class);
@@ -59,6 +57,10 @@ public class FileUploadManager {
             }
         })
         .build();
+
+    public FileUploadManager(FileUploadRepository repository) {
+        this.repository = repository;
+    }
 
     public Optional<FileBlobMetadata> findMetadata(String id) {
         return repository.findById(id);

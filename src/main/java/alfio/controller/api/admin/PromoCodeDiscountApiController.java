@@ -23,7 +23,6 @@ import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import alfio.util.ClockProvider;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,13 +36,22 @@ import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 
 @RestController
 @RequestMapping("/admin/api")
-@RequiredArgsConstructor
 public class PromoCodeDiscountApiController {
 
     private final EventRepository eventRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventManager eventManager;
     private final ClockProvider clockProvider;
+
+    public PromoCodeDiscountApiController(EventRepository eventRepository,
+                                          PromoCodeDiscountRepository promoCodeRepository,
+                                          EventManager eventManager,
+                                          ClockProvider clockProvider) {
+        this.eventRepository = eventRepository;
+        this.promoCodeRepository = promoCodeRepository;
+        this.eventManager = eventManager;
+        this.clockProvider = clockProvider;
+    }
 
     @PostMapping("/promo-code")
     public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode) {

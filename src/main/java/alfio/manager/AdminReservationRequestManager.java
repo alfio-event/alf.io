@@ -25,7 +25,6 @@ import alfio.model.user.User;
 import alfio.repository.AdminReservationRequestRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.user.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -53,7 +52,6 @@ import static java.util.Optional.ofNullable;
 
 @Component
 @Transactional
-@RequiredArgsConstructor
 public class AdminReservationRequestManager {
 
     private static final Logger log = LoggerFactory.getLogger(AdminReservationRequestManager.class);
@@ -64,6 +62,20 @@ public class AdminReservationRequestManager {
     private final AdminReservationRequestRepository adminReservationRequestRepository;
     private final EventRepository eventRepository;
     private final PlatformTransactionManager transactionManager;
+
+    public AdminReservationRequestManager(AdminReservationManager adminReservationManager,
+                                          EventManager eventManager,
+                                          UserRepository userRepository,
+                                          AdminReservationRequestRepository adminReservationRequestRepository,
+                                          EventRepository eventRepository,
+                                          PlatformTransactionManager transactionManager) {
+        this.adminReservationManager = adminReservationManager;
+        this.eventManager = eventManager;
+        this.userRepository = userRepository;
+        this.adminReservationRequestRepository = adminReservationRequestRepository;
+        this.eventRepository = eventRepository;
+        this.transactionManager = transactionManager;
+    }
 
     public Result<AdminReservationRequestStats> getRequestStatus(String requestId, String eventName, String username) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, username)

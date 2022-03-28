@@ -24,9 +24,7 @@ import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.SubscriptionWithUsageDetails;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +42,6 @@ import static alfio.util.FileUtil.sendPdf;
 
 @RequestMapping("/admin/api/reservation")
 @RestController
-@AllArgsConstructor
 public class AdminReservationApiController {
 
     private final AdminReservationManager adminReservationManager;
@@ -52,6 +49,18 @@ public class AdminReservationApiController {
     private final PurchaseContextManager purchaseContextManager;
     private final PurchaseContextSearchManager purchaseContextSearchManager;
     private final TicketReservationManager ticketReservationManager;
+
+    public AdminReservationApiController(AdminReservationManager adminReservationManager,
+                                         EventManager eventManager,
+                                         PurchaseContextManager purchaseContextManager,
+                                         PurchaseContextSearchManager purchaseContextSearchManager,
+                                         TicketReservationManager ticketReservationManager) {
+        this.adminReservationManager = adminReservationManager;
+        this.eventManager = eventManager;
+        this.purchaseContextManager = purchaseContextManager;
+        this.purchaseContextSearchManager = purchaseContextSearchManager;
+        this.ticketReservationManager = ticketReservationManager;
+    }
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/new")
     public Result<String> createNew(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @RequestBody AdminReservationModification reservation, Principal principal) {
@@ -264,7 +273,6 @@ public class AdminReservationApiController {
         return null;
     }
 
-    @RequiredArgsConstructor
     @Getter
     public static class TicketReservationDescriptor {
         private final TicketReservation reservation;
@@ -272,15 +280,37 @@ public class AdminReservationApiController {
         private final OrderSummary orderSummary;
         private final List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory;
         private final SubscriptionWithUsageDetails subscriptionDetails;
+
+        public TicketReservationDescriptor(TicketReservation reservation,
+                                           TicketReservationAdditionalInfo additionalInfo,
+                                           OrderSummary orderSummary,
+                                           List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory,
+                                           SubscriptionWithUsageDetails subscriptionDetails) {
+            this.reservation = reservation;
+            this.additionalInfo = additionalInfo;
+            this.orderSummary = orderSummary;
+            this.ticketsByCategory = ticketsByCategory;
+            this.subscriptionDetails = subscriptionDetails;
+        }
     }
 
-    @RequiredArgsConstructor
+
     @Getter
     public static class RemoveTicketsModification {
         private final List<Integer> ticketIds;
         private Map<Integer, Boolean> refundTo;
         private final Boolean notify;
         private final Boolean issueCreditNote;
+
+        public RemoveTicketsModification(List<Integer> ticketIds,
+                                         Map<Integer, Boolean> refundTo,
+                                         Boolean notify,
+                                         Boolean issueCreditNote) {
+            this.ticketIds = ticketIds;
+            this.refundTo = refundTo;
+            this.notify = notify;
+            this.issueCreditNote = issueCreditNote;
+        }
 
         public Boolean getNotify() {
             return Boolean.TRUE.equals(notify);
@@ -291,9 +321,12 @@ public class AdminReservationApiController {
         }
     }
 
-    @RequiredArgsConstructor
     @Getter
     public static class RefundAmount {
         private final String amount;
+
+        public RefundAmount(String amount) {
+            this.amount = amount;
+        }
     }
 }
