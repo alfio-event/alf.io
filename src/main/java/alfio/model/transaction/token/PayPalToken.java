@@ -20,15 +20,19 @@ import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 @Getter
 public class PayPalToken implements PaymentToken {
 
     private final String payerId;
     private final String paymentId;
     private final String hmac;
+
+    public PayPalToken(String payerId, String paymentId, String hmac) {
+        this.payerId = payerId;
+        this.paymentId = paymentId;
+        this.hmac = hmac;
+    }
 
     @Override
     public String getToken() {
