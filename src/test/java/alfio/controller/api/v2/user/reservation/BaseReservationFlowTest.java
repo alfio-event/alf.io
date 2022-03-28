@@ -62,7 +62,6 @@ import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 import com.opencsv.CSVReader;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.mockito.Mockito;
@@ -95,7 +94,7 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
-@RequiredArgsConstructor
+
 public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(BaseReservationFlowTest.class);
@@ -139,6 +138,72 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     private static final String HIDDEN_CODE = "HIDDENNN";
     static final String URL_CODE_HIDDEN = "CODE_CODE_CODE";
     private int hiddenCategoryId = Integer.MIN_VALUE;
+
+    protected BaseReservationFlowTest(ConfigurationRepository configurationRepository,
+                                      EventManager eventManager,
+                                      EventRepository eventRepository,
+                                      EventStatisticsManager eventStatisticsManager,
+                                      TicketCategoryRepository ticketCategoryRepository,
+                                      TicketReservationRepository ticketReservationRepository,
+                                      EventApiController eventApiController,
+                                      TicketRepository ticketRepository,
+                                      TicketFieldRepository ticketFieldRepository,
+                                      AdditionalServiceApiController additionalServiceApiController,
+                                      SpecialPriceTokenGenerator specialPriceTokenGenerator,
+                                      SpecialPriceRepository specialPriceRepository,
+                                      CheckInApiController checkInApiController,
+                                      AttendeeApiController attendeeApiController,
+                                      UsersApiController usersApiController,
+                                      ScanAuditRepository scanAuditRepository,
+                                      AuditingRepository auditingRepository,
+                                      AdminReservationManager adminReservationManager,
+                                      TicketReservationManager ticketReservationManager,
+                                      InfoApiController infoApiController,
+                                      TranslationsApiController translationsApiController,
+                                      EventApiV2Controller eventApiV2Controller,
+                                      ReservationApiV2Controller reservationApiV2Controller,
+                                      TicketApiV2Controller ticketApiV2Controller,
+                                      IndexController indexController,
+                                      NamedParameterJdbcTemplate jdbcTemplate,
+                                      ExtensionLogRepository extensionLogRepository,
+                                      ExtensionService extensionService,
+                                      PollRepository pollRepository,
+                                      ClockProvider clockProvider,
+                                      NotificationManager notificationManager,
+                                      UserRepository userRepository) {
+        this.configurationRepository = configurationRepository;
+        this.eventManager = eventManager;
+        this.eventRepository = eventRepository;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.eventApiController = eventApiController;
+        this.ticketRepository = ticketRepository;
+        this.ticketFieldRepository = ticketFieldRepository;
+        this.additionalServiceApiController = additionalServiceApiController;
+        this.specialPriceTokenGenerator = specialPriceTokenGenerator;
+        this.specialPriceRepository = specialPriceRepository;
+        this.checkInApiController = checkInApiController;
+        this.attendeeApiController = attendeeApiController;
+        this.usersApiController = usersApiController;
+        this.scanAuditRepository = scanAuditRepository;
+        this.auditingRepository = auditingRepository;
+        this.adminReservationManager = adminReservationManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.infoApiController = infoApiController;
+        this.translationsApiController = translationsApiController;
+        this.eventApiV2Controller = eventApiV2Controller;
+        this.reservationApiV2Controller = reservationApiV2Controller;
+        this.ticketApiV2Controller = ticketApiV2Controller;
+        this.indexController = indexController;
+        this.jdbcTemplate = jdbcTemplate;
+        this.extensionLogRepository = extensionLogRepository;
+        this.extensionService = extensionService;
+        this.pollRepository = pollRepository;
+        this.clockProvider = clockProvider;
+        this.notificationManager = notificationManager;
+        this.userRepository = userRepository;
+    }
 
     private void ensureConfiguration(ReservationFlowContext context) {
 
