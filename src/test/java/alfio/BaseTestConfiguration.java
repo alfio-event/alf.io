@@ -60,7 +60,7 @@ public class BaseTestConfiguration {
     @Profile("!travis")
     public DataSource getDataSource() {
         String POSTGRES_DB = "alfio";
-        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:14")
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:10")
             .withDatabaseName(POSTGRES_DB)
             .withInitScript("init-db-user.sql");
         postgres.start();
