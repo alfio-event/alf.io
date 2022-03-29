@@ -16,15 +16,18 @@
  */
 package alfio.model;
 
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
-@RequiredArgsConstructor
 public class TicketWithCategory implements TicketInfoContainer {
 
     @Delegate
     private final Ticket ticket;
     private final TicketCategory category;
+
+    public TicketWithCategory(Ticket ticket, TicketCategory category) {
+        this.ticket = ticket;
+        this.category = category;
+    }
 
     public String getCategoryName() {
         return category != null ? category.getName() : null;

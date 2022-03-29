@@ -30,7 +30,6 @@ import alfio.repository.AuditingRepository;
 import alfio.repository.GroupRepository;
 import alfio.repository.TicketRepository;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -273,11 +272,9 @@ public class GroupManager {
         return true;
     }
 
-    @RequiredArgsConstructor
-    public static class WhitelistValidator implements Predicate<WhitelistValidationItem> {
 
-        private final int eventId;
-        private final GroupManager groupManager;
+    public record WhitelistValidator(int eventId,
+                                     GroupManager groupManager) implements Predicate<WhitelistValidationItem> {
 
         @Override
         public boolean test(WhitelistValidationItem item) {
@@ -285,10 +282,7 @@ public class GroupManager {
         }
     }
 
-    @RequiredArgsConstructor
-    public static class WhitelistValidationItem {
-        private final int categoryId;
-        private final String value;
+    public record WhitelistValidationItem(int categoryId, String value) {
     }
 
     public static class DuplicateGroupItemException extends RuntimeException {

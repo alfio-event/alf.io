@@ -31,7 +31,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.ContentLanguage;
 import alfio.util.ErrorsCode;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -46,7 +45,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v2/public/user")
-@RequiredArgsConstructor
 public class UserApiV2Controller {
 
     private final PublicUserManager publicUserManager;
@@ -54,6 +52,18 @@ public class UserApiV2Controller {
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
     private final MessageSourceManager messageSourceManager;
+
+    public UserApiV2Controller(PublicUserManager publicUserManager,
+                               TicketReservationManager ticketReservationManager,
+                               ConfigurationManager configurationManager,
+                               ExtensionManager extensionManager,
+                               MessageSourceManager messageSourceManager) {
+        this.publicUserManager = publicUserManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.configurationManager = configurationManager;
+        this.extensionManager = extensionManager;
+        this.messageSourceManager = messageSourceManager;
+    }
 
     @GetMapping("/me")
     public ResponseEntity<User> getUserIdentity(Authentication principal) {

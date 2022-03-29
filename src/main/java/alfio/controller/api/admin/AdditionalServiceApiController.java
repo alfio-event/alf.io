@@ -27,7 +27,6 @@ import alfio.repository.EventRepository;
 import alfio.util.ExportUtils;
 import alfio.util.MonetaryUtil;
 import alfio.util.Validator;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +52,6 @@ import static java.util.Objects.requireNonNullElse;
 
 @RestController
 @RequestMapping("/admin/api")
-@RequiredArgsConstructor
 public class AdditionalServiceApiController {
 
     private static final Logger log = LoggerFactory.getLogger(AdditionalServiceApiController.class);
@@ -61,6 +59,14 @@ public class AdditionalServiceApiController {
     private final EventManager eventManager;
     private final EventRepository eventRepository;
     private final AdditionalServiceManager additionalServiceManager;
+
+    public AdditionalServiceApiController(EventManager eventManager,
+                                          EventRepository eventRepository,
+                                          AdditionalServiceManager additionalServiceManager) {
+        this.eventManager = eventManager;
+        this.eventRepository = eventRepository;
+        this.additionalServiceManager = additionalServiceManager;
+    }
 
 
     @ExceptionHandler({IllegalArgumentException.class})

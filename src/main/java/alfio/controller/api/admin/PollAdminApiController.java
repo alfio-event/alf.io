@@ -23,7 +23,6 @@ import alfio.model.poll.PollParticipant;
 import alfio.model.poll.PollStatistics;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -34,10 +33,13 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/api/{eventName}/poll")
-@RequiredArgsConstructor
 public class PollAdminApiController {
 
     private final PollManager pollManager;
+
+    public PollAdminApiController(PollManager pollManager) {
+        this.pollManager = pollManager;
+    }
 
     @GetMapping
     ResponseEntity<List<PollModification>> getAllForEvent(@PathVariable("eventName") String eventName) {

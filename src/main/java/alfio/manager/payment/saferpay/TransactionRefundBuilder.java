@@ -17,17 +17,20 @@
 package alfio.manager.payment.saferpay;
 
 import com.google.gson.stream.JsonWriter;
-import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.io.StringWriter;
 
-@RequiredArgsConstructor
 public class TransactionRefundBuilder {
     private final String captureId;
     private final int retryIndicator;
     private String customerId;
     private String requestId;
+
+    public TransactionRefundBuilder(String captureId, int retryIndicator) {
+        this.captureId = captureId;
+        this.retryIndicator = retryIndicator;
+    }
 
     public TransactionRefundBuilder addAuthentication(String customerId, String requestId) {
         this.customerId = customerId;

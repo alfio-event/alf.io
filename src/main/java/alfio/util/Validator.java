@@ -29,7 +29,6 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -455,11 +454,16 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    @RequiredArgsConstructor
+
     public static class AdvancedTicketAssignmentValidator implements Function<AdvancedValidationContext, Result<Void>> {
 
         private final SameCountryValidator vatValidator;
         private final GroupManager.WhitelistValidator whitelistValidator;
+
+        public AdvancedTicketAssignmentValidator(SameCountryValidator vatValidator, GroupManager.WhitelistValidator whitelistValidator) {
+            this.vatValidator = vatValidator;
+            this.whitelistValidator = whitelistValidator;
+        }
 
 
         @Override
@@ -480,13 +484,25 @@ public final class Validator {
         }
     }
 
-    @RequiredArgsConstructor
+
     public static class AdvancedValidationContext {
         private final UpdateTicketOwnerForm updateTicketOwnerForm;
         private final List<TicketFieldConfiguration> ticketFieldConfigurations;
         private final int categoryId;
         private final String ticketUuid;
         private final String prefix;
+
+        public AdvancedValidationContext(UpdateTicketOwnerForm updateTicketOwnerForm,
+                                         List<TicketFieldConfiguration> ticketFieldConfigurations,
+                                         int categoryId,
+                                         String ticketUuid,
+                                         String prefix) {
+            this.updateTicketOwnerForm = updateTicketOwnerForm;
+            this.ticketFieldConfigurations = ticketFieldConfigurations;
+            this.categoryId = categoryId;
+            this.ticketUuid = ticketUuid;
+            this.prefix = prefix;
+        }
     }
 
 }

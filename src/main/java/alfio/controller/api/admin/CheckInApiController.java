@@ -29,7 +29,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -49,7 +48,6 @@ import static alfio.util.Wrappers.optionally;
 
 @RestController
 @RequestMapping("/admin/api")
-@RequiredArgsConstructor
 public class CheckInApiController {
 
     private static final Logger log = LoggerFactory.getLogger(CheckInApiController.class);
@@ -58,6 +56,14 @@ public class CheckInApiController {
     private final CheckInManager checkInManager;
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
+
+    public CheckInApiController(CheckInManager checkInManager,
+                                EventManager eventManager,
+                                ConfigurationManager configurationManager) {
+        this.checkInManager = checkInManager;
+        this.eventManager = eventManager;
+        this.configurationManager = configurationManager;
+    }
 
     @Data
     public static class TicketCode {

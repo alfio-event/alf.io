@@ -28,7 +28,6 @@ import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.PasswordGenerator;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,7 +51,6 @@ import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional
-@RequiredArgsConstructor
 public class UserManager {
 
     private static final Logger log = LoggerFactory.getLogger(UserManager.class);
@@ -65,6 +63,20 @@ public class UserManager {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
+
+    public UserManager(AuthorityRepository authorityRepository,
+                       OrganizationRepository organizationRepository,
+                       UserOrganizationRepository userOrganizationRepository,
+                       UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       InvoiceSequencesRepository invoiceSequencesRepository) {
+        this.authorityRepository = authorityRepository;
+        this.organizationRepository = organizationRepository;
+        this.userOrganizationRepository = userOrganizationRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.invoiceSequencesRepository = invoiceSequencesRepository;
+    }
 
     private List<Authority> getUserAuthorities(User user) {
         return authorityRepository.findGrantedAuthorities(user.getUsername());
