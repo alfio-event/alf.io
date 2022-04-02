@@ -43,7 +43,9 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
     org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration.class,
     org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class,
     org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class,
-    org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration.class})
+    org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration.class
+})
 @EnableConfigurationProperties(ExternalConfiguration.class)
 @Configuration(proxyBeanMethods = false)
 @Profile(Initializer.PROFILE_SPRING_BOOT)
