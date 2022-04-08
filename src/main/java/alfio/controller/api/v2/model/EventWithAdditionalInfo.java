@@ -21,13 +21,11 @@ import alfio.model.Event.EventFormat;
 import alfio.model.PurchaseContext;
 import alfio.model.user.Organization;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
 
-@AllArgsConstructor
 public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext {
     private final Event event;
     private final String mapUrl;
@@ -71,6 +69,46 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
     private final String customCss;
 
     private final boolean canApplySubscriptions;
+
+    public EventWithAdditionalInfo(Event event,
+                                   String mapUrl,
+                                   Organization.OrganizationContact organization,
+                                   Map<String, String> description,
+                                   String bankAccount,
+                                   List<String> bankAccountOwner,
+                                   Map<String, String> formattedBeginDate,
+                                   Map<String, String> formattedBeginTime,
+                                   Map<String, String> formattedEndDate,
+                                   Map<String, String> formattedEndTime,
+                                   InvoicingConfiguration invoicingConfiguration,
+                                   CaptchaConfiguration captchaConfiguration,
+                                   AssignmentConfiguration assignmentConfiguration,
+                                   PromotionsConfiguration promotionsConfiguration,
+                                   AnalyticsConfiguration analyticsConfiguration,
+                                   Map<String, Map<String, String>> i18nOverride,
+                                   Integer availableTicketsCount,
+                                   String customCss,
+                                   boolean canApplySubscriptions) {
+        this.event = event;
+        this.mapUrl = mapUrl;
+        this.organization = organization;
+        this.description = description;
+        this.bankAccount = bankAccount;
+        this.bankAccountOwner = bankAccountOwner;
+        this.formattedBeginDate = formattedBeginDate;
+        this.formattedBeginTime = formattedBeginTime;
+        this.formattedEndDate = formattedEndDate;
+        this.formattedEndTime = formattedEndTime;
+        this.invoicingConfiguration = invoicingConfiguration;
+        this.captchaConfiguration = captchaConfiguration;
+        this.assignmentConfiguration = assignmentConfiguration;
+        this.promotionsConfiguration = promotionsConfiguration;
+        this.analyticsConfiguration = analyticsConfiguration;
+        this.i18nOverride = i18nOverride;
+        this.availableTicketsCount = availableTicketsCount;
+        this.customCss = customCss;
+        this.canApplySubscriptions = canApplySubscriptions;
+    }
 
     public String getShortName() {
         return event.getShortName();
@@ -236,27 +274,42 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         return event.getTitle();
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class CaptchaConfiguration {
         private final boolean captchaForTicketSelection;
         private final boolean captchaForOfflinePaymentAndFree;
         private final String recaptchaApiKey;
+
+        public CaptchaConfiguration(boolean captchaForTicketSelection, boolean captchaForOfflinePaymentAndFree, String recaptchaApiKey) {
+            this.captchaForTicketSelection = captchaForTicketSelection;
+            this.captchaForOfflinePaymentAndFree = captchaForOfflinePaymentAndFree;
+            this.recaptchaApiKey = recaptchaApiKey;
+        }
     }
 
-    @AllArgsConstructor
     @Getter
     public static class AssignmentConfiguration {
         private final boolean forceAssignment;
         private final boolean enableAttendeeAutocomplete;
         private final boolean enableTicketTransfer;
+
+        public AssignmentConfiguration(boolean forceAssignment, boolean enableAttendeeAutocomplete, boolean enableTicketTransfer) {
+            this.forceAssignment = forceAssignment;
+            this.enableAttendeeAutocomplete = enableAttendeeAutocomplete;
+            this.enableTicketTransfer = enableTicketTransfer;
+        }
     }
 
-    @AllArgsConstructor
     @Getter
     public static class PromotionsConfiguration {
         private final boolean hasAccessPromotions;
         private final boolean usePartnerCode;
+
+        public PromotionsConfiguration(boolean hasAccessPromotions, boolean usePartnerCode) {
+            this.hasAccessPromotions = hasAccessPromotions;
+            this.usePartnerCode = usePartnerCode;
+        }
     }
 
     @JsonIgnore

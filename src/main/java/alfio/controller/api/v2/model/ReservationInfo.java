@@ -24,7 +24,6 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
@@ -32,7 +31,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
 @Getter
 public class ReservationInfo {
     private final String id;
@@ -77,17 +75,74 @@ public class ReservationInfo {
 
     private final List<SubscriptionInfo> subscriptionInfos;
 
+    public ReservationInfo(String id,
+                           String shortId,
+                           String firstName,
+                           String lastName,
+                           String email,
+                           long validity,
+                           List<TicketsByTicketCategory> ticketsByCategory,
+                           ReservationInfoOrderSummary orderSummary,
+                           TicketReservationStatus status,
+                           boolean validatedBookingInformation,
+                           Map<String, String> formattedExpirationDate,
+                           String invoiceNumber,
+                           boolean invoiceRequested,
+                           boolean invoiceOrReceiptDocumentPresent,
+                           boolean paid,
+                           boolean tokenAcquired,
+                           PaymentProxy paymentProxy,
+                           Boolean addCompanyBillingDetails,
+                           String customerReference,
+                           Boolean skipVatNr,
+                           String billingAddress,
+                           BillingDetails billingDetails,
+                           boolean containsCategoriesLinkedToGroups,
+                           Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods,
+                           List<SubscriptionInfo> subscriptionInfos) {
+        this.id = id;
+        this.shortId = shortId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.validity = validity;
+        this.ticketsByCategory = ticketsByCategory;
+        this.orderSummary = orderSummary;
+        this.status = status;
+        this.validatedBookingInformation = validatedBookingInformation;
+        this.formattedExpirationDate = formattedExpirationDate;
+        this.invoiceNumber = invoiceNumber;
+        this.invoiceRequested = invoiceRequested;
+        this.invoiceOrReceiptDocumentPresent = invoiceOrReceiptDocumentPresent;
+        this.paid = paid;
+        this.tokenAcquired = tokenAcquired;
+        this.paymentProxy = paymentProxy;
+        this.addCompanyBillingDetails = addCompanyBillingDetails;
+        this.customerReference = customerReference;
+        this.skipVatNr = skipVatNr;
+        this.billingAddress = billingAddress;
+        this.billingDetails = billingDetails;
+        this.containsCategoriesLinkedToGroups = containsCategoriesLinkedToGroups;
+        this.activePaymentMethods = activePaymentMethods;
+        this.subscriptionInfos = subscriptionInfos;
+    }
 
-    @AllArgsConstructor
+
     @Getter
     public static class TicketsByTicketCategory {
         private final String name;
         private final TicketCategory.TicketAccessType ticketAccessType;
         private final List<BookingInfoTicket> tickets;
+
+        public TicketsByTicketCategory(String name, TicketCategory.TicketAccessType ticketAccessType, List<BookingInfoTicket> tickets) {
+            this.name = name;
+            this.ticketAccessType = ticketAccessType;
+            this.tickets = tickets;
+        }
     }
 
 
-    @AllArgsConstructor
+
     public static class BookingInfoTicket {
         private final String uuid;
         private final String firstName;
@@ -104,6 +159,38 @@ public class ReservationInfo {
         private final List<AdditionalField> ticketFieldConfiguration;
         private final Map<String, String> formattedOnlineCheckInDate;
         private final boolean onlineEventStarted;
+
+        public BookingInfoTicket(String uuid,
+                                 String firstName,
+                                 String lastName,
+                                 String email,
+                                 String fullName,
+                                 String userLanguage,
+                                 boolean assigned,
+                                 boolean locked,
+                                 boolean acquired,
+                                 boolean cancellationEnabled,
+                                 boolean sendMailEnabled,
+                                 boolean downloadEnabled,
+                                 List<AdditionalField> ticketFieldConfiguration,
+                                 Map<String, String> formattedOnlineCheckInDate,
+                                 boolean onlineEventStarted) {
+            this.uuid = uuid;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+            this.fullName = fullName;
+            this.userLanguage = userLanguage;
+            this.assigned = assigned;
+            this.locked = locked;
+            this.acquired = acquired;
+            this.cancellationEnabled = cancellationEnabled;
+            this.sendMailEnabled = sendMailEnabled;
+            this.downloadEnabled = downloadEnabled;
+            this.ticketFieldConfiguration = ticketFieldConfiguration;
+            this.formattedOnlineCheckInDate = formattedOnlineCheckInDate;
+            this.onlineEventStarted = onlineEventStarted;
+        }
 
         public String getEmail() {
             return email;
@@ -168,7 +255,6 @@ public class ReservationInfo {
         }
     }
 
-    @AllArgsConstructor
     @Getter
     public static class AdditionalField {
         private final String name;
@@ -182,21 +268,46 @@ public class ReservationInfo {
         private final List<Field> fields;
         private final boolean beforeStandardFields;
         private final Map<String, Description> description;
+
+        public AdditionalField(String name, String value, String type, boolean required, boolean editable, Integer minLength, Integer maxLength, List<String> restrictedValues, List<Field> fields, boolean beforeStandardFields, Map<String, Description> description) {
+            this.name = name;
+            this.value = value;
+            this.type = type;
+            this.required = required;
+            this.editable = editable;
+            this.minLength = minLength;
+            this.maxLength = maxLength;
+            this.restrictedValues = restrictedValues;
+            this.fields = fields;
+            this.beforeStandardFields = beforeStandardFields;
+            this.description = description;
+        }
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class Description {
         private final String label;
         private final String placeholder;
         private final Map<String, String> restrictedValuesDescription;
+
+        public Description(String label, String placeholder, Map<String, String> restrictedValuesDescription) {
+            this.label = label;
+            this.placeholder = placeholder;
+            this.restrictedValuesDescription = restrictedValuesDescription;
+        }
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class Field {
         private final int fieldIndex;
         private final String fieldValue;
+
+        public Field(int fieldIndex, String fieldValue) {
+            this.fieldIndex = fieldIndex;
+            this.fieldValue = fieldValue;
+        }
     }
 
 
@@ -229,7 +340,7 @@ public class ReservationInfo {
         }
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class ReservationInfoOrderSummaryRow {
         private final String name;
@@ -238,23 +349,43 @@ public class ReservationInfo {
         private final String subTotal;
         private final SummaryType type;
         private final String taxPercentage;
+
+        public ReservationInfoOrderSummaryRow(String name, int amount, String price, String subTotal, SummaryType type, String taxPercentage) {
+            this.name = name;
+            this.amount = amount;
+            this.price = price;
+            this.subTotal = subTotal;
+            this.type = type;
+            this.taxPercentage = taxPercentage;
+        }
     }
 
-    @AllArgsConstructor
     @Getter
     public static class SubscriptionInfo {
         private final UUID id;
         private final String pin;
         private final UsageDetails usageDetails;
         private final SubscriptionOwner owner;
+
+        public SubscriptionInfo(UUID id, String pin, UsageDetails usageDetails, SubscriptionOwner owner) {
+            this.id = id;
+            this.pin = pin;
+            this.usageDetails = usageDetails;
+            this.owner = owner;
+        }
     }
 
-    @AllArgsConstructor
     @Getter
     public static class SubscriptionOwner {
         private final String firstName;
         private final String lastName;
         private final String email;
+
+        public SubscriptionOwner(String firstName, String lastName, String email) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+        }
     }
 
 }

@@ -16,12 +16,15 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
 public class Language {
     private final String locale;
     private final String displayLanguage;
+
+    public Language(String locale, String displayLanguage) {
+        this.locale = locale;
+        this.displayLanguage = displayLanguage;
+    }
 }
