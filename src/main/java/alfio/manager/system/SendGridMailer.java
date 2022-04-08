@@ -20,7 +20,6 @@ import alfio.model.Configurable;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -36,15 +35,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@AllArgsConstructor
 public class SendGridMailer implements Mailer {
 
     private static final Logger log = LoggerFactory.getLogger(SendGridMailer.class);
 
     private static final String EMAIL = "email";
-    private final HttpClient client;
 
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
+
+    public SendGridMailer(HttpClient client, ConfigurationManager configurationManager) {
+        this.client = client;
+        this.configurationManager = configurationManager;
+    }
 
     @Override
     public void send(Configurable configurable, final String fromName, final String to, final List<String> cc, final String subject, final String text, final Optional<String> html, final Attachment... attachment) {

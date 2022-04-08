@@ -25,7 +25,6 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -42,23 +41,54 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.collections.CollectionUtils.isEmpty;
 
 @Getter
-@AllArgsConstructor
 public class EventCreationRequest{
-    private String title;
-    private String slug;
-    private List<DescriptionRequest> description;
-    private Event.EventFormat format;
-    private LocationRequest location;
-    private String timezone;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    private String websiteUrl;
-    private String termsAndConditionsUrl;
-    private String privacyPolicyUrl;
-    private String imageUrl;
-    private TicketRequest tickets;
-    private List<ExtensionSetting> extensionSettings;
-    private List<AttendeeAdditionalInfoRequest> additionalInfo;
+    private final String title;
+    private final String slug;
+    private final List<DescriptionRequest> description;
+    private final Event.EventFormat format;
+    private final LocationRequest location;
+    private final String timezone;
+    private final LocalDateTime startDate;
+    private final LocalDateTime endDate;
+    private final String websiteUrl;
+    private final String termsAndConditionsUrl;
+    private final String privacyPolicyUrl;
+    private final String imageUrl;
+    private final TicketRequest tickets;
+    private final List<ExtensionSetting> extensionSettings;
+    private final List<AttendeeAdditionalInfoRequest> additionalInfo;
+
+    public EventCreationRequest(String title,
+                                String slug,
+                                List<DescriptionRequest> description,
+                                Event.EventFormat format,
+                                LocationRequest location,
+                                String timezone,
+                                LocalDateTime startDate,
+                                LocalDateTime endDate,
+                                String websiteUrl,
+                                String termsAndConditionsUrl,
+                                String privacyPolicyUrl,
+                                String imageUrl,
+                                TicketRequest tickets,
+                                List<ExtensionSetting> extensionSettings,
+                                List<AttendeeAdditionalInfoRequest> additionalInfo) {
+        this.title = title;
+        this.slug = slug;
+        this.description = description;
+        this.format = format;
+        this.location = location;
+        this.timezone = timezone;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.websiteUrl = websiteUrl;
+        this.termsAndConditionsUrl = termsAndConditionsUrl;
+        this.privacyPolicyUrl = privacyPolicyUrl;
+        this.imageUrl = imageUrl;
+        this.tickets = tickets;
+        this.extensionSettings = extensionSettings;
+        this.additionalInfo = additionalInfo;
+    }
 
     public EventModification toEventModification(Organization organization, UnaryOperator<String> slugGenerator, String imageRef) {
         String slug = this.slug;
@@ -171,53 +201,105 @@ public class EventCreationRequest{
 
 
     @Getter
-    @AllArgsConstructor
     public static class DescriptionRequest {
-        private String lang;
-        private String body;
+        private final String lang;
+        private final String body;
+
+        public DescriptionRequest(String lang, String body) {
+            this.lang = lang;
+            this.body = body;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class LocationRequest {
-        private String fullAddress;
-        private CoordinateRequest coordinate;
+        private final String fullAddress;
+        private final CoordinateRequest coordinate;
+
+        public LocationRequest(String fullAddress, CoordinateRequest coordinate) {
+            this.fullAddress = fullAddress;
+            this.coordinate = coordinate;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class TicketRequest {
-        private Boolean freeOfCharge;
-        private Integer max;
-        private String currency;
-        private BigDecimal taxPercentage;
-        private Boolean taxIncludedInPrice;
-        private List<PaymentProxy> paymentMethods;
-        private List<CategoryRequest> categories;
-        private List<PromoCodeRequest> promoCodes;
+        private final Boolean freeOfCharge;
+        private final Integer max;
+        private final String currency;
+        private final BigDecimal taxPercentage;
+        private final Boolean taxIncludedInPrice;
+        private final List<PaymentProxy> paymentMethods;
+        private final List<CategoryRequest> categories;
+        private final List<PromoCodeRequest> promoCodes;
+
+        public TicketRequest(Boolean freeOfCharge,
+                             Integer max,
+                             String currency,
+                             BigDecimal taxPercentage,
+                             Boolean taxIncludedInPrice,
+                             List<PaymentProxy> paymentMethods,
+                             List<CategoryRequest> categories,
+                             List<PromoCodeRequest> promoCodes) {
+            this.freeOfCharge = freeOfCharge;
+            this.max = max;
+            this.currency = currency;
+            this.taxPercentage = taxPercentage;
+            this.taxIncludedInPrice = taxIncludedInPrice;
+            this.paymentMethods = paymentMethods;
+            this.categories = categories;
+            this.promoCodes = promoCodes;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class CoordinateRequest {
-        private String latitude;
-        private String longitude;
+        private final String latitude;
+        private final String longitude;
+
+        public CoordinateRequest(String latitude, String longitude) {
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class CategoryRequest {
-        private String name;
-        private List<DescriptionRequest> description;
-        private Integer maxTickets;
-        private boolean accessRestricted;
-        private BigDecimal price;
-        private LocalDateTime startSellingDate;
-        private LocalDateTime endSellingDate;
-        private String accessCode;
-        private CustomTicketValidityRequest customValidity;
-        private GroupLinkRequest groupLink;
-        private TicketCategory.TicketAccessType ticketAccessType;
+        private final String name;
+        private final List<DescriptionRequest> description;
+        private final Integer maxTickets;
+        private final boolean accessRestricted;
+        private final BigDecimal price;
+        private final LocalDateTime startSellingDate;
+        private final LocalDateTime endSellingDate;
+        private final String accessCode;
+        private final CustomTicketValidityRequest customValidity;
+        private final GroupLinkRequest groupLink;
+        private final TicketCategory.TicketAccessType ticketAccessType;
+
+        public CategoryRequest(String name,
+                               List<DescriptionRequest> description,
+                               Integer maxTickets,
+                               boolean accessRestricted,
+                               BigDecimal price,
+                               LocalDateTime startSellingDate,
+                               LocalDateTime endSellingDate,
+                               String accessCode,
+                               CustomTicketValidityRequest customValidity,
+                               GroupLinkRequest groupLink,
+                               TicketCategory.TicketAccessType ticketAccessType) {
+            this.name = name;
+            this.description = description;
+            this.maxTickets = maxTickets;
+            this.accessRestricted = accessRestricted;
+            this.price = price;
+            this.startSellingDate = startSellingDate;
+            this.endSellingDate = endSellingDate;
+            this.accessCode = accessCode;
+            this.customValidity = customValidity;
+            this.groupLink = groupLink;
+            this.ticketAccessType = ticketAccessType;
+        }
 
         TicketCategoryModification toTicketCategoryModification() {
             return toTicketCategoryModification(null);
@@ -253,53 +335,94 @@ public class EventCreationRequest{
     }
 
     @Getter
-    @AllArgsConstructor
     public static class CustomTicketValidityRequest {
-        private LocalDateTime checkInFrom;
-        private LocalDateTime checkInTo;
-        private LocalDateTime validityStart;
-        private LocalDateTime validityEnd;
+        private final LocalDateTime checkInFrom;
+        private final LocalDateTime checkInTo;
+        private final LocalDateTime validityStart;
+        private final LocalDateTime validityEnd;
+
+        public CustomTicketValidityRequest(LocalDateTime checkInFrom, LocalDateTime checkInTo, LocalDateTime validityStart, LocalDateTime validityEnd) {
+            this.checkInFrom = checkInFrom;
+            this.checkInTo = checkInTo;
+            this.validityStart = validityStart;
+            this.validityEnd = validityEnd;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class PromoCodeRequest {
-        private String name;
-        private LocalDateTime validFrom;
-        private LocalDateTime validTo;
-        private PromoCodeDiscount.DiscountType discountType;
-        private int discount;
+        private final String name;
+        private final LocalDateTime validFrom;
+        private final LocalDateTime validTo;
+        private final PromoCodeDiscount.DiscountType discountType;
+        private final int discount;
+
+        public PromoCodeRequest(String name, LocalDateTime validFrom, LocalDateTime validTo, PromoCodeDiscount.DiscountType discountType, int discount) {
+            this.name = name;
+            this.validFrom = validFrom;
+            this.validTo = validTo;
+            this.discountType = discountType;
+            this.discount = discount;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class ExtensionSetting {
-        private String extensionId;
-        private String key;
-        private String value;
+        private final String extensionId;
+        private final String key;
+        private final String value;
+
+        public ExtensionSetting(String extensionId, String key, String value) {
+            this.extensionId = extensionId;
+            this.key = key;
+            this.value = value;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class GroupLinkRequest {
-        private Integer groupId;
-        private LinkedGroup.Type type;
-        private LinkedGroup.MatchType matchType;
-        private Integer maxAllocation;
+        private final Integer groupId;
+        private final LinkedGroup.Type type;
+        private final LinkedGroup.MatchType matchType;
+        private final Integer maxAllocation;
+
+        public GroupLinkRequest(Integer groupId, LinkedGroup.Type type, LinkedGroup.MatchType matchType, Integer maxAllocation) {
+            this.groupId = groupId;
+            this.type = type;
+            this.matchType = matchType;
+            this.maxAllocation = maxAllocation;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class AttendeeAdditionalInfoRequest {
 
-        private Integer ordinal;
-        private String name;
-        private AdditionalInfoType type;
-        private Boolean required;
-        private List<DescriptionRequest> label;
-        private List<DescriptionRequest> placeholder;
-        private List<RestrictedValueRequest> restrictedValues;
-        private ContentLengthRequest contentLength;
+        private final Integer ordinal;
+        private final String name;
+        private final AdditionalInfoType type;
+        private final Boolean required;
+        private final List<DescriptionRequest> label;
+        private final List<DescriptionRequest> placeholder;
+        private final List<RestrictedValueRequest> restrictedValues;
+        private final ContentLengthRequest contentLength;
+
+        public AttendeeAdditionalInfoRequest(Integer ordinal,
+                                             String name,
+                                             AdditionalInfoType type,
+                                             Boolean required,
+                                             List<DescriptionRequest> label,
+                                             List<DescriptionRequest> placeholder,
+                                             List<RestrictedValueRequest> restrictedValues,
+                                             ContentLengthRequest contentLength) {
+            this.ordinal = ordinal;
+            this.name = name;
+            this.type = type;
+            this.required = required;
+            this.label = label;
+            this.placeholder = placeholder;
+            this.restrictedValues = restrictedValues;
+            this.contentLength = contentLength;
+        }
 
 
         private EventModification.AdditionalField toAdditionalField(int ordinal) {
@@ -385,21 +508,28 @@ public class EventCreationRequest{
     public static final Set<String> WITH_RESTRICTED_VALUES = Set.of(AdditionalInfoType.LIST_BOX.code, AdditionalInfoType.CHECKBOX.code, AdditionalInfoType.RADIO.code);
 
     @Getter
-    @AllArgsConstructor
     public static class ContentLengthRequest {
-        private Integer min;
-        private Integer max;
+        private final Integer min;
+        private final Integer max;
+
+        public ContentLengthRequest(Integer min, Integer max) {
+            this.min = min;
+            this.max = max;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class RestrictedValueRequest {
+        private final String value;
+        private final Boolean enabled;
+        private final List<DescriptionRequest> descriptions;
 
-        private String value;
-        private Boolean enabled;
-        private List<DescriptionRequest> descriptions;
-
+        public RestrictedValueRequest(String value,
+                                      Boolean enabled,
+                                      List<DescriptionRequest> descriptions) {
+            this.value = value;
+            this.enabled = enabled;
+            this.descriptions = descriptions;
+        }
     }
-
-
 }

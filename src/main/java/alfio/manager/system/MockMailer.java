@@ -17,7 +17,6 @@
 package alfio.manager.system;
 
 import alfio.model.Configurable;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
@@ -30,13 +29,17 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
 
-@AllArgsConstructor
 public class MockMailer implements Mailer {
 
     private static final Logger log = LoggerFactory.getLogger(MockMailer.class);
 
     private final ConfigurationManager configurationManager;
     private final Environment environment;
+
+    public MockMailer(ConfigurationManager configurationManager, Environment environment) {
+        this.configurationManager = configurationManager;
+        this.environment = environment;
+    }
 
     @Override
     public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachments) {
