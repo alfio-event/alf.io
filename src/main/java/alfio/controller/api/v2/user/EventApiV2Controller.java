@@ -38,7 +38,6 @@ import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.util.*;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -69,7 +68,6 @@ import static java.util.stream.Collectors.*;
 
 @RestController
 @RequestMapping("/api/v2/public/")
-@AllArgsConstructor
 public class EventApiV2Controller {
 
     private final EventManager eventManager;
@@ -77,7 +75,6 @@ public class EventApiV2Controller {
     private final ConfigurationManager configurationManager;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
-    private final PaymentManager paymentManager;
     private final MessageSourceManager messageSourceManager;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
@@ -93,6 +90,48 @@ public class EventApiV2Controller {
     private final EventLoader eventLoader;
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
+
+    public EventApiV2Controller(EventManager eventManager,
+                                EventRepository eventRepository,
+                                ConfigurationManager configurationManager,
+                                EventDescriptionRepository eventDescriptionRepository,
+                                TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
+                                MessageSourceManager messageSourceManager,
+                                AdditionalServiceRepository additionalServiceRepository,
+                                AdditionalServiceTextRepository additionalServiceTextRepository,
+                                WaitingQueueManager waitingQueueManager,
+                                I18nManager i18nManager,
+                                TicketCategoryRepository ticketCategoryRepository,
+                                TicketRepository ticketRepository,
+                                TicketReservationManager ticketReservationManager,
+                                PromoCodeDiscountRepository promoCodeRepository,
+                                EventStatisticsManager eventStatisticsManager,
+                                RecaptchaService recaptchaService,
+                                PromoCodeRequestManager promoCodeRequestManager,
+                                EventLoader eventLoader,
+                                ExtensionManager extensionManager,
+                                ClockProvider clockProvider) {
+        this.eventManager = eventManager;
+        this.eventRepository = eventRepository;
+        this.configurationManager = configurationManager;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.additionalServiceRepository = additionalServiceRepository;
+        this.additionalServiceTextRepository = additionalServiceTextRepository;
+        this.waitingQueueManager = waitingQueueManager;
+        this.i18nManager = i18nManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketRepository = ticketRepository;
+        this.ticketReservationManager = ticketReservationManager;
+        this.promoCodeRepository = promoCodeRepository;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.recaptchaService = recaptchaService;
+        this.promoCodeRequestManager = promoCodeRequestManager;
+        this.eventLoader = eventLoader;
+        this.extensionManager = extensionManager;
+        this.clockProvider = clockProvider;
+    }
 
 
     @GetMapping("events")

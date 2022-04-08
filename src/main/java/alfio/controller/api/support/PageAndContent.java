@@ -16,12 +16,17 @@
  */
 package alfio.controller.api.support;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-@AllArgsConstructor
+@Getter
+@Setter
 public class PageAndContent<T> {
     private final T left;
     private final Integer right;
+
+    public PageAndContent(T left, Integer right) {
+        this.left = left;
+        this.right = right;
+    }
 }

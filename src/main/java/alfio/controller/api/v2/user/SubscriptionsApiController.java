@@ -32,7 +32,6 @@ import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
-import lombok.AllArgsConstructor;
 import org.joda.money.CurrencyUnit;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
@@ -53,7 +52,6 @@ import static java.util.stream.Collectors.toList;
 
 @RestController
 @RequestMapping("/api/v2/public/")
-@AllArgsConstructor
 public class SubscriptionsApiController {
 
     private final SubscriptionManager subscriptionManager;
@@ -63,6 +61,22 @@ public class SubscriptionsApiController {
     private final OrganizationRepository organizationRepository;
     private final MessageSourceManager messageSourceManager;
     private final ClockProvider clockProvider;
+
+    public SubscriptionsApiController(SubscriptionManager subscriptionManager,
+                                      I18nManager i18nManager,
+                                      TicketReservationManager reservationManager,
+                                      ConfigurationManager configurationManager,
+                                      OrganizationRepository organizationRepository,
+                                      MessageSourceManager messageSourceManager,
+                                      ClockProvider clockProvider) {
+        this.subscriptionManager = subscriptionManager;
+        this.i18nManager = i18nManager;
+        this.reservationManager = reservationManager;
+        this.configurationManager = configurationManager;
+        this.organizationRepository = organizationRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.clockProvider = clockProvider;
+    }
 
 
     @GetMapping("subscriptions")

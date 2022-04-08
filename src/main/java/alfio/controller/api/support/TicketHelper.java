@@ -31,7 +31,6 @@ import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
 import alfio.util.Validator.AdvancedTicketAssignmentValidator;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -44,10 +43,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
-
 @Component
-@AllArgsConstructor
 public class TicketHelper {
 
     private static final Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
@@ -63,8 +59,30 @@ public class TicketHelper {
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
-    private final TicketReservationRepository ticketReservationRepository;
-    private final EventManager eventManager;
+
+    public TicketHelper(TicketReservationManager ticketReservationManager,
+                        OrganizationRepository organizationRepository,
+                        TicketCategoryRepository ticketCategoryRepository,
+                        TicketRepository ticketRepository,
+                        TemplateManager templateManager,
+                        TicketFieldRepository ticketFieldRepository,
+                        AdditionalServiceItemRepository additionalServiceItemRepository,
+                        EuVatChecker vatChecker,
+                        GroupManager groupManager,
+                        ConfigurationManager configurationManager,
+                        ExtensionManager extensionManager) {
+        this.ticketReservationManager = ticketReservationManager;
+        this.organizationRepository = organizationRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketRepository = ticketRepository;
+        this.templateManager = templateManager;
+        this.ticketFieldRepository = ticketFieldRepository;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.vatChecker = vatChecker;
+        this.groupManager = groupManager;
+        this.configurationManager = configurationManager;
+        this.extensionManager = extensionManager;
+    }
 
 
     public Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
