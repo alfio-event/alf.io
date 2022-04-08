@@ -21,12 +21,10 @@ import alfio.model.modification.SendCodeModification;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.MediaType;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -601,19 +599,28 @@ public enum TemplateResource {
     }
 
     @Getter
-    @AllArgsConstructor
     public static class ImageData {
         private final String eventImage;
         private final Integer imageWidth;
         private final Integer imageHeight;
+
+        public ImageData(String eventImage, Integer imageWidth, Integer imageHeight) {
+            this.eventImage = eventImage;
+            this.imageWidth = imageWidth;
+            this.imageHeight = imageHeight;
+        }
     }
 
     @Getter
-    @AllArgsConstructor
     public static class TicketReservationWithZonedExpiringDate {
         @Delegate
         private final TicketReservationInfo reservation;
         private final Event event;
+
+        public TicketReservationWithZonedExpiringDate(TicketReservationInfo reservation, Event event) {
+            this.reservation = reservation;
+            this.event = event;
+        }
 
         public ZonedDateTime getZonedExpiration() {
             return reservation.getValidity().toInstant().atZone(event.getZoneId());

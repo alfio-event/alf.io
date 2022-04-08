@@ -28,7 +28,6 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -216,13 +215,22 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    @AllArgsConstructor
     public static class TicketFieldsFilterer {
 
         private final List<TicketFieldConfiguration> additionalFieldsForEvent;
         private final Function<String, Integer> fromTicketUUIDToTicketCategoryId;
         private final Set<Integer> additionalServiceIds;
         private final Optional<Ticket> firstTicketInReservation;
+
+        public TicketFieldsFilterer(List<TicketFieldConfiguration> additionalFieldsForEvent,
+                                    Function<String, Integer> fromTicketUUIDToTicketCategoryId,
+                                    Set<Integer> additionalServiceIds,
+                                    Optional<Ticket> firstTicketInReservation) {
+            this.additionalFieldsForEvent = additionalFieldsForEvent;
+            this.fromTicketUUIDToTicketCategoryId = fromTicketUUIDToTicketCategoryId;
+            this.additionalServiceIds = additionalServiceIds;
+            this.firstTicketInReservation = firstTicketInReservation;
+        }
 
 
         public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUUID) {
