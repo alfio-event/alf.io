@@ -24,7 +24,6 @@ import alfio.model.system.AdminJobSchedule;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.RenderedTemplate;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
@@ -35,7 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 @Component
-@AllArgsConstructor
 public class BillingDocumentJobExecutor implements AdminJobExecutor {
 
     private final BillingDocumentManager billingDocumentManager;
@@ -43,6 +41,18 @@ public class BillingDocumentJobExecutor implements AdminJobExecutor {
     private final EventRepository eventRepository;
     private final NotificationManager notificationManager;
     private final OrganizationRepository organizationRepository;
+
+    public BillingDocumentJobExecutor(BillingDocumentManager billingDocumentManager,
+                                      TicketReservationManager ticketReservationManager,
+                                      EventRepository eventRepository,
+                                      NotificationManager notificationManager,
+                                      OrganizationRepository organizationRepository) {
+        this.billingDocumentManager = billingDocumentManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.eventRepository = eventRepository;
+        this.notificationManager = notificationManager;
+        this.organizationRepository = organizationRepository;
+    }
 
     @Override
     public Set<JobName> getJobNames() {

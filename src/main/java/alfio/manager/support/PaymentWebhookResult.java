@@ -17,10 +17,8 @@
 package alfio.manager.support;
 
 import alfio.model.transaction.PaymentToken;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
 public class PaymentWebhookResult {
 
@@ -38,6 +36,13 @@ public class PaymentWebhookResult {
     private final PaymentToken paymentToken;
     private final String reason;
     private final String redirectUrl;
+
+    public PaymentWebhookResult(Type type, PaymentToken paymentToken, String reason, String redirectUrl) {
+        this.type = type;
+        this.paymentToken = paymentToken;
+        this.reason = reason;
+        this.redirectUrl = redirectUrl;
+    }
 
     public boolean isSuccessful() {
         return type == Type.SUCCESSFUL;

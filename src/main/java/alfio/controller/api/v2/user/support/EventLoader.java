@@ -26,7 +26,6 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpSession;
@@ -35,7 +34,6 @@ import java.util.*;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@AllArgsConstructor
 public class EventLoader {
 
     private final EventRepository eventRepository;
@@ -47,6 +45,26 @@ public class EventLoader {
     private final TicketRepository ticketRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final SubscriptionRepository subscriptionRepository;
+
+    public EventLoader(EventRepository eventRepository,
+                       MessageSourceManager messageSourceManager,
+                       EventDescriptionRepository eventDescriptionRepository,
+                       OrganizationRepository organizationRepository,
+                       ConfigurationManager configurationManager,
+                       TicketCategoryRepository ticketCategoryRepository,
+                       TicketRepository ticketRepository,
+                       PromoCodeDiscountRepository promoCodeRepository,
+                       SubscriptionRepository subscriptionRepository) {
+        this.eventRepository = eventRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.organizationRepository = organizationRepository;
+        this.configurationManager = configurationManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketRepository = ticketRepository;
+        this.promoCodeRepository = promoCodeRepository;
+        this.subscriptionRepository = subscriptionRepository;
+    }
 
     public Optional<EventWithAdditionalInfo> loadEventInfo(String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//

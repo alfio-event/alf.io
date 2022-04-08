@@ -18,17 +18,25 @@ package alfio.manager.support;
 
 import alfio.manager.system.Mailer;
 import alfio.util.TemplateResource;
-import lombok.AllArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
 
-@AllArgsConstructor
 public class ConfirmationEmailConfiguration {
     private final TemplateResource templateResource;
     private final String emailAddress;
     private final Map<String, Object> model;
     private final List<Mailer.Attachment> attachments;
+
+    public ConfirmationEmailConfiguration(TemplateResource templateResource,
+                                          String emailAddress,
+                                          Map<String, Object> model,
+                                          List<Mailer.Attachment> attachments) {
+        this.templateResource = templateResource;
+        this.emailAddress = emailAddress;
+        this.model = model;
+        this.attachments = attachments;
+    }
 
     public TemplateResource getTemplateResource() {
         return templateResource;
