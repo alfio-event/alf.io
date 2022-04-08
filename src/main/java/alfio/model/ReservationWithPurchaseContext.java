@@ -21,7 +21,6 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -123,12 +122,19 @@ public class ReservationWithPurchaseContext implements PriceContainer {
         return centsToUnit(discountCts, currencyCode);
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class PurchaseContextItem {
         private final String id;
         private final String firstName;
         private final String lastName;
         private final Map<String, String> type;
+
+        public PurchaseContextItem(String id, String firstName, String lastName, Map<String, String> type) {
+            this.id = id;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.type = type;
+        }
     }
 }

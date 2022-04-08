@@ -40,7 +40,6 @@ import com.paypal.http.HttpResponse;
 import com.paypal.http.exceptions.HttpException;
 import com.paypal.orders.*;
 import com.paypal.payments.CapturesRefundRequest;
-import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
@@ -66,7 +65,6 @@ import static alfio.util.MonetaryUtil.*;
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 
 @Component
-@AllArgsConstructor
 public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo, ExtractPaymentTokenFromTransaction {
 
     private static final Logger log = LoggerFactory.getLogger(PayPalManager.class);
@@ -80,6 +78,20 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     private final TransactionRepository transactionRepository;
     private final Json json;
     private final ClockProvider clockProvider;
+
+    public PayPalManager(ConfigurationManager configurationManager,
+                         TicketReservationRepository ticketReservationRepository,
+                         TicketRepository ticketRepository,
+                         TransactionRepository transactionRepository,
+                         Json json,
+                         ClockProvider clockProvider) {
+        this.configurationManager = configurationManager;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.ticketRepository = ticketRepository;
+        this.transactionRepository = transactionRepository;
+        this.json = json;
+        this.clockProvider = clockProvider;
+    }
 
     private PayPalHttpClient getClient(Configurable configurable) {
         PayPalEnvironment apiContext = getApiContext(configurable);
@@ -415,11 +427,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         }
     }
 
-    @AllArgsConstructor
-    private static class PayPalChargeDetails {
-        private final String captureId;
-        private final String orderId;
-        private final long payPalFee;
+
+    private record PayPalChargeDetails(String captureId, String orderId, long payPalFee) {
     }
 
 }

@@ -28,7 +28,6 @@ import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi20;
 import com.github.scribejava.core.model.OAuth2AccessToken;
 import com.github.scribejava.core.oauth.OAuth20Service;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -41,7 +40,6 @@ import java.util.UUID;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
-@AllArgsConstructor
 @Component
 public class MollieConnectManager implements OAuthPaymentProviderConnector {
 
@@ -52,6 +50,14 @@ public class MollieConnectManager implements OAuthPaymentProviderConnector {
     private final ExtensionManager extensionManager;
     private final ConfigurationManager configurationManager;
     private final HttpClient httpClient;
+
+    public MollieConnectManager(ExtensionManager extensionManager,
+                                ConfigurationManager configurationManager,
+                                HttpClient httpClient) {
+        this.extensionManager = extensionManager;
+        this.configurationManager = configurationManager;
+        this.httpClient = httpClient;
+    }
 
     @Override
     public AuthorizationRequestDetails getConnectURL(int organizationId) {

@@ -31,11 +31,9 @@ import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
-import alfio.util.oauth2.AccessTokenResponseDetails;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +59,6 @@ import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
 @Component
 @Order(1)
 @Transactional
-@AllArgsConstructor
 public class RevolutBankTransferManager implements PaymentProvider, OfflineProcessor, PaymentInfo {
 
     private static final Logger log = LoggerFactory.getLogger(RevolutBankTransferManager.class);
@@ -75,6 +72,18 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     private static final Cache<String, List<String>> accountsCache = Caffeine.newBuilder()
         .expireAfterWrite(Duration.ofHours(1))
         .build();
+
+    public RevolutBankTransferManager(BankTransferManager bankTransferManager,
+                                      ConfigurationManager configurationManager,
+                                      TransactionRepository transactionRepository,
+                                      HttpClient client,
+                                      ClockProvider clockProvider) {
+        this.bankTransferManager = bankTransferManager;
+        this.configurationManager = configurationManager;
+        this.transactionRepository = transactionRepository;
+        this.client = client;
+        this.clockProvider = clockProvider;
+    }
 
     @Override
     public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {

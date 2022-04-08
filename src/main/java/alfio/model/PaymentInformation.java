@@ -16,17 +16,22 @@
  */
 package alfio.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 @Getter
-@AllArgsConstructor
 public class PaymentInformation {
     private final String paidAmount;
     private final String refundedAmount;
     private final String fee;
     private final String platformFee;
+
+    public PaymentInformation(String paidAmount, String refundedAmount, String fee, String platformFee) {
+        this.paidAmount = paidAmount;
+        this.refundedAmount = refundedAmount;
+        this.fee = fee;
+        this.platformFee = platformFee;
+    }
 
     public boolean isFullyRefunded() {
         return StringUtils.equals(paidAmount, refundedAmount);

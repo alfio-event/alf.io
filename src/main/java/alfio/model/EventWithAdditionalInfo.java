@@ -16,18 +16,15 @@
  */
 package alfio.model;
 
-import alfio.manager.support.extension.ExtensionCapability;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.StatisticsContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
 import java.util.*;
 
-@AllArgsConstructor
 @Getter
 public class EventWithAdditionalInfo implements StatisticsContainer, PriceContainer {
 
@@ -48,6 +45,24 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
     private final List<UUID> linkedSubscriptions;
 
     private final Set<ExtensionCapabilitySummary> supportedCapabilities;
+
+    public EventWithAdditionalInfo(Event event,
+                                   List<TicketCategoryWithAdditionalInfo> ticketCategories,
+                                   EventStatistic eventStatistic,
+                                   Map<String, String> description,
+                                   BigDecimal grossIncome,
+                                   AlfioMetadata metadata,
+                                   List<UUID> linkedSubscriptions,
+                                   Set<ExtensionCapabilitySummary> supportedCapabilities) {
+        this.event = event;
+        this.ticketCategories = ticketCategories;
+        this.eventStatistic = eventStatistic;
+        this.description = description;
+        this.grossIncome = grossIncome;
+        this.metadata = metadata;
+        this.linkedSubscriptions = linkedSubscriptions;
+        this.supportedCapabilities = supportedCapabilities;
+    }
 
     @JsonIgnore
     public Event getEvent() {

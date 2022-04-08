@@ -26,7 +26,6 @@ import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.ClockProvider;
 import alfio.util.WorkingDaysAdjusters;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +40,6 @@ import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYM
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@AllArgsConstructor
 public class BankTransferManager implements PaymentProvider {
 
     private static final Logger log = LoggerFactory.getLogger(BankTransferManager.class);
@@ -49,10 +47,21 @@ public class BankTransferManager implements PaymentProvider {
     private static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(BANK_TRANSFER_ENABLED,
         DEFERRED_BANK_TRANSFER_ENABLED, OFFLINE_PAYMENT_DAYS, REVOLUT_ENABLED, REVOLUT_API_KEY,
         REVOLUT_LIVE_MODE, REVOLUT_MANUAL_REVIEW);
+
     private final ConfigurationManager configurationManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final TransactionRepository transactionRepository;
     private final ClockProvider clockProvider;
+
+    public BankTransferManager(ConfigurationManager configurationManager,
+                               TicketReservationRepository ticketReservationRepository,
+                               TransactionRepository transactionRepository,
+                               ClockProvider clockProvider) {
+        this.configurationManager = configurationManager;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.transactionRepository = transactionRepository;
+        this.clockProvider = clockProvider;
+    }
 
     @Override
     public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {

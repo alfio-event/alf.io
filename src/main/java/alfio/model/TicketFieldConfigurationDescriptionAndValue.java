@@ -18,7 +18,6 @@ package alfio.model;
 
 import alfio.util.Json;
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.apache.commons.collections.CollectionUtils;
@@ -33,7 +32,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-@AllArgsConstructor
 public class TicketFieldConfigurationDescriptionAndValue {
 
     @Delegate
@@ -50,6 +48,16 @@ public class TicketFieldConfigurationDescriptionAndValue {
         "vat:eu"
     );
     private static final Pattern CHECKBOX_VALUES_PATTERN = Pattern.compile("\"(.*?)\",?");
+
+    public TicketFieldConfigurationDescriptionAndValue(TicketFieldConfiguration ticketFieldConfiguration,
+                                                       TicketFieldDescription ticketFieldDescription,
+                                                       int count,
+                                                       String value) {
+        this.ticketFieldConfiguration = ticketFieldConfiguration;
+        this.ticketFieldDescription = ticketFieldDescription;
+        this.count = count;
+        this.value = value;
+    }
 
     public String getTranslatedValue() {
         if(StringUtils.isBlank(value)) {

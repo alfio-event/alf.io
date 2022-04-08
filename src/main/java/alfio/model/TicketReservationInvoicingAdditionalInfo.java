@@ -16,14 +16,16 @@
  */
 package alfio.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class TicketReservationInvoicingAdditionalInfo {
 
     private final ItalianEInvoicing italianEInvoicing;
+
+    public TicketReservationInvoicingAdditionalInfo(ItalianEInvoicing italianEInvoicing) {
+        this.italianEInvoicing = italianEInvoicing;
+    }
 
     public boolean isEmpty() {
         return italianEInvoicing == null || italianEInvoicing.isEmpty();
@@ -37,7 +39,6 @@ public class TicketReservationInvoicingAdditionalInfo {
     // https://github.com/alfio-event/alf.io/issues/573
     //
     @Getter
-    @AllArgsConstructor
     public static class ItalianEInvoicing {
 
         public enum ReferenceType {
@@ -51,6 +52,18 @@ public class TicketReservationInvoicingAdditionalInfo {
         private final String addresseeCode;
         private final String pec;
         private final boolean splitPayment;
+
+        public ItalianEInvoicing(String fiscalCode,
+                                 ReferenceType referenceType,
+                                 String addresseeCode,
+                                 String pec,
+                                 boolean splitPayment) {
+            this.fiscalCode = fiscalCode;
+            this.referenceType = referenceType;
+            this.addresseeCode = addresseeCode;
+            this.pec = pec;
+            this.splitPayment = splitPayment;
+        }
 
         public String getReferenceTypeAsString() {
             return referenceType == null ? "" : referenceType.toString();
