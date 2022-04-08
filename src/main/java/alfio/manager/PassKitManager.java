@@ -33,7 +33,6 @@ import com.ryantenney.passkit4j.model.*;
 import com.ryantenney.passkit4j.sign.PassSigner;
 import com.ryantenney.passkit4j.sign.PassSignerImpl;
 import com.ryantenney.passkit4j.sign.PassSigningException;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.imgscalr.Scalr;
 import org.slf4j.Logger;
@@ -53,7 +52,6 @@ import java.util.stream.Collectors;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@AllArgsConstructor
 public class PassKitManager {
 
     private static final Logger log = LoggerFactory.getLogger(PassKitManager.class);
@@ -70,7 +68,22 @@ public class PassKitManager {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
-    private final TicketReservationRepository ticketReservationRepository;
+
+    public PassKitManager(EventRepository eventRepository,
+                          OrganizationRepository organizationRepository,
+                          ConfigurationManager configurationManager,
+                          FileUploadManager fileUploadManager,
+                          EventDescriptionRepository eventDescriptionRepository,
+                          TicketCategoryRepository ticketCategoryRepository,
+                          TicketRepository ticketRepository) {
+        this.eventRepository = eventRepository;
+        this.organizationRepository = organizationRepository;
+        this.configurationManager = configurationManager;
+        this.fileUploadManager = fileUploadManager;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.ticketRepository = ticketRepository;
+    }
 
 
     public boolean writePass(Ticket ticket, EventAndOrganizationId event, OutputStream out) throws IOException, PassSigningException {

@@ -30,7 +30,6 @@ import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,7 +51,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@AllArgsConstructor
 @RequestMapping("/admin/api/extensions")
 public class ExtensionApiController {
 
@@ -73,6 +71,16 @@ public class ExtensionApiController {
     private final UserManager userManager;
     private final OrganizationRepository organizationRepository;
     private final EventRepository eventRepository;
+
+    public ExtensionApiController(ExtensionService extensionService,
+                                  UserManager userManager,
+                                  OrganizationRepository organizationRepository,
+                                  EventRepository eventRepository) {
+        this.extensionService = extensionService;
+        this.userManager = userManager;
+        this.organizationRepository = organizationRepository;
+        this.eventRepository = eventRepository;
+    }
 
 
     @GetMapping("")

@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.repository.EventAdminRepository;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -34,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Component
-@AllArgsConstructor
 @Transactional(readOnly = true)
 public class EventNameManager {
 
@@ -47,6 +45,10 @@ public class EventNameManager {
         .usingRandom(RANDOM::nextInt)
         .build();
     private final EventAdminRepository eventAdminRepository;
+
+    public EventNameManager(EventAdminRepository eventAdminRepository) {
+        this.eventAdminRepository = eventAdminRepository;
+    }
 
     /**
      * Generates and returns a short name based on the given display name.<br>

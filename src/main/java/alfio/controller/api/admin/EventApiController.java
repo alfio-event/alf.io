@@ -45,7 +45,6 @@ import alfio.repository.TicketFieldRepository;
 import alfio.util.*;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
@@ -92,7 +91,6 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
 
 @RestController
 @RequestMapping("/admin/api")
-@AllArgsConstructor
 public class EventApiController {
 
     private static final Logger log = LoggerFactory.getLogger(EventApiController.class);
@@ -115,6 +113,40 @@ public class EventApiController {
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
+
+    public EventApiController(EventManager eventManager,
+                              EventStatisticsManager eventStatisticsManager,
+                              I18nManager i18nManager,
+                              TicketReservationManager ticketReservationManager,
+                              TicketFieldRepository ticketFieldRepository,
+                              EventDescriptionRepository eventDescriptionRepository,
+                              TicketHelper ticketHelper,
+                              DynamicFieldTemplateRepository dynamicFieldTemplateRepository,
+                              UserManager userManager,
+                              SponsorScanRepository sponsorScanRepository,
+                              PaymentManager paymentManager,
+                              TemplateManager templateManager,
+                              FileUploadManager fileUploadManager,
+                              ConfigurationManager configurationManager,
+                              ExtensionManager extensionManager,
+                              ClockProvider clockProvider) {
+        this.eventManager = eventManager;
+        this.eventStatisticsManager = eventStatisticsManager;
+        this.i18nManager = i18nManager;
+        this.ticketReservationManager = ticketReservationManager;
+        this.ticketFieldRepository = ticketFieldRepository;
+        this.eventDescriptionRepository = eventDescriptionRepository;
+        this.ticketHelper = ticketHelper;
+        this.dynamicFieldTemplateRepository = dynamicFieldTemplateRepository;
+        this.userManager = userManager;
+        this.sponsorScanRepository = sponsorScanRepository;
+        this.paymentManager = paymentManager;
+        this.templateManager = templateManager;
+        this.fileUploadManager = fileUploadManager;
+        this.configurationManager = configurationManager;
+        this.extensionManager = extensionManager;
+        this.clockProvider = clockProvider;
+    }
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -171,11 +203,16 @@ public class EventApiController {
     }
 
 
-    @AllArgsConstructor
+
     @Getter
     public static class EventAndOrganization {
         private final EventWithAdditionalInfo event;
         private final Organization organization;
+
+        public EventAndOrganization(EventWithAdditionalInfo event, Organization organization) {
+            this.event = event;
+            this.organization = organization;
+        }
     }
 
 

@@ -20,6 +20,8 @@ import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Getter;
 
@@ -130,7 +132,11 @@ public class ReservationWithPurchaseContext implements PriceContainer {
         private final String lastName;
         private final Map<String, String> type;
 
-        public PurchaseContextItem(String id, String firstName, String lastName, Map<String, String> type) {
+        @JsonCreator
+        public PurchaseContextItem(@JsonProperty("id") String id,
+                                   @JsonProperty("firstName") String firstName,
+                                   @JsonProperty("lastName") String lastName,
+                                   @JsonProperty("type") Map<String, String> type) {
             this.id = id;
             this.firstName = firstName;
             this.lastName = lastName;

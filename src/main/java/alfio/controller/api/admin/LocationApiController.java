@@ -21,7 +21,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.ConfigurationKeys;
 import com.moodysalem.TimezoneMapper;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,10 +89,15 @@ public class LocationApiController {
         return new ProviderAndKeys(provider, apiKeys);
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class ProviderAndKeys {
         private final ConfigurationKeys.GeoInfoProvider provider;
-        private Map<ConfigurationKeys, String> keys;
+        private final Map<ConfigurationKeys, String> keys;
+
+        public ProviderAndKeys(GeoInfoProvider provider, Map<ConfigurationKeys, String> keys) {
+            this.provider = provider;
+            this.keys = keys;
+        }
     }
 }

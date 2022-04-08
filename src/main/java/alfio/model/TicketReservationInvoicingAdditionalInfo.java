@@ -16,6 +16,8 @@
  */
 package alfio.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
@@ -23,7 +25,8 @@ public class TicketReservationInvoicingAdditionalInfo {
 
     private final ItalianEInvoicing italianEInvoicing;
 
-    public TicketReservationInvoicingAdditionalInfo(ItalianEInvoicing italianEInvoicing) {
+    @JsonCreator
+    public TicketReservationInvoicingAdditionalInfo(@JsonProperty("italianEInvoicing") ItalianEInvoicing italianEInvoicing) {
         this.italianEInvoicing = italianEInvoicing;
     }
 
@@ -53,11 +56,12 @@ public class TicketReservationInvoicingAdditionalInfo {
         private final String pec;
         private final boolean splitPayment;
 
-        public ItalianEInvoicing(String fiscalCode,
-                                 ReferenceType referenceType,
-                                 String addresseeCode,
-                                 String pec,
-                                 boolean splitPayment) {
+        @JsonCreator
+        public ItalianEInvoicing(@JsonProperty("fiscalCode") String fiscalCode,
+                                 @JsonProperty("referenceType") ReferenceType referenceType,
+                                 @JsonProperty("addresseeCode") String addresseeCode,
+                                 @JsonProperty("pec") String pec,
+                                 @JsonProperty("splitPayment") boolean splitPayment) {
             this.fiscalCode = fiscalCode;
             this.referenceType = referenceType;
             this.addresseeCode = addresseeCode;

@@ -21,7 +21,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.repository.*;
-import lombok.AllArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -42,7 +41,6 @@ import static alfio.util.MonetaryUtil.unitToCents;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
-@AllArgsConstructor
 @Component
 public class ReverseChargeManager {
 
@@ -58,7 +56,29 @@ public class ReverseChargeManager {
     private final TicketRepository ticketRepository;
     private final SubscriptionRepository subscriptionRepository;
 
-
+    public ReverseChargeManager(PromoCodeDiscountRepository promoCodeDiscountRepository,
+                                AdditionalServiceItemRepository additionalServiceItemRepository,
+                                AdditionalServiceRepository additionalServiceRepository,
+                                TicketCategoryRepository ticketCategoryRepository,
+                                NamedParameterJdbcTemplate jdbcTemplate,
+                                ConfigurationManager configurationManager,
+                                TicketReservationRepository ticketReservationRepository,
+                                EuVatChecker vatChecker,
+                                TicketReservationManager ticketReservationManager,
+                                TicketRepository ticketRepository,
+                                SubscriptionRepository subscriptionRepository) {
+        this.promoCodeDiscountRepository = promoCodeDiscountRepository;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.additionalServiceRepository = additionalServiceRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.configurationManager = configurationManager;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.vatChecker = vatChecker;
+        this.ticketReservationManager = ticketReservationManager;
+        this.ticketRepository = ticketRepository;
+        this.subscriptionRepository = subscriptionRepository;
+    }
 
 
     public void checkAndApplyVATRules(PurchaseContext purchaseContext,

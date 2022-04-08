@@ -26,7 +26,6 @@ import alfio.model.result.Result;
 import alfio.repository.*;
 import alfio.util.Json;
 import alfio.util.PinGenerator;
-import lombok.AllArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -43,7 +42,6 @@ import java.util.stream.IntStream;
 import static java.util.Objects.requireNonNullElse;
 
 @Component
-@AllArgsConstructor
 @Transactional
 public class PollManager {
     private final PollRepository pollRepository;
@@ -52,6 +50,20 @@ public class PollManager {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final TicketSearchRepository ticketSearchRepository;
     private final AuditingRepository auditingRepository;
+
+    public PollManager(PollRepository pollRepository,
+                       EventRepository eventRepository,
+                       TicketRepository ticketRepository,
+                       NamedParameterJdbcTemplate jdbcTemplate,
+                       TicketSearchRepository ticketSearchRepository,
+                       AuditingRepository auditingRepository) {
+        this.pollRepository = pollRepository;
+        this.eventRepository = eventRepository;
+        this.ticketRepository = ticketRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.ticketSearchRepository = ticketSearchRepository;
+        this.auditingRepository = auditingRepository;
+    }
 
     public Result<List<Poll>> getActiveForEvent(String eventName, String pin) {
         return validatePinAndEvent(pin, eventName)

@@ -23,7 +23,6 @@ import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.repository.SubscriptionRepository;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,13 +45,17 @@ import static java.util.Objects.requireNonNullElse;
 
 @Component
 @Transactional
-@AllArgsConstructor
 public class SubscriptionManager {
 
     private static final Logger log = LoggerFactory.getLogger(SubscriptionManager.class);
 
     private final SubscriptionRepository subscriptionRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+
+    public SubscriptionManager(SubscriptionRepository subscriptionRepository, NamedParameterJdbcTemplate jdbcTemplate) {
+        this.subscriptionRepository = subscriptionRepository;
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     public List<SubscriptionDescriptor> findAll(int organizationId) {
         return subscriptionRepository.findAllByOrganizationIds(organizationId);

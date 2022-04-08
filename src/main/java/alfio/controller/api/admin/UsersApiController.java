@@ -28,7 +28,6 @@ import alfio.util.ImageUtil;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -56,7 +55,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RestController
 @RequestMapping("/admin/api")
-@AllArgsConstructor
 public class UsersApiController {
 
     private static final Logger log = LoggerFactory.getLogger(UsersApiController.class);
@@ -64,6 +62,11 @@ public class UsersApiController {
     private static final String OK = "OK";
     private final UserManager userManager;
     private final ConfigurationManager configurationManager;
+
+    public UsersApiController(UserManager userManager, ConfigurationManager configurationManager) {
+        this.userManager = userManager;
+        this.configurationManager = configurationManager;
+    }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
