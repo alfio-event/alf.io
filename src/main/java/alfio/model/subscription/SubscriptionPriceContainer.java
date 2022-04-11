@@ -18,7 +18,6 @@ package alfio.model.subscription;
 
 import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
-import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -26,12 +25,17 @@ import java.util.Optional;
 import static alfio.util.MonetaryUtil.centsToUnit;
 import static alfio.util.MonetaryUtil.unitToCents;
 
-@AllArgsConstructor
 public class SubscriptionPriceContainer implements PriceContainer {
 
     private final Subscription subscription;
     private final PromoCodeDiscount promoCodeDiscount;
     private final SubscriptionDescriptor descriptor;
+
+    public SubscriptionPriceContainer(Subscription subscription, PromoCodeDiscount promoCodeDiscount, SubscriptionDescriptor descriptor) {
+        this.subscription = subscription;
+        this.promoCodeDiscount = promoCodeDiscount;
+        this.descriptor = descriptor;
+    }
 
 
     @Override

@@ -44,7 +44,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
 import alfio.util.*;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -76,7 +75,6 @@ import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT
 import static java.util.stream.Collectors.toMap;
 
 @RestController
-@AllArgsConstructor
 @RequestMapping("/api/v2/public/")
 public class ReservationApiV2Controller {
 
@@ -103,6 +101,50 @@ public class ReservationApiV2Controller {
     private final TicketRepository ticketRepository;
     private final PublicUserManager publicUserManager;
     private final ReverseChargeManager reverseChargeManager;
+
+    public ReservationApiV2Controller(EventManager eventManager,
+                                      EventRepository eventRepository,
+                                      TicketReservationManager ticketReservationManager,
+                                      TicketReservationRepository ticketReservationRepository,
+                                      TicketFieldRepository ticketFieldRepository,
+                                      MessageSourceManager messageSourceManager,
+                                      ConfigurationManager configurationManager,
+                                      PaymentManager paymentManager,
+                                      FileUploadManager fileUploadManager,
+                                      TemplateManager templateManager,
+                                      ExtensionManager extensionManager,
+                                      TicketHelper ticketHelper,
+                                      EuVatChecker vatChecker,
+                                      RecaptchaService recaptchaService,
+                                      BookingInfoTicketLoader bookingInfoTicketLoader,
+                                      BillingDocumentManager billingDocumentManager,
+                                      PurchaseContextManager purchaseContextManager,
+                                      SubscriptionRepository subscriptionRepository,
+                                      TicketRepository ticketRepository,
+                                      PublicUserManager publicUserManager,
+                                      ReverseChargeManager reverseChargeManager) {
+        this.eventManager = eventManager;
+        this.eventRepository = eventRepository;
+        this.ticketReservationManager = ticketReservationManager;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.ticketFieldRepository = ticketFieldRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.configurationManager = configurationManager;
+        this.paymentManager = paymentManager;
+        this.fileUploadManager = fileUploadManager;
+        this.templateManager = templateManager;
+        this.extensionManager = extensionManager;
+        this.ticketHelper = ticketHelper;
+        this.vatChecker = vatChecker;
+        this.recaptchaService = recaptchaService;
+        this.bookingInfoTicketLoader = bookingInfoTicketLoader;
+        this.billingDocumentManager = billingDocumentManager;
+        this.purchaseContextManager = purchaseContextManager;
+        this.subscriptionRepository = subscriptionRepository;
+        this.ticketRepository = ticketRepository;
+        this.publicUserManager = publicUserManager;
+        this.reverseChargeManager = reverseChargeManager;
+    }
 
     /**
      * Note: now it will return for any states of the reservation.

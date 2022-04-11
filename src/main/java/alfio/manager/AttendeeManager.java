@@ -29,7 +29,6 @@ import alfio.repository.*;
 import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.ZoneId;
@@ -39,7 +38,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
-@AllArgsConstructor
 public class AttendeeManager {
 
     private final SponsorScanRepository sponsorScanRepository;
@@ -50,6 +48,24 @@ public class AttendeeManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final ClockProvider clockProvider;
+
+    public AttendeeManager(SponsorScanRepository sponsorScanRepository,
+                           EventRepository eventRepository,
+                           TicketRepository ticketRepository,
+                           UserRepository userRepository,
+                           UserManager userManager,
+                           TicketFieldRepository ticketFieldRepository,
+                           AdditionalServiceItemRepository additionalServiceItemRepository,
+                           ClockProvider clockProvider) {
+        this.sponsorScanRepository = sponsorScanRepository;
+        this.eventRepository = eventRepository;
+        this.ticketRepository = ticketRepository;
+        this.userRepository = userRepository;
+        this.userManager = userManager;
+        this.ticketFieldRepository = ticketFieldRepository;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.clockProvider = clockProvider;
+    }
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String notes, SponsorScan.LeadStatus leadStatus, String username) {
         int userId = userRepository.getByUsername(username).getId();

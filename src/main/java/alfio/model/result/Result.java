@@ -17,7 +17,6 @@
 package alfio.model.result;
 
 import alfio.model.result.ValidationResult.ErrorDescriptor;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -29,13 +28,19 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
+
 @Getter
 public class Result<T> {
 
     private final ResultStatus status;
     private final T data;
     private final List<ErrorCode> errors;
+
+    public Result(ResultStatus status, T data, List<ErrorCode> errors) {
+        this.status = status;
+        this.data = data;
+        this.errors = errors;
+    }
 
     public static <T> Result<T> success(T data) {
         return new Result<>(ResultStatus.OK, data, Collections.emptyList());

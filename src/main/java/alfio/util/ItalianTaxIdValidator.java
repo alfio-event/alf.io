@@ -16,7 +16,6 @@
  */
 package alfio.util;
 
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -166,19 +165,16 @@ public final class ItalianTaxIdValidator {
         return controlDigit == Character.getNumericValue(chars[10]);
     }
 
-    @AllArgsConstructor
-    private static class EvenOddValueContainer {
-        private final int evenValue;
-        private final int oddValue;
+
+    private record EvenOddValueContainer(int evenValue, int oddValue) {
 
         private int getValue(int index) {
             return (index + 1) % 2 == 0 ? evenValue : oddValue;
         }
     }
 
-    @AllArgsConstructor
-    private static class FiscalCodeParts {
-        private final List<Character> consonants;
-        private final List<Character> vowels;
+
+    private record FiscalCodeParts(List<Character> consonants,
+                                   List<Character> vowels) {
     }
 }

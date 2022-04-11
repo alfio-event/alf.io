@@ -20,7 +20,6 @@ import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
 import alfio.model.TicketFieldConfigurationDescriptionAndValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -28,13 +27,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
 public class TicketWithAdditionalFields {
     @Delegate(excludes = EventAndOrganizationId.class)
     @JsonIgnore
     private final Ticket ticket;
     @JsonIgnore
     private final List<TicketFieldConfigurationDescriptionAndValue> additionalFieldsDescriptionsAndValues;
+
+    public TicketWithAdditionalFields(Ticket ticket,
+                                      List<TicketFieldConfigurationDescriptionAndValue> additionalFieldsDescriptionsAndValues) {
+        this.ticket = ticket;
+        this.additionalFieldsDescriptionsAndValues = additionalFieldsDescriptionsAndValues;
+    }
 
     public Map<String, String> getAdditionalFields() {
         return additionalFieldsDescriptionsAndValues.stream()

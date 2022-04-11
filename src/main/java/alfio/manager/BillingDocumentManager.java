@@ -30,7 +30,6 @@ import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.TemplateResource;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -56,7 +55,6 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
-@AllArgsConstructor
 public class BillingDocumentManager {
 
     private static final Logger log = LoggerFactory.getLogger(BillingDocumentManager.class);
@@ -75,6 +73,32 @@ public class BillingDocumentManager {
     private final ClockProvider clockProvider;
     private final ExtensionManager extensionManager;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
+
+    public BillingDocumentManager(BillingDocumentRepository billingDocumentRepository,
+                                  Json json,
+                                  ConfigurationManager configurationManager,
+                                  TicketRepository ticketRepository,
+                                  TicketCategoryRepository ticketCategoryRepository,
+                                  OrganizationRepository organizationRepository,
+                                  UserRepository userRepository,
+                                  AuditingRepository auditingRepository,
+                                  TicketReservationRepository ticketReservationRepository,
+                                  ClockProvider clockProvider,
+                                  ExtensionManager extensionManager,
+                                  InvoiceSequencesRepository invoiceSequencesRepository) {
+        this.billingDocumentRepository = billingDocumentRepository;
+        this.json = json;
+        this.configurationManager = configurationManager;
+        this.ticketRepository = ticketRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.organizationRepository = organizationRepository;
+        this.userRepository = userRepository;
+        this.auditingRepository = auditingRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
+        this.clockProvider = clockProvider;
+        this.extensionManager = extensionManager;
+        this.invoiceSequencesRepository = invoiceSequencesRepository;
+    }
 
 
     public Optional<ZonedDateTime> findFirstInvoiceDate(int eventId) {

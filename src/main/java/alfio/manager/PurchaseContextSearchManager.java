@@ -21,7 +21,6 @@ import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.TicketSearchRepository;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
@@ -34,10 +33,13 @@ import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional(readOnly = true)
-@AllArgsConstructor
 public class PurchaseContextSearchManager {
 
     private final TicketSearchRepository ticketSearchRepository;
+
+    public PurchaseContextSearchManager(TicketSearchRepository ticketSearchRepository) {
+        this.ticketSearchRepository = ticketSearchRepository;
+    }
 
     public Pair<List<TicketReservation>, Integer> findAllReservationsFor(PurchaseContext purchaseContext, Integer page, String search, List<TicketReservation.TicketReservationStatus> status) {
         final int pageSize = 50;

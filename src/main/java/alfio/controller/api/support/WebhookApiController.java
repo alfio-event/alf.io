@@ -18,9 +18,6 @@ package alfio.controller.api.support;
 
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.util.RequestUtils;
-import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +26,15 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/webhook")
-@AllArgsConstructor
 public class WebhookApiController {
-
-    private static final Logger log = LoggerFactory.getLogger(WebhookApiController.class);
 
     //private final MollieManager mollieManager;
     //private final TicketReservationManager ticketReservationManager;
     private final StripeCreditCardManager stripeCreditCardManager;
+
+    public WebhookApiController(StripeCreditCardManager stripeCreditCardManager) {
+        this.stripeCreditCardManager = stripeCreditCardManager;
+    }
 
     @PostMapping("/mollie/event/{eventName}/reservation/{reservationId}")
     public void handleMollie(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {

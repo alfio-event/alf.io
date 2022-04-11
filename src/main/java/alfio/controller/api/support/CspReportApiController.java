@@ -18,7 +18,6 @@ package alfio.controller.api.support;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,13 +33,16 @@ import static alfio.model.system.ConfigurationKeys.SECURITY_CSP_REPORT_URI;
 
 
 @RestController
-@AllArgsConstructor
 public class CspReportApiController {
 
     private static final Logger log = LoggerFactory.getLogger(CspReportApiController.class);
 
 
     private final ConfigurationManager configurationManager;
+
+    public CspReportApiController(ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
+    }
 
     @PostMapping("/report-csp-violation")
     public boolean logCspViolation(HttpServletRequest request) throws IOException {

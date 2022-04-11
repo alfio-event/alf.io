@@ -17,13 +17,16 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.TicketReservation;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
 public class ReservationStatusInfo {
 
     private final TicketReservation.TicketReservationStatus status;
     private final boolean validatedBookingInformation;
+
+    public ReservationStatusInfo(TicketReservation.TicketReservationStatus status, boolean validatedBookingInformation) {
+        this.status = status;
+        this.validatedBookingInformation = validatedBookingInformation;
+    }
 }

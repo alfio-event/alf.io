@@ -40,7 +40,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
-import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -65,7 +64,6 @@ import java.util.Optional;
 import static alfio.util.EventUtil.firstMatchingCallLink;
 
 @RestController
-@AllArgsConstructor
 public class TicketApiV2Controller {
 
     private final TicketHelper ticketHelper;
@@ -79,6 +77,30 @@ public class TicketApiV2Controller {
     private final NotificationManager notificationManager;
     private final BookingInfoTicketLoader bookingInfoTicketLoader;
     private final TicketRepository ticketRepository;
+
+    public TicketApiV2Controller(TicketHelper ticketHelper,
+                                 TicketReservationManager ticketReservationManager,
+                                 TicketCategoryRepository ticketCategoryRepository,
+                                 MessageSourceManager messageSourceManager,
+                                 ExtensionManager extensionManager,
+                                 FileUploadManager fileUploadManager,
+                                 OrganizationRepository organizationRepository,
+                                 TemplateManager templateManager,
+                                 NotificationManager notificationManager,
+                                 BookingInfoTicketLoader bookingInfoTicketLoader,
+                                 TicketRepository ticketRepository) {
+        this.ticketHelper = ticketHelper;
+        this.ticketReservationManager = ticketReservationManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.messageSourceManager = messageSourceManager;
+        this.extensionManager = extensionManager;
+        this.fileUploadManager = fileUploadManager;
+        this.organizationRepository = organizationRepository;
+        this.templateManager = templateManager;
+        this.notificationManager = notificationManager;
+        this.bookingInfoTicketLoader = bookingInfoTicketLoader;
+        this.ticketRepository = ticketRepository;
+    }
 
 
     @GetMapping(value = {

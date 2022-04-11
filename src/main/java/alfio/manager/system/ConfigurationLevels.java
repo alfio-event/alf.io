@@ -17,7 +17,6 @@
 package alfio.manager.system;
 
 import alfio.model.system.ConfigurationPathLevel;
-import lombok.AllArgsConstructor;
 
 import java.util.OptionalInt;
 
@@ -39,9 +38,12 @@ class ConfigurationLevels {
         }
     }
 
-    @AllArgsConstructor
     static class OrganizationLevel implements ConfigurationLevel {
         final int organizationId;
+
+        OrganizationLevel(int organizationId) {
+            this.organizationId = organizationId;
+        }
 
         @Override
         public ConfigurationPathLevel getPathLevel() {
@@ -54,10 +56,14 @@ class ConfigurationLevels {
         }
     }
 
-    @AllArgsConstructor
     static class EventLevel implements ConfigurationLevel {
         final int organizationId;
         final int eventId;
+
+        EventLevel(int organizationId, int eventId) {
+            this.organizationId = organizationId;
+            this.eventId = eventId;
+        }
 
         @Override
         public ConfigurationPathLevel getPathLevel() {
@@ -75,11 +81,17 @@ class ConfigurationLevels {
         }
     }
 
-    @AllArgsConstructor
+
     static class CategoryLevel implements ConfigurationLevel {
         final int organizationId;
         final int eventId;
         final int categoryId;
+
+        CategoryLevel(int organizationId, int eventId, int categoryId) {
+            this.organizationId = organizationId;
+            this.eventId = eventId;
+            this.categoryId = categoryId;
+        }
 
         @Override
         public ConfigurationPathLevel getPathLevel() {

@@ -18,7 +18,6 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import alfio.util.HttpUtils;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -35,13 +34,17 @@ import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
-@AllArgsConstructor
 class MailgunMailer implements Mailer {
 
     private static final Logger log = LoggerFactory.getLogger(MailgunMailer.class);
 
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
+
+    MailgunMailer(HttpClient client, ConfigurationManager configurationManager) {
+        this.client = client;
+        this.configurationManager = configurationManager;
+    }
 
 
     private static Map<String, String> getEmailData(String from, String to, String replyTo, List<String> cc, String subject, String text, Optional<String> html) {

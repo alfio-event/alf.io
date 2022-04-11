@@ -25,7 +25,6 @@ import alfio.model.ExtensionSupport.*;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
-import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -51,7 +50,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 @Service
-@AllArgsConstructor
 public class ExtensionService {
 
     private static final String EVALUATE_RESULT = "res = GSON.fromJson(JSON.stringify(res), returnClass);";
@@ -61,6 +59,7 @@ public class ExtensionService {
     private static final String OUTPUT = "output";
     private static final String EXECUTION_KEY = "executionKey";
     private static final String EXTENSION_EVENT = "extensionEvent";
+
     private final ScriptingExecutionService scriptingExecutionService;
     private final ExtensionRepository extensionRepository;
     private final ExtensionLogRepository extensionLogRepository;
@@ -68,8 +67,22 @@ public class ExtensionService {
     private final ExternalConfiguration externalConfiguration;
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
+    public ExtensionService(ScriptingExecutionService scriptingExecutionService,
+                            ExtensionRepository extensionRepository,
+                            ExtensionLogRepository extensionLogRepository,
+                            PlatformTransactionManager platformTransactionManager,
+                            ExternalConfiguration externalConfiguration,
+                            NamedParameterJdbcTemplate jdbcTemplate) {
+        this.scriptingExecutionService = scriptingExecutionService;
+        this.extensionRepository = extensionRepository;
+        this.extensionLogRepository = extensionLogRepository;
+        this.platformTransactionManager = platformTransactionManager;
+        this.externalConfiguration = externalConfiguration;
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
-    @AllArgsConstructor
+
+
     private static final class ExtensionLoggerImpl implements ExtensionLogger {
 
         private final ExtensionLogRepository extensionLogRepository;
@@ -77,6 +90,18 @@ public class ExtensionService {
         private final String effectivePath;
         private final String path;
         private final String name;
+
+        private ExtensionLoggerImpl(ExtensionLogRepository extensionLogRepository,
+                                    PlatformTransactionManager platformTransactionManager,
+                                    String effectivePath,
+                                    String path,
+                                    String name) {
+            this.extensionLogRepository = extensionLogRepository;
+            this.platformTransactionManager = platformTransactionManager;
+            this.effectivePath = effectivePath;
+            this.path = path;
+            this.name = name;
+        }
 
         @Override
         public void logWarning(String msg) {

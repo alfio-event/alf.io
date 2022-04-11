@@ -18,7 +18,6 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import alfio.model.system.ConfigurationKeys;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -43,12 +42,16 @@ import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
-@AllArgsConstructor
+
 class SmtpMailer implements Mailer {
 
     private static final Logger log = LoggerFactory.getLogger(SmtpMailer.class);
     
     private final ConfigurationManager configurationManager;
+
+    SmtpMailer(ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
+    }
 
     @Override
     public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text,

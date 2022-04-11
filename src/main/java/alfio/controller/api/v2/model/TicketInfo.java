@@ -16,13 +16,11 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.Map;
 
 @Getter
-@AllArgsConstructor
 public class TicketInfo implements DateValidity {
 
     private final String fullName;
@@ -43,5 +41,35 @@ public class TicketInfo implements DateValidity {
     private final Map<String, String> formattedBeginTime; //the hour/minute component
     private final Map<String, String> formattedEndDate;
     private final Map<String, String> formattedEndTime;
+
+    public TicketInfo(String fullName,
+                      String email,
+                      String uuid,
+                      String ticketCategoryName,
+                      String reservationFullName,
+                      String reservationId,
+                      boolean deskPaymentRequired,
+                      String timeZone,
+                      DatesWithTimeZoneOffset datesWithOffset,
+                      boolean sameDay,
+                      Map<String, String> formattedBeginDate,
+                      Map<String, String> formattedBeginTime,
+                      Map<String, String> formattedEndDate,
+                      Map<String, String> formattedEndTime) {
+        this.fullName = fullName;
+        this.email = email;
+        this.uuid = uuid;
+        this.ticketCategoryName = ticketCategoryName;
+        this.reservationFullName = reservationFullName;
+        this.reservationId = reservationId;
+        this.deskPaymentRequired = deskPaymentRequired;
+        this.timeZone = timeZone;
+        this.datesWithOffset = datesWithOffset;
+        this.sameDay = sameDay;
+        this.formattedBeginDate = formattedBeginDate;
+        this.formattedBeginTime = formattedBeginTime;
+        this.formattedEndDate = formattedEndDate;
+        this.formattedEndTime = formattedEndTime;
+    }
     //
 }

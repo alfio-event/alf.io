@@ -31,7 +31,6 @@ import alfio.util.ClockProvider;
 import alfio.util.ErrorsCode;
 import alfio.util.RequestUtils;
 import alfio.util.ReservationUtil;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -52,7 +51,6 @@ import java.util.function.Function;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 
 @Component
-@AllArgsConstructor
 public class PromoCodeRequestManager {
 
     private final SpecialPriceRepository specialPriceRepository;
@@ -62,6 +60,22 @@ public class PromoCodeRequestManager {
     private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
     private final ClockProvider clockProvider;
+
+    public PromoCodeRequestManager(SpecialPriceRepository specialPriceRepository,
+                                   PromoCodeDiscountRepository promoCodeRepository,
+                                   TicketCategoryRepository ticketCategoryRepository,
+                                   EventManager eventManager,
+                                   EventRepository eventRepository,
+                                   TicketReservationManager ticketReservationManager,
+                                   ClockProvider clockProvider) {
+        this.specialPriceRepository = specialPriceRepository;
+        this.promoCodeRepository = promoCodeRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
+        this.eventManager = eventManager;
+        this.eventRepository = eventRepository;
+        this.ticketReservationManager = ticketReservationManager;
+        this.clockProvider = clockProvider;
+    }
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND

@@ -23,8 +23,6 @@ import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -53,7 +51,6 @@ import java.util.regex.Pattern;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
 
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter {
     public static final String AUTHENTICATE = "/authenticate";
     private final Environment environment;
@@ -64,6 +61,24 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
     private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
+
+    protected AbstractFormBasedWebSecurity(Environment environment,
+                                           UserManager userManager,
+                                           RecaptchaService recaptchaService,
+                                           ConfigurationManager configurationManager,
+                                           CsrfTokenRepository csrfTokenRepository,
+                                           DataSource dataSource,
+                                           PasswordEncoder passwordEncoder,
+                                           PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager) {
+        this.environment = environment;
+        this.userManager = userManager;
+        this.recaptchaService = recaptchaService;
+        this.configurationManager = configurationManager;
+        this.csrfTokenRepository = csrfTokenRepository;
+        this.dataSource = dataSource;
+        this.passwordEncoder = passwordEncoder;
+        this.publicOpenIdAuthenticationManager = publicOpenIdAuthenticationManager;
+    }
 
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {

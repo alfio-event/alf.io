@@ -16,12 +16,10 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
 
-@AllArgsConstructor
 @Getter
 public class ItemsByCategory {
 
@@ -33,11 +31,28 @@ public class ItemsByCategory {
     private final boolean preSales;
     private final List<TicketCategoryForWaitingList> ticketCategoriesForWaitingList;
 
+    public ItemsByCategory(List<TicketCategory> ticketCategories,
+                           List<TicketCategory> expiredCategories,
+                           List<AdditionalService> additionalServices,
+                           boolean waitingList,
+                           boolean preSales,
+                           List<TicketCategoryForWaitingList> ticketCategoriesForWaitingList) {
+        this.ticketCategories = ticketCategories;
+        this.expiredCategories = expiredCategories;
+        this.additionalServices = additionalServices;
+        this.waitingList = waitingList;
+        this.preSales = preSales;
+        this.ticketCategoriesForWaitingList = ticketCategoriesForWaitingList;
+    }
 
-    @AllArgsConstructor
     @Getter
     public static class TicketCategoryForWaitingList {
         private final int id;
         private final String name;
+
+        public TicketCategoryForWaitingList(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
     }
 }

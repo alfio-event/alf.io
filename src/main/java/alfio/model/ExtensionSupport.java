@@ -19,7 +19,6 @@ package alfio.model;
 import alfio.extension.ExtensionMetadata;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
@@ -143,11 +142,16 @@ public class ExtensionSupport {
         }
     }
 
-    @AllArgsConstructor
+
     @Getter
     public static class ExtensionMetadataValue {
         private final int id;
         private final String value;
+
+        public ExtensionMetadataValue(int id, String value) {
+            this.id = id;
+            this.value = value;
+        }
     }
 
 
