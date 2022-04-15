@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ByteArrayResource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
@@ -60,7 +61,7 @@ public class BaseTestConfiguration {
     @Profile("!travis")
     public DataSource getDataSource() {
         String POSTGRES_DB = "alfio";
-        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:10")
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("docker.io/postgres:10").asCompatibleSubstituteFor("postgres"))
             .withDatabaseName(POSTGRES_DB)
             .withInitScript("init-db-user.sql");
         postgres.start();

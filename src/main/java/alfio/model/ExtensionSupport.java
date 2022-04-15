@@ -19,6 +19,8 @@ package alfio.model;
 import alfio.extension.ExtensionMetadata;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
@@ -148,7 +150,8 @@ public class ExtensionSupport {
         private final int id;
         private final String value;
 
-        public ExtensionMetadataValue(int id, String value) {
+        @JsonCreator
+        public ExtensionMetadataValue(@JsonProperty("id") int id, @JsonProperty("value") String value) {
             this.id = id;
             this.value = value;
         }

@@ -16,12 +16,14 @@
  */
 package alfio;
 
+import alfio.config.BaseConfiguration;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ExternalConfiguration;
 import alfio.manager.user.UserManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.context.annotation.Bean;
@@ -53,5 +55,10 @@ public class TestConfiguration {
             externalConfiguration,
             environment,
             cache);
+    }
+
+    @Bean
+    ObjectMapper objectMapper() {
+        return BaseConfiguration.buildObjectMapper();
     }
 }

@@ -56,12 +56,16 @@ public class BaseConfiguration {
             cache);
     }
 
-    @Bean
-    ObjectMapper objectMapper() {
+    public static ObjectMapper buildObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return mapper;
+    }
+
+    @Bean
+    ObjectMapper objectMapper() {
+        return buildObjectMapper();
     }
 }
