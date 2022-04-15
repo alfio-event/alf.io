@@ -59,9 +59,9 @@ public class CheckJsonBodyRequest {
                 .filter(p -> p.hasParameterAnnotation(RequestBody.class))
                 .forEach(p -> {
                     var k = p.getGenericParameterType();
-                    if (k instanceof ParameterizedType) {
+                    if (k instanceof ParameterizedType pt) {
                         Arrays
-                            .stream(((ParameterizedType) k).getActualTypeArguments())
+                            .stream(pt.getActualTypeArguments())
                             .filter(g -> g.getTypeName().startsWith("alfio.")) // keep only our types
                             .filter(g -> !((Class) g).isEnum()) // filter out enums
                             .forEach(genericParamType -> classesToCheck.add((Class) genericParamType));
