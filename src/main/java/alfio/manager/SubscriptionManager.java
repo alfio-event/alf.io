@@ -188,6 +188,12 @@ public class SubscriptionManager {
                 if(original.getPrice() != subscriptionDescriptor.getPriceCts()) {
                     subscriptionRepository.updatePriceForSubscriptions(subscriptionDescriptorId, subscriptionDescriptor.getPriceCts());
                 }
+                if(original.getMaxEntries() != subscriptionDescriptor.getMaxEntries()) {
+                    int maxEntries = requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1);
+                    int updatedSubscriptions = subscriptionRepository.updateMaxEntriesForSubscriptions(subscriptionDescriptorId, maxEntries);
+                    log.debug("SubscriptionDescriptor #{}: updated {} subscriptions. Modified max entries to {}",
+                        subscriptionDescriptorId, updatedSubscriptions, maxEntries);
+                }
                 return Optional.of(subscriptionDescriptorId);
             });
     }
