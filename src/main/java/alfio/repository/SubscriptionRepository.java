@@ -343,7 +343,8 @@ public interface SubscriptionRepository {
             "      and sd.supports_tickets_generation is TRUE " +
             "      and exp.inception <= now() " +
             "      and exp.expiration > now() " +
-            "      and (s.max_usage = -1 or s.max_usage > u.usage) " +
+            "      and (s.max_entries = -1 or s.max_entries > u.usage) " +
+            "      and (select count(*) from ticket_category where event_id = e.id and tc_status = 'ACTIVE') > 0" +
             "    order by e.id", paramSource, rse -> {
             int eId = rse.getInt("event_id");
             if (!result.containsKey(eId)) {
@@ -364,4 +365,7 @@ public interface SubscriptionRepository {
 
     @Query("update subscription set src_price_cts = :price where subscription_descriptor_fk = :descriptorId and status = 'FREE'")
     int updatePriceForSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("price") int priceCts);
+
+    @Query("update subscription set max_entries = :maxEntries, max_usage = :maxEntries where subscription_descriptor_fk = :descriptorId")
+    int updateMaxEntriesForSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("maxEntries") int maxEntries);
 }
