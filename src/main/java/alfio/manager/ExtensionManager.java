@@ -167,8 +167,8 @@ public class ExtensionManager {
             event,
             Map.of(
                 TICKET, ticket,
-                ADDITIONAL_INFO, additionalInfo,
-                EVENT_METADATA, eventRepository.getMetadataForEvent(event.getId()),
+                ADDITIONAL_INFO, Objects.requireNonNullElse(additionalInfo, Map.of()),
+                EVENT_METADATA, Objects.requireNonNullElseGet(eventRepository.getMetadataForEvent(event.getId()), AlfioMetadata::empty),
                 "onlineAccessTicket", EventUtil.isAccessOnline(category, event)
             ));
     }
