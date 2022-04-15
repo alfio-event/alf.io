@@ -1149,8 +1149,9 @@
             return token.status === 'WAITING';
         };
 
-        $scope.canBeDeleted = function(category) {
-            return category.checkedInTickets + category.soldTickets + category.pendingTickets === 0
+        $scope.canBeDeleted = function(event, category) {
+            return event.ticketCategories.length > 1
+                && category.checkedInTickets + category.soldTickets + category.pendingTickets === 0
         };
 
         $scope.deleteCategory = function(category, event) {

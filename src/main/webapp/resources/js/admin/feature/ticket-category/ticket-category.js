@@ -21,6 +21,8 @@
     function TicketCategoryDetailCtrl() {
         var ctrl = this;
 
+        ctrl.deleteEnabled = !angular.isDefined(ctrl.event.id) || ctrl.event.ticketCategories.length > 1;
+
         ctrl.baseUrl = window.location.origin;
 
         ctrl.categoryHasDescriptions = function(category) {
