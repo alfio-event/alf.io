@@ -88,7 +88,7 @@
                                             <i class="fa fa-envelope-o"></i> send invitations
                                         </a>
                                         <a class="btn btn-sm btn-default" data-ng-click="openConfiguration(event, ticketCategory)"><i class="fa fa-wrench"></i> options</a>
-                                        <a class="btn btn-sm btn-danger" ng-if="canBeDeleted(ticketCategory)" ng-click="deleteCategory(ticketCategory, event)"><i class="fa fa-trash"></i> delete</a>
+                                        <a class="btn btn-sm btn-danger" ng-if="canBeDeleted(event, ticketCategory)" ng-click="deleteCategory(ticketCategory, event)"><i class="fa fa-trash"></i> delete</a>
                                     </div>
                                 </div>
                             </div>

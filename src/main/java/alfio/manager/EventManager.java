@@ -1139,6 +1139,9 @@ public class EventManager {
             throw new IllegalArgumentException("Event not found");
         }
         int eventId = optionalEvent.get().getId();
+        if(ticketCategoryRepository.countActiveByEventId(eventId) < 2) {
+            throw new IllegalArgumentException("At least one category is required");
+        }
         var optionalCategory = getOptionalByIdAndActive(categoryId, eventId);
         if(optionalCategory.isEmpty()) {
             throw new IllegalArgumentException("Category not found");
