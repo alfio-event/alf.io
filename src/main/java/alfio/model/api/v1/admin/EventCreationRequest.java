@@ -25,6 +25,8 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -58,21 +60,22 @@ public class EventCreationRequest{
     private final List<ExtensionSetting> extensionSettings;
     private final List<AttendeeAdditionalInfoRequest> additionalInfo;
 
-    public EventCreationRequest(String title,
-                                String slug,
-                                List<DescriptionRequest> description,
-                                Event.EventFormat format,
-                                LocationRequest location,
-                                String timezone,
-                                LocalDateTime startDate,
-                                LocalDateTime endDate,
-                                String websiteUrl,
-                                String termsAndConditionsUrl,
-                                String privacyPolicyUrl,
-                                String imageUrl,
-                                TicketRequest tickets,
-                                List<ExtensionSetting> extensionSettings,
-                                List<AttendeeAdditionalInfoRequest> additionalInfo) {
+    @JsonCreator
+    public EventCreationRequest(@JsonProperty("title") String title,
+                                @JsonProperty("slug") String slug,
+                                @JsonProperty("description") List<DescriptionRequest> description,
+                                @JsonProperty("format") Event.EventFormat format,
+                                @JsonProperty("location") LocationRequest location,
+                                @JsonProperty("timezone") String timezone,
+                                @JsonProperty("startDate") LocalDateTime startDate,
+                                @JsonProperty("endDate") LocalDateTime endDate,
+                                @JsonProperty("websiteUrl") String websiteUrl,
+                                @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
+                                @JsonProperty("privacyPolicyUrl") String privacyPolicyUrl,
+                                @JsonProperty("imageUrl") String imageUrl,
+                                @JsonProperty("tickets") TicketRequest tickets,
+                                @JsonProperty("extensionSettings") List<ExtensionSetting> extensionSettings,
+                                @JsonProperty("additionalInfo") List<AttendeeAdditionalInfoRequest> additionalInfo) {
         this.title = title;
         this.slug = slug;
         this.description = description;
@@ -205,7 +208,8 @@ public class EventCreationRequest{
         private final String lang;
         private final String body;
 
-        public DescriptionRequest(String lang, String body) {
+        @JsonCreator
+        public DescriptionRequest(@JsonProperty("lang") String lang, @JsonProperty("body") String body) {
             this.lang = lang;
             this.body = body;
         }
@@ -216,7 +220,8 @@ public class EventCreationRequest{
         private final String fullAddress;
         private final CoordinateRequest coordinate;
 
-        public LocationRequest(String fullAddress, CoordinateRequest coordinate) {
+        @JsonCreator
+        public LocationRequest(@JsonProperty("fullAddress") String fullAddress, @JsonProperty("coordinate") CoordinateRequest coordinate) {
             this.fullAddress = fullAddress;
             this.coordinate = coordinate;
         }
@@ -233,14 +238,15 @@ public class EventCreationRequest{
         private final List<CategoryRequest> categories;
         private final List<PromoCodeRequest> promoCodes;
 
-        public TicketRequest(Boolean freeOfCharge,
-                             Integer max,
-                             String currency,
-                             BigDecimal taxPercentage,
-                             Boolean taxIncludedInPrice,
-                             List<PaymentProxy> paymentMethods,
-                             List<CategoryRequest> categories,
-                             List<PromoCodeRequest> promoCodes) {
+        @JsonCreator
+        public TicketRequest(@JsonProperty("freeOfCharge") Boolean freeOfCharge,
+                             @JsonProperty("max") Integer max,
+                             @JsonProperty("currency") String currency,
+                             @JsonProperty("taxPercentage") BigDecimal taxPercentage,
+                             @JsonProperty("taxIncludedInPrice") Boolean taxIncludedInPrice,
+                             @JsonProperty("paymentMethods") List<PaymentProxy> paymentMethods,
+                             @JsonProperty("categories") List<CategoryRequest> categories,
+                             @JsonProperty("promoCodes") List<PromoCodeRequest> promoCodes) {
             this.freeOfCharge = freeOfCharge;
             this.max = max;
             this.currency = currency;
@@ -257,7 +263,8 @@ public class EventCreationRequest{
         private final String latitude;
         private final String longitude;
 
-        public CoordinateRequest(String latitude, String longitude) {
+        @JsonCreator
+        public CoordinateRequest(@JsonProperty("latitude") String latitude, @JsonProperty("longitude") String longitude) {
             this.latitude = latitude;
             this.longitude = longitude;
         }
@@ -277,17 +284,18 @@ public class EventCreationRequest{
         private final GroupLinkRequest groupLink;
         private final TicketCategory.TicketAccessType ticketAccessType;
 
-        public CategoryRequest(String name,
-                               List<DescriptionRequest> description,
-                               Integer maxTickets,
-                               boolean accessRestricted,
-                               BigDecimal price,
-                               LocalDateTime startSellingDate,
-                               LocalDateTime endSellingDate,
-                               String accessCode,
-                               CustomTicketValidityRequest customValidity,
-                               GroupLinkRequest groupLink,
-                               TicketCategory.TicketAccessType ticketAccessType) {
+        @JsonCreator
+        public CategoryRequest(@JsonProperty("name") String name,
+                               @JsonProperty("description") List<DescriptionRequest> description,
+                               @JsonProperty("maxTickets") Integer maxTickets,
+                               @JsonProperty("accessRestricted") boolean accessRestricted,
+                               @JsonProperty("price") BigDecimal price,
+                               @JsonProperty("startSellingDate") LocalDateTime startSellingDate,
+                               @JsonProperty("endSellingDate") LocalDateTime endSellingDate,
+                               @JsonProperty("accessCode") String accessCode,
+                               @JsonProperty("customValidity") CustomTicketValidityRequest customValidity,
+                               @JsonProperty("groupLink") GroupLinkRequest groupLink,
+                               @JsonProperty("ticketAccessType") TicketCategory.TicketAccessType ticketAccessType) {
             this.name = name;
             this.description = description;
             this.maxTickets = maxTickets;
@@ -341,7 +349,11 @@ public class EventCreationRequest{
         private final LocalDateTime validityStart;
         private final LocalDateTime validityEnd;
 
-        public CustomTicketValidityRequest(LocalDateTime checkInFrom, LocalDateTime checkInTo, LocalDateTime validityStart, LocalDateTime validityEnd) {
+        @JsonCreator
+        public CustomTicketValidityRequest(@JsonProperty("checkInFrom") LocalDateTime checkInFrom,
+                                           @JsonProperty("checkInTo") LocalDateTime checkInTo,
+                                           @JsonProperty("validityStart") LocalDateTime validityStart,
+                                           @JsonProperty("validityEnd") LocalDateTime validityEnd) {
             this.checkInFrom = checkInFrom;
             this.checkInTo = checkInTo;
             this.validityStart = validityStart;
@@ -357,7 +369,12 @@ public class EventCreationRequest{
         private final PromoCodeDiscount.DiscountType discountType;
         private final int discount;
 
-        public PromoCodeRequest(String name, LocalDateTime validFrom, LocalDateTime validTo, PromoCodeDiscount.DiscountType discountType, int discount) {
+        @JsonCreator
+        public PromoCodeRequest(@JsonProperty("name") String name,
+                                @JsonProperty("validFrom") LocalDateTime validFrom,
+                                @JsonProperty("validTo") LocalDateTime validTo,
+                                @JsonProperty("discountType") PromoCodeDiscount.DiscountType discountType,
+                                @JsonProperty("discount") int discount) {
             this.name = name;
             this.validFrom = validFrom;
             this.validTo = validTo;
@@ -372,7 +389,10 @@ public class EventCreationRequest{
         private final String key;
         private final String value;
 
-        public ExtensionSetting(String extensionId, String key, String value) {
+        @JsonCreator
+        public ExtensionSetting(@JsonProperty("extensionId") String extensionId,
+                                @JsonProperty("key") String key,
+                                @JsonProperty("value") String value) {
             this.extensionId = extensionId;
             this.key = key;
             this.value = value;
@@ -386,7 +406,11 @@ public class EventCreationRequest{
         private final LinkedGroup.MatchType matchType;
         private final Integer maxAllocation;
 
-        public GroupLinkRequest(Integer groupId, LinkedGroup.Type type, LinkedGroup.MatchType matchType, Integer maxAllocation) {
+        @JsonCreator
+        public GroupLinkRequest(@JsonProperty("groupId") Integer groupId,
+                                @JsonProperty("type") LinkedGroup.Type type,
+                                @JsonProperty("matchType") LinkedGroup.MatchType matchType,
+                                @JsonProperty("maxAllocation") Integer maxAllocation) {
             this.groupId = groupId;
             this.type = type;
             this.matchType = matchType;
@@ -406,14 +430,15 @@ public class EventCreationRequest{
         private final List<RestrictedValueRequest> restrictedValues;
         private final ContentLengthRequest contentLength;
 
-        public AttendeeAdditionalInfoRequest(Integer ordinal,
-                                             String name,
-                                             AdditionalInfoType type,
-                                             Boolean required,
-                                             List<DescriptionRequest> label,
-                                             List<DescriptionRequest> placeholder,
-                                             List<RestrictedValueRequest> restrictedValues,
-                                             ContentLengthRequest contentLength) {
+        @JsonCreator
+        public AttendeeAdditionalInfoRequest(@JsonProperty("ordinal") Integer ordinal,
+                                             @JsonProperty("name") String name,
+                                             @JsonProperty("type") AdditionalInfoType type,
+                                             @JsonProperty("required") Boolean required,
+                                             @JsonProperty("label") List<DescriptionRequest> label,
+                                             @JsonProperty("placeholder") List<DescriptionRequest> placeholder,
+                                             @JsonProperty("restrictedValues") List<RestrictedValueRequest> restrictedValues,
+                                             @JsonProperty("contentLength") ContentLengthRequest contentLength) {
             this.ordinal = ordinal;
             this.name = name;
             this.type = type;
@@ -512,7 +537,8 @@ public class EventCreationRequest{
         private final Integer min;
         private final Integer max;
 
-        public ContentLengthRequest(Integer min, Integer max) {
+        @JsonCreator
+        public ContentLengthRequest(@JsonProperty("min") Integer min, @JsonProperty("max") Integer max) {
             this.min = min;
             this.max = max;
         }
@@ -524,9 +550,10 @@ public class EventCreationRequest{
         private final Boolean enabled;
         private final List<DescriptionRequest> descriptions;
 
-        public RestrictedValueRequest(String value,
-                                      Boolean enabled,
-                                      List<DescriptionRequest> descriptions) {
+        @JsonCreator
+        public RestrictedValueRequest(@JsonProperty("value") String value,
+                                      @JsonProperty("enabled") Boolean enabled,
+                                      @JsonProperty("descriptions") List<DescriptionRequest> descriptions) {
             this.value = value;
             this.enabled = enabled;
             this.descriptions = descriptions;

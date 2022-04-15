@@ -24,6 +24,8 @@ import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.SubscriptionWithUsageDetails;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -302,10 +304,11 @@ public class AdminReservationApiController {
         private final Boolean notify;
         private final Boolean issueCreditNote;
 
-        public RemoveTicketsModification(List<Integer> ticketIds,
-                                         Map<Integer, Boolean> refundTo,
-                                         Boolean notify,
-                                         Boolean issueCreditNote) {
+        @JsonCreator
+        public RemoveTicketsModification(@JsonProperty("ticketIds") List<Integer> ticketIds,
+                                         @JsonProperty("refundTo") Map<Integer, Boolean> refundTo,
+                                         @JsonProperty("notify") Boolean notify,
+                                         @JsonProperty("issueCreditNote") Boolean issueCreditNote) {
             this.ticketIds = ticketIds;
             this.refundTo = refundTo;
             this.notify = notify;
@@ -325,7 +328,8 @@ public class AdminReservationApiController {
     public static class RefundAmount {
         private final String amount;
 
-        public RefundAmount(String amount) {
+        @JsonCreator
+        public RefundAmount(@JsonProperty("amount") String amount) {
             this.amount = amount;
         }
     }
