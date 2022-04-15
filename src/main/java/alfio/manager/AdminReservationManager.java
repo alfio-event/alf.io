@@ -60,6 +60,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.validation.MapBindingResult;
+import org.springframework.validation.ObjectError;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -242,12 +243,13 @@ public class AdminReservationManager {
                     .map(r -> r.flatMap(p -> transactionalCreateReservation(p.getRight(), p.getLeft(), username)))
                     .orElse(Result.error(ErrorCode.EventError.NOT_FOUND));
                 if (!result.isSuccess()) {
-                    log.debug("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
+                    log.warn("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
                     status.rollbackToSavepoint(savepoint);
                 }
                 return result;
             } catch (Exception e) {
                 log.error("Error during update of reservation eventName: {}, username: {}, reservation: {}", eventName, username, AdminReservationModification.summary(input));
+                log.debug("Error detail:", e);
                 status.rollbackToSavepoint(savepoint);
                 return Result.error(singletonList(ErrorCode.custom(e instanceof DuplicateReferenceException ? "duplicate-reference" : "", e.getMessage())));
             }
@@ -420,6 +422,8 @@ public class AdminReservationManager {
                         .findFirst()
                         .map(DefaultMessageSourceResolvable::getCode)
                         .orElse("Unknown error");
+                    log.warn("Unable to apply subscription {}: {}", subscriptionId,
+                        bindingResult.getAllErrors().stream().map(ObjectError::getCode).collect(joining(", ")));
                     return Result.error(ErrorCode.custom(message, String.format("Cannot assign subscription %s to Reservation %s", subscriptionId, reservationId)));
                 }
 

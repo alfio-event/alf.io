@@ -133,7 +133,7 @@ public class AdminReservationRequestManager {
             try {
                 adminReservationRequestRepository.updateStatus(list);
             } catch(Exception e) {
-                log.error("cannot update the status of "+list.size()+" reservations", e);
+                log.warn("cannot update the status of "+list.size()+" reservations", e);
             }
         });
 
@@ -160,6 +160,7 @@ public class AdminReservationRequestManager {
                     .map(triple -> Triple.of(triple.getLeft(), triple.getMiddle(), (Event) triple.getRight()));
                 if(!result.isSuccess()) {
                     status.rollbackToSavepoint(savepoint);
+                    log.warn("Cannot process reservation: \n{}", result.getFormattedErrors());
                 }
                 return result;
             } catch(Exception ex) {
@@ -171,6 +172,9 @@ public class AdminReservationRequestManager {
 
     private MapSqlParameterSource buildParameterSource(Long id, Result<Triple<TicketReservation, List<Ticket>, Event>> result) {
         boolean success = result.isSuccess();
+        if (!success) {
+            log.warn("Cannot process request {}. Got the following errors:\n{}", id, result.getFormattedErrors());
+        }
         return new MapSqlParameterSource("id", id)
             .addValue("status", success ? AdminReservationRequest.Status.SUCCESS.name() : AdminReservationRequest.Status.ERROR.name())
             .addValue("reservationId", success ? result.getData().getLeft().getId() : null)

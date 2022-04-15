@@ -290,8 +290,14 @@ public class DataMigrator {
      * in order to ensure backward compatibility
      */
     private void fixAvailableSeats(Event event) {
-        int availableSeats = eventRepository.countExistingTickets(event.getId());
-        eventRepository.updatePrices(event.getCurrency(), availableSeats, event.isVatIncluded(), event.getVat(), event.getAllowedPaymentProxies().stream().map(PaymentProxy::name).collect(joining(",")), event.getId(), event.getVatStatus(), event.getSrcPriceCts());
+        try {
+            int availableSeats = eventRepository.countExistingTickets(event.getId());
+            var paymentProxies = event.getAllowedPaymentProxies().stream().map(PaymentProxy::name).collect(joining(","));
+            eventRepository.updatePrices(event.getCurrency(), availableSeats, event.isVatIncluded(),
+                event.getVat(), paymentProxies, event.getId(), event.getVatStatus(), event.getSrcPriceCts());
+        } catch (Exception ex) {
+            log.trace("got exception while fixing available seats", ex);
+        }
     }
 
     boolean needsFixing(EventMigration eventMigration) {
