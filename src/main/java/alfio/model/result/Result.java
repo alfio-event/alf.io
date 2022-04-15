@@ -84,6 +84,14 @@ public class Result<T> {
         return errors.get(0);
     }
 
+    public String getFormattedErrors() {
+        if(isSuccess()) {
+            return null;
+        }
+        return getErrors().stream().map(ErrorCode::getDescription)
+            .collect(Collectors.joining("\n"));
+    }
+
     public enum ResultStatus {
         OK, VALIDATION_ERROR, ERROR
     }
