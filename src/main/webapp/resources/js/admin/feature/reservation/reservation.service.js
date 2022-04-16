@@ -48,6 +48,9 @@
                 },
                 getTicket: function(publicIdentifier, reservationId, ticketId) {
                     return $http.get('/admin/api/reservation/event/'+publicIdentifier+'/'+reservationId+'/ticket/'+ticketId).error(HttpErrorHandler.handle);
+                },
+                getTicketIdsWithAdditionalData: function(publicIdentifier, reservationId) {
+                    return $http.get('/admin/api/reservation/event/'+publicIdentifier+'/'+reservationId+'/tickets-with-additional-data').error(HttpErrorHandler.handle);
                 }
             }
         }]).service('AdminImportService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {

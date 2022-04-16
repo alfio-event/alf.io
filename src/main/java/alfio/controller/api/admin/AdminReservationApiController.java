@@ -190,6 +190,18 @@ public class AdminReservationApiController {
         );
     }
 
+    @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/tickets-with-additional-data")
+    public List<Integer> ticketsWithAdditionalData(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
+                                                   @PathVariable("publicIdentifier") String publicIdentifier,
+                                                   @PathVariable("reservationId") String reservationId) {
+
+        if(purchaseContextType != PurchaseContextType.event) {
+            return List.of();
+        }
+
+        return adminReservationManager.getTicketIdsWithAdditionalData(purchaseContextType, publicIdentifier, reservationId);
+    }
+
 
     @PostMapping("/event/{publicIdentifier}/{reservationId}/remove-tickets")
     public Result<Boolean> removeTickets(@PathVariable("publicIdentifier") String publicIdentifier,
