@@ -385,6 +385,14 @@ public class AdminReservationManager {
             .orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
     }
 
+    @Transactional
+    public List<Integer> getTicketIdsWithAdditionalData(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId) {
+        if(purchaseContextType != PurchaseContextType.event) {
+            return List.of();
+        }
+        return ticketRepository.findTicketsWithAdditionalData(reservationId, publicIdentifier);
+    }
+
 
     private Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> loadReservation(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId)

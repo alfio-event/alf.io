@@ -131,6 +131,20 @@
                 }
             });
 
+            if(ctrl.purchaseContextType === 'event') {
+                // retrieve tickets with additional data
+                AdminReservationService.getTicketIdsWithAdditionalData(ctrl.purchaseContext.publicIdentifier, ctrl.reservation.id)
+                    .then(function(result) {
+                       if(result.data && result.data.length > 0) {
+                           ctrl.reservation.ticketsInfo.forEach(function(ticketInfo) {
+                               ticketInfo.attendees.forEach(function (attendee) {
+                                   attendee.hasAdditionalData = result.data.indexOf(attendee.ticketId) > -1;
+                               });
+                           });
+                       }
+                    });
+            }
+
             ctrl.displayConfirmButton = ['PENDING', 'OFFLINE_PAYMENT', 'STUCK'].indexOf(ctrl.reservation.status) > -1;
 
             CountriesService.getCountries().then(function(countries) {

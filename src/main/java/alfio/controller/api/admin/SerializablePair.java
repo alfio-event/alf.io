@@ -16,11 +16,13 @@
  */
 package alfio.controller.api.admin;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.tuple.Pair;
 
 public final class SerializablePair<L,R> {
     @Delegate
+    @JsonIgnore
     private final Pair<L, R> pair;
 
     private SerializablePair(Pair<L, R> pair) {
