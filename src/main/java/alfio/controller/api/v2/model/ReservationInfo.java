@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.controller.api.support.BookingInfoTicket;
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
 import alfio.model.SummaryRow.SummaryType;
