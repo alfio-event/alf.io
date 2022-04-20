@@ -21,7 +21,7 @@ import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
 import alfio.controller.api.v2.model.OnlineCheckInInfo;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.TicketInfo;
-import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
+import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.Formatters;
 import alfio.controller.support.TemplateProcessor;

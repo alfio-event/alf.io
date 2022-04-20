@@ -14,10 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.user.support;
+package alfio.controller.api.support;
 
-import alfio.controller.api.support.BookingInfoTicket;
-import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.support.Formatters;
 import alfio.manager.EventManager;
