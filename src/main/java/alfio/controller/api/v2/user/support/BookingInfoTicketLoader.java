@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.user.support;
 
+import alfio.controller.api.support.BookingInfoTicket;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.support.Formatters;
@@ -53,7 +54,7 @@ public class BookingInfoTicketLoader {
     private final ClockProvider clockProvider;
 
 
-    public ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event) {
+    public BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event) {
         var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
             .stream()
             .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
@@ -86,14 +87,14 @@ public class BookingInfoTicketLoader {
             onlineEventStarted);
     }
 
-    public ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket t,
-                                                                 boolean hasPaidSupplement,
-                                                                 Event event,
-                                                                 Validator.TicketFieldsFilterer ticketFieldsFilterer,
-                                                                 Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
-                                                                 Map<Integer, List<TicketFieldValue>> valuesByTicketIds,
-                                                                 Map<String, String> formattedOnlineCheckInDate,
-                                                                 boolean onlineEventStarted) {
+    public BookingInfoTicket toBookingInfoTicket(Ticket t,
+                                                 boolean hasPaidSupplement,
+                                                 Event event,
+                                                 Validator.TicketFieldsFilterer ticketFieldsFilterer,
+                                                 Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
+                                                 Map<Integer, List<TicketFieldValue>> valuesByTicketIds,
+                                                 Map<String, String> formattedOnlineCheckInDate,
+                                                 boolean onlineEventStarted) {
         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
         var configuration = configurationManager.getFor(EnumSet.of(ALLOW_FREE_TICKETS_CANCELLATION, SEND_TICKETS_AUTOMATICALLY, ALLOW_TICKET_DOWNLOAD), ConfigurationLevel.ticketCategory(event, t.getCategoryId()));
         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
@@ -118,15 +119,15 @@ public class BookingInfoTicketLoader {
             ticketReservationManager.findFirstInReservation(reservationId));
     }
 
-    private static ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket,
-                                                                         boolean cancellationEnabled,
-                                                                         boolean sendMailEnabled,
-                                                                         boolean downloadEnabled,
-                                                                         List<TicketFieldConfiguration> ticketFields,
-                                                                         Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
-                                                                         List<TicketFieldValue> ticketFieldValues,
-                                                                         Map<String, String> formattedOnlineCheckInDate,
-                                                                         boolean onlineEventStarted) {
+    private static BookingInfoTicket toBookingInfoTicket(Ticket ticket,
+                                                         boolean cancellationEnabled,
+                                                         boolean sendMailEnabled,
+                                                         boolean downloadEnabled,
+                                                         List<TicketFieldConfiguration> ticketFields,
+                                                         Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
+                                                         List<TicketFieldValue> ticketFieldValues,
+                                                         Map<String, String> formattedOnlineCheckInDate,
+                                                         boolean onlineEventStarted) {
 
 
         var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
@@ -142,7 +143,7 @@ public class BookingInfoTicketLoader {
                 return toAdditionalField(t, descs);
             }).collect(Collectors.toList());
 
-        return new ReservationInfo.BookingInfoTicket(ticket.getUuid(),
+        return new BookingInfoTicket(ticket.getUuid(),
             ticket.getFirstName(),
             ticket.getLastName(),
             ticket.getEmail(),

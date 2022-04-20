@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.controller.api.support.BookingInfoTicket;
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
 import alfio.model.SummaryRow.SummaryType;
@@ -86,87 +87,6 @@ public class ReservationInfo {
         private final List<BookingInfoTicket> tickets;
     }
 
-
-    @AllArgsConstructor
-    public static class BookingInfoTicket {
-        private final String uuid;
-        private final String firstName;
-        private final String lastName;
-        private final String email;
-        private final String fullName;
-        private final String userLanguage;
-        private final boolean assigned;
-        private final boolean locked;
-        private final boolean acquired;
-        private final boolean cancellationEnabled;
-        private final boolean sendMailEnabled;
-        private final boolean downloadEnabled;
-        private final List<AdditionalField> ticketFieldConfiguration;
-        private final Map<String, String> formattedOnlineCheckInDate;
-        private final boolean onlineEventStarted;
-
-        public String getEmail() {
-            return email;
-        }
-
-        public String getFirstName() {
-            return firstName;
-        }
-
-        public String getLastName() {
-            return lastName;
-        }
-
-        public String getUuid() {
-            return uuid;
-        }
-
-        public String getFullName() {
-            return fullName;
-        }
-
-        public boolean isAssigned() {
-            return assigned;
-        }
-
-        public boolean isAcquired() {
-            return acquired;
-        }
-
-        public String getUserLanguage() {
-            return userLanguage;
-        }
-
-        public boolean isLocked() { return locked; }
-
-        public boolean isCancellationEnabled() {
-            return cancellationEnabled;
-        }
-
-        public List<AdditionalField> getTicketFieldConfigurationBeforeStandard() {
-            return ticketFieldConfiguration.stream().filter(AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
-        }
-
-        public List<AdditionalField> getTicketFieldConfigurationAfterStandard() {
-            return ticketFieldConfiguration.stream().filter(tv -> !tv.isBeforeStandardFields()).collect(Collectors.toList());
-        }
-
-        public Map<String, String> getFormattedOnlineCheckInDate() {
-            return formattedOnlineCheckInDate;
-        }
-
-        public boolean isOnlineEventStarted() {
-            return onlineEventStarted;
-        }
-
-        public boolean isSendMailEnabled() {
-            return sendMailEnabled;
-        }
-
-        public boolean isDownloadEnabled() {
-            return downloadEnabled;
-        }
-    }
 
     @AllArgsConstructor
     @Getter
