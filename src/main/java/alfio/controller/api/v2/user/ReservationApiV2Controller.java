@@ -22,7 +22,7 @@ import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.model.ReservationPaymentResult;
 import alfio.controller.api.v2.model.ReservationStatusInfo;
-import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
+import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
