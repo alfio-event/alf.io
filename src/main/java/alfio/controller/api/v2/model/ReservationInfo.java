@@ -88,38 +88,6 @@ public class ReservationInfo {
     }
 
 
-    @AllArgsConstructor
-    @Getter
-    public static class AdditionalField {
-        private final String name;
-        private final String value;
-        private final String type;
-        private final boolean required;
-        private final boolean editable;
-        private final Integer minLength;
-        private final Integer maxLength;
-        private final List<String> restrictedValues;
-        private final List<Field> fields;
-        private final boolean beforeStandardFields;
-        private final Map<String, Description> description;
-    }
-
-    @AllArgsConstructor
-    @Getter
-    public static class Description {
-        private final String label;
-        private final String placeholder;
-        private final Map<String, String> restrictedValuesDescription;
-    }
-
-    @AllArgsConstructor
-    @Getter
-    public static class Field {
-        private final int fieldIndex;
-        private final String fieldValue;
-    }
-
-
     @Getter
     public static class ReservationInfoOrderSummary {
 

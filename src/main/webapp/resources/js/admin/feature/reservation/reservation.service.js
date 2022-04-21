@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('adminApplication')
-        .service('AdminReservationService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {
+        .service('AdminReservationService', ['$http', 'HttpErrorHandler', '$uibModal', function($http, HttpErrorHandler, $uibModal) {
             return {
                 createReservation: function(eventName, reservation) {
                     return $http.post('/admin/api/reservation/event/'+eventName+'/new', reservation).error(HttpErrorHandler.handle);
@@ -51,6 +51,29 @@
                 },
                 getTicketIdsWithAdditionalData: function(publicIdentifier, reservationId) {
                     return $http.get('/admin/api/reservation/event/'+publicIdentifier+'/'+reservationId+'/tickets-with-additional-data').error(HttpErrorHandler.handle);
+                },
+                openFullDataView: function(purchaseContext, reservationId, ticketUUID) {
+                    return $uibModal.open({
+                        size:'md',
+                        template:'<ticket-full-data event="event" reservation-id="reservationId" ticket-id="ticketUUID" on-success="success(result)" on-cancel="close()"></ticket-full-data>',
+                        backdrop: 'static',
+                        controller: function($scope) {
+                            $scope.event = purchaseContext;
+                            $scope.ticketUUID = ticketUUID;
+                            $scope.reservationId = reservationId;
+                            $scope.close = function() {
+                                $scope.$close(false);
+                            };
+
+                            $scope.success = function () {
+                                $scope.$close(false);
+                            }
+                        }
+                    }).result;
+                },
+                getFullTicketData: function(purchaseContext, reservationId, ticketUUID) {
+                    return $http.get('/admin/api/reservation/event/' + purchaseContext.publicIdentifier + '/' + reservationId + '/ticket/'+ticketUUID+'/full-data')
+                        .error(HttpErrorHandler.handle);
                 }
             }
         }]).service('AdminImportService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {

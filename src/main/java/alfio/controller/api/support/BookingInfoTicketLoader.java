@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.support;
 
-import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.support.Formatters;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
@@ -158,15 +157,15 @@ public class BookingInfoTicketLoader {
             onlineEventStarted);
     }
 
-    private static ReservationInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, ReservationInfo.Description> description) {
-        var fields = t.getFields().stream().map(f -> new ReservationInfo.Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
-        return new ReservationInfo.AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(), t.isEditable(),
+    private static AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, Description> description) {
+        var fields = t.getFields().stream().map(f -> new Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
+        return new AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(), t.isEditable(),
             t.getMinLength(), t.getMaxLength(), t.getRestrictedValues(),
             fields, t.isBeforeStandardFields(), description);
     }
 
-    private static Map<String, ReservationInfo.Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
+    private static Map<String, Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
         return descs.stream().collect(Collectors.toMap(TicketFieldDescription::getLocale,
-            d -> new ReservationInfo.Description(d.getLabelDescription(), d.getPlaceholderDescription(), d.getRestrictedValuesDescription())));
+            d -> new Description(d.getLabelDescription(), d.getPlaceholderDescription(), d.getRestrictedValuesDescription())));
     }
 }

@@ -16,6 +16,8 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.BookingInfoTicket;
+import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.support.PageAndContent;
 import alfio.manager.*;
 import alfio.model.*;
@@ -52,6 +54,7 @@ public class AdminReservationApiController {
     private final PurchaseContextManager purchaseContextManager;
     private final PurchaseContextSearchManager purchaseContextSearchManager;
     private final TicketReservationManager ticketReservationManager;
+    private final BookingInfoTicketLoader bookingInfoTicketLoader;
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/new")
     public Result<String> createNew(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @RequestBody AdminReservationModification reservation, Principal principal) {
@@ -254,6 +257,21 @@ public class AdminReservationApiController {
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/email-list")
     public Result<List<LightweightMailMessage>> getEmailList(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.getEmailsForReservation(purchaseContextType, publicIdentifier, reservationId, principal.getName());
+    }
+
+    @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/ticket/{ticketId}/full-data")
+    public ResponseEntity<BookingInfoTicket> loadFullTicketData(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
+                                                                @PathVariable("publicIdentifier") String publicIdentifier,
+                                                                @PathVariable("reservationId") String reservationId,
+                                                                @PathVariable("ticketId") String ticketUUID) {
+        if(purchaseContextType != PurchaseContextType.event) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.of(
+            adminReservationManager.loadFullTicketInfo(reservationId, publicIdentifier, ticketUUID)
+                .map(eventAndTicket -> bookingInfoTicketLoader.toBookingInfoTicket(eventAndTicket.getRight(), eventAndTicket.getLeft()))
+        );
     }
 
     private TicketReservationDescriptor toReservationDescriptor(String reservationId, Triple<TicketReservation, List<Ticket>, PurchaseContext> triple) {

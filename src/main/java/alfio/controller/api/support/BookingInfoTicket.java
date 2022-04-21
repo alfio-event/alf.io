@@ -16,8 +16,6 @@
  */
 package alfio.controller.api.support;
 
-import alfio.controller.api.v2.model.ReservationInfo;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -35,7 +33,7 @@ public class BookingInfoTicket {
     private final boolean cancellationEnabled;
     private final boolean sendMailEnabled;
     private final boolean downloadEnabled;
-    private final List<ReservationInfo.AdditionalField> ticketFieldConfiguration;
+    private final List<AdditionalField> ticketFieldConfiguration;
     private final Map<String, String> formattedOnlineCheckInDate;
     private final boolean onlineEventStarted;
 
@@ -51,7 +49,7 @@ public class BookingInfoTicket {
                              boolean cancellationEnabled,
                              boolean sendMailEnabled,
                              boolean downloadEnabled,
-                             List<ReservationInfo.AdditionalField> ticketFieldConfiguration,
+                             List<AdditionalField> ticketFieldConfiguration,
                              Map<String, String> formattedOnlineCheckInDate,
                              boolean onlineEventStarted) {
         this.uuid = uuid;
@@ -111,11 +109,11 @@ public class BookingInfoTicket {
         return cancellationEnabled;
     }
 
-    public List<ReservationInfo.AdditionalField> getTicketFieldConfigurationBeforeStandard() {
-        return ticketFieldConfiguration.stream().filter(ReservationInfo.AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
+    public List<AdditionalField> getTicketFieldConfigurationBeforeStandard() {
+        return ticketFieldConfiguration.stream().filter(AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
     }
 
-    public List<ReservationInfo.AdditionalField> getTicketFieldConfigurationAfterStandard() {
+    public List<AdditionalField> getTicketFieldConfigurationAfterStandard() {
         return ticketFieldConfiguration.stream().filter(tv -> !tv.isBeforeStandardFields()).collect(Collectors.toList());
     }
 

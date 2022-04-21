@@ -67,6 +67,7 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/promo-codes/promo-codes.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-remove/tickets-remove.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/ticket-full-data/ticket-full-data.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation-cancel/reservation-cancel.js"></script>
 

@@ -340,6 +340,14 @@ public class AdminReservationManager {
         return ticketRepository.findTicketsWithAdditionalData(reservationId, publicIdentifier);
     }
 
+    @Transactional
+    public Optional<Pair<Event, Ticket>> loadFullTicketInfo(String reservationId, String eventShortName, String ticketUUID) {
+        return purchaseContextManager.findBy(PurchaseContextType.event, eventShortName)
+            .flatMap(event -> ticketRepository.findOptionalByUUID(ticketUUID)
+                .filter(ticket -> reservationId.equals(ticket.getTicketsReservationId()))
+                .map(ticket -> Pair.of((Event) event, ticket)));
+    }
+
 
     private Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> loadReservation(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId)
