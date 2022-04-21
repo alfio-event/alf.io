@@ -412,6 +412,13 @@
             });
         };
 
+        ctrl.openFullData = function(ticket) {
+            AdminReservationService.openFullDataView(ctrl.purchaseContext, ctrl.reservation.id, ticket.uuid)
+                .then(function() {
+                    console.log('modal closed.');
+                })
+        };
+
         ctrl.removeTicket = function(ticket) {
             EventService.removeTicketModal(ctrl.purchaseContext, ctrl.reservation.id, ticket.ticketId, ctrl.reservation.customerData.invoiceRequested).then(function(billingDocumentRequested) {
                 var message = 'Ticket has been cancelled.';
