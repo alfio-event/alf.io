@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.config.Initializer;
 import alfio.controller.form.SearchOptions;
 import alfio.model.AllocationStatus;
 import alfio.model.modification.SubscriptionDescriptorModification;
@@ -26,6 +27,8 @@ import alfio.repository.SubscriptionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -51,6 +54,7 @@ public class SubscriptionManager {
 
     private final SubscriptionRepository subscriptionRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final Environment environment;
 
     public List<SubscriptionDescriptor> findAll(int organizationId) {
         return subscriptionRepository.findAllByOrganizationIds(organizationId);
@@ -198,6 +202,9 @@ public class SubscriptionManager {
     }
 
     public boolean setPublicStatus(UUID id, int organizationId, boolean isPublic) {
+        if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
+            throw new IllegalStateException("Cannot publish subscriptions while in demo mode");
+        }
         return subscriptionRepository.setPublicStatus(id, organizationId, isPublic) == 1;
     }
 
