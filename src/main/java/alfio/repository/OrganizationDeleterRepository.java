@@ -54,6 +54,12 @@ public interface OrganizationDeleterRepository {
         " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
     int deleteResourcesForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
 
+    @Query("delete from subscription where organization_id_fk in (:organizationIds)")
+    int deleteSubscriptions(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from subscription_descriptor where organization_id_fk in (:organizationIds)")
+    int deleteSubscriptionDescriptors(@Bind("organizationIds") List<Integer> organizationIds);
+
     @Query("delete from organization where id in(:organizationIds)" +
         " and id not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
     int deleteOrganizationsIfEmpty(@Bind("organizationIds") List<Integer> organizationIds);
@@ -78,6 +84,13 @@ public interface OrganizationDeleterRepository {
         // delete resources
         int deletedResources = deleteResourcesForEmptyOrganizations(organizationIds);
         LOGGER.info("deleted {} resources", deletedResources);
+
+        // delete subscriptions
+        int deletedSubscriptions = deleteSubscriptions(organizationIds);
+        int deletedDescriptors = deleteSubscriptionDescriptors(organizationIds);
+        LOGGER.info("deleted {} subscription descriptors and {} subscriptions", deletedDescriptors, deletedSubscriptions);
+
+
 
         int deletedOrganizations = deleteOrganizationsIfEmpty(organizationIds);
         LOGGER.info("deleted {} empty organizations", deletedOrganizations);
