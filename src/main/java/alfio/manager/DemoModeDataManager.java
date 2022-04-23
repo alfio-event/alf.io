@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 public class DemoModeDataManager {
 
@@ -63,7 +64,7 @@ public class DemoModeDataManager {
     }
 
     public List<Integer> findExpiredUsers(Date date) {
-        return userRepository.findUsersToDeleteOlderThan(date, EnumSet.of(User.Type.DEMO, User.Type.API_KEY));
+        return userRepository.findUsersToDeleteOlderThan(date, Set.of(User.Type.DEMO.name(), User.Type.API_KEY.name()));
     }
 
     public void deleteAccounts(List<Integer> userIds) {
