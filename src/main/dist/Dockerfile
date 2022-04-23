@@ -5,7 +5,7 @@
 # - https://august.nagro.us/small-java.html
 #
 
-FROM azul/zulu-openjdk-alpine:15.0.2 as zulu
+FROM azul/zulu-openjdk-alpine:15.0.7 as zulu
 
 RUN $JAVA_HOME/bin/jlink --compress=1 --strip-java-debug-attributes --no-header-files --no-man-pages \
     --module-path $JAVA_HOME/jmods \
@@ -15,7 +15,7 @@ RUN $JAVA_HOME/bin/jlink --compress=1 --strip-java-debug-attributes --no-header-
     --include-locales en,it,es,nl,fr,de,ro,pt,tr,pl,da,bg,sv \
     --output /jlinked
 
-FROM alpine:3.12
+FROM alpine:3.15
 LABEL org.opencontainers.image.source https://github.com/alfio-event/alf.io
 
 COPY --from=zulu /jlinked /opt/jdk/
