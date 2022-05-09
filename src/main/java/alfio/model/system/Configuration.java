@@ -88,7 +88,7 @@ public class Configuration implements Comparable<Configuration> {
     }
 
     @EqualsAndHashCode
-    public static class SystemConfigurationPath implements  ConfigurationPath {
+    public static class SystemConfigurationPath implements ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
             return ConfigurationPathLevel.SYSTEM;

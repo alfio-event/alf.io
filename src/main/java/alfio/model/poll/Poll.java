@@ -20,13 +20,12 @@ import alfio.model.support.Array;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
-import lombok.ToString;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.List;
 import java.util.Map;
 
 @Getter
-@ToString
 public class Poll {
 
 
@@ -64,5 +63,17 @@ public class Poll {
         this.organizationId = organizationId;
     }
 
-
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+            .append("id", id)
+            .append("status", status)
+            .append("title", title)
+            .append("description", description)
+            .append("allowedTags", allowedTags)
+            .append("order", order)
+            .append("eventId", eventId)
+            .append("organizationId", organizationId)
+            .toString();
+    }
 }
