@@ -21,7 +21,6 @@ import alfio.model.Event.EventFormat;
 import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -29,10 +28,10 @@ import org.apache.commons.text.StringSubstitutor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 
 @Getter
-@EqualsAndHashCode
 public class LocationDescriptor {
 
 
@@ -106,4 +105,16 @@ public class LocationDescriptor {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LocationDescriptor that = (LocationDescriptor) o;
+        return Objects.equals(timeZone, that.timeZone) && Objects.equals(latitude, that.latitude) && Objects.equals(longitude, that.longitude) && Objects.equals(mapUrl, that.mapUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(timeZone, latitude, longitude, mapUrl);
+    }
 }

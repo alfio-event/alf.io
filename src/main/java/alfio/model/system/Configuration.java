@@ -18,12 +18,12 @@ package alfio.model.system;
 
 import alfio.model.EventAndOrganizationId;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 @Getter
@@ -87,7 +87,6 @@ public class Configuration implements Comparable<Configuration> {
         ConfigurationPathLevel pathLevel();
     }
 
-    @EqualsAndHashCode
     public static class SystemConfigurationPath implements ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
@@ -96,7 +95,7 @@ public class Configuration implements Comparable<Configuration> {
 
     }
 
-    @EqualsAndHashCode
+
     @Getter
     public static class OrganizationConfigurationPath implements ConfigurationPath {
 
@@ -111,9 +110,20 @@ public class Configuration implements Comparable<Configuration> {
             return ConfigurationPathLevel.ORGANIZATION;
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            OrganizationConfigurationPath that = (OrganizationConfigurationPath) o;
+            return id == that.id;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id);
+        }
     }
 
-    @EqualsAndHashCode
     @Getter
     public static class EventConfigurationPath implements ConfigurationPath {
 
@@ -131,9 +141,20 @@ public class Configuration implements Comparable<Configuration> {
             return ConfigurationPathLevel.EVENT;
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EventConfigurationPath that = (EventConfigurationPath) o;
+            return organizationId == that.organizationId && id == that.id;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(organizationId, id);
+        }
     }
 
-    @EqualsAndHashCode
     @Getter
     public static class TicketCategoryConfigurationPath implements ConfigurationPath {
 
@@ -152,6 +173,18 @@ public class Configuration implements Comparable<Configuration> {
             return ConfigurationPathLevel.TICKET_CATEGORY;
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TicketCategoryConfigurationPath that = (TicketCategoryConfigurationPath) o;
+            return organizationId == that.organizationId && eventId == that.eventId && id == that.id;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(organizationId, eventId, id);
+        }
     }
 
     public static ConfigurationPath system() {
@@ -169,7 +202,6 @@ public class Configuration implements Comparable<Configuration> {
 
     //
     @Getter
-    @EqualsAndHashCode
     public static class ConfigurationPathKey {
         private final ConfigurationPath path;
         private final ConfigurationKeys key;
@@ -177,6 +209,19 @@ public class Configuration implements Comparable<Configuration> {
         private ConfigurationPathKey(ConfigurationPath path, ConfigurationKeys key) {
             this.path = path;
             this.key = key;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ConfigurationPathKey that = (ConfigurationPathKey) o;
+            return Objects.equals(path, that.path) && key == that.key;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(path, key);
         }
     }
     //
