@@ -17,7 +17,7 @@
 package alfio.model.result;
 
 import lombok.Getter;
-import lombok.ToString;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
@@ -88,7 +88,6 @@ public final class ValidationResult {
         return errorCount == 0;
     }
 
-    @ToString
     @Getter
     public static final class ErrorDescriptor implements ErrorCode {
         private final String fieldName;
@@ -137,6 +136,16 @@ public final class ValidationResult {
 
         public static ErrorDescriptor fromObjectError(ObjectError objectError) {
             return new ErrorDescriptor("", objectError.getObjectName(), objectError.getCode(), objectError.getArguments());
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this)
+                .append("fieldName", fieldName)
+                .append("message", message)
+                .append("code", code)
+                .append("arguments", arguments)
+                .toString();
         }
     }
 

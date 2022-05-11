@@ -17,13 +17,11 @@
 package alfio.manager.support;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.Objects;
 import java.util.Optional;
 
-@EqualsAndHashCode
-@ToString
 public final class PaymentResult {
 
     public enum Type { SUCCESSFUL, INITIALIZED, PENDING, REDIRECT, FAILED }
@@ -102,5 +100,28 @@ public final class PaymentResult {
 
     public static PaymentResult failed( String errorCode) {
         return new PaymentResult(Type.FAILED).setErrorCode( errorCode );
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+            .append("type", type)
+            .append("gatewayId", gatewayId)
+            .append("errorCode", errorCode)
+            .append("redirectUrl", redirectUrl)
+            .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PaymentResult that = (PaymentResult) o;
+        return type == that.type && Objects.equals(gatewayId, that.gatewayId) && Objects.equals(errorCode, that.errorCode) && Objects.equals(redirectUrl, that.redirectUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, gatewayId, errorCode, redirectUrl);
     }
 }

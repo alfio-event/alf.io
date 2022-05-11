@@ -18,11 +18,11 @@ package alfio.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.Objects;
+
 @Getter
-@EqualsAndHashCode
 public class SendCodeModification {
 
     private final String code;
@@ -41,4 +41,16 @@ public class SendCodeModification {
         this.language = language;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SendCodeModification that = (SendCodeModification) o;
+        return Objects.equals(code, that.code) && Objects.equals(assignee, that.assignee) && Objects.equals(email, that.email) && Objects.equals(language, that.language);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(code, assignee, email, language);
+    }
 }

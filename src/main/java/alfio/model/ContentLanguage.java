@@ -17,13 +17,12 @@
 package alfio.model;
 
 import alfio.util.LocaleUtil;
-import lombok.EqualsAndHashCode;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-@EqualsAndHashCode
 public class ContentLanguage {
 
     public static final int ENGLISH_IDENTIFIER = 0b00010;
@@ -74,5 +73,18 @@ public class ContentLanguage {
 
     public int getValue() {
         return value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ContentLanguage that = (ContentLanguage) o;
+        return value == that.value && Objects.equals(locale, that.locale) && Objects.equals(displayLocale, that.displayLocale);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(locale, value, displayLocale);
     }
 }
