@@ -56,9 +56,12 @@ public class SubscriptionManager {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final Environment environment;
 
-    public SubscriptionManager(SubscriptionRepository subscriptionRepository, NamedParameterJdbcTemplate jdbcTemplate) {
+    public SubscriptionManager(SubscriptionRepository subscriptionRepository,
+                               NamedParameterJdbcTemplate jdbcTemplate,
+                               Environment environment) {
         this.subscriptionRepository = subscriptionRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.environment = environment;
     }
 
     public List<SubscriptionDescriptor> findAll(int organizationId) {

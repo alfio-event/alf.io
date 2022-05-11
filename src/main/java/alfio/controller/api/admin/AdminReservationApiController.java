@@ -59,12 +59,14 @@ public class AdminReservationApiController {
                                          EventManager eventManager,
                                          PurchaseContextManager purchaseContextManager,
                                          PurchaseContextSearchManager purchaseContextSearchManager,
-                                         TicketReservationManager ticketReservationManager) {
+                                         TicketReservationManager ticketReservationManager,
+                                         BookingInfoTicketLoader bookingInfoTicketLoader) {
         this.adminReservationManager = adminReservationManager;
         this.eventManager = eventManager;
         this.purchaseContextManager = purchaseContextManager;
         this.purchaseContextSearchManager = purchaseContextSearchManager;
         this.ticketReservationManager = ticketReservationManager;
+        this.bookingInfoTicketLoader = bookingInfoTicketLoader;
     }
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/new")
