@@ -18,6 +18,7 @@ package alfio.config.authentication;
 
 import alfio.config.authentication.support.OpenIdAuthenticationFilter;
 import alfio.config.authentication.support.OpenIdCallbackLoginFilter;
+import alfio.config.support.CustomCookieSameSiteSupplier;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
@@ -54,7 +55,8 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
                                   DataSource dataSource,
                                   PasswordEncoder passwordEncoder,
                                   AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager,
-                                  PublicOpenIdAuthenticationManager openIdAuthenticationManager) {
+                                  PublicOpenIdAuthenticationManager openIdAuthenticationManager,
+                                  CustomCookieSameSiteSupplier sameSiteSupplier) {
         super(environment,
             userManager,
             recaptchaService,
@@ -62,7 +64,8 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
             csrfTokenRepository,
             dataSource,
             passwordEncoder,
-            openIdAuthenticationManager);
+            openIdAuthenticationManager,
+            sameSiteSupplier);
         this.adminOpenIdAuthenticationManager = adminOpenIdAuthenticationManager;
     }
 

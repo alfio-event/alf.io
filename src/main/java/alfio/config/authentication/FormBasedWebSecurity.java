@@ -16,6 +16,7 @@
  */
 package alfio.config.authentication;
 
+import alfio.config.support.CustomCookieSameSiteSupplier;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
@@ -43,7 +44,8 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
                                 CsrfTokenRepository csrfTokenRepository,
                                 DataSource dataSource,
                                 PasswordEncoder passwordEncoder,
-                                PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager) {
+                                PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
+                                CustomCookieSameSiteSupplier sameSiteSupplier) {
         super(environment,
             userManager,
             recaptchaService,
@@ -51,6 +53,7 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
             csrfTokenRepository,
             dataSource,
             passwordEncoder,
-            publicOpenIdAuthenticationManager);
+            publicOpenIdAuthenticationManager,
+            sameSiteSupplier);
     }
 }

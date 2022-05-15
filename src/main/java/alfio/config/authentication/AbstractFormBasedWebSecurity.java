@@ -18,12 +18,14 @@ package alfio.config.authentication;
 
 import alfio.config.Initializer;
 import alfio.config.authentication.support.*;
+import alfio.config.support.CustomCookieSameSiteSupplier;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jetty.http.HttpCookie;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
@@ -61,6 +63,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
     private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
+    private final CustomCookieSameSiteSupplier sameSiteSupplier;
 
     protected AbstractFormBasedWebSecurity(Environment environment,
                                            UserManager userManager,
@@ -69,7 +72,8 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
                                            CsrfTokenRepository csrfTokenRepository,
                                            DataSource dataSource,
                                            PasswordEncoder passwordEncoder,
-                                           PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager) {
+                                           PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
+                                           CustomCookieSameSiteSupplier sameSiteSupplier) {
         this.environment = environment;
         this.userManager = userManager;
         this.recaptchaService = recaptchaService;
@@ -78,6 +82,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
         this.dataSource = dataSource;
         this.passwordEncoder = passwordEncoder;
         this.publicOpenIdAuthenticationManager = publicOpenIdAuthenticationManager;
+        this.sameSiteSupplier = sameSiteSupplier;
     }
 
     @Override
@@ -195,8 +200,23 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
                 if (csrf == null) {
                     csrf = csrfTokenRepository.generateToken(req);
                 }
-                Cookie cookie = new Cookie("XSRF-TOKEN", csrf.getToken());
+                Cookie cookie = new Cookie(CustomCookieSameSiteSupplier.XSRF_TOKEN, csrf.getToken());
                 cookie.setPath("/");
+                cookie.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
+                var sameSiteAttribute = sameSiteSupplier.getSameSite(cookie, () -> req);
+                if (sameSiteAttribute != null) {
+                    // forcing Jetty's SameSite comment style, as we need the current request in order to validate
+                    // the "ALFIO_EMBEDDED_SESSION" session attribute.
+                    // By doing so we override the default behavior of
+                    // https://github.com/spring-projects/spring-boot/blob/main/spring-boot-project/spring-boot/src/main/java/org/springframework/boot/web/embedded/jetty/JettyServletWebServerFactory.java
+                    // (SuppliedSameSiteCookieHandlerWrapper#addCookie - line 697 at the time of writing)
+                    var comment = switch (sameSiteAttribute) {
+                        case NONE -> HttpCookie.SAME_SITE_NONE_COMMENT;
+                        case LAX -> HttpCookie.SAME_SITE_LAX_COMMENT;
+                        case STRICT -> HttpCookie.SAME_SITE_STRICT_COMMENT;
+                    };
+                    cookie.setComment(comment);
+                }
                 res.addCookie(cookie);
             }
             filterChain.doFilter(servletRequest, servletResponse);

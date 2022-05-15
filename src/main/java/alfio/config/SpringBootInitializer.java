@@ -16,26 +16,24 @@
  */
 package alfio.config;
 
+import alfio.config.support.CustomCookieSameSiteSupplier;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ExternalConfiguration;
 import alfio.util.ClockProvider;
 import com.openhtmltopdf.util.XRLog;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Profiles;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.core.env.Environment;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.servlet.Filter;
-import javax.servlet.SessionCookieConfig;
 import java.time.Clock;
 import java.util.logging.Level;
-
-import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
 
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
     org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
@@ -53,20 +51,6 @@ public class SpringBootInitializer {
 
 
     @Bean
-    public ServletContextInitializer servletContextInitializer() {
-        return servletContext -> {
-            WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
-            ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
-            SessionCookieConfig config = servletContext.getSessionCookieConfig();
-            config.setHttpOnly(true);
-            config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-            // force log initialization, then disable it
-            XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
-            XRLog.setLoggingEnabled(false);
-        };
-    }
-
-    @Bean
     public Filter characterEncodingFilter() {
         CharacterEncodingFilter cef = new CharacterEncodingFilter();
         cef.setEncoding("UTF-8");
@@ -77,5 +61,23 @@ public class SpringBootInitializer {
     @Bean
     public ClockProvider clockProvider() {
         return ClockProvider.init(Clock.systemUTC());
+    }
+
+    @Bean
+    public CustomCookieSameSiteSupplier customCookieSameSiteSupplier(ConfigurationManager configurationManager,
+                                                                     Environment environment) {
+        return new CustomCookieSameSiteSupplier(configurationManager, environment);
+    }
+
+    @Bean
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> applicationCookieSameSiteSupplier(CustomCookieSameSiteSupplier sameSiteSupplier) {
+        return factory -> {
+            factory.addCookieSameSiteSuppliers(sameSiteSupplier);
+            factory.addInitializers(servletContext -> {
+                // force log initialization, then disable it
+                XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
+                XRLog.setLoggingEnabled(false);
+            });
+        };
     }
 }
