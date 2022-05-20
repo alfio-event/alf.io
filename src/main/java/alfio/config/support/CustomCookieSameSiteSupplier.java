@@ -82,11 +82,11 @@ public class CustomCookieSameSiteSupplier implements CookieSameSiteSupplier {
             var secFetchSite = request.getHeader("Sec-Fetch-Site");
             boolean embeddedSession = cookie.getName().equals("SESSION")
                 && referrerMatches(referrer, allowedOrigins, secFetchSite)
-                && IFRAME.equals(secFetchDest);
+                && isDestinationIframe(secFetchDest);
             if (embeddedSession) {
                 // store the embedded flag in the session
                 request.getSession(false).setAttribute(EMBEDDED_SESSION_ATTRIBUTE, IFRAME);
-                if (CROSS_SITE.equals(secFetchSite)) {
+                if (isCrossSite(secFetchSite)) {
                     // request is marked as cross-site, therefore we enable cookie sharing explicitly
                     return Cookie.SameSite.NONE;
                 } else {
@@ -95,7 +95,8 @@ public class CustomCookieSameSiteSupplier implements CookieSameSiteSupplier {
                 }
             } else if(cookie.getName().equals(XSRF_TOKEN)
                 && request.getRequestURI().startsWith("/api/v2/public/") // admin cannot be embedded yet
-                && IFRAME.equals(request.getSession().getAttribute(EMBEDDED_SESSION_ATTRIBUTE))) {
+                && request.getSession(false) != null
+                && IFRAME.equals(request.getSession(false).getAttribute(EMBEDDED_SESSION_ATTRIBUTE))) {
                 return Cookie.SameSite.NONE;
             }
         }
@@ -103,7 +104,7 @@ public class CustomCookieSameSiteSupplier implements CookieSameSiteSupplier {
     }
 
     static boolean referrerMatches(String referrer, MaybeConfiguration allowedOrigins, String secFetchSite) {
-        if (!CROSS_SITE.equals(secFetchSite)) {
+        if (!isCrossSite(secFetchSite)) {
             // request is not cross-site. Cookie can be shared if necessary
             return true;
         }
@@ -115,5 +116,13 @@ public class CustomCookieSameSiteSupplier implements CookieSameSiteSupplier {
             log.warn("error while parsing referrer", ex);
         }
         return false;
+    }
+
+    static boolean isCrossSite(String secFetchSite) {
+        return secFetchSite == null || CROSS_SITE.equals(secFetchSite);
+    }
+
+    static boolean isDestinationIframe(String secFetchDest) {
+        return secFetchDest == null || IFRAME.equals(secFetchDest);
     }
 }
