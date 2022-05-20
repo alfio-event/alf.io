@@ -18,7 +18,6 @@ package alfio.config.authentication;
 
 import alfio.config.Initializer;
 import alfio.config.authentication.support.*;
-import alfio.config.support.CustomCookieSameSiteSupplier;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
@@ -50,6 +49,8 @@ import javax.sql.DataSource;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
+import static alfio.config.Initializer.XSRF_TOKEN;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
 
@@ -63,7 +64,6 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
     private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
-    private final CustomCookieSameSiteSupplier sameSiteSupplier;
 
     protected AbstractFormBasedWebSecurity(Environment environment,
                                            UserManager userManager,
@@ -72,8 +72,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
                                            CsrfTokenRepository csrfTokenRepository,
                                            DataSource dataSource,
                                            PasswordEncoder passwordEncoder,
-                                           PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
-                                           CustomCookieSameSiteSupplier sameSiteSupplier) {
+                                           PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager) {
         this.environment = environment;
         this.userManager = userManager;
         this.recaptchaService = recaptchaService;
@@ -82,7 +81,6 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
         this.dataSource = dataSource;
         this.passwordEncoder = passwordEncoder;
         this.publicOpenIdAuthenticationManager = publicOpenIdAuthenticationManager;
-        this.sameSiteSupplier = sameSiteSupplier;
     }
 
     @Override
@@ -98,7 +96,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        if (environment.acceptsProfiles(Profiles.of("!" + Initializer.PROFILE_DEV))) {
+        if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
             http.requiresChannel().antMatchers("/healthz").requiresInsecure()
                 .and()
                 .requiresChannel().mvcMatchers("/**").requiresSecure();
@@ -195,29 +193,16 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
             HttpServletResponse res = (HttpServletResponse) servletResponse;
             var reqUri = req.getRequestURI();
 
-            if ((reqUri.startsWith("/api/v2/public/") || reqUri.startsWith("/admin/api/") || reqUri.startsWith("/api/v2/admin/")) && "GET".equalsIgnoreCase(req.getMethod())) {
+            if ((reqUri.startsWith(API_V2_PUBLIC_PATH) || reqUri.startsWith(ADMIN_API) || reqUri.startsWith("/api/v2/admin/")) && "GET".equalsIgnoreCase(req.getMethod())) {
                 CsrfToken csrf = csrfTokenRepository.loadToken(req);
                 if (csrf == null) {
                     csrf = csrfTokenRepository.generateToken(req);
                 }
-                Cookie cookie = new Cookie(CustomCookieSameSiteSupplier.XSRF_TOKEN, csrf.getToken());
-                cookie.setPath("/");
-                cookie.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-                var sameSiteAttribute = sameSiteSupplier.getSameSite(cookie, () -> req);
-                if (sameSiteAttribute != null) {
-                    // forcing Jetty's SameSite comment style, as we need the current request in order to validate
-                    // the "ALFIO_EMBEDDED_SESSION" session attribute.
-                    // By doing so we override the default behavior of
-                    // https://github.com/spring-projects/spring-boot/blob/main/spring-boot-project/spring-boot/src/main/java/org/springframework/boot/web/embedded/jetty/JettyServletWebServerFactory.java
-                    // (SuppliedSameSiteCookieHandlerWrapper#addCookie - line 697 at the time of writing)
-                    var comment = switch (sameSiteAttribute) {
-                        case NONE -> HttpCookie.SAME_SITE_NONE_COMMENT;
-                        case LAX -> HttpCookie.SAME_SITE_LAX_COMMENT;
-                        case STRICT -> HttpCookie.SAME_SITE_STRICT_COMMENT;
-                    };
-                    cookie.setComment(comment);
+                if (reqUri.startsWith(API_V2_PUBLIC_PATH)) {
+                    res.addHeader(XSRF_TOKEN, csrf.getToken());
+                } else {
+                    addCookie(res, csrf);
                 }
-                res.addCookie(cookie);
             }
             filterChain.doFilter(servletRequest, servletResponse);
         }, RecaptchaLoginFilter.class);
@@ -225,6 +210,17 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);
         }
+    }
+
+    private void addCookie(HttpServletResponse res, CsrfToken csrf) {
+        Cookie cookie = new Cookie(XSRF_TOKEN, csrf.getToken());
+        cookie.setPath("/");
+        boolean dev = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
+        cookie.setSecure(dev);
+        if (dev) {
+            cookie.setComment(HttpCookie.SAME_SITE_STRICT_COMMENT);
+        }
+        res.addCookie(cookie);
     }
 
     /**

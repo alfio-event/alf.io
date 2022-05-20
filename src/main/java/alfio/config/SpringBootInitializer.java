@@ -16,8 +16,6 @@
  */
 package alfio.config;
 
-import alfio.config.support.CustomCookieSameSiteSupplier;
-import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ExternalConfiguration;
 import alfio.util.ClockProvider;
 import com.openhtmltopdf.util.XRLog;
@@ -25,10 +23,10 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.Environment;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.servlet.Filter;
@@ -64,15 +62,9 @@ public class SpringBootInitializer {
     }
 
     @Bean
-    public CustomCookieSameSiteSupplier customCookieSameSiteSupplier(ConfigurationManager configurationManager,
-                                                                     Environment environment) {
-        return new CustomCookieSameSiteSupplier(configurationManager, environment);
-    }
-
-    @Bean
-    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> applicationCookieSameSiteSupplier(CustomCookieSameSiteSupplier sameSiteSupplier) {
+    public WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> applicationCookieSameSiteSupplier() {
         return factory -> {
-            factory.addCookieSameSiteSuppliers(sameSiteSupplier);
+            factory.addCookieSameSiteSuppliers(CookieSameSiteSupplier.ofStrict());
             factory.addInitializers(servletContext -> {
                 // force log initialization, then disable it
                 XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
