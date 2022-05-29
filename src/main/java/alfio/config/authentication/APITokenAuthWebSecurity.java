@@ -33,6 +33,8 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,7 +70,7 @@ public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
             // check if API Key is system
             var systemApiKeyOptional = configurationRepository.findOptionalByKey(ConfigurationKeys.SYSTEM_API_KEY.name());
 
-            if (systemApiKeyOptional.isPresent() && systemApiKeyOptional.get().getValue().equals(apiKey)) {
+            if (systemApiKeyOptional.isPresent() && apiKeyMatches(apiKey, systemApiKeyOptional.get())) {
                 return new APITokenAuthentication(
                     authentication.getPrincipal(),
                     authentication.getCredentials(),
@@ -108,5 +110,10 @@ public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
             .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR, API_CLIENT)
             .antMatchers("/**").authenticated()
             .and().addFilter(filter);
+    }
+
+    private static boolean apiKeyMatches(String input, alfio.model.system.Configuration systemApiKeyConfiguration) {
+        return MessageDigest.isEqual(input.getBytes(StandardCharsets.UTF_8),
+            systemApiKeyConfiguration.getValue().getBytes(StandardCharsets.UTF_8));
     }
 }
