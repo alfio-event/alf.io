@@ -43,6 +43,12 @@
             resetPassword: function(user) {
                 return $http['put']('/admin/api/users/'+user.id+'/reset-password?baseUrl='+window.encodeURIComponent($window.location.origin)).error(HttpErrorHandler.handle);
             },
+            retrieveSystemApiKey: function() {
+                return $http.get('/admin/api/system/api-key').error(HttpErrorHandler.handle);
+            },
+            rotateSystemApiKey: function() {
+                return $http['put']('/admin/api/system/api-key').error(HttpErrorHandler.handle);
+            },
 
             showUserData: function(user) {
                 return $uibModal.open({

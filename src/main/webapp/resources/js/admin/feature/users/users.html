@@ -1,4 +1,25 @@
 <div class="container">
+    <div class="wMarginBottom30px" data-ng-if="$ctrl.type === 'apikey' && $ctrl.isAdmin">
+        <div class="page-header">
+            <h1>System API Key</h1>
+            <small>System API Key can be used from external application to create/modify/delete organizations and to create API Keys</small>
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="row">
+                    <div class="col-xs-9" data-ng-if="$ctrl.systemApiKey"><pre>{{$ctrl.systemApiKey}}</pre></div>
+                    <div class="col-xs-1" data-ng-if="$ctrl.systemApiKey"><button class="btn btn-default btn-block" ng-click="$ctrl.copySystemApiKey()">Copy</button></div>
+                    <div class="col-xs-1">
+                        <button class="btn btn-success btn-block" data-ng-class="{'btn-success': !$ctrl.systemApiKey, 'btn-warning': $ctrl.systemApiKey}">
+                            <span ng-if="!$ctrl.systemApiKey" ng-click="$ctrl.revealSystemApiKey()">Reveal</span>
+                            <span ng-if="$ctrl.systemApiKey" ng-click="$ctrl.rotateSystemApiKey()">Rotate</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="wMarginBottom30px" data-ng-if="$ctrl.type === 'apikey' && $ctrl.isAdmin">&nbsp;</div>
     <h1>{{$ctrl.title}}</h1>
     <hr>
     <div class="row">

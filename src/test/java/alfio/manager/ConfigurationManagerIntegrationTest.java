@@ -365,4 +365,21 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), BASE_URL.getValue(), "https://test/", "");
         assertEquals("https://test", configurationManager.baseUrl(event));
     }
+
+    @Test
+    void testSystemApiKeyGeneration() {
+        assertTrue(configurationRepository.findOptionalByKey(SYSTEM_API_KEY.name()).isEmpty());
+        // force generation
+        var apiKey = configurationManager.retrieveSystemApiKey(false);
+        assertNotNull(apiKey);
+        assertFalse(apiKey.isEmpty());
+        // retrieve again the same apiKey
+        var apiKey2 = configurationManager.retrieveSystemApiKey(false);
+        assertEquals(apiKey, apiKey2);
+        // force apiKey rotation
+        apiKey2 = configurationManager.retrieveSystemApiKey(true);
+        assertNotNull(apiKey2);
+        assertFalse(apiKey2.isEmpty());
+        assertNotEquals(apiKey, apiKey2);
+    }
 }

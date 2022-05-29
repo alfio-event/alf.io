@@ -17,7 +17,9 @@
 package alfio.config.authentication;
 
 import alfio.config.authentication.support.*;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.User;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
@@ -32,6 +34,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static alfio.config.authentication.support.AuthenticationConstants.*;
@@ -43,11 +46,14 @@ public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
     public static final String API_KEY = "Api key ";
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;
+    private final ConfigurationRepository configurationRepository;
 
     public APITokenAuthWebSecurity(UserRepository userRepository,
-                                   AuthorityRepository authorityRepository) {
+                                   AuthorityRepository authorityRepository,
+                                   ConfigurationRepository configurationRepository) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
+        this.configurationRepository = configurationRepository;
     }
 
     //https://stackoverflow.com/a/48448901
@@ -58,6 +64,17 @@ public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
         filter.setAuthenticationManager(authentication -> {
             //
             String apiKey = (String) authentication.getPrincipal();
+
+            // check if API Key is system
+            var systemApiKeyOptional = configurationRepository.findOptionalByKey(ConfigurationKeys.SYSTEM_API_KEY.name());
+
+            if (systemApiKeyOptional.isPresent() && systemApiKeyOptional.get().getValue().equals(apiKey)) {
+                return new APITokenAuthentication(
+                    authentication.getPrincipal(),
+                    authentication.getCredentials(),
+                    List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT)));
+            }
+
             //check if user type ->
             User user = userRepository.findByUsername(apiKey).orElseThrow(() -> new BadCredentialsException(API_KEY + apiKey + " don't exists"));
             if (!user.isEnabled()) {
@@ -81,6 +98,7 @@ public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and().csrf().disable()
             .authorizeRequests()
+            .antMatchers(ADMIN_PUBLIC_API + "/system/**").hasRole(SYSTEM_API_CLIENT)
             .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
             .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
             .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, AuthenticationConstants.SPONSOR)
