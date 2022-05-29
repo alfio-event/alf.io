@@ -106,7 +106,8 @@ public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFl
                                                      ExtensionService extensionService,
                                                      PollRepository pollRepository,
                                                      NotificationManager notificationManager,
-                                                     UserRepository userRepository) {
+                                                     UserRepository userRepository,
+                                                     OrganizationDeleter organizationDeleter) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -138,7 +139,8 @@ public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFl
             pollRepository,
             clockProvider,
             notificationManager,
-            userRepository);
+            userRepository,
+            organizationDeleter);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
     }

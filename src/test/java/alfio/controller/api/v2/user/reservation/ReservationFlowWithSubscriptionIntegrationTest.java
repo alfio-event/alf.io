@@ -134,7 +134,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
                                                           SubscriptionRepository subscriptionRepository,
                                                           FileUploadManager fileUploadManager,
                                                           UserRepository userRepository,
-                                                          PlatformTransactionManager platformTransactionManager) {
+                                                          PlatformTransactionManager platformTransactionManager,
+                                                          OrganizationDeleter organizationDeleter) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -166,7 +167,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
             pollRepository,
             clockProvider,
             notificationManager,
-            userRepository);
+            userRepository,
+            organizationDeleter);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.subscriptionManager = subscriptionManager;
