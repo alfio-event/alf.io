@@ -17,8 +17,10 @@
 package alfio.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 public class OrganizationModification {
@@ -43,5 +45,13 @@ public class OrganizationModification {
         this.description = description;
         this.externalId = externalId;
         this.slug = slug;
+    }
+
+    @JsonIgnore
+    public boolean isValid(boolean create) {
+        return (create || (id != null && id > 0))
+            && StringUtils.isNotEmpty(name)
+            && StringUtils.isNotEmpty(email)
+            && StringUtils.isNotEmpty(description);
     }
 }

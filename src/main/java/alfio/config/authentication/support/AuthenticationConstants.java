@@ -29,5 +29,6 @@ public final class AuthenticationConstants {
     public static final String ADMIN = "ADMIN";
     public static final String OWNER = "OWNER";
     public static final String API_CLIENT = "API_CLIENT";
+    public static final String SYSTEM_API_CLIENT = "SYSTEM_API_CLIENT";
     public static final String X_REQUESTED_WITH = "X-Requested-With";
 }

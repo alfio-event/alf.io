@@ -60,6 +60,9 @@ public interface OrganizationDeleterRepository {
     @Query("delete from subscription_descriptor where organization_id_fk in (:organizationIds)")
     int deleteSubscriptionDescriptors(@Bind("organizationIds") List<Integer> organizationIds);
 
+    @Query("delete from promo_code where organization_id_fk in (:organizationIds)")
+    int deletePromoCodes(@Bind("organizationIds") List<Integer> organizationIds);
+
     @Query("delete from organization where id in(:organizationIds)" +
         " and id not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
     int deleteOrganizationsIfEmpty(@Bind("organizationIds") List<Integer> organizationIds);
@@ -90,7 +93,9 @@ public interface OrganizationDeleterRepository {
         int deletedDescriptors = deleteSubscriptionDescriptors(organizationIds);
         LOGGER.info("deleted {} subscription descriptors and {} subscriptions", deletedDescriptors, deletedSubscriptions);
 
-
+        // delete promo codes
+        int deletedPromoCodes = deletePromoCodes(organizationIds);
+        LOGGER.info("deleted {} promo codes", deletedPromoCodes);
 
         int deletedOrganizations = deleteOrganizationsIfEmpty(organizationIds);
         LOGGER.info("deleted {} empty organizations", deletedOrganizations);

@@ -79,9 +79,20 @@ public final class RequestUtils {
 
     public static boolean isAdmin(Principal principal) {
         if (principal instanceof Authentication) {
-            return ((Authentication) principal).getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch("ROLE_ADMIN"::equals);
+            return hasRole((Authentication) principal, "ROLE_ADMIN");
+        }
+        return false;
+    }
+
+    private static boolean hasRole(Authentication principal, String role) {
+        return principal.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .anyMatch(role::equals);
+    }
+
+    public static boolean isSystemApiKey(Principal principal) {
+        if (principal instanceof Authentication) {
+            return hasRole((Authentication)principal, "ROLE_SYSTEM_API_CLIENT");
         }
         return false;
     }

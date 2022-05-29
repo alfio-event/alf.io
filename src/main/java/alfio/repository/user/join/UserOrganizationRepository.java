@@ -52,4 +52,6 @@ public interface UserOrganizationRepository {
     @Query("delete from j_user_organization where user_id = :userId and org_id in (:organizationIds)")
     int removeOrganizationUserLinks(@Bind("userId") int userId, @Bind("organizationIds") Collection<Integer> organizationIds);
 
+    @Query("delete from j_user_organization where org_id = :organizationId")
+    int cleanupOrganization(@Bind("organizationId") int organizationId);
 }

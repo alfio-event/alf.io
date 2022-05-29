@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.user.reservation;
 
+import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.controller.IndexController;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
@@ -73,6 +74,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
@@ -89,6 +91,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static alfio.manager.support.extension.ExtensionEvent.*;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
@@ -131,6 +134,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     protected final ClockProvider clockProvider;
     protected final NotificationManager notificationManager;
     protected final UserRepository userRepository;
+    protected final OrganizationDeleter organizationDeleter;
 
     private Integer additionalServiceId;
 
@@ -170,7 +174,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                                       PollRepository pollRepository,
                                       ClockProvider clockProvider,
                                       NotificationManager notificationManager,
-                                      UserRepository userRepository) {
+                                      UserRepository userRepository,
+                                      OrganizationDeleter organizationDeleter) {
         this.configurationRepository = configurationRepository;
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;
@@ -203,6 +208,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         this.clockProvider = clockProvider;
         this.notificationManager = notificationManager;
         this.userRepository = userRepository;
+        this.organizationDeleter = organizationDeleter;
     }
 
     private void ensureConfiguration(ReservationFlowContext context) {
@@ -1249,6 +1255,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             }
             performAdditionalTests(context);
             eventManager.deleteEvent(context.event.getId(), context.userId);
+            assertTrue(organizationDeleter.deleteOrganization(context.event.getOrganizationId(), new APITokenAuthentication("TEST", "", List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT)))));
         }
 
     }
