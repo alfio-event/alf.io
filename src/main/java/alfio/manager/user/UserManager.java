@@ -16,7 +16,6 @@
  */
 package alfio.manager.user;
 
-import alfio.model.TicketReservationAdditionalInfo;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
@@ -48,7 +47,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 
 @Component
@@ -140,11 +138,14 @@ public class UserManager {
     }
 
     public Organization findOrganizationById(int id, String username) {
+        return findOptionalOrganizationById(id, username).orElseThrow(IllegalArgumentException::new);
+    }
+
+    public Optional<Organization> findOptionalOrganizationById(int id, String username) {
         return findUserOrganizations(username)
-                .stream()
-                .filter(o -> o.getId() == id)
-                .findFirst()
-                .orElseThrow(IllegalArgumentException::new);
+            .stream()
+            .filter(o -> o.getId() == id)
+            .findFirst();
     }
 
     public boolean isAdmin(User user) {
@@ -178,7 +179,7 @@ public class UserManager {
     }
 
     public void updateOrganization(OrganizationModification om, Principal principal) {
-        boolean isAdmin = RequestUtils.isAdmin(principal);
+        boolean isAdmin = RequestUtils.isAdmin(principal) || RequestUtils.isSystemApiKey(principal);
         var currentOrg = organizationRepository.getById(requireNonNull(om.getId()));
         organizationRepository.update(om.getId(),
             om.getName(),

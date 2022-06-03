@@ -117,7 +117,8 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
                                                            PollRepository pollRepository,
                                                            NotificationManager notificationManager,
                                                            UserRepository userRepository,
-                                                           UserApiV2Controller publicUserApiController) {
+                                                           UserApiV2Controller publicUserApiController,
+                                                           OrganizationDeleter organizationDeleter) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -149,7 +150,8 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
             pollRepository,
             clockProvider,
             notificationManager,
-            userRepository);
+            userRepository,
+            organizationDeleter);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.publicUserApiController = publicUserApiController;

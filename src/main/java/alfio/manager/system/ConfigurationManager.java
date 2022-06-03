@@ -52,6 +52,8 @@ import org.springframework.core.env.Profiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpSession;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -78,6 +80,7 @@ public class ConfigurationManager {
     private final ExternalConfiguration externalConfiguration;
     private final Environment environment;
     private final Cache<Set<ConfigurationKeys>, Map<ConfigurationKeys, MaybeConfiguration>> oneMinuteCache;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
@@ -718,5 +721,26 @@ public class ConfigurationManager {
         var configurationLevel = purchaseContext.event().map(ConfigurationLevel::event)
             .orElseGet(() -> ConfigurationLevel.organization(purchaseContext.getOrganizationId()));
         return StringUtils.removeEnd(getFor(BASE_URL, configurationLevel).getRequiredValue(), "/");
+    }
+
+    public String retrieveSystemApiKey(boolean rotate) {
+        Optional<Configuration> existing = configurationRepository.findOptionalByKey(SYSTEM_API_KEY.name());
+        String apiKeyValue;
+        if(existing.isPresent() && rotate) {
+            apiKeyValue = generateApiKey();
+            configurationRepository.update(SYSTEM_API_KEY.name(), apiKeyValue);
+        } else if(existing.isPresent()) {
+            apiKeyValue = existing.get().getValue();
+        } else {
+            apiKeyValue = generateApiKey();
+            configurationRepository.insert(SYSTEM_API_KEY.name(), apiKeyValue, SYSTEM_API_KEY.getDescription());
+        }
+        return apiKeyValue;
+    }
+
+    private String generateApiKey() {
+        var bytes = new byte[48];
+        secureRandom.nextBytes(bytes);
+        return new BigInteger(1, bytes).toString(36);
     }
 }

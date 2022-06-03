@@ -21,9 +21,6 @@ import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.*;
-import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -183,6 +180,8 @@ public interface EventRepository {
 
     @Query(value = "update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds)) returning id", type = QueryType.MODIFYING_WITH_RETURN)
     List<Integer> disableEventsForUsers(@Bind("userIds") Collection<Integer> userIds);
+    @Query(value = "update event set status = 'DISABLED' where org_id = :orgId returning id", type = QueryType.MODIFYING_WITH_RETURN)
+    List<Integer> disableEventsForOrganization(@Bind("orgId") int orgId);
 
     @Query("select coalesce(sum(final_price_cts),0) from tickets_reservation where event_id_fk = :eventId and status = 'COMPLETE'")
     long getGrossIncome(@Bind("eventId") int eventId);

@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('adminApplication').component('users', {
-        controller: ['$window', 'UserService', '$uibModal', '$q', UsersCtrl],
+        controller: ['$window', 'UserService', '$uibModal', '$q', 'NotificationHandler', UsersCtrl],
         templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/users/users.html',
         bindings: {
             title: '@',
@@ -30,7 +30,7 @@
 
 
 
-    function UsersCtrl($window, UserService, $uibModal, $q) {
+    function UsersCtrl($window, UserService, $uibModal, $q, NotificationHandler) {
         var ctrl = this;
 
         ctrl.loadUsers = loadUsers;
@@ -39,13 +39,17 @@
         ctrl.enable = enable;
         ctrl.downloadApiKeys = downloadAllApiKeys;
         ctrl.viewApiKey = viewApiKeyQR;
+        ctrl.rotateSystemApiKey = rotateSystemApiKey;
+        ctrl.revealSystemApiKey = revealSystemApiKey;
+        ctrl.copySystemApiKey = copySystemApiKey;
         ctrl.selectedOrganization = null;
 
         ctrl.$onInit = function() {
             ctrl.users = [];
             ctrl.organizations = [];
-            UserService.getAllRoles().then(function(roles) {
-                ctrl.roles = roles.data;
+            $q.all([UserService.getAllRoles(), UserService.loadCurrentUser()]).then(function(results) {
+                ctrl.roles = results[0].data;
+                ctrl.isAdmin = (results[1].data.role === 'ADMIN');
             });
             loadUsers();
         };
@@ -115,6 +119,48 @@
                     }
                 }
             });
+        }
+
+        function revealSystemApiKey() {
+            UserService.retrieveSystemApiKey().then(function(result) {
+                ctrl.systemApiKey = result.data;
+            });
+        }
+
+        function rotateSystemApiKey() {
+
+            $uibModal.open({
+                size: 'lg',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/users/confirm-api-key-rotation.html',
+                backdrop: 'static',
+                controller: function ($scope) {
+                    $scope.cancel = function() {
+                        $scope.$dismiss();
+                    };
+                    $scope.confirm = function() {
+                        $scope.$close(true);
+                    }
+                }
+            }).result.then(function(result) {
+                if (result) {
+                    UserService.rotateSystemApiKey().then(function(result) {
+                        ctrl.systemApiKey = result.data;
+                        NotificationHandler.showSuccess('API Key successfully rotated.');
+                    });
+                }
+            });
+        }
+
+        function copySystemApiKey() {
+            var listener = function(clipboardEvent) {
+                var clipboard = clipboardEvent.clipboardData || window['clipboardData'];
+                clipboard.setData('text', ctrl.systemApiKey);
+                clipboardEvent.preventDefault();
+                NotificationHandler.showSuccess('System API Key copied to Clipboard!');
+            };
+            document.addEventListener('copy', listener, false);
+            document.execCommand('copy');
+            document.removeEventListener('copy', listener, false);
         }
     }
 })();
