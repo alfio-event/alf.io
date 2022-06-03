@@ -42,6 +42,8 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
     public static final String PROFILE_DEMO = "demo";
     public static final String PROFILE_OPENID = "openid";
     public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
+    public static final String API_V2_PUBLIC_PATH = "/api/v2/public/";
+    public static final String XSRF_TOKEN = "XSRF-TOKEN";
     private Environment environment;
 
     @Override

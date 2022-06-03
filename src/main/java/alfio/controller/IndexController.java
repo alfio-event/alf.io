@@ -42,10 +42,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -64,7 +66,9 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static alfio.config.Initializer.XSRF_TOKEN;
 import static alfio.model.system.ConfigurationKeys.*;
+import static java.util.Objects.requireNonNull;
 
 @Controller
 public class IndexController {
@@ -78,6 +82,10 @@ public class IndexController {
 
     private static final Document INDEX_PAGE;
     private static final Document OPEN_GRAPH_PAGE;
+    private static final String NONCE = "nonce";
+    private static final String REDIRECT = "redirect:";
+    private static final String EVENT_SHORT_NAME = "eventShortName";
+    private static final String NOT_FOUND = "not-found";
 
     static {
         try (var idxIs = new ClassPathResource("alfio-public-frontend-index.html").getInputStream();
@@ -103,6 +111,7 @@ public class IndexController {
     private final SubscriptionRepository subscriptionRepository;
     private final EventLoader eventLoader;
     private final PurchaseContextManager purchaseContextManager;
+    private final CsrfTokenRepository csrfTokenRepository;
 
     public IndexController(ConfigurationManager configurationManager,
                            EventRepository eventRepository,
@@ -115,7 +124,8 @@ public class IndexController {
                            TicketReservationRepository ticketReservationRepository,
                            SubscriptionRepository subscriptionRepository,
                            EventLoader eventLoader,
-                           PurchaseContextManager purchaseContextManager) {
+                           PurchaseContextManager purchaseContextManager,
+                           CsrfTokenRepository csrfTokenRepository) {
         this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
         this.environment = environment;
@@ -128,6 +138,7 @@ public class IndexController {
         this.subscriptionRepository = subscriptionRepository;
         this.eventLoader = eventLoader;
         this.purchaseContextManager = purchaseContextManager;
+        this.csrfTokenRepository = csrfTokenRepository;
     }
 
 
@@ -214,7 +225,7 @@ public class IndexController {
         "/my-orders",
         "/my-profile",
     })
-    public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
+    public void replyToIndex(@PathVariable(value = EVENT_SHORT_NAME, required = false) String eventShortName,
                              @PathVariable(value = "subscriptionId", required = false) String subscriptionId,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
                              @RequestParam(value = "lang", required = false) String lang,
@@ -240,10 +251,17 @@ public class IndexController {
                             .ifPresent(html -> html.setAttribute("data-signed-up", "true"));
                     session.removeAttribute(OpenIdAuthenticationManager.USER_SIGNED_UP);
                 }
-                idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
+                idx.getElementsByTagName("script").forEach(element -> element.setAttribute(NONCE, nonce));
                 var head = idx.getElementsByTagName("head").get(0);
-                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), "application/json", "preload-info", null));
-                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
+                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), MediaType.APPLICATION_JSON.toString(), "preload-info", null));
+                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), MediaType.APPLICATION_JSON.toString(), "preload-bundle", "en"));
+                var httpServletRequest = requireNonNull(request.getNativeRequest(HttpServletRequest.class));
+                head.appendChild(buildMetaTag("GID", request.getSessionId()));
+                var csrf = csrfTokenRepository.loadToken(httpServletRequest);
+                if (csrf == null) {
+                    csrf = csrfTokenRepository.generateToken(httpServletRequest);
+                }
+                head.appendChild(buildMetaTag(XSRF_TOKEN, csrf.getToken()));
                 if (baseCustomCss != null) {
                     var style = new Element("style");
                     style.setAttribute("type", "text/css");
@@ -252,7 +270,7 @@ public class IndexController {
                 }
                 if (eventShortName != null) {
                     eventLoader.loadEventInfo(eventShortName, session).ifPresent(ev -> {
-                        head.appendChild(buildScripTag(Json.toJson(ev), "application/json", "preload-event", eventShortName));
+                        head.appendChild(buildScripTag(Json.toJson(ev), MediaType.APPLICATION_JSON.toString(), "preload-event", eventShortName));
                     });
                 }
                 JFiveParse.serialize(idx, osw);
@@ -261,13 +279,13 @@ public class IndexController {
     }
 
     @GetMapping("/event/{eventShortName}/reservation/{reservationId}")
-    public String redirectEventToReservation(@PathVariable(value = "eventShortName") String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
+    public String redirectEventToReservation(@PathVariable(value = EVENT_SHORT_NAME) String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
         if (eventRepository.existsByShortName(eventShortName)) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
-                .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
+                .map(IndexController::reservationStatusToUrlMapping).orElse(NOT_FOUND);
 
-            return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
-                .buildAndExpand(Map.of("eventShortName", eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
+            return REDIRECT + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
+                .buildAndExpand(Map.of(EVENT_SHORT_NAME, eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
                 .toUriString();
         } else {
             return "redirect:/";
@@ -278,9 +296,9 @@ public class IndexController {
     public String redirectSubscriptionToReservation(@PathVariable("subscriptionId") String subscriptionId, @PathVariable("reservationId") String reservationId) {
         if (subscriptionRepository.existsById(UUID.fromString(subscriptionId))) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
-                .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
+                .map(IndexController::reservationStatusToUrlMapping).orElse(NOT_FOUND);
 
-            return "redirect:" + UriComponentsBuilder.fromPath("/subscription/{subscriptionId}/reservation/{reservationId}/{status}")
+            return REDIRECT + UriComponentsBuilder.fromPath("/subscription/{subscriptionId}/reservation/{reservationId}/{status}")
                 .buildAndExpand(Map.of("subscriptionId", subscriptionId, "reservationId", reservationId, "status",reservationStatusUrlSegment))
                 .toUriString();
         } else {
@@ -300,17 +318,15 @@ public class IndexController {
     }
 
     private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
-        switch (status.getStatus()) {
-            case PENDING: return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
-            case COMPLETE: return "success";
-            case OFFLINE_PAYMENT: return "waiting-payment";
-            case DEFERRED_OFFLINE_PAYMENT: return "deferred-payment";
-            case EXTERNAL_PROCESSING_PAYMENT:
-            case WAITING_EXTERNAL_CONFIRMATION: return "processing-payment";
-            case IN_PAYMENT:
-            case STUCK: return "error";
-            default: return "not-found"; // <- this may be a little bit aggressive
-        }
+        return switch (status.getStatus()) {
+            case PENDING -> Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
+            case COMPLETE -> "success";
+            case OFFLINE_PAYMENT -> "waiting-payment";
+            case DEFERRED_OFFLINE_PAYMENT -> "deferred-payment";
+            case EXTERNAL_PROCESSING_PAYMENT, WAITING_EXTERNAL_CONFIRMATION -> "processing-payment";
+            case IN_PAYMENT, STUCK -> "error";
+            default -> NOT_FOUND; // <- this may be a little bit aggressive
+        };
     }
 
     // see https://github.com/alfio-event/alf.io/issues/708
@@ -351,18 +367,26 @@ public class IndexController {
         fileUploadRepository.findById(event.getFileBlobId()).ifPresent(metadata -> {
             var attributes = metadata.getAttributes();
             if (attributes.containsKey(FileBlobMetadata.ATTR_IMG_HEIGHT) && attributes.containsKey(FileBlobMetadata.ATTR_IMG_WIDTH)) {
-                head.appendChild(buildMetaTag("og:image:width", attributes.get(FileBlobMetadata.ATTR_IMG_WIDTH)));
-                head.appendChild(buildMetaTag("og:image:height", attributes.get(FileBlobMetadata.ATTR_IMG_HEIGHT)));
+                head.appendChild(buildOGMetaTag("og:image:width", attributes.get(FileBlobMetadata.ATTR_IMG_WIDTH)));
+                head.appendChild(buildOGMetaTag("og:image:height", attributes.get(FileBlobMetadata.ATTR_IMG_HEIGHT)));
             }
         });
 
         return eventOpenGraph;
     }
 
-    private static Element buildMetaTag(String propertyValue, String contentValue) {
+    private static Element buildOGMetaTag(String propertyValue, String contentValue) {
+        return buildMetaTag("property", propertyValue, contentValue);
+    }
+
+    private static Element buildMetaTag(String name, String content) {
+        return buildMetaTag("name", name, content);
+    }
+
+    private static Element buildMetaTag(String property, String propertyValue, String content) {
         var meta = new Element("meta");
-        meta.setAttribute("property", propertyValue);
-        meta.setAttribute("content", contentValue);
+        meta.setAttribute(property, propertyValue);
+        meta.setAttribute("content", content);
         return meta;
     }
 
@@ -373,15 +397,15 @@ public class IndexController {
     @GetMapping(value = {
         "/event/{eventShortName}/code/{code}",
         "/e/{eventShortName}/c/{code}"})
-    public String redirectCode(@PathVariable("eventShortName") String eventName,
+    public String redirectCode(@PathVariable(EVENT_SHORT_NAME) String eventName,
                                @PathVariable("code") String code) {
-        return "redirect:" + UriComponentsBuilder.fromPath("/api/v2/public/event/{eventShortName}/code/{code}")
-            .build(Map.of("eventShortName", eventName, "code", code));
+        return REDIRECT + UriComponentsBuilder.fromPath("/api/v2/public/event/{eventShortName}/code/{code}")
+            .build(Map.of(EVENT_SHORT_NAME, eventName, "code", code));
     }
 
     @GetMapping("/e/{eventShortName}")
-    public String redirectEvent(@PathVariable("eventShortName") String eventName) {
-        return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of("eventShortName", eventName));
+    public String redirectEvent(@PathVariable(EVENT_SHORT_NAME) String eventName) {
+        return REDIRECT + UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of(EVENT_SHORT_NAME, eventName));
     }
 
     // login related
@@ -420,7 +444,7 @@ public class IndexController {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
             var nonce = addCspHeader(response, false);
-            model.addAttribute("nonce", nonce);
+            model.addAttribute(NONCE, nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
     }
@@ -463,7 +487,7 @@ public class IndexController {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
             var nonce = addCspHeader(response, false);
-            model.addAttribute("nonce", nonce);
+            model.addAttribute(NONCE, nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
         }
     }

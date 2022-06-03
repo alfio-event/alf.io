@@ -29,6 +29,9 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
+import org.springframework.session.web.http.CookieHttpSessionIdResolver;
+import org.springframework.session.web.http.HeaderHttpSessionIdResolver;
+import org.springframework.session.web.http.HttpSessionIdResolver;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -37,14 +40,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.AbstractUrlBasedView;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
+import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
+
+
 @Configuration(proxyBeanMethods = false)
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
 @EnableWebMvc
-@EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60) //4h
+@EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60, tableName = "ALFIO_SPRING_SESSION") //4h
 public class MvcConfiguration implements WebMvcConfigurer {
 
     private final Environment environment;
@@ -127,5 +135,41 @@ public class MvcConfiguration implements WebMvcConfigurer {
         var resolver = new UrlBasedViewResolver();
         resolver.setViewClass(AbstractUrlBasedView.class);
         return resolver;
+    }
+
+    @Bean
+    public HttpSessionIdResolver httpSessionIdResolver() {
+        var publicSessionIdResolver = HeaderHttpSessionIdResolver.xAuthToken();
+        var adminSessionIdResolver = new CookieHttpSessionIdResolver();
+        return new HttpSessionIdResolver() {
+            @Override
+            public List<String> resolveSessionIds(HttpServletRequest request) {
+                return isPublic(request) ? publicSessionIdResolver.resolveSessionIds(request)
+                    : adminSessionIdResolver.resolveSessionIds(request);
+            }
+
+            @Override
+            public void setSessionId(HttpServletRequest request, HttpServletResponse response, String sessionId) {
+                if (isPublic(request)) {
+                    publicSessionIdResolver.setSessionId(request, response, sessionId);
+                } else {
+                    adminSessionIdResolver.setSessionId(request, response, sessionId);
+                }
+            }
+
+            @Override
+            public void expireSession(HttpServletRequest request, HttpServletResponse response) {
+                if (isPublic(request)) {
+                    publicSessionIdResolver.expireSession(request, response);
+                } else {
+                    adminSessionIdResolver.expireSession(request, response);
+                }
+            }
+
+            private static boolean isPublic(HttpServletRequest request) {
+                var requestURI = request.getRequestURI();
+                return requestURI.equals("/") || requestURI.startsWith(API_V2_PUBLIC_PATH);
+            }
+        };
     }
 }

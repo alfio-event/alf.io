@@ -38,6 +38,8 @@ import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
 import java.net.http.HttpClient;
 
+import static alfio.config.Initializer.PROFILE_OPENID;
+
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 public class WebSecurityConfig {
@@ -54,7 +56,7 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    @Profile("openid")
+    @Profile(PROFILE_OPENID)
     public AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager(Environment environment,
                                                                              HttpClient httpClient,
                                                                              ConfigurationManager configurationManager,

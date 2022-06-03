@@ -30,6 +30,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.LazyCsrfTokenRepository;
 
 import java.time.Duration;
 import java.util.Map;
@@ -60,5 +63,10 @@ public class TestConfiguration {
     @Bean
     ObjectMapper objectMapper() {
         return BaseConfiguration.buildObjectMapper();
+    }
+
+    @Bean
+    CsrfTokenRepository csrfTokenRepository() {
+        return new CookieCsrfTokenRepository();
     }
 }

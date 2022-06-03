@@ -24,6 +24,7 @@ import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jetty.http.HttpCookie;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
@@ -48,6 +49,8 @@ import javax.sql.DataSource;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
+import static alfio.config.Initializer.XSRF_TOKEN;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
 
@@ -93,7 +96,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        if (environment.acceptsProfiles(Profiles.of("!" + Initializer.PROFILE_DEV))) {
+        if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
             http.requiresChannel().antMatchers("/healthz").requiresInsecure()
                 .and()
                 .requiresChannel().mvcMatchers("/**").requiresSecure();
@@ -190,14 +193,16 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
             HttpServletResponse res = (HttpServletResponse) servletResponse;
             var reqUri = req.getRequestURI();
 
-            if ((reqUri.startsWith("/api/v2/public/") || reqUri.startsWith("/admin/api/") || reqUri.startsWith("/api/v2/admin/")) && "GET".equalsIgnoreCase(req.getMethod())) {
+            if ((reqUri.startsWith(API_V2_PUBLIC_PATH) || reqUri.startsWith(ADMIN_API) || reqUri.startsWith("/api/v2/admin/")) && "GET".equalsIgnoreCase(req.getMethod())) {
                 CsrfToken csrf = csrfTokenRepository.loadToken(req);
                 if (csrf == null) {
                     csrf = csrfTokenRepository.generateToken(req);
                 }
-                Cookie cookie = new Cookie("XSRF-TOKEN", csrf.getToken());
-                cookie.setPath("/");
-                res.addCookie(cookie);
+                if (reqUri.startsWith(API_V2_PUBLIC_PATH)) {
+                    res.addHeader(XSRF_TOKEN, csrf.getToken());
+                } else {
+                    addCookie(res, csrf);
+                }
             }
             filterChain.doFilter(servletRequest, servletResponse);
         }, RecaptchaLoginFilter.class);
@@ -205,6 +210,17 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, AUTHENTICATE), RecaptchaLoginFilter.class);
         }
+    }
+
+    private void addCookie(HttpServletResponse res, CsrfToken csrf) {
+        Cookie cookie = new Cookie(XSRF_TOKEN, csrf.getToken());
+        cookie.setPath("/");
+        boolean prod = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
+        cookie.setSecure(prod);
+        if (prod) {
+            cookie.setComment(HttpCookie.SAME_SITE_STRICT_COMMENT);
+        }
+        res.addCookie(cookie);
     }
 
     /**
