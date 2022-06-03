@@ -215,9 +215,9 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     private void addCookie(HttpServletResponse res, CsrfToken csrf) {
         Cookie cookie = new Cookie(XSRF_TOKEN, csrf.getToken());
         cookie.setPath("/");
-        boolean dev = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
-        cookie.setSecure(dev);
-        if (dev) {
+        boolean prod = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
+        cookie.setSecure(prod);
+        if (prod) {
             cookie.setComment(HttpCookie.SAME_SITE_STRICT_COMMENT);
         }
         res.addCookie(cookie);
