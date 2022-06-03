@@ -23,7 +23,6 @@ import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,26 +43,27 @@ public class OrganizationsApiV1Controller {
     }
 
     @PostMapping("/create")
-    public Organization createOrganization(@RequestBody OrganizationModification om) {
+    public ResponseEntity<Organization> createOrganization(@RequestBody OrganizationModification om) {
+        if (om == null || !om.isValid(true)) {
+            return ResponseEntity.badRequest().build();
+        }
         int orgId = userManager.createOrganization(om);
-        return userManager.findOrganizationById(orgId, UserManager.ADMIN_USERNAME);
+        return ResponseEntity.ok(userManager.findOrganizationById(orgId, UserManager.ADMIN_USERNAME));
     }
 
     @GetMapping("/list")
-    @ResponseStatus(HttpStatus.OK)
     public List<Organization> getAllOrganizations() {
         return userManager.findUserOrganizations(UserManager.ADMIN_USERNAME);
     }
 
     @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public Organization getSingleOrganization(@PathVariable("id") int organizationId) {
-        return userManager.findOrganizationById(organizationId, UserManager.ADMIN_USERNAME);
+    public ResponseEntity<Organization> getSingleOrganization(@PathVariable("id") int organizationId) {
+        return ResponseEntity.of(userManager.findOptionalOrganizationById(organizationId, UserManager.ADMIN_USERNAME));
     }
 
     @PutMapping("/{id}/api-key")
     public OrganizationApiKey createApiKeyForOrganization(@PathVariable("id") int organizationId) {
-        var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName("ROLE_API_CLIENT"), User.Type.API_KEY, null, "Auto Generated API Key");
+        var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName("ROLE_API_CLIENT"), User.Type.API_KEY, null, "Auto-generated API Key");
         return new OrganizationApiKey(organizationId, user.getUsername());
     }
 
@@ -71,7 +71,7 @@ public class OrganizationsApiV1Controller {
     public ResponseEntity<Organization> update(@PathVariable("id") int organizationId,
                                                @RequestBody OrganizationModification om,
                                                Principal principal) {
-        if (om == null || !om.isValid() || organizationId != om.getId()) {
+        if (om == null || !om.isValid(false) || organizationId != om.getId()) {
             return ResponseEntity.badRequest().build();
         }
         userManager.updateOrganization(om, principal);
@@ -82,7 +82,7 @@ public class OrganizationsApiV1Controller {
     public ResponseEntity<Void> delete(@PathVariable("id") int organizationId, Principal principal) {
         boolean result = organizationDeleter.deleteOrganization(organizationId, principal);
         if (result) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.badRequest().build();
         }

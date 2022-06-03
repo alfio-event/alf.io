@@ -48,9 +48,8 @@ public class OrganizationModification {
     }
 
     @JsonIgnore
-    public boolean isValid() {
-        return id != null
-            && id > 0
+    public boolean isValid(boolean create) {
+        return (create || (id != null && id > 0))
             && StringUtils.isNotEmpty(name)
             && StringUtils.isNotEmpty(email)
             && StringUtils.isNotEmpty(description);
