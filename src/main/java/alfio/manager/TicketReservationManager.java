@@ -2589,7 +2589,7 @@ public class TicketReservationManager {
                 // depending on when we actually receive the event, we could have two possibilities:
                 //
                 //      1) the user is still waiting on the payment page. In this case, there's no harm in reverting the reservation status to PENDING
-                //      2) the user has given up and we're officially in background mode.
+                //      2) the user has given up, and we're officially in background mode.
                 //
                 // either way, we have to notify the user about the charge failure. Then:
                 //
