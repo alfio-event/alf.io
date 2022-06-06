@@ -30,7 +30,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
@@ -62,7 +61,7 @@ public class MailjetMailer implements Mailer  {
         List<Map<String, String>> recipients = new ArrayList<>();
         recipients.add(Collections.singletonMap("Email", to));
         if(cc != null && !cc.isEmpty()) {
-            recipients.addAll(cc.stream().map(email -> Collections.singletonMap("Email", email)).collect(Collectors.toList()));
+            recipients.addAll(cc.stream().map(email -> Collections.singletonMap("Email", email)).toList());
         }
 
         mailPayload.put("FromEmail", fromEmail);
@@ -78,7 +77,7 @@ public class MailjetMailer implements Mailer  {
         }
 
         if(attachment != null && attachment.length > 0) {
-            mailPayload.put("Attachments", Arrays.stream(attachment).map(MailjetMailer::fromAttachment).collect(Collectors.toList()));
+            mailPayload.put("Attachments", Arrays.stream(attachment).map(MailjetMailer::fromAttachment).toList());
         }
 
         HttpRequest request = HttpRequest.newBuilder(URI.create("https://api.mailjet.com/v3/send"))
@@ -90,7 +89,7 @@ public class MailjetMailer implements Mailer  {
         try {
             HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
             if(!HttpUtils.callSuccessful(response)) {
-                log.warn("sending email was not successful:" + response);
+                log.warn("sending email was not successful: {}", response);
                 throw new IllegalStateException("Attempt to send a message failed. Result is: "+response.statusCode());
             }
         } catch (IOException e) {

@@ -35,6 +35,7 @@ import alfio.util.RenderedTemplate;
 import alfio.util.TemplateManager;
 import alfio.util.checkin.TicketCheckInUtil;
 import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
@@ -179,7 +180,7 @@ public class CustomMessageManager {
 
     public static Mailer.Attachment generateTicketAttachment(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {
         Map<String, String> model = getModelForTicket(ticket, reservation, ticketCategory, organization);
-        return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
+        return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, MediaType.APPLICATION_PDF_VALUE, model, Mailer.AttachmentIdentifier.TICKET_PDF);
     }
 
     private static Map<String, String> getModelForTicket(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {

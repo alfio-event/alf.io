@@ -495,7 +495,7 @@ class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("UTC-8")).plusMonths(3).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
-        List<Event> events = trm.getNotifiableEventsStream().collect(Collectors.toList());
+        List<Event> events = trm.getNotifiableEventsStream().toList();
         Assertions.assertEquals(0, events.size());
         verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TemplateGenerator.class));
     }

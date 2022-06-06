@@ -131,7 +131,7 @@ public class GroupManager {
     public Optional<GroupModification> loadComplete(int id) {
         return groupRepository.getOptionalById(id)
             .map(wl -> {
-                List<GroupMemberModification> items = groupRepository.getItems(wl.getId()).stream().map(i -> new GroupMemberModification(i.getId(), i.getValue(), i.getDescription())).collect(Collectors.toList());
+                List<GroupMemberModification> items = groupRepository.getItems(wl.getId()).stream().map(i -> new GroupMemberModification(i.getId(), i.getValue(), i.getDescription())).toList();
                 return new GroupModification(wl.getId(), wl.getName(), wl.getDescription(), wl.getOrganizationId(), items);
             });
     }
@@ -165,7 +165,7 @@ public class GroupManager {
     Result<Integer> insertMembers(int groupId, List<GroupMemberModification> members) {
 
         Map<String, List<GroupMemberModification>> grouped = members.stream().collect(Collectors.groupingBy(GroupMemberModification::getValue));
-        List<String> duplicates = grouped.entrySet().stream().filter(e -> e.getValue().size() > 1).map(Map.Entry::getKey).collect(Collectors.toList());
+        List<String> duplicates = grouped.entrySet().stream().filter(e -> e.getValue().size() > 1).map(Map.Entry::getKey).toList();
 
         return new Result.Builder<Integer>()
             .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> ErrorCode.custom("value.duplicate", duplicates.stream().limit(10).collect(Collectors.joining(", ")))))
@@ -216,7 +216,7 @@ public class GroupManager {
 
     @Transactional
     public void deleteWhitelistedTicketsForReservation(String reservationId) {
-        List<Integer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
+        List<Integer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).toList();
         if(!tickets.isEmpty()) {
             int result = groupRepository.deleteExistingWhitelistedTickets(tickets);
             log.trace("deleted {} whitelisted tickets for reservation {}", result, reservationId);
@@ -239,7 +239,7 @@ public class GroupManager {
         List<GroupMemberModification> notPresent = modification.getItems().stream()
             .filter(i -> i.getId() == null && !existingValues.contains(i.getValue().strip().toLowerCase()))
             .distinct()
-            .collect(Collectors.toList());
+            .toList();
 
         if(!notPresent.isEmpty()) {
             var insertResult = insertMembers(listId, notPresent);
@@ -263,7 +263,7 @@ public class GroupManager {
 
     @Transactional
     public boolean deactivateGroup(int groupId) {
-        List<Integer> members = groupRepository.getItems(groupId).stream().map(GroupMember::getId).collect(Collectors.toList());
+        List<Integer> members = groupRepository.getItems(groupId).stream().map(GroupMember::getId).toList();
         if(!members.isEmpty()) {
             Validate.isTrue(deactivateMembers(members, groupId), "error while disabling group members");
         }

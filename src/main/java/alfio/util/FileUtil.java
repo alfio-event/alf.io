@@ -17,6 +17,7 @@
 package alfio.util;
 
 import alfio.model.BillingDocument;
+import org.springframework.http.MediaType;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -41,7 +42,7 @@ public class FileUtil {
 
     public static void sendHeaders(HttpServletResponse response, String eventName, String reservationId, BillingDocument billingDocument) {
         response.setHeader("Content-Disposition", "attachment; filename=\"" + getBillingDocumentFileName(eventName, reservationId, billingDocument) + "\"");
-        response.setContentType("application/pdf");
+        response.setContentType(MediaType.APPLICATION_PDF_VALUE);
     }
 
     public static String getBillingDocumentFileName(String eventShortName, String reservationId, BillingDocument document) {

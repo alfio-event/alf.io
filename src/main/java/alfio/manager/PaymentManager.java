@@ -106,7 +106,7 @@ public class PaymentManager {
 
         return proxiesByMethod.entrySet().stream()
             .filter(e -> e.getValue().size() > 1)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     Stream<PaymentProvider> streamActiveProvidersByProxyAndCapabilities(PaymentProxy paymentProxy,
@@ -133,7 +133,7 @@ public class PaymentManager {
             .filter(p -> !blacklist.contains(p.getKey()))
             .map(proxy -> Pair.of(proxy, paymentMethodsByProxy(context, transactionRequest, proxy)))
             .flatMap(pair -> pair.getRight().stream().map(pm -> new PaymentMethodDTO(pair.getLeft(), pm, PaymentMethodDTO.PaymentMethodStatus.ACTIVE)))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private Set<PaymentMethod> paymentMethodsByProxy(PaymentContext context, TransactionRequest transactionRequest, PaymentProxy proxy) {
@@ -248,14 +248,11 @@ public class PaymentManager {
         return transactionRepository.loadOptionalByReservationId(reservation.getId())
             .filter(transaction -> transaction.getPaymentProxy().getPaymentMethod() == paymentMethod)
             .map(transaction -> {
-                switch(transaction.getStatus()) {
-                    case COMPLETE:
-                        return PaymentResult.successful(transaction.getPaymentId());
-                    case FAILED:
-                        return PaymentResult.failed(null);
-                    default:
-                        return PaymentResult.initialized(transaction.getPaymentId());
-                }
+                return switch (transaction.getStatus()) {
+                    case COMPLETE -> PaymentResult.successful(transaction.getPaymentId());
+                    case FAILED -> PaymentResult.failed(null);
+                    default -> PaymentResult.initialized(transaction.getPaymentId());
+                };
             });
     }
 
@@ -299,7 +296,7 @@ public class PaymentManager {
             return status == PaymentMethodStatus.ACTIVE;
         }
 
-        @Deprecated
+        @Deprecated(forRemoval = true)
         public Set<String> getOnlyForCurrency() {
             return paymentProxy.getOnlyForCurrency();
         }

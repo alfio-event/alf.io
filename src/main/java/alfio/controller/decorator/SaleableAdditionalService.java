@@ -115,17 +115,12 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getVatIncluded() {
-        switch (getVatType()) {
-            case INHERITED:
-                return event.isVatIncluded();
-            case NONE:
-            case CUSTOM_EXCLUDED:
-                return false;
-            case CUSTOM_INCLUDED:
-                return true;
-            default:
-                return false;
-        }
+        return switch (getVatType()) {
+            case INHERITED -> event.isVatIncluded();
+            case NONE, CUSTOM_EXCLUDED -> false;
+            case CUSTOM_INCLUDED -> true;
+            default -> false;
+        };
     }
 
     public BigDecimal getVatPercentage() {

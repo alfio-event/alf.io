@@ -27,7 +27,6 @@ import org.springframework.validation.FieldError;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ValidatedResponse<T> {
     private final ValidationResult validationResult;
@@ -42,15 +41,14 @@ public class ValidatedResponse<T> {
     public static <T> ValidatedResponse<T> toResponse(BindingResult bindingResult, T value) {
 
         var transformed = bindingResult.getAllErrors().stream().map(objectError -> {
-            if (objectError instanceof FieldError) {
-                var fe = (FieldError) objectError;
+            if (objectError instanceof FieldError fe) {
                 return new ValidationResult.ErrorDescriptor(fe.getField(), "", fe.getCode(), fe.getArguments());
             } else {
                 return new ValidationResult.ErrorDescriptor(objectError.getObjectName(), "", objectError.getCode(), objectError.getArguments());
             }
-        }).collect(Collectors.toList());
+        }).toList();
 
-        List<WarningMessage> warnings = bindingResult instanceof CustomBindingResult ? ((CustomBindingResult)bindingResult).getWarnings() : List.of();
+        List<WarningMessage> warnings = bindingResult instanceof CustomBindingResult cbd ? cbd.getWarnings() : List.of();
         return new ValidatedResponse<>(ValidationResult.failed(transformed, warnings), value);
     }
 
@@ -60,7 +58,7 @@ public class ValidatedResponse<T> {
         }
         var transformed = result.getErrors().stream()
             .map(ec -> new ValidationResult.ErrorDescriptor(objectName, "", ec.getCode()))
-            .collect(Collectors.toList());
+            .toList();
 
         return new ValidatedResponse<>(ValidationResult.failed(transformed), null);
     }
@@ -76,7 +74,7 @@ public class ValidatedResponse<T> {
     public List<ErrorDescriptor> getValidationErrors() {
         return validationResult.getValidationErrors().stream()
             .map(ed -> new ErrorDescriptor(ed.getFieldName(), ed.getCode(), fromArray(ed.getArguments())))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public int getErrorCount() {

@@ -53,6 +53,7 @@ import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.springframework.http.MediaType.APPLICATION_PDF_VALUE;
 
 @Component
 public class BillingDocumentManager {
@@ -60,7 +61,6 @@ public class BillingDocumentManager {
     private static final Logger log = LoggerFactory.getLogger(BillingDocumentManager.class);
 
     static final String CREDIT_NOTE_NUMBER = "creditNoteNumber";
-    private static final String APPLICATION_PDF = "application/pdf";
     private final BillingDocumentRepository billingDocumentRepository;
     private final Json json;
     private final ConfigurationManager configurationManager;
@@ -124,16 +124,14 @@ public class BillingDocumentManager {
         model.put("eventId", purchaseContext.event().map(ev -> Integer.toString(ev.getId())).orElse(null));
         model.put("language", json.asJsonString(language));
         model.put("reservationEmailModel", json.asJsonString(getOrCreateBillingDocument(purchaseContext, ticketReservation, username, orderSummary).getModel()));
-        switch (documentType) {
-            case INVOICE:
-                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-            case RECEIPT:
-                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
-            case CREDIT_NOTE:
-                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, APPLICATION_PDF, model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
-            default:
-                throw new IllegalStateException(documentType+" is not supported");
-        }
+        return switch (documentType) {
+            case INVOICE ->
+                Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF_VALUE, model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+            case RECEIPT ->
+                Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, APPLICATION_PDF_VALUE, model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+            case CREDIT_NOTE ->
+                Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, APPLICATION_PDF_VALUE, model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
+        };
     }
 
     @Transactional
@@ -252,7 +250,7 @@ public class BillingDocumentManager {
             ticketsWithCategory = ticketCategoryRepository.findByIds(ticketsByCategory.keySet())
                 .stream()
                 .flatMap(tc -> ticketsByCategory.get(tc.getId()).stream().map(t -> new TicketWithCategory(t, tc)))
-                .collect(toList());
+                .toList();
         } else {
             ticketsWithCategory = Collections.emptyList();
         }

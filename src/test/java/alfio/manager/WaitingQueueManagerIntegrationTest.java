@@ -128,7 +128,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
         boolean result = waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH);
         assertTrue(result);
-        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).toList();
         assertEquals(1, subscriptions.size());
         Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
@@ -150,7 +150,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
         boolean result = waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH);
         assertTrue(result);
-        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).toList();
         assertEquals(1, subscriptions.size());
         Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
@@ -242,7 +242,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         ticketReservationManager.deleteOfflinePayment(event, reservationIdSingle, false, false, null);
 
-        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).toList();
         assertEquals(1, subscriptions.size());
         Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
@@ -304,7 +304,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         ticketReservationManager.deleteOfflinePayment(event, reservationIdSingle, false, false, null);
 
-        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).toList();
         assertEquals(1, subscriptions.size());
         Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
@@ -358,7 +358,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         ticketReservationManager.deleteOfflinePayment(event, reservationIdSingleFirst, false, false, null);
         ticketReservationManager.deleteOfflinePayment(event, reservationIdSingleSecond, false, false, null);
 
-        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).toList();
         assertEquals(2, subscriptions.size());
         Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime> subscriptionDetail = subscriptions.get(0);
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
@@ -423,7 +423,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(ticketCategoryResult.isSuccess());
         assertEquals(1, ticketRepository.countReleasedTicketInCategory(event.getId(), first.getId()).intValue());
         //now we should have an extra available ticket
-        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).toList();
         assertEquals(1, subscriptions.size());
     }
 
@@ -453,7 +453,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         ticketCategoryRepository.update(first.getId(), first.getName(), first.getInception(event.getZoneId()), event.now(clockProvider).minusMinutes(1L), first.getMaxTickets(), first.isAccessRestricted(),
             MonetaryUtil.unitToCents(first.getPrice(), first.getCurrencyCode()), first.getCode(), null, null, null, null, first.getTicketCheckInStrategy(), first.getTicketAccessType());
 
-        List<Integer> ticketIds = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
+        List<Integer> ticketIds = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).toList();
         assertEquals(2, ticketIds.size());
 
         ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);

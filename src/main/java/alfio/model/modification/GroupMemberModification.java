@@ -43,11 +43,9 @@ public class GroupMemberModification {
     public boolean equals(Object o) {
         if (this == o) return true;
 
-        if (!(o instanceof GroupMemberModification)) {
+        if (!(o instanceof GroupMemberModification that)) {
             return false;
         }
-
-        GroupMemberModification that = (GroupMemberModification) o;
 
         return new EqualsBuilder()
             .append(id, that.id)

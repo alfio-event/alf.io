@@ -147,17 +147,12 @@ public class AdditionalService {
     }
 
     public static PriceContainer.VatStatus getVatStatus(VatType vatType, PriceContainer.VatStatus eventVatStatus) {
-        switch (vatType) {
-            case INHERITED:
-                return eventVatStatus;
-            case NONE:
-                return PriceContainer.VatStatus.NONE;
-            case CUSTOM_EXCLUDED:
-                return PriceContainer.VatStatus.NOT_INCLUDED;
-            case CUSTOM_INCLUDED:
-                return PriceContainer.VatStatus.INCLUDED;
-            default:
-                return PriceContainer.VatStatus.NOT_INCLUDED;
-        }
+        return switch (vatType) {
+            case INHERITED -> eventVatStatus;
+            case NONE -> PriceContainer.VatStatus.NONE;
+            case CUSTOM_EXCLUDED -> PriceContainer.VatStatus.NOT_INCLUDED;
+            case CUSTOM_INCLUDED -> PriceContainer.VatStatus.INCLUDED;
+            default -> PriceContainer.VatStatus.NOT_INCLUDED;
+        };
     }
 }

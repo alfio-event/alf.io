@@ -268,8 +268,8 @@ public class NotificationManager {
             var attachmentModel = new HashMap<String, String>();
             // attachment model expects non-string properties to be JSON, so we convert them
             renderedTemplate.getSrcModel().forEach((k, v) -> {
-                if(v instanceof String) {
-                    attachmentModel.put(k, (String) v);
+                if(v instanceof String s) {
+                    attachmentModel.put(k, s);
                 } else {
                     attachmentModel.put(k, Json.toJson(v));
                 }
@@ -305,7 +305,7 @@ public class NotificationManager {
             .filter(Objects::nonNull)
             .map(String::trim)
             .filter(StringUtils::isNotBlank)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public void sendSimpleEmail(PurchaseContext event, String reservationId, String recipient, String subject, TemplateGenerator textBuilder) {
@@ -429,8 +429,7 @@ public class NotificationManager {
         Set<Mailer.AttachmentIdentifier> alreadyPresents = Arrays.stream(attachments).map(Mailer.Attachment::getIdentifier).filter(Objects::nonNull).collect(Collectors.toSet());
         //
         List<Mailer.Attachment> toReinterpret = Arrays.stream(attachments)
-            .filter(attachment -> attachment.getIdentifier() != null && !attachment.getIdentifier().reinterpretAs().isEmpty())
-            .collect(Collectors.toList());
+            .filter(attachment -> attachment.getIdentifier() != null && !attachment.getIdentifier().reinterpretAs().isEmpty()).toList();
 
         List<Mailer.Attachment> generated = Arrays.stream(attachments)
             .map(attachment -> this.transformAttachment(attachment, attachment.getIdentifier()))
@@ -445,7 +444,7 @@ public class NotificationManager {
             )
         );
 
-        generated.addAll(reinterpreted.stream().filter(Objects::nonNull).collect(Collectors.toList()));
+        generated.addAll(reinterpreted.stream().filter(Objects::nonNull).toList());
         return generated.toArray(new Mailer.Attachment[0]);
     }
 

@@ -17,13 +17,16 @@
 
 package alfio.extension;
 
+import org.mozilla.javascript.Token;
+import org.mozilla.javascript.ast.AstNode;
+import org.mozilla.javascript.ast.FunctionNode;
+import org.mozilla.javascript.ast.Name;
+import org.mozilla.javascript.ast.VariableInitializer;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.mozilla.javascript.Token;
-import org.mozilla.javascript.ast.*;
 
 /**
  *
@@ -40,8 +43,7 @@ class JSSymbol {
 
     public JSSymbol(AstNode node) {
         this.node = node;
-        if (node instanceof FunctionNode) {
-            FunctionNode funcNode = (FunctionNode)node;
+        if (node instanceof FunctionNode funcNode) {
             List<AstNode> args = funcNode.getParams();
             if (args != null) {
                 for (AstNode argNode : args) {
@@ -61,10 +63,7 @@ class JSSymbol {
             AstNode childNode = child.getNode();
             if (childNode instanceof VariableInitializer) {
                 String varName = ((Name)((VariableInitializer) childNode).getTarget()).getIdentifier();
-                if (localVars.containsKey(varName)) {
-                    return;
-                }
-                localVars.put(varName, child);
+                localVars.computeIfAbsent(varName, s -> localVars.put(s, child));
             }
         }
         children.add(child);
@@ -75,7 +74,7 @@ class JSSymbol {
         addChild(new JSSymbol(node));
     }
 
-    public ArrayList<JSSymbol> getChildren() {
+    public List<JSSymbol> getChildren() {
         return new ArrayList<>(children);
     }
 

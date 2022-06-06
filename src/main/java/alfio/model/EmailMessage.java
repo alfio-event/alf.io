@@ -106,13 +106,12 @@ public class EmailMessage implements Comparable<EmailMessage> {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof EmailMessage)) {
+        if(!(obj instanceof EmailMessage other)) {
             return false;
         }
         if(obj == this) {
             return true;
         }
-        EmailMessage other = (EmailMessage)obj;
         return new EqualsBuilder()
             .append(eventId, other.eventId)
             .append(subscriptionDescriptorId, other.subscriptionDescriptorId)

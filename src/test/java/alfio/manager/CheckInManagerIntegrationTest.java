@@ -51,7 +51,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -135,8 +134,7 @@ class CheckInManagerIntegrationTest {
         ticketReservationManager.confirmOfflinePayment(event, reservationId, eventAndUser.getRight());
 
         var returnedAdditionalServices = ticketReservationManager.findTicketsInReservation(reservationId).stream()
-            .filter(ticket -> !checkInManager.getAdditionalServicesForTicket(ticket).isEmpty())
-            .collect(Collectors.toList());
+            .filter(ticket -> !checkInManager.getAdditionalServicesForTicket(ticket).isEmpty()).toList();
         //
         assertEquals(1, returnedAdditionalServices.size());
         assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), returnedAdditionalServices.get(0).getId());

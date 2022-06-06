@@ -46,7 +46,6 @@ import java.util.stream.Collectors;
 import static alfio.extension.ScriptingExecutionService.EXTENSION_CONFIGURATION_PARAMETERS;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 @Service
@@ -181,7 +180,7 @@ public class ExtensionService {
             for (ExtensionMetadata.Field field : requireNonNullElse(parameters.getFields(), List.<ExtensionMetadata.Field>of())) {
                 for (String level : parameters.getConfigurationLevels()) {
                     int confFieldId = extensionRepository.registerExtensionConfigurationMetadata(extensionId, field.getName(), field.getDescription(), field.getType(), level, field.isRequired()).getKey();
-                    List<ExtensionParameterKeyValue> filteredParam = extensionParameterKeyValue.stream().filter(kv -> field.getName().equals(kv.getName()) && level.equals(kv.getConfigurationLevel())).collect(toList());
+                    List<ExtensionParameterKeyValue> filteredParam = extensionParameterKeyValue.stream().filter(kv -> field.getName().equals(kv.getName()) && level.equals(kv.getConfigurationLevel())).toList();
                     var parameterSources = filteredParam.stream()
                         .map(kv -> new MapSqlParameterSource("ecmId", confFieldId)
                             .addValue("confPath", kv.getConfigurationPath())
@@ -239,8 +238,7 @@ public class ExtensionService {
         extensionRepository.deleteSettingValue(level, path);
         List<ExtensionMetadataValue> toUpdate2 = (toUpdate == null ? Collections.emptyList() : toUpdate);
         List<ExtensionMetadataValue> filtered = toUpdate2.stream()
-            .filter(f -> StringUtils.trimToNull(f.getValue()) != null)
-            .collect(toList());
+            .filter(f -> StringUtils.trimToNull(f.getValue()) != null).toList();
         var parameterSources = filtered.stream()
             .map(kv -> new MapSqlParameterSource("ecmId", kv.getId())
                 .addValue("confPath", path)

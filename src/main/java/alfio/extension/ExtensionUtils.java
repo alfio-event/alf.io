@@ -100,24 +100,22 @@ public final class ExtensionUtils {
 
     static Object unwrap(Object o) {
         if (o instanceof Scriptable) {
-            if (o instanceof NativeArray) {
+            if (o instanceof NativeArray na) {
                 List<Object> res = new ArrayList<>();
-                var na = (NativeArray) o;
                 for (var a : na) {
                     res.add(unwrap(a));
                 }
                 return res;
-            } else if (o instanceof NativeJavaObject) {
-                return ((NativeJavaObject) o).unwrap();
-            } else if (o instanceof NativeObject) {
-                var na = (NativeObject) o;
+            } else if (o instanceof NativeJavaObject njo) {
+                return njo.unwrap();
+            } else if (o instanceof NativeObject no) {
                 Map<Object, Object> res = new LinkedHashMap<>();
-                for (var kv : na.entrySet()) {
+                for (var kv : no.entrySet()) {
                     res.put(kv.getKey(), unwrap(kv.getValue()));
                 }
                 return res;
-            } else if (o instanceof IdScriptableObject) {
-                return parseIdScriptableObject((IdScriptableObject) o);
+            } else if (o instanceof IdScriptableObject ids) {
+                return parseIdScriptableObject(ids);
             }
         } else if (o instanceof CharSequence) {
             return o.toString();
@@ -127,17 +125,13 @@ public final class ExtensionUtils {
 
     private static Object parseIdScriptableObject(IdScriptableObject object) {
         var className = object.getClassName();
-        switch (className) {
-            case "String":
-                return ScriptRuntime.toCharSequence(object);
-            case "Boolean":
-                return Context.jsToJava(object, Boolean.class);
-            case "Date": {
-                return Context.jsToJava(object, Date.class);
-            }
-        }
-        // better safe than sorry: we ignore all the unknown objects
-        return null;
+        return switch (className) {
+            case "String" -> ScriptRuntime.toCharSequence(object);
+            case "Boolean" -> Context.jsToJava(object, Boolean.class);
+            case "Date" -> Context.jsToJava(object, Date.class);
+            // better safe than sorry: we ignore all the unknown objects
+            default -> null;
+        };
     }
 
     /**

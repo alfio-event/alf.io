@@ -70,10 +70,9 @@ public class Configuration implements Comparable<Configuration> {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof  Configuration)) {
+        if (!(obj instanceof Configuration o)) {
             return false;
         }
-        Configuration o = (Configuration) obj;
         return new EqualsBuilder().append(configurationKey, o.configurationKey).append(configurationPathLevel, configurationPathLevel).isEquals();
     }
 

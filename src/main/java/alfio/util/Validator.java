@@ -38,7 +38,6 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 
@@ -197,7 +196,7 @@ public final class Validator {
         if (errors.hasFieldErrors()) {
             return ValidationResult.failed(errors.getFieldErrors()
                     .stream().map(ValidationResult.ErrorDescriptor::fromFieldError)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
         return ValidationResult.success();
     }
@@ -245,7 +244,7 @@ public final class Validator {
             return additionalFieldsForEvent.stream()
                 .filter(field -> field.rulesApply(ticketCategoryId))
                 .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ATTENDEE || (isFirstTicket && Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent()))
-                .collect(Collectors.toList());
+                .toList();
         }
     }
 
@@ -455,7 +454,10 @@ public final class Validator {
     }
 
     public static ValidationResult validateAdditionalFields(List<TicketFieldConfiguration> fieldConf, EventModification.AdditionalField field, Errors errors){
-        String duplicateName = fieldConf.stream().filter(f->f.getName().equalsIgnoreCase(field.getName())).map(TicketFieldConfiguration::getName).findAny().orElse("");
+        String duplicateName = fieldConf.stream().map(TicketFieldConfiguration::getName)
+            .filter(name -> name.equalsIgnoreCase(field.getName()))
+            .findAny()
+            .orElse("");
         if(StringUtils.isNotBlank(duplicateName)){
             errors.rejectValue("name", ErrorCode.DUPLICATE);
         }

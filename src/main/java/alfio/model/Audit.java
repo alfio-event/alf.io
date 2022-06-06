@@ -102,7 +102,8 @@ public class Audit {
         this.eventTime = eventTime;
         this.entityType = entityType;
         this.entityId = entityId;
-        this.modifications = modifications == null ? null : Json.fromJson(modifications, new TypeReference<List<Map<String, Object>>>() {});
+        this.modifications = modifications == null ? null : Json.fromJson(modifications, new TypeReference<>() {
+        });
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;

@@ -217,7 +217,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         //promo code at event level
         eventManager.addPromoCode(PROMO_CODE, context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null, null);
 
-        hiddenCategoryId = ticketCategoryRepository.findAllTicketCategories(context.event.getId()).stream().filter(TicketCategory::isAccessRestricted).collect(Collectors.toList()).get(0).getId();
+        hiddenCategoryId = ticketCategoryRepository.findAllTicketCategories(context.event.getId()).stream().filter(TicketCategory::isAccessRestricted).toList().get(0).getId();
 
         eventManager.addPromoCode(HIDDEN_CODE, context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId, null);
 
@@ -1046,7 +1046,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             var ticketPdfMockResp = new MockHttpServletResponse();
             ticketApiV2Controller.generateTicketPdf(context.event.getShortName(), ticket.getUuid(), ticketPdfMockResp);
-            assertEquals("application/pdf", ticketPdfMockResp.getContentType());
+            assertEquals(MediaType.APPLICATION_PDF_VALUE, ticketPdfMockResp.getContentType());
 
             var ticketQRCodeResp = new MockHttpServletResponse();
             ticketApiV2Controller.showQrCode(context.event.getShortName(), ticket.getUuid(), ticketQRCodeResp);
