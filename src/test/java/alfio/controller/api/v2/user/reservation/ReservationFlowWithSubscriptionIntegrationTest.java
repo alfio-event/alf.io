@@ -83,7 +83,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlowTest {
+class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;
@@ -205,6 +205,8 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
         var descriptor = subscriptionRepository.findOne(descriptorId).orElseThrow();
         var subscriptionIdAndPin = confirmAndLinkSubscription(descriptor, event.getOrganizationId(), subscriptionRepository, ticketReservationRepository, maxEntries);
         this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
+        var linkedSubscriptions = eventManager.getLinkedSubscriptionIds(event.getId(), event.getOrganizationId());
+        assertEquals(List.of(descriptorId), linkedSubscriptions);
         this.context = new ReservationFlowContext(event, eventAndUser.getRight() + "_owner", subscriptionIdAndPin.getLeft(), subscriptionIdAndPin.getRight());
     }
 
@@ -218,7 +220,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     }
 
     @Test
-    public void inPersonEventWithSubscriptionUsingID() {
+    void inPersonEventWithSubscriptionUsingID() {
         var modifiedContext = new ReservationFlowContext(context.event, context.userId, context.subscriptionId, null);
         super.testAddSubscription(modifiedContext, 1);
         var eventInfo = eventStatisticsManager.getEventWithAdditionalInfo(context.event.getShortName(), context.userId);
@@ -227,13 +229,13 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     }
 
     @Test
-    public void inPersonEventWithSubscriptionUsingPin() {
+    void inPersonEventWithSubscriptionUsingPin() {
         super.testAddSubscription(context, 1);
         assertErrorWhenTransferToAnotherOrg();
     }
 
     @Test
-    public void triggerMaxSubscriptionPerEvent() {
+    void triggerMaxSubscriptionPerEvent() {
         super.testAddSubscription(context, 1);
         var params = Map.of("subscriptionId", context.subscriptionId, "eventId", context.event.getId());
         assertEquals(1, jdbcTemplate.queryForObject("select count(*) from tickets_reservation where subscription_id_fk = :subscriptionId and event_id_fk = :eventId", params, Integer.class));
@@ -249,7 +251,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     }
 
     @Test
-    public void triggerMaxUsage() {
+    void triggerMaxUsage() {
         assertEquals(2, subscriptionRepository.findSubscriptionById(context.subscriptionId).getMaxEntries());
         jdbcTemplate.update("update subscription set max_entries = 1 where id = :id::uuid", Map.of("id", context.subscriptionId));
         super.testAddSubscription(context, 1);
@@ -316,7 +318,7 @@ public class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservat
     }
 
     @Test
-    public void testUpdateEventHeaderError() {
+    void testUpdateEventHeaderError() {
         List<TicketCategoryModification> categories = Collections.singletonList(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
                 new DateTimeModification(LocalDate.now(clockProvider.getClock()), LocalTime.now(clockProvider.getClock())),

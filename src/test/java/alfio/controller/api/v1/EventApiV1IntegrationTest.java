@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
@@ -164,7 +164,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
 
     @Test
-    public void createTest() {
+    void createTest() {
 
         EventCreationRequest eventCreationRequest = creationRequest();
 
@@ -179,7 +179,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         assertEquals(eventCreationRequest.getTickets().getCurrency(),event.getCurrency());
         assertEquals(eventCreationRequest.getWebsiteUrl(),event.getWebsiteUrl());
         assertEquals(eventCreationRequest.getTickets().getPaymentMethods(),event.getAllowedPaymentProxies());
-        Assertions.assertTrue(event.getFileBlobIdIsPresent());
+        assertTrue(event.getFileBlobIdIsPresent());
         assertEquals(eventCreationRequest.getTickets().getCategories().size(),tickets.size());
         tickets.forEach((t) -> {
                 List<EventCreationRequest.CategoryRequest> requestCategories = eventCreationRequest.getTickets().getCategories().stream().filter((rt) -> rt.getName().equals(t.getName())).collect(Collectors.toList());
@@ -195,7 +195,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void updateTest() {
+    void updateTest() {
         controller.create(creationRequest(),mockPrincipal);
 
 
@@ -207,6 +207,17 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         Event event = eventManager.getSingleEvent(shortName,username);
         assertEquals(newTitle,event.getDisplayName());
 
+    }
+
+    @Test
+    void retrieveLinkedSubscriptions() {
+        controller.create(creationRequest(),mockPrincipal);
+        var response = controller.getLinkedSubscriptions(shortName, mockPrincipal);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        var linkedSubscriptions = response.getBody();
+        assertNotNull(linkedSubscriptions);
+        assertTrue(linkedSubscriptions.getSubscriptions().isEmpty());
+        assertEquals(shortName, linkedSubscriptions.getEventSlug());
     }
 
 

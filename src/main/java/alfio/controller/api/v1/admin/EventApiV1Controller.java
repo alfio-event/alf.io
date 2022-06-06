@@ -24,6 +24,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
 import alfio.model.api.v1.admin.EventCreationRequest;
+import alfio.model.api.v1.admin.LinkedSubscriptions;
 import alfio.model.group.Group;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.LinkedGroupModification;
@@ -49,6 +50,7 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -183,6 +185,33 @@ public class EventApiV1Controller {
         }
     }
 
+    @GetMapping("/{slug}/subscriptions")
+    public ResponseEntity<LinkedSubscriptions> getLinkedSubscriptions(@PathVariable("slug") String slug, Principal user) {
+
+        var subscriptionIdsOptional = eventManager.getOptionalEventAndOrganizationIdByName(slug, user.getName())
+            .map(event -> retrieveLinkedSubscriptionsForEvent(slug, event.getId(), event.getOrganizationId()));
+
+        return ResponseEntity.of(subscriptionIdsOptional);
+    }
+
+    @PutMapping("/{slug}/subscriptions")
+    public ResponseEntity<LinkedSubscriptions> updateLinkedSubscriptions(@PathVariable("slug") String slug,
+                                                                         @RequestBody List<UUID> subscriptions,
+                                                                         Principal user) {
+        var eventOptional = eventManager.getOptionalByName(slug, user.getName());
+        if (eventOptional.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var eventAndOrgId = eventOptional.get();
+        eventManager.updateLinkedSubscriptions(subscriptions, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId());
+        return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId()));
+    }
+
+    private LinkedSubscriptions retrieveLinkedSubscriptionsForEvent(String slug, int id, int organizationId) {
+        var subscriptionIds = eventManager.getLinkedSubscriptionIds(id, organizationId);
+        return new LinkedSubscriptions(slug, subscriptionIds);
+    }
+
     private Optional<Event> updateEvent(String slug, EventCreationRequest request, Principal user, String imageRef) {
         Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
         EventWithAdditionalInfo original = eventStatisticsManager.getEventWithAdditionalInfo(slug,user.getName());
@@ -298,10 +327,4 @@ public class EventApiV1Controller {
             return null;
         }
     }
-
-
-
-
-
-
 }
