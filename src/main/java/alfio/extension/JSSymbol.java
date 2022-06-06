@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  *
  * @author Ram Kulkarni
- * http://ramkulkarni.com/blog/parsing-javascript-code-using-mozilla-rhino/
+ * <a href="http://ramkulkarni.com/blog/parsing-javascript-code-using-mozilla-rhino/">(source)</a>
  *
  * This class holds reference to AST node and child elements.
  */
@@ -61,9 +61,12 @@ class JSSymbol {
         if (child.getType() == Token.VAR) {
             //check if it is already added
             AstNode childNode = child.getNode();
-            if (childNode instanceof VariableInitializer) {
-                String varName = ((Name)((VariableInitializer) childNode).getTarget()).getIdentifier();
-                localVars.computeIfAbsent(varName, s -> localVars.put(s, child));
+            if (childNode instanceof VariableInitializer variableInitializer) {
+                String varName = ((Name) variableInitializer.getTarget()).getIdentifier();
+                if (localVars.containsKey(varName)) {
+                    return;
+                }
+                localVars.put(varName, child);
             }
         }
         children.add(child);
