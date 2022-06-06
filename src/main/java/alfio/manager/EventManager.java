@@ -34,6 +34,7 @@ import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.support.CheckInOutputColorConfiguration.ColorConfiguration;
 import alfio.model.system.ConfigurationKeys;
@@ -203,7 +204,7 @@ public class EventManager {
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
-        createSubscriptionLinks(eventId, organization.getId(), em);
+        createSubscriptionLinks(eventId, organization.getId(), em.getLinkedSubscriptions());
         extensionManager.handleEventCreation(event);
         var eventMetadata = extensionManager.handleMetadataUpdate(event, organization, AlfioMetadata.empty());
         if(eventMetadata != null) {
@@ -211,9 +212,9 @@ public class EventManager {
         }
     }
 
-    private void createSubscriptionLinks(int eventId, int organizationId, EventModification em) {
-        if(CollectionUtils.isNotEmpty(em.getLinkedSubscriptions())) {
-            var parameters = em.getLinkedSubscriptions().stream()
+    private void createSubscriptionLinks(int eventId, int organizationId, List<UUID> linkedSubscriptions) {
+        if(CollectionUtils.isNotEmpty(linkedSubscriptions)) {
+            var parameters = linkedSubscriptions.stream()
                 .map(id -> new MapSqlParameterSource("eventId", eventId)
                     .addValue("subscriptionId", id)
                     .addValue("pricePerTicket", 0)
@@ -410,11 +411,15 @@ public class EventManager {
             }
         }
         int organizationId = original.getOrganizationId();
-        if(CollectionUtils.isNotEmpty(em.getLinkedSubscriptions())) {
-            int removed = subscriptionRepository.removeStaleSubscriptions(eventId, organizationId, em.getLinkedSubscriptions());
+        updateLinkedSubscriptions(em.getLinkedSubscriptions(), eventId, organizationId);
+    }
+
+    public void updateLinkedSubscriptions(List<UUID> linkedSubscriptions, int eventId, int organizationId) {
+        if(CollectionUtils.isNotEmpty(linkedSubscriptions)) {
+            int removed = subscriptionRepository.removeStaleSubscriptions(eventId, organizationId, linkedSubscriptions);
             log.trace("removed {} subscription links", removed);
-            createSubscriptionLinks(eventId, organizationId, em);
-        } else if (em.getLinkedSubscriptions() != null) {
+            createSubscriptionLinks(eventId, organizationId, linkedSubscriptions);
+        } else if (linkedSubscriptions != null) {
             // the user removed all the subscriptions
             int removed = subscriptionRepository.removeAllSubscriptionsForEvent(eventId, organizationId);
             log.trace("removed all subscription links ({}) for event {}", removed, eventId);
@@ -1177,6 +1182,10 @@ public class EventManager {
                 }
 
             });
+    }
+
+    public List<UUID> getLinkedSubscriptionIds(int eventId, int organizationId) {
+        return subscriptionRepository.findLinkedSubscriptionIds(eventId, organizationId);
     }
 
 
