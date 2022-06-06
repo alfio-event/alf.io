@@ -261,7 +261,7 @@ public class IndexController {
                 if (csrf == null) {
                     csrf = csrfTokenRepository.generateToken(httpServletRequest);
                 }
-                head.appendChild(buildMetaTag(XSRF_TOKEN, csrf.getToken()));
+                head.appendChild(buildMetaTag("XSRF_TOKEN", csrf.getToken()));
                 if (baseCustomCss != null) {
                     var style = new Element("style");
                     style.setAttribute("type", "text/css");
