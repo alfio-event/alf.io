@@ -168,7 +168,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
             private static boolean isPublic(HttpServletRequest request) {
                 var requestURI = request.getRequestURI();
-                return requestURI.equals("/") || requestURI.startsWith(API_V2_PUBLIC_PATH);
+                return requestURI.startsWith(API_V2_PUBLIC_PATH);
             }
         };
     }
