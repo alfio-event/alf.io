@@ -63,7 +63,6 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
-import static java.util.stream.Collectors.toList;
 
 @Transactional
 public class ConfigurationManager {
@@ -73,6 +72,7 @@ public class ConfigurationManager {
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
+    private static final String DELETE_ERROR = "User is not owner of the organization. Therefore, delete is not allowed.";
 
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
@@ -102,28 +102,28 @@ public class ConfigurationManager {
         var keyAsString = key.getValue();
         var configList = new ArrayList<>(externalConfiguration.load(keyAsString));
         switch (path.pathLevel()) {
-            case SYSTEM:
+            case SYSTEM -> {
                 configList.addAll(configurationRepository.findByKeyAtSystemLevel(keyAsString));
                 return selectPath(configList);
-            case ORGANIZATION: {
+            }
+            case ORGANIZATION -> {
                 OrganizationConfigurationPath o = (OrganizationConfigurationPath) path;
                 configList.addAll(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
                 return selectPath(configList);
             }
-            case EVENT: {
+            case EVENT -> {
                 EventConfigurationPath o = (EventConfigurationPath) path;
                 configList.addAll(configurationRepository.findByEventAndKey(o.getOrganizationId(),
                     o.getId(), keyAsString));
                 return selectPath(configList);
             }
-            case TICKET_CATEGORY: {
+            case TICKET_CATEGORY -> {
                 TicketCategoryConfigurationPath o = (TicketCategoryConfigurationPath) path;
                 configList.addAll(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
                     o.getEventId(), o.getId(), keyAsString));
                 return selectPath(configList);
             }
-            default:
-                throw new IllegalStateException("Can't reach here");
+            default -> throw new IllegalStateException("Can't reach here");
         }
     }
 
@@ -142,19 +142,16 @@ public class ConfigurationManager {
     public void saveConfig(ConfigurationPathKey pathKey, String value) {
         ConfigurationPath path = pathKey.getPath();
         switch (path.pathLevel()) {
-            case SYSTEM:
-                saveSystemConfiguration(pathKey.getKey(), value);
-                break;
-            case ORGANIZATION:
+            case SYSTEM -> saveSystemConfiguration(pathKey.getKey(), value);
+            case ORGANIZATION -> {
                 OrganizationConfigurationPath orgPath = (OrganizationConfigurationPath) path;
                 saveOrganizationConfiguration(orgPath.getId(), pathKey.getKey().name(), value);
-                break;
-            case EVENT:
+            }
+            case EVENT -> {
                 EventConfigurationPath eventPath = (EventConfigurationPath) path;
                 saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
-                break;
-            default:
-                throw new IllegalStateException("can't reach here");
+            }
+            default -> throw new IllegalStateException("can't reach here");
         }
     }
 
@@ -275,7 +272,7 @@ public class ConfigurationManager {
                 boolean absent = externalConfiguration.getSingle(key.getValue())
                     .or(() -> configurationRepository.findOptionalByKey(key.getValue())).isEmpty();
                 if (absent) {
-                    log.warn("cannot find a value for " + key.getValue());
+                    log.warn("cannot find a value for {}", key.getValue());
                 }
                 return absent;
             });
@@ -394,7 +391,7 @@ public class ConfigurationManager {
                 ConfigurationKeys.SettingCategory key = e.getKey();
                 Set<Configuration> entries = new TreeSet<>(e.getValue());
                 if(existing.containsKey(key)) {
-                    List<Configuration> configurations = existing.get(key).stream().filter(Predicate.not(Configuration::isInternal)).collect(Collectors.toList());
+                    List<Configuration> configurations = existing.get(key).stream().filter(Predicate.not(Configuration::isInternal)).toList();
                     configurations.forEach(entries::remove);
                     entries.addAll(configurations);
                 }
@@ -431,21 +428,21 @@ public class ConfigurationManager {
     }
 
     public void deleteOrganizationLevelByKey(String key, int organizationId, String username) {
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), DELETE_ERROR);
         configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
     }
 
     public void deleteEventLevelByKey(String key, int eventId, String username) {
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), DELETE_ERROR);
         configurationRepository.deleteEventLevelByKey(key, eventId);
     }
 
     public void deleteCategoryLevelByKey(String key, int eventId, int categoryId, String username) {
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
+        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), DELETE_ERROR);
         configurationRepository.deleteCategoryLevelByKey(key, eventId, categoryId);
     }
 
@@ -547,23 +544,21 @@ public class ConfigurationManager {
     public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys, ConfigurationLevel configurationLevel) {
         var keysAsString = keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toSet());
         List<ConfigurationKeyValuePathLevel> found = new ArrayList<>(externalConfiguration.getAll(keysAsString));
-        switch(configurationLevel.getPathLevel()) {
-            case SYSTEM:
-                found.addAll(configurationRepository.findByKeysAtSystemLevel(keysAsString));
-                break;
-            case ORGANIZATION:
-                found.addAll(configurationRepository.findByOrganizationAndKeys(((OrganizationLevel)configurationLevel).organizationId, keysAsString));
-                break;
-            case EVENT:
+        switch (configurationLevel.getPathLevel()) {
+            case SYSTEM -> found.addAll(configurationRepository.findByKeysAtSystemLevel(keysAsString));
+            case ORGANIZATION ->
+                found.addAll(configurationRepository.findByOrganizationAndKeys(((OrganizationLevel) configurationLevel).organizationId, keysAsString));
+            case EVENT -> {
                 var eventLevel = (EventLevel) configurationLevel;
                 found.addAll(configurationRepository.findByEventAndKeys(eventLevel.organizationId, eventLevel.eventId, keysAsString));
-                break;
-            case TICKET_CATEGORY:
+            }
+            case TICKET_CATEGORY -> {
                 var categoryLevel = (CategoryLevel) configurationLevel;
                 found.addAll(configurationRepository.findByTicketCategoryAndKeys(categoryLevel.organizationId, categoryLevel.eventId, categoryLevel.categoryId, keysAsString));
-                break;
-            default:
-                break;
+            }
+            default -> {
+                // ignore EXTERNAL
+            }
         }
         return buildKeyConfigurationMapResult(keys, found);
     }
@@ -595,10 +590,10 @@ public class ConfigurationManager {
                     .filter(blacklistForCategories::containsKey)
                     .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
                     .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
-                    .collect(toList());
-            } else if (categoryIds.size() > 0) {
+                    .toList();
+            } else if (!categoryIds.isEmpty()) {
                     return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
-                        .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
+                        .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).toList())
                         .orElse(List.of());
             } else {
                 return List.<PaymentMethod>of();

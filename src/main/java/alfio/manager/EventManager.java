@@ -34,7 +34,6 @@ import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.support.CheckInOutputColorConfiguration.ColorConfiguration;
 import alfio.model.system.ConfigurationKeys;
@@ -89,7 +88,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
 
 @Component
 @Transactional
@@ -762,19 +761,18 @@ public class EventManager {
                 colorConfiguration = new CheckInOutputColorConfiguration("success", List.of(new ColorConfiguration(chosenColor, List.of(categoryId))));
             } else {
                 var configurationWithoutCategory = colorConfiguration.getConfigurations().stream()
-                    .map(cc -> new ColorConfiguration(cc.getColorName(), cc.getCategories().stream().filter(c -> !c.equals(categoryId)).collect(toUnmodifiableList())))
-                    .filter(cc -> !cc.getCategories().isEmpty())
-                    .collect(toList());
+                    .map(cc -> new ColorConfiguration(cc.getColorName(), cc.getCategories().stream().filter(c -> !c.equals(categoryId)).toList()))
+                    .filter(cc -> !cc.getCategories().isEmpty()).toList();
                 boolean colorExists = configurationWithoutCategory.stream().anyMatch(cc -> cc.getColorName().equals(chosenColor));
                 if(colorExists) {
                     colorConfiguration = new CheckInOutputColorConfiguration(colorConfiguration.getDefaultColorName(), configurationWithoutCategory.stream().map(cc -> {
-                        if(cc.getColorName().equals(chosenColor)) {
+                        if (cc.getColorName().equals(chosenColor)) {
                             var newList = new ArrayList<>(cc.getCategories());
                             newList.add(categoryId);
                             return new ColorConfiguration(chosenColor, newList);
                         }
                         return cc;
-                    }).collect(toUnmodifiableList()));
+                    }).toList());
                 } else {
                     var newList = new ArrayList<>(configurationWithoutCategory);
                     newList.add(new ColorConfiguration(chosenColor, List.of(categoryId)));
@@ -1014,7 +1012,7 @@ public class EventManager {
         }
 
         //
-        categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).collect(toList());
+        categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).toList();
         //
 
         if (organizationId == null) {
@@ -1043,12 +1041,12 @@ public class EventManager {
     
     public List<PromoCodeDiscountWithFormattedTimeAndAmount> findPromoCodesInEvent(int eventId) {
         var event = eventRepository.findById(eventId);
-        return promoCodeRepository.findAllInEvent(eventId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, event.getZoneId(), event.getCurrency())).collect(toList());
+        return promoCodeRepository.findAllInEvent(eventId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, event.getZoneId(), event.getCurrency())).toList();
     }
 
     public List<PromoCodeDiscountWithFormattedTimeAndAmount> findPromoCodesInOrganization(int organizationId) {
         ZoneId zoneId = ZoneId.systemDefault();
-        return promoCodeRepository.findAllInOrganization(organizationId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, zoneId, null)).collect(toList());
+        return promoCodeRepository.findAllInOrganization(organizationId).stream().map(p -> new PromoCodeDiscountWithFormattedTimeAndAmount(p, zoneId, null)).toList();
     }
 
     public String getEventUrl(Event event) {
@@ -1070,7 +1068,7 @@ public class EventManager {
     }
 
     public List<Event> getActiveEvents() {
-        return getActiveEventsStream().collect(toList());
+        return getActiveEventsStream().toList();
     }
 
     private Stream<Event> getActiveEventsStream() {

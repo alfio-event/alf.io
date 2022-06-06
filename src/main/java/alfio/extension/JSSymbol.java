@@ -17,18 +17,21 @@
 
 package alfio.extension;
 
+import org.mozilla.javascript.Token;
+import org.mozilla.javascript.ast.AstNode;
+import org.mozilla.javascript.ast.FunctionNode;
+import org.mozilla.javascript.ast.Name;
+import org.mozilla.javascript.ast.VariableInitializer;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.mozilla.javascript.Token;
-import org.mozilla.javascript.ast.*;
-
 /**
  *
  * @author Ram Kulkarni
- * http://ramkulkarni.com/blog/parsing-javascript-code-using-mozilla-rhino/
+ * <a href="http://ramkulkarni.com/blog/parsing-javascript-code-using-mozilla-rhino/">(source)</a>
  *
  * This class holds reference to AST node and child elements.
  */
@@ -40,8 +43,7 @@ class JSSymbol {
 
     public JSSymbol(AstNode node) {
         this.node = node;
-        if (node instanceof FunctionNode) {
-            FunctionNode funcNode = (FunctionNode)node;
+        if (node instanceof FunctionNode funcNode) {
             List<AstNode> args = funcNode.getParams();
             if (args != null) {
                 for (AstNode argNode : args) {
@@ -59,8 +61,8 @@ class JSSymbol {
         if (child.getType() == Token.VAR) {
             //check if it is already added
             AstNode childNode = child.getNode();
-            if (childNode instanceof VariableInitializer) {
-                String varName = ((Name)((VariableInitializer) childNode).getTarget()).getIdentifier();
+            if (childNode instanceof VariableInitializer variableInitializer) {
+                String varName = ((Name) variableInitializer.getTarget()).getIdentifier();
                 if (localVars.containsKey(varName)) {
                     return;
                 }
@@ -75,7 +77,7 @@ class JSSymbol {
         addChild(new JSSymbol(node));
     }
 
-    public ArrayList<JSSymbol> getChildren() {
+    public List<JSSymbol> getChildren() {
         return new ArrayList<>(children);
     }
 

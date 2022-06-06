@@ -70,6 +70,7 @@ import static java.util.stream.Collectors.*;
 @RequestMapping("/api/v2/public/")
 public class EventApiV2Controller {
 
+    private static final String TICKET_CATEGORY_DATE_FORMAT = "common.ticket-category.date-format";
     private final EventManager eventManager;
     private final EventRepository eventRepository;
     private final ConfigurationManager configurationManager;
@@ -147,9 +148,9 @@ public class EventApiV2Controller {
                 return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getTitle(), e.getFormat(), e.getLocation(),
                     e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
-                    e.getContentLanguages().stream().map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage())).collect(toList()));
+                    e.getContentLanguages().stream().map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage())).toList());
             })
-            .collect(Collectors.toList());
+            .toList();
         return new ResponseEntity<>(events, getCorsHeaders(), HttpStatus.OK);
     }
 
@@ -197,8 +198,8 @@ public class EventApiV2Controller {
             var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
 
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
-                .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
-                .map((category) -> {
+                .filter(c -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
+                .map(category -> {
                     int maxTickets = getMaxAmountOfTicketsPerReservation(configurations, ticketCategoryLevelConfiguration, category.getId());
                     PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, category)).orElse(null);
                     if (specialCode.isPresent()) {
@@ -210,22 +211,22 @@ public class EventApiV2Controller {
                         now, event, ticketReservationManager.countAvailableTickets(event, category), maxTickets,
                         filteredPromoCode);
                 })
-                .collect(Collectors.toList());
+                .toList();
 
 
-            var valid = saleableTicketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
+            var valid = saleableTicketCategories.stream().filter(tc -> !tc.getExpired()).toList();
 
             //
 
-            var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
+            var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).toList();
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
 
             boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault();
             var categoriesByExpiredFlag = saleableTicketCategories.stream()
                 .map(stc -> {
                     var description = Formatters.applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()), messageSource);
-                    var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
-                    var inception = Formatters.getFormattedDate(event, stc.getZonedInception(), "common.ticket-category.date-format", messageSource);
+                    var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), TICKET_CATEGORY_DATE_FORMAT, messageSource);
+                    var inception = Formatters.getFormattedDate(event, stc.getZonedInception(), TICKET_CATEGORY_DATE_FORMAT, messageSource);
                     return new TicketCategory(stc, description, inception, expiration, displayTicketsLeft && !stc.isAccessRestricted());
                 })
                 .sorted(Comparator.comparingInt(TicketCategory::getOrdinal))
@@ -240,17 +241,16 @@ public class EventApiV2Controller {
             var saleableAdditionalServices = additionalServiceRepository.loadAllForEvent(event.getId())
                 .stream()
                 .map(as -> new SaleableAdditionalService(event, as, promoCode.orElse(null)))
-                .filter(SaleableAdditionalService::isNotExpired)
-                .collect(Collectors.toList());
+                .filter(SaleableAdditionalService::isNotExpired).toList();
 
             // will be used for fetching descriptions and titles for all the languages
-            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::getId).collect(Collectors.toList());
+            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::getId).toList();
 
             var additionalServiceTexts = additionalServiceTextRepository.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
 
             var additionalServicesRes = saleableAdditionalServices.stream().map(as -> {
-                var expiration = Formatters.getFormattedDate(event, as.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
-                var inception = Formatters.getFormattedDate(event, as.getZonedInception(), "common.ticket-category.date-format", messageSource);
+                var expiration = Formatters.getFormattedDate(event, as.getZonedExpiration(), TICKET_CATEGORY_DATE_FORMAT, messageSource);
+                var inception = Formatters.getFormattedDate(event, as.getZonedInception(), TICKET_CATEGORY_DATE_FORMAT, messageSource);
                 var title = additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
                 var description = Formatters.applyCommonMark(additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()), messageSource);
                 return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(),
@@ -258,15 +258,15 @@ public class EventApiV2Controller {
                     as.getFree(), as.getFormattedFinalPrice(), as.getSupportsDiscount(), as.getDiscountedPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage().toString(),
                     as.isExpired(), as.getSaleInFuture(),
                     inception, expiration, title, description);
-            }).collect(Collectors.toList());
+            }).toList();
             //
 
             // waiting queue parameters
             boolean displayWaitingQueueForm = EventUtil.displayWaitingQueueForm(event, saleableTicketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable());
             boolean preSales = EventUtil.isPreSales(event, saleableTicketCategories);
             Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
-            List<SaleableTicketCategory> unboundedCategories = saleableTicketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList());
-            var tcForWaitingList = unboundedCategories.stream().map(stc -> new ItemsByCategory.TicketCategoryForWaitingList(stc.getId(), stc.getName())).collect(toList());
+            List<SaleableTicketCategory> unboundedCategories = saleableTicketCategories.stream().filter(waitingQueueTargetCategory).toList();
+            var tcForWaitingList = unboundedCategories.stream().map(stc -> new ItemsByCategory.TicketCategoryForWaitingList(stc.getId(), stc.getName())).toList();
             //
             var activeCategories = categoriesByExpiredFlag.get(false);
             var expiredCategories = configurations.get(DISPLAY_EXPIRED_CATEGORIES).getValueAsBooleanOrDefault() ? categoriesByExpiredFlag.get(true) : List.<TicketCategory>of();
@@ -482,21 +482,20 @@ public class EventApiV2Controller {
         Map<String, String> res = new HashMap<>();
         String code;
         String amount;
-        switch(promoCodeDiscount.getDiscountType()) {
-            case PERCENTAGE:
+        switch (promoCodeDiscount.getDiscountType()) {
+            case PERCENTAGE -> {
                 code = "reservation.dynamic.discount.confirmation.percentage.message";
                 amount = String.valueOf(promoCodeDiscount.getDiscountAmount());
-                break;
-            case FIXED_AMOUNT:
+            }
+            case FIXED_AMOUNT -> {
                 amount = event.getCurrency() + " " + MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
                 code = "reservation.dynamic.discount.confirmation.fix-per-ticket.message";
-                break;
-            case FIXED_AMOUNT_RESERVATION:
+            }
+            case FIXED_AMOUNT_RESERVATION -> {
                 amount = event.getCurrency() + " " + MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
                 code = "reservation.dynamic.discount.confirmation.fix-per-reservation.message";
-                break;
-            default:
-                throw new IllegalStateException("Unexpected discount code type");
+            }
+            default -> throw new IllegalStateException("Unexpected discount code type");
         }
 
         for (ContentLanguage cl : event.getContentLanguages()) {

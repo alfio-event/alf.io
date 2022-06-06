@@ -32,7 +32,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SendGridMailer implements Mailer {
@@ -86,7 +85,7 @@ public class SendGridMailer implements Mailer {
         final var recipients = new ArrayList<>();
         recipients.add(Map.of(EMAIL, to));
         if (CollectionUtils.isNotEmpty(cc)) {
-            recipients.addAll(cc.stream().map(email -> Map.of(EMAIL, email)).collect(Collectors.toList()));
+            recipients.addAll(cc.stream().map(email -> Map.of(EMAIL, email)).toList());
         }
         return List.of(Map.of("to", recipients, "subject", subject));
     }
@@ -100,7 +99,7 @@ public class SendGridMailer implements Mailer {
 
     private void addAttachments(final Map<String, Object> payload, final Attachment[] attachment) {
         final var attachments = Stream.of(attachment)
-            .map(attach -> Map.of("filename", attach.getFilename(), "content", attach.getSource(), "content_id", attach.getIdentifier().name(), "type", attach.getContentType())).collect(Collectors.toList());
+            .map(attach -> Map.of("filename", attach.getFilename(), "content", attach.getSource(), "content_id", attach.getIdentifier().name(), "type", attach.getContentType())).toList();
         payload.put("attachments", attachments);
     }
 }

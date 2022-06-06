@@ -36,7 +36,6 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,7 +53,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -182,7 +180,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         assertTrue(event.getFileBlobIdIsPresent());
         assertEquals(eventCreationRequest.getTickets().getCategories().size(),tickets.size());
         tickets.forEach((t) -> {
-                List<EventCreationRequest.CategoryRequest> requestCategories = eventCreationRequest.getTickets().getCategories().stream().filter((rt) -> rt.getName().equals(t.getName())).collect(Collectors.toList());
+                List<EventCreationRequest.CategoryRequest> requestCategories = eventCreationRequest.getTickets().getCategories().stream().filter((rt) -> rt.getName().equals(t.getName())).toList();
                 assertEquals(1,requestCategories.size());
                 requestCategories.forEach((rtc) -> {
                         assertEquals(t.getMaxTickets(), rtc.getMaxTickets().intValue());

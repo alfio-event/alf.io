@@ -203,16 +203,15 @@ public final class TemplateProcessor {
     }
 
     public static Optional<byte[]> buildBillingDocumentPdf(BillingDocument.Type documentType, PurchaseContext purchaseContext, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, ExtensionManager extensionManager) {
-        switch (documentType) {
-            case INVOICE:
-                return buildInvoicePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
-            case RECEIPT:
-                return buildReceiptPdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
-            case CREDIT_NOTE:
-                return buildCreditNotePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
-            default:
-                throw new IllegalStateException(documentType + " not supported");
-        }
+        return switch (documentType) {
+            case INVOICE ->
+                buildInvoicePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
+            case RECEIPT ->
+                buildReceiptPdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
+            case CREDIT_NOTE ->
+                buildCreditNotePdf(purchaseContext, fileUploadManager, language, templateManager, model, extensionManager);
+            default -> throw new IllegalStateException(documentType + " not supported");
+        };
     }
 
     private static Optional<byte[]> buildFrom(PurchaseContext purchaseContext,

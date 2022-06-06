@@ -37,11 +37,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 
 public class ReservationUtil {
 
@@ -85,8 +83,7 @@ public class ReservationUtil {
         }
 
         List<Pair<TicketReservationModification, Integer>> maxTicketsByTicketReservation = selected(request.getTickets()).stream()
-            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event, r.getTicketCategoryId(), validatedPromoCodeDiscount)))
-            .collect(toList());
+            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event, r.getTicketCategoryId(), validatedPromoCodeDiscount))).toList();
         Optional<Pair<TicketReservationModification, Integer>> error = maxTicketsByTicketReservation.stream()
             .filter(p -> p.getKey().getQuantity() > p.getValue())
             .findAny();
@@ -127,7 +124,7 @@ public class ReservationUtil {
         //
         final ZonedDateTime now = event.now(ClockProvider.clock());
         maxTicketsByTicketReservation.forEach(pair -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
-        return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
+        return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).toList()));
     }
 
     private static int ticketSelectionCount(List<TicketReservationModification> tickets) {
@@ -153,7 +150,7 @@ public class ReservationUtil {
             .orElse(emptyList())
             .stream()
             .filter(e -> e != null && e.getQuantity() != null && e.getTicketCategoryId() != null && e.getQuantity() > 0)
-            .collect(toList());
+            .toList();
     }
 
     private static List<AdditionalServiceReservationModification> selectedAdditionalServices(List<AdditionalServiceReservationModification> additionalServices) {
@@ -161,6 +158,6 @@ public class ReservationUtil {
             .orElse(emptyList())
             .stream()
             .filter(e -> e != null && e.getQuantity() != null && e.getAdditionalServiceId() != null && e.getQuantity() > 0)
-            .collect(toList());
+            .toList();
     }
 }

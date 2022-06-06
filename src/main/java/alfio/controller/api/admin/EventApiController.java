@@ -86,7 +86,6 @@ import java.util.zip.ZipOutputStream;
 import static alfio.util.Validator.*;
 import static alfio.util.Wrappers.optionally;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
 @RestController
@@ -176,12 +175,12 @@ public class EventApiController {
 
     @GetMapping(value = "/events", headers = "Authorization")
     public List<EventListItem> getAllEventsForExternal(Principal principal, HttpServletRequest request) {
-        List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(toList());
+        List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).toList();
         return eventManager.getActiveEvents().stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()))
             .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
             .map(s -> new EventListItem(s, request.getContextPath(), eventDescriptionRepository.findByEventId(s.getId())))
-            .collect(toList());
+            .toList();
     }
 
     @GetMapping("/events")
@@ -349,7 +348,7 @@ public class EventApiController {
 
     private static final String PAYMENT_METHOD = "Payment Method";
     private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", PAYMENT_METHOD);
-    private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
+    private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).toList();
     private static final String FISCAL_CODE = "Fiscal Code";
     private static final String REFERENCE_TYPE = "Reference Type";
     private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of(FISCAL_CODE, REFERENCE_TYPE, "Addressee Code", "PEC");
@@ -461,7 +460,7 @@ public class EventApiController {
         header.add("Timestamp");
         header.add("Full name");
         header.add("Email");
-        header.addAll(fields.stream().map(TicketFieldConfiguration::getName).collect(toList()));
+        header.addAll(fields.stream().map(TicketFieldConfiguration::getName).toList());
         header.add("Sponsor notes");
         header.add("Lead Status");
 
@@ -474,7 +473,7 @@ public class EventApiController {
             .map(p -> {
                 DetailedScanData data = p.getLeft();
                 Map<String, String> descriptions = p.getRight();
-                return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x.getName(), "")).collect(toList()));
+                return Pair.of(data, fields.stream().map(x -> descriptions.getOrDefault(x.getName(), "")).toList());
             }).map(p -> {
             List<String> line = new ArrayList<>();
             Ticket ticket = p.getLeft().getTicket();
@@ -518,9 +517,9 @@ public class EventApiController {
         var eventAndOrganizationId = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         List<SerializablePair<String, String>> fields = new ArrayList<>(FIXED_PAIRS);
         if(configurationManager.isItalianEInvoicingEnabled(eventAndOrganizationId)) {
-            fields.addAll(ITALIAN_E_INVOICING_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList()));
+            fields.addAll(ITALIAN_E_INVOICING_FIELDS.stream().map(f -> SerializablePair.of(f, f)).toList());
         }
-        fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
+        fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).toList());
         return fields;
     }
 
@@ -529,7 +528,7 @@ public class EventApiController {
         final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
             .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
-            .collect(toList());
+            .toList();
     }
 
     @GetMapping("/events/{eventName}/additional-field/{id}/stats")
@@ -639,7 +638,7 @@ public class EventApiController {
                             return Triple.of(Boolean.FALSE, Optional.ofNullable(reservationID).orElse(""), e.getMessage());
                         }
                     })
-                    .collect(toList());
+                    .toList();
         }
     }
 
@@ -686,16 +685,14 @@ public class EventApiController {
         Optional<byte[]> pdf;
         var language = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
 
-        switch(document.getType()) {
-            case CREDIT_NOTE:
-                pdf = TemplateProcessor.buildCreditNotePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-                break;
-            case RECEIPT:
-                pdf = TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-                break;
-            default:
-                pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
-        }
+        pdf = switch (document.getType()) {
+            case CREDIT_NOTE ->
+                TemplateProcessor.buildCreditNotePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+            case RECEIPT ->
+                TemplateProcessor.buildReceiptPdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+            default ->
+                TemplateProcessor.buildInvoicePdf(event, fileUploadManager, language, templateManager, reservationModel, extensionManager);
+        };
 
         if (pdf.isPresent()) {
             String fileName = FileUtil.getBillingDocumentFileName(event.getShortName(), reservation.getId(), document);

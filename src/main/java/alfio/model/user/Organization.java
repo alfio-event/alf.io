@@ -57,11 +57,9 @@ public class Organization {
     public boolean equals(Object o) {
         if (this == o) return true;
 
-        if (! (o instanceof Organization)) {
+        if (! (o instanceof Organization that)) {
             return false;
         }
-
-        Organization that = (Organization) o;
 
         return new EqualsBuilder()
             .append(id, that.id)
@@ -79,7 +77,7 @@ public class Organization {
      * @deprecated use {@link #getExternalId()}
      * @return the external ID, if present
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public String getNameOpenId() {
         return externalId;
     }

@@ -73,8 +73,8 @@ public class ScriptingExecutionService {
     private final Cache<String, Executor> asyncExecutors = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofHours(12))
         .removalListener((String key, Executor value, RemovalCause cause) -> {
-            if (value instanceof ExecutorService) {
-                ((ExecutorService) value).shutdown();
+            if (value instanceof ExecutorService executorService) {
+                executorService.shutdown();
             }
         })
         .build();
@@ -198,8 +198,7 @@ public class ScriptingExecutionService {
             Object res;
             res = cx.evaluateString(scope, script, name, 1, null);
             extensionLogger.logSuccess("Script executed successfully.");
-            if (res instanceof NativeJavaObject) {
-                NativeJavaObject nativeRes = (NativeJavaObject) res;
+            if (res instanceof NativeJavaObject nativeRes) {
                 return (T) nativeRes.unwrap();
             } else if(clazz.isInstance(res)) {
                 return (T) res;

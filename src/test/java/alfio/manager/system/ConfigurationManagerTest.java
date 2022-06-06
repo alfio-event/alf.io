@@ -16,7 +16,6 @@
  */
 package alfio.manager.system;
 
-import alfio.model.PurchaseContext;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import org.junit.jupiter.api.Assertions;
@@ -24,10 +23,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationPathLevel.*;
-import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 
@@ -35,7 +32,7 @@ public class ConfigurationManagerTest {
     public void testUnionEvent() {
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> intersection = ConfigurationManager.union(SYSTEM, EVENT);
         Assertions.assertNotNull(intersection);
-        List<Configuration> values = intersection.values().stream().flatMap(List::stream).collect(Collectors.toList());
+        List<Configuration> values = intersection.values().stream().flatMap(List::stream).toList();
         Assertions.assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
         Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.BASE_URL && v.getConfigurationPathLevel() == SYSTEM));
     }
@@ -44,7 +41,7 @@ public class ConfigurationManagerTest {
     public void testUnionOrganization() {
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> intersection = ConfigurationManager.union(EVENT, ORGANIZATION);
         Assertions.assertNotNull(intersection);
-        List<Configuration> values = intersection.values().stream().flatMap(List::stream).collect(Collectors.toList());
+        List<Configuration> values = intersection.values().stream().flatMap(List::stream).toList();
         Assertions.assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
         Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.VAT_NR && v.getConfigurationPathLevel() == ORGANIZATION));
     }

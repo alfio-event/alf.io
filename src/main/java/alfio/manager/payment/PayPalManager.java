@@ -58,7 +58,6 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.PAYPAL_ENABLED;
 import static alfio.util.MonetaryUtil.*;
@@ -246,8 +245,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                 if(HttpUtils.statusCodeIsSuccessful(orderResponse.statusCode()) && orderResponse.result() != null) {
                     var order = orderResponse.result();
                     var payments = order.purchaseUnits().stream()
-                        .map(PurchaseUnit::payments)
-                        .collect(Collectors.toList());
+                        .map(PurchaseUnit::payments).toList();
 
                     var refund = payments.stream().flatMap(p -> emptyIfNull(p.refunds()).stream())
                         .map(r -> new BigDecimal(r.amount().value()))

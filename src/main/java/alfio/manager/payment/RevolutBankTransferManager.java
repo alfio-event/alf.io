@@ -51,7 +51,6 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
@@ -145,8 +144,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         List<Pair<TicketReservationWithTransaction, RevolutTransactionDescriptor>> matched = pendingReservations.stream()
             .map(reservation -> Pair.of(reservation, transactions.stream().filter(transactionMatches(reservation, context)).findFirst()))
             .filter(pair -> pair.getRight().isPresent())
-            .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()))
-            .collect(Collectors.toList());
+            .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow())).toList();
 
         return Result.success(matched.stream().map(pair -> {
                 var reservationId = pair.getLeft().getTicketReservation().getId();
@@ -169,7 +167,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
                 return reservationId;
             })
             .filter(Objects::nonNull)
-            .collect(Collectors.toList()));
+            .toList());
     }
 
     private Predicate<RevolutTransactionDescriptor> transactionMatches(TicketReservationWithTransaction reservationWithTransaction, PaymentContext context) {
@@ -206,7 +204,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
                 return Result.success(
                     result.stream()
                         .filter(t -> "completed".equals(t.getState()) && t.getLegs().size() == 1 && accounts.contains(t.getLegs().get(0).getAccountId()))
-                        .collect(Collectors.toList()));
+                        .toList());
             }
             return Result.error(ErrorCode.custom("no data received", "No data received from Revolut. Status code is "+response.statusCode()));
         } catch (InterruptedException e) {
@@ -238,7 +236,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             if (response.statusCode() == HttpStatus.OK.value()) {
                 List<Map<String, ?>> result = Json.fromJson(response.body(), new TypeReference<>() {
                 });
-                return result.stream().filter(m -> "active".equals(m.get("state"))).map(m -> (String) m.get("id")).collect(Collectors.toList());
+                return result.stream().filter(m -> "active".equals(m.get("state"))).map(m -> (String) m.get("id")).toList();
             }
             throw new IllegalStateException("cannot retrieve accounts");
         } catch (IllegalStateException ex) {

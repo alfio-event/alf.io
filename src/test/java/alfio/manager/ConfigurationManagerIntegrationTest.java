@@ -225,7 +225,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), "MY-ACCOUNT_NUMBER", "empty");
         Configuration existing = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue()).orElseThrow(IllegalStateException::new);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> all = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
-        List<Configuration> flatten = all.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
+        List<Configuration> flatten = all.entrySet().stream().flatMap(e -> e.getValue().stream()).toList();
         List<ConfigurationModification> modified = flatten.stream().filter(c -> !c.getKey().equals(ConfigurationKeys.BANK_ACCOUNT_NR.getValue())).map(ConfigurationModification::fromConfiguration).collect(Collectors.toList());
         modified.add(new ConfigurationModification(existing.getId(), existing.getKey(), "NEW-NUMBER"));
         configurationManager.saveAllOrganizationConfiguration(event.getOrganizationId(), modified, USERNAME);
@@ -243,7 +243,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue(), "MY-ACCOUNT_NUMBER", "empty");
         Configuration existing = configurationRepository.findByKeyAtOrganizationLevel(event.getOrganizationId(), ConfigurationKeys.BANK_ACCOUNT_NR.getValue()).orElseThrow(IllegalStateException::new);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> all = configurationManager.loadOrganizationConfig(event.getOrganizationId(), USERNAME);
-        List<Configuration> flatten = all.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
+        List<Configuration> flatten = all.entrySet().stream().flatMap(e -> e.getValue().stream()).toList();
         List<ConfigurationModification> modified = flatten.stream().filter(c -> !c.getKey().equals(ConfigurationKeys.BANK_ACCOUNT_NR.getValue()) && !c.getKey().equals(ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH.getValue())).map(ConfigurationModification::fromConfiguration).collect(Collectors.toList());
         modified.add(new ConfigurationModification(existing.getId(), existing.getKey(), "NEW-NUMBER"));
         modified.add(new ConfigurationModification(-1, ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH.getValue(), "9"));

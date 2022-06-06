@@ -51,19 +51,19 @@ public class PurchaseContextManager {
     }
 
     public Optional<? extends PurchaseContext> findBy(PurchaseContext.PurchaseContextType purchaseContextType, String publicIdentifier) {
-        switch (purchaseContextType) {
-            case event: return eventRepository.findOptionalByShortName(publicIdentifier);
-            case subscription: return subscriptionRepository.findOne(UUID.fromString(publicIdentifier));
-            default: throw new IllegalStateException("not a covered type " + purchaseContextType);
-        }
+        return switch (purchaseContextType) {
+            case event -> eventRepository.findOptionalByShortName(publicIdentifier);
+            case subscription -> subscriptionRepository.findOne(UUID.fromString(publicIdentifier));
+            default -> throw new IllegalStateException("not a covered type " + purchaseContextType);
+        };
     }
 
     Optional<? extends PurchaseContext> findById(PurchaseContext.PurchaseContextType purchaseContextType, String idAsString) {
-        switch (purchaseContextType) {
-            case event: return eventRepository.findOptionalById(Integer.parseInt(idAsString));
-            case subscription: return subscriptionRepository.findOne(UUID.fromString(idAsString));
-            default: throw new IllegalStateException("not a covered type " + purchaseContextType);
-        }
+        return switch (purchaseContextType) {
+            case event -> eventRepository.findOptionalById(Integer.parseInt(idAsString));
+            case subscription -> subscriptionRepository.findOne(UUID.fromString(idAsString));
+            default -> throw new IllegalStateException("not a covered type " + purchaseContextType);
+        };
     }
 
     public Optional<PurchaseContext> findByReservationId(String reservationId) {
