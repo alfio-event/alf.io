@@ -451,6 +451,9 @@
                 return $http.get('/admin/api/reservation/subscription/'+name+'/reservations/list', {params: {page: page, search: search, status: status}});
             },
             loadSubscriptionsDescriptors: function(organizationId) {
+                if (!window.USER_IS_OWNER) {
+                    return $q.reject('not authorized');
+                }
                 return $http.get('/admin/api/organization/'+organizationId+'/subscription/list')
                     .error(HttpErrorHandler.handle);
             },

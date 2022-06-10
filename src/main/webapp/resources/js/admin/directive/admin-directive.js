@@ -884,12 +884,14 @@
                             $rootScope.$broadcast('PendingReservationsFound', count);
                         });
                     };
-                    getPendingPayments();
-                    var promise = $interval(getPendingPayments, 10000);
+                    if (window.USER_IS_OWNER) {
+                        getPendingPayments();
+                        var promise = $interval(getPendingPayments, 10000);
 
-                    scope.$on('$destroy', function() {
-                        $interval.cancel(promise);
-                    });
+                        scope.$on('$destroy', function() {
+                            $interval.cancel(promise);
+                        });
+                    }
                 } else {
                     var listener = $rootScope.$on('PendingReservationsFound', function(data) {
                         scope.pendingReservationsCount = data;

@@ -100,9 +100,15 @@
                 return $http.get('/admin/api/configuration/events/'+eventId+'/load').error(HttpErrorHandler.handle)
             },
             loadSingleConfigForEvent: function(eventId, key) {
+                if (!window.USER_IS_OWNER) {
+                    return $q.reject('not authorized');
+                }
                 return $http.get('/admin/api/configuration/events/'+eventId+'/single/'+key).error(HttpErrorHandler.handle)
             },
             loadSingleConfigForOrganization: function(organizationId, key) {
+                if (!window.USER_IS_OWNER) {
+                    return $q.reject('not authorized');
+                }
                 return $http.get('/admin/api/configuration/organizations/'+organizationId+'/single/'+key).error(HttpErrorHandler.handle)
             },
             loadInstanceSettings: function() {
