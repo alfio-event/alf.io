@@ -94,7 +94,9 @@
 
         ctrl.$onInit = function() {
             ctrl.groups = [];
-            loadGroups();
+            if (window.USER_IS_OWNER) {
+                loadGroups();
+            }
         };
 
         function loadGroups() {
@@ -231,6 +233,9 @@
     function GroupService($http, HttpErrorHandler, $q, NotificationHandler) {
         return {
             loadGroups: function(orgId) {
+                if (!window.USER_IS_OWNER) {
+                    return $q.reject('not authorized');
+                }
                 return $http.get('/admin/api/group/for/'+orgId).error(HttpErrorHandler.handle);
             },
             loadGroupDetail: function(orgId, groupId) {
