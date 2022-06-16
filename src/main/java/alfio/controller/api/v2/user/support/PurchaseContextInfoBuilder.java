@@ -31,6 +31,8 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 public class PurchaseContextInfoBuilder {
 
+    private PurchaseContextInfoBuilder() {}
+
     public static Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationsValues(PurchaseContext purchaseContext, ConfigurationManager configurationManager) {
         return configurationManager.getFor(List.of(
             MAPS_PROVIDER,
@@ -58,6 +60,7 @@ public class PurchaseContextInfoBuilder {
             //
             INVOICE_ADDRESS,
             VAT_NR,
+            SHOW_ONLY_BASIC_INSTRUCTIONS,
             // required by EuVatChecker.reverseChargeEnabled
             ENABLE_EU_VAT_DIRECTIVE,
             COUNTRY_OF_BUSINESS,

@@ -18,6 +18,7 @@ package alfio.controller.api.v2.user.support;
 
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
+import alfio.controller.api.v2.model.OfflinePaymentConfiguration;
 import alfio.controller.support.Formatters;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
@@ -108,11 +109,13 @@ public class EventLoader {
 
                 var hasLinkedSubscription = subscriptionRepository.hasLinkedSubscription(event.getId());
 
+                var offlinePaymentConfiguration = new OfflinePaymentConfiguration(configurationsValues.get(SHOW_ONLY_BASIC_INSTRUCTIONS).getValueAsBooleanOrDefault());
+
                 return new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
-                    invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
+                    invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf, offlinePaymentConfiguration,
                     MessageSourceManager.convertPlaceholdersForEachLanguage(i18nOverride), availableTicketsCount, customCss, hasLinkedSubscription);
             });
     }

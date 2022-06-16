@@ -64,6 +64,8 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
 
     private final AnalyticsConfiguration analyticsConfiguration;
 
+    private final OfflinePaymentConfiguration offlinePaymentConfiguration;
+
     private final Map<String, Map<String, String>> i18nOverride;
 
     private final Integer availableTicketsCount;
@@ -234,6 +236,11 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
     @Override
     public Map<String, String> getTitle() {
         return event.getTitle();
+    }
+
+    @Override
+    public OfflinePaymentConfiguration getOfflinePaymentConfiguration() {
+        return offlinePaymentConfiguration;
     }
 
     @AllArgsConstructor
