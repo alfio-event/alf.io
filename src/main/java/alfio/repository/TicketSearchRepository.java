@@ -32,7 +32,8 @@ import java.util.UUID;
 @QueryRepository
 public interface TicketSearchRepository {
     String APPLY_FILTER = " (:search is null or (lower(tr_id) like lower(:search) or lower(t_uuid) like lower(:search) or lower(t_full_name) like lower(:search) or lower(t_first_name) like lower(:search) or lower(t_last_name) like lower(:search) or lower(t_email_address) like lower(:search) or " +
-        "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search) or lower(promo_code) like lower(:search) or lower(special_price_token) like lower(:search))) ";
+        "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search) or lower(promo_code) like lower(:search) or lower(special_price_token) like lower(:search)" +
+        "  or (tr_invoice_number is not null and lower(tr_invoice_number) like lower(:search)) )) ";
 
     String APPLY_FILTER_SUBSCRIPTION = " (:search is null or (lower(tr_id) like lower(:search) or lower(s_id::text) like lower(:search) or lower(s_first_name) like lower(:search) or lower(s_last_name) like lower(:search) or lower(s_email_address) like lower(:search) " +
         "  or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search) or lower(promo_code) like lower(:search) )) ";
