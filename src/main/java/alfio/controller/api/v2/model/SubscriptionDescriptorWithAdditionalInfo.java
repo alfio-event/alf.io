@@ -218,6 +218,12 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     }
 
     @Override
+    public OfflinePaymentConfiguration getOfflinePaymentConfiguration() {
+        // offline payment is not supported for subscriptions
+        return null;
+    }
+
+    @Override
     public boolean isCanApplySubscriptions() {
         return false;//cannot buy a subscription with another subscription
     }

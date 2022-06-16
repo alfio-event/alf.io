@@ -62,6 +62,8 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
 
     private final AnalyticsConfiguration analyticsConfiguration;
 
+    private final OfflinePaymentConfiguration offlinePaymentConfiguration;
+
     private final Map<String, Map<String, String>> i18nOverride;
 
     private final Integer availableTicketsCount;
@@ -85,6 +87,7 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
                                    AssignmentConfiguration assignmentConfiguration,
                                    PromotionsConfiguration promotionsConfiguration,
                                    AnalyticsConfiguration analyticsConfiguration,
+                                   OfflinePaymentConfiguration offlinePaymentConfiguration,
                                    Map<String, Map<String, String>> i18nOverride,
                                    Integer availableTicketsCount,
                                    String customCss,
@@ -104,6 +107,7 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         this.assignmentConfiguration = assignmentConfiguration;
         this.promotionsConfiguration = promotionsConfiguration;
         this.analyticsConfiguration = analyticsConfiguration;
+        this.offlinePaymentConfiguration = offlinePaymentConfiguration;
         this.i18nOverride = i18nOverride;
         this.availableTicketsCount = availableTicketsCount;
         this.customCss = customCss;
@@ -274,6 +278,11 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         return event.getTitle();
     }
 
+
+    @Override
+    public OfflinePaymentConfiguration getOfflinePaymentConfiguration() {
+        return offlinePaymentConfiguration;
+    }
 
     @Getter
     public static class CaptchaConfiguration {
