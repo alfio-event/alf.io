@@ -37,8 +37,8 @@
         <div class="col-xs-12 col-sm-6" data-ng-repeat="lang in $ctrl.selectedLanguages">
             <div class="form-group" bs-form-error="editSubscriptionForm['description-'+lang.locale]">
                 <label for="description-{{lang.locale}}">{{lang.displayLanguage}}</label><display-commonmark-preview class="pull-right" style="margin-right: 20px" text="$ctrl.subscription.description[lang.locale]"></display-commonmark-preview>
-                <textarea ng-model="$ctrl.subscription.description[lang.locale]" name="description-{{lang.locale}}" id="description-{{lang.locale}}" required class="form-control" ng-minlength="10" data-ng-maxlength="255"></textarea>
-                <field-error data-form-obj="editSubscriptionForm" data-field-obj="editSubscriptionForm['description-'+lang.locale]" data-min-char="10" data-max-char="255" data-show-existing-errors="true"></field-error>
+                <textarea ng-model="$ctrl.subscription.description[lang.locale]" name="description-{{lang.locale}}" id="description-{{lang.locale}}" required class="form-control" ng-minlength="10" data-ng-maxlength="{{$ctrl.descriptionMaxLength}}"></textarea>
+                <field-error data-form-obj="editSubscriptionForm" data-field-obj="editSubscriptionForm['description-'+lang.locale]" data-min-char="10" data-max-char="{{$ctrl.descriptionMaxLength}}" data-show-existing-errors="true"></field-error>
             </div>
         </div>
     </div>
