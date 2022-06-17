@@ -266,7 +266,8 @@
                 UtilsService.getAvailableCurrencies(),
                 PaymentProxyService.getAllProxies(ctrl.organizationId),
                 LocationService.getTimezones(),
-                ConfigurationService.loadSingleConfigForOrganization(ctrl.organizationId, 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS')
+                ConfigurationService.loadSingleConfigForOrganization(ctrl.organizationId, 'GENERATE_TICKETS_FOR_SUBSCRIPTIONS'),
+                ConfigurationService.loadInstanceSettings()
             ];
             if(ctrl.subscriptionId) {
                 ctrl.existing = true;
@@ -292,6 +293,7 @@
                 ctrl.paymentMethods = getPaymentMethods(res[3].data);
                 ctrl.timeZones = res[4].data;
                 ctrl.ticketsGenerationJobActive = res[5].data === 'true';
+                ctrl.descriptionMaxLength = res[6].data.descriptionMaxLength;
 
                 if(ctrl.existing) {
                     initExistingSubscription();
