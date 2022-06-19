@@ -75,10 +75,17 @@ public class SubscriptionApiController {
     ResponseEntity<UUID> create(@PathVariable("organizationId") int organizationId,
                                 @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
                                 Principal principal) {
-        if (organizationId == subscriptionDescriptor.getOrganizationId() && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
+
+        if (organizationId != subscriptionDescriptor.getOrganizationId()
+            || !userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        var result = SubscriptionDescriptorModification.validate(subscriptionDescriptor);
+        if (result.isSuccess()) {
             return ResponseEntity.of(subscriptionManager.createSubscriptionDescriptor(subscriptionDescriptor));
         } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.badRequest().build();
         }
     }
 

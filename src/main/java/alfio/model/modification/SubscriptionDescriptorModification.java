@@ -17,6 +17,8 @@
 package alfio.model.modification;
 
 import alfio.model.PriceContainer.VatStatus;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
@@ -32,6 +34,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static java.util.Objects.requireNonNullElse;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.length;
 
 @Getter
 public class SubscriptionDescriptorModification {
@@ -89,8 +95,8 @@ public class SubscriptionDescriptorModification {
                                               @JsonProperty("timeZone") ZoneId timeZone,
                                               @JsonProperty("supportsTicketsGeneration") Boolean supportsTicketsGeneration) {
         this.id = id;
-        this.title = title;
-        this.description = description;
+        this.title = requireNonNullElse(title, Map.of());
+        this.description = requireNonNullElse(description, Map.of());
         this.maxAvailable = maxAvailable;
         this.onSaleFrom = onSaleFrom;
         this.onSaleTo = onSaleTo;
@@ -110,7 +116,7 @@ public class SubscriptionDescriptorModification {
         this.termsAndConditionsUrl = termsAndConditionsUrl;
         this.privacyPolicyUrl = privacyPolicyUrl;
         this.fileBlobId = fileBlobId;
-        this.paymentProxies = paymentProxies;
+        this.paymentProxies = requireNonNullElse(paymentProxies, List.of());
         this.timeZone = timeZone;
         this.supportsTicketsGeneration = supportsTicketsGeneration;
     }
@@ -166,5 +172,24 @@ public class SubscriptionDescriptorModification {
             subscriptionDescriptor.getPaymentProxies(),
             subscriptionDescriptor.getZoneId(),
             subscriptionDescriptor.isSupportsTicketsGeneration());
+    }
+
+    public static Result<SubscriptionDescriptorModification> validate(SubscriptionDescriptorModification input) {
+        return new Result.Builder<SubscriptionDescriptorModification>()
+            .checkPrecondition(() -> !input.title.isEmpty(), ErrorCode.custom("title", "Title is mandatory"))
+            .checkPrecondition(() -> !input.description.isEmpty(), ErrorCode.custom("description", "Description is mandatory"))
+            .checkPrecondition(() -> input.title.keySet().equals(input.description.keySet()), ErrorCode.custom("locale-mismatch", "Mismatch between supported translations"))
+            .checkPrecondition(() -> isNotBlank(input.termsAndConditionsUrl), ErrorCode.custom("terms", "Terms and Conditions are mandatory"))
+            .checkPrecondition(() -> isNotBlank(input.fileBlobId), ErrorCode.custom("logo", "Logo is required"))
+            .checkPrecondition(() -> isNotBlank(input.currency) && length(input.currency) == 3, ErrorCode.custom("currency", "Currency Code is required"))
+            .checkPrecondition(() -> input.vatStatus != null, ErrorCode.custom("taxPolicy", "Tax Policy is required"))
+            .checkPrecondition(() -> input.vat != null, ErrorCode.custom("taxes", "Tax percentage is required"))
+            .checkPrecondition(() -> input.onSaleFrom != null, ErrorCode.custom("onSaleFrom", "'On Sale From' is required"))
+            .checkPrecondition(() -> input.timeZone != null, ErrorCode.custom("timeZone", "Time Zone is required"))
+            .checkPrecondition(() -> !input.paymentProxies.isEmpty(), ErrorCode.custom("paymentMethods", "At least one Payment Method is required"))
+            .checkPrecondition(() -> input.price != null, ErrorCode.custom("price", "Price is mandatory"))
+            .checkPrecondition(() -> input.usageType != null, ErrorCode.custom("usageType", "UsageType is mandatory"))
+            .checkPrecondition(() -> isNotBlank(input.fileBlobId), ErrorCode.custom("logo", "Logo is required"))
+            .build(() -> input);
     }
 }

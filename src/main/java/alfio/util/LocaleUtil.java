@@ -21,11 +21,13 @@ import alfio.model.LocalizedContent;
 import alfio.model.Ticket;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -62,6 +64,13 @@ public final class LocaleUtil {
     public static ZonedDateTime atZone(ZonedDateTime in, ZoneId zone) {
         if(in != null) {
             return in.withZoneSameInstant(zone);
+        }
+        return null;
+    }
+
+    public static ZonedDateTime atZone(LocalDateTime in, ZoneId zone) {
+        if(in != null) {
+            return in.atZone(Objects.requireNonNull(zone));
         }
         return null;
     }
