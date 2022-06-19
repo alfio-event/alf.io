@@ -91,19 +91,14 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .addResourceLocations("/resources/images/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
-        //
-        registry
-            .addResourceHandler("/webjars/**")
-            .addResourceLocations("/webjars/")
-            .setCacheControl(defaultCacheControl);
 
         registry.addResourceHandler("/assets/**")
-            .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/assets/")
+            .addResourceLocations("/frontend-public/assets/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 
         registry.addResourceHandler("/*.js")
-            .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/")
+            .addResourceLocations("/frontend-public/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 

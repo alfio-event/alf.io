@@ -1,0 +1,139 @@
+<app-reservation>
+
+<div *ngIf="reservationInfo && purchaseContext">
+
+  <app-stepper [currentStep]="2" [free]="reservationInfo.orderSummary.free"></app-stepper>
+
+  <app-countdown *ngIf="!expired" [validity]="reservationInfo.validity" (expired)="handleExpired($event)"></app-countdown>
+
+  <form [formGroup]="contactAndTicketsForm" (submit)="submitForm()">
+
+    <div class="page-header">
+      <h2 translate="reservation-page.your-details"></h2>
+      <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="displayLoginSuggestion">
+        <div class="h6"><fa-icon [icon]="['fas', 'info-circle']" class="text-info" a11yRole="presentation"></fa-icon> {{ 'reservation-page.login.message' | translate }}</div>
+        <button type="button" (click)="login()" class="btn btn-default"><fa-icon [icon]="['fas', 'sign-in-alt']" a11yRole="presentation"></fa-icon> {{ 'user.menu.login' | translate }}</button>
+      </div>
+    </div>
+
+    <div class="alert alert-danger" role="alert" *ngIf="globalErrors && globalErrors.length > 0">
+      <div *ngFor="let err of globalErrors"><strong>{{err.code | translate: err.arguments}}</strong></div>
+    </div>
+
+    <div class="row">
+      <div class="col-12 col-sm-6">
+        <div class="form-group">
+          <label for="first-name">{{'common.first-name'|translate}}{{' '}}*</label>
+          <input id="first-name" class="form-control" formControlName="firstName" aria-required="true" type="text" #contactFirstName autocomplete="fname" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('firstName', contactFirstName.value)">
+        </div>
+      </div>
+      <div class="col-12 col-sm-6">
+        <div class="form-group">
+          <label for="last-name">{{'common.last-name'|translate}}{{' '}}*</label>
+          <input id="last-name" class="form-control" formControlName="lastName" aria-required="true" type="text" #contactLastName autocomplete="lname" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('lastName', contactLastName.value)">
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <div class="form-group">
+            <label for="email">{{'common.email'|translate}}{{' '}}*</label>
+            <input id="email" class="form-control" formControlName="email" aria-required="true" type="email" #contactLastEmail autocomplete="email" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('email', contactLastEmail.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- invoicing section -->
+    <a id="invoiceSection" #invoiceAnchor></a>
+    <div *ngIf="!reservationInfo.orderSummary.free && purchaseContext.invoicingConfiguration.onlyInvoice" class="mb-4 mt-4">
+      <app-invoice-form [form]="contactAndTicketsForm" [purchaseContext]="purchaseContext"></app-invoice-form>
+    </div>
+    <div *ngIf="!reservationInfo.orderSummary.free && !purchaseContext.invoicingConfiguration.onlyInvoice && purchaseContext.invoicingConfiguration.invoiceAllowed" class="mb-4 mt-4">
+      <div class="custom-control custom-checkbox">
+        <input class="custom-control-input" type="checkbox" formControlName="invoiceRequested" (change)="handleInvoiceRequestedChange()" id="invoiceRequested">
+        <label for="invoiceRequested" class="custom-control-label">
+          {{' '}}<span translate="reservation-page.i-need-an-invoice"></span>
+        </label>
+      </div>
+
+      <app-invoice-form *ngIf="contactAndTicketsForm.value.invoiceRequested" [form]="contactAndTicketsForm" [purchaseContext]="purchaseContext"></app-invoice-form>
+    </div>
+    <!-- -->
+
+    <ng-container *ngIf="purchaseContextType === 'event'">
+      <h2 translate="reservation-page.attendees"></h2>
+
+      <div class="custom-control custom-checkbox wMarginBottom" *ngIf="!purchaseContext.assignmentConfiguration.forceAssignment && ticketCounts > 1 && !reservationInfo.containsCategoriesLinkedToGroups">
+        <input class="custom-control-input" type="checkbox" formControlName="postponeAssignment" id="postpone-assignment" value="true">
+        <label class="custom-control-label" for="postpone-assignment">{{' '}}{{'reservation-page.postpone-assignment'|translate}}</label>
+      </div>
+
+      <ng-container *ngIf="!contactAndTicketsForm.value.postponeAssignment">
+        <div *ngFor="let tc of reservationInfo.ticketsByCategory; let firstCategory = first; ">
+          <div *ngFor="let ticket of tc.tickets; let firstTicket = first;" formGroupName="tickets" class="card mt-4">
+            <div class="attendees-data card-body">
+              <div class="d-flex w-100 justify-content-between">
+                <h3 class="card-title">
+                  <fa-icon [icon]="['fas', 'ticket-alt']" size="xs" [classes]="['rotate-45']" a11yRole="presentation"></fa-icon>
+                  <span>{{' '}}{{'reservation-page-complete.ticket-nr' | translate}}<span class="ticket-counter"></span></span>
+                </h3>
+                <div class="h3" *ngIf="!enableAttendeeAutocomplete && firstCategory && firstTicket">
+                  <button class="btn btn-light btn-xs"
+                          [ngbTooltip]="'reservation-page.copy-attendee'|translate"
+                          type="button"
+                          (click)="copyContactInfoTo(ticket)">
+                    <fa-icon [icon]="['far', 'clone']" a11yRole="presentation"></fa-icon>
+                    <span class="sr-only" translate="reservation-page.copy-attendee"></span>
+                  </button>
+                </div>
+              </div>
+              <div class="h3 mb-3"><small class="text-muted">{{tc.name}}</small></div>
+              <app-ticket-form [ticket]="ticket" [purchaseContext]="purchaseContext" [form]="getTicketForm(ticket)"></app-ticket-form>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+    <ng-container *ngIf="purchaseContextType === 'subscription'">
+      <div class="custom-control custom-checkbox mb-3">
+        <input class="custom-control-input" type="checkbox" formControlName="differentSubscriptionOwner" id="show-subscription-owner" value="true">
+        <label class="custom-control-label" for="show-subscription-owner">{{' '}}{{'reservation-page.subscription.different-owner' | translate}}</label>
+      </div>
+      <div *ngIf="contactAndTicketsForm.value.differentSubscriptionOwner" [formGroup]="getSubscriptionForm()">
+        <div class="form-row">
+          <div class="col-12 col-md-6">
+            <div class="form-group">
+              <label for="subscription-first-name">{{'common.first-name' | translate}} *</label>
+              <input id="subscription-first-name" class="form-control" formControlName="firstName" type="text" appInvalidFeedback>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="form-group">
+              <label for="subscription-last-name">{{'common.last-name' | translate}} *</label>
+              <input class="form-control" id="subscription-last-name" formControlName="lastName" type="text" appInvalidFeedback>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="subscription-email">{{'common.email' | translate}} *</label>
+          <input id="subscription-email" formControlName="email" type="email" class="form-control" appInvalidFeedback>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="mt-3 mb-3" aria-hidden="true"><strong>*</strong>{{' '}}<span translate="common.required-fields"></span></div>
+    <hr class="mt-5">
+
+    <div class="row d-flex justify-content-between mobile-add-margin-bottom">
+      <div class="col-md-5 order-md-1 col-12">
+        <button type="submit" class="block-button btn btn-success" translate="reservation-page.continue" [disabled]="expired"></button>
+      </div>
+      <div class="col-md-5 order-md-0 col-12">
+        <button type="button" class="block-button btn btn-light" (click)="cancelPendingReservation()" translate="reservation-page.cancel"></button>
+      </div>
+    </div>
+  </form>
+</div>
+
+</app-reservation>

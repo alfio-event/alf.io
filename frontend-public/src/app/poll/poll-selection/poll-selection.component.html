@@ -1,0 +1,28 @@
+<div *ngIf="!polls">
+    <h2 translate="poll.title"></h2>
+    <form [formGroup]="pinForm" (submit)="confirmPin()" *ngIf="!polls">
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="form-group">
+                    <label for="pin" translate="poll.enter-your-pin"></label>
+                    <input id="pin" formControlName="pin" class="form-control" appInvalidFeedback>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4 offset-md-8 col-12">
+                <button class="btn btn-success btn-block" type="submit" translate="show-event.continue"></button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div *ngIf="polls && polls.length > 0">
+    <h2 translate="poll.select"></h2>
+    <div class="list-group poll-list">
+        <a class="list-group-item list-group-item-action" *ngFor="let poll of polls" [routerLink]="[poll.id]" queryParamsHandling="merge">
+            <h3>{{poll.title[translate.currentLang]}}</h3>
+            <p class="mb-0" *ngIf="poll.description[translate.currentLang]">{{poll.description[translate.currentLang]}}</p>
+        </a>
+    </div>
+</div>

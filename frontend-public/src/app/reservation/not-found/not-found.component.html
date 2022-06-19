@@ -1,0 +1,6 @@
+<app-reservation>
+
+<h4 class="mt-5 text-center">{{'reservation-page-not-found.reservation-with-id-does-not-exist'|translate: {'0': reservationId|uppercase|slice:0:8} }}</h4>
+<h5 class="mt-5 text-center" [innerHTML]="'reservation-page-not-found.go-back-to-event' | translate: {'0': purchaseContextUrl}"></h5>
+
+</app-reservation>

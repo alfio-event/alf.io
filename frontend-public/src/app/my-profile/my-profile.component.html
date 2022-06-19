@@ -1,0 +1,63 @@
+<div class="container mt-2" *ngIf="userForm && user">
+  <form [formGroup]="userForm" (submit)="save()">
+    <div class="application-container p-md-4">
+      <app-topbar [contentLanguages]="languages"></app-topbar>
+      <div class="page-header">
+        <h1>{{ 'user.menu.my-profile' | translate }}</h1>
+        <small>{{ 'my-profile.description' | translate }}</small>
+      </div>
+
+      <div class="row mt-3" [formGroup]="userForm">
+        <div class="col-12 col-sm-6">
+          <div class="form-group">
+            <label for="first-name">{{'common.first-name'|translate}}{{' '}}*</label>
+            <input id="first-name" class="form-control" formControlName="firstName" aria-required="true" type="text" autocomplete="fname" [attr.maxlength]="255" appInvalidFeedback>
+          </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="form-group">
+            <label for="last-name">{{'common.last-name'|translate}}{{' '}}*</label>
+            <input id="last-name" class="form-control" formControlName="lastName" aria-required="true" type="text" autocomplete="lname" [attr.maxlength]="255" appInvalidFeedback>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="invoicingConfiguration?.invoiceAllowed">
+        <app-invoice-form [form]="userForm" [invoicingConfiguration]="invoicingConfiguration"></app-invoice-form>
+      </div>
+
+      <div *ngIf="hasAdditionalData" formGroupName="additionalInfo">
+        <div class="page-header">
+          <h2 translate="my-profile.additional-info"></h2>
+        </div>
+        <div class="form-group" *ngFor="let item of additionalData | keyvalue">
+          <label [attr.for]="item.key">{{item.value.label | translateDescription}}</label>
+          <input type="text" class="form-control" [attr.name]="'additional-'+item.key" [formControlName]="item.key" appInvalidFeedback>
+        </div>
+      </div>
+
+      <hr>
+      <div class="mt-5">
+        <div class="row d-flex justify-content-md-between">
+          <div class="col-md-5 order-md-1 col-12 mb-2">
+            <button class="block-button btn btn-success">{{ 'common.confirm' | translate }}</button>
+          </div>
+          <div class="col-md-5 order-md-0 col-12 mt-2 mt-md-0 mb-2">
+            <a class="block-button btn btn-light" [routerLink]="['/']" translate="to-home"></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-top border-danger pt-5 delete-profile" *ngIf="user.external">
+        <h4 class="text-danger">{{ 'my-profile.delete-profile' | translate }}</h4>
+        <p class="text-muted">{{ 'my-profile.delete-profile.description' | translate }}</p>
+        <div class="row d-flex justify-content-end">
+          <div class="col-md-5 col-12 mt-2">
+            <button type="button" class="btn btn-block btn-danger" (click)="deleteProfile()">{{ 'my-profile.delete-profile' | translate }}</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>

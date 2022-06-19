@@ -1,0 +1,25 @@
+<div *ngIf="event && dateValidityProvider">
+  <h2 translate="ticket.event-info" class="mt-4 mb-4 d-none d-md-block"></h2>
+
+  <div>
+    <dl class="row">
+        <dt class="col-1 text-muted"><fa-icon [icon]="['far', 'building']" a11yRole="presentation"></fa-icon></dt>
+        <dd class="col-11">{{'show-event.by'|translate}} <strong><a [href]="'mailto:'+ event.organizationEmail">{{event.organizationName}}</a></strong></dd>
+        <dt class="col-1 text-muted"><fa-icon [icon]="['far', 'calendar-alt']" [title]="'ticket.date-time' | translate"></fa-icon></dt>
+        <dd class="col-11">
+          <app-event-dates [dateValidityProvider]="dateValidityProvider"></app-event-dates>
+        </dd>
+        <dt class="col-1 text-muted"><fa-icon [icon]="['far', 'calendar-plus']" a11yRole="presentation"></fa-icon></dt>
+        <dd class="col-11">
+          {{'show-event.add-to-calendar' | translate}} &nbsp;
+          <a target="_blank" rel="noopener" href="/api/v2/public/event/{{event.shortName}}/calendar/{{translate.currentLang}}?type=google">Google</a>
+          &nbsp;&ndash;&nbsp;
+          <a target="_blank" rel="noopener" href="/api/v2/public/event/{{event.shortName}}/calendar/{{translate.currentLang}}">iCalendar</a>
+        </dd>
+        <dt class="col-1 text-muted"><fa-icon [icon]="['far', 'compass']" [title]="(isEventOnline ? 'event.location.online' : 'ticket.location') | translate"></fa-icon></dt>
+        <dd class="col-11" *ngIf="!isEventOnline">{{ event.location }}</dd>
+        <dd class="col-11" *ngIf="isEventOnline"><div class="h6" *ngIf="isEventOnline"><span class="badge badge-secondary">{{'event.online.badge' | translate}}</span></div></dd>
+
+    </dl>
+  </div>
+</div>

@@ -1,0 +1,143 @@
+<app-reservation>
+
+<div *ngIf="reservationInfo && purchaseContext">
+
+  <app-stepper [currentStep]="3" [free]="reservationInfo.orderSummary.free"></app-stepper>
+
+  <app-countdown *ngIf="!expired" [validity]="reservationInfo.validity" (expired)="handleExpired($event)"></app-countdown>
+
+  <form [formGroup]="overviewForm" (submit)="confirm()">
+
+
+    <div class="page-header">
+      <h2 translate="reservation-page.title"></h2>
+    </div>
+
+    <div class="row">
+      <div class="col-12" [ngClass]="{'col-md-7': !reservationInfo.orderSummary.free && purchaseContext.invoicingConfiguration.invoiceAllowed}">
+        <app-summary-table [purchaseContext]="purchaseContext" [purchaseContextType]="purchaseContextType" [reservationInfo]="reservationInfo" [displayRemoveSubscription]="displayRemoveSubscription" (removeSubscription)="removeSubscription($event)"></app-summary-table>
+      </div>
+      <div class="d-none d-md-flex col-md-1 justify-content-md-center" *ngIf="purchaseContext.invoicingConfiguration.invoiceAllowed">
+        <div class="border-left separator"></div>
+      </div>
+
+      <div class="col-12 col-md-4 invoice-details" *ngIf="!reservationInfo.orderSummary.free && purchaseContext.invoicingConfiguration.invoiceAllowed">
+        <div class="d-flex flex-column justify-content-center h-100">
+          <div class="h5 d-none d-md-block" translate="reservation-page.invoice-details"></div>
+          <div class="page-header d-block d-md-none"><h2 translate="reservation-page.invoice-details"></h2></div>
+          <div class="row">
+            <div class="col-12" *ngIf="reservationInfo.invoiceRequested">
+              <address class="text-left">
+                <div class="preformatted">{{reservationInfo.billingAddress}}</div>
+                <div *ngIf="hasTaxId">{{'invoice.vat' |translate: {'0': ('common.vat' | translate)} }} {{reservationInfo.billingDetails.taxId}}</div>
+                <hr *ngIf="enabledItalyEInvoicing"/>
+                <h5 class="d-none d-md-block" *ngIf="enabledItalyEInvoicing" translate="invoice-fields.addresseeItalyEInvoice"></h5>
+                <div *ngIf="enabledItalyEInvoicing">{{ taxIdMessageKey | translate}}{{': '}}{{italyEInvoicingFiscalCode}}</div>
+                <div *ngIf="enabledItalyEInvoicing && italyEInvoicingReference != null">
+                  {{(italyEInvoicingSelectedAddresseeKey | translate) + ': ' + italyEInvoicingReference}}
+                </div>
+              </address>
+            </div>
+            <div class="col-7 col-md-12 mt-md-3" *ngIf="!reservationInfo.invoiceRequested">
+              <div class="h-100 d-flex flex-column justify-content-center"><span translate="reservation-page.no-invoice-requested"></span></div>
+            </div>
+            <div class="col-5 col-md-12 mt-md-3">
+              <button type="button" class="btn btn-secondary" (click)="back(true)"><fa-icon [icon]="['far', 'edit']" a11yRole="presentation"></fa-icon>{{' '}}{{(reservationInfo.invoiceRequested ? 'common.edit' : 'reservation-page.request-invoice') | translate}}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="purchaseContext.canApplySubscriptions && !appliedSubscription">
+      <h2 class="page-header mt-2" translate="reservation-page.subscription"></h2>
+
+      <div *ngIf="!displaySubscriptionForm" class="row mt-2">
+        <div class="col-12 col-md-6">
+          <p class="lead" translate="reservation-page.overview.pay-with-subscription"></p>
+        </div>
+        <div class="col-12 col-md-6">
+          <button class="btn btn-default" (click)="toggleSubscriptionFormVisible()">{{'reservation-page.overview.apply-subscription-code' | translate}}</button>
+        </div>
+      </div>
+
+      <div *ngIf="displaySubscriptionForm" class="mt-2">
+        <div class="form-row">
+          <div class="col-12 col-md-6">
+            <div class="form-group" [formGroup]="subscriptionCodeForm">
+              <label for="subscription-input-code" class="sr-only">{{'reservation-page.overview.insert-subscription-code' | translate }}</label>
+              <input (keydown.enter)="applySubscription()" formControlName="subscriptionCode" required id="subscription-input-code" #subscriptionInput appInvalidFeedback class="form-control" [placeholder]="'reservation-page.overview.insert-subscription-code' | translate" autocomplete="off">
+              <div class="invalid-feedback"></div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <button class="btn btn-success" translate="reservation-page.overview.apply-subscription-code" type="button" (click)="applySubscription()"></button>
+            <button class="btn btn-light ml-2" translate="reservation-page-complete.cancel" type="button" (click)="toggleSubscriptionFormVisible()"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div *ngIf="!reservationInfo.orderSummary.free" class="page-header mt-2"><h2 translate="reservation-page.payment"></h2></div>
+
+    <div class="alert alert-danger mt-3 mb-3" role="alert" *ngIf="globalErrors && globalErrors.length > 0">
+      <div *ngFor="let err of globalErrors"><strong>{{err.code | translate: err.arguments}}</strong></div>
+    </div>
+
+    <div class="alert mt-3 mb-3 text-center" role="alert" *ngIf="submitting" [class.alert-warning]="paymentStatusNotification && paymentStatusNotification.indeterminate">
+      <div class="progress mb-3">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" [class.bg-warning]="paymentStatusNotification && paymentStatusNotification.indeterminate" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 75%"></div>
+      </div>
+      <strong *ngIf="!paymentStatusNotification"><span translate="reservation.payment-in-progress" [attr.aria-hidden]="reservationInfo.orderSummary.free"></span><app-animated-dots aria-hidden="true"></app-animated-dots></strong>
+      <strong *ngIf="paymentStatusNotification"><span>{{ (paymentStatusNotification.indeterminate ? 'reservation.payment-processing.warning.message' : 'reservation.payment-processing.delay.message') | translate }}</span><app-animated-dots></app-animated-dots></strong>
+      <div class="text-center mt-3" *ngIf="paymentStatusNotification && !paymentStatusNotification.indeterminate">
+        <button class="btn btn-default" translate="reservation.payment-processing.force-check" (click)="forceCheck()"></button>
+      </div>
+    </div>
+
+    <div *ngIf="!reservationInfo.orderSummary.free" [class.invisible]="submitting">
+      <app-payment-method-selector [purchaseContext]="purchaseContext" [reservationInfo]="reservationInfo" [overviewForm]="overviewForm" (selectedPaymentProvider)="registerCurrentPaymentProvider($event)"></app-payment-method-selector>
+    </div>
+
+
+    <div *ngIf="reservationInfo.orderSummary.free && purchaseContext.captchaConfiguration.captchaForOfflinePaymentAndFree" class="mt-2 wMarginBottom">
+      <app-recaptcha [apiKey]="purchaseContext.captchaConfiguration.recaptchaApiKey" (recaptchaResponse)="handleRecaptchaResponse($event)"></app-recaptcha>
+    </div>
+
+    <div class="custom-control custom-checkbox" *ngIf="purchaseContext.privacyPolicyUrl" [class.invisible]="submitting">
+        <input class="custom-control-input" id="privacyPolicyAccepted" formControlName="privacyPolicyAccepted" type="checkbox" aria-labelledby="privacy-policy-label">{{' '}} <!-- ugly, see  https://github.com/angular/angular/issues/21049 -->
+        <label for="privacyPolicyAccepted" class="custom-control-label" id="privacy-policy-label">
+          <span [innerHTML]="'reservation-page.privacy.prefix' | translate"></span>{{' '}}<a [attr.href]="purchaseContext.privacyPolicyUrl" target="_blank" rel="noopener" translate="reservation-page.privacy.link.text"></a>{{' '}}<span translate="reservation-page.privacy.suffix"></span>
+        </label>
+    </div>
+    <div class="custom-control custom-checkbox" [class.invisible]="submitting">
+        <input class="custom-control-input" id="termsAndConditionsAccepted" formControlName="termAndConditionsAccepted" type="checkbox" aria-labelledby="terms-conditions-label">
+        <label class="custom-control-label" for="termsAndConditionsAccepted" id="terms-conditions-label">
+          {{' '}}<span [innerHTML]="'reservation-page.tc.prefix' | translate"></span>{{' '}}<a [attr.href]="purchaseContext.termsAndConditionsUrl" target="_blank" rel="noopener" translate="reservation-page.tc.link.text"></a>{{' '}}<span translate="reservation-page.tc.suffix"></span>
+        </label>
+    </div>
+
+    <hr class="mt-5">
+
+    <div class="row d-flex justify-content-between mobile-add-margin-bottom mt-4" *ngIf="!submitting">
+      <div class="col-md-5 order-md-1 col-12">
+        <button *ngIf="reservationInfo.orderSummary.free" type="submit" class="block-button btn btn-success" translate="reservation-page.continue" [disabled]="expired"></button>
+        <button *ngIf="!reservationInfo.orderSummary.free" type="submit" class="block-button btn btn-success" [disabled]="expired || !selectedPaymentProvider || !acceptedPrivacyAndTermAndConditions">
+          <ng-container *ngIf="!reservationInfo.tokenAcquired">
+            {{ (paymentMethodDeferred ? 'common.confirm' : 'reservation-page.pay')| translate}} <app-price-tag *ngIf="!paymentMethodDeferred" [purchaseContext]="purchaseContext" [formattedPrice]="reservationInfo.orderSummary.totalPrice" [displayTextInline]="true"></app-price-tag>
+          </ng-container>
+          <ng-container *ngIf="reservationInfo.tokenAcquired">
+            {{'reservation-page.confirm-button' | translate}}
+          </ng-container>
+        </button>
+      </div>
+      <div class="col-md-5 order-md-0 col-12 ">
+        <button type="button" class="block-button btn btn-light" (click)="back()" translate="common.back" *ngIf="!reservationInfo.tokenAcquired"></button>
+        <button type="button" class="block-button btn btn-light" (click)="clearToken()" translate="reservation-page-complete.cancel" *ngIf="reservationInfo.tokenAcquired"></button>
+      </div>
+    </div>
+  </form>
+</div>
+
+</app-reservation>

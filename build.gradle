@@ -15,7 +15,6 @@ buildscript {
     dependencies {
         classpath 'org.postgresql:postgresql:42.2.20'
         //this is for processing the index.html at compile time
-        classpath "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
         classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.9.0"
         //
     }
@@ -42,7 +41,7 @@ plugins {
     id 'org.springframework.boot' version '2.6.6'
     id 'org.sonarqube' version '3.3'
     id 'net.ltgt.errorprone' version '2.0.2'
-	id 'com.github.node-gradle.node' version '3.1.1'
+	id 'com.github.node-gradle.node' version '3.3.0'
 }
 
 apply plugin: 'java'
@@ -51,6 +50,10 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'project-report'
 
+// MJML email templates translations to HTML
+node {
+    download = true
+}
 
 //as pointed out by @facundofarias, we should validate minimum javac version
 task validate {
@@ -260,17 +263,16 @@ processResources {
         gradleProperties.withReader { properties.load(it) }
         properties['alfio.version'] = project.version
         properties['alfio.build-ts'] = ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
-        properties['alfio.frontend.version'] = alfioPublicFrontendVersion
         gradleProperties.withWriter { properties.store(it, null) }
 
 
         //
         // alf.io public frontend: read index.html rewrite path for css/js
 
-        final resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("META-INF/resources/webjars/alfio-public-frontend/$alfioPublicFrontendVersion/alfio-public-frontend/index.html")
+        final resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("/frontend-public/index.html")
         final indexDoc = new Parser().parse(new InputStreamReader(resource, StandardCharsets.UTF_8))
 
-        final basePath = "webjars/alfio-public-frontend/$alfioPublicFrontendVersion/alfio-public-frontend/"
+        final basePath = "frontend-public/"
         NodeMatcher scriptNodes = Selector.select().element("script").toMatcher()
 
         indexDoc.getAllNodesMatching(scriptNodes).stream().forEach({
@@ -387,10 +389,19 @@ task dockerize(type: Copy) {
     filter(ReplaceTokens, tokens: [ALFIO_VERSION: project.version])
 }
 
+task publicFrontendNpmInstall(type: NpmTask) {
+    args = ['--prefix', "${project.projectDir}/frontend-public", 'install']
+}
+
+task publicFrontendBuild(type: NpmTask) {
+    dependsOn publicFrontendNpmInstall
+    args = ['--prefix', "${project.projectDir}/frontend-public", 'run', 'build']
+}
+
 task distribution(type: Copy) {
     from zipTree("${project.buildDir}/libs/alfio-${project.version}-boot.war")
     into "${buildDir}/dockerize"
-    dependsOn build, dockerize
+    dependsOn publicFrontendBuild, build, dockerize
 }
 
 task clever(type: Copy) {
@@ -402,7 +413,7 @@ task clever(type: Copy) {
         }
     })
     into "${project.buildDir}/clevercloud"
-    dependsOn build
+    dependsOn publicFrontendBuild, build
 }
 
 release {
@@ -415,9 +426,6 @@ release {
 }
 
 // MJML email templates translations to HTML
-node {
-    download = true
-}
 
 task mjmlToHtml( type: NodeTask, dependsOn: 'npmInstall' ) {
     script = file( 'src/main/node/mjmlToHtml.js' )
