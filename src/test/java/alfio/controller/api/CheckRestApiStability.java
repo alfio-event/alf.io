@@ -45,7 +45,6 @@ public class CheckRestApiStability {
     private boolean updateDescriptor = false; // change to true and copy the file
 
     @Test
-    @Disabled
     void checkRestApiStability() throws Exception {
         var mvcResult = this.mockMvc.perform(get("/v2/api-docs")
                 .accept(MediaType.APPLICATION_JSON))
@@ -60,14 +59,13 @@ public class CheckRestApiStability {
             try (var writer = Files.newBufferedWriter(Paths.get("descriptor.json"), StandardCharsets.UTF_8)) {
                 writer.write(descriptor);
             }
-            return;
         }
 
         var referenceDescriptor = Json.createReader(new FileReader("src/test/resources/api/descriptor.json")).readValue();
         var currentDescriptor = Json.createReader(new StringReader(descriptor)).readValue();
 
         var diff = Json.createDiff(referenceDescriptor.asJsonObject(), currentDescriptor.asJsonObject());
-        Assertions.assertEquals(Json.createArrayBuilder().build(), diff.toJsonArray()); //TODO: it's currently not stable, we need to understand why
+        Assertions.assertEquals(Json.createArrayBuilder().build(), diff.toJsonArray());
     }
 
     @EnableSwagger2
