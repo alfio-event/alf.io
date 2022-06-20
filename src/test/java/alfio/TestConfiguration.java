@@ -32,7 +32,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.csrf.LazyCsrfTokenRepository;
 
 import java.time.Duration;
 import java.util.Map;
