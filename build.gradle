@@ -197,7 +197,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.junit.platform:junit-platform-engine"
 
-    testImplementation "io.springfox:springfox-swagger2:3.0.0"
+    testImplementation "org.springdoc:springdoc-openapi-ui:1.6.9"
     testImplementation "org.glassfish:jakarta.json:2.0.1"
 
     providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
