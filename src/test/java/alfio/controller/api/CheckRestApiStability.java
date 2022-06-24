@@ -51,13 +51,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     DataSourceConfiguration.class,
     TestConfiguration.class,
     ControllerConfiguration.class,
-    CheckRestApiStability.OpenApiConfiguration.class,
+    TestCheckRestApiStability.DisableSecurity.class,
     SpringDocConfiguration.class,
     SpringDocConfigProperties.class,
     SpringDocWebMvcConfiguration.class
 })
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class CheckRestApiStability {
+class TestCheckRestApiStability {
 
     @Autowired
     private MockMvc mockMvc;
@@ -91,7 +91,7 @@ public class CheckRestApiStability {
 
     @EnableWebSecurity
     @Configuration
-    public static class OpenApiConfiguration extends WebSecurityConfigurerAdapter {
+    public static class DisableSecurity extends WebSecurityConfigurerAdapter {
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
