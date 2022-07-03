@@ -47,9 +47,11 @@ public class ControllerConfiguration implements WebMvcConfigurer {
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.add(jacksonMessageConverter(objectMapper));
+        // see https://github.com/springdoc/springdoc-openapi/issues/624#issuecomment-633155765
         StringHttpMessageConverter converter = new StringHttpMessageConverter();
         converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));
         converters.add(converter);
+        //
+        converters.add(jacksonMessageConverter(objectMapper));
     }
 }
