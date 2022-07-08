@@ -36,6 +36,7 @@ import alfio.controller.form.*;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
+import alfio.manager.support.IncompatibleStateException;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.support.extension.ExtensionEvent;
@@ -1106,6 +1107,29 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEquals(0, eventWithAdditionalInfo3.getSoldTickets());
                 assertEquals(20, eventWithAdditionalInfo3.getAvailableSeats());
                 assertEquals(1, eventWithAdditionalInfo3.getCheckedInTickets());
+
+                // at this point we should not be able to cancel the reservation anymore
+                var removeResult = adminReservationManager.removeReservation(
+                    PurchaseContextType.event,
+                    context.event.getShortName(),
+                    reservationId,
+                    true,
+                    true,
+                    true,
+                    context.userId
+                );
+                assertFalse(removeResult.isSuccess());
+
+                // trying to remove the ticket would result in a runtime exception
+                assertThrows(IncompatibleStateException.class, () -> adminReservationManager.removeTickets(
+                    context.event.getShortName(),
+                    reservationId,
+                    List.of(fullTicketInfo.getId()),
+                    List.of(),
+                    false,
+                    false,
+                    context.userId
+                ));
 
 
                 //test revert check in

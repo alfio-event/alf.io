@@ -20,6 +20,7 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
+import alfio.controller.api.admin.AdminReservationApiController;
 import alfio.controller.api.v2.user.EventApiV2Controller;
 import alfio.controller.api.v2.user.ReservationApiV2Controller;
 import alfio.controller.form.ContactAndTicketsForm;
@@ -30,10 +31,7 @@ import alfio.manager.AdminReservationManager;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.BillingDocument;
-import alfio.model.Event;
-import alfio.model.PurchaseContext;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -44,6 +42,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.BillingDocumentRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -52,6 +51,7 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
@@ -64,15 +64,18 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
@@ -104,6 +107,10 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private AdminReservationManager adminReservationManager;
+    @Autowired
+    private TicketRepository ticketRepository;
+    @Autowired
+    private AdminReservationApiController adminReservationApiController;
 
 
     private Event event;
@@ -205,6 +212,35 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertNotNull(reservationId);
         adminReservationManager.creditReservation(PurchaseContext.PurchaseContextType.event, event.getShortName(), reservationId, false, false, username);
 
+        var billingDocuments = billingDocumentRepository.findAllByReservationId(reservationId);
+        assertEquals(2, billingDocuments.size());
+        assertTrue(billingDocuments.stream().allMatch(bd -> bd.getStatus() == BillingDocument.Status.VALID));
+
+        assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.get(0).getType());
+    }
+
+    @Test
+    void deleteTicketGeneratesCreditNote() {
+        var reservationId = createReservation(form -> {
+            form.setInvoiceRequested(true);
+            form.setVatCountryCode("CH");
+            form.setBillingAddressLine1("LINE 1");
+            form.setBillingAddressCity("CITY");
+            form.setBillingAddressZip("ZIP");
+        });
+        assertNotNull(reservationId);
+        var tickets = ticketRepository.findTicketsInReservation(reservationId);
+        var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toList());
+        var principal = Mockito.mock(Principal.class);
+        when(principal.getName()).thenReturn(username);
+        var modification = new AdminReservationApiController.RemoveTicketsModification(
+            ticketIds,
+            Map.of(),
+            false,
+            true);
+        var result = adminReservationApiController.removeTickets(event.getShortName(), reservationId, modification,principal);
+        assertTrue(result.isSuccess());
+        assertTrue(result.getData().isCreditNoteGenerated());
         var billingDocuments = billingDocumentRepository.findAllByReservationId(reservationId);
         assertEquals(2, billingDocuments.size());
         assertTrue(billingDocuments.stream().allMatch(bd -> bd.getStatus() == BillingDocument.Status.VALID));

@@ -459,7 +459,7 @@
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-default" data-ng-if="attendee.hasAdditionalData" ng-click="$ctrl.openFullData(attendee)" ><i class="fa fa-list"></i> <span class="hidden-xs hidden-sm">Full data</span></button>
-                                            <button type="button" class="btn btn-sm btn-danger" ng-click="$ctrl.removeTicket(attendee)"><i class="fa fa-trash"></i> <span class="hidden-xs hidden-sm">Remove</span></button>
+                                            <button type="button" class="btn btn-sm btn-danger" data-ng-if="attendee.status !== 'CHECKED_IN'" ng-click="$ctrl.removeTicket(attendee)"><i class="fa fa-trash"></i> <span class="hidden-xs hidden-sm">Remove</span></button>
                                         </td>
                                     </tr>
                                     </tbody>

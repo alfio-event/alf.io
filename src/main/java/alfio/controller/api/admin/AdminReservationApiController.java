@@ -220,7 +220,7 @@ public class AdminReservationApiController {
 
 
     @PostMapping("/event/{publicIdentifier}/{reservationId}/remove-tickets")
-    public Result<Boolean> removeTickets(@PathVariable("publicIdentifier") String publicIdentifier,
+    public Result<RemoveResult> removeTickets(@PathVariable("publicIdentifier") String publicIdentifier,
                                          @PathVariable("reservationId") String reservationId,
                                          @RequestBody RemoveTicketsModification toRemove,
                                          Principal principal) {
@@ -230,8 +230,14 @@ public class AdminReservationApiController {
             .map(Map.Entry::getKey)
             .collect(Collectors.toList());
 
-        adminReservationManager.removeTickets(publicIdentifier, reservationId, toRemove.getTicketIds(), toRefund, toRemove.getNotify(), toRemove.getIssueCreditNote(), principal.getName());
-        return Result.success(true);
+        boolean issueCreditNote = adminReservationManager.removeTickets(publicIdentifier,
+            reservationId,
+            toRemove.getTicketIds(),
+            toRefund,
+            toRemove.getNotify(),
+            toRemove.issueCreditNote,
+            principal.getName()).getData();
+        return Result.success(new RemoveResult(true, issueCreditNote));
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/payment-info")
@@ -332,7 +338,7 @@ public class AdminReservationApiController {
     @Getter
     public static class RemoveTicketsModification {
         private final List<Integer> ticketIds;
-        private Map<Integer, Boolean> refundTo;
+        private final Map<Integer, Boolean> refundTo;
         private final Boolean notify;
         private final Boolean issueCreditNote;
 
@@ -363,6 +369,25 @@ public class AdminReservationApiController {
         @JsonCreator
         public RefundAmount(@JsonProperty("amount") String amount) {
             this.amount = amount;
+        }
+    }
+
+    public static class RemoveResult {
+
+        private final boolean success;
+        private final boolean creditNoteGenerated;
+
+        public RemoveResult(boolean success, boolean creditNoteGenerated) {
+            this.success = success;
+            this.creditNoteGenerated = creditNoteGenerated;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public boolean isCreditNoteGenerated() {
+            return creditNoteGenerated;
         }
     }
 }

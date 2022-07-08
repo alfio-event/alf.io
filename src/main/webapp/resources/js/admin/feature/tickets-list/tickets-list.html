@@ -41,7 +41,7 @@
             <div class="list-group-item" data-ng-repeat="ticket in $ctrl.tickets | orderBy: ['timestamp', 'transaction.id' , 'uuid']">
                 <div class="list-group-item-heading">
                     <button type="button" class="btn btn-sm btn-default pull-right" data-ng-click="$ctrl.toggleLocking($ctrl.event, ticket, $ctrl.ticketCategory)"><span data-ng-if="ticket.lockedAssignment"><i class="fa fa-unlock"></i> unlock</span><span data-uib-tooltip="forbid ticket reassignment" data-tooltip-placement="left" data-ng-if="!ticket.lockedAssignment"><i class="fa fa-lock"></i> lock</span></button>
-                    <button type="button" class="btn btn-sm btn-default pull-right" ng-click="$ctrl.removeTicket($ctrl.event, ticket)"><i class="fa fa-trash"></i> remove</button>
+                    <button type="button" class="btn btn-sm btn-default pull-right" ng-if="ticket.status !== 'CHECKED_IN'" ng-click="$ctrl.removeTicket($ctrl.event, ticket)"><i class="fa fa-trash"></i> remove</button>
                     <h4><i data-ng-class="$ctrl.evaluateTicketStatus(ticket.status)" data-uib-tooltip="{{ticket.status | statusText}}"></i> {{::ticket.uuid | limitTo:8}} <span data-ng-if="ticket.paid">Confirmed on: {{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span> by {{::ticket.ticketReservation.fullName}}</h4>
                 </div>
                 <div class="list-group-item-text">

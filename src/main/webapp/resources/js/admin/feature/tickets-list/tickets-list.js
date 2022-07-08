@@ -6,13 +6,13 @@
             event: '<',
             categoryId: '<'
         },
-        controller: ['EventService', '$location', TicketsListCtrl],
+        controller: ['EventService', '$location', 'NotificationHandler', TicketsListCtrl],
         templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/tickets-list/tickets-list.html'
     });
     
     
     
-    function TicketsListCtrl(EventService, $location) {
+    function TicketsListCtrl(EventService, $location, NotificationHandler) {
         var ctrl = this;
 
         var currentSearch = $location.search();
@@ -72,9 +72,14 @@
         }
 
         function removeTicket(event, ticket) {
-            EventService.removeTicketModal(event, ticket.ticketReservation.id, ticket.id, ticket.ticketReservation.invoiceRequested).then(function() {
-                loadData();
-            });
+            if (ticket.status !== 'CHECKED_IN') {
+                EventService.removeTicketModal(event, ticket.ticketReservation.id, ticket.id, ticket.ticketReservation.invoiceRequested).then(function() {
+                    NotificationHandler.showSuccess('Ticket removed');
+                    loadData();
+                });
+            } else {
+                NotificationHandler.showError('Cannot remove a checked-in ticket');
+            }
         }
 
         function loadData() {

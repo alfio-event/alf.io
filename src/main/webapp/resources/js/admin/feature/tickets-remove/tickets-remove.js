@@ -35,8 +35,13 @@
 
         function confirmRemove() {
             ctrl.submitted = true;
-            return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, [ctrl.ticketId], ctrl.toRefund, ctrl.notify, ctrl.issueCreditNote).then(function() {
-                ctrl.onSuccess({ result: ctrl.issueCreditNote });
+            if (!ctrl.paymentInfo.supportRefund && ctrl.canGenerateCreditNote && ctrl.issueCreditNote) {
+                // if payment provider does not support refund, but credit note has been requested,
+                // we simulate a refund anyway, otherwise credit note does
+                ctrl.toRefund = [ctrl.ticketId];
+            }
+            return EventService.removeTickets(ctrl.event.shortName, ctrl.reservationId, [ctrl.ticketId], ctrl.toRefund, ctrl.notify, ctrl.issueCreditNote).then(function(result) {
+                ctrl.onSuccess({ result: result.data.data.creditNoteGenerated });
             }).finally(function() {
                 ctrl.submitted = false;
             });
