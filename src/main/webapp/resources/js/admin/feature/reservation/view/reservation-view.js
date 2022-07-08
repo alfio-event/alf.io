@@ -85,10 +85,15 @@
             } else if(['INCLUDED_EXEMPT', 'NOT_INCLUDED_EXEMPT'].indexOf(src.vatStatus) > -1) {
                 vatApplied = 'N';
             }
+            var containsCheckedInTickets = ctrl.reservationDescriptor.ticketsByCategory.some(function(category) {
+                return category.value.some(function(t) {
+                    return t.status === 'CHECKED_IN';
+                })
+            });
             ctrl.reservation = {
                 id: src.id,
                 status: src.status,
-                showCreditCancel: src.status !== 'CANCELLED' && src.status !== 'CREDIT_NOTE_ISSUED',
+                showCreditCancel: src.status !== 'CANCELLED' && src.status !== 'CREDIT_NOTE_ISSUED' && !containsCheckedInTickets,
                 expirationStr: moment(src.validity).format('YYYY-MM-DD HH:mm'),
                 expiration: {
                     date: moment(src.validity).format('YYYY-MM-DD'),
@@ -420,13 +425,17 @@
         };
 
         ctrl.removeTicket = function(ticket) {
-            EventService.removeTicketModal(ctrl.purchaseContext, ctrl.reservation.id, ticket.ticketId, ctrl.reservation.customerData.invoiceRequested).then(function(billingDocumentRequested) {
-                var message = 'Ticket has been cancelled.';
-                if(billingDocumentRequested) {
-                    message += ' A credit note has been generated. Please check the Billing Documents tab.';
-                }
-                reloadReservation(message);
-            });
+            if (ticket.status !== 'CHECKED_IN') {
+                EventService.removeTicketModal(ctrl.purchaseContext, ctrl.reservation.id, ticket.ticketId, ctrl.reservation.customerData.invoiceRequested).then(function(billingDocumentRequested) {
+                    var message = 'Ticket has been cancelled.';
+                    if(billingDocumentRequested) {
+                        message += ' A credit note has been generated. Please check the Billing Documents tab.';
+                    }
+                    reloadReservation(message);
+                });
+            } else {
+                NotificationHandler.showError('Cannot remove a checked-in ticket');
+            }
         };
 
         ctrl.confirmRefund = function() {

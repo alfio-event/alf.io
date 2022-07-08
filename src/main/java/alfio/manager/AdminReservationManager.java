@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.support.IncompatibleStateException;
 import alfio.manager.support.DuplicateReferenceException;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
@@ -673,8 +674,8 @@ public class AdminReservationManager {
     }
 
     @Transactional
-    public void removeTickets(String publicIdentifier, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean issueCreditNote, String username) {
-        loadReservation(PurchaseContextType.event, publicIdentifier, reservationId, username).ifSuccess(res -> {
+    public Result<Boolean> removeTickets(String publicIdentifier, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean creditNoteRequested, String username) {
+        return loadReservation(PurchaseContextType.event, publicIdentifier, reservationId, username).map(res -> {
             Event e = res.getRight().event().orElseThrow();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
@@ -683,11 +684,18 @@ public class AdminReservationManager {
             // ensure that all the tickets ids are present in tickets
             Assert.isTrue(ticketIdsInReservation.containsAll(ticketIds), "Some ticket ids are not contained in the reservation");
             Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
+            if (!ticketsStatusIsCompatibleWithCancellation(tickets.stream().filter(t -> ticketIds.contains(t.getId())))) {
+                throw new IncompatibleStateException("Cannot remove checked-in tickets");
+            }
             //
 
             handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
 
             boolean removeReservation = tickets.size() - ticketIds.size() <= 0;
+            boolean issueCreditNote = (creditNoteRequested &&
+                // if payment method supports refund we require that the user has selected at least one ticket
+                (!toRefund.isEmpty() || !reservation.getPaymentMethod().isSupportRefund())
+            );
             removeTicketsFromReservation(reservation, e, ticketIds, notify, username, removeReservation, issueCreditNote);
             //
 
@@ -707,6 +715,7 @@ public class AdminReservationManager {
                     unitToCents(calculator.getAppliedDiscount(), currencyCode), calculator.getCurrencyCode(), reservation.getVatNr(), reservation.getVatCountryCode(),
                     reservation.isInvoiceRequested(), reservationId);
             }
+            return issueCreditNote;
         });
     }
 
@@ -836,7 +845,11 @@ public class AdminReservationManager {
     }
 
     private boolean ticketsStatusIsCompatibleWithCancellation(List<Ticket> tickets) {
-        return tickets.stream().noneMatch(c -> c.getStatus() == Ticket.TicketStatus.CHECKED_IN);
+        return ticketsStatusIsCompatibleWithCancellation(tickets.stream());
+    }
+
+    private boolean ticketsStatusIsCompatibleWithCancellation(Stream<Ticket> ticketsStream) {
+        return ticketsStream.noneMatch(c -> c.getStatus() == Ticket.TicketStatus.CHECKED_IN);
     }
 
     @Transactional

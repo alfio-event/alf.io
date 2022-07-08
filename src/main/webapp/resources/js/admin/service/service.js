@@ -338,7 +338,7 @@
                         $scope.reservationId = reservationId;
                         $scope.invoiceRequested = invoiceRequested;
                         $scope.close = function() {
-                            $scope.$close(false);
+                            $scope.$dismiss(false);
                         };
 
                         $scope.success = function (result) {
