@@ -619,9 +619,9 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/invoices/count")
-    public Integer countInvoicesForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+    public Integer countBillingDocumentsForEvent(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .map(e -> ticketReservationManager.countInvoices(e.getId()))
+            .map(e -> ticketReservationManager.countBillingDocuments(e.getId()))
             .orElse(0);
     }
 

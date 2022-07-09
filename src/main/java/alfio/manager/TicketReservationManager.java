@@ -2368,8 +2368,8 @@ public class TicketReservationManager {
             .map(entry -> Pair.of(reservations.get(entry.getKey()), entry.getValue()));
     }
 
-    public Integer countInvoices(int eventId) {
-        return ticketReservationRepository.countInvoices(eventId);
+    public Integer countBillingDocuments(int eventId) {
+        return billingDocumentRepository.countAllForEvent(eventId);
     }
 
 

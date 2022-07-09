@@ -26,6 +26,11 @@ import java.util.Optional;
 @QueryRepository
 public interface BillingDocumentRepository {
 
+    String LOAD_ALL_BY_EVENT_ID = "select a.* from billing_document a inner join" +
+        " (select max(generation_ts) as time,reservation_id_fk from billing_document where status = 'VALID' and type = 'INVOICE' and event_id_fk = :eventId group by reservation_id_fk) b" +
+        " on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk" +
+        " union select * from billing_document where status = 'VALID' and event_id_fk = :eventId and type <> 'INVOICE'";
+
     @Query("select * from billing_document where reservation_id_fk = :reservationId and status = 'VALID' order by generation_ts desc limit 1")
     Optional<BillingDocument> findLatestByReservationId(@Bind("reservationId") String reservationId);
 
@@ -62,14 +67,11 @@ public interface BillingDocumentRepository {
         " on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk")
     List<BillingDocument> findAllOfTypeForEvent(@Bind("type") BillingDocument.Type type, @Bind("eventId") int eventId);
 
-    @Query(
-        "select a.* from billing_document a inner join " +
-            "(select max(generation_ts) as time,reservation_id_fk from billing_document where status = 'VALID' and type = 'INVOICE' and event_id_fk = :eventId group by reservation_id_fk) b" +
-        " on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk" +
-        " union select * from billing_document where status = 'VALID' and event_id_fk = :eventId and type <> 'INVOICE'" +
-        " order by reservation_id_fk, generation_ts"
-    )
+    @Query(LOAD_ALL_BY_EVENT_ID + " order by reservation_id_fk, generation_ts")
     List<BillingDocument> findAllForEvent(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from (" + LOAD_ALL_BY_EVENT_ID + ") docs")
+    Integer countAllForEvent(@Bind("eventId") int eventId);
 
     @Query("delete from billing_document where reservation_id_fk = :reservationId")
     int deleteForReservation(@Bind("reservationId") String reservationId);

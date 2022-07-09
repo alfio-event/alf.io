@@ -77,8 +77,8 @@ If you want to regenerate/download an invoice for a reservation, head to the Res
 
 ![Download Single Invoice](/img/configuration/invoice/standard/005.png)
 
-#### Download all invoices for an event
+#### Download all Billing Documents for an event
 
-You can download all the invoices generated for an event, by selecting _Download_ -> _all invoices_ on the event detail page
+You can download all the invoices generated for an event, by selecting _Download_ -> _all Billing Documents_ on the event detail page
 
-![Download All Invoices](/img/configuration/invoice/standard/006.png)
+![Download All Billing Documents](/img/configuration/invoice/standard/006.png)

@@ -243,6 +243,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertTrue(result.getData().isCreditNoteGenerated());
         var billingDocuments = billingDocumentRepository.findAllByReservationId(reservationId);
         assertEquals(2, billingDocuments.size());
+        assertEquals(2, ticketReservationManager.countBillingDocuments(event.getId()));
         assertTrue(billingDocuments.stream().allMatch(bd -> bd.getStatus() == BillingDocument.Status.VALID));
 
         assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.get(0).getType());
