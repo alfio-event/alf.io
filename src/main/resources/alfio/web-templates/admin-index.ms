@@ -160,8 +160,8 @@
                                 <li role="menuitem"><a data-ng-click="ctrl.openFieldSelectionModal()"><i class="fa fa-users"></i> attendees' data</a></li>
                                 <li role="menuitem"><a data-ng-click="ctrl.openWaitingQueueModal()" ><i class="fa fa-group"></i> waiting list</a></li>
                                 <li role="menuitem"><a data-ng-click="ctrl.downloadSponsorsScan()" ><i class="fa fa-barcode"></i> sponsors scan</a></li>
-                                <li role="menuitem"><a data-ng-click="ctrl.downloadInvoices()" ><i class="fa fa-file-o"></i> all Invoices (PDF)</a></li>
-                                <li role="menuitem"><a data-ng-click="ctrl.downloadInvoices('xls')" ><i class="fa fa-file-o"></i> all Invoices (Excel)</a></li>
+                                <li role="menuitem"><a data-ng-click="ctrl.downloadInvoices()" ><i class="fa fa-file-o"></i> all Billing Documents (PDF)</a></li>
+                                <li role="menuitem"><a data-ng-click="ctrl.downloadInvoices('xls')" ><i class="fa fa-file-o"></i> all Billing Documents (Excel)</a></li>
                             </ul>
 
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">

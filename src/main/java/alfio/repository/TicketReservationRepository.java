@@ -147,9 +147,6 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set invoice_number = :invoiceNumber where id = :reservationId")
     int setInvoiceNumber(@Bind("reservationId") String reservationId, @Bind("invoiceNumber") String invoiceNumber);
 
-    @Query("select count(*) from tickets_reservation where invoice_number is not null and event_id_fk = :eventId")
-    Integer countInvoices(@Bind("eventId") int eventId);
-
 
     @Query("update tickets_reservation set vat_status = :vatStatus, src_price_cts = :srcPriceCts, " +
         " final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, " +
