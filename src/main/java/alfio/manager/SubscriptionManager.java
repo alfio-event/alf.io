@@ -20,9 +20,12 @@ import alfio.config.Initializer;
 import alfio.controller.form.SearchOptions;
 import alfio.model.AllocationStatus;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
+import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -234,5 +237,25 @@ public class SubscriptionManager {
 
     public List<SubscriptionDescriptor> loadActiveSubscriptionDescriptors(int organizationId) {
         return subscriptionRepository.findActiveSubscriptionsForOrganization(organizationId);
+    }
+
+    public Result<List<EventSubscriptionLink>> updateLinkedEvents(int organizationId, UUID subscriptionId, List<Integer> eventIds){
+        if (eventIds.isEmpty()) {
+            int removed = subscriptionRepository.removeAllLinksForSubscription(subscriptionId, organizationId);
+            log.info("removed all subscription links ({}) for subscription {}", removed, subscriptionId);
+            return Result.success(List.of());
+        } else {
+            subscriptionRepository.removeStaleEvents(subscriptionId, organizationId, eventIds);
+            var parameters = eventIds.stream()
+                .map(eventId -> new MapSqlParameterSource("eventId", eventId)
+                    .addValue("subscriptionId", subscriptionId)
+                    .addValue("pricePerTicket", 0)
+                    .addValue("organizationId", organizationId))
+                .toArray(MapSqlParameterSource[]::new);
+            var result = jdbcTemplate.batchUpdate(SubscriptionRepository.INSERT_SUBSCRIPTION_LINK, parameters);
+            return new Result.Builder<List<EventSubscriptionLink>>()
+                .checkPrecondition(() -> Arrays.stream(result).allMatch(r -> r == 1), ErrorCode.custom("cannot-link", "Cannot link events"))
+                .build(() -> getLinkedEvents(organizationId, subscriptionId));
+        }
     }
 }

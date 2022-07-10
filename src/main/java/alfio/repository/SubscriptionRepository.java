@@ -191,9 +191,19 @@ public interface SubscriptionRepository {
                                  @Bind("organizationId") int organizationId,
                                  @Bind("descriptorIds") List<UUID> currentDescriptors);
 
+    @Query("delete from subscription_event where subscription_descriptor_id_fk = :subscriptionId and organization_id_fk = :organizationId" +
+        " and event_id_fk not in (:eventIds)")
+    int removeStaleEvents(@Bind("subscriptionId") UUID subscriptionId,
+                          @Bind("organizationId") int organizationId,
+                          @Bind("eventIds") List<Integer> eventIds);
+
     @Query("delete from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
     int removeAllSubscriptionsForEvent(@Bind("eventId") int eventId,
                                        @Bind("organizationId") int organizationId);
+
+    @Query("delete from subscription_event where subscription_descriptor_fk = :subscriptionId and organization_id_fk = :organizationId")
+    int removeAllLinksForSubscription(@Bind("subscriptionId") UUID subscriptionId,
+                                      @Bind("organizationId") int organizationId);
 
     @Query(type = QueryType.TEMPLATE, value = INSERT_SUBSCRIPTION)
     String batchCreateSubscription();
