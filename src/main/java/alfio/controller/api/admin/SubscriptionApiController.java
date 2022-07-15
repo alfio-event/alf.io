@@ -16,16 +16,12 @@
  */
 package alfio.controller.api.admin;
 
-import alfio.manager.EventManager;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
-import alfio.util.Json;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,17 +35,13 @@ import java.util.stream.Collectors;
 @RequestMapping("/admin/api/organization/{organizationId}/subscription")
 public class SubscriptionApiController {
 
-    private static final Logger log = LoggerFactory.getLogger(SubscriptionApiController.class);
     private final SubscriptionManager subscriptionManager;
     private final UserManager userManager;
-    private final EventManager eventManager;
 
     public SubscriptionApiController(SubscriptionManager subscriptionManager,
-                                     UserManager userManager,
-                                     EventManager eventManager) {
+                                     UserManager userManager) {
         this.subscriptionManager = subscriptionManager;
         this.userManager = userManager;
-        this.eventManager = eventManager;
     }
 
     @GetMapping("/list")
@@ -127,44 +119,50 @@ public class SubscriptionApiController {
     }
 
     @GetMapping("/{subscriptionId}/events")
-    ResponseEntity<List<String>> getLinkedEvents(@PathVariable("organizationId") int organizationId,
+    ResponseEntity<List<EventSubscriptionLink>> getLinkedEvents(@PathVariable("organizationId") int organizationId,
                                                                 @PathVariable("subscriptionId") UUID subscriptionId,
                                                                 Principal principal) {
         if(userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return ResponseEntity.ok(loadLinkedEvents(subscriptionManager.getLinkedEvents(organizationId, subscriptionId)));
+            return ResponseEntity.ok(subscriptionManager.getLinkedEvents(organizationId, subscriptionId));
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 
-    @PostMapping("/{subscriptionId}/events")
-    ResponseEntity<List<String>> updateLinkedEvents(@PathVariable("organizationId") int organizationId,
-                                                                   @PathVariable("subscriptionId") UUID subscriptionId,
-                                                                   @RequestBody List<String> eventSlugs,
-                                                                   Principal principal) {
-        if (eventSlugs == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+    /**
+     * Deactivates a subscription descriptor and removes the link with events, if any.
+     *
+     * This will ensure that existing reservations made or ticket registered using this subscription won't have
+     * to be deleted.
+     *
+     * @param organizationId
+     * @param descriptorId
+     * @param principal
+     * @return
+     */
+    @DeleteMapping("/{subscriptionId}")
+    ResponseEntity<Void> deactivate(@PathVariable("organizationId") int organizationId,
+                                    @PathVariable("subscriptionId") UUID descriptorId,
+                                    Principal principal) {
         if(userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            List<Integer> eventIds = List.of();
-            if (!eventSlugs.isEmpty()) {
-                eventIds = eventManager.getEventIdsBySlug(eventSlugs, organizationId);
-            }
-            var result = subscriptionManager.updateLinkedEvents(organizationId, subscriptionId, eventIds);
-            if (result.isSuccess()) {
-                return ResponseEntity.ok(loadLinkedEvents(result.getData()));
-            } else {
-                if (log.isWarnEnabled()) {
-                    log.warn("Cannot update linked events {}", Json.toJson(result.getErrors()));
-                }
-                return ResponseEntity.badRequest().build();
-            }
+            return deactivateSubscriptionDescriptor(organizationId, descriptorId, subscriptionManager);
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    public static ResponseEntity<Void> deactivateSubscriptionDescriptor(int organizationId,
+                                                                         UUID descriptorId,
+                                                                         SubscriptionManager subscriptionManager) {
+        var result = subscriptionManager.deactivateDescriptor(organizationId, descriptorId);
+        if (result.isSuccess()) {
+            return ResponseEntity.ok().build();
         } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    private List<String> loadLinkedEvents(List<EventSubscriptionLink> eventSubscriptionLinks) {
+    public static List<String> loadLinkedEvents(List<EventSubscriptionLink> eventSubscriptionLinks) {
         return eventSubscriptionLinks.stream()
             .map(EventSubscriptionLink::getEventShortName)
             .collect(Collectors.toList());

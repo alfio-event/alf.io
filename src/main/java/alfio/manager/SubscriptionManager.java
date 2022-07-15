@@ -223,6 +223,10 @@ public class SubscriptionManager {
         return subscriptionRepository.findAllWithStatistics(organizationId);
     }
 
+    public Optional<SubscriptionDescriptorWithStatistics> loadSubscriptionWithStatistics(UUID id, int organizationId) {
+        return subscriptionRepository.findOneWithStatistics(id, organizationId);
+    }
+
     public int linkSubscriptionToEvent(UUID subscriptionId, int eventId, int organizationId, int pricePerTicket) {
         return subscriptionRepository.linkSubscriptionAndEvent(subscriptionId, eventId, pricePerTicket, organizationId);
     }
@@ -239,10 +243,20 @@ public class SubscriptionManager {
         return subscriptionRepository.findActiveSubscriptionsForOrganization(organizationId);
     }
 
+    public Result<Boolean> deactivateDescriptor(int organizationId, UUID descriptorId) {
+        // 1. remove all links
+        removeAllEventLinksForSubscription(organizationId, descriptorId);
+        int result = subscriptionRepository.deactivateDescriptor(descriptorId, organizationId);
+        if (result == 1) {
+            return Result.success(true);
+        }
+        return Result.error(ErrorCode.custom("cannot-deactivate-subscription",
+            "Cannot deactivate subscription descriptor"));
+    }
+
     public Result<List<EventSubscriptionLink>> updateLinkedEvents(int organizationId, UUID subscriptionId, List<Integer> eventIds){
         if (eventIds.isEmpty()) {
-            int removed = subscriptionRepository.removeAllLinksForSubscription(subscriptionId, organizationId);
-            log.info("removed all subscription links ({}) for subscription {}", removed, subscriptionId);
+            removeAllEventLinksForSubscription(organizationId, subscriptionId);
             return Result.success(List.of());
         } else {
             subscriptionRepository.removeStaleEvents(subscriptionId, organizationId, eventIds);
@@ -257,5 +271,10 @@ public class SubscriptionManager {
                 .checkPrecondition(() -> Arrays.stream(result).allMatch(r -> r == 1), ErrorCode.custom("cannot-link", "Cannot link events"))
                 .build(() -> getLinkedEvents(organizationId, subscriptionId));
         }
+    }
+
+    private void removeAllEventLinksForSubscription(int organizationId, UUID subscriptionId) {
+        int removed = subscriptionRepository.removeAllLinksForSubscription(subscriptionId, organizationId);
+        log.info("removed all event links ({}) for subscription {}", removed, subscriptionId);
     }
 }

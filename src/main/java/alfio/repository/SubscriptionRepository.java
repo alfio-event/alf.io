@@ -56,11 +56,11 @@ public interface SubscriptionRepository {
     @Query("insert into subscription_descriptor (" +
         "id, title, description, max_available, on_sale_from, on_sale_to, price_cts, vat, vat_status, currency, is_public, organization_id_fk, " +
         " max_entries, validity_type, validity_time_unit, validity_units, validity_from, validity_to, usage_type, terms_conditions_url, privacy_policy_url," +
-        " file_blob_id_fk, allowed_payment_proxies, private_key, time_zone, supports_tickets_generation) " +
+        " file_blob_id_fk, allowed_payment_proxies, private_key, time_zone, supports_tickets_generation, status) " +
         " values(:id, :title::jsonb, :description::jsonb, :maxAvailable, :onSaleFrom, :onSaleTo, :priceCts, :vat, :vatStatus::VAT_STATUS, :currency, " +
         " :isPublic, :organizationId, :maxEntries, :validityType::SUBSCRIPTION_VALIDITY_TYPE, :validityTimeUnit::SUBSCRIPTION_TIME_UNIT, " +
         " :validityUnits, :validityFrom, :validityTo, :usageType::SUBSCRIPTION_USAGE_TYPE, :tcUrl, :privacyPolicyUrl," +
-        " :fileBlobId, :allowedPaymentProxies::text[], :privateKey, :timeZone, :supportsTicketsGeneration)")
+        " :fileBlobId, :allowedPaymentProxies::text[], :privateKey, :timeZone, :supportsTicketsGeneration, 'ACTIVE')")
     int createSubscriptionDescriptor(@Bind("id") UUID id,
                                      @Bind("title") @JSONData Map<String, String> title,
                                      @Bind("description") @JSONData Map<String, String> description,
@@ -130,35 +130,44 @@ public interface SubscriptionRepository {
     @Query("update subscription_descriptor set is_public = :isPublic where id = :id and organization_id_fk = :organizationId")
     int setPublicStatus(@Bind("id") UUID id, @Bind("organizationId") int organizationId, @Bind("isPublic") boolean isPublic);
 
-    @Query("select * from subscription_descriptor where organization_id_fk = :organizationId order by on_sale_from, on_sale_to nulls last")
+    @Query("update subscription_descriptor set status = 'NOT_ACTIVE' where id = :id and organization_id_fk = :organizationId")
+    int deactivateDescriptor(@Bind("id") UUID id, @Bind("organizationId") int organizationId);
+
+    @Query("select * from subscription_descriptor where organization_id_fk = :organizationId" +
+        " and status = 'ACTIVE'" +
+        " order by on_sale_from, on_sale_to nulls last")
     List<SubscriptionDescriptor> findAllByOrganizationIds(@Bind("organizationId") int organizationId);
 
     @Query("select subscription_descriptor.* from subscription_descriptor" +
         " join organization org on subscription_descriptor.organization_id_fk = org.id "+
-        " where is_public = true and" +
+        " where status = 'ACTIVE' and is_public = true and" +
         " (max_entries > 0 or max_entries = -1) and (on_sale_from is null or :from >= on_sale_from) " +
         " and (on_sale_to is null or :from <= on_sale_to)" +
         " and (:orgSlug is null or org.slug = :orgSlug)"+
         " order by on_sale_from, on_sale_to nulls last")
     List<SubscriptionDescriptor> findAllActiveAndPublic(@Bind("from") ZonedDateTime from, @Bind("orgSlug") String organizerSlug);
 
-    @Query("select * from subscription_descriptor where id = :id and organization_id_fk = :organizationId")
+    @Query("select * from subscription_descriptor where status = 'ACTIVE' and id = :id and organization_id_fk = :organizationId")
     Optional<SubscriptionDescriptor> findOne(@Bind("id") UUID id, @Bind("organizationId") int organizationId);
 
-    @Query("select * from subscription_descriptor where id = :id")
+    @Query("select * from subscription_descriptor where id = :id and status = 'ACTIVE'")
     Optional<SubscriptionDescriptor> findOne(@Bind("id") UUID id);
 
-    @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where reservation_id_fk = :reservationId)")
+    @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where reservation_id_fk = :reservationId) and status = 'ACTIVE'")
     Optional<SubscriptionDescriptor> findDescriptorByReservationId(@Bind("reservationId") String reservationId);
 
-    @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where id = :id)")
+    @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where id = :id) and status = 'ACTIVE'")
     SubscriptionDescriptor findDescriptorBySubscriptionId(@Bind("id") UUID subscriptionId);
 
-    @Query("select organization_id_fk from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where id = :id)")
+    @Query("select organization_id_fk from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where id = :id) and status = 'ACTIVE'")
     Optional<Integer> findOrganizationIdForSubscription(@Bind("id") UUID subscriptionId);
 
     @Query("select * from subscription_descriptor_statistics where sd_organization_id_fk = :organizationId")
     List<SubscriptionDescriptorWithStatistics> findAllWithStatistics(@Bind("organizationId") int organizationId);
+
+    @Query("select * from subscription_descriptor_statistics where sd_organization_id_fk = :organizationId and sd_id = :subscriptionDescriptorId")
+    Optional<SubscriptionDescriptorWithStatistics> findOneWithStatistics(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
+                                                                         @Bind("organizationId") int organizationId);
 
     @Query("select exists (select 1 from subscription_event where event_id_fk = :eventId" +
         " and subscription_descriptor_id_fk = :subscriptionDescriptorId::uuid and organization_id_fk = :organizationId)")
@@ -182,7 +191,8 @@ public interface SubscriptionRepository {
     @Query("select subscription_descriptor_id_fk from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId")
     List<UUID> findLinkedSubscriptionIds(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
 
-    @Query("select * from subscription_descriptor where organization_id_fk = :organizationId and (on_sale_to is null or on_sale_to > now()) order by on_sale_from, on_sale_to nulls last")
+    @Query("select * from subscription_descriptor where status = 'ACTIVE' and organization_id_fk = :organizationId" +
+        " and (on_sale_to is null or on_sale_to > now()) order by on_sale_from, on_sale_to nulls last")
     List<SubscriptionDescriptor> findActiveSubscriptionsForOrganization(@Bind("organizationId") int organizationId);
 
     @Query("delete from subscription_event where event_id_fk = :eventId and organization_id_fk = :organizationId" +
@@ -201,7 +211,7 @@ public interface SubscriptionRepository {
     int removeAllSubscriptionsForEvent(@Bind("eventId") int eventId,
                                        @Bind("organizationId") int organizationId);
 
-    @Query("delete from subscription_event where subscription_descriptor_fk = :subscriptionId and organization_id_fk = :organizationId")
+    @Query("delete from subscription_event where subscription_descriptor_id_fk = :subscriptionId and organization_id_fk = :organizationId")
     int removeAllLinksForSubscription(@Bind("subscriptionId") UUID subscriptionId,
                                       @Bind("organizationId") int organizationId);
 
@@ -242,7 +252,7 @@ public interface SubscriptionRepository {
     @Query("select * from subscription where reservation_id_fk = :reservationId for update")
     Optional<Subscription> findFirstSubscriptionByReservationIdForUpdate(@Bind("reservationId") String reservationId);
 
-    @Query("select exists(select 1 from subscription_descriptor where id = :id)")
+    @Query("select exists(select 1 from subscription_descriptor where id = :id and status = 'ACTIVE')")
     boolean existsById(@Bind("id") UUID subscriptionId);
 
     @Query("select exists (select id from subscription_event where event_id_fk  = :eventId)")

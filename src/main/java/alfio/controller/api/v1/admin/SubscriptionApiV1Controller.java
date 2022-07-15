@@ -16,40 +16,52 @@
  */
 package alfio.controller.api.v1.admin;
 
+import alfio.controller.api.admin.SubscriptionApiController;
+import alfio.manager.EventManager;
 import alfio.manager.FileDownloadManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
 import alfio.model.api.v1.admin.SubscriptionDescriptorModificationRequest;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.util.Json;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
+import java.util.UUID;
+
+import static alfio.controller.api.admin.SubscriptionApiController.loadLinkedEvents;
 
 @RestController
 @RequestMapping("/api/v1/admin/subscription")
 @Transactional
 public class SubscriptionApiV1Controller {
+    private static final Logger log = LoggerFactory.getLogger(SubscriptionApiV1Controller.class);
     private final SubscriptionManager subscriptionManager;
     private final FileUploadManager fileUploadManager;
     private final FileDownloadManager fileDownloadManager;
     private final UserManager userManager;
+    private final EventManager eventManager;
 
     public SubscriptionApiV1Controller(SubscriptionManager subscriptionManager,
                                        FileUploadManager fileUploadManager,
                                        FileDownloadManager fileDownloadManager,
-                                       UserManager userManager) {
+                                       UserManager userManager,
+                                       EventManager eventManager) {
         this.subscriptionManager = subscriptionManager;
         this.fileUploadManager = fileUploadManager;
         this.fileDownloadManager = fileDownloadManager;
         this.userManager = userManager;
+        this.eventManager = eventManager;
     }
 
     @PostMapping("/create")
@@ -69,6 +81,72 @@ public class SubscriptionApiV1Controller {
         }
         return ResponseEntity.badRequest().body(Json.toJson(modification.getErrors()));
 
+    }
+
+    @PostMapping("/{subscriptionId}/update")
+    public ResponseEntity<String> update(@PathVariable("subscriptionId") UUID subscriptionId,
+                                         @RequestBody SubscriptionDescriptorModificationRequest request, Principal principal) {
+        var organization = userManager.findUserOrganizations(principal.getName()).get(0);
+        String imageRef = null;
+        if(StringUtils.isNotEmpty(request.getImageUrl())) {
+            imageRef = fetchImage(request.getImageUrl());
+        }
+        var modification = request.toDescriptorModification(subscriptionId, organization.getId(), imageRef)
+            .flatMap(SubscriptionDescriptorModification::validate);
+        if (modification.isSuccess()) {
+            // request is valid
+            var optionalId = subscriptionManager.updateSubscriptionDescriptor(modification.getData());
+            return optionalId.map(uuid -> ResponseEntity.ok(uuid.toString()))
+                .orElseGet(() -> ResponseEntity.internalServerError().build());
+        }
+        return ResponseEntity.badRequest().body(Json.toJson(modification.getErrors()));
+    }
+
+    @GetMapping("/{subscriptionId}")
+    public ResponseEntity<SubscriptionDescriptorWithStatistics> get(@PathVariable("subscriptionId") UUID subscriptionId,
+                                                                    Principal principal) {
+        var organization = userManager.findUserOrganizations(principal.getName()).get(0);
+        return ResponseEntity.of(subscriptionManager.loadSubscriptionWithStatistics(subscriptionId, organization.getId()));
+    }
+
+    @GetMapping("/{subscriptionId}/events")
+    ResponseEntity<List<String>> getLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
+                                                 Principal principal) {
+        var organization = userManager.findUserOrganizations(principal.getName()).get(0);
+        return ResponseEntity.ok(loadLinkedEvents(subscriptionManager.getLinkedEvents(organization.getId(), subscriptionId)));
+    }
+
+    @PostMapping("/{subscriptionId}/events")
+    ResponseEntity<List<String>> updateLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
+                                                    @RequestBody List<String> eventSlugs,
+                                                    Principal principal) {
+        if (eventSlugs == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+        var organization = userManager.findUserOrganizations(principal.getName()).get(0);
+        int organizationId = organization.getId();
+
+        List<Integer> eventIds = List.of();
+        if (!eventSlugs.isEmpty()) {
+            eventIds = eventManager.getEventIdsBySlug(eventSlugs, organizationId);
+        }
+        var result = subscriptionManager.updateLinkedEvents(organizationId, subscriptionId, eventIds);
+        if (result.isSuccess()) {
+            return ResponseEntity.ok(loadLinkedEvents(result.getData()));
+        } else {
+            if (log.isWarnEnabled()) {
+                log.warn("Cannot update linked events {}", Json.toJson(result.getErrors()));
+            }
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/{subscriptionId}")
+    ResponseEntity<Void> deactivate(@PathVariable("subscriptionId") UUID descriptorId,
+                                    Principal principal) {
+        var organization = userManager.findUserOrganizations(principal.getName()).get(0);
+        int organizationId = organization.getId();
+        return SubscriptionApiController.deactivateSubscriptionDescriptor(organizationId, descriptorId, subscriptionManager);
     }
 
     
