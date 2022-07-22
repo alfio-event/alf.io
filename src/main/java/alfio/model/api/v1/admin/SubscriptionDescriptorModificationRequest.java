@@ -136,16 +136,16 @@ public class SubscriptionDescriptorModificationRequest {
                     id,
                     title.stream().collect(Collectors.toMap(EventCreationRequest.DescriptionRequest::getLang, EventCreationRequest.DescriptionRequest::getBody)),
                     description.stream().collect(Collectors.toMap(EventCreationRequest.DescriptionRequest::getLang, EventCreationRequest.DescriptionRequest::getBody)),
-                    maxAvailable,
+                    requireNonNullElse(maxAvailable, -1),
                     atZone(onSaleFrom, zoneId),
                     atZone(onSaleTo, zoneId),
                     price,
                     vat,
                     vatStatus,
                     currency,
-                    isPublic,
+                    Boolean.TRUE.equals(isPublic),
                     organizationId,
-                    term.getNumEntries(),
+                    requireNonNullElse(term.getNumEntries(), -1),
                     getValidityType(),
                     term.getTimeUnit(),
                     term.getUnits(),
@@ -157,7 +157,7 @@ public class SubscriptionDescriptorModificationRequest {
                     fileBlobId,
                     paymentMethods,
                     zoneId,
-                    supportsTicketsGeneration
+                    Boolean.TRUE.equals(supportsTicketsGeneration)
                 );
             });
     }

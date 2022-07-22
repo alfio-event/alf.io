@@ -114,10 +114,10 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     }
 
 
-    private EventCreationRequest creationRequest() {
+    static EventCreationRequest creationRequest(String shortName) {
         return new EventCreationRequest(
             "Title",
-            this.shortName,
+            shortName,
             Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
             null,
             new EventCreationRequest.LocationRequest(
@@ -125,12 +125,12 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 new EventCreationRequest.CoordinateRequest("45.5","9.00")
             ),
             "Europe/Zurich",
-            LocalDateTime.of(2020,1,10,12,00),
-            LocalDateTime.of(2020,1,10,18,00),
+            LocalDateTime.of(2020,1,10,12,0),
+            LocalDateTime.of(2020,1,10,18,0),
             "https://alf.io",
             "https://alf.io",
             "https://alf.io",
-            "https://avatars3.githubusercontent.com/u/34451076",
+            "https://alf.io/img/tutorials/check-in-app/003.png",
             new EventCreationRequest.TicketRequest(
                 false,
                 10,
@@ -166,7 +166,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     @Test
     void createTest() {
 
-        EventCreationRequest eventCreationRequest = creationRequest();
+        EventCreationRequest eventCreationRequest = creationRequest(shortName);
 
         String shortName = controller.create(eventCreationRequest,mockPrincipal).getBody();
         Event event = eventManager.getSingleEvent(shortName,username);
@@ -196,7 +196,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
     @Test
     void updateTest() {
-        controller.create(creationRequest(),mockPrincipal);
+        controller.create(creationRequest(shortName),mockPrincipal);
 
 
         String newTitle = "new title";
@@ -211,7 +211,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
     @Test
     void retrieveLinkedSubscriptions() {
-        controller.create(creationRequest(),mockPrincipal);
+        controller.create(creationRequest(shortName),mockPrincipal);
         var response = controller.getLinkedSubscriptions(shortName, mockPrincipal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         var linkedSubscriptions = response.getBody();

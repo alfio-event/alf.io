@@ -24,7 +24,6 @@ import alfio.manager.SubscriptionManager;
 import alfio.manager.user.UserManager;
 import alfio.model.api.v1.admin.SubscriptionDescriptorModificationRequest;
 import alfio.model.modification.SubscriptionDescriptorModification;
-import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
 import alfio.util.Json;
 import org.apache.commons.lang3.StringUtils;
@@ -110,14 +109,14 @@ public class SubscriptionApiV1Controller {
     }
 
     @GetMapping("/{subscriptionId}/events")
-    ResponseEntity<List<String>> getLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
+    public ResponseEntity<List<String>> getLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
                                                  Principal principal) {
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
         return ResponseEntity.ok(loadLinkedEvents(subscriptionManager.getLinkedEvents(organization.getId(), subscriptionId)));
     }
 
     @PostMapping("/{subscriptionId}/events")
-    ResponseEntity<List<String>> updateLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
+    public ResponseEntity<List<String>> updateLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
                                                     @RequestBody List<String> eventSlugs,
                                                     Principal principal) {
         if (eventSlugs == null) {
@@ -141,15 +140,12 @@ public class SubscriptionApiV1Controller {
         }
     }
 
-    @DeleteMapping("/{subscriptionId}")
-    ResponseEntity<Void> deactivate(@PathVariable("subscriptionId") UUID descriptorId,
-                                    Principal principal) {
+    @DeleteMapping("/{subscriptionId}/deactivate")
+    public ResponseEntity<Void> deactivate(@PathVariable("subscriptionId") UUID descriptorId, Principal principal) {
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
         int organizationId = organization.getId();
         return SubscriptionApiController.deactivateSubscriptionDescriptor(organizationId, descriptorId, subscriptionManager);
     }
-
-    
 
     private String fetchImage(String url) {
         if(url != null) {

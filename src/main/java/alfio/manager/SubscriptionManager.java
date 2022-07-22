@@ -41,10 +41,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNullElse;
@@ -190,7 +187,7 @@ public class SubscriptionManager {
                 if(original.getPrice() != subscriptionDescriptor.getPriceCts()) {
                     subscriptionRepository.updatePriceForSubscriptions(subscriptionDescriptorId, subscriptionDescriptor.getPriceCts());
                 }
-                if(original.getMaxEntries() != subscriptionDescriptor.getMaxEntries()) {
+                if(!Objects.equals(original.getMaxEntries(), subscriptionDescriptor.getMaxEntries())) {
                     int maxEntries = requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1);
                     int updatedSubscriptions = subscriptionRepository.updateMaxEntriesForSubscriptions(subscriptionDescriptorId, maxEntries);
                     log.debug("SubscriptionDescriptor #{}: updated {} subscriptions. Modified max entries to {}",
