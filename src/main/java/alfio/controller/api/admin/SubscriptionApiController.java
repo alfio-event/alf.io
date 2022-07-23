@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/api/organization/{organizationId}/subscription")
@@ -37,7 +38,8 @@ public class SubscriptionApiController {
     private final SubscriptionManager subscriptionManager;
     private final UserManager userManager;
 
-    public SubscriptionApiController(SubscriptionManager subscriptionManager, UserManager userManager) {
+    public SubscriptionApiController(SubscriptionManager subscriptionManager,
+                                     UserManager userManager) {
         this.subscriptionManager = subscriptionManager;
         this.userManager = userManager;
     }
@@ -75,10 +77,17 @@ public class SubscriptionApiController {
     ResponseEntity<UUID> create(@PathVariable("organizationId") int organizationId,
                                 @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
                                 Principal principal) {
-        if (organizationId == subscriptionDescriptor.getOrganizationId() && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
+
+        if (organizationId != subscriptionDescriptor.getOrganizationId()
+            || !userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        var result = SubscriptionDescriptorModification.validate(subscriptionDescriptor);
+        if (result.isSuccess()) {
             return ResponseEntity.of(subscriptionManager.createSubscriptionDescriptor(subscriptionDescriptor));
         } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.badRequest().build();
         }
     }
 
@@ -118,5 +127,44 @@ public class SubscriptionApiController {
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+    }
+
+    /**
+     * Deactivates a subscription descriptor and removes the link with events, if any.
+     *
+     * This will ensure that existing reservations made or ticket registered using this subscription won't have
+     * to be deleted.
+     *
+     * @param organizationId
+     * @param descriptorId
+     * @param principal
+     * @return
+     */
+    @DeleteMapping("/{subscriptionId}")
+    ResponseEntity<Void> deactivate(@PathVariable("organizationId") int organizationId,
+                                    @PathVariable("subscriptionId") UUID descriptorId,
+                                    Principal principal) {
+        if(userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
+            return deactivateSubscriptionDescriptor(organizationId, descriptorId, subscriptionManager);
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    public static ResponseEntity<Void> deactivateSubscriptionDescriptor(int organizationId,
+                                                                         UUID descriptorId,
+                                                                         SubscriptionManager subscriptionManager) {
+        var result = subscriptionManager.deactivateDescriptor(organizationId, descriptorId);
+        if (result.isSuccess()) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    public static List<String> loadLinkedEvents(List<EventSubscriptionLink> eventSubscriptionLinks) {
+        return eventSubscriptionLinks.stream()
+            .map(EventSubscriptionLink::getEventShortName)
+            .collect(Collectors.toList());
     }
 }
