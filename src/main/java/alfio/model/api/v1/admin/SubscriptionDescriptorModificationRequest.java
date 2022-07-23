@@ -62,9 +62,9 @@ public class SubscriptionDescriptorModificationRequest {
     private final LocalDateTime onSaleFrom;
     private final LocalDateTime onSaleTo;
     private final BigDecimal price;
-    private final BigDecimal vat;
-    private final PriceContainer.VatStatus vatStatus;
-    private final String currency;
+    private final BigDecimal taxPercentage;
+    private final PriceContainer.VatStatus taxPolicy;
+    private final String currencyCode;
     private final Boolean isPublic;
     private final String imageUrl;
     private final String termType;
@@ -82,8 +82,11 @@ public class SubscriptionDescriptorModificationRequest {
                                                      @JsonProperty("termType") String termType,
                                                      @JsonTypeInfo(use= JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "termType")
                                                      @JsonSubTypes({
+                                                         // if termType is "standard", then we expect an instance of StandardPeriodTerm
                                                          @JsonSubTypes.Type(value = StandardPeriodTerm.class, name = TERM_STANDARD),
+                                                         // if termType is "numEntries", then we expect an instance of EntryBasedTerm
                                                          @JsonSubTypes.Type(value = EntryBasedTerm.class, name = TERM_NUM_ENTRIES),
+                                                         // if termType is "custom", then we expect an instance of CustomPeriodTerm
                                                          @JsonSubTypes.Type(value = CustomPeriodTerm.class, name = TERM_CUSTOM)
                                                      })
                                                      @JsonProperty("term") SubscriptionTerm term,
@@ -94,8 +97,8 @@ public class SubscriptionDescriptorModificationRequest {
                                                      @JsonProperty("onSaleTo") LocalDateTime onSaleTo,
                                                      @JsonProperty("price") BigDecimal price,
                                                      @JsonProperty("taxPercentage") BigDecimal taxPercentage,
-                                                     @JsonProperty("taxPolicy") PriceContainer.VatStatus vatStatus,
-                                                     @JsonProperty("currencyCode") String currency,
+                                                     @JsonProperty("taxPolicy") PriceContainer.VatStatus taxPolicy,
+                                                     @JsonProperty("currencyCode") String currencyCode,
                                                      @JsonProperty("isPublic") Boolean isPublic,
                                                      @JsonProperty("imageUrl") String imageUrl,
                                                      @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
@@ -112,9 +115,9 @@ public class SubscriptionDescriptorModificationRequest {
         this.onSaleFrom = onSaleFrom;
         this.onSaleTo = onSaleTo;
         this.price = price;
-        this.vat = taxPercentage;
-        this.vatStatus = vatStatus;
-        this.currency = currency;
+        this.taxPercentage = taxPercentage;
+        this.taxPolicy = taxPolicy;
+        this.currencyCode = currencyCode;
         this.isPublic = isPublic;
         this.imageUrl = imageUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
@@ -140,9 +143,9 @@ public class SubscriptionDescriptorModificationRequest {
                     atZone(onSaleFrom, zoneId),
                     atZone(onSaleTo, zoneId),
                     price,
-                    vat,
-                    vatStatus,
-                    currency,
+                    taxPercentage,
+                    taxPolicy,
+                    currencyCode,
                     Boolean.TRUE.equals(isPublic),
                     organizationId,
                     requireNonNullElse(term.getNumEntries(), -1),
