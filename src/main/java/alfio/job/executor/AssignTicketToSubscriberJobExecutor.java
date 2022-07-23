@@ -54,6 +54,7 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
 
     public static final String EVENT_ID = "eventId";
     public static final String ORGANIZATION_ID = "organizationId";
+    public static final String FORCE_GENERATION = "forceGeneration";
     private final AdminReservationRequestManager requestManager;
     private final ConfigurationManager configurationManager;
     private final SubscriptionRepository subscriptionRepository;
@@ -92,9 +93,10 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
         //     - status = 'ACQUIRED'
         var subscriptionsByEvent = subscriptionRepository.loadAvailableSubscriptionsByEvent((Integer) metadata.get(EVENT_ID), (Integer) metadata.get(ORGANIZATION_ID));
         if (!subscriptionsByEvent.isEmpty()) {
+            boolean forceGeneration = Boolean.TRUE.equals(metadata.get(FORCE_GENERATION));
             eventRepository.findByIds(subscriptionsByEvent.keySet()).forEach(event -> {
-                // 2. for each event check if the flag is active
-                boolean generationEnabled = configurationManager.getFor(GENERATE_TICKETS_FOR_SUBSCRIPTIONS, event.getConfigurationLevel())
+                // 2. for each event check if the flag is active, unless forceGeneration has been specified
+                boolean generationEnabled = forceGeneration || configurationManager.getFor(GENERATE_TICKETS_FOR_SUBSCRIPTIONS, event.getConfigurationLevel())
                     .getValueAsBooleanOrDefault();
                 if (generationEnabled) {
                     var subscriptions = subscriptionsByEvent.get(event.getId());

@@ -20,9 +20,12 @@ import alfio.config.Initializer;
 import alfio.controller.form.SearchOptions;
 import alfio.model.AllocationStatus;
 import alfio.model.modification.SubscriptionDescriptorModification;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
+import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -38,10 +41,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNullElse;
@@ -195,7 +195,7 @@ public class SubscriptionManager {
                 if(original.getPrice() != subscriptionDescriptor.getPriceCts()) {
                     subscriptionRepository.updatePriceForSubscriptions(subscriptionDescriptorId, subscriptionDescriptor.getPriceCts());
                 }
-                if(original.getMaxEntries() != subscriptionDescriptor.getMaxEntries()) {
+                if(!Objects.equals(original.getMaxEntries(), subscriptionDescriptor.getMaxEntries())) {
                     int maxEntries = requireNonNullElse(subscriptionDescriptor.getMaxEntries(), -1);
                     int updatedSubscriptions = subscriptionRepository.updateMaxEntriesForSubscriptions(subscriptionDescriptorId, maxEntries);
                     log.debug("SubscriptionDescriptor #{}: updated {} subscriptions. Modified max entries to {}",
@@ -228,6 +228,10 @@ public class SubscriptionManager {
         return subscriptionRepository.findAllWithStatistics(organizationId);
     }
 
+    public Optional<SubscriptionDescriptorWithStatistics> loadSubscriptionWithStatistics(UUID id, int organizationId) {
+        return subscriptionRepository.findOneWithStatistics(id, organizationId);
+    }
+
     public int linkSubscriptionToEvent(UUID subscriptionId, int eventId, int organizationId, int pricePerTicket) {
         return subscriptionRepository.linkSubscriptionAndEvent(subscriptionId, eventId, pricePerTicket, organizationId);
     }
@@ -242,5 +246,40 @@ public class SubscriptionManager {
 
     public List<SubscriptionDescriptor> loadActiveSubscriptionDescriptors(int organizationId) {
         return subscriptionRepository.findActiveSubscriptionsForOrganization(organizationId);
+    }
+
+    public Result<Boolean> deactivateDescriptor(int organizationId, UUID descriptorId) {
+        // 1. remove all links
+        removeAllEventLinksForSubscription(organizationId, descriptorId);
+        int result = subscriptionRepository.deactivateDescriptor(descriptorId, organizationId);
+        if (result == 1) {
+            return Result.success(true);
+        }
+        return Result.error(ErrorCode.custom("cannot-deactivate-subscription",
+            "Cannot deactivate subscription descriptor"));
+    }
+
+    public Result<List<EventSubscriptionLink>> updateLinkedEvents(int organizationId, UUID subscriptionId, List<Integer> eventIds){
+        if (eventIds.isEmpty()) {
+            removeAllEventLinksForSubscription(organizationId, subscriptionId);
+            return Result.success(List.of());
+        } else {
+            subscriptionRepository.removeStaleEvents(subscriptionId, organizationId, eventIds);
+            var parameters = eventIds.stream()
+                .map(eventId -> new MapSqlParameterSource("eventId", eventId)
+                    .addValue("subscriptionId", subscriptionId)
+                    .addValue("pricePerTicket", 0)
+                    .addValue("organizationId", organizationId))
+                .toArray(MapSqlParameterSource[]::new);
+            var result = jdbcTemplate.batchUpdate(SubscriptionRepository.INSERT_SUBSCRIPTION_LINK, parameters);
+            return new Result.Builder<List<EventSubscriptionLink>>()
+                .checkPrecondition(() -> Arrays.stream(result).allMatch(r -> r == 1), ErrorCode.custom("cannot-link", "Cannot link events"))
+                .build(() -> getLinkedEvents(organizationId, subscriptionId));
+        }
+    }
+
+    private void removeAllEventLinksForSubscription(int organizationId, UUID subscriptionId) {
+        int removed = subscriptionRepository.removeAllLinksForSubscription(subscriptionId, organizationId);
+        log.info("removed all event links ({}) for subscription {}", removed, subscriptionId);
     }
 }

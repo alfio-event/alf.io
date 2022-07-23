@@ -211,4 +211,8 @@ public interface EventRepository {
                                            @Bind("organizer") Integer organizer,
                                            @Bind("organizerSlug") String organizerSlug,
                                            @Bind("tags") List<String> tags);
+
+    @Query("select id from event where short_name in (:shortNames) and org_id = :orgId")
+    List<Integer> findIdsByShortNames(@Bind("shortNames") List<String> eventShortNames,
+                                      @Bind("orgId") int organizationId);
 }

@@ -182,6 +182,10 @@ public class EventManager {
         return getOptionalEventAndOrganizationIdByName(eventName, username).orElseThrow(IllegalStateException::new);
     }
 
+    public List<Integer> getEventIdsBySlug(List<String> eventSlugs, int organizationId) {
+        return eventRepository.findIdsByShortNames(eventSlugs, organizationId);
+    }
+
     public Optional<Event> getOptionalByName(String eventName, String username) {
         return eventRepository.findOptionalByShortName(eventName)
             .filter(checkOwnership(username, organizationRepository));

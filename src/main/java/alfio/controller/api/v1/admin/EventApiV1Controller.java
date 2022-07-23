@@ -17,7 +17,9 @@
 package alfio.controller.api.v1.admin;
 
 import alfio.extension.ExtensionService;
+import alfio.job.executor.AssignTicketToSubscriberJobExecutor;
 import alfio.manager.*;
+import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -47,14 +49,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static alfio.controller.api.admin.EventApiController.validateEvent;
+import static alfio.manager.system.AdminJobExecutor.JobName.ASSIGN_TICKETS_TO_SUBSCRIBERS;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -75,6 +75,7 @@ public class EventApiV1Controller {
     private final ExtensionService extensionService;
     private final ExtensionRepository extensionRepository;
     private final ConfigurationManager configurationManager;
+    private final AdminJobManager adminJobManager;
 
     public EventApiV1Controller(EventManager eventManager,
                                 EventNameManager eventNameManager,
@@ -205,6 +206,19 @@ public class EventApiV1Controller {
         var eventAndOrgId = eventOptional.get();
         eventManager.updateLinkedSubscriptions(subscriptions, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId());
         return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId()));
+    }
+
+    @PostMapping("/{slug}/generate-subscribers-tickets")
+    public ResponseEntity<Boolean> generateTicketsForSubscribers(@PathVariable("slug") String slug,
+                                                                 Principal user) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(slug, user.getName()).map(eventAndOrganizationId -> {
+            Map<String, Object> params = Map.of(
+                AssignTicketToSubscriberJobExecutor.EVENT_ID, eventAndOrganizationId.getId(),
+                AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, eventAndOrganizationId.getOrganizationId(),
+                AssignTicketToSubscriberJobExecutor.FORCE_GENERATION, true
+            );
+            return adminJobManager.scheduleExecution(ASSIGN_TICKETS_TO_SUBSCRIBERS, params);
+        }));
     }
 
     private LinkedSubscriptions retrieveLinkedSubscriptionsForEvent(String slug, int id, int organizationId) {
