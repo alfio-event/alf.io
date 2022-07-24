@@ -16,24 +16,12 @@
  */
 package alfio.model.subscription;
 
-import lombok.Getter;
-
-@Getter
-public class UsageDetails {
-    private final Integer total;
-    private final Integer used;
-    private final Integer available;
-
-    public UsageDetails(Integer total, Integer used, Integer available) {
-        this.total = total;
-        this.used = used;
-        this.available = available;
-    }
+public record UsageDetails(Integer total, Integer used, Integer available) {
 
     public static UsageDetails fromSubscription(Subscription subscription, int usageCount) {
         int maxEntries = Math.max(subscription.getMaxEntries(), 0);
         return new UsageDetails(maxEntries == 0 ? null : maxEntries,
-                                usageCount,
-                                maxEntries == 0 ? null : maxEntries - usageCount);
+            usageCount,
+            maxEntries == 0 ? null : maxEntries - usageCount);
     }
 }

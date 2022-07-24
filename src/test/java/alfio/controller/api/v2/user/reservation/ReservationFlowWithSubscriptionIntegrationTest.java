@@ -246,8 +246,8 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
         assertEquals(SubscriptionUsageExceededForEvent.ERROR, serverError.get().getMessage());
         assertNotNull(serverError.get().getDetail());
         var detail = Json.fromJson(serverError.get().getDetail(), MaxEntriesOverageDetails.class);
-        assertEquals(1, detail.getAllowed());
-        assertEquals(2, detail.getRequested());
+        assertEquals(1, detail.allowed());
+        assertEquals(2, detail.requested());
     }
 
     @Test
@@ -264,8 +264,8 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
         assertEquals(SubscriptionUsageExceeded.ERROR, serverError.get().getMessage());
         assertNotNull(serverError.get().getDetail());
         var detail = Json.fromJson(serverError.get().getDetail(), MaxEntriesOverageDetails.class);
-        assertEquals(1, detail.getAllowed());
-        assertEquals(2, detail.getRequested());
+        assertEquals(1, detail.allowed());
+        assertEquals(2, detail.requested());
     }
 
     @Test

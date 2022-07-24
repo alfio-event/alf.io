@@ -3027,9 +3027,9 @@ public class TicketReservationManager {
                     }
                     var errorDetails = json.fromJsonString(serverError.getDetail(), MaxEntriesOverageDetails.class);
                     if(Objects.equals(serverError.getMessage(), SubscriptionUsageExceeded.ERROR)) {
-                        return new SubscriptionUsageExceeded(errorDetails.getAllowed(),errorDetails.getRequested());
+                        return new SubscriptionUsageExceeded(errorDetails.allowed(),errorDetails.requested());
                     }
-                    return new SubscriptionUsageExceededForEvent(errorDetails.getAllowed(),errorDetails.getRequested());
+                    return new SubscriptionUsageExceededForEvent(errorDetails.allowed(),errorDetails.requested());
                 })
                 .orElse(sqlException);
         }

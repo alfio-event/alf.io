@@ -16,18 +16,8 @@
  */
 package alfio.model.subscription;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
 
-@Getter
-public class MaxEntriesOverageDetails {
-    private final int allowed;
-    private final int requested;
-
-    @JsonCreator
-    public MaxEntriesOverageDetails(@JsonProperty("allowed") int allowed, @JsonProperty("requested") int requested) {
-        this.allowed = allowed;
-        this.requested = requested;
-    }
+public record MaxEntriesOverageDetails(@JsonProperty("allowed") int allowed, @JsonProperty("requested") int requested) {
 }
