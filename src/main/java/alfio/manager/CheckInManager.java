@@ -499,11 +499,11 @@ public class CheckInManager {
         if(outputColorConfiguration == null) {
             return null;
         }
-        return outputColorConfiguration.getConfigurations().stream()
+        return outputColorConfiguration.configurations().stream()
             .filter(cc -> cc.getCategories().contains(categoryId))
             .map(CheckInOutputColorConfiguration.ColorConfiguration::getColorName)
             .findFirst()
-            .orElse(outputColorConfiguration.getDefaultColorName());
+            .orElse(outputColorConfiguration.defaultColorName());
     }
 
     List<AdditionalServiceInfo> getAdditionalServicesForTicket(TicketInfoContainer ticket) {

@@ -904,7 +904,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var owner = ticketReservationRepository.getReservationOwnerAndOrganizationId(reservationId);
             if(context.publicUserId != null) {
                 assertTrue(owner.isPresent());
-                assertEquals(context.publicUserId, owner.get().getUserId());
+                assertEquals(context.publicUserId, owner.get().userId());
 
                 // make sure that the profile has been persisted
                 var optionalProfile = userRepository.loadUserProfile(context.publicUserId);

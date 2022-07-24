@@ -90,14 +90,14 @@ public class UserManager {
             .flatMap(org -> {
                 Map<Integer, List<UserOrganization>> usersAndOrganizations = userOrganizationRepository.findByOrganizationIdsOrderByUserId(organizations.stream().map(Organization::getId).collect(toList()))
                     .stream()
-                    .collect(Collectors.groupingBy(UserOrganization::getUserId));
+                    .collect(Collectors.groupingBy(UserOrganization::userId));
                 return Optional.of(usersAndOrganizations.keySet())
                     .filter(isNotEmpty)
                     .map(ks -> userRepository.findByIds(ks)
                         .stream()
                         .map(u -> {
                             List<UserOrganization> userOrganizations = usersAndOrganizations.get(u.getId());
-                            List<Organization> filteredOrganizations = organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.getOrganizationId() == o.getId())).collect(toList());
+                            List<Organization> filteredOrganizations = organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.organizationId() == o.getId())).collect(toList());
                             List<Role> roles = authorityRepository.findRoles(u.getUsername()).stream().map(Role::fromRoleName).collect(toList());
                             return new UserWithOrganizations(u, filteredOrganizations, roles);
                         }).collect(toList()));
@@ -108,7 +108,7 @@ public class UserManager {
         return findUserOrganizations(username)
                 .stream()
                 .flatMap(o -> userOrganizationRepository.findByOrganizationId(o.getId()).stream())
-                .map(uo -> userRepository.findById(uo.getUserId()))
+                .map(uo -> userRepository.findById(uo.userId()))
                 .filter(User::isEnabled)
                 .collect(toList());
     }
@@ -171,7 +171,7 @@ public class UserManager {
     }
 
     public boolean isOwnerOfOrganization(User user, int organizationId) {
-        return isAdmin(user) || (isOwner(user) && userOrganizationRepository.findByUserId(user.getId()).stream().anyMatch(uo -> uo.getOrganizationId() == organizationId));
+        return isAdmin(user) || (isOwner(user) && userOrganizationRepository.findByUserId(user.getId()).stream().anyMatch(uo -> uo.organizationId() == organizationId));
     }
 
     public boolean isOwnerOfOrganization(String username, int organizationId) {

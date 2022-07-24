@@ -1197,7 +1197,7 @@ public class TicketReservationManager {
             userId = userRepository.getByUsername(username).getId();
         } else {
             userId = ticketReservationRepository.getReservationOwnerAndOrganizationId(reservationId)
-                .map(UserIdAndOrganizationId::getUserId)
+                .map(UserIdAndOrganizationId::userId)
                 .orElse(null);
         }
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
@@ -3072,8 +3072,8 @@ public class TicketReservationManager {
                 }
                 var currentUser = currentUserOptional.get();
                 // access is granted to public owner or organization owners
-                return currentUser.getId() == owner.getUserId()
-                    || userManager.isOwnerOfOrganization(currentUser, owner.getOrganizationId());
+                return currentUser.getId() == owner.userId()
+                    || userManager.isOwnerOfOrganization(currentUser, owner.organizationId());
             }).orElse(true); // reservation is anonymous, so access is granted
     }
 

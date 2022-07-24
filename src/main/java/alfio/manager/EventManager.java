@@ -396,9 +396,9 @@ public class EventManager {
             Validate.isTrue(original.getAllowedPaymentProxies().stream().allMatch(p -> p != PaymentProxy.ON_SITE), ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE);
         }
 
-        String timeZone = ObjectUtils.firstNonNull(em.getZoneId(), em.getGeolocation() != null ? em.getGeolocation().getTimeZone() : null);
-        String latitude = ObjectUtils.firstNonNull(em.getLatitude(), em.getGeolocation() != null ? em.getGeolocation().getLatitude() : null);
-        String longitude = ObjectUtils.firstNonNull(em.getLongitude(), em.getGeolocation() != null ?  em.getGeolocation().getLongitude(): null);
+        String timeZone = ObjectUtils.firstNonNull(em.getZoneId(), em.getGeolocation() != null ? em.getGeolocation().timeZone() : null);
+        String latitude = ObjectUtils.firstNonNull(em.getLatitude(), em.getGeolocation() != null ? em.getGeolocation().latitude() : null);
+        String longitude = ObjectUtils.firstNonNull(em.getLongitude(), em.getGeolocation() != null ?  em.getGeolocation().longitude(): null);
 
         final ZoneId zoneId = ZoneId.of(timeZone);
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
@@ -760,12 +760,12 @@ public class EventManager {
             if(!existingConfiguration) {
                 colorConfiguration = new CheckInOutputColorConfiguration("success", List.of(new ColorConfiguration(chosenColor, List.of(categoryId))));
             } else {
-                var configurationWithoutCategory = colorConfiguration.getConfigurations().stream()
+                var configurationWithoutCategory = colorConfiguration.configurations().stream()
                     .map(cc -> new ColorConfiguration(cc.getColorName(), cc.getCategories().stream().filter(c -> !c.equals(categoryId)).toList()))
                     .filter(cc -> !cc.getCategories().isEmpty()).toList();
                 boolean colorExists = configurationWithoutCategory.stream().anyMatch(cc -> cc.getColorName().equals(chosenColor));
                 if(colorExists) {
-                    colorConfiguration = new CheckInOutputColorConfiguration(colorConfiguration.getDefaultColorName(), configurationWithoutCategory.stream().map(cc -> {
+                    colorConfiguration = new CheckInOutputColorConfiguration(colorConfiguration.defaultColorName(), configurationWithoutCategory.stream().map(cc -> {
                         if (cc.getColorName().equals(chosenColor)) {
                             var newList = new ArrayList<>(cc.getCategories());
                             newList.add(categoryId);
@@ -776,7 +776,7 @@ public class EventManager {
                 } else {
                     var newList = new ArrayList<>(configurationWithoutCategory);
                     newList.add(new ColorConfiguration(chosenColor, List.of(categoryId)));
-                    colorConfiguration = new CheckInOutputColorConfiguration(colorConfiguration.getDefaultColorName(), newList);
+                    colorConfiguration = new CheckInOutputColorConfiguration(colorConfiguration.defaultColorName(), newList);
                 }
             }
             if(existingConfiguration) {
