@@ -143,12 +143,12 @@ public class ExtensionService {
 
     @Transactional
     public void createOrUpdate(String previousPath, String previousName, Extension script) {
-        Validate.notBlank(script.getName(), "Name is mandatory");
-        Validate.notBlank(script.getPath(), "Path must be defined");
-        ScriptValidation validation = new ScriptValidation(script.getScript());
+        Validate.notBlank(script.name(), "Name is mandatory");
+        Validate.notBlank(script.path(), "Path must be defined");
+        ScriptValidation validation = new ScriptValidation(script.script());
         validation.validate();
-        String hash = DigestUtils.sha256Hex(script.getScript());
-        ExtensionMetadata extensionMetadata = getMetadata(script.getName(), script.getScript());
+        String hash = DigestUtils.sha256Hex(script.script());
+        ExtensionMetadata extensionMetadata = getMetadata(script.name(), script.script());
 
         Validate.notBlank(extensionMetadata.getDisplayName(), "Display Name is mandatory");
 
@@ -158,14 +158,14 @@ public class ExtensionService {
             extensionRepository.deleteEventsForPath(previousPath, previousName);
         }
 
-        if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
+        if (!Objects.equals(previousPath, script.path()) || !Objects.equals(previousName, script.name())) {
             extensionRepository.deleteScriptForPath(previousPath, previousName);
-            extensionRepository.insert(script.getPath(), script.getName(), extensionMetadata.getDisplayName(), hash, script.isEnabled(), extensionMetadata.isAsync(), script.getScript(), extensionMetadata);
+            extensionRepository.insert(script.path(), script.name(), extensionMetadata.getDisplayName(), hash, script.enabled(), extensionMetadata.isAsync(), script.script(), extensionMetadata);
         } else {
-            extensionRepository.update(script.getPath(), script.getName(), extensionMetadata.getDisplayName(), hash, script.isEnabled(), extensionMetadata.isAsync(), script.getScript(), extensionMetadata);
+            extensionRepository.update(script.path(), script.name(), extensionMetadata.getDisplayName(), hash, script.enabled(), extensionMetadata.isAsync(), script.script(), extensionMetadata);
         }
 
-        int extensionId = extensionRepository.getExtensionIdFor(script.getPath(), script.getName());
+        int extensionId = extensionRepository.getExtensionIdFor(script.path(), script.name());
 
         for (String event : extensionMetadata.getEvents()) {
             extensionRepository.insertEvent(extensionId, event);

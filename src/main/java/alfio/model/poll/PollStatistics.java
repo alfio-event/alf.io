@@ -50,8 +50,8 @@ public class PollStatistics {
         BigDecimal totalVotes = new BigDecimal(this.totalVotes);
         return countByOption.stream()
             .map(o -> {
-                var percentage = getVotesPercentage(totalVotes, o.getVotes());
-                return new StatisticDetail(o.getVotes(), o.getOptionId(), percentage);
+                var percentage = getVotesPercentage(totalVotes, o.votes());
+                return new StatisticDetail(o.votes(), o.optionId(), percentage);
             })
             .collect(Collectors.toList());
     }
