@@ -144,7 +144,7 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
         configurationManager.saveConfig(Configuration.from(event, ENABLE_REVERSE_CHARGE_IN_PERSON), "false");
 
         var reservation = createReservation();
-        var summary = reservation.getOrderSummary();
+        var summary = reservation.orderSummary();
         // 20 + 1.98 = 21.98
         assertEquals("0.20", summary.getTotalVAT());
         assertEquals(2198, summary.getPriceInCents());
@@ -152,10 +152,10 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
         // we expect to find two rows for VAT: the first one for in-person (1%), the second one for online (0%)
         var rows = summary.getSummary();
         assertEquals(3, rows.size());
-        assertEquals(SummaryRow.SummaryType.TAX_DETAIL, rows.get(1).getType());
-        assertEquals("0", rows.get(1).getTaxPercentage());
-        assertEquals("", rows.get(1).getPrice());
-        assertEquals("0.00", rows.get(1).getSubTotal());
+        assertEquals(SummaryRow.SummaryType.TAX_DETAIL, rows.get(1).type());
+        assertEquals("0", rows.get(1).taxPercentage());
+        assertEquals("", rows.get(1).price());
+        assertEquals("0.00", rows.get(1).subTotal());
     }
 
     @Test
@@ -165,16 +165,16 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
 
         var reservation = createReservation();
         // 19.80 + 2 = 21.80
-        assertEquals("0.02", reservation.getOrderSummary().getTotalVAT());
-        assertEquals(2180, reservation.getOrderSummary().getPriceInCents());
+        assertEquals("0.02", reservation.orderSummary().getTotalVAT());
+        assertEquals(2180, reservation.orderSummary().getPriceInCents());
     }
 
     @Test
     void defaultReverseCharge() {
         var reservation = createReservation();
         // 19.80 + 1.98 = 21.78
-        assertEquals("0", reservation.getOrderSummary().getTotalVAT());
-        assertEquals(2178, reservation.getOrderSummary().getPriceInCents());
+        assertEquals("0", reservation.orderSummary().getTotalVAT());
+        assertEquals(2178, reservation.orderSummary().getPriceInCents());
     }
 
     @Test
@@ -182,13 +182,13 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
         configurationManager.saveConfig(Configuration.from(event.getOrganizationId(), GENERATE_ONLY_INVOICE), "false");
         var reservation = createReservation();
         // 19.80 + 1.98 = 21.78
-        assertEquals("0", reservation.getOrderSummary().getTotalVAT());
-        assertEquals(2178, reservation.getOrderSummary().getPriceInCents());
+        assertEquals("0", reservation.orderSummary().getTotalVAT());
+        assertEquals(2178, reservation.orderSummary().getPriceInCents());
 
-        var reservationId = reservation.getId();
+        var reservationId = reservation.id();
         reservation = createReservation(reservationId, false);
-        assertEquals("0.22", reservation.getOrderSummary().getTotalVAT());
-        assertEquals(2200, reservation.getOrderSummary().getPriceInCents());
+        assertEquals("0.22", reservation.orderSummary().getTotalVAT());
+        assertEquals(2200, reservation.orderSummary().getPriceInCents());
     }
 
     @Test
@@ -196,16 +196,16 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
         configurationManager.saveConfig(Configuration.from(event, ENABLE_EU_VAT_DIRECTIVE), "false");
         var reservation = createReservation();
         // 19.80 + 1.98 = 21.78
-        assertEquals("0.22", reservation.getOrderSummary().getTotalVAT());
-        assertEquals(2200, reservation.getOrderSummary().getPriceInCents());
+        assertEquals("0.22", reservation.orderSummary().getTotalVAT());
+        assertEquals(2200, reservation.orderSummary().getPriceInCents());
 
         configurationManager.saveConfig(Configuration.from(event, ENABLE_REVERSE_CHARGE_IN_PERSON), "true");
         configurationManager.saveConfig(Configuration.from(event, ENABLE_REVERSE_CHARGE_ONLINE), "true");
         // since the global flag is disabled, the specific settings are not effective
         reservation = createReservation();
         // 19.80 + 1.98 = 21.78
-        assertEquals("0.22", reservation.getOrderSummary().getTotalVAT());
-        assertEquals(2200, reservation.getOrderSummary().getPriceInCents());
+        assertEquals("0.22", reservation.orderSummary().getTotalVAT());
+        assertEquals(2200, reservation.orderSummary().getPriceInCents());
     }
 
     private ReservationInfo createReservation() {
@@ -276,7 +276,7 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
         var reservation = resInfoRes.getBody();
         assertNotNull(reservation);
-        assertFalse(reservation.getOrderSummary().isFree());
+        assertFalse(reservation.orderSummary().isFree());
 
         return reservation;
     }

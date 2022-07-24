@@ -16,78 +16,29 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.Getter;
-
+import alfio.model.AdditionalService.AdditionalServiceType;
+import alfio.model.AdditionalService.SupplementPolicy;
 import java.util.Map;
 
-@Getter
-public class AdditionalService {
-
-    private final int id;
-    private final alfio.model.AdditionalService.AdditionalServiceType type;
-    private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy;
-
-    //
-    private final boolean fixPrice;
-    private final int availableQuantity;
-    private final int maxQtyPerOrder;
-
-    //
-    private final boolean free;
-    private final String formattedFinalPrice;
-    private final boolean hasDiscount;
-    private final String formattedDiscountedPrice;
-    private final boolean vatApplies;
-    private final boolean vatIncluded;
-    private final String vatPercentage;
-    //
-
-
-    private final boolean expired; //TODO: check, could be useless :)
-    private final boolean saleInFuture;
-    private final Map<String, String> formattedInception;
-    private final Map<String, String> formattedExpiration;
-
-    private final Map<String, String> title;
-    private final Map<String, String> description;
-
-    public AdditionalService(int id,
-                             alfio.model.AdditionalService.AdditionalServiceType type,
-                             alfio.model.AdditionalService.SupplementPolicy supplementPolicy,
-                             boolean fixPrice,
-                             int availableQuantity,
-                             int maxQtyPerOrder,
-                             boolean free,
-                             String formattedFinalPrice,
-                             boolean hasDiscount,
-                             String formattedDiscountedPrice,
-                             boolean vatApplies,
-                             boolean vatIncluded,
-                             String vatPercentage,
-                             boolean expired,
-                             boolean saleInFuture,
-                             Map<String, String> formattedInception,
-                             Map<String, String> formattedExpiration,
-                             Map<String, String> title,
-                             Map<String, String> description) {
-        this.id = id;
-        this.type = type;
-        this.supplementPolicy = supplementPolicy;
-        this.fixPrice = fixPrice;
-        this.availableQuantity = availableQuantity;
-        this.maxQtyPerOrder = maxQtyPerOrder;
-        this.free = free;
-        this.formattedFinalPrice = formattedFinalPrice;
-        this.hasDiscount = hasDiscount;
-        this.formattedDiscountedPrice = formattedDiscountedPrice;
-        this.vatApplies = vatApplies;
-        this.vatIncluded = vatIncluded;
-        this.vatPercentage = vatPercentage;
-        this.expired = expired;
-        this.saleInFuture = saleInFuture;
-        this.formattedInception = formattedInception;
-        this.formattedExpiration = formattedExpiration;
-        this.title = title;
-        this.description = description;
-    }
+/**
+ * @param expired TODO: check, could be useless :)
+ */
+public record AdditionalService(int id,
+                                AdditionalServiceType type,
+                                SupplementPolicy supplementPolicy,
+                                boolean fixPrice,
+                                int availableQuantity,
+                                int maxQtyPerOrder,
+                                boolean free,
+                                String formattedFinalPrice,
+                                boolean hasDiscount,
+                                String formattedDiscountedPrice,
+                                boolean vatApplies,
+                                boolean vatIncluded,
+                                String vatPercentage,
+                                boolean expired,
+                                boolean saleInFuture,
+                                Map<String, String> formattedInception,
+                                Map<String, String> formattedExpiration,
+                                Map<String, String> title, Map<String, String> description) {
 }

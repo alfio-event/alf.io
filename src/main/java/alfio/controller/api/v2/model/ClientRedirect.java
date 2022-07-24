@@ -16,16 +16,9 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
-@Getter
-public class ClientRedirect {
-    private final String targetUrl;
-
-    public ClientRedirect(String targetUrl) {
-        this.targetUrl = targetUrl;
-    }
+public record ClientRedirect(String targetUrl) {
 
     public boolean isEmpty() {
         return StringUtils.isBlank(targetUrl);

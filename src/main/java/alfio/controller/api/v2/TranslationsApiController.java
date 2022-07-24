@@ -79,7 +79,7 @@ public class TranslationsApiController {
     private static List<LocalizedCountry> fromPair(List<Pair<String, String>> countries) {
         var collator = Collator.getInstance(Locale.FRENCH); //<- gives the better sorting experience...
         return countries.stream().map(p-> new LocalizedCountry(p.getKey(), p.getValue()))
-            .sorted((lc1, lc2) -> collator.compare(lc1.getName(), lc2.getName()))
+            .sorted((lc1, lc2) -> collator.compare(lc1.name(), lc2.name()))
             .collect(Collectors.toList());
     }
 

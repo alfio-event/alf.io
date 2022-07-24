@@ -234,10 +234,10 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         var resInfoRes = reservationApiV2Controller.getReservationInfo(reservationId, null);
         assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
         assertNotNull(resInfoRes.getBody());
-        var ticketsByCat = resInfoRes.getBody().getTicketsByCategory();
+        var ticketsByCat = resInfoRes.getBody().ticketsByCategory();
         assertEquals(1, ticketsByCat.size());
-        assertEquals(1, ticketsByCat.get(0).getTickets().size());
-        var ticket = ticketsByCat.get(0).getTickets().get(0);
+        assertEquals(1, ticketsByCat.get(0).tickets().size());
+        var ticket = ticketsByCat.get(0).tickets().get(0);
 
         var contactForm = new ContactAndTicketsForm();
 

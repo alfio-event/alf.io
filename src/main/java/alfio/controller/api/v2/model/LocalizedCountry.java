@@ -16,15 +16,5 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.Getter;
-
-@Getter
-public class LocalizedCountry {
-    private final String isoCode;
-    private final String name;
-
-    public LocalizedCountry(String isoCode, String name) {
-        this.isoCode = isoCode;
-        this.name = name;
-    }
+public record LocalizedCountry(String isoCode, String name) {
 }

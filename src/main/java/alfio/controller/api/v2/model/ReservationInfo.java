@@ -32,114 +32,42 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Getter
-public class ReservationInfo {
-    private final String id;
-    private final String shortId;
-    private final String firstName;
-    private final String lastName;
-    private final String email;
-    private final long validity;
-    private final List<TicketsByTicketCategory> ticketsByCategory;
-    private final ReservationInfoOrderSummary orderSummary;
-
-
-    private final TicketReservationStatus status;
-    private final boolean validatedBookingInformation;
-    private final Map<String, String> formattedExpirationDate; // map of language -> formatted date
-
-    private final String invoiceNumber;
-    private final boolean invoiceRequested;
-
-
-    private final boolean invoiceOrReceiptDocumentPresent;
-    private final boolean paid;
-    private final boolean tokenAcquired;
-    private final PaymentProxy paymentProxy;
-
-
-    //billing info from additional info
-    private final Boolean addCompanyBillingDetails;
-    //
-    private final String customerReference;
-    private final Boolean skipVatNr;
-
-    private final String billingAddress;
-
-    private final BillingDetails billingDetails;
-
-    //reservation info group related info
-    private final boolean containsCategoriesLinkedToGroups;
+/**
+ * @param formattedExpirationDate          map of language -> formatted date
+ * @param addCompanyBillingDetails         billing info from additional info
+ * @param containsCategoriesLinkedToGroups reservation info group related info
+ */
+public record ReservationInfo(String id,
+                              String shortId,
+                              String firstName,
+                              String lastName,
+                              String email,
+                              long validity,
+                              List<TicketsByTicketCategory> ticketsByCategory,
+                              alfio.controller.api.v2.model.ReservationInfo.ReservationInfoOrderSummary orderSummary,
+                              TicketReservationStatus status,
+                              boolean validatedBookingInformation,
+                              Map<String, String> formattedExpirationDate,
+                              String invoiceNumber,
+                              boolean invoiceRequested,
+                              boolean invoiceOrReceiptDocumentPresent,
+                              boolean paid,
+                              boolean tokenAcquired,
+                              PaymentProxy paymentProxy,
+                              Boolean addCompanyBillingDetails,
+                              String customerReference,
+                              Boolean skipVatNr,
+                              String billingAddress,
+                              BillingDetails billingDetails,
+                              boolean containsCategoriesLinkedToGroups,
+                              Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods,
+                              List<SubscriptionInfo> subscriptionInfos) {
     //
 
-    private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
 
-    private final List<SubscriptionInfo> subscriptionInfos;
-
-    public ReservationInfo(String id,
-                           String shortId,
-                           String firstName,
-                           String lastName,
-                           String email,
-                           long validity,
-                           List<TicketsByTicketCategory> ticketsByCategory,
-                           ReservationInfoOrderSummary orderSummary,
-                           TicketReservationStatus status,
-                           boolean validatedBookingInformation,
-                           Map<String, String> formattedExpirationDate,
-                           String invoiceNumber,
-                           boolean invoiceRequested,
-                           boolean invoiceOrReceiptDocumentPresent,
-                           boolean paid,
-                           boolean tokenAcquired,
-                           PaymentProxy paymentProxy,
-                           Boolean addCompanyBillingDetails,
-                           String customerReference,
-                           Boolean skipVatNr,
-                           String billingAddress,
-                           BillingDetails billingDetails,
-                           boolean containsCategoriesLinkedToGroups,
-                           Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods,
-                           List<SubscriptionInfo> subscriptionInfos) {
-        this.id = id;
-        this.shortId = shortId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.validity = validity;
-        this.ticketsByCategory = ticketsByCategory;
-        this.orderSummary = orderSummary;
-        this.status = status;
-        this.validatedBookingInformation = validatedBookingInformation;
-        this.formattedExpirationDate = formattedExpirationDate;
-        this.invoiceNumber = invoiceNumber;
-        this.invoiceRequested = invoiceRequested;
-        this.invoiceOrReceiptDocumentPresent = invoiceOrReceiptDocumentPresent;
-        this.paid = paid;
-        this.tokenAcquired = tokenAcquired;
-        this.paymentProxy = paymentProxy;
-        this.addCompanyBillingDetails = addCompanyBillingDetails;
-        this.customerReference = customerReference;
-        this.skipVatNr = skipVatNr;
-        this.billingAddress = billingAddress;
-        this.billingDetails = billingDetails;
-        this.containsCategoriesLinkedToGroups = containsCategoriesLinkedToGroups;
-        this.activePaymentMethods = activePaymentMethods;
-        this.subscriptionInfos = subscriptionInfos;
-    }
-
-
-    @Getter
-    public static class TicketsByTicketCategory {
-        private final String name;
-        private final TicketCategory.TicketAccessType ticketAccessType;
-        private final List<BookingInfoTicket> tickets;
-
-        public TicketsByTicketCategory(String name, TicketCategory.TicketAccessType ticketAccessType, List<BookingInfoTicket> tickets) {
-            this.name = name;
-            this.ticketAccessType = ticketAccessType;
-            this.tickets = tickets;
-        }
+    public record TicketsByTicketCategory(String name,
+                                          TicketCategory.TicketAccessType ticketAccessType,
+                                          List<BookingInfoTicket> tickets) {
     }
 
     @Getter
@@ -172,51 +100,17 @@ public class ReservationInfo {
     }
 
 
-    @Getter
-    public static class ReservationInfoOrderSummaryRow {
-        private final String name;
-        private final int amount;
-        private final String price;
-        private final String subTotal;
-        private final SummaryType type;
-        private final String taxPercentage;
-
-        public ReservationInfoOrderSummaryRow(String name, int amount, String price, String subTotal, SummaryType type, String taxPercentage) {
-            this.name = name;
-            this.amount = amount;
-            this.price = price;
-            this.subTotal = subTotal;
-            this.type = type;
-            this.taxPercentage = taxPercentage;
-        }
+    public record ReservationInfoOrderSummaryRow(String name,
+                                                 int amount, String price,
+                                                 String subTotal,
+                                                 SummaryType type,
+                                                 String taxPercentage) {
     }
 
-    @Getter
-    public static class SubscriptionInfo {
-        private final UUID id;
-        private final String pin;
-        private final UsageDetails usageDetails;
-        private final SubscriptionOwner owner;
-
-        public SubscriptionInfo(UUID id, String pin, UsageDetails usageDetails, SubscriptionOwner owner) {
-            this.id = id;
-            this.pin = pin;
-            this.usageDetails = usageDetails;
-            this.owner = owner;
-        }
+    public record SubscriptionInfo(UUID id, String pin, UsageDetails usageDetails, SubscriptionOwner owner) {
     }
 
-    @Getter
-    public static class SubscriptionOwner {
-        private final String firstName;
-        private final String lastName;
-        private final String email;
-
-        public SubscriptionOwner(String firstName, String lastName, String email) {
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.email = email;
-        }
+    public record SubscriptionOwner(String firstName, String lastName, String email) {
     }
 
 }

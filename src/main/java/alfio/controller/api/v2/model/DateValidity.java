@@ -16,15 +16,31 @@
  */
 package alfio.controller.api.v2.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Map;
 
 public interface DateValidity {
 
-    String getTimeZone();
-    DatesWithTimeZoneOffset getDatesWithOffset();
-    boolean isSameDay();
-    Map<String, String> getFormattedBeginDate();
-    Map<String, String> getFormattedBeginTime();
-    Map<String, String> getFormattedEndDate();
-    Map<String, String> getFormattedEndTime();
+    @JsonProperty("timeZone")
+    String timeZone();
+
+
+    @JsonProperty("datesWithOffset")
+    DatesWithTimeZoneOffset datesWithOffset();
+
+    @JsonProperty("sameDay")
+    boolean sameDay();
+
+    @JsonProperty("formattedBeginDate")
+    Map<String, String> formattedBeginDate();
+
+    @JsonProperty("formattedBeginTime")
+    Map<String, String> formattedBeginTime();
+
+    @JsonProperty("formattedEndDate")
+    Map<String, String> formattedEndDate();
+
+    @JsonProperty("formattedEndTime")
+    Map<String, String> formattedEndTime();
 }

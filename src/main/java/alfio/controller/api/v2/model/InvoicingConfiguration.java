@@ -16,31 +16,11 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.Getter;
-
-@Getter
-public class InvoicingConfiguration {
-    private final boolean userCanDownloadReceiptOrInvoice;
-    private final boolean euVatCheckingEnabled;
-    private final boolean invoiceAllowed;
-    private final boolean onlyInvoice;
-    private final boolean customerReferenceEnabled;
-    private final boolean enabledItalyEInvoicing;
-    private final boolean vatNumberStrictlyRequired;
-
-    public InvoicingConfiguration(boolean userCanDownloadReceiptOrInvoice,
-                                  boolean euVatCheckingEnabled,
-                                  boolean invoiceAllowed,
-                                  boolean onlyInvoice,
-                                  boolean customerReferenceEnabled,
-                                  boolean enabledItalyEInvoicing,
-                                  boolean vatNumberStrictlyRequired) {
-        this.userCanDownloadReceiptOrInvoice = userCanDownloadReceiptOrInvoice;
-        this.euVatCheckingEnabled = euVatCheckingEnabled;
-        this.invoiceAllowed = invoiceAllowed;
-        this.onlyInvoice = onlyInvoice;
-        this.customerReferenceEnabled = customerReferenceEnabled;
-        this.enabledItalyEInvoicing = enabledItalyEInvoicing;
-        this.vatNumberStrictlyRequired = vatNumberStrictlyRequired;
-    }
+public record InvoicingConfiguration(boolean userCanDownloadReceiptOrInvoice,
+                                     boolean euVatCheckingEnabled,
+                                     boolean invoiceAllowed,
+                                     boolean onlyInvoice,
+                                     boolean customerReferenceEnabled,
+                                     boolean enabledItalyEInvoicing,
+                                     boolean vatNumberStrictlyRequired) {
 }

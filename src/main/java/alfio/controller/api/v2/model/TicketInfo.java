@@ -16,60 +16,27 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.Getter;
-
 import java.util.Map;
 
-@Getter
-public class TicketInfo implements DateValidity {
+/**
+ * @param timeZone           date related
+ * @param formattedBeginDate day, month, year
+ * @param formattedBeginTime the hour/minute component
+ */
+public record TicketInfo(String fullName,
+                         String email,
+                         String uuid,
+                         String ticketCategoryName,
+                         String reservationFullName,
+                         String reservationId,
+                         boolean deskPaymentRequired,
+                         String timeZone,
+                         DatesWithTimeZoneOffset datesWithOffset,
+                         boolean sameDay,
+                         Map<String, String> formattedBeginDate,
+                         Map<String, String> formattedBeginTime,
+                         Map<String, String> formattedEndDate,
+                         Map<String, String> formattedEndTime) implements DateValidity {
 
-    private final String fullName;
-    private final String email;
-    private final String uuid;
-
-    private final String ticketCategoryName;
-    private final String reservationFullName;
-    private final String reservationId;
-
-    private final boolean deskPaymentRequired;
-
-    //date related
-    private final String timeZone;
-    private final DatesWithTimeZoneOffset datesWithOffset;
-    private final boolean sameDay;
-    private final Map<String, String> formattedBeginDate; // day, month, year
-    private final Map<String, String> formattedBeginTime; //the hour/minute component
-    private final Map<String, String> formattedEndDate;
-    private final Map<String, String> formattedEndTime;
-
-    public TicketInfo(String fullName,
-                      String email,
-                      String uuid,
-                      String ticketCategoryName,
-                      String reservationFullName,
-                      String reservationId,
-                      boolean deskPaymentRequired,
-                      String timeZone,
-                      DatesWithTimeZoneOffset datesWithOffset,
-                      boolean sameDay,
-                      Map<String, String> formattedBeginDate,
-                      Map<String, String> formattedBeginTime,
-                      Map<String, String> formattedEndDate,
-                      Map<String, String> formattedEndTime) {
-        this.fullName = fullName;
-        this.email = email;
-        this.uuid = uuid;
-        this.ticketCategoryName = ticketCategoryName;
-        this.reservationFullName = reservationFullName;
-        this.reservationId = reservationId;
-        this.deskPaymentRequired = deskPaymentRequired;
-        this.timeZone = timeZone;
-        this.datesWithOffset = datesWithOffset;
-        this.sameDay = sameDay;
-        this.formattedBeginDate = formattedBeginDate;
-        this.formattedBeginTime = formattedBeginTime;
-        this.formattedEndDate = formattedEndDate;
-        this.formattedEndTime = formattedEndTime;
-    }
     //
 }

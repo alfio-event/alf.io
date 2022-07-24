@@ -16,21 +16,9 @@
  */
 package alfio.controller.api.v2.model;
 
-import lombok.Getter;
-
-@Getter
-public class ReservationPaymentResult {
-    private final boolean success;
-    private final boolean redirect;
-    private final String redirectUrl;
-    private final boolean failure;
-    private final String gatewayIdOrNull;
-
-    public ReservationPaymentResult(boolean success, boolean redirect, String redirectUrl, boolean failure, String gatewayIdOrNull) {
-        this.success = success;
-        this.redirect = redirect;
-        this.redirectUrl = redirectUrl;
-        this.failure = failure;
-        this.gatewayIdOrNull = gatewayIdOrNull;
-    }
+public record ReservationPaymentResult(boolean success,
+                                       boolean redirect,
+                                       String redirectUrl,
+                                       boolean failure,
+                                       String gatewayIdOrNull) {
 }

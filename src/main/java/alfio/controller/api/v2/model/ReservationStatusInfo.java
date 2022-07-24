@@ -17,16 +17,8 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.TicketReservation;
-import lombok.Getter;
 
-@Getter
-public class ReservationStatusInfo {
+public record ReservationStatusInfo(TicketReservation.TicketReservationStatus status,
+                                    boolean validatedBookingInformation) {
 
-    private final TicketReservation.TicketReservationStatus status;
-    private final boolean validatedBookingInformation;
-
-    public ReservationStatusInfo(TicketReservation.TicketReservationStatus status, boolean validatedBookingInformation) {
-        this.status = status;
-        this.validatedBookingInformation = validatedBookingInformation;
-    }
 }

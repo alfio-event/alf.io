@@ -20,7 +20,6 @@ import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionValidityType;
-import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -28,84 +27,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Getter
-public class BasicSubscriptionDescriptorInfo {
-    private final UUID id;
-    private final String fileBlobId;
-    private final Map<String, String> title;
-    private final Map<String, String> description;
-
-    //
-    private final DatesWithTimeZoneOffset salePeriod;
-    private final SubscriptionValidityType validityType;
-    private final SubscriptionUsageType usageType;
-    private final ZoneId timeZone;
-    private final SubscriptionTimeUnit validityTimeUnit;
-    private final Integer validityUnits;
-    private final Integer maxEntries;
-
-    private final String organizationEmail;
-    private final String organizationName;
-
-    private final String formattedPrice;
-    private final String currency;
-    private final CurrencyDescriptor currencyDescriptor;
-    private final BigDecimal vat;
-    private final boolean vatIncluded;
-
-    private final Map<String, String> formattedOnSaleFrom;
-    private final Map<String, String> formattedOnSaleTo;
-
-    private final Map<String, String> formattedValidFrom;
-    private final Map<String, String> formattedValidTo;
-
-    private final List<Language> contentLanguages;
-
-    public BasicSubscriptionDescriptorInfo(UUID id,
-                                           String fileBlobId,
-                                           Map<String, String> title,
-                                           Map<String, String> description,
-                                           DatesWithTimeZoneOffset salePeriod,
-                                           SubscriptionValidityType validityType,
-                                           SubscriptionUsageType usageType,
-                                           ZoneId timeZone,
-                                           SubscriptionTimeUnit validityTimeUnit,
-                                           Integer validityUnits,
-                                           Integer maxEntries,
-                                           String organizationEmail,
-                                           String organizationName,
-                                           String formattedPrice,
-                                           String currency,
-                                           CurrencyDescriptor currencyDescriptor,
-                                           BigDecimal vat,
-                                           boolean vatIncluded,
-                                           Map<String, String> formattedOnSaleFrom,
-                                           Map<String, String> formattedOnSaleTo,
-                                           Map<String, String> formattedValidFrom,
-                                           Map<String, String> formattedValidTo,
-                                           List<Language> contentLanguages) {
-        this.id = id;
-        this.fileBlobId = fileBlobId;
-        this.title = title;
-        this.description = description;
-        this.salePeriod = salePeriod;
-        this.validityType = validityType;
-        this.usageType = usageType;
-        this.timeZone = timeZone;
-        this.validityTimeUnit = validityTimeUnit;
-        this.validityUnits = validityUnits;
-        this.maxEntries = maxEntries;
-        this.organizationEmail = organizationEmail;
-        this.organizationName = organizationName;
-        this.formattedPrice = formattedPrice;
-        this.currency = currency;
-        this.currencyDescriptor = currencyDescriptor;
-        this.vat = vat;
-        this.vatIncluded = vatIncluded;
-        this.formattedOnSaleFrom = formattedOnSaleFrom;
-        this.formattedOnSaleTo = formattedOnSaleTo;
-        this.formattedValidFrom = formattedValidFrom;
-        this.formattedValidTo = formattedValidTo;
-        this.contentLanguages = contentLanguages;
-    }
+public record BasicSubscriptionDescriptorInfo(UUID id,
+                                              String fileBlobId,
+                                              Map<String, String> title,
+                                              Map<String, String> description,
+                                              DatesWithTimeZoneOffset salePeriod,
+                                              SubscriptionValidityType validityType,
+                                              SubscriptionUsageType usageType,
+                                              ZoneId timeZone,
+                                              SubscriptionTimeUnit validityTimeUnit,
+                                              Integer validityUnits,
+                                              Integer maxEntries,
+                                              String organizationEmail,
+                                              String organizationName,
+                                              String formattedPrice,
+                                              String currency,
+                                              CurrencyDescriptor currencyDescriptor,
+                                              BigDecimal vat,
+                                              boolean vatIncluded,
+                                              Map<String, String> formattedOnSaleFrom,
+                                              Map<String, String> formattedOnSaleTo,
+                                              Map<String, String> formattedValidFrom,
+                                              Map<String, String> formattedValidTo,
+                                              List<Language> contentLanguages) {
 }

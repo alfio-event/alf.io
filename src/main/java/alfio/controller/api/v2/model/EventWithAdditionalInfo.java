@@ -21,7 +21,6 @@ import alfio.model.Event.EventFormat;
 import alfio.model.PurchaseContext;
 import alfio.model.user.Organization;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
@@ -200,37 +199,37 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
 
     // date related fields
     @Override
-    public boolean isSameDay() {
+    public boolean sameDay() {
         return event.getSameDay();
     }
 
     @Override
-    public Map<String, String> getFormattedBeginDate() {
+    public Map<String, String> formattedBeginDate() {
         return formattedBeginDate;
     }
 
     @Override
-    public Map<String, String> getFormattedBeginTime() {
+    public Map<String, String> formattedBeginTime() {
         return formattedBeginTime;
     }
 
     @Override
-    public Map<String, String> getFormattedEndDate() {
+    public Map<String, String> formattedEndDate() {
         return formattedEndDate;
     }
 
     @Override
-    public Map<String, String> getFormattedEndTime() {
+    public Map<String, String> formattedEndTime() {
         return formattedEndTime;
     }
 
     @Override
-    public String getTimeZone() {
+    public String timeZone() {
         return event.getTimeZone();
     }
 
     @Override
-    public DatesWithTimeZoneOffset getDatesWithOffset() {
+    public DatesWithTimeZoneOffset datesWithOffset() {
         return DatesWithTimeZoneOffset.fromEvent(event);
     }
 
@@ -284,41 +283,17 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         return offlinePaymentConfiguration;
     }
 
-    @Getter
-    public static class CaptchaConfiguration {
-        private final boolean captchaForTicketSelection;
-        private final boolean captchaForOfflinePaymentAndFree;
-        private final String recaptchaApiKey;
-
-        public CaptchaConfiguration(boolean captchaForTicketSelection, boolean captchaForOfflinePaymentAndFree, String recaptchaApiKey) {
-            this.captchaForTicketSelection = captchaForTicketSelection;
-            this.captchaForOfflinePaymentAndFree = captchaForOfflinePaymentAndFree;
-            this.recaptchaApiKey = recaptchaApiKey;
-        }
+    public record CaptchaConfiguration(boolean captchaForTicketSelection,
+                                       boolean captchaForOfflinePaymentAndFree,
+                                       String recaptchaApiKey) {
     }
 
-    @Getter
-    public static class AssignmentConfiguration {
-        private final boolean forceAssignment;
-        private final boolean enableAttendeeAutocomplete;
-        private final boolean enableTicketTransfer;
-
-        public AssignmentConfiguration(boolean forceAssignment, boolean enableAttendeeAutocomplete, boolean enableTicketTransfer) {
-            this.forceAssignment = forceAssignment;
-            this.enableAttendeeAutocomplete = enableAttendeeAutocomplete;
-            this.enableTicketTransfer = enableTicketTransfer;
-        }
+    public record AssignmentConfiguration(boolean forceAssignment,
+                                          boolean enableAttendeeAutocomplete,
+                                          boolean enableTicketTransfer) {
     }
 
-    @Getter
-    public static class PromotionsConfiguration {
-        private final boolean hasAccessPromotions;
-        private final boolean usePartnerCode;
-
-        public PromotionsConfiguration(boolean hasAccessPromotions, boolean usePartnerCode) {
-            this.hasAccessPromotions = hasAccessPromotions;
-            this.usePartnerCode = usePartnerCode;
-        }
+    public record PromotionsConfiguration(boolean hasAccessPromotions, boolean usePartnerCode) {
     }
 
     @JsonIgnore
