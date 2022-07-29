@@ -95,6 +95,7 @@ public class BookingInfoTicketLoader {
         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
         var configuration = configurationManager.getFor(EnumSet.of(ALLOW_FREE_TICKETS_CANCELLATION, SEND_TICKETS_AUTOMATICALLY, ALLOW_TICKET_DOWNLOAD), ConfigurationLevel.ticketCategory(event, t.getCategoryId()));
         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
+            !event.expired() &&
             (!hasPaidSupplement && configuration.get(ALLOW_FREE_TICKETS_CANCELLATION).getValueAsBooleanOrDefault()) && // freeCancellationEnabled
             eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
         //
