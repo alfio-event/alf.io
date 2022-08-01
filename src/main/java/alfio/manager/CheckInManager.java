@@ -441,13 +441,13 @@ public class CheckInManager {
                                     if(rv instanceof Map) {
                                         @SuppressWarnings("unchecked")
                                         Map<String, String> restrictedValues = (Map<String, String>) rv;
-                                        return Pair.of(vd.getName(), restrictedValues.getOrDefault(vd.getValue(), vd.getValue()));
+                                        return Pair.of(vd.name(), restrictedValues.getOrDefault(vd.value(), vd.value()));
                                     }
                                 }
                             } catch (Exception e) {
                                 log.error("cannot deserialize restricted values", e);
                             }
-                            return Pair.of(vd.getName(), vd.getValue());
+                            return Pair.of(vd.name(), vd.value());
                         })
                         .collect(toMap(Pair::getLeft, Pair::getRight)));
                     info.put("additionalInfoJson", Json.toJson(fields));
