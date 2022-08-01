@@ -123,7 +123,7 @@ public class GroupApiController {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> {
                 Optional<LinkedGroup> configuration = groupManager.getLinksForEvent(event.getId()).stream()
-                    .filter(c -> c.getTicketCategoryId() == null)
+                    .filter(c -> c.ticketCategoryId() == null)
                     .findFirst();
                 return configuration.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
             })
@@ -138,7 +138,7 @@ public class GroupApiController {
             .map(event -> {
                 Optional<LinkedGroup> configuration = groupManager.findLinks(event.getId(), categoryId)
                     .stream()
-                    .filter(c -> c.getTicketCategoryId() != null && c.getTicketCategoryId() == categoryId)
+                    .filter(c -> c.ticketCategoryId() != null && c.ticketCategoryId() == categoryId)
                     .findFirst();
                 return configuration.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
             })
@@ -155,15 +155,15 @@ public class GroupApiController {
             .map(event -> {
                 Optional<LinkedGroup> existing = groupManager.getLinksForEvent(event.getId())
                     .stream()
-                    .filter(c -> Objects.equals(body.getTicketCategoryId(), c.getTicketCategoryId()))
+                    .filter(c -> Objects.equals(body.getTicketCategoryId(), c.ticketCategoryId()))
                     .findFirst();
                 LinkedGroup link;
                 if(existing.isPresent()) {
-                    link = groupManager.updateLink(existing.get().getId(), body);
+                    link = groupManager.updateLink(existing.get().id(), body);
                 } else {
                     link = groupManager.createLink(groupId, event.getId(), body);
                 }
-                return ResponseEntity.ok(link.getId());
+                return ResponseEntity.ok(link.id());
             })
             .orElseGet(() -> ResponseEntity.notFound().build());
     }

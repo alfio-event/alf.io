@@ -1402,7 +1402,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     private void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event, int logSize) {
         assertEquals(logSize, extLog.size()); // each event logs exactly two logs
-        assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
+        assertTrue(extLog.stream().anyMatch(l -> l.description().equals(event.name())));
     }
 
     private void checkStatus(String reservationId,

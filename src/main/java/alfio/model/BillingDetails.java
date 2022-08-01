@@ -18,40 +18,16 @@ package alfio.model;
 
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class BillingDetails {
-    private final String companyName;
-    private final String addressLine1;
-    private final String addressLine2;
-    private final String zip;
-    private final String city;
-    private final String state;
-    private final String country;
-    private final String taxId;
-    private final TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo;
-
-    public BillingDetails(@Column("billing_address_company") String companyName,
-                          @Column("billing_address_line1") String addressLine1,
-                          @Column("billing_address_line2") String addressLine2,
-                          @Column("billing_address_zip") String zip,
-                          @Column("billing_address_city") String city,
-                          @Column("billing_address_state") String state,
-                          @Column("vat_country") String country,
-                          @Column("vat_nr") String taxId,
-                          @Column("invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo) {
-
-        this.companyName = companyName;
-        this.addressLine1 = addressLine1;
-        this.addressLine2 = addressLine2;
-        this.zip = zip;
-        this.city = city;
-        this.state = state;
-        this.country = country;
-        this.taxId = taxId;
-        this.invoicingAdditionalInfo = invoicingAdditionalInfo;
-    }
+public record BillingDetails(@Column("billing_address_company") String companyName,
+                             @Column("billing_address_line1") String addressLine1,
+                             @Column("billing_address_line2") String addressLine2,
+                             @Column("billing_address_zip") String zip,
+                             @Column("billing_address_city") String city,
+                             @Column("billing_address_state") String state,
+                             @Column("vat_country") String country,
+                             @Column("vat_nr") String taxId,
+                             @Column("invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo) {
 
     public boolean getHasTaxId() {
         return taxId != null && !taxId.isEmpty();

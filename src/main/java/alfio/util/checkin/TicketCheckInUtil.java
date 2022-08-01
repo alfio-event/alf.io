@@ -68,8 +68,8 @@ public final class TicketCheckInUtil {
             result.put(CUSTOM_CHECK_IN_URL_DESCRIPTION, linkDescription);
             result.put("prerequisites", "");
         } else {
-            Supplier<Optional<String>> eventMetadata = () -> Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
-            var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
+            Supplier<Optional<String>> eventMetadata = () -> Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).requirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
+            var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).requirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
             result.put(ONLINE_CHECK_IN_URL, ticketOnlineCheckInUrl(event, ticket, configurationManager.baseUrl(event)));
             result.put("prerequisites", categoryMetadata.or(eventMetadata).orElse(""));
         }

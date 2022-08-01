@@ -80,8 +80,8 @@ public class BookingInfoTicketLoader {
         Map<String, String> formattedDates = Map.of();
         boolean onlineEventStarted = false;
         if(event.isOnline()) {
-            var eventConfiguration = eventManager.getMetadataForEvent(event).getOnlineConfiguration();
-            var ticketCategoryConfiguration = eventManager.getMetadataForCategory(event, ticket.getCategoryId()).getOnlineConfiguration();
+            var eventConfiguration = eventManager.getMetadataForEvent(event).onlineConfiguration();
+            var ticketCategoryConfiguration = eventManager.getMetadataForCategory(event, ticket.getCategoryId()).onlineConfiguration();
             var checkInDate = EventUtil.firstMatchingCallLink(event.getZoneId(), ticketCategoryConfiguration, eventConfiguration)
                 .map(link -> link.getValidFrom().atZone(event.getZoneId()))
                 .orElse(event.getBegin());

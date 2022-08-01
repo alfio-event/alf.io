@@ -17,26 +17,10 @@
 package alfio.model.group;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class Group {
-    private final int id;
-    private final String name;
-    private final String description;
-    private final Integer organizationId;
-    private final boolean active;
-
-
-    public Group(@Column("id") int id,
-                 @Column("name") String name,
-                 @Column("description") String description,
-                 @Column("organization_id_fk") Integer organizationId,
-                 @Column("active") boolean active) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.organizationId = organizationId;
-        this.active = active;
-    }
+public record Group(@Column("id") int id,
+                    @Column("name") String name,
+                    @Column("description") String description,
+                    @Column("organization_id_fk") Integer organizationId,
+                    @Column("active") boolean active) {
 }

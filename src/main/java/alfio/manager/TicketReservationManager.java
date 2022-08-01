@@ -744,7 +744,7 @@ public class TicketReservationManager {
             return false;
         }
         return ticketRepository.findTicketsInReservation(reservationId).stream()
-            .anyMatch(t -> allLinks.stream().anyMatch(lg -> lg.getTicketCategoryId() == null || lg.getTicketCategoryId().equals(t.getCategoryId())));
+            .anyMatch(t -> allLinks.stream().anyMatch(lg -> lg.ticketCategoryId() == null || lg.ticketCategoryId().equals(t.getCategoryId())));
     }
 
     private PaymentProxy evaluatePaymentProxy(PaymentProxy proxy, TotalPrice reservationCost) {
@@ -780,7 +780,7 @@ public class TicketReservationManager {
             return Boolean.TRUE.equals(requiresNewTransactionTemplate.execute(status ->
                 ticketsInReservation
                     .stream()
-                    .filter(ticket -> linkedGroups.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
+                    .filter(ticket -> linkedGroups.stream().anyMatch(c -> c.ticketCategoryId() == null || c.ticketCategoryId().equals(ticket.getCategoryId())))
                     .map(groupManager::acquireMemberForTicket)
                     .reduce(true, Boolean::logicalAnd)));
         }

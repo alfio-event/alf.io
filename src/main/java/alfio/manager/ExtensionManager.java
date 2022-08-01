@@ -265,8 +265,8 @@ public class ExtensionManager {
         payload.put("customerReference", spec.getCustomerReference());
         payload.put("reservationCost", reservationCost);
         payload.put("invoiceRequested", spec.isInvoiceRequested());
-        payload.put("vatCountryCode", billingDetails.getCountry());
-        payload.put("vatNr", billingDetails.getTaxId());
+        payload.put("vatCountryCode", billingDetails.country());
+        payload.put("vatNr", billingDetails.taxId());
         payload.put("vatStatus", spec.getVatStatus());
 
         return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchaseContext(), payload, InvoiceGeneration.class));

@@ -17,24 +17,9 @@
 package alfio.model.group;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class GroupMember {
-
-    private final int id;
-    private final int groupId;
-    private final String value;
-    private final String description;
-
-
-    public GroupMember(@Column("id") int id,
-                       @Column("a_group_id_fk") int groupId,
-                       @Column("value") String value,
-                       @Column("description") String description) {
-        this.id = id;
-        this.groupId = groupId;
-        this.value = value;
-        this.description = description;
-    }
+public record GroupMember(@Column("id") int id,
+                          @Column("a_group_id_fk") int groupId,
+                          @Column("value") String value,
+                          @Column("description") String description) {
 }

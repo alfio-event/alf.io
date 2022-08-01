@@ -16,21 +16,10 @@
  */
 package alfio.util;
 
-import lombok.Getter;
-
 import java.util.Map;
 
-@Getter
-public class RenderedTemplate {
-    private final String textPart;
-    private final String htmlPart;
-    private final Map<String, Object> srcModel;
 
-    private RenderedTemplate(String textPart, String htmlPart, Map<String, Object> model) {
-        this.textPart = textPart;
-        this.htmlPart = htmlPart;
-        this.srcModel = model;
-    }
+public record RenderedTemplate(String textPart, String htmlPart, Map<String, Object> srcModel) {
 
     public boolean isMultipart() {
         return htmlPart != null;

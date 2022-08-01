@@ -17,10 +17,14 @@
 package alfio.model.group;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class LinkedGroup {
+public record LinkedGroup(@Column("id") int id,
+                          @Column("a_group_id_fk") int groupId,
+                          @Column("event_id_fk") Integer eventId,
+                          @Column("ticket_category_id_fk") Integer ticketCategoryId,
+                          @Column("type") Type type,
+                          @Column("match_type") MatchType matchType,
+                          @Column("max_allocation") Integer maxAllocation) {
 
 
     /**
@@ -50,29 +54,5 @@ public class LinkedGroup {
          * Try to find a FULL match; if not successful, try to match email domain (everything after '@')
          */
         EMAIL_DOMAIN
-    }
-
-    private final int id;
-    private final int groupId;
-    private final Integer eventId;
-    private final Integer ticketCategoryId;
-    private final Type type;
-    private final MatchType matchType;
-    private final Integer maxAllocation;
-
-    public LinkedGroup(@Column("id") int id,
-                       @Column("a_group_id_fk") int groupId,
-                       @Column("event_id_fk") Integer eventId,
-                       @Column("ticket_category_id_fk") Integer ticketCategoryId,
-                       @Column("type") Type type,
-                       @Column("match_type") MatchType matchType,
-                       @Column("max_allocation") Integer maxAllocation) {
-        this.id = id;
-        this.groupId = groupId;
-        this.eventId = eventId;
-        this.ticketCategoryId = ticketCategoryId;
-        this.type = type;
-        this.matchType = matchType;
-        this.maxAllocation = maxAllocation;
     }
 }

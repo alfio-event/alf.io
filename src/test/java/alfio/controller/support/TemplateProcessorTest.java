@@ -60,8 +60,8 @@ public class TemplateProcessorTest {
         FileUploadManager fileUploadManager = mock(FileUploadManager.class);
         when(fileUploadManager.findMetadata(e.getFileBlobId())).thenReturn(Optional.of(metadata));
         TemplateProcessor.extractImageModel(e, fileUploadManager).ifPresent(imageData -> {
-            Assertions.assertTrue(imageData.getImageWidth() <= 300);
-            Assertions.assertTrue(imageData.getImageHeight() <= 150);
+            Assertions.assertTrue(imageData.imageWidth() <= 300);
+            Assertions.assertTrue(imageData.imageHeight() <= 150);
         });
     }
 }

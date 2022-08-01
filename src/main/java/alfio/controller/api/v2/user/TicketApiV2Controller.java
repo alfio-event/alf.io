@@ -308,8 +308,8 @@ public class TicketApiV2Controller {
                 var messageSource = messageSourceManager.getMessageSourceFor(event.getOrganizationId(), event.getId());
                 String ticketCode = ticket.ticketCode(event.getPrivateKey());
                 if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), checkInCode.getBytes(StandardCharsets.UTF_8))) {
-                    var categoryConfiguration = info.getCategoryMetadata().getOnlineConfiguration();
-                    var eventConfiguration = event.getMetadata().getOnlineConfiguration();
+                    var categoryConfiguration = info.getCategoryMetadata().onlineConfiguration();
+                    var eventConfiguration = event.getMetadata().onlineConfiguration();
                     var zoneId = StringUtils.isNotBlank(userTz) ? ZoneId.of(userTz) : event.getZoneId();
                     return firstMatchingCallLink(event.getZoneId(), categoryConfiguration, eventConfiguration)
                         .map(joinLink -> OnlineCheckInInfo.fromJoinLink(joinLink, event, zoneId, messageSource))

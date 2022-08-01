@@ -282,13 +282,13 @@ public class EventApiV1Controller {
                         findCategoryByName(e, categoryRequest.getName()).ifPresent(category -> {
                             EventCreationRequest.GroupLinkRequest groupLinkRequest = categoryRequest.getGroupLink();
                             LinkedGroupModification modification = new LinkedGroupModification(null,
-                                group.getId(),
+                                group.id(),
                                 e.getId(),
                                 category.getId(),
                                 groupLinkRequest.getType(),
                                 groupLinkRequest.getMatchType(),
                                 groupLinkRequest.getMaxAllocation());
-                            groupManager.createLink(group.getId(), e.getId(), modification);
+                            groupManager.createLink(group.id(), e.getId(), modification);
                         });
                     }
                 });

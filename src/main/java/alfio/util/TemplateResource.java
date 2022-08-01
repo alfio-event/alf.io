@@ -281,9 +281,9 @@ public enum TemplateResource {
     private static Map<String, Object> sampleBillingDocument(Optional<ImageData> imageData, Organization organization, Event event) {
         Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
         imageData.ifPresent(iData -> {
-            model.put("eventImage", iData.getEventImage());
-            model.put("imageWidth", iData.getImageWidth());
-            model.put("imageHeight", iData.getImageHeight());
+            model.put("eventImage", iData.eventImage());
+            model.put("imageWidth", iData.imageWidth());
+            model.put("imageHeight", iData.imageHeight());
         });
         return model;
     }
@@ -546,9 +546,9 @@ public enum TemplateResource {
         model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
 
         imageData.ifPresent(iData -> {
-            model.put("eventImage", iData.getEventImage());
-            model.put("imageWidth", iData.getImageWidth());
-            model.put("imageHeight", iData.getImageHeight());
+            model.put("eventImage", iData.eventImage());
+            model.put("imageWidth", iData.imageWidth());
+            model.put("imageHeight", iData.imageHeight());
         });
 
         model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
@@ -598,17 +598,7 @@ public enum TemplateResource {
         return new ImageData(null, null, null);
     }
 
-    @Getter
-    public static class ImageData {
-        private final String eventImage;
-        private final Integer imageWidth;
-        private final Integer imageHeight;
-
-        public ImageData(String eventImage, Integer imageWidth, Integer imageHeight) {
-            this.eventImage = eventImage;
-            this.imageWidth = imageWidth;
-            this.imageHeight = imageHeight;
-        }
+    public record ImageData(String eventImage, Integer imageWidth, Integer imageHeight) {
     }
 
     @Getter

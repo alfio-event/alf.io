@@ -17,18 +17,8 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class EventIdShortName {
 
-    private final int id;
-    private final String shortName;
-
-    public EventIdShortName(
-        @Column("id") int id,
-        @Column("short_name") String shortName) {
-        this.id = id;
-        this.shortName = shortName;
-    }
+public record EventIdShortName(@Column("id") int id,
+                               @Column("short_name") String shortName) {
 }

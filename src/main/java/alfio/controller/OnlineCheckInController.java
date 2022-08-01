@@ -62,8 +62,8 @@ public class OnlineCheckInController {
                 if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), ticketCodeHash.getBytes(StandardCharsets.UTF_8))) {
                     log.debug("code successfully validated for ticket {}", ticketUUID);
                     // check-in can be done. Let's check if there is a redirection URL
-                    var categoryConfiguration = data.getCategoryMetadata().getOnlineConfiguration();
-                    var eventConfiguration = event.getMetadata().getOnlineConfiguration();
+                    var categoryConfiguration = data.getCategoryMetadata().onlineConfiguration();
+                    var eventConfiguration = event.getMetadata().onlineConfiguration();
                     var match = findMatchingLink(event.getZoneId(), categoryConfiguration, eventConfiguration);
                     if(match.isPresent()) {
                         var checkInStatus = checkInManager.performCheckinForOnlineEvent(ticket, event, data.getTicketCategory());

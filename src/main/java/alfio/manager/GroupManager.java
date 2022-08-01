@@ -73,7 +73,7 @@ public class GroupManager {
     public Result<Integer> createNew(GroupModification input) {
         return requiresNewTransactionTemplate.execute(status -> {
             Group wl = createNew(input.getName(), input.getDescription(), input.getOrganizationId());
-            Result<Integer> insertMembers = insertMembers(wl.getId(), input.getItems());
+            Result<Integer> insertMembers = insertMembers(wl.id(), input.getItems());
             if(!insertMembers.isSuccess()) {
                 status.setRollbackOnly();
             }
@@ -101,16 +101,16 @@ public class GroupManager {
     public LinkedGroup updateLink(int id, LinkedGroupModification modification) {
         LinkedGroup original = groupRepository.getConfigurationForUpdate(id);
         if(requiresCleanState(modification, original)) {
-            Validate.isTrue(groupRepository.countWhitelistedTicketsForConfiguration(original.getId()) == 0, "Cannot update as there are already confirmed tickets.");
+            Validate.isTrue(groupRepository.countWhitelistedTicketsForConfiguration(original.id()) == 0, "Cannot update as there are already confirmed tickets.");
         }
-        groupRepository.updateConfiguration(id, modification.getGroupId(), original.getEventId(), modification.getTicketCategoryId(), modification.getType(), modification.getMatchType(), modification.getMaxAllocation());
+        groupRepository.updateConfiguration(id, modification.getGroupId(), original.eventId(), modification.getTicketCategoryId(), modification.getType(), modification.getMatchType(), modification.getMaxAllocation());
         return groupRepository.getConfiguration(id);
     }
 
     private boolean requiresCleanState(LinkedGroupModification modification, LinkedGroup original) {
-        return (original.getType() == UNLIMITED && modification.getType() != UNLIMITED)
-            || original.getGroupId() != modification.getGroupId()
-            || (modification.getType() == LIMITED_QUANTITY && modification.getMaxAllocation() != null && original.getMaxAllocation() != null && modification.getMaxAllocation().compareTo(original.getMaxAllocation()) < 0);
+        return (original.type() == UNLIMITED && modification.getType() != UNLIMITED)
+            || original.groupId() != modification.getGroupId()
+            || (modification.getType() == LIMITED_QUANTITY && modification.getMaxAllocation() != null && original.maxAllocation() != null && modification.getMaxAllocation().compareTo(original.maxAllocation()) < 0);
     }
 
     boolean isGroupLinked(int eventId, int categoryId) {
@@ -131,14 +131,14 @@ public class GroupManager {
     public Optional<GroupModification> loadComplete(int id) {
         return groupRepository.getOptionalById(id)
             .map(wl -> {
-                List<GroupMemberModification> items = groupRepository.getItems(wl.getId()).stream().map(i -> new GroupMemberModification(i.getId(), i.getValue(), i.getDescription())).toList();
-                return new GroupModification(wl.getId(), wl.getName(), wl.getDescription(), wl.getOrganizationId(), items);
+                List<GroupMemberModification> items = groupRepository.getItems(wl.id()).stream().map(i -> new GroupMemberModification(i.id(), i.value(), i.description())).toList();
+                return new GroupModification(wl.id(), wl.name(), wl.description(), wl.organizationId(), items);
             });
     }
 
     @Transactional
     public Optional<Group> findById(int groupId, int organizationId) {
-        return groupRepository.getOptionalById(groupId).filter(w -> w.getOrganizationId() == organizationId);
+        return groupRepository.getOptionalById(groupId).filter(w -> w.organizationId() == organizationId);
     }
 
     @Transactional
@@ -184,21 +184,21 @@ public class GroupManager {
             return false;
         }
         GroupMember item = optionalItem.get();
-        boolean preventDuplication = configuration.getType() == ONCE_PER_VALUE;
-        boolean limitAssignments = preventDuplication || configuration.getType() == LIMITED_QUANTITY;
+        boolean preventDuplication = configuration.type() == ONCE_PER_VALUE;
+        boolean limitAssignments = preventDuplication || configuration.type() == LIMITED_QUANTITY;
         if(limitAssignments) {
             //reload and lock configuration
-            configuration = groupRepository.getConfigurationForUpdate(configuration.getId());
-            int existing = groupRepository.countExistingWhitelistedTickets(item.getId(), configuration.getId());
-            int expected = preventDuplication ? 1 : Optional.ofNullable(configuration.getMaxAllocation()).orElse(0);
+            configuration = groupRepository.getConfigurationForUpdate(configuration.id());
+            int existing = groupRepository.countExistingWhitelistedTickets(item.id(), configuration.id());
+            int expected = preventDuplication ? 1 : Optional.ofNullable(configuration.maxAllocation()).orElse(0);
             if(existing >= expected) {
                 return false;
             }
         }
-        groupRepository.insertWhitelistedTicket(item.getId(), configuration.getId(), ticket.getId(), preventDuplication ? Boolean.TRUE : null);
+        groupRepository.insertWhitelistedTicket(item.id(), configuration.id(), ticket.getId(), preventDuplication ? Boolean.TRUE : null);
         Map<String, Object> modifications = new HashMap<>();
-        modifications.put("itemId", item.getId());
-        modifications.put("configurationId", configuration.getId());
+        modifications.put("itemId", item.id());
+        modifications.put("configurationId", configuration.id());
         modifications.put("ticketId", ticket.getId());
         auditingRepository.insert(ticket.getTicketsReservationId(), null, ticket.getEventId(), Audit.EventType.GROUP_MEMBER_ACQUIRED, new Date(), Audit.EntityType.TICKET, String.valueOf(ticket.getId()), singletonList(modifications));
         return true;
@@ -206,12 +206,12 @@ public class GroupManager {
 
     private Optional<GroupMember> getMatchingMember(LinkedGroup configuration, String email) {
         String trimmed = StringUtils.trimToEmpty(email);
-        Optional<GroupMember> exactMatch = groupRepository.findItemByValueExactMatch(configuration.getGroupId(), trimmed);
-        if(exactMatch.isPresent() || configuration.getMatchType() == FULL) {
+        Optional<GroupMember> exactMatch = groupRepository.findItemByValueExactMatch(configuration.groupId(), trimmed);
+        if(exactMatch.isPresent() || configuration.matchType() == FULL) {
             return exactMatch;
         }
         String partial = StringUtils.substringAfterLast(trimmed, "@");
-        return partial.length() > 0 ? groupRepository.findItemEndsWith(configuration.getId(), configuration.getGroupId(), "%@"+partial) : Optional.empty();
+        return partial.length() > 0 ? groupRepository.findItemEndsWith(configuration.id(), configuration.groupId(), "%@"+partial) : Optional.empty();
     }
 
     @Transactional
@@ -263,7 +263,7 @@ public class GroupManager {
 
     @Transactional
     public boolean deactivateGroup(int groupId) {
-        List<Integer> members = groupRepository.getItems(groupId).stream().map(GroupMember::getId).toList();
+        List<Integer> members = groupRepository.getItems(groupId).stream().map(GroupMember::id).toList();
         if(!members.isEmpty()) {
             Validate.isTrue(deactivateMembers(members, groupId), "error while disabling group members");
         }

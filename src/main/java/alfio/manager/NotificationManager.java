@@ -267,7 +267,7 @@ public class NotificationManager {
         if(EventUtil.isAccessOnline(ticketCategory, event)) { // generate only calendar invitation
             var attachmentModel = new HashMap<String, String>();
             // attachment model expects non-string properties to be JSON, so we convert them
-            renderedTemplate.getSrcModel().forEach((k, v) -> {
+            renderedTemplate.srcModel().forEach((k, v) -> {
                 if(v instanceof String s) {
                     attachmentModel.put(k, s);
                 } else {
@@ -288,8 +288,8 @@ public class NotificationManager {
         tx.execute(status -> {
             emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
                 // see issue #967
-                id -> emailMessageRepository.updateStatusToWaitingWithHtml(id, renderedTemplate.getHtmlPart()),
-                () -> emailMessageRepository.insert(event.getId(), null, reservation.getId(), recipient, null, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock()), event.getOrganizationId())
+                id -> emailMessageRepository.updateStatusToWaitingWithHtml(id, renderedTemplate.htmlPart()),
+                () -> emailMessageRepository.insert(event.getId(), null, reservation.getId(), recipient, null, subject, renderedTemplate.textPart(), renderedTemplate.htmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock()), event.getOrganizationId())
             );
             return null;
         });
@@ -328,11 +328,11 @@ public class NotificationManager {
 
         existing.ifPresentOrElse(id ->
             //see issue #967
-            emailMessageRepository.updateStatusToWaitingWithHtml(id, renderedTemplate.getHtmlPart())
+            emailMessageRepository.updateStatusToWaitingWithHtml(id, renderedTemplate.htmlPart())
             ,
             () -> {
                 var pair = getEventIdSubscriptionId(purchaseContext);
-                emailMessageRepository.insert(pair.getLeft(), pair.getRight(), reservationId, recipient, encodedCC, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock()), purchaseContext.getOrganizationId());
+                emailMessageRepository.insert(pair.getLeft(), pair.getRight(), reservationId, recipient, encodedCC, subject, renderedTemplate.textPart(), renderedTemplate.htmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock()), purchaseContext.getOrganizationId());
             });
     }
 
@@ -463,9 +463,9 @@ public class NotificationManager {
             digest.update(recipient.getBytes(StandardCharsets.UTF_8));
             digest.update(subject.getBytes(StandardCharsets.UTF_8));
             Optional.ofNullable(attachments).ifPresent(v -> digest.update(v.getBytes(StandardCharsets.UTF_8)));
-            digest.update(renderedTemplate.getTextPart().getBytes(StandardCharsets.UTF_8));
+            digest.update(renderedTemplate.textPart().getBytes(StandardCharsets.UTF_8));
             if(renderedTemplate.isMultipart()) {
-                digest.update(renderedTemplate.getHtmlPart().getBytes(StandardCharsets.UTF_8));
+                digest.update(renderedTemplate.htmlPart().getBytes(StandardCharsets.UTF_8));
             }
             return new String(Hex.encode(digest.digest()));
         } catch (NoSuchAlgorithmException e) {

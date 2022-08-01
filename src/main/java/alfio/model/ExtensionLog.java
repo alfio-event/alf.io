@@ -18,41 +18,18 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
 import java.time.ZonedDateTime;
 
-@Getter
-public class ExtensionLog {
+public record ExtensionLog(@Column("id") int id,
+                           @Column("effective_path") String effectivePath,
+                           @Column("path") String path,
+                           @Column("name") String name,
+                           @Column("description") String description,
+                           @Column("type") Type type,
+                           @Column("event_ts") ZonedDateTime timestamp) {
 
     public enum Type {
         SUCCESS, ERROR, INFO, WARNING
     }
-
-
-    private final int id;
-    private final String effectivePath;
-    private final String path;
-    private final String name;
-    private final String description;
-    private final Type type;
-    private final ZonedDateTime timestamp;
-
-
-    public ExtensionLog(@Column("id") int id,
-                        @Column("effective_path") String effectivePath,
-                        @Column("path") String path,
-                        @Column("name") String name,
-                        @Column("description") String description,
-                        @Column("type") Type type,
-                        @Column("event_ts") ZonedDateTime timestamp) {
-        this.id = id;
-        this.effectivePath = effectivePath;
-        this.path = path;
-        this.name = name;
-        this.description = description;
-        this.type = type;
-        this.timestamp = timestamp;
-    }
-
 }

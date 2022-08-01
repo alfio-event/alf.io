@@ -43,7 +43,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Data;
 import lombok.Getter;
-import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -618,7 +617,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
             String billingCountry = null;
             if(transactionRequest.getBillingDetails() != null) {
-                billingCountry = StringUtils.trimToNull(transactionRequest.getBillingDetails().getCountry());
+                billingCountry = StringUtils.trimToNull(transactionRequest.getBillingDetails().country());
             }
             PaymentAmount amount = null;
             if(transactionRequest.getPrice() != null) {

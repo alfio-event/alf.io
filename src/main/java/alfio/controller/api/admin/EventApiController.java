@@ -417,7 +417,7 @@ public class EventApiController {
 
             if(eInvoicingEnabled) {
                 var billingDetails = trs.getBillingDetails();
-                var optionalInvoicingData = Optional.ofNullable(billingDetails.getInvoicingAdditionalInfo()).map(TicketReservationInvoicingAdditionalInfo::getItalianEInvoicing);
+                var optionalInvoicingData = Optional.ofNullable(billingDetails.invoicingAdditionalInfo()).map(TicketReservationInvoicingAdditionalInfo::getItalianEInvoicing);
                 if(fields.contains(FISCAL_CODE)) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getFiscalCode).orElse(""));}
                 if(fields.contains(REFERENCE_TYPE)) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getReferenceTypeAsString).orElse(""));}
                 if(fields.contains("Addressee Code")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getAddresseeCode).orElse(""));}
@@ -737,7 +737,7 @@ public class EventApiController {
                         fields.add(reservation.getLineSplittedBillingAddress().stream().findFirst().orElse(""));
                         fields.add(reservation.getVatNr());
                         if(italianEInvoicingEnabled) {
-                            var additionalInfo = reservationWithTransaction.getBillingDetails().getInvoicingAdditionalInfo();
+                            var additionalInfo = reservationWithTransaction.getBillingDetails().invoicingAdditionalInfo();
                             boolean hasEInvoicingInfo = !additionalInfo.isEmpty();
                             var eInvoicingInfo = additionalInfo.getItalianEInvoicing();
                             fields.add(hasEInvoicingInfo ? eInvoicingInfo.getFiscalCode() : "");
