@@ -621,8 +621,8 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             }
             PaymentAmount amount = null;
             if(transactionRequest.getPrice() != null) {
-                String currencyCode = transactionRequest.getPrice().getCurrencyCode();
-                amount = new PaymentAmount(formatCents(transactionRequest.getPrice().getPriceWithVAT(), currencyCode), currencyCode);
+                String currencyCode = transactionRequest.getPrice().currencyCode();
+                amount = new PaymentAmount(formatCents(transactionRequest.getPrice().priceWithVAT(), currencyCode), currencyCode);
             }
             boolean testMode = !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault();
             return new MethodCacheKey(amount, billingCountry, testMode);

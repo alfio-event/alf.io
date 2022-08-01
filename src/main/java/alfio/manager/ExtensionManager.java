@@ -361,8 +361,8 @@ public class ExtensionManager {
     void handleRefund(PurchaseContext purchaseContext, TicketReservation reservation, TransactionAndPaymentInfo info) {
         Map<String, Object> payload = new HashMap<>();
         payload.put(RESERVATION, reservation);
-        payload.put("transaction", info.getTransaction());
-        payload.put("paymentInfo", info.getPaymentInformation());
+        payload.put("transaction", info.transaction());
+        payload.put("paymentInfo", info.paymentInformation());
         asyncCall(ExtensionEvent.REFUND_ISSUED, purchaseContext, payload);
     }
 

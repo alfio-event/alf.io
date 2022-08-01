@@ -18,36 +18,18 @@ package alfio.model.audit;
 
 import alfio.manager.support.CheckInStatus;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
 import java.time.ZonedDateTime;
 
-@Getter
-public class ScanAudit {
+public record ScanAudit(@Column("ticket_uuid") String ticketUuid,
+                        @Column("event_id_fk") int eventId,
+                        @Column("scan_ts") ZonedDateTime scanTimestamp,
+                        @Column("username") String username,
+                        @Column("check_in_status") CheckInStatus checkInStatus,
+                        @Column("operation") Operation operation) {
 
     public enum Operation {
         SCAN,
         REVERT
-    }
-
-    private final String ticketUuid;
-    private final int eventId;
-    private final ZonedDateTime scanTimestamp;
-    private final String username;
-    private final CheckInStatus checkInStatus;
-    private final Operation operation;
-
-    public ScanAudit(@Column("ticket_uuid") String ticketUuid,
-                     @Column("event_id_fk") int eventId,
-                     @Column("scan_ts") ZonedDateTime scanTimestamp,
-                     @Column("username") String username,
-                     @Column("check_in_status") CheckInStatus checkInStatus,
-                     @Column("operation") Operation operation) {
-        this.ticketUuid = ticketUuid;
-        this.eventId = eventId;
-        this.scanTimestamp = scanTimestamp;
-        this.username = username;
-        this.checkInStatus = checkInStatus;
-        this.operation = operation;
     }
 }

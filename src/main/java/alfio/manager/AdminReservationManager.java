@@ -336,8 +336,8 @@ public class AdminReservationManager {
                 auditingRepository.insert(reservationId, userRepository.getByUsername(username).getId(), purchaseContext, Audit.EventType.FORCE_VAT_APPLICATION, new Date(), Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("vatStatus", newVatStatus)));
                 ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, null);
                 var newPrice = ticketReservationManager.totalReservationCostWithVAT(r.withVatStatus(newVatStatus)).getLeft();
-                ticketReservationRepository.resetVat(reservationId, r.isInvoiceRequested(), newVatStatus, r.getSrcPriceCts(), newPrice.getPriceWithVAT(),
-                    newPrice.getVAT(), Math.abs(newPrice.getDiscount()), r.getCurrencyCode());
+                ticketReservationRepository.resetVat(reservationId, r.isInvoiceRequested(), newVatStatus, r.getSrcPriceCts(), newPrice.priceWithVAT(),
+                    newPrice.VAT(), Math.abs(newPrice.discount()), r.getCurrencyCode());
             }
         }
 
@@ -750,7 +750,7 @@ public class AdminReservationManager {
             } else {
                 // recalculate totals
                 var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
-                var currencyCode = totalPrice.getCurrencyCode();
+                var currencyCode = totalPrice.currencyCode();
                 var updatedTickets = ticketRepository.findTicketsInReservation(reservationId);
                 var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
                 List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);

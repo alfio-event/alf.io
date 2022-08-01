@@ -1089,7 +1089,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc, new TestingAuthenticationToken("ciccio", "ciccio")).getResult().getStatus());
                 List<ScanAudit> audits = scanAuditRepository.findAllForEvent(context.event.getId());
                 assertFalse(audits.isEmpty());
-                assertTrue(audits.stream().anyMatch(sa -> sa.getTicketUuid().equals(ticketIdentifier)));
+                assertTrue(audits.stream().anyMatch(sa -> sa.ticketUuid().equals(ticketIdentifier)));
 
                 extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
                 assertEventLogged(extLogs, TICKET_CHECKED_IN, 2);

@@ -178,15 +178,15 @@ class TicketReservationManagerUnitTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
         TotalPrice included = priceAndDiscount.getLeft();
         Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(10, included.getPriceWithVAT());
-        Assertions.assertEquals(1, included.getVAT());
+        Assertions.assertEquals(10, included.priceWithVAT());
+        Assertions.assertEquals(1, included.VAT());
 
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscountNotIncluded = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
         TotalPrice notIncluded = priceAndDiscountNotIncluded.getLeft();
         Assertions.assertTrue(priceAndDiscountNotIncluded.getRight().isEmpty());
-        Assertions.assertEquals(11, notIncluded.getPriceWithVAT());
-        Assertions.assertEquals(1, notIncluded.getVAT());
+        Assertions.assertEquals(11, notIncluded.priceWithVAT());
+        Assertions.assertEquals(1, notIncluded.VAT());
     }
 
     @Test
@@ -196,8 +196,8 @@ class TicketReservationManagerUnitTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
         TotalPrice first = priceAndDiscount.getLeft();
         Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(20, first.getPriceWithVAT());
-        Assertions.assertEquals(2, first.getVAT());
+        Assertions.assertEquals(20, first.priceWithVAT());
+        Assertions.assertEquals(2, first.VAT());
     }
 
     @Test
@@ -207,8 +207,8 @@ class TicketReservationManagerUnitTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
         TotalPrice second = priceAndDiscount.getLeft();
         Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(20, second.getPriceWithVAT());
-        Assertions.assertEquals(1, second.getVAT());
+        Assertions.assertEquals(20, second.priceWithVAT());
+        Assertions.assertEquals(1, second.VAT());
     }
 
     @Test
@@ -218,8 +218,8 @@ class TicketReservationManagerUnitTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
         TotalPrice third = priceAndDiscount.getLeft();
         Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(22, third.getPriceWithVAT());
-        Assertions.assertEquals(2, third.getVAT());
+        Assertions.assertEquals(22, third.priceWithVAT());
+        Assertions.assertEquals(2, third.VAT());
     }
 
     @Test
@@ -229,8 +229,8 @@ class TicketReservationManagerUnitTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
         TotalPrice fourth = priceAndDiscount.getLeft();
         Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(21, fourth.getPriceWithVAT());
-        Assertions.assertEquals(1, fourth.getVAT());
+        Assertions.assertEquals(21, fourth.priceWithVAT());
+        Assertions.assertEquals(1, fourth.VAT());
     }
 
     @Test
