@@ -200,14 +200,14 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         var from = ZonedDateTime.now(Clock.systemUTC()).minusDays(1).with(d -> d.with(ChronoField.HOUR_OF_DAY, 0));
         var to = ZonedDateTime.now(Clock.systemUTC()).plusDays(1).with(ChronoField.HOUR_OF_DAY, 23);
 
-        assertTrue(ticketReservationRepository.getSoldStatistic(event.getId(), from, to, "day").stream().allMatch(tds -> tds.getCount() == 0L)); // -> no reservations
+        assertTrue(ticketReservationRepository.getSoldStatistic(event.getId(), from, to, "day").stream().allMatch(tds -> tds.count() == 0L)); // -> no reservations
         ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event, new BigDecimal("190.00"), eventAndUsername.getValue());
 
         var soldStatisticsList = ticketReservationRepository.getSoldStatistic(event.getId(), from, to, "day");
         assertEquals(3, soldStatisticsList.size());
-        assertEquals(LocalDate.now(ClockProvider.clock()).toString(), soldStatisticsList.get(1).getDate());
-        assertEquals(19L, soldStatisticsList.get(1).getCount()); // -> 19 tickets reserved
-        assertEquals(19L, soldStatisticsList.stream().mapToLong(TicketsByDateStatistic::getCount).sum());
+        assertEquals(LocalDate.now(ClockProvider.clock()).toString(), soldStatisticsList.get(1).date());
+        assertEquals(19L, soldStatisticsList.get(1).count()); // -> 19 tickets reserved
+        assertEquals(19L, soldStatisticsList.stream().mapToLong(TicketsByDateStatistic::count).sum());
 
         assertEquals(10, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId(), 0, null).size());
         assertEquals(Integer.valueOf(10), eventStatisticsManager.countModifiedTicket(event.getId(), bounded.getId(), null));

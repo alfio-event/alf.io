@@ -520,7 +520,7 @@ public class CheckInManager {
         if(!additionalServicesEmpty) {
             List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::additionalServiceId).collect(Collectors.toList());
             Map<Integer, List<TicketFieldValueForAdditionalService>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
-                .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::getAdditionalServiceId));
+                .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::additionalServiceId));
 
             return additionalServices.stream()
                 .map(as -> new AdditionalServiceInfo(as.additionalServiceName(), as.count(), fields.get(as.additionalServiceId())))

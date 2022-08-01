@@ -20,47 +20,24 @@ import java.util.Date;
 
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class TicketReservationInfo {
+public record TicketReservationInfo(@Column("id") String id,
+                                    @Column("full_name") String fullName,
+                                    @Column("first_name") String firstName,
+                                    @Column("last_name") String lastName,
+                                    @Column("email_address") String email,
+                                    @Column("final_price_cts") Integer finalPriceCts,
+                                    @Column("currency_code") String currencyCode,
+                                    @Column("event_id_fk") int eventId,
+                                    @Column("validity") Date validity) {
 
-    private final String id;
-    private final String fullName;
-    private final String firstName;
-    private final String lastName;
-    private final String email;
-    private final Integer finalPriceCts;
-    private final String currencyCode;
-    private final int eventId;
-    private final Date validity;
-
-    public TicketReservationInfo(@Column("id") String id,
-                                 @Column("full_name") String fullName,
-                                 @Column("first_name") String firstName,
-                                 @Column("last_name") String lastName,
-                                 @Column("email_address") String email,
-                                 @Column("final_price_cts") Integer finalPriceCts,
-                                 @Column("currency_code") String currencyCode,
-                                 @Column("event_id_fk") int eventId,
-                                 @Column("validity") Date validity) {
-        this.id = id;
-        this.fullName = fullName;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.finalPriceCts = finalPriceCts;
-        this.currencyCode = currencyCode;
-        this.eventId = eventId;
-        this.validity = validity;
-    }
-
-    public String getFullName() {
+    @Override
+    public String fullName() {
         return (firstName != null && lastName != null) ? (firstName + " " + lastName) : fullName;
     }
 
     public String getTotalAmount() {
-        if(finalPriceCts > 0) {
+        if (finalPriceCts > 0) {
             return MonetaryUtil.formatCents(finalPriceCts, currencyCode);
         }
         return null;

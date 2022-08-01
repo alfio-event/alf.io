@@ -108,9 +108,9 @@ public interface TicketFieldRepository extends FieldRepository {
                 if(!readOnlyFields.contains(fieldName)) {
                     TicketFieldValue field = toUpdate.get(fieldName);
                     if(isNotBlank) {
-                        updateValue(field.getTicketId(), field.getTicketFieldConfigurationId(), fieldValue);
+                        updateValue(field.ticketId(), field.ticketFieldConfigurationId(), fieldValue);
                     } else {
-                        deleteValue(field.getTicketId(), field.getTicketFieldConfigurationId());
+                        deleteValue(field.ticketId(), field.ticketFieldConfigurationId());
                     }
                 }
             } else if(fieldNameToId.containsKey(fieldName) && isNotBlank) {
@@ -120,7 +120,7 @@ public interface TicketFieldRepository extends FieldRepository {
     }
 
     default Map<String, TicketFieldValue> findAllByTicketIdGroupedByName(int id) {
-        return findAllByTicketId(id).stream().collect(Collectors.toMap(TicketFieldValue::getName, Function.identity()));
+        return findAllByTicketId(id).stream().collect(Collectors.toMap(TicketFieldValue::name, Function.identity()));
     }
 
     default boolean hasOptionalData(int ticketId) {

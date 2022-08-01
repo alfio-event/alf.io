@@ -74,7 +74,7 @@ public class BookingInfoTicketLoader {
 
         var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(List.of(ticket.getId()))
             .stream()
-            .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
+            .collect(Collectors.groupingBy(TicketFieldValue::ticketId));
 
         boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(ticket.getTicketsReservationId());
         Map<String, String> formattedDates = Map.of();
@@ -143,7 +143,7 @@ public class BookingInfoTicketLoader {
                                                          boolean onlineEventStarted) {
 
 
-        var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
+        var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::ticketFieldConfigurationId, Function.identity()));
 
 
         var ticketFieldsAdditional = ticketFields.stream()
@@ -151,7 +151,7 @@ public class BookingInfoTicketLoader {
             .map(tfc -> {
                 var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
                 var fieldValue = valueById.get(tfc.getId());
-                var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue == null ? null : fieldValue.getValue());
+                var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue == null ? null : fieldValue.value());
                 var descs = fromFieldDescriptions(descriptionsByTicketFieldId.get(t.getTicketFieldConfigurationId()));
                 return toAdditionalField(t, descs);
             }).collect(Collectors.toList());

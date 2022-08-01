@@ -340,7 +340,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals(1, eventStatistic.size());
         var statisticsFrom = ZonedDateTime.now(context.event.getZoneId()).minusYears(1);
         var statisticsTo = ZonedDateTime.now(context.event.getZoneId()).plusDays(1);
-        assertEquals(0L, eventStatisticsManager.getTicketSoldStatistics(context.event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::getCount).sum());
+        assertEquals(0L, eventStatisticsManager.getTicketSoldStatistics(context.event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::count).sum());
         EventWithAdditionalInfo eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(context.event.getShortName(), context.userId);
         assertEquals(2, eventWithAdditionalInfo.getNotSoldTickets()); // <- 2 tickets are the bounded category
         assertEquals(0, eventWithAdditionalInfo.getSoldTickets());
@@ -1100,7 +1100,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
 
                 // check stats after check in one ticket
-                assertTrue(eventStatisticsManager.getTicketSoldStatistics(context.event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::getCount).sum() > 0);
+                assertTrue(eventStatisticsManager.getTicketSoldStatistics(context.event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::count).sum() > 0);
                 EventWithAdditionalInfo eventWithAdditionalInfo3 = eventStatisticsManager.getEventWithAdditionalInfo(context.event.getShortName(), context.userId);
                 assertEquals(2, eventWithAdditionalInfo3.getNotSoldTickets());
                 assertEquals(0, eventWithAdditionalInfo3.getSoldTickets());
@@ -1127,7 +1127,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
 
                 // check stats after revert check in one ticket
-                assertTrue(eventStatisticsManager.getTicketSoldStatistics(context.event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::getCount).sum() > 0);
+                assertTrue(eventStatisticsManager.getTicketSoldStatistics(context.event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::count).sum() > 0);
                 EventWithAdditionalInfo eventWithAdditionalInfo4 = eventStatisticsManager.getEventWithAdditionalInfo(context.event.getShortName(), context.userId);
                 assertEquals(2, eventWithAdditionalInfo4.getNotSoldTickets());
                 assertEquals(1, eventWithAdditionalInfo4.getSoldTickets());

@@ -17,18 +17,8 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class TicketCategoryDescription {
-
-    private final int ticketCategoryId;
-    private final String locale;
-    private final String description;
-
-    public TicketCategoryDescription(@Column("ticket_category_id_fk") int ticketCategoryId, @Column("locale") String locale, @Column("description") String description) {
-        this.ticketCategoryId = ticketCategoryId;
-        this.locale = locale;
-        this.description = description;
-    }
+public record TicketCategoryDescription(@Column("ticket_category_id_fk") int ticketCategoryId,
+                                        @Column("locale") String locale,
+                                        @Column("description") String description) {
 }

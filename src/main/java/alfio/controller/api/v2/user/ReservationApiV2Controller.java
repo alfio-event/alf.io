@@ -175,7 +175,7 @@ public class ReservationApiV2Controller {
             var ticketsInfo = purchaseContext.event().filter(e -> !ticketIds.isEmpty()).map(event -> {
                 var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
                     .stream()
-                    .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
+                    .collect(Collectors.groupingBy(TicketFieldValue::ticketId));
 
                 var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
                     .stream()

@@ -44,7 +44,7 @@ public interface TicketCategoryDescriptionRepository {
 
 
     default Map<String, String> descriptionForTicketCategory(int ticketCategory) {
-        return findByTicketCategoryId(ticketCategory).stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription));
+        return findByTicketCategoryId(ticketCategory).stream().collect(Collectors.toMap(TicketCategoryDescription::locale, TicketCategoryDescription::description));
     }
 
     default Map<Integer, Map<String, String>> descriptionsByTicketCategory(Collection<Integer> ticketCategoryIds) {
@@ -55,10 +55,10 @@ public interface TicketCategoryDescriptionRepository {
 
         Map<Integer, Map<String, String>> res = new HashMap<>();
         findByTicketCategoryIds(ticketCategoryIds).forEach(t -> {
-            if (!res.containsKey(t.getTicketCategoryId())) {
-                res.put(t.getTicketCategoryId(), new HashMap<>());
+            if (!res.containsKey(t.ticketCategoryId())) {
+                res.put(t.ticketCategoryId(), new HashMap<>());
             }
-            res.get(t.getTicketCategoryId()).put(t.getLocale(), t.getDescription());
+            res.get(t.ticketCategoryId()).put(t.locale(), t.description());
         });
         return res;
     }

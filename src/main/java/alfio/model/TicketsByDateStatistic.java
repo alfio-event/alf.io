@@ -17,16 +17,7 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class TicketsByDateStatistic {
-    private final long count;
-    private final String date;
-
-    public TicketsByDateStatistic(@Column("ticket_count") long count,
-                                  @Column("day") String date) {
-        this.count = count;
-        this.date = date;
-    }
+public record TicketsByDateStatistic(@Column("ticket_count") long count,
+                                     @Column("day") String date) {
 }

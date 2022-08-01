@@ -613,7 +613,7 @@ public enum TemplateResource {
         }
 
         public ZonedDateTime getZonedExpiration() {
-            return reservation.getValidity().toInstant().atZone(event.getZoneId());
+            return reservation.validity().toInstant().atZone(event.getZoneId());
         }
     }
 }
