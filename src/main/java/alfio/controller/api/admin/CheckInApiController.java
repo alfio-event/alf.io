@@ -28,7 +28,6 @@ import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -247,76 +246,38 @@ public class CheckInApiController {
             .flatMap(str -> optionally(() -> Json.fromJson(str, LabelLayout.class)));
     }
 
-    @Data
-    private static class OnSitePaymentConfirmation {
-        private final boolean status;
-        private final String message;
+
+    private record OnSitePaymentConfirmation(boolean status, String message) {
     }
 
-    @Getter
-    private static class LabelLayout {
 
-        private final QRCode qrCode;
-        private final Content content;
-        private final General general;
-        private final String mediaName;
+    private record LabelLayout(@JsonProperty("qrCode") QRCode qrCode,
+                               @JsonProperty("content") Content content,
+                               @JsonProperty("general") General general,
+                               @JsonProperty("mediaName") String mediaName) {
+    }
+    
+    private record QRCode(@JsonProperty("additionalInfo") List<String> additionalInfo,
+                          @JsonProperty("infoSeparator") String infoSeparator) {
+    }
 
+
+    private record Content(String firstRow, String secondRow, List<String> thirdRow, List<String> additionalRows, Boolean checkbox) {
         @JsonCreator
-        private LabelLayout(@JsonProperty("qrCode") QRCode qrCode,
-                            @JsonProperty("content") Content content,
-                            @JsonProperty("general") General general,
-                            @JsonProperty("mediaName") String mediaName) {
-            this.qrCode = qrCode;
-            this.content = content;
-            this.general = general;
-            this.mediaName = mediaName;
+        private Content(@JsonProperty("firstRow") String firstRow,
+                        @JsonProperty("secondRow") String secondRow,
+                        @JsonProperty("thirdRow") List<String> thirdRow,
+                        @JsonProperty("additionalRows") List<String> additionalRows,
+                        @JsonProperty("checkbox") Boolean checkbox) {
+            this.firstRow = firstRow;
+            this.secondRow = secondRow;
+            this.thirdRow = thirdRow != null ? thirdRow : List.of();
+            this.additionalRows = additionalRows != null ? additionalRows : List.of();
+            this.checkbox = checkbox;
         }
+    }
 
-        @Getter
-        private static class QRCode {
-            private final List<String> additionalInfo;
-            private final String infoSeparator;
-
-            @JsonCreator
-            private QRCode(@JsonProperty("additionalInfo") List<String> additionalInfo,
-                           @JsonProperty("infoSeparator") String infoSeparator) {
-                this.additionalInfo = additionalInfo;
-                this.infoSeparator = infoSeparator;
-            }
-        }
-
-        @Getter
-        private static class Content {
-
-            private final String firstRow;
-            private final String secondRow;
-            private final List<String> thirdRow;
-            private final List<String> additionalRows;
-            private final Boolean checkbox;
-
-            @JsonCreator
-            private Content(@JsonProperty("firstRow") String firstRow,
-                            @JsonProperty("secondRow") String secondRow,
-                            @JsonProperty("thirdRow") List<String> thirdRow,
-                            @JsonProperty("additionalRows") List<String> additionalRows,
-                            @JsonProperty("checkbox") Boolean checkbox) {
-                this.firstRow = firstRow;
-                this.secondRow = secondRow;
-                this.thirdRow = thirdRow != null ? thirdRow : List.of();
-                this.additionalRows = additionalRows != null ? additionalRows : List.of();
-                this.checkbox = checkbox;
-            }
-        }
-
-        @Getter
-        private static class General {
-            private final boolean printPartialID;
-
-            @JsonCreator
-            private General(@JsonProperty("printPartialID") boolean printPartialID) {
-                this.printPartialID = printPartialID;
-            }
-        }
+    private record General(@JsonProperty("printPartialID") boolean printPartialID) {
     }
 
 }

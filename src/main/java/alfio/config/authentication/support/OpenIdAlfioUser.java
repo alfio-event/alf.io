@@ -18,33 +18,12 @@ package alfio.config.authentication.support;
 
 import alfio.model.user.Role;
 import alfio.model.user.User;
-import lombok.Getter;
 
 import java.util.Map;
 import java.util.Set;
 
-@Getter
-public class OpenIdAlfioUser {
-    private final String idToken;
-    private final String subject;
-    private final String email;
-    private final User.Type userType;
-    private final Set<Role> alfioRoles;
-    private final Map<String, Set<String>> alfioOrganizationAuthorizations;
-
-    public OpenIdAlfioUser(String idToken,
-                           String subject,
-                           String email,
-                           User.Type userType,
-                           Set<Role> alfioRoles,
-                           Map<String, Set<String>> alfioOrganizationAuthorizations) {
-        this.idToken = idToken;
-        this.subject = subject;
-        this.email = email;
-        this.userType = userType;
-        this.alfioRoles = alfioRoles;
-        this.alfioOrganizationAuthorizations = alfioOrganizationAuthorizations;
-    }
+public record OpenIdAlfioUser(String idToken, String subject, String email, User.Type userType, Set<Role> alfioRoles,
+                              Map<String, Set<String>> alfioOrganizationAuthorizations) {
 
     public boolean isAdmin() {
         return userType == User.Type.INTERNAL && alfioRoles.contains(Role.ADMIN);

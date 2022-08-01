@@ -125,13 +125,13 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     private OpenIdAlfioAuthentication createOrRetrieveUser(OpenIdAlfioUser user,
                                                            Map<String, Claim> idTokenClaims,
                                                            HttpSession session) {
-        if (!userManager.usernameExists(user.getEmail())) {
+        if (!userManager.usernameExists(user.email())) {
             var configuration = openIdConfiguration();
-            var result = userRepository.create(user.getEmail(),
+            var result = userRepository.create(user.email(),
                 passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
                 retrieveClaimOrBlank(idTokenClaims, configuration.getGivenNameClaim()),
                 retrieveClaimOrBlank(idTokenClaims, configuration.getFamilyNameClaim()),
-                user.getEmail(),
+                user.email(),
                 true,
                 getUserType(),
                 null,
@@ -140,13 +140,13 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         }
 
         if(syncRoles()) {
-            updateRoles(user.getAlfioRoles(), user.getEmail());
+            updateRoles(user.alfioRoles(), user.email());
             updateOrganizations(user);
         }
 
-        List<GrantedAuthority> authorities = user.getAlfioRoles().stream().map(Role::getRoleName)
+        List<GrantedAuthority> authorities = user.alfioRoles().stream().map(Role::getRoleName)
             .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        return new OpenIdAlfioAuthentication(authorities, user.getIdToken(), user.getSubject(), user.getEmail(), buildLogoutUrl(), user.isPublicUser());
+        return new OpenIdAlfioAuthentication(authorities, user.idToken(), user.subject(), user.email(), buildLogoutUrl(), user.isPublicUser());
     }
 
     private void onUserCreated(User user, HttpSession session) {
@@ -167,8 +167,8 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     }
 
     private void updateOrganizations(OpenIdAlfioUser alfioUser) {
-        int userId = userRepository.findIdByUserName(alfioUser.getEmail()).orElseThrow();
-        var databaseOrganizationIds = organizationRepository.findAllForUser(alfioUser.getEmail()).stream()
+        int userId = userRepository.findIdByUserName(alfioUser.email()).orElseThrow();
+        var databaseOrganizationIds = organizationRepository.findAllForUser(alfioUser.email()).stream()
             .map(Organization::getId).collect(Collectors.toSet());
 
         if (alfioUser.isAdmin()) {
@@ -179,7 +179,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         }
 
         List<Integer> organizationIds;
-        var userOrg = alfioUser.getAlfioOrganizationAuthorizations().keySet();
+        var userOrg = alfioUser.alfioOrganizationAuthorizations().keySet();
         if(!userOrg.isEmpty()) {
             organizationIds = organizationRepository.findOrganizationIdsByExternalId(userOrg);
         } else {

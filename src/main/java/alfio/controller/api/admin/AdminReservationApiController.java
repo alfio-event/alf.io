@@ -26,9 +26,8 @@ import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.subscription.SubscriptionWithUsageDetails;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.ResponseEntity;
@@ -225,12 +224,12 @@ public class AdminReservationApiController {
                                          @RequestBody RemoveTicketsModification toRemove,
                                          Principal principal) {
 
-        List<Integer> toRefund = toRemove.getRefundTo().entrySet().stream()
+        List<Integer> toRefund = toRemove.refundTo().entrySet().stream()
             .filter(Map.Entry::getValue)
             .map(Map.Entry::getKey)
             .collect(Collectors.toList());
 
-        adminReservationManager.removeTickets(publicIdentifier, reservationId, toRemove.getTicketIds(), toRefund, toRemove.getNotify(), toRemove.getIssueCreditNote(), principal.getName());
+        adminReservationManager.removeTickets(publicIdentifier, reservationId, toRemove.ticketIds(), toRefund, toRemove.isNotify(), toRemove.issueCreditNote(), principal.getName());
         return Result.success(true);
     }
 
@@ -307,62 +306,18 @@ public class AdminReservationApiController {
         return null;
     }
 
-    @Getter
-    public static class TicketReservationDescriptor {
-        private final TicketReservation reservation;
-        private final TicketReservationAdditionalInfo additionalInfo;
-        private final OrderSummary orderSummary;
-        private final List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory;
-        private final SubscriptionWithUsageDetails subscriptionDetails;
-
-        public TicketReservationDescriptor(TicketReservation reservation,
-                                           TicketReservationAdditionalInfo additionalInfo,
-                                           OrderSummary orderSummary,
-                                           List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory,
-                                           SubscriptionWithUsageDetails subscriptionDetails) {
-            this.reservation = reservation;
-            this.additionalInfo = additionalInfo;
-            this.orderSummary = orderSummary;
-            this.ticketsByCategory = ticketsByCategory;
-            this.subscriptionDetails = subscriptionDetails;
-        }
+    public record TicketReservationDescriptor(TicketReservation reservation,
+                                              TicketReservationAdditionalInfo additionalInfo, OrderSummary orderSummary,
+                                              List<SerializablePair<TicketCategory, List<Ticket>>> ticketsByCategory,
+                                              SubscriptionWithUsageDetails subscriptionDetails) {
     }
 
 
-    @Getter
-    public static class RemoveTicketsModification {
-        private final List<Integer> ticketIds;
-        private Map<Integer, Boolean> refundTo;
-        private final Boolean notify;
-        private final Boolean issueCreditNote;
-
-        @JsonCreator
-        public RemoveTicketsModification(@JsonProperty("ticketIds") List<Integer> ticketIds,
-                                         @JsonProperty("refundTo") Map<Integer, Boolean> refundTo,
-                                         @JsonProperty("notify") Boolean notify,
-                                         @JsonProperty("issueCreditNote") Boolean issueCreditNote) {
-            this.ticketIds = ticketIds;
-            this.refundTo = refundTo;
-            this.notify = notify;
-            this.issueCreditNote = issueCreditNote;
-        }
-
-        public Boolean getNotify() {
-            return Boolean.TRUE.equals(notify);
-        }
-
-        public Boolean getIssueCreditNote() {
-            return Boolean.TRUE.equals(issueCreditNote);
-        }
+    public record RemoveTicketsModification(@JsonProperty("ticketIds") List<Integer> ticketIds,
+                                            @JsonProperty("refundTo") Map<Integer, Boolean> refundTo,
+                                            @JsonProperty("notify") Boolean isNotify,
+                                            @JsonProperty("issueCreditNote") Boolean issueCreditNote) {
     }
-
-    @Getter
-    public static class RefundAmount {
-        private final String amount;
-
-        @JsonCreator
-        public RefundAmount(@JsonProperty("amount") String amount) {
-            this.amount = amount;
-        }
+    public record RefundAmount(@JsonProperty("amount") String amount) {
     }
 }

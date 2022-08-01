@@ -46,7 +46,6 @@ import alfio.util.*;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import lombok.Data;
-import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -201,17 +200,7 @@ public class EventApiController {
         return results;
     }
 
-
-
-    @Getter
-    public static class EventAndOrganization {
-        private final EventWithAdditionalInfo event;
-        private final Organization organization;
-
-        public EventAndOrganization(EventWithAdditionalInfo event, Organization organization) {
-            this.event = event;
-            this.organization = organization;
-        }
+    public record EventAndOrganization(EventWithAdditionalInfo event, Organization organization) {
     }
 
 
