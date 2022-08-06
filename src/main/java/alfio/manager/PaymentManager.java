@@ -95,7 +95,7 @@ public class PaymentManager {
             .collect(Collectors.toList());
     }
 
-    Stream<PaymentProvider> streamProvidersByProxyAndCapabilities(PaymentProxy paymentProxy,
+    private Stream<PaymentProvider> streamProvidersByProxyAndCapabilities(PaymentProxy paymentProxy,
                                                                   List<Class<? extends Capability>> capabilities) {
         return paymentProviders.stream()
             .filter(pp -> pp.getPaymentProxy() == paymentProxy)
