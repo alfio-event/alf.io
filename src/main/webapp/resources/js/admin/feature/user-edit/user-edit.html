@@ -17,10 +17,11 @@
                         Can view and update all the events. Can also create other users and access the configuration at organization and event level.
                     </div>
                 </li>
-                <li class="list-group-item" ng-if="$ctrl.user.target == 'USER'">
+                <li class="list-group-item">
                     <div class="list-group-item-heading"><strong>Check-in supervisor</strong></div>
                     <div class="list-group-item-text">
-                        Has a limited access to the events (e.g. can't see the statistics). Can also perform the check-in using the web interface.
+                        <span ng-if="$ctrl.user.target == 'USER'">Has limited access to the events (e.g. can't see the statistics). Can also perform the check-in using the web interface.</span>
+                        <span ng-if="$ctrl.user.target == 'API_KEY'">Can perform check-in and additionally search users from the mobile app. Access on the web admin is denied</span>
                     </div>
                 </li>
                 <li class="list-group-item" ng-if="$ctrl.user.target == 'API_KEY'">

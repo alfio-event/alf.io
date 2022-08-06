@@ -301,7 +301,7 @@ public class UsersApiController {
             return role.getDescription();
         }
 
-        public String getTarget() { return role.getTarget().name(); }
+        public List<String> getTarget() { return role.getTarget().stream().map(RoleTarget::name).collect(Collectors.toList()); }
     }
 
     private static final class PasswordModification {

@@ -19,21 +19,23 @@ package alfio.model.user;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Set;
 
 @Getter
 public enum Role {
-    ADMIN("ROLE_ADMIN", "Administrator", RoleTarget.ADMIN),
-    OWNER("ROLE_OWNER", "Organization owner", RoleTarget.USER),
-    SUPERVISOR("ROLE_SUPERVISOR", "Check-in supervisor", RoleTarget.USER),
-    OPERATOR("ROLE_OPERATOR", "Check-in operator", RoleTarget.API_KEY),
-    SPONSOR("ROLE_SPONSOR", "Sponsor", RoleTarget.API_KEY),
-    API_CONSUMER("ROLE_API_CLIENT", "API Client", RoleTarget.API_KEY);
+    ADMIN("ROLE_ADMIN", "Administrator", EnumSet.of(RoleTarget.ADMIN)),
+    OWNER("ROLE_OWNER", "Organization owner", EnumSet.of(RoleTarget.USER)),
+    SUPERVISOR("ROLE_SUPERVISOR", "Check-in supervisor", EnumSet.of(RoleTarget.USER, RoleTarget.API_KEY)),
+    OPERATOR("ROLE_OPERATOR", "Check-in operator", EnumSet.of(RoleTarget.API_KEY)),
+    SPONSOR("ROLE_SPONSOR", "Sponsor", EnumSet.of(RoleTarget.API_KEY)),
+    API_CONSUMER("ROLE_API_CLIENT", "API Client", EnumSet.of(RoleTarget.API_KEY));
 
     private final String roleName;
     private final String description;
-    private final RoleTarget target;
+    private final Set<RoleTarget> target;
 
-    Role(String roleName, String description, RoleTarget target) {
+    Role(String roleName, String description, Set<RoleTarget> target) {
         this.roleName = roleName;
         this.description = description;
         this.target = target;

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 public class EventListItem {
 
+    private static final int API_VERSION = 204;
     protected final Event event;
     private final String requestContextPath;
     private final List<EventDescription> eventDescriptions;
@@ -85,7 +86,7 @@ public class EventListItem {
     }
 
     public int getApiVersion() {
-        return 17;
+        return API_VERSION;
     }
 
 }
