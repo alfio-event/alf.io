@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.audit.ScanAudit;
+import alfio.model.checkin.CheckInFullInfo;
 import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
@@ -101,6 +102,13 @@ public class CheckInManager {
         Validate.isTrue(ticket.getStatus() == TicketStatus.TO_BE_PAID);
         ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.ACQUIRED.toString());
         ticketReservationManager.registerAlfioTransaction(eventRepository.findById(ticket.getEventId()), ticket.getTicketsReservationId(), PaymentProxy.ON_SITE);
+    }
+
+    public List<CheckInFullInfo> searchAttendees(int eventId, String query) {
+        if (StringUtils.isBlank(query)) {
+            return List.of();
+        }
+        return ticketRepository.searchAttendees(eventId, "%"+query+"%");
     }
 
     /**

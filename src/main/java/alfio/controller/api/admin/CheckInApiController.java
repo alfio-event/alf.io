@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.AttendeeSearchResult;
 import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.support.CheckInStatistics;
@@ -23,7 +24,9 @@ import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.FullTicketInfo;
+import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,6 +43,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -162,6 +166,33 @@ public class CheckInApiController {
                                                Principal principal) {
         response.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
         return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
+    }
+
+    @GetMapping("/check-in/{publicIdentifier}/attendees")
+    public ResponseEntity<List<AttendeeSearchResult>> searchAttendees(@PathVariable("publicIdentifier") String publicIdentifier,
+                                                                      @RequestParam(value = "query", required = false) String query,
+                                                                      Principal principal) {
+        if (StringUtils.isBlank(query) || StringUtils.isBlank(publicIdentifier)) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        var result = eventManager.getOptionalByName(publicIdentifier, principal.getName())
+            .map(event -> checkInManager.searchAttendees(event.getId(), query).stream()
+                .map(fi -> {
+                    var ticket = fi.getTicket();
+                    var reservation = fi.getTicketReservation();
+                    BigDecimal amountToPay = null;
+                    if (reservation.getPaymentMethod() == PaymentProxy.ON_SITE) {
+                        var priceContainer = TicketPriceContainer.from(ticket, reservation.getVatStatus(), reservation.getVAT(), event.getVatStatus(), reservation.getDiscount().orElse(null));
+                        amountToPay = priceContainer.getFinalPrice();
+                    }
+                    return new AttendeeSearchResult(ticket.getFirstName(),
+                        ticket.getLastName(), fi.getTicketCategory().getName(), fi.getTicketAdditionalInfo(),
+                        ticket.getStatus(), amountToPay);
+                }).collect(Collectors.toList()));
+
+        return ResponseEntity.of(result);
+
     }
 
     @PostMapping("/check-in/{eventId}/tickets")

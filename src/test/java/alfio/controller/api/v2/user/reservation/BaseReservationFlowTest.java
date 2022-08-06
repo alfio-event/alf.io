@@ -1012,6 +1012,23 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 String ticketIdentifier = fullTicketInfo.getUuid();
                 String eventName = context.event.getShortName();
 
+                // try to search ticket
+                var results = checkInApiController.searchAttendees(eventName, fullTicketInfo.getEmail(), principal);
+                switch (context.event.getFormat()) {
+                    case IN_PERSON:
+                    case HYBRID:
+                        assertTrue(results.getStatusCode().is2xxSuccessful());
+                        assertNotNull(results.getBody());
+                        assertFalse(results.getBody().isEmpty());
+                        assertTrue(results.getBody().stream().anyMatch(sr -> sr.getLastName().equals(fullTicketInfo.getLastName())));
+                        break;
+                    case ONLINE:
+                        assertTrue(results.getStatusCode().is2xxSuccessful());
+                        assertNotNull(results.getBody());
+                        assertTrue(results.getBody().isEmpty());
+                        break;
+                }
+
                 String ticketCode = fullTicketInfo.ticketCode(context.event.getPrivateKey());
                 TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode);
                 assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());

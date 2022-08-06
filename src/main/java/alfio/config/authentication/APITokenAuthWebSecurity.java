@@ -102,6 +102,7 @@ public class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
             .authorizeRequests()
             .antMatchers(ADMIN_PUBLIC_API + "/system/**").hasRole(SYSTEM_API_CLIENT)
             .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
+            .antMatchers(ADMIN_API + "/check-in/*/attendees").hasRole(SUPERVISOR)
             .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
             .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, AuthenticationConstants.SPONSOR)
             .antMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, AuthenticationConstants.SPONSOR)
