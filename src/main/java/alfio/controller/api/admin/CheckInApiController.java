@@ -184,7 +184,7 @@ public class CheckInApiController {
         return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
     }
 
-    @GetMapping("/check-in/{publicIdentifier}/attendees")
+    @GetMapping("/check-in/event/{publicIdentifier}/attendees")
     public ResponseEntity<List<AttendeeSearchResult>> searchAttendees(@PathVariable("publicIdentifier") String publicIdentifier,
                                                                       @RequestParam(value = "query", required = false) String query,
                                                                       Principal principal) {
