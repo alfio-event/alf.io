@@ -130,7 +130,7 @@ create view checkin_ticket_event_and_category_info as
              inner join tickets_reservation tr on t.tickets_reservation_id = tr.id
              inner join ticket_category tc on t.category_id = tc.id
              inner join event e on e.id = t.event_id
-    where t.status in ('ACQUIRED', 'CHECKED_IN')
+    where t.status in ('ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID')
       and t.first_name is not null
       and (t.first_name <> '') IS TRUE
       and t.last_name is not null
