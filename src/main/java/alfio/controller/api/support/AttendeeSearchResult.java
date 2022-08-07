@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 public class AttendeeSearchResult {
+    private final String uuid;
     private final String firstName;
     private final String lastName;
     private final String categoryName;
@@ -30,12 +31,14 @@ public class AttendeeSearchResult {
     private final Ticket.TicketStatus ticketStatus;
     private final BigDecimal amountToPay;
 
-    public AttendeeSearchResult(String firstName,
+    public AttendeeSearchResult(String uuid,
+                                String firstName,
                                 String lastName,
                                 String categoryName,
                                 Map<String, List<String>> additionalInfo,
                                 Ticket.TicketStatus ticketStatus,
                                 BigDecimal amountToPay) {
+        this.uuid = uuid;
         this.firstName = firstName;
         this.lastName = lastName;
         this.categoryName = categoryName;
@@ -66,5 +69,9 @@ public class AttendeeSearchResult {
 
     public BigDecimal getAmountToPay() {
         return amountToPay;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 }

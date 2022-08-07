@@ -124,16 +124,32 @@ public class CheckInApiController {
     public boolean manualCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
-        log.warn("for event id : {} and ticket : {}, a manual check in has been done", eventId, ticketIdentifier);
+        log.warn("for event id : {} and ticket : {}, a manual check in has been done by {}", eventId, ticketIdentifier, principal.getName());
         return checkInManager.manualCheckIn(eventId, ticketIdentifier, principal.getName());
+    }
+
+    @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/manual-check-in")
+    public ResponseEntity<Boolean> manualCheckIn(@PathVariable("eventName") String eventName,
+                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                 Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(ev -> manualCheckIn(ev.getId(), ticketIdentifier, principal)));
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/revert-check-in")
     public boolean revertCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
-        log.warn("for event id : {} and ticket : {}, a revert of the check in has been done", eventId, ticketIdentifier);
+        log.warn("for event id : {} and ticket : {}, a revert of the check in has been done by {}", eventId, ticketIdentifier, principal.getName());
         return checkInManager.revertCheckIn(eventId, ticketIdentifier, principal.getName());
+    }
+
+    @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/revert-check-in")
+    public ResponseEntity<Boolean> revertCheckIn(@PathVariable("eventName") String eventName,
+                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                 Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(ev -> revertCheckIn(ev.getId(), ticketIdentifier, principal)));
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment")
@@ -186,7 +202,7 @@ public class CheckInApiController {
                         var priceContainer = TicketPriceContainer.from(ticket, reservation.getVatStatus(), reservation.getVAT(), event.getVatStatus(), reservation.getDiscount().orElse(null));
                         amountToPay = priceContainer.getFinalPrice();
                     }
-                    return new AttendeeSearchResult(ticket.getFirstName(),
+                    return new AttendeeSearchResult(ticket.getUuid(), ticket.getFirstName(),
                         ticket.getLastName(), fi.getTicketCategory().getName(), fi.getTicketAdditionalInfo(),
                         ticket.getStatus(), amountToPay);
                 }).collect(Collectors.toList()));
