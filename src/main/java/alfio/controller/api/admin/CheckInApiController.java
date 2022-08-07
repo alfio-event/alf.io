@@ -28,6 +28,7 @@ import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.Json;
+import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -197,10 +198,10 @@ public class CheckInApiController {
                 .map(fi -> {
                     var ticket = fi.getTicket();
                     var reservation = fi.getTicketReservation();
-                    BigDecimal amountToPay = null;
+                    String amountToPay = null;
                     if (reservation.getPaymentMethod() == PaymentProxy.ON_SITE) {
                         var priceContainer = TicketPriceContainer.from(ticket, reservation.getVatStatus(), reservation.getVAT(), event.getVatStatus(), reservation.getDiscount().orElse(null));
-                        amountToPay = priceContainer.getFinalPrice();
+                        amountToPay = event.getCurrency() + " " + MonetaryUtil.formatUnit(priceContainer.getFinalPrice(), event.getCurrency());
                     }
                     return new AttendeeSearchResult(ticket.getUuid(), ticket.getFirstName(),
                         ticket.getLastName(), fi.getTicketCategory().getName(), fi.getTicketAdditionalInfo(),

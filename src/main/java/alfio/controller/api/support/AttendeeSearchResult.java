@@ -29,7 +29,7 @@ public class AttendeeSearchResult {
     private final String categoryName;
     private final Map<String, List<String>> additionalInfo;
     private final Ticket.TicketStatus ticketStatus;
-    private final BigDecimal amountToPay;
+    private final String amountToPay;
 
     public AttendeeSearchResult(String uuid,
                                 String firstName,
@@ -37,7 +37,7 @@ public class AttendeeSearchResult {
                                 String categoryName,
                                 Map<String, List<String>> additionalInfo,
                                 Ticket.TicketStatus ticketStatus,
-                                BigDecimal amountToPay) {
+                                String amountToPay) {
         this.uuid = uuid;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -67,7 +67,7 @@ public class AttendeeSearchResult {
         return ticketStatus;
     }
 
-    public BigDecimal getAmountToPay() {
+    public String getAmountToPay() {
         return amountToPay;
     }
 
