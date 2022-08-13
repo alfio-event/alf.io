@@ -85,7 +85,7 @@ public class PaymentManager {
         var paymentContext = new PaymentContext(null, ConfigurationLevel.organization(organizationId));
 
         Map<PaymentMethod, Set<PaymentProxy>> proxiesByMethod = paymentProxies.stream()
-            .flatMap(proxy -> streamActiveProvidersByProxy(proxy, paymentContext))
+            .flatMap(proxy -> streamProvidersByProxyAndCapabilities(proxy, List.of()))
             .map(provider -> Pair.of(provider.getPaymentProxy(), provider.getSupportedPaymentMethods(paymentContext, TransactionRequest.empty())))
             .flatMap(pair -> pair.getValue().stream().map(pm -> Pair.of(pm, pair.getKey()))) // flip
             .collect(Collectors.groupingBy(Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toSet())));
@@ -95,12 +95,17 @@ public class PaymentManager {
             .collect(Collectors.toList());
     }
 
+    private Stream<PaymentProvider> streamProvidersByProxyAndCapabilities(PaymentProxy paymentProxy,
+                                                                  List<Class<? extends Capability>> capabilities) {
+        return paymentProviders.stream()
+            .filter(pp -> pp.getPaymentProxy() == paymentProxy)
+            .filter(filterByCapabilities(capabilities));
+    }
+
     Stream<PaymentProvider> streamActiveProvidersByProxyAndCapabilities(PaymentProxy paymentProxy,
                                                                                 PaymentContext paymentContext,
                                                                                 List<Class<? extends Capability>> capabilities) {
-        return paymentProviders.stream()
-            .filter(pp -> pp.getPaymentProxy() == paymentProxy && pp.isActive(paymentContext))
-            .filter(filterByCapabilities(capabilities));
+        return streamProvidersByProxyAndCapabilities(paymentProxy, capabilities).filter((pp) -> pp.isActive(paymentContext));
     }
 
     private static Predicate<PaymentProvider> filterByCapabilities(List<Class<? extends Capability>> capabilities) {
