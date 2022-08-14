@@ -23,7 +23,9 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.PurchaseContext;
 import alfio.model.TicketCategory;
+import alfio.model.TicketReservation;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.modification.DateTimeModification;
@@ -43,6 +45,7 @@ import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -58,6 +61,8 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 @SpringBootTest
@@ -102,8 +107,13 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         desc.put("it", "muh description");
         desc.put("de", "muh description");
 
-        List<TicketCategoryModification> ticketsCategory = Collections.singletonList(
+        List<TicketCategoryModification> ticketsCategory = List.of(
             new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 20,
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
+                Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false, null, null,
+                null, null, null, 0, null, null, AlfioMetadata.empty()),
+            new TicketCategoryModification(null, "second", TicketCategory.TicketAccessType.INHERIT, 20,
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 new DateTimeModification(LocalDate.now(ClockProvider.clock()), LocalTime.now(ClockProvider.clock())),
                 Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false, null, null,
@@ -381,5 +391,21 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         assertNotNull(apiKey2);
         assertFalse(apiKey2.isEmpty());
         assertNotEquals(apiKey, apiKey2);
+    }
+
+    @Test
+    void ensureNoErrorsWhenDeniedMethodsOptionIsEmpty() {
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        // insert empty value
+        configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), event.getId(), categories.get(0).getId(), PAYMENT_METHODS_BLACKLIST.name(), "", "");
+        // try with single category
+        var deniedMethods = configurationManager.getBlacklistedMethodsForReservation(event, List.of(categories.get(0).getId()));
+        assertNotNull(deniedMethods);
+        assertTrue(deniedMethods.isEmpty());
+
+        // try with multiple categories
+        deniedMethods = configurationManager.getBlacklistedMethodsForReservation(event, categories.stream().map(TicketCategory::getId).collect(Collectors.toList()));
+        assertNotNull(deniedMethods);
+        assertTrue(deniedMethods.isEmpty());
     }
 }

@@ -60,6 +60,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
@@ -589,10 +590,12 @@ public class ConfigurationManager {
                 return categoryIds.stream()
                     .filter(blacklistForCategories::containsKey)
                     .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
+                    .filter(StringUtils::isNotBlank)
                     .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
                     .toList();
             } else if (!categoryIds.isEmpty()) {
                     return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
+                        .filter(v -> StringUtils.isNotBlank(v.getValue()))
                         .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).toList())
                         .orElse(List.of());
             } else {
