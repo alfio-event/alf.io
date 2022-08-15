@@ -409,7 +409,7 @@ public interface TicketRepository {
     Optional<CheckInFullInfo> getFullInfoForOnlineCheckin(@Bind("eventShortName") String eventShortName, @Bind("ticketUUID") String ticketUUID);
 
     @Query("select * from checkin_ticket_event_and_category_info where e_id = :eventId " +
-        "and (" + TicketSearchRepository.BASE_FILTER + ") "+
+        "and (" + TicketSearchRepository.BASE_FILTER + " or lower(tc_name) like lower(:search)) "+
         "and (e_format = 'IN_PERSON' or tc_ticket_access_type = 'IN_PERSON') ")
     List<CheckInFullInfo> searchAttendees(@Bind("eventId") int eventId, @Bind("search") String search);
 
