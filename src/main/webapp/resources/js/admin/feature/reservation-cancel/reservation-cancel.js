@@ -36,7 +36,7 @@
                             $scope.purchaseContext = purchaseContext;
                             $scope.purchaseContextType = purchaseContextType;
                             $scope.reservationId = reservation.id;
-                            $scope.invoiceRequested = reservation.customerData.invoiceRequested;
+                            $scope.invoiceRequested = reservation.customerData.invoiceRequested && reservation.status !== 'OFFLINE_PAYMENT';
                             $scope.credit = credit;
                             $scope.close = function() {
                                 $scope.$dismiss(false);
