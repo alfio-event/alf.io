@@ -854,7 +854,14 @@ public class AdminReservationManager {
 
     @Transactional
     public void creditReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, boolean refund, boolean notify, String username) {
-        loadReservation(purchaseContextType, publicIdentifier, reservationId, username).flatMap(res -> removeReservation(res, refund, notify, username, false, true));
+        loadReservation(purchaseContextType, publicIdentifier, reservationId, username)
+            .ifSuccess(res -> {
+                if (res.getLeft().getStatus() == TicketReservationStatus.OFFLINE_PAYMENT) {
+                    ticketReservationManager.deleteOfflinePayment(res.getRight().event().orElseThrow(), reservationId, false, true, username);
+                } else {
+                    removeReservation(res, refund, notify, username, false, true);
+                }
+            });
     }
 
     private Result<Pair<PurchaseContext, TicketReservation>> removeReservation(Triple<TicketReservation, List<Ticket>, PurchaseContext> triple,
