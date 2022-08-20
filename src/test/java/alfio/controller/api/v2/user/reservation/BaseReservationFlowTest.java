@@ -1013,19 +1013,25 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 String eventName = context.event.getShortName();
 
                 // try to search ticket
-                var results = checkInApiController.searchAttendees(eventName, fullTicketInfo.getEmail(), principal);
+                var results = checkInApiController.searchAttendees(eventName, fullTicketInfo.getEmail(), 0, principal);
                 switch (context.event.getFormat()) {
                     case IN_PERSON:
                     case HYBRID:
                         assertTrue(results.getStatusCode().is2xxSuccessful());
                         assertNotNull(results.getBody());
-                        assertFalse(results.getBody().isEmpty());
-                        assertTrue(results.getBody().stream().anyMatch(sr -> sr.getLastName().equals(fullTicketInfo.getLastName())));
+                        var searchResults = results.getBody();
+                        assertEquals(1, searchResults.getTotalPages());
+                        var attendees = searchResults.getAttendees();
+                        int count = searchResults.getTotalResults();
+                        assertFalse(searchResults.hasMorePages());
+                        assertFalse(attendees.isEmpty());
+                        assertEquals(count, attendees.size());
+                        assertTrue(attendees.stream().anyMatch(sr -> sr.getLastName().equals(fullTicketInfo.getLastName())));
                         break;
                     case ONLINE:
                         assertTrue(results.getStatusCode().is2xxSuccessful());
                         assertNotNull(results.getBody());
-                        assertTrue(results.getBody().isEmpty());
+                        assertEquals(0, results.getBody().getTotalResults());
                         break;
                 }
 

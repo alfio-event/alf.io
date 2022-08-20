@@ -21,7 +21,8 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.audit.ScanAudit;
-import alfio.model.checkin.CheckInFullInfo;
+import alfio.model.checkin.AttendeeSearchResults;
+import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
@@ -44,7 +45,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +72,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 public class CheckInManager {
 
     static final Pattern CYPHER_SPLITTER = Pattern.compile("\\|");
+    private static final int SEARCH_ATTENDEES_LIMIT = 20;
     private final TicketRepository ticketRepository;
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
@@ -104,11 +105,28 @@ public class CheckInManager {
         ticketReservationManager.registerAlfioTransaction(eventRepository.findById(ticket.getEventId()), ticket.getTicketsReservationId(), PaymentProxy.ON_SITE);
     }
 
-    public List<CheckInFullInfo> searchAttendees(int eventId, String query) {
+    public AttendeeSearchResults searchAttendees(Event event, String query, int page) {
         if (StringUtils.isBlank(query)) {
-            return List.of();
+            return new AttendeeSearchResults(0, 0, 0, 0, List.of());
         }
-        return ticketRepository.searchAttendees(eventId, "%"+query+"%");
+        int eventId = event.getId();
+        var search = "%" + query + "%";
+        var results = ticketRepository.searchAttendees(eventId, search, SEARCH_ATTENDEES_LIMIT, SEARCH_ATTENDEES_LIMIT * page);
+        var statistics = ticketRepository.countSearchResults(eventId, search);
+        var attendees = results.stream().map(fi -> {
+            var ticket = fi.getTicket();
+            var reservation = fi.getTicketReservation();
+            String amountToPay = null;
+            if (reservation.getPaymentMethod() == PaymentProxy.ON_SITE) {
+                var priceContainer = TicketPriceContainer.from(ticket, reservation.getVatStatus(), reservation.getVAT(), event.getVatStatus(), reservation.getDiscount().orElse(null));
+                amountToPay = event.getCurrency() + " " + MonetaryUtil.formatUnit(priceContainer.getFinalPrice(), event.getCurrency());
+            }
+            return new AttendeeSearchResults.Attendee(ticket.getUuid(), ticket.getFirstName(),
+                ticket.getLastName(), fi.getTicketCategory().getName(), fi.getTicketAdditionalInfo(),
+                ticket.getStatus(), amountToPay);
+        }).collect(Collectors.toList());
+        int totalPages = (int) Math.ceil((statistics.getTotal() / (double) SEARCH_ATTENDEES_LIMIT));
+        return new AttendeeSearchResults(statistics.getTotal(), statistics.getCheckedIn(), totalPages, page, attendees);
     }
 
     /**
