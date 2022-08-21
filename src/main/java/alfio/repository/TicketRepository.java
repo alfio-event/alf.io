@@ -412,7 +412,7 @@ public interface TicketRepository {
     @Query("select * from checkin_ticket_event_and_category_info where e_id = :eventId " +
         "and (" + TicketSearchRepository.BASE_FILTER + " or lower(tc_name) like lower(:search)) "+
         "and (e_format = 'IN_PERSON' or tc_ticket_access_type = 'IN_PERSON') " +
-        "order by t_status_priority, t_last_name, t_first_name, t_uuid limit :limit offset :offset")
+        "order by t_last_name, t_first_name, t_uuid limit :limit offset :offset")
     List<CheckInFullInfo> searchAttendees(@Bind("eventId") int eventId,
                                           @Bind("search") String search,
                                           @Bind("limit") int limit,
