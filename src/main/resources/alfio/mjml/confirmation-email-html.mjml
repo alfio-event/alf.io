@@ -61,12 +61,13 @@
 		<mj-section background-color="white">
 			<mj-column width="100%">
 		        <mj-text align="left" font-size="14px">
-		        	{{#i18n}}email.hello [{{ticketReservation.fullName}}]{{/i18n}}<br/>{{custom-header-text}}
+		        	{{#i18n}}email.hello [{{ticketReservation.fullName}}]{{/i18n}}
 		        </mj-text>
 	        
 					<mj-text align="left" font-size="14px">
 		            {{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.completed [{{event.displayName}}] [<a href="{{reservationUrl}}" rel="notrack">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
 		            {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.displayName}}] [<a href="{{reservationUrl}}" rel="notrack">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
+                    {{#render-markdown}}{{custom-header-text}}.html{{/render-markdown}}
 					</mj-text>
 			    <mj-button rel="notrack" background-color="#28a745" href="{{reservationUrl}}">
 			        {{#i18n}}email-confirmation.view-reservation{{/i18n}}
