@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -175,6 +176,19 @@ public interface TicketFieldRepository extends FieldRepository {
         TicketFieldConfiguration configuration = findById(configurationId);
         Map<String, Integer> valueStats = getValueStats(configurationId).stream().collect(Collectors.toMap(RestrictedValueStats.RestrictedValueCount::getName, RestrictedValueStats.RestrictedValueCount::getCount));
         int total = valueStats.values().stream().mapToInt(i -> i).sum();
+        if (configuration.isCountryField()) {
+            // no restricted values
+            var descComparator = Entry.<String, Integer>comparingByValue().reversed();
+            return valueStats.entrySet().stream()
+                .sorted(descComparator)
+                .map(entry -> {
+                    int count = entry.getValue();
+                    return new RestrictedValueStats(entry.getKey(),
+                        count,
+                        new BigDecimal(count).divide(new BigDecimal(total), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED).intValue()
+                    );
+                }).collect(Collectors.toList());
+        }
         return configuration.getRestrictedValues().stream()
             .map(name -> {
                 int count = valueStats.getOrDefault(name, 0);

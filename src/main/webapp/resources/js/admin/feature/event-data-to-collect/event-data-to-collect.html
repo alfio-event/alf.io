@@ -68,7 +68,7 @@
                     </div>
                 </div>
             </div>
-            <hr data-ng-if="field.type == 'select'" />
+            <hr data-ng-if="field.type == 'select' || field.type == 'country'" />
             <div class="row" data-ng-if="field.type == 'select'">
                 <div class="col-xs-1"><strong>Values</strong></div>
                 <div class="col-xs-10">
@@ -80,6 +80,9 @@
                     </div>
                 </div>
                 <div class="col-xs-1"><button class="btn btn-default btn-xs" type="button" ng-click="$ctrl.openStats(field)"><i class="fa fa-bar-chart-o"></i> Statistics</button></div>
+            </div>
+            <div class="row" data-ng-if="field.type == 'country'">
+                <div class="col-xs-1 col-xs-offset-11"><button class="btn btn-default btn-xs" type="button" ng-click="$ctrl.openStats(field)"><i class="fa fa-bar-chart-o"></i> Statistics</button></div>
             </div>
             <hr data-ng-if="field.context === 'ADDITIONAL_SERVICE'" />
             <div data-ng-if="field.context === 'ADDITIONAL_SERVICE'">
