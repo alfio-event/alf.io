@@ -2091,7 +2091,6 @@
         };
 
         $scope.deletePayment = function(eventName, id, credit) {
-            var action = credit ? "credit" : "cancel";
             var confirmPromise = $uibModal.open({
                 size:'md',
                 templateUrl:BASE_STATIC_URL + '/pending-payments/delete-or-credit-modal.html',
@@ -2100,18 +2099,19 @@
                     var ctrl = this;
                     ctrl.credit = credit;
                     ctrl.reservationId = id;
+                    ctrl.notify = !credit;
                     ctrl.cancel = function() {
                         $scope.$dismiss('canceled');
                     };
                     ctrl.confirm = function() {
-                        $scope.$close(true);
+                        $scope.$close(ctrl.notify);
                     };
                 },
                 controllerAs: '$ctrl'
             }).result;
 
-            confirmPromise.then(function() {
-                return EventService.cancelPayment(eventName, id, credit);
+            confirmPromise.then(function(notify) {
+                return EventService.cancelPayment(eventName, id, credit, notify);
             }).then(function() {
                 getPendingPayments(true);
             }, function() {

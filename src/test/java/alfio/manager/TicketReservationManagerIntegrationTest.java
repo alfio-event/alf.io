@@ -232,7 +232,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         PaymentResult confirm2 = ticketReservationManager.performPayment(specification2, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(confirm2.isSuccessful());
 
-        ticketReservationManager.deleteOfflinePayment(event, reservationId2, false, false, null);
+        ticketReservationManager.deleteOfflinePayment(event, reservationId2, false, false, false, null);
 
         assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
     }
@@ -286,13 +286,13 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         assertTrue(confirm.isSuccessful());
 
         try {
-            ticketReservationManager.deleteOfflinePayment(event, reservationId, false, true, null);
+            ticketReservationManager.deleteOfflinePayment(event, reservationId, false, true, false, null);
             fail("Credit should not be enabled for deferred payments");
         } catch (IllegalArgumentException ex) {
             // do nothing, because this is the expected behavior
         }
 
-        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, false, null);
         assertFalse(ticketReservationManager.findById(reservationId).isPresent());
     }
 
@@ -583,7 +583,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
-        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, false, null);
         waitingQueueManager.distributeSeats(event);
 
         mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());

@@ -7,6 +7,15 @@
 <div class="modal-body" ng-switch="$ctrl.credit">
     <p ng-switch-when="true">A new Billing Document of type <i>Credit Note</i> will be generated, and the reservation will be kept under the "Credit Note issued" tab of the reservations list</p>
     <p ng-switch-default="">Alf.io will discard the payment and delete the reservation for good.</p>
+    <div class="form-group">
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" ng-model="$ctrl.notify">
+                <span ng-if="$ctrl.credit">Send credit note to the reservation contact person</span>
+                <span ng-if="!$ctrl.credit">Send a notification email to the reservation contact person</span>
+            </label>
+        </div>
+    </div>
 </div>
 <div class="modal-footer">
     <div class="row">

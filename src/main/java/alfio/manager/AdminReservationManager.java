@@ -804,7 +804,7 @@ public class AdminReservationManager {
         loadReservation(purchaseContextType, publicIdentifier, reservationId, username)
             .ifSuccess(res -> {
                 if (res.getLeft().getStatus() == TicketReservationStatus.OFFLINE_PAYMENT) {
-                    ticketReservationManager.deleteOfflinePayment(res.getRight().event().orElseThrow(), reservationId, false, true, username);
+                    ticketReservationManager.deleteOfflinePayment(res.getRight().event().orElseThrow(), reservationId, false, true, notify, username);
                 } else {
                     removeReservation(res, refund, notify, username, false, true);
                 }

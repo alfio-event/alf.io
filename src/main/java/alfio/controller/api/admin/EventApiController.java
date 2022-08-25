@@ -577,8 +577,9 @@ public class EventApiController {
     public String deletePendingPayment(@PathVariable("eventName") String eventName,
                                        @PathVariable("reservationId") String reservationId,
                                        @RequestParam(required = false, value = "credit", defaultValue = "false") Boolean creditReservation,
+                                       @RequestParam(required = false, value = "notify", defaultValue = "true") Boolean notify,
                                        Principal principal) {
-        ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId, false, Boolean.TRUE.equals(creditReservation), principal.getName());
+        ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId, false, Boolean.TRUE.equals(creditReservation), notify, principal.getName());
         return OK;
     }
 
