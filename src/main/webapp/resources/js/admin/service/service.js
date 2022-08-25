@@ -173,10 +173,11 @@
             registerPayment: function(eventName, reservationId) {
                 return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm').error(HttpErrorHandler.handle);
             },
-            cancelPayment: function(eventName, reservationId, credit) {
+            cancelPayment: function(eventName, reservationId, credit, notify) {
                 return $http['delete']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId, {
                     params: {
-                        credit: credit
+                        credit: credit,
+                        notify: notify
                     }
                 }).error(HttpErrorHandler.handle);
             },

@@ -949,19 +949,21 @@ public class TicketReservationManager {
         return ticketReservationRepository.findOptionalReservationById(reservationId).map(TicketReservationManager::getReservationLocale).orElse(Locale.ENGLISH);
     }
 
-    public void deleteOfflinePayment(Event event, String reservationId, boolean expired, boolean credit, String username) {
+    public void deleteOfflinePayment(Event event, String reservationId, boolean expired, boolean credit, boolean notify, String username) {
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
         Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT || reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT, "Invalid reservation status");
         Validate.isTrue(!(credit && reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT), "Cannot credit deferred payment");
         if(credit) {
-            creditReservation(reservation, username);
+            creditReservation(reservation, username, notify);
         } else {
-            Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
-            Locale reservationLanguage = findReservationLanguage(reservationId);
-            String subject = getReservationEmailSubject(event, reservationLanguage, "reservation-email-expired-subject", reservation.getId());
-            notificationManager.sendSimpleEmail(event, reservationId, reservation.getEmail(), subject,
-            	() ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
-            );
+            if (notify) {
+                Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
+                Locale reservationLanguage = findReservationLanguage(reservationId);
+                String subject = getReservationEmailSubject(event, reservationLanguage, "reservation-email-expired-subject", reservation.getId());
+                notificationManager.sendSimpleEmail(event, reservationId, reservation.getEmail(), subject,
+                    () ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
+                );
+            }
             cancelReservation(reservation, expired, username);
         }
     }
@@ -1458,7 +1460,7 @@ public class TicketReservationManager {
                 Event event = eventRepository.findByReservationId(reservationId);
                 boolean enabled = configurationManager.getFor(AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
                 if (enabled) {
-                    deleteOfflinePayment(event, reservationId, true, false, null);
+                    deleteOfflinePayment(event, reservationId, true, false, true, null);
                 } else {
                     log.trace("Will not cleanup reservation with id {} because the automatic removal has been disabled", reservationId);
                 }
@@ -1917,11 +1919,11 @@ public class TicketReservationManager {
 
     }
 
-    private void creditReservation(TicketReservation reservation, String username) {
+    private void creditReservation(TicketReservation reservation, String username, boolean sendEmail) {
         String reservationId = reservation.getId();
         Event event = eventRepository.findByReservationId(reservationId);
         billingDocumentManager.ensureBillingDocumentIsPresent(event, reservation, username, () -> orderSummaryForReservationId(reservation.getId(), event));
-        issueCreditNoteForReservation(event, reservation, username, true);
+        issueCreditNoteForReservation(event, reservation, username, sendEmail);
         cleanupReferencesToReservation(false, username, reservationId, event);
         extensionManager.handleReservationsCreditNoteIssuedForEvent(event, Collections.singletonList(reservationId));
     }
