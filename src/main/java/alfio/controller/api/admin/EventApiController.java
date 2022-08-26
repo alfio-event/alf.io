@@ -142,10 +142,12 @@ public class EventApiController {
     }
 
     @GetMapping(value = "/events", headers = "Authorization")
-    public List<EventListItem> getAllEventsForExternal(Principal principal, HttpServletRequest request) {
+    public List<EventListItem> getAllEventsForExternal(Principal principal,
+                                                       HttpServletRequest request,
+                                                       @RequestParam(value = "includeOnline", required = false, defaultValue = "false") boolean includeOnline) {
         List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(toList());
         return eventManager.getActiveEvents().stream()
-            .filter(e -> userOrganizations.contains(e.getOrganizationId()))
+            .filter(e -> userOrganizations.contains(e.getOrganizationId()) && (includeOnline || e.getFormat() != Event.EventFormat.ONLINE))
             .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
             .map(s -> new EventListItem(s, request.getContextPath(), eventDescriptionRepository.findByEventId(s.getId())))
             .collect(toList());

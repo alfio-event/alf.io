@@ -23,6 +23,7 @@ import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.FullTicketInfo;
+import alfio.model.checkin.AttendeeSearchResults;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -120,16 +121,32 @@ public class CheckInApiController {
     public boolean manualCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
-        log.warn("for event id : {} and ticket : {}, a manual check in has been done", eventId, ticketIdentifier);
+        log.warn("for event id : {} and ticket : {}, a manual check in has been done by {}", eventId, ticketIdentifier, principal.getName());
         return checkInManager.manualCheckIn(eventId, ticketIdentifier, principal.getName());
+    }
+
+    @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/manual-check-in")
+    public ResponseEntity<Boolean> manualCheckIn(@PathVariable("eventName") String eventName,
+                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                 Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(ev -> manualCheckIn(ev.getId(), ticketIdentifier, principal)));
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/revert-check-in")
     public boolean revertCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
-        log.warn("for event id : {} and ticket : {}, a revert of the check in has been done", eventId, ticketIdentifier);
+        log.warn("for event id : {} and ticket : {}, a revert of the check in has been done by {}", eventId, ticketIdentifier, principal.getName());
         return checkInManager.revertCheckIn(eventId, ticketIdentifier, principal.getName());
+    }
+
+    @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/revert-check-in")
+    public ResponseEntity<Boolean> revertCheckIn(@PathVariable("eventName") String eventName,
+                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                 Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(ev -> revertCheckIn(ev.getId(), ticketIdentifier, principal)));
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment")
@@ -162,6 +179,20 @@ public class CheckInApiController {
                                                Principal principal) {
         response.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
         return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
+    }
+
+    @GetMapping("/check-in/event/{publicIdentifier}/attendees")
+    public ResponseEntity<AttendeeSearchResults> searchAttendees(@PathVariable("publicIdentifier") String publicIdentifier,
+                                                                 @RequestParam(value = "query", required = false) String query,
+                                                                 @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                                                 Principal principal) {
+        if (StringUtils.isBlank(query) || StringUtils.isBlank(publicIdentifier)) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+
+        return ResponseEntity.of(eventManager.getOptionalByName(publicIdentifier, principal.getName())
+            .map(event -> checkInManager.searchAttendees(event, query, page)));
+
     }
 
     @PostMapping("/check-in/{eventId}/tickets")

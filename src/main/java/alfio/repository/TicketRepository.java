@@ -17,7 +17,8 @@
 package alfio.repository;
 
 import alfio.model.*;
-import alfio.model.checkin.OnlineCheckInFullInfo;
+import alfio.model.checkin.AttendeeSearchResultsCount;
+import alfio.model.checkin.CheckInFullInfo;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.poll.PollParticipant;
 import alfio.model.support.Array;
@@ -406,7 +407,23 @@ public interface TicketRepository {
     List<Integer> getCategoriesIdToPayInReservation(@Bind("reservationId") String reservationId);
 
     @Query("select * from checkin_ticket_event_and_category_info where t_uuid = :ticketUUID and e_short_name = :eventShortName and (e_format = 'ONLINE' or tc_ticket_access_type = 'ONLINE') ")
-    Optional<OnlineCheckInFullInfo> getFullInfoForOnlineCheckin(@Bind("eventShortName") String eventShortName, @Bind("ticketUUID") String ticketUUID);
+    Optional<CheckInFullInfo> getFullInfoForOnlineCheckin(@Bind("eventShortName") String eventShortName, @Bind("ticketUUID") String ticketUUID);
+
+    @Query("select * from checkin_ticket_event_and_category_info where e_id = :eventId " +
+        "and (" + TicketSearchRepository.BASE_FILTER + " or lower(tc_name) like lower(:search)) "+
+        "and (e_format = 'IN_PERSON' or tc_ticket_access_type = 'IN_PERSON') " +
+        "order by t_last_name, t_first_name, t_uuid limit :limit offset :offset")
+    List<CheckInFullInfo> searchAttendees(@Bind("eventId") int eventId,
+                                          @Bind("search") String search,
+                                          @Bind("limit") int limit,
+                                          @Bind("offset") int offset);
+
+    @Query("select count(*) as total, count(*) filter (where t_status = 'CHECKED_IN') as checked_in " +
+        "from checkin_ticket_event_and_category_info where e_id = :eventId " +
+        "and (" + TicketSearchRepository.BASE_FILTER + " or lower(tc_name) like lower(:search)) "+
+        "and (e_format = 'IN_PERSON' or tc_ticket_access_type = 'IN_PERSON') ")
+    AttendeeSearchResultsCount countSearchResults(@Bind("eventId") int eventId,
+                                                  @Bind("search") String search);
 
     @Query("update ticket set status = 'CHECKED_IN', locked_assignment = true where uuid = :uuid and event_id = :eventId and status = 'ACQUIRED'")
     int performCheckIn(@Bind("uuid") String ticketUUID, @Bind("eventId") int eventId);
