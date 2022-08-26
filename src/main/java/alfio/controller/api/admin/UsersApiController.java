@@ -83,19 +83,23 @@ public class UsersApiController {
 
     /**
      * This endpoint is intended only for external use. If a user is registered as "sponsor", then the answer will be "SPONSOR", otherwise "OPERATOR".
-     * @return "SPONSOR" or "OPERATOR", depending on current user's privileges.
+     * @return "SPONSOR", "SUPERVISOR", or "OPERATOR", depending on current user's privileges.
      */
     @GetMapping("/user-type")
     public String getLoggedUserType() {
-        return SecurityContextHolder.getContext()
+        var authorities = SecurityContextHolder.getContext()
             .getAuthentication()
             .getAuthorities()
             .stream()
-            .map(GrantedAuthority::getAuthority)
-            .map(s -> StringUtils.substringAfter(s, "ROLE_"))
-            .filter(AuthenticationConstants.SPONSOR::equals)
-            .findFirst()
-            .orElse(AuthenticationConstants.OPERATOR);
+            .map(ga -> StringUtils.substringAfter(ga.getAuthority(), "ROLE_"))
+            .collect(Collectors.toSet());
+        if (authorities.contains(AuthenticationConstants.SPONSOR)) {
+            return AuthenticationConstants.SPONSOR;
+        } else if (authorities.contains(AuthenticationConstants.SUPERVISOR)) {
+            return AuthenticationConstants.SUPERVISOR;
+        } else {
+            return AuthenticationConstants.OPERATOR;
+        }
     }
 
     @GetMapping("/user/details")
@@ -306,7 +310,7 @@ public class UsersApiController {
             return role.getDescription();
         }
 
-        public String getTarget() { return role.getTarget().name(); }
+        public List<String> getTarget() { return role.getTarget().stream().map(RoleTarget::name).collect(Collectors.toList()); }
     }
 
     private static final class PasswordModification {

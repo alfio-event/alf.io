@@ -39,7 +39,7 @@ import alfio.model.SpecialPrice.Status;
 import alfio.model.SummaryRow.SummaryType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
-import alfio.model.checkin.OnlineCheckInFullInfo;
+import alfio.model.checkin.CheckInFullInfo;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
@@ -2127,7 +2127,7 @@ public class TicketReservationManager {
         });
     }
 
-    public Optional<OnlineCheckInFullInfo> fetchCompleteAndAssignedForOnlineCheckIn(String eventName, String ticketIdentifier) {
+    public Optional<CheckInFullInfo> fetchCompleteAndAssignedForOnlineCheckIn(String eventName, String ticketIdentifier) {
         return ticketRepository.getFullInfoForOnlineCheckin(eventName, ticketIdentifier);
     }
 
