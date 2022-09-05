@@ -19,8 +19,11 @@ package alfio.model;
 import alfio.util.MonetaryUtil;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static alfio.util.MonetaryUtil.*;
 
 @Data
 public class OrderSummary {
@@ -100,5 +103,15 @@ public class OrderSummary {
 
     public boolean getDisplaySplitPaymentNote() {
         return !free && (vatStatus == PriceContainer.VatStatus.INCLUDED_NOT_CHARGED || vatStatus == PriceContainer.VatStatus.NOT_INCLUDED_NOT_CHARGED);
+    }
+
+    public String getPriceBeforeTaxes() {
+        String currencyCode = originalTotalPrice.getCurrencyCode();
+        if(PriceContainer.VatStatus.isVatIncluded(vatStatus)) {
+            var vat = vatStatus.extractVat(centsToUnit(originalTotalPrice.getPriceWithVAT(), currencyCode), new BigDecimal(vatPercentage));
+            return formatUnit(new BigDecimal(getTotalPrice()).subtract(vat), currencyCode);
+        } else {
+            return formatCents(originalTotalPrice.getPriceWithVAT() - originalTotalPrice.getVAT(), currencyCode);
+        }
     }
 }

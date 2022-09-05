@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
@@ -153,6 +154,9 @@ public class TemplateManager {
 
     private String render(Resource resource, Map<String, Object> model, Locale locale, PurchaseContext purchaseContext, TemplateOutput templateOutput) {
         try {
+            var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
+            boolean usePartnerCode = configurationManager.getFor(ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ConfigurationLevel.purchaseContext(purchaseContext))
+                .getValueAsBooleanOrDefault();
             ModelAndView mv = new ModelAndView();
             mv.getModelMap().addAllAttributes(model);
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
@@ -160,7 +164,8 @@ public class TemplateManager {
             mv.addObject("render-markdown", RENDER_MARKDOWN);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get(ADDITIONAL_FIELDS_KEY)));
             mv.addObject("metadata-value", ADDITIONAL_FIELD_VALUE.apply(model.get(METADATA_ATTRIBUTES_KEY)));
-            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceFor(purchaseContext)).createTranslator());
+            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
+            mv.addObject("discountCodeDescription", messageSource.getMessage("show-event.promo-code-type." + (usePartnerCode ? "partner" : "promotional"), null, locale));
             var updatedModel = mv.getModel();
             updatedModel.putIfAbsent("custom-header-text", "");
             updatedModel.putIfAbsent("custom-body-text", "");
