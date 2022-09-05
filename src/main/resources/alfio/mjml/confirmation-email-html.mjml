@@ -88,23 +88,36 @@
 			<mj-table padding="0 15px">
 			
 				{{#orderSummary.summary}}
+
 				<tr class="bottom-border">
-					<th class="header">{{#i18n}}email-confirmation.summary.category{{/i18n}}</th>
+					<th class="header">
+					    {{^discount}}{{#i18n}}email-confirmation.summary.category{{/i18n}}{{/discount}}
+					    {{#discount}}{{#i18n}}show-event.promo-code-applied [{{discountCodeDescription}}]{{/i18n}}{{/discount}}
+                    </th>
 					<td>{{name}}</td>
 				</tr>
+				{{^discount}}
 				<tr class="bottom-border">
 					<th class="header">{{#i18n}}email-confirmation.summary.quantity{{/i18n}}</th>
 					<td>{{amount}}</td>
 				</tr>
+				{{/discount}}
 				{{^orderSummary.free}}
 				<tr class="bottom-border">
-					<th>{{#i18n}}email-confirmation.summary.subtotal{{/i18n}}</th>
+				    <th>
+				        {{^discount}}{{#i18n}}email-confirmation.summary.subtotal{{/i18n}}{{/discount}}
+                    	{{#discount}}{{#i18n}}reservation.dynamic.discount.description{{/i18n}}{{/discount}}
+				    </th>
 					<td>{{subTotal}} {{event.currency}}</td>
 				</tr>
 				{{/orderSummary.free}}
 				{{/orderSummary.summary}}
 				
 				{{^orderSummary.free}}{{^ticketReservation.vatIncluded}}
+				<tr class="bottom-border">
+                    <th>{{#i18n}}email-confirmation.summary.subtotal{{/i18n}}</th>
+                    <td>{{orderSummary.priceBeforeTaxes}} {{event.currency}}</td>
+                </tr>
 				<tr class="bottom-border">
 					<th>{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th>
 					<td>{{orderSummary.totalVAT}} {{event.currency}}</td>
@@ -188,8 +201,11 @@
     		
     		<mj-raw>{{^event.sameDay}}</mj-raw>
 			<mj-table font-size="16px" font-weight="bold" >
-				<tr class="bottom-border">
+				<tr>
 					<td>{{#i18n}}event-days.not-same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]{{/i18n}}</td>
+				</tr>
+				<tr>
+				    <td>{{#i18n}}subscription.detail.validity.CUSTOM.to{{/i18n}}</td>
 				</tr>
 				<tr>
 					<td>{{#i18n}}event-days.not-same-day [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]{{/i18n}}</td>
