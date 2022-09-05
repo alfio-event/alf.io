@@ -124,7 +124,7 @@ create view checkin_ticket_event_and_category_info as
         (select jsonb_object_agg(tfc.field_name, case tfc.field_type when 'checkbox' then tfv.field_value::jsonb else jsonb_build_array(tfv.field_value) end) as additional_info
             from ticket_field_value tfv
                 inner join ticket_field_configuration tfc on tfv.ticket_field_configuration_id_fk = tfc.id
-            where event_id_fk = e.id)       tai_additional_info,
+            where event_id_fk = e.id and tfv.ticket_id_fk = t.id)       tai_additional_info,
         case when t.status = 'ACQUIRED' or t.status = 'TO_BE_PAID' then 0 else 2 end as t_status_priority
 
     from ticket t
