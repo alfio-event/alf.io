@@ -20,6 +20,7 @@ import alfio.model.Ticket;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class AttendeeSearchResults {
     private final int totalResults;
@@ -97,7 +98,7 @@ public class AttendeeSearchResults {
         }
 
         public Map<String, List<String>> getAdditionalInfo() {
-            return additionalInfo;
+            return Objects.requireNonNullElse(additionalInfo, Map.of());
         }
 
         public Ticket.TicketStatus getTicketStatus() {
