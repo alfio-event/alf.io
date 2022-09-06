@@ -1097,6 +1097,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                         assertFalse(attendees.isEmpty());
                         assertEquals(count, attendees.size());
                         assertTrue(attendees.stream().anyMatch(sr -> sr.getLastName().equals(fullTicketInfo.getLastName())));
+                        assertTrue(attendees.stream().allMatch(sr -> sr.getAdditionalInfo() != null));
                         break;
                     case ONLINE:
                         assertTrue(results.getStatusCode().is2xxSuccessful());
