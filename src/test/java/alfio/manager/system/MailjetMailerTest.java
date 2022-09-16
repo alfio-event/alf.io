@@ -16,36 +16,30 @@
  */
 package alfio.manager.system;
 
-import alfio.manager.testSupport.MaybeConfigurationBuilder;
 import alfio.model.Configurable;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
-import javax.net.ssl.SSLSession;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static alfio.manager.testSupport.MaybeConfigurationBuilder.existing;
+import static alfio.manager.testSupport.MaybeConfigurationBuilder.missing;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -64,14 +58,16 @@ class MailjetMailerTest {
         configurable = mock(Configurable.class);
         when(configurable.getConfigurationLevel()).thenReturn(ConfigurationLevel.system());
         var configurationManager = mock(ConfigurationManager.class);
-        when(configurationManager.getFor(eq(EnumSet.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO)), any()))
+        when(configurationManager.getFor(eq(EnumSet.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO, MAIL_SET_ORG_REPLY_TO)), any()))
             .thenReturn(Map.of(
                 MAILJET_APIKEY_PUBLIC, existing(MAILJET_APIKEY_PUBLIC, "public"),
                 MAILJET_APIKEY_PRIVATE, existing(MAILJET_APIKEY_PRIVATE, "private"),
                 MAILJET_FROM, existing(MAILJET_FROM, "mail_from"),
-                MAIL_REPLY_TO, existing(MAIL_REPLY_TO, "mail_to")
+                MAIL_REPLY_TO, existing(MAIL_REPLY_TO, "mail_to"),
+                MAIL_SET_ORG_REPLY_TO, missing(MAIL_SET_ORG_REPLY_TO)
             ));
-        mailjetMailer = new MailjetMailer(httpClient, configurationManager);
+        var organizationRepository = mock(OrganizationRepository.class);
+        mailjetMailer = new MailjetMailer(httpClient, configurationManager, organizationRepository);
         requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
     }
 
