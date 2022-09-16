@@ -19,24 +19,27 @@ package alfio.manager.system;
 import alfio.model.Configurable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import alfio.repository.user.OrganizationRepository;
 import org.springframework.core.env.Environment;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
+import static alfio.model.system.ConfigurationKeys.MAIL_SET_ORG_REPLY_TO;
 
-public class MockMailer implements Mailer {
+class MockMailer extends BaseMailer {
 
     private static final Logger log = LoggerFactory.getLogger(MockMailer.class);
 
     private final ConfigurationManager configurationManager;
     private final Environment environment;
 
-    public MockMailer(ConfigurationManager configurationManager, Environment environment) {
+    MockMailer(ConfigurationManager configurationManager,
+               Environment environment,
+               OrganizationRepository organizationRepository) {
+        super(organizationRepository);
         this.configurationManager = configurationManager;
         this.environment = environment;
     }
@@ -52,9 +55,13 @@ public class MockMailer implements Mailer {
             .stream().map(a -> "{filename:" +a.getFilename() + ", contentType: " + a.getContentType() + "}")
             .collect(Collectors.joining(", "));
 
+        var conf = configurationManager.getFor(EnumSet.of(MAIL_REPLY_TO, MAIL_SET_ORG_REPLY_TO), configurable.getConfigurationLevel());
+        var replyTo = new AtomicReference<String>(null);
+        setReplyToIfPresent(conf, configurable.getOrganizationId(), replyTo::set);
+
         log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}",
             fromName,
-            configurationManager.getFor(MAIL_REPLY_TO, configurable.getConfigurationLevel()).getValueOrDefault(""),
+            replyTo.get(),
             to, cc, subject, text,
             html.orElse("no html"), printedAttachments);
     }

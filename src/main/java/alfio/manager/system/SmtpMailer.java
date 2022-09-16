@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -37,19 +38,19 @@ import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-
-class SmtpMailer implements Mailer {
+class SmtpMailer extends BaseMailer {
 
     private static final Logger log = LoggerFactory.getLogger(SmtpMailer.class);
-    
     private final ConfigurationManager configurationManager;
 
-    SmtpMailer(ConfigurationManager configurationManager) {
+    SmtpMailer(ConfigurationManager configurationManager,
+               OrganizationRepository organizationRepository) {
+        super(organizationRepository);
         this.configurationManager = configurationManager;
     }
 
@@ -58,19 +59,22 @@ class SmtpMailer implements Mailer {
                      Optional<String> html, Attachment... attachments) {
 
         var conf = configurationManager.getFor(Set.of(SMTP_FROM_EMAIL, MAIL_REPLY_TO,
-            SMTP_HOST, SMTP_PORT, SMTP_PROTOCOL,
+            MAIL_SET_ORG_REPLY_TO, SMTP_HOST, SMTP_PORT, SMTP_PROTOCOL,
             SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES), configurable.getConfigurationLevel());
 
         MimeMessagePreparator preparator = mimeMessage -> {
 
-            MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
-                    : new MimeMessageHelper(mimeMessage, "UTF-8");
+            MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, UTF_8.name())
+                    : new MimeMessageHelper(mimeMessage, UTF_8.name());
             message.setSubject(subject);
             message.setFrom(conf.get(SMTP_FROM_EMAIL).getRequiredValue(), fromName);
-            String replyTo = conf.get(MAIL_REPLY_TO).getValueOrDefault("");
-            if(StringUtils.isNotBlank(replyTo)) {
-                message.setReplyTo(replyTo);
-            }
+            setReplyToIfPresent(conf, configurable.getOrganizationId(), replyTo -> {
+                try {
+                    message.setReplyTo(replyTo);
+                } catch (MessagingException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             message.setTo(to);
             if(cc != null && !cc.isEmpty()){
                 message.setCc(cc.toArray(new String[0]));
@@ -95,7 +99,7 @@ class SmtpMailer implements Mailer {
     
     private static JavaMailSender toMailSender(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf) {
         JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
-        r.setDefaultEncoding("UTF-8");
+        r.setDefaultEncoding(UTF_8.name());
 
         r.setHost(conf.get(SMTP_HOST).getRequiredValue());
         r.setPort(Integer.parseInt(conf.get(SMTP_PORT).getRequiredValue()));
@@ -108,7 +112,7 @@ class SmtpMailer implements Mailer {
         if (properties != null) {
             try {
                 Properties prop = PropertiesLoaderUtils.loadProperties(new EncodedResource(new ByteArrayResource(
-                        properties.getBytes(StandardCharsets.UTF_8)), "UTF-8"));
+                        properties.getBytes(UTF_8)), UTF_8.name()));
                 r.setJavaMailProperties(prop);
             } catch (IOException e) {
                 log.warn("error while setting the mail sender properties", e);

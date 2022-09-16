@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
 import org.apache.commons.collections.CollectionUtils;
@@ -34,7 +35,7 @@ import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class SendGridMailer implements Mailer {
+class SendGridMailer extends BaseMailer {
 
     private static final Logger log = LoggerFactory.getLogger(SendGridMailer.class);
 
@@ -43,14 +44,19 @@ public class SendGridMailer implements Mailer {
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
 
-    public SendGridMailer(HttpClient client, ConfigurationManager configurationManager) {
+    SendGridMailer(HttpClient client,
+                          ConfigurationManager configurationManager,
+                          OrganizationRepository organizationRepository) {
+        super(organizationRepository);
         this.client = client;
         this.configurationManager = configurationManager;
     }
 
     @Override
     public void send(Configurable configurable, final String fromName, final String to, final List<String> cc, final String subject, final String text, final Optional<String> html, final Attachment... attachment) {
-        final var config = configurationManager.getFor(Set.of(ConfigurationKeys.SENDGRID_API_KEY, ConfigurationKeys.SENDGRID_FROM, ConfigurationKeys.MAIL_REPLY_TO), configurable.getConfigurationLevel());
+        final var config = configurationManager.getFor(EnumSet.of(
+            ConfigurationKeys.SENDGRID_API_KEY, ConfigurationKeys.SENDGRID_FROM, ConfigurationKeys.MAIL_REPLY_TO, ConfigurationKeys.MAIL_SET_ORG_REPLY_TO),
+            configurable.getConfigurationLevel());
         final var from = config.get(ConfigurationKeys.SENDGRID_FROM).getRequiredValue();
         final var personalizations = createPersonalizations(to, cc, subject);
         final var contents = createContents(text, html);
@@ -61,6 +67,8 @@ public class SendGridMailer implements Mailer {
         payload.put("from", Map.of(EMAIL, from, "name", fromName));
         payload.put("personalizations", personalizations);
         payload.put("content", contents);
+        setReplyToIfPresent(config, configurable.getOrganizationId(),
+            replyTo -> payload.put("reply_to", Map.of(EMAIL, replyTo)));
         //prepare request
         final var body = Json.GSON.toJson(payload);
         final var request = HttpRequest.newBuilder(URI.create("https://api.sendgrid.com/v3/mail/send"))
