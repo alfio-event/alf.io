@@ -17,11 +17,11 @@
 package alfio.manager.system;
 
 import alfio.model.Configurable;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,16 +38,19 @@ public class MailjetMailer implements Mailer  {
 
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
+    private final OrganizationRepository organizationRepository;
 
-    public MailjetMailer(HttpClient httpClient, ConfigurationManager configurationManager) {
+    public MailjetMailer(HttpClient httpClient, ConfigurationManager configurationManager, OrganizationRepository organizationRepository) {
         this.client = httpClient;
         this.configurationManager = configurationManager;
+        this.organizationRepository = organizationRepository;
     }
 
     @Override
     public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
 
-        var conf = configurationManager.getFor(EnumSet.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO), configurable.getConfigurationLevel());
+        var conf = configurationManager.getFor(
+            EnumSet.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO, MAIL_SET_ORG_REPLY_TO), configurable.getConfigurationLevel());
 
 
         String apiKeyPublic = conf.get(MAILJET_APIKEY_PUBLIC).getRequiredValue();
@@ -70,10 +73,13 @@ public class MailjetMailer implements Mailer  {
         html.ifPresent(h -> mailPayload.put("Html-part", h));
         mailPayload.put("Recipients", recipients);
 
-        String replyTo = conf.get(MAIL_REPLY_TO).getValueOrDefault("");
-        if(StringUtils.isNotBlank(replyTo)) {
-            mailPayload.put("Headers", Collections.singletonMap("Reply-To", replyTo));
-        }
+        MailerUtil.setReplyToIfPresent(
+            conf.get(MAIL_REPLY_TO).getValueOrDefault(""),
+            configurable,
+            organizationRepository,
+            conf.get(MAIL_SET_ORG_REPLY_TO).getValueAsBooleanOrDefault(),
+            address -> mailPayload.put("Headers", Collections.singletonMap("Reply-To", address))
+        );
 
         if(attachment != null && attachment.length > 0) {
             mailPayload.put("Attachments", Arrays.stream(attachment).map(MailjetMailer::fromAttachment).collect(Collectors.toList()));

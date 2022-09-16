@@ -17,6 +17,7 @@
 package alfio.manager.system;
 
 import alfio.model.Configurable;
+import alfio.repository.user.OrganizationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -35,16 +36,19 @@ public class DefaultMailer implements Mailer {
     private final Environment environment;
 
     @Autowired
-    public DefaultMailer(ConfigurationManager configurationManager, Environment environment, HttpClient httpClient) {
+    public DefaultMailer(ConfigurationManager configurationManager,
+                         Environment environment,
+                         HttpClient httpClient,
+                         OrganizationRepository organizationRepository) {
         this.configurationManager = configurationManager;
         this.environment = environment;
         this.mailers = new HashMap<>();
-        this.defaultMailer = new SmtpMailer(configurationManager);
+        this.defaultMailer = new SmtpMailer(configurationManager, organizationRepository);
         mailers.put("smtp", defaultMailer);
-        mailers.put("mailgun", new MailgunMailer(httpClient, configurationManager));
-        mailers.put("mailjet", new MailjetMailer(httpClient, configurationManager));
-        mailers.put("sendgrid", new SendGridMailer(httpClient, configurationManager));
-        mailers.put("disabled", new MockMailer(configurationManager, environment));
+        mailers.put("mailgun", new MailgunMailer(httpClient, configurationManager, organizationRepository));
+        mailers.put("mailjet", new MailjetMailer(httpClient, configurationManager, organizationRepository));
+        mailers.put("sendgrid", new SendGridMailer(httpClient, configurationManager, organizationRepository));
+        mailers.put("disabled", new MockMailer(configurationManager, environment, organizationRepository));
     }
 
     @Override

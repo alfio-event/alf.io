@@ -16,10 +16,12 @@
  */
 package alfio.manager.system;
 
+import alfio.manager.testSupport.MaybeConfigurationBuilder;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
+import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.*;
 
-public class SendGridMailerTest {
+class SendGridMailerTest {
 
     private SendGridMailer sendGridMailer;
 
@@ -51,16 +53,21 @@ public class SendGridMailerTest {
     public void setUp() {
         configurationManager = mock(ConfigurationManager.class);
         client = mock(HttpClient.class);
-        sendGridMailer = new SendGridMailer(client, configurationManager);
+        sendGridMailer = new SendGridMailer(client, configurationManager, mock(OrganizationRepository.class));
     }
 
     @Test
-    public void shouldSendEmail() throws IOException, InterruptedException {
+    void shouldSendEmail() throws IOException, InterruptedException {
         //Test data
         final var apiConfig = new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.SENDGRID_API_KEY, new ConfigurationKeyValuePathLevel("key", "value", ConfigurationPathLevel.SYSTEM));
         final var fromConfig = new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.SENDGRID_FROM, new ConfigurationKeyValuePathLevel("key", "value", ConfigurationPathLevel.SYSTEM));
         //Mock
-        when(configurationManager.getFor(anySet(), any(ConfigurationLevel.class))).thenReturn(Map.of(ConfigurationKeys.SENDGRID_API_KEY, apiConfig, ConfigurationKeys.SENDGRID_FROM, fromConfig));
+        when(configurationManager.getFor(anySet(), any(ConfigurationLevel.class))).thenReturn(Map.of(
+            ConfigurationKeys.SENDGRID_API_KEY, apiConfig,
+            ConfigurationKeys.SENDGRID_FROM, fromConfig,
+            ConfigurationKeys.MAIL_REPLY_TO, MaybeConfigurationBuilder.missing(ConfigurationKeys.MAIL_REPLY_TO),
+            ConfigurationKeys.MAIL_SET_ORG_REPLY_TO, MaybeConfigurationBuilder.missing(ConfigurationKeys.MAIL_SET_ORG_REPLY_TO)
+        ));
         final HttpResponse<Object> httpResponse = createMockHttpResponse();
         when(client.send(any(HttpRequest.class), any())).thenReturn(httpResponse);
         //Service call

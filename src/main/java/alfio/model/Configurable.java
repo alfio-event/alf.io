@@ -26,4 +26,6 @@ public interface Configurable {
 
     @JsonIgnore
     ConfigurationLevel getConfigurationLevel();
+
+    int getOrganizationId();
 }
