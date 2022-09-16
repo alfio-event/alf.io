@@ -34,16 +34,17 @@ import java.util.stream.Collectors;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Log4j2
-public class MailjetMailer implements Mailer  {
+class MailjetMailer extends BaseMailer  {
 
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
-    private final OrganizationRepository organizationRepository;
 
-    public MailjetMailer(HttpClient httpClient, ConfigurationManager configurationManager, OrganizationRepository organizationRepository) {
+    MailjetMailer(HttpClient httpClient,
+                         ConfigurationManager configurationManager,
+                         OrganizationRepository organizationRepository) {
+        super(organizationRepository);
         this.client = httpClient;
         this.configurationManager = configurationManager;
-        this.organizationRepository = organizationRepository;
     }
 
     @Override
@@ -73,13 +74,8 @@ public class MailjetMailer implements Mailer  {
         html.ifPresent(h -> mailPayload.put("Html-part", h));
         mailPayload.put("Recipients", recipients);
 
-        MailerUtil.setReplyToIfPresent(
-            conf.get(MAIL_REPLY_TO).getValueOrDefault(""),
-            configurable,
-            organizationRepository,
-            conf.get(MAIL_SET_ORG_REPLY_TO).getValueAsBooleanOrDefault(),
-            address -> mailPayload.put("Headers", Collections.singletonMap("Reply-To", address))
-        );
+        setReplyToIfPresent(conf, configurable.getOrganizationId(),
+            address -> mailPayload.put("Headers", Collections.singletonMap("Reply-To", address)));
 
         if(attachment != null && attachment.length > 0) {
             mailPayload.put("Attachments", Arrays.stream(attachment).map(MailjetMailer::fromAttachment).collect(Collectors.toList()));

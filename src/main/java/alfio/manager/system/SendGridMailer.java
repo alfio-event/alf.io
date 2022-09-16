@@ -21,7 +21,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
-import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -37,14 +36,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
-@AllArgsConstructor
-public class SendGridMailer implements Mailer {
+class SendGridMailer extends BaseMailer {
 
     private static final String EMAIL = "email";
     private final HttpClient client;
 
     private final ConfigurationManager configurationManager;
-    private final OrganizationRepository organizationRepository;
+
+    SendGridMailer(HttpClient client,
+                          ConfigurationManager configurationManager,
+                          OrganizationRepository organizationRepository) {
+        super(organizationRepository);
+        this.client = client;
+        this.configurationManager = configurationManager;
+    }
 
     @Override
     public void send(Configurable configurable, final String fromName, final String to, final List<String> cc, final String subject, final String text, final Optional<String> html, final Attachment... attachment) {
@@ -61,13 +66,8 @@ public class SendGridMailer implements Mailer {
         payload.put("from", Map.of(EMAIL, from, "name", fromName));
         payload.put("personalizations", personalizations);
         payload.put("content", contents);
-        MailerUtil.setReplyToIfPresent(
-            config.get(ConfigurationKeys.MAIL_REPLY_TO).getValueOrDefault(""),
-            configurable,
-            organizationRepository,
-            config.get(ConfigurationKeys.MAIL_SET_ORG_REPLY_TO).getValueAsBooleanOrDefault(),
-            replyTo -> payload.put("reply_to", Map.of(EMAIL, replyTo))
-        );
+        setReplyToIfPresent(config, configurable.getOrganizationId(),
+            replyTo -> payload.put("reply_to", Map.of(EMAIL, replyTo)));
         //prepare request
         final var body = Json.GSON.toJson(payload);
         final var request = HttpRequest.newBuilder(URI.create("https://api.sendgrid.com/v3/mail/send"))

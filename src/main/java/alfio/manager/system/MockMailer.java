@@ -18,7 +18,6 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import alfio.repository.user.OrganizationRepository;
-import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
 
@@ -30,12 +29,18 @@ import static alfio.model.system.ConfigurationKeys.MAIL_REPLY_TO;
 import static alfio.model.system.ConfigurationKeys.MAIL_SET_ORG_REPLY_TO;
 
 @Log4j2
-@AllArgsConstructor
-public class MockMailer implements Mailer {
+class MockMailer extends BaseMailer {
 
     private final ConfigurationManager configurationManager;
     private final Environment environment;
-    private final OrganizationRepository organizationRepository;
+
+    MockMailer(ConfigurationManager configurationManager,
+               Environment environment,
+               OrganizationRepository organizationRepository) {
+        super(organizationRepository);
+        this.configurationManager = configurationManager;
+        this.environment = environment;
+    }
 
     @Override
     public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachments) {
@@ -50,13 +55,7 @@ public class MockMailer implements Mailer {
 
         var conf = configurationManager.getFor(EnumSet.of(MAIL_REPLY_TO, MAIL_SET_ORG_REPLY_TO), configurable.getConfigurationLevel());
         var replyTo = new AtomicReference<String>(null);
-        MailerUtil.setReplyToIfPresent(
-            conf.get(MAIL_REPLY_TO).getValueOrDefault(""),
-            configurable,
-            organizationRepository,
-            conf.get(MAIL_SET_ORG_REPLY_TO).getValueAsBooleanOrDefault(),
-            replyTo::set
-        );
+        setReplyToIfPresent(conf, configurable.getOrganizationId(), replyTo::set);
 
         log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}",
             fromName,

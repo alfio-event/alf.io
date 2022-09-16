@@ -19,7 +19,6 @@ package alfio.manager.system;
 import alfio.model.Configurable;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.user.OrganizationRepository;
-import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.core.io.ByteArrayResource;
@@ -37,18 +36,21 @@ import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Log4j2
-@AllArgsConstructor
-class SmtpMailer implements Mailer {
+class SmtpMailer extends BaseMailer {
     
     private final ConfigurationManager configurationManager;
-    private final OrganizationRepository organizationRepository;
+
+    SmtpMailer(ConfigurationManager configurationManager,
+               OrganizationRepository organizationRepository) {
+        super(organizationRepository);
+        this.configurationManager = configurationManager;
+    }
 
     @Override
     public void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text,
@@ -64,19 +66,13 @@ class SmtpMailer implements Mailer {
                     : new MimeMessageHelper(mimeMessage, UTF_8.name());
             message.setSubject(subject);
             message.setFrom(conf.get(SMTP_FROM_EMAIL).getRequiredValue(), fromName);
-            MailerUtil.setReplyToIfPresent(
-                conf.get(MAIL_REPLY_TO).getValueOrDefault(""),
-                configurable,
-                organizationRepository,
-                conf.get(MAIL_SET_ORG_REPLY_TO).getValueAsBooleanOrDefault(),
-                replyTo -> {
-                    try {
-                        message.setReplyTo(replyTo);
-                    } catch (MessagingException e) {
-                        throw new RuntimeException(e);
-                    }
+            setReplyToIfPresent(conf, configurable.getOrganizationId(), replyTo -> {
+                try {
+                    message.setReplyTo(replyTo);
+                } catch (MessagingException e) {
+                    throw new RuntimeException(e);
                 }
-            );
+            });
             message.setTo(to);
             if(cc != null && !cc.isEmpty()){
                 message.setCc(cc.toArray(new String[0]));
