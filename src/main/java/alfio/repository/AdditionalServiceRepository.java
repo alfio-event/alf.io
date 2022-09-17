@@ -18,6 +18,7 @@ package alfio.repository;
 
 import alfio.model.AdditionalService;
 import alfio.model.AdditionalServiceItem;
+import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
 import ch.digitalfondue.npjt.*;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -33,13 +34,13 @@ public interface AdditionalServiceRepository {
 
     NamedParameterJdbcTemplate getJdbcTemplate();
 
-    default Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> getCount(int eventId) {
-        Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> res = new HashMap<>();
+    default Map<Integer, Map<AdditionalServiceItemStatus, Integer>> getCount(int eventId) {
+        Map<Integer, Map<AdditionalServiceItemStatus, Integer>> res = new HashMap<>();
         getJdbcTemplate().query("select count(*) as cnt, additional_service_id_fk, status from additional_service_item where event_id_fk = :eventId group by additional_service_id_fk, status",
             Collections.singletonMap("eventId", eventId),
             rse -> {
                 var additionalServiceId = rse.getInt("additional_service_id_fk");
-                res.putIfAbsent(additionalServiceId, new HashMap<>());
+                res.putIfAbsent(additionalServiceId, new EnumMap<>(AdditionalServiceItem.AdditionalServiceItemStatus.class));
                 var statusCount = res.get(additionalServiceId);
                 var status = AdditionalServiceItem.AdditionalServiceItemStatus.valueOf(rse.getString("status"));
                 statusCount.put(status, rse.getInt("cnt"));
