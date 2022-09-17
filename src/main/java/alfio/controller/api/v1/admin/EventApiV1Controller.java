@@ -86,7 +86,8 @@ public class EventApiV1Controller {
                                 GroupManager groupManager,
                                 ExtensionService extensionService,
                                 ExtensionRepository extensionRepository,
-                                ConfigurationManager configurationManager) {
+                                ConfigurationManager configurationManager,
+                                AdminJobManager adminJobManager) {
         this.eventManager = eventManager;
         this.eventNameManager = eventNameManager;
         this.fileUploadManager = fileUploadManager;
@@ -97,6 +98,7 @@ public class EventApiV1Controller {
         this.extensionService = extensionService;
         this.extensionRepository = extensionRepository;
         this.configurationManager = configurationManager;
+        this.adminJobManager = adminJobManager;
     }
 
     @PostMapping("/create")

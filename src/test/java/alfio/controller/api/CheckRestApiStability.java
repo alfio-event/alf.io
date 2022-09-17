@@ -59,10 +59,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 class TestCheckRestApiStability {
 
+    private static final String DESCRIPTOR_JSON_PATH = "src/test/resources/api/descriptor.json";
     @Autowired
     private MockMvc mockMvc;
 
-    private boolean updateDescriptor = false; // change to true and copy the file
+    private boolean updateDescriptor = false; // change to true to regenerate the file
 
     @Test
     void checkRestApiStability() throws Exception {
@@ -76,12 +77,12 @@ class TestCheckRestApiStability {
 
         // for generating the result
         if (updateDescriptor) {
-            try (var writer = Files.newBufferedWriter(Paths.get("descriptor.json"), StandardCharsets.UTF_8)) {
+            try (var writer = Files.newBufferedWriter(Paths.get(DESCRIPTOR_JSON_PATH), StandardCharsets.UTF_8)) {
                 writer.write(descriptor);
             }
         }
 
-        var referenceDescriptor = Json.createReader(new FileReader("src/test/resources/api/descriptor.json")).readValue();
+        var referenceDescriptor = Json.createReader(new FileReader(DESCRIPTOR_JSON_PATH)).readValue();
         var currentDescriptor = Json.createReader(new StringReader(descriptor)).readValue();
 
         var diff = Json.createDiff(referenceDescriptor.asJsonObject(), currentDescriptor.asJsonObject());

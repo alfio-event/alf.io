@@ -43,7 +43,10 @@ class MailgunMailer extends BaseMailer {
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
 
-    MailgunMailer(HttpClient client, ConfigurationManager configurationManager) {
+    MailgunMailer(HttpClient client,
+                  ConfigurationManager configurationManager,
+                  OrganizationRepository organizationRepository) {
+        super(organizationRepository);
         this.client = client;
         this.configurationManager = configurationManager;
     }
