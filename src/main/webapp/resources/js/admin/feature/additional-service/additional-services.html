@@ -15,7 +15,7 @@
                 <div class="col-xs-9">
                     <div class="h4">
                         <span data-ng-repeat="pair in item.zippedTitleAndDescriptions" title="{{pair[0].locale}}"><span ng-class="{'text-danger': pair[0].value === ''}">{{pair[0] | showMissingASText}}</span> <span data-ng-if="!$last"> / </span></span>
-                        <span style="margin-left: 20px;" class="text-success" data-ng-if="ctrl.additionalServiceUseCount[item.id] > 0"> Confirmed: {{ctrl.additionalServiceUseCount[item.id]}}</span>
+                        <span style="margin-left: 20px;" class="text-success" data-ng-if="ctrl.countSold(item.id) > 0"> Confirmed: {{ctrl.formatCountSold(item.id)}}</span>
                     </div>
                 </div>
                 <div class="col-xs-3">

@@ -32,6 +32,9 @@ public class AdditionalServiceItemExport {
     private final String emailAddress;
     private final String additionalServiceTitle;
     private final AdditionalService.AdditionalServiceType additionalServiceType;
+
+    private final AdditionalServiceItem.AdditionalServiceItemStatus additionalServiceItemStatus;
+
     private final Integer finalPriceCts;
     private final String currencyCode;
     private final Integer vatCts;
@@ -49,7 +52,8 @@ public class AdditionalServiceItemExport {
                                        @Column("ai_final_price_cts") Integer finalPriceCts,
                                        @Column("ai_currency_code") String currencyCode,
                                        @Column("ai_vat_cts") Integer vatCts,
-                                       @Column("ai_discount_cts") Integer discountCts) {
+                                       @Column("ai_discount_cts") Integer discountCts,
+                                       @Column("ai_status") AdditionalServiceItem.AdditionalServiceItemStatus additionalServiceItemStatus) {
         this.uuid = uuid;
         this.utcCreation = utcCreation;
         this.utcLastModified = utcLastModified;
@@ -63,5 +67,6 @@ public class AdditionalServiceItemExport {
         this.currencyCode = currencyCode;
         this.vatCts = vatCts;
         this.discountCts = discountCts;
+        this.additionalServiceItemStatus = additionalServiceItemStatus;
     }
 }
