@@ -24,8 +24,13 @@ import java.time.ZonedDateTime;
 @Getter
 public class AdditionalServiceItem {
 
+    // are considered "Confirmed": ACQUIRED, CHECKED_IN and TO_BE_PAID
     public enum AdditionalServiceItemStatus {
-        FREE, PENDING, TO_BE_PAID, ACQUIRED, CANCELLED, CHECKED_IN, EXPIRED, INVALIDATED, RELEASED
+        FREE, // <- unused
+        PENDING, TO_BE_PAID, ACQUIRED, CANCELLED,
+        CHECKED_IN, // <- unused
+        EXPIRED,
+        INVALIDATED, RELEASED // <- both unused
     }
 
     private final int id;

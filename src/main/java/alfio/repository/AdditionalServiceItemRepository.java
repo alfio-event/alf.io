@@ -68,7 +68,7 @@ public interface AdditionalServiceItemRepository {
         "select" +
             "    ai.uuid ai_uuid, ai.creation ai_creation, ai.last_modified ai_last_modified, ai.final_price_cts ai_final_price_cts, ai.currency_code ai_currency_code, ai.vat_cts ai_vat_cts, ai.discount_cts ai_discount_cts," +
             "    tr.id tr_uuid, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address," +
-            "    asv.service_type as_type, asd.value as_title" +
+            "    asv.service_type as_type, asd.value as_title, ai.status as ai_status " +
             " from additional_service_item ai" +
             "    join additional_service asv on ai.additional_service_id_fk = asv.id" +
             "    join tickets_reservation tr on ai.tickets_reservation_uuid = tr.id" +
@@ -76,7 +76,8 @@ public interface AdditionalServiceItemRepository {
             " where ai.event_id_fk = :eventId" +
             "  and asv.service_type = :additionalServiceType" +
             "  and asd.type = 'TITLE'" +
-            "  and asd.locale = :locale"
+            "  and asd.locale = :locale " +
+            "  and ai.status in ('ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID') "
     )
     List<AdditionalServiceItemExport> getAdditionalServicesOfTypeForEvent(@Bind("eventId") int eventId,
                                                                           @Bind("additionalServiceType") String additionalServiceType,

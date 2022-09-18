@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.model.AdditionalService;
+import alfio.model.AdditionalServiceItem;
 import alfio.model.AdditionalServiceItemExport;
 import alfio.model.AdditionalServiceText;
 import alfio.repository.AdditionalServiceItemRepository;
@@ -56,7 +57,7 @@ public class AdditionalServiceManager {
         return additionalServiceTextRepository.findAllByAdditionalServiceId(additionalServiceId);
     }
 
-    public Map<Integer, Integer> countUsageForEvent(int eventId) {
+    public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUsageForEvent(int eventId) {
         return additionalServiceRepository.getCount(eventId);
     }
 
