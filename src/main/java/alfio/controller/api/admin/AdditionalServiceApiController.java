@@ -19,6 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.AdditionalServiceManager;
 import alfio.manager.EventManager;
 import alfio.model.AdditionalService;
+import alfio.model.AdditionalServiceItem;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.modification.EventModification;
@@ -87,7 +88,7 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/event/{eventId}/additional-services/count")
-    public Map<Integer, Integer> countUse(@PathVariable("eventId") int eventId) {
+    public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable("eventId") int eventId) {
         return additionalServiceManager.countUsageForEvent(eventId);
     }
 
@@ -155,6 +156,7 @@ public class AdditionalServiceApiController {
             "Name",
             "Creation",
             "Last Update",
+            "Status",
             "Reservation ID",
             "Reservation First name",
             "Reservation Last name",
@@ -171,6 +173,7 @@ public class AdditionalServiceApiController {
                 item.getAdditionalServiceTitle(),
                 item.getUtcCreation().withZoneSameInstant(event.getZoneId()).format(formatter),
                 requireNonNullElse(item.getUtcLastModified(), item.getUtcCreation()).withZoneSameInstant(event.getZoneId()).format(formatter),
+                item.getAdditionalServiceItemStatus().name(),
                 item.getTicketsReservationUuid(),
                 item.getFirstName(),
                 item.getLastName(),

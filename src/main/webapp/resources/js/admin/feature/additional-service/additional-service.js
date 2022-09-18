@@ -96,14 +96,13 @@
             });
             self.displayList = buildDisplayList(self.list);
             self.additionalServiceUseCount = results[2].data;
-            var countSold = 0;
+            var countStatus = 0;
             self.displayList.map(function(i) {
-                if (self.additionalServiceUseCount[i.id] > 0) {
-                    countSold ++;
+                if (Object.values(self.additionalServiceUseCount[i.id] || {}).some((v) => v > 0)) {
+                    countStatus++;
                 }
             });
-            self.allowDownload = countSold > 0;
-
+            self.allowDownload = countStatus > 0;
         });
 
         function fillExistingTexts(texts) {
@@ -115,6 +114,36 @@
 
         self.zipTitleAndDescription = function(item) {
             return _.zip(item.title, item.description);
+        };
+
+        self.getSold = function(additionalServiceId) {
+            var statusCount = self.additionalServiceUseCount[additionalServiceId] || {};
+            var acquired = statusCount['ACQUIRED'] || 0;
+            var checkedIn = statusCount['CHECKED_IN'] || 0;
+            var toBePaid = statusCount['TO_BE_PAID'] || 0;
+            return [
+                {c : acquired, s: 'Acquired' },
+                {c: checkedIn, s: 'Checked in'},
+                {c: toBePaid, s: 'To be paid on site'}
+            ];
+        };
+
+        self.countSold = function(additionalServiceId) {
+            var soldCount = self.getSold(additionalServiceId);
+            return soldCount.reduce(function(acc, cur) {return acc + cur.c}, 0);
+        };
+
+        self.formatCountSold = function(additionalServiceId) {
+            var composition = self.getSold(additionalServiceId).filter(function(v) {return v.c > 0})
+            var showBreakDown = composition.length > 1;
+            var total = self.countSold(additionalServiceId);
+            var afterText = '';
+            if (showBreakDown) {
+                afterText = ' (of which ';
+                afterText += composition.map((function(v) { return v.s + ': ' + v.c})).join(', ');
+                afterText += ')';
+            }
+            return total + afterText;
         };
 
         self.addedItem = undefined;
