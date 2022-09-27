@@ -64,7 +64,10 @@
                 ctrl.accesscodes = pcRes.data.filter(function(pc) {
                     return pc.codeType === 'ACCESS';
                 });
-                angular.forEach(ctrl.promocodes, function(v) {
+                var discountOrAccess = pcRes.data.filter(function(pc) {
+                    return pc.codeType === 'DISCOUNT' || pc.codeType === 'ACCESS';
+                });
+                angular.forEach(discountOrAccess, function(v) {
                     (function(v) {
                         v.hasCurrency = ctrl.forEvent || v.currencyCode;
                         v.currencyToDisplay = ctrl.forEvent ? ctrl.event.currency : v.currencyCode;
