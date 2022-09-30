@@ -459,6 +459,7 @@ public class CheckInManager {
                 if (!additionalFields.isEmpty()) {
                     Map<String, String> fields = new HashMap<>();
                     fields.put("company", trimToEmpty(ticket.getBillingDetails().getCompanyName()));
+                    fields.put("category", ticket.getTicketCategory().getName());
                     fields.putAll(ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream()
                         .map(vd -> {
                             try {
