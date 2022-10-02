@@ -121,6 +121,8 @@
 				<mj-text align="center" font-size="14px">
 					(<a href="{{googleCalendarUrl}}" rel="notrack" align="center">{{#i18n}}show-event.add-to-calendar{{/i18n}}</a>)
 				</mj-text>
+
+                <mj-image src="{{baseUrl}}/resources/images/email/enUS_add_to_google_wallet_wallet-button.png" href="{{baseUrl}}/api/wallet/event/{{event.shortName}}/v1/version/passes/{{ticket.uuid}}"></mj-image>
 			</mj-column>
 		</mj-section>
     
