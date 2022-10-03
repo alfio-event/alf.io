@@ -48,6 +48,7 @@ public class GoogleWalletApiController {
         if (validationResult.isEmpty()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         } else {
+            response.setHeader("Content-Type", "text/html");
             PrintWriter writer = response.getWriter();
             writer.write("<html><body>");
             writer.write("<h1>Thank you for your interest in Adding to Google Wallet</h1>");

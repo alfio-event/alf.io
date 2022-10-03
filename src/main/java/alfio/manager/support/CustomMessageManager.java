@@ -29,10 +29,7 @@ import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
-import alfio.util.EventUtil;
-import alfio.util.Json;
-import alfio.util.RenderedTemplate;
-import alfio.util.TemplateManager;
+import alfio.util.*;
 import alfio.util.checkin.TicketCheckInUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -81,6 +78,7 @@ public class CustomMessageManager {
         Organization organization = eventManager.loadOrganizer(event, username);
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
         var categoriesById = ticketCategoryRepository.findByEventIdAsMap(event.getId());
+        var baseUrl = configurationManager.baseUrl(event);
 
         sendMessagesExecutor.execute(() -> {
             var messageSource = messageSourceManager.getMessageSourceFor(event);
@@ -99,6 +97,7 @@ public class CustomMessageManager {
                     model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
                     model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl(event, t.getUuid()));
                     model.addAttribute("ticketID", t.getUuid());
+                    model.addAttribute("ticket", t);
                     return Triple.of(t, t.getEmail(), model);
                 })
                 .forEach(triple -> {
@@ -136,7 +135,10 @@ public class CustomMessageManager {
                             attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
                         }
                     }
-                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, () -> RenderedTemplate.plaintext(text.toString(), templateModel), attachments);
+                    templateModel.put("message", text);
+                    templateModel.put("event", event);
+                    templateModel.put("baseUrl", baseUrl);
+                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, () -> templateManager.renderTemplate(event, TemplateResource.CUSTOM_MESSAGE, templateModel, Locale.forLanguageTag(ticket.getUserLanguage())), attachments);
                 });
         });
 
