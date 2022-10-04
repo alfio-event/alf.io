@@ -25,6 +25,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.MustacheCustomTag;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -124,7 +125,8 @@ public class GoogleWalletManager {
         String serviceAccountKey = config.get(WALLET_SERVICE_ACCOUNT_KEY);
         boolean overwritePreviousClassesAndEvents = Boolean.parseBoolean(config.get(WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS));
 
-        String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse("");
+        String eventDescription = MustacheCustomTag.renderToTextCommonmark(
+            eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse(""));
         TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
         var ticketValidityStart = Optional.ofNullable(category.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
         var ticketValidityEnd = Optional.ofNullable(category.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());

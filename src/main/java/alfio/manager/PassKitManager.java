@@ -24,6 +24,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.LocaleUtil;
+import alfio.util.MustacheCustomTag;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ryantenney.passkit4j.Pass;
@@ -150,7 +151,8 @@ public class PassKitManager {
         String privateKeyAlias = config.get(PASSBOOK_PRIVATE_KEY_ALIAS);
 
 
-        String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse("");
+        String eventDescription = MustacheCustomTag.renderToTextCommonmark(
+            eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse(""));
         TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
         var ticketValidityStart = Optional.ofNullable(category.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
         Pass pass = new Pass()
