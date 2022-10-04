@@ -82,10 +82,9 @@ public class GoogleWalletManager {
     }
 
     public String createAddToWalletUrl(Ticket ticket, EventAndOrganizationId event) {
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<ConfigurationKeys, String> passConf = getConfigurationKeys(event);
         if (!passConf.isEmpty()) {
-            return buildWalletPassUrl(ticket, eventRepository.findById(event.getId()), organization, passConf);
+            return buildWalletPassUrl(ticket, eventRepository.findById(event.getId()), passConf);
         } else {
             throw new RuntimeException("Google Wallet integration is not enabled.");
         }
@@ -96,7 +95,8 @@ public class GoogleWalletManager {
                 ENABLE_WALLET,
                 WALLET_ISSUER_IDENTIFIER,
                 WALLET_SERVICE_ACCOUNT_KEY,
-                WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS),
+                WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS,
+                BASE_URL),
             event.getConfigurationLevel());
 
         if (!conf.get(ENABLE_WALLET).getValueAsBooleanOrDefault()) {
@@ -105,7 +105,8 @@ public class GoogleWalletManager {
         var configValues = Map.of(
             WALLET_ISSUER_IDENTIFIER, conf.get(WALLET_ISSUER_IDENTIFIER).getValue(),
             WALLET_SERVICE_ACCOUNT_KEY, conf.get(WALLET_SERVICE_ACCOUNT_KEY).getValue(),
-            WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS, conf.get(WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS).getValue());
+            WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS, conf.get(WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS).getValue(),
+            BASE_URL, conf.get(BASE_URL).getValue());
 
         if (configValues.values().stream().anyMatch(Optional::isEmpty)) {
             return Map.of();
@@ -119,7 +120,6 @@ public class GoogleWalletManager {
 
     private String buildWalletPassUrl(Ticket ticket,
                                       Event event,
-                                      Organization organization,
                                       Map<ConfigurationKeys, String> config) {
         String baseUrl = config.get(BASE_URL);
         String issuerId = config.get(WALLET_ISSUER_IDENTIFIER);
@@ -139,7 +139,7 @@ public class GoogleWalletManager {
         var eventTicketClass = EventTicketClass.builder()
             .id(String.format("%s.%s-class-%d", issuerId, walletIdPrefix(), category.getId()))
             .eventOrGroupingId(Integer.toString(event.getId()))
-            .logoUri(event.getImageUrl())
+            .logoUri(baseUrl + "/file/" + event.getFileBlobId())
             .eventName(eventDescription)
             .description(event.getDisplayName())
             .venue(event.getLocation())
