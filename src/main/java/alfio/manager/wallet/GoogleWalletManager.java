@@ -1,16 +1,16 @@
 /**
  * This file is part of alf.io.
- *
+ * <p>
  * alf.io is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * alf.io is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -136,7 +136,7 @@ public class GoogleWalletManager {
 
         var host = URI.create(baseUrl).getHost().replace(".", "-");
         var eventTicketClass = EventTicketClass.builder()
-            .id(String.format("%s.%s-%s-class.%s-%d", issuerId, walletIdPrefix(), host, event.getShortName(), category.getId()))
+            .id(formatEventTicketClassId(event, issuerId, category, host))
             .eventOrGroupingId(Integer.toString(event.getId()))
             .logoUri(baseUrl + "/file/" + event.getFileBlobId())
             .eventName(event.getDisplayName())
@@ -149,7 +149,7 @@ public class GoogleWalletManager {
             .build();
 
         var eventTicketObject = EventTicketObject.builder()
-            .id(String.format("%s.%s-%s-object.%s-%s", issuerId, walletIdPrefix(), host, event.getShortName(), ticket.getUuid()))
+            .id(formatEventTicketObjectId(ticket, event, issuerId, host))
             .classId(eventTicketClass.getId())
             .ticketHolderName(ticket.getFullName())
             .ticketNumber(ticket.getUuid())
@@ -171,7 +171,15 @@ public class GoogleWalletManager {
         return generateWalletPassUrl(credentials, eventObjectId, baseUrl);
     }
 
-    String generateWalletPassUrl(GoogleCredentials credentials, String eventObjectId, String url) {
+    private String formatEventTicketObjectId(Ticket ticket, Event event, String issuerId, String host) {
+        return String.format("%s.%s-%s-object.%s-%s", issuerId, walletIdPrefix(), host, event.getShortName().replaceAll("[^\\w.-]", "_"), ticket.getUuid());
+    }
+
+    private String formatEventTicketClassId(Event event, String issuerId, TicketCategory category, String host) {
+        return String.format("%s.%s-%s-class.%s-%d", issuerId, walletIdPrefix(), host, event.getShortName().replaceAll("[^\\w.-]", "_"), category.getId());
+    }
+
+    private String generateWalletPassUrl(GoogleCredentials credentials, String eventObjectId, String url) {
         var objectIdMap = Map.of("id", eventObjectId);
         var payload = Map.of("genericObjects", List.of(objectIdMap));
         var claims = Map.of(
@@ -211,34 +219,38 @@ public class GoogleWalletManager {
 
             HttpResponse<String> getResponse = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
             log.debug("GET Response: {}", getResponse);
+            if (getResponse.statusCode() != 200 && getResponse.statusCode() != 404) {
+                log.warn("Received {} status code when creating entity but 200 or 404 were expected: {}", getResponse.statusCode(), getResponse.body());
+                throw new GoogleWalletException("Cannot create Wallet class. Response status: " + getResponse.statusCode());
+            }
 
-            if (getResponse.statusCode() == 404) {
+            if (getResponse.statusCode() == 404 || overwritePreviousClassesAndEvents) {
                 HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .header("Authorization", String.format("Bearer %s", credentials.refreshAccessToken().getTokenValue()));
-                if (overwritePreviousClassesAndEvents) {
+                if (getResponse.statusCode() == 404) {
+                    builder = builder
+                        .uri(URI.create(uri))
+                        .POST(HttpRequest.BodyPublishers.ofString(entity.build(objectMapper)));
+                } else {
                     builder = builder
                         .uri(uriWithId)
                         .PUT(HttpRequest.BodyPublishers.ofString(entity.build(objectMapper)));
-                } else {
-                    builder
-                        .uri(URI.create(uri))
-                        .POST(HttpRequest.BodyPublishers.ofString(entity.build(objectMapper)));
                 }
                 HttpRequest postOrPutRequest = builder.build();
                 log.debug("POST or PUT Request: {}", postOrPutRequest);
                 HttpResponse<String> postOrPutResponse = httpClient.send(postOrPutRequest, HttpResponse.BodyHandlers.ofString());
                 log.debug("POST or PUT Response: {}", postOrPutResponse);
-                if(postOrPutResponse.statusCode() != 200) {
+                if (postOrPutResponse.statusCode() != 200) {
                     log.warn("Received {} status code when creating entity: {}", postOrPutResponse.statusCode(), postOrPutResponse.body());
-                    throw new GoogleWalletException("Cannot create wallet. Response status " + postOrPutResponse.statusCode());
+                    throw new GoogleWalletException("Cannot create wallet. Response status: " + postOrPutResponse.statusCode());
                 }
             }
             return entity.getId();
         } catch (IOException e) {
-            throw new GoogleWalletException("Error while communication with the Google Wallet API", e);
+            throw new GoogleWalletException("Error while communicating with the Google Wallet API", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new GoogleWalletException("Error while communication with the Google Wallet API", e);
+            throw new GoogleWalletException("Error while communicating with the Google Wallet API", e);
         }
     }
 
