@@ -243,10 +243,14 @@ public class GoogleWalletManager {
     }
 
     private String walletIdPrefix() {
-        return Stream.of(PROFILE_DEMO, PROFILE_DEV, PROFILE_LIVE)
+        var profile = Stream.of(PROFILE_DEMO, PROFILE_DEV, PROFILE_LIVE)
             .filter(p -> environment.acceptsProfiles(Profiles.of(p)))
             .findFirst()
             .orElseThrow(() -> new NoSuchElementException("No suitable Spring Profile found to create a Wallet ID prefix for classes and objects. Must have one of PROFILE_DEMO, PROFILE_DEV, or PROFILE_LIVE"));
+        if (profile.equals(PROFILE_LIVE)) {
+            return "live";
+        }
+        return profile;
     }
 
 }
