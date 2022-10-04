@@ -240,10 +240,10 @@ public enum ConfigurationKeys {
     PASSBOOK_PRIVATE_KEY_ALIAS("Passbook Private Key alias", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
     //WALLET
-    ENABLE_WALLET("Enable Google Wallet(tm) integration", false, SettingCategory.WALLET_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
+    ENABLE_WALLET("Enable Google Wallet(tm) integration", false, SettingCategory.WALLET_INTEGRATION, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
     WALLET_ISSUER_IDENTIFIER("Google Wallet Issue ID", false, SettingCategory.WALLET_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    WALLET_CLASS_IDENTIFIER("Google Wallet Class ID", false, SettingCategory.WALLET_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     WALLET_SERVICE_ACCOUNT_KEY("Google Wallet Service Account Key in JSON format", false, SettingCategory.WALLET_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS("Overwrite previous EventClass and EventObject definitions (use after code changes affecting the JSON)", false, SettingCategory.WALLET_INTEGRATION, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
     //CHECK-IN
     CHECK_IN_STATS("Display check-in statistics in mobile apps", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), BooleanUtils.TRUE),
 

@@ -16,7 +16,7 @@
  */
 package alfio.controller.api.wallet;
 
-import alfio.manager.GoogleWalletManager;
+import alfio.manager.wallet.GoogleWalletManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
 import lombok.RequiredArgsConstructor;
@@ -48,13 +48,8 @@ public class GoogleWalletApiController {
         if (validationResult.isEmpty()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         } else {
-            response.setHeader("Content-Type", "text/html");
-            PrintWriter writer = response.getWriter();
-            writer.write("<html><body>");
-            writer.write("<h1>Thank you for your interest in Adding to Google Wallet</h1>");
-            writer.write("<h2>The Google Wallet support is going to be available in the next couple of days. Please check it again tomorrow.</h2>");
-            writer.write("</body></html>");
-            writer.close();
+            String walletUrl = walletManager.createAddToWalletUrl(validationResult.get().getRight(), validationResult.get().getLeft());
+            response.sendRedirect(walletUrl);
         }
     }
 
