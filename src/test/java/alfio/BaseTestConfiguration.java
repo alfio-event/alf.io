@@ -24,6 +24,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.context.annotation.Bean;
@@ -115,5 +116,10 @@ public class BaseTestConfiguration {
     @Profile(Initializer.PROFILE_INTEGRATION_TEST)
     public ClockProvider clockProvider() {
         return FIXED_TIME_CLOCK;
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }
