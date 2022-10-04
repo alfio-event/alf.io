@@ -57,9 +57,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 @Log4j2
 public class GoogleWalletManager {
 
-    private static final String GOOGLE_WALLET_PASS = "GoogleWalletPass";
     private final EventRepository eventRepository;
-    private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -86,7 +84,7 @@ public class GoogleWalletManager {
         if (!passConf.isEmpty()) {
             return buildWalletPassUrl(ticket, eventRepository.findById(event.getId()), passConf);
         } else {
-            throw new RuntimeException("Google Wallet integration is not enabled.");
+            throw new GoogleWalletException("Google Wallet integration is not enabled.");
         }
     }
 
@@ -136,8 +134,9 @@ public class GoogleWalletManager {
             latitudeLongitudePoint = EventTicketClass.LatitudeLongitudePoint.of(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude()));
         }
 
+        var host = URI.create(baseUrl).getHost().replace(".", "-");
         var eventTicketClass = EventTicketClass.builder()
-            .id(String.format("%s.%s-class-%d", issuerId, walletIdPrefix(), category.getId()))
+            .id(String.format("%s.%s-%s-class.%s-%d", issuerId, walletIdPrefix(), host, event.getShortName(), category.getId()))
             .eventOrGroupingId(Integer.toString(event.getId()))
             .logoUri(baseUrl + "/file/" + event.getFileBlobId())
             .eventName(eventDescription)
@@ -150,7 +149,7 @@ public class GoogleWalletManager {
             .build();
 
         var eventTicketObject = EventTicketObject.builder()
-            .id(String.format("%s.%s-object-%s", issuerId, walletIdPrefix(), ticket.getUuid()))
+            .id(String.format("%s.%s-%s-object.%s-%s", issuerId, walletIdPrefix(), host, event.getShortName(), ticket.getUuid()))
             .classId(eventTicketClass.getId())
             .ticketHolderName(ticket.getFullName())
             .ticketNumber(ticket.getUuid())
@@ -229,9 +228,16 @@ public class GoogleWalletManager {
                 log.debug("POST or PUT Request: {}", postOrPutRequest);
                 HttpResponse<String> postOrPutResponse = httpClient.send(postOrPutRequest, HttpResponse.BodyHandlers.ofString());
                 log.debug("POST or PUT Response: {}", postOrPutResponse);
+                if(postOrPutResponse.statusCode() != 200) {
+                    log.warn("Received {} status code when creating entity: {}", postOrPutResponse.statusCode(), postOrPutResponse.body());
+                    throw new GoogleWalletException("Cannot create wallet. Response status " + postOrPutResponse.statusCode());
+                }
             }
             return entity.getId();
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
+            throw new GoogleWalletException("Error while communication with the Google Wallet API", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new GoogleWalletException("Error while communication with the Google Wallet API", e);
         }
     }
