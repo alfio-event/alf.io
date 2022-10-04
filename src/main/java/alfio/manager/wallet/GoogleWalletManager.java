@@ -139,7 +139,7 @@ public class GoogleWalletManager {
         var eventTicketClass = EventTicketClass.builder()
             .id(String.format("%s.%s-class-%d", issuerId, walletIdPrefix(), category.getId()))
             .eventOrGroupingId(Integer.toString(event.getId()))
-            .logoUri("https://reg.devoxx.be/file/c73315d4890c5fade112165c40338b72271e43939eed4e1e57a4e4891ee19cc8")
+            .logoUri(event.getImageUrl())
             .eventName(eventDescription)
             .description(event.getDisplayName())
             .venue(event.getLocation())
