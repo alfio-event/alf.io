@@ -25,6 +25,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.modification.MessageModification;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -78,7 +79,9 @@ public class CustomMessageManager {
         Organization organization = eventManager.loadOrganizer(event, username);
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
         var categoriesById = ticketCategoryRepository.findByEventIdAsMap(event.getId());
-        var baseUrl = configurationManager.baseUrl(event);
+        var configuration = configurationManager.getFor(EnumSet.of(ConfigurationKeys.BASE_URL, ConfigurationKeys.ENABLE_WALLET), event.getConfigurationLevel());
+        var baseUrl = configuration.get(ConfigurationKeys.BASE_URL).getRequiredValue();
+        boolean walletEnabled = configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault();
 
         sendMessagesExecutor.execute(() -> {
             var messageSource = messageSourceManager.getMessageSourceFor(event);
@@ -111,8 +114,9 @@ public class CustomMessageManager {
                     if(m.isAttachTicket()) {
                         var optionalReservation = ticketReservationManager.findById(ticket.getTicketsReservationId());
                         var optionalTicketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId());
+                        boolean onlineTicket = optionalTicketCategory.isPresent() && EventUtil.isAccessOnline(optionalTicketCategory.get(), event);
 
-                        if(optionalReservation.isPresent() && optionalTicketCategory.isPresent() && EventUtil.isAccessOnline(optionalTicketCategory.get(), event)) {
+                        if(optionalReservation.isPresent() && onlineTicket) {
                             var onlineCheckInModel = new HashMap<>(TicketCheckInUtil.getOnlineCheckInInfo(
                                 extensionManager,
                                 eventRepository,
@@ -134,6 +138,10 @@ public class CustomMessageManager {
                         } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
                             attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
                         }
+                        templateModel.put("walletEnabled", walletEnabled && !onlineTicket);
+                    } else {
+                        // ticket attachment was not requested. Do not display wallet
+                        templateModel.put("walletEnabled", false);
                     }
                     templateModel.put("message", text);
                     templateModel.put("event", event);

@@ -82,12 +82,14 @@
 			</mj-column>
 		</mj-section>
 
+        <mj-raw>{{#walletEnabled}}</mj-raw>
 	     <mj-section background-color="white">
              <mj-column>
                 <mj-image width="283px" rel="notrack" src="{{baseUrl}}/resources/images/email/enUS_add_to_google_wallet_wallet-button.png" alt="Add to Google Wallet" align="center" padding="8dp" href="{{baseUrl}}/api/wallet/event/{{event.shortName}}/v1/version/passes/{{ticket.uuid}}"></mj-image>
              </mj-column>
 		</mj-section>
-    
+        <mj-raw>{{/walletEnabled}}</mj-raw>
+
         <mj-section>
             <mj-column width="100%">
                 <mj-text align="center">{{#i18n}}alfio.credits{{/i18n}}</mj-text>
