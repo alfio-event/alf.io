@@ -79,7 +79,10 @@ public class ReservationPriceCalculator implements PriceContainer {
             if (discount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION) {
                 return MonetaryUtil.centsToUnit(discount.getDiscountAmount() + subscriptionDiscount, reservation.getCurrencyCode());
             }
-            return MonetaryUtil.centsToUnit(tickets.stream().mapToInt(Ticket::getDiscountCts).sum() +
+            int ticketDiscount = tickets.stream()
+                .mapToInt(t -> MonetaryUtil.unitToCents(TicketPriceContainer.from(t, reservation.getVatStatus(), reservation.getVatPercentageOrZero(), purchaseContext.getVatStatus(), discount).getAppliedDiscount(), reservation.getCurrencyCode()))
+                .sum();
+            return MonetaryUtil.centsToUnit(ticketDiscount +
                     additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getDiscountCts).sum() +
                     subscriptions.stream().mapToInt(Subscription::getDiscountCts).sum() + subscriptionDiscount, reservation.getCurrencyCode());
         }
