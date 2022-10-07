@@ -46,6 +46,7 @@ class ReservationPriceCalculatorTest {
         reservation = mock(TicketReservation.class);
         when(reservation.getCurrencyCode()).thenReturn("CHF");
         ticket = mock(Ticket.class);
+        when(ticket.getCurrencyCode()).thenReturn("CHF");
         tickets = List.of(ticket);
         additionalServiceItem = mock(AdditionalServiceItem.class);
         additionalServiceItems = List.of(additionalServiceItem);
@@ -56,11 +57,12 @@ class ReservationPriceCalculatorTest {
     }
 
     @Nested
-    public class PromoCodeDiscountTest {
+    class PromoCodeDiscountTest {
         private PromoCodeDiscount discount = mock(PromoCodeDiscount.class);
 
         @BeforeEach
         void init() {
+            when(ticket.getSrcPriceCts()).thenReturn(10_00);
             when(ticket.getDiscountCts()).thenReturn(100);
             when(additionalServiceItem.getDiscountCts()).thenReturn(100);
         }
@@ -87,7 +89,7 @@ class ReservationPriceCalculatorTest {
     }
 
     @Nested
-    public class TaxCalculatorTest {
+    class TaxCalculatorTest {
         @BeforeEach
         void init() {
             when(ticket.getSrcPriceCts()).thenReturn(1000);
