@@ -5,6 +5,8 @@ import ch.digitalfondue.jfiveparse.Selector
 import org.apache.tools.ant.filters.ReplaceTokens
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.Year
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -15,7 +17,7 @@ buildscript {
     dependencies {
         classpath 'org.postgresql:postgresql:42.2.20'
         //this is for processing the index.html at compile time
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.9.0"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.0.0"
         //
     }
 
@@ -109,7 +111,7 @@ repositories {
 
 dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
-    implementation 'com.auth0:java-jwt:3.19.2'
+    implementation 'com.auth0:java-jwt:4.0.0'
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "org.springframework.boot:spring-boot-properties-migrator", {
@@ -123,7 +125,7 @@ dependencies {
     /**/
     implementation 'com.openhtmltopdf:openhtmltopdf-core:1.0.10'
     implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
-    implementation "ch.digitalfondue.jfiveparse:jfiveparse:0.9.0"
+    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:1.0.0'
     /**/
     implementation 'com.google.zxing:core:3.5.0'
     implementation 'com.google.zxing:javase:3.5.0'
@@ -160,7 +162,7 @@ dependencies {
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.mozilla:rhino-runtime:1.7.13'
 
-    implementation "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
+    //implementation "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
 
     compileOnly "javax.servlet:javax.servlet-api:4.0.1"
     testImplementation "javax.servlet:javax.servlet-api:4.0.1"
@@ -264,28 +266,6 @@ processResources {
         properties['alfio.version'] = project.version
         properties['alfio.build-ts'] = ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
         gradleProperties.withWriter { properties.store(it, null) }
-
-
-        //
-        // alf.io public frontend: read index.html rewrite path for css/js
-
-        final resource = Thread.currentThread().getContextClassLoader().getResourceAsStream("/frontend-public/index.html")
-        final indexDoc = new Parser().parse(new InputStreamReader(resource, StandardCharsets.UTF_8))
-
-        final basePath = "frontend-public/"
-        NodeMatcher scriptNodes = Selector.select().element("script").toMatcher()
-
-        indexDoc.getAllNodesMatching(scriptNodes).stream().forEach({
-            it.setAttribute("src", basePath + it.getAttribute("src"))
-        })
-
-        NodeMatcher cssNodes = Selector.select().element("link").attrValEq("rel", "stylesheet").toMatcher();
-        indexDoc.getAllNodesMatching(cssNodes).stream().forEach({
-            it.setAttribute("href", basePath + it.getAttribute("href"))
-        })
-
-        final alfioPublicIndex = new File((File) it.destinationDir, "alfio-public-frontend-index.html")
-        alfioPublicIndex.write(HtmlSerializer.serialize(indexDoc), "UTF-8", false)
     }
 }
 
@@ -347,21 +327,12 @@ bootRun {
         "-Ddatasource.password=${project.datasourcePassword}",
         "-Dalfio.version=${project.version}",
         "-Dalfio.build-ts=${ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)}",
-        "-Dalfio.frontend.version=$alfioPublicFrontendVersion"
+        "-Dalfio.frontend.version="
     ]
     if(externalConfig.exists()) {
         opts += externalConfig.readLines()
     }
     jvmArgs = opts
-}
-
-bootWar {
-    archiveClassifier.set('boot')
-    def bowerDir = "resources/bower_components"
-    def excludesFile = new File("./lib_exclude")
-    if(excludesFile.exists()) {
-        exclude(excludesFile.readLines().collect({ bowerDir + it }))
-    }
 }
 
 // -- code-coverage
@@ -398,10 +369,16 @@ task publicFrontendBuild(type: NpmTask) {
     args = ['--prefix', "${project.projectDir}/frontend-public", 'run', 'build']
 }
 
+task publicFrontendIndexTransform(type: PublicFrontendIndexTransformTask) {
+    dependsOn publicFrontendBuild
+    indexHtml.set(layout.projectDirectory.file("frontend-public/dist/alfio-public-frontend/index.html"))
+    indexHtmlTransformed.set(layout.buildDirectory.file("index-transformed/alfio-public-frontend-index.html"))
+}
+
 task distribution(type: Copy) {
     from zipTree("${project.buildDir}/libs/alfio-${project.version}-boot.war")
     into "${buildDir}/dockerize"
-    dependsOn publicFrontendBuild, build, dockerize
+    dependsOn publicFrontendIndexTransform, build, dockerize
 }
 
 task clever(type: Copy) {
@@ -435,3 +412,44 @@ task mjmlToHtml( type: NodeTask, dependsOn: 'npmInstall' ) {
 // TODO should we do the same for plaintext templates? See https://gist.github.com/brasilikum/3cd515bad5541ca6c76873faf10445c2
 processResources.dependsOn(mjmlToHtml)
 sourceSets.main.output.dir file("$buildDir/generated/resources"), builtBy: mjmlToHtml
+
+abstract class PublicFrontendIndexTransformTask extends org.gradle.api.DefaultTask {
+
+    @org.gradle.api.tasks.InputFile
+    abstract org.gradle.api.file.RegularFileProperty getIndexHtml()
+
+    @org.gradle.api.tasks.OutputFile
+    abstract org.gradle.api.file.RegularFileProperty getIndexHtmlTransformed()
+
+    @org.gradle.api.tasks.TaskAction
+    def doWork() {
+        final resource = indexHtml.get().asFile.newInputStream()
+        final indexDoc = new Parser().parse(new InputStreamReader(resource, StandardCharsets.UTF_8))
+
+        final basePath = "frontend-public/"
+        NodeMatcher scriptNodes = Selector.select().element("script").toMatcher()
+
+        indexDoc.getAllNodesMatching(scriptNodes).stream().forEach({
+            it.setAttribute("src", basePath + it.getAttribute("src"))
+        })
+
+        NodeMatcher cssNodes = Selector.select().element("link").attrValEq("rel", "stylesheet").toMatcher();
+        indexDoc.getAllNodesMatching(cssNodes).stream().forEach({
+            it.setAttribute("href", basePath + it.getAttribute("href"))
+        })
+
+        indexHtmlTransformed.get().asFile.write(HtmlSerializer.serialize(indexDoc), "UTF-8", false)
+    }
+}
+
+bootWar {
+    archiveClassifier.set('boot')
+    from(tasks.named("publicFrontendIndexTransform")) {
+        rename 'alfio-public-frontend-index.html', 'WEB-INF/classes/alfio-public-frontend-index.html'
+    }
+    def bowerDir = "resources/bower_components"
+    def excludesFile = new File("./lib_exclude")
+    if(excludesFile.exists()) {
+        exclude(excludesFile.readLines().collect({ bowerDir + it }))
+    }
+}
