@@ -45,7 +45,7 @@ export class OfflinePaymentComponent implements OnInit {
         this.purchaseContext = ev;
         this.reservationInfo = reservationInfo;
 
-        this.paymentReason = `<mark>${this.purchaseContext.shortName} ${this.reservationInfo.shortId}</mark>`;
+        this.paymentReason = `<mark>${this.reservationInfo.shortId}</mark>`;
 
         this.i18nService.setPageTitle('reservation-page-waiting.header.title', ev);
         this.analytics.pageView(ev.analyticsConfiguration);

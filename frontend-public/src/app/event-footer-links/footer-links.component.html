@@ -1,4 +1,4 @@
-<div [ngClass]="marginClass" class="d-md-flex text-center text-md-left justify-content-md-center">
+<div [ngClass]="marginClass" class="d-md-flex text-center text-md-left justify-content-md-center" *ngIf="linksContainer">
   <div *ngIf="linksContainer.termsAndConditionsUrl">
     <a [href]="linksContainer.termsAndConditionsUrl" target="_blank" rel="noopener"
        [attr.aria-label]="('reservation-page.tc.link.text' | translate) + ('link.new-tab' | translate)">{{'reservation-page.tc.link.text'|translate}}</a></div>
