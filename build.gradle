@@ -404,7 +404,7 @@ bootWar {
     dependsOn publicFrontendIndexTransform
     archiveClassifier.set('boot')
     from(tasks.named("publicFrontendBuild")) {
-        into 'WEB-INF/classes/'
+        into 'resources'
     }
     from(tasks.named("publicFrontendIndexTransform")) {
         rename 'alfio-public-frontend-index.html', 'WEB-INF/classes/alfio-public-frontend-index.html'
