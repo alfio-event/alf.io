@@ -45,7 +45,7 @@ jobs:
               env:
                   PGPASSWORD: postgres
             - name: Build with Gradle
-              run: ./gradlew build distribution jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
+              run: ./gradlew dist jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
             - name: upload to sonarcloud
               if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '14'}}
               run: ./gradlew sonarqube

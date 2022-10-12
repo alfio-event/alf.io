@@ -5,8 +5,6 @@ import ch.digitalfondue.jfiveparse.Selector
 import org.apache.tools.ant.filters.ReplaceTokens
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.Year
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -43,7 +41,7 @@ plugins {
     id 'org.springframework.boot' version '2.6.6'
     id 'org.sonarqube' version '3.3'
     id 'net.ltgt.errorprone' version '2.0.2'
-	id 'com.github.node-gradle.node' version '3.3.0'
+	id 'com.github.node-gradle.node' version '3.4.0'
 }
 
 apply plugin: 'java'
@@ -367,6 +365,7 @@ task publicFrontendNpmInstall(type: NpmTask) {
 task publicFrontendBuild(type: NpmTask) {
     dependsOn publicFrontendNpmInstall
     args = ['--prefix', "${project.projectDir}/frontend-public", 'run', 'build']
+    outputs.dir("${project.projectDir}/frontend-public/dist")
 }
 
 task publicFrontendIndexTransform(type: PublicFrontendIndexTransformTask) {
@@ -402,6 +401,20 @@ release {
     }
 }
 
+bootWar {
+    dependsOn publicFrontendIndexTransform
+    archiveClassifier.set('boot')
+    from(tasks.named("publicFrontendBuild"))
+    from(tasks.named("publicFrontendIndexTransform")) {
+        rename 'alfio-public-frontend-index.html', 'WEB-INF/classes/alfio-public-frontend-index.html'
+    }
+    def bowerDir = "resources/bower_components"
+    def excludesFile = new File("./lib_exclude")
+    if(excludesFile.exists()) {
+        exclude(excludesFile.readLines().collect({ bowerDir + it }))
+    }
+}
+
 // MJML email templates translations to HTML
 
 task mjmlToHtml( type: NodeTask, dependsOn: 'npmInstall' ) {
@@ -413,6 +426,7 @@ task mjmlToHtml( type: NodeTask, dependsOn: 'npmInstall' ) {
 processResources.dependsOn(mjmlToHtml)
 sourceSets.main.output.dir file("$buildDir/generated/resources"), builtBy: mjmlToHtml
 
+// transform index.html
 abstract class PublicFrontendIndexTransformTask extends org.gradle.api.DefaultTask {
 
     @org.gradle.api.tasks.InputFile
@@ -439,17 +453,5 @@ abstract class PublicFrontendIndexTransformTask extends org.gradle.api.DefaultTa
         })
 
         indexHtmlTransformed.get().asFile.write(HtmlSerializer.serialize(indexDoc), "UTF-8", false)
-    }
-}
-
-bootWar {
-    archiveClassifier.set('boot')
-    from(tasks.named("publicFrontendIndexTransform")) {
-        rename 'alfio-public-frontend-index.html', 'WEB-INF/classes/alfio-public-frontend-index.html'
-    }
-    def bowerDir = "resources/bower_components"
-    def excludesFile = new File("./lib_exclude")
-    if(excludesFile.exists()) {
-        exclude(excludesFile.readLines().collect({ bowerDir + it }))
     }
 }
