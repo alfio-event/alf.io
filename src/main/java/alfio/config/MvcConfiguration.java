@@ -56,16 +56,13 @@ import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
 public class MvcConfiguration implements WebMvcConfigurer {
 
     private final Environment environment;
-    private final String frontendVersion;
     private final String alfioVersion;
     private final ObjectMapper objectMapper;
 
     public MvcConfiguration(Environment environment,
-                            @Value("${alfio.frontend.version}") String frontendVersion,
                             @Value("${alfio.version}") String alfioVersion,
                             ObjectMapper objectMapper) {
         this.environment = environment;
-        this.frontendVersion = frontendVersion;
         this.alfioVersion = alfioVersion;
         this.objectMapper = objectMapper;
     }

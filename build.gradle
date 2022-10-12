@@ -324,8 +324,7 @@ bootRun {
         "-Ddatasource.username=${project.datasourceUsername}",
         "-Ddatasource.password=${project.datasourcePassword}",
         "-Dalfio.version=${project.version}",
-        "-Dalfio.build-ts=${ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)}",
-        "-Dalfio.frontend.version="
+        "-Dalfio.build-ts=${ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)}"
     ]
     if(externalConfig.exists()) {
         opts += externalConfig.readLines()
