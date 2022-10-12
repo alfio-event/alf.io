@@ -89,15 +89,10 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(defaultCacheControl);
 
-        registry.addResourceHandler("/assets/**")
-            .addResourceLocations("/frontend-public/assets/")
-            .setCachePeriod(cacheMinutes * 60)
-            .setCacheControl(defaultCacheControl);
-
-        registry.addResourceHandler("/*.js")
+        registry.addResourceHandler("/frontend-public/**")
             .addResourceLocations("/frontend-public/")
             .setCachePeriod(cacheMinutes * 60)
-            .setCacheControl(defaultCacheControl);
+            .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
 
     }
 
