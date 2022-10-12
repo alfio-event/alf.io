@@ -90,7 +90,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .setCacheControl(defaultCacheControl);
 
         registry.addResourceHandler("/frontend-public/**")
-            .addResourceLocations("/frontend-public/")
+            .addResourceLocations("/alfio-public-frontend/")
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
 

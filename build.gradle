@@ -403,7 +403,9 @@ release {
 bootWar {
     dependsOn publicFrontendIndexTransform
     archiveClassifier.set('boot')
-    from(tasks.named("publicFrontendBuild"))
+    from(tasks.named("publicFrontendBuild")) {
+        into 'WEB-INF/classes/'
+    }
     from(tasks.named("publicFrontendIndexTransform")) {
         rename 'alfio-public-frontend-index.html', 'WEB-INF/classes/alfio-public-frontend-index.html'
     }
@@ -446,7 +448,7 @@ abstract class PublicFrontendIndexTransformTask extends org.gradle.api.DefaultTa
             it.setAttribute("src", basePath + it.getAttribute("src"))
         })
 
-        NodeMatcher cssNodes = Selector.select().element("link").attrValEq("rel", "stylesheet").toMatcher();
+        NodeMatcher cssNodes = Selector.select().element("link").attrValEq("rel", "stylesheet").toMatcher()
         indexDoc.getAllNodesMatching(cssNodes).stream().forEach({
             it.setAttribute("href", basePath + it.getAttribute("href"))
         })
