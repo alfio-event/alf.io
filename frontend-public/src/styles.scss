@@ -187,9 +187,7 @@ label.radio-inline {
 /* end markdown styling */
 
 .ng-select.form-control {
-    padding-top: 0;
-    padding-bottom: 0;
-    padding-left: 0;
+  padding: 0;
 }
 
 .ng-select.ng-select-focused.form-control {
@@ -198,6 +196,22 @@ label.radio-inline {
     border-color: #80bdff;
     outline: 0;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.ng-select .ng-arrow-wrapper {
+
+  font-weight: $form-select-font-weight;
+  line-height: $form-select-line-height;
+  color: $form-select-color;
+  background-color: $form-select-bg;
+  background-image: escape-svg($form-select-indicator);
+  background-repeat: no-repeat;
+  background-position: $form-select-bg-position;
+  background-size: $form-select-bg-size;
+
+  .ng-arrow {
+    border: 0;
+  }
 }
 
 .ng-select.form-control .ng-select-container {

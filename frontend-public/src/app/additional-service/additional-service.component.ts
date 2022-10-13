@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { AdditionalService } from '../model/additional-service';
 import { TranslateService } from '@ngx-translate/core';
-import { FormGroup, FormArray, FormBuilder } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormArray, UntypedFormBuilder } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Event } from '../model/event';
 
@@ -16,9 +16,9 @@ export class AdditionalServiceComponent implements OnInit, OnDestroy {
   additionalService: AdditionalService;
 
   @Input()
-  form: FormGroup;
+  form: UntypedFormGroup;
 
-  additionalServiceFormGroup: FormGroup;
+  additionalServiceFormGroup: UntypedFormGroup;
 
   @Input()
   event: Event;
@@ -27,11 +27,11 @@ export class AdditionalServiceComponent implements OnInit, OnDestroy {
 
   private formSub: Subscription;
 
-  constructor(public translate: TranslateService, private formBuilder: FormBuilder) { }
+  constructor(public translate: TranslateService, private formBuilder: UntypedFormBuilder) { }
 
   public ngOnInit(): void {
 
-    const fa = this.form.get('additionalService') as FormArray;
+    const fa = this.form.get('additionalService') as UntypedFormArray;
 
     if (this.additionalService.fixPrice) {
       this.additionalServiceFormGroup = this.formBuilder.group({additionalServiceId: this.additionalService.id, quantity: null});

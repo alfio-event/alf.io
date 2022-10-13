@@ -5,7 +5,7 @@
     </header>
     <main class="mt-5">
       <div class="alert d-flex align-items-center justify-content-center" [ngClass]="{'alert-info': eventStartsInTheFuture, 'alert-warning': eventRunning || eventEnded}">
-        <div class="mr-5">
+        <div class="me-5">
           <fa-icon size="2x" [icon]="eventStartsInTheFuture ? ['far', 'clock'] : ['fas', 'exclamation-triangle']" a11yRole="presentation"></fa-icon>
         </div>
         <div>
@@ -28,7 +28,7 @@
       <div class="row justify-content-center mt-5" *ngIf="!eventEnded">
         <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2">
           <a [attr.href]="'/event/' + event.shortName + '/ticket/' + ticket.uuid + '/check-in/' + checkInCode" class="btn btn-default btn-block">
-            <fa-icon [icon]="['fas', 'redo-alt']" a11yRole="presentation"></fa-icon> <span class="ml-2">{{ 'online.check-in.waiting-room.button' | translate }}</span>
+            <fa-icon [icon]="['fas', 'redo-alt']" a11yRole="presentation"></fa-icon> <span class="ms-2">{{ 'online.check-in.waiting-room.button' | translate }}</span>
           </a>
         </div>
       </div>

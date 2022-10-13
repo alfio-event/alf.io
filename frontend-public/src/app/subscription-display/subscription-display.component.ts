@@ -3,13 +3,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SubscriptionInfo } from '../model/subscription';
 import { AnalyticsService } from '../shared/analytics.service';
 import { InfoService } from '../shared/info.service';
-import { getLocalizedContent, SubscriptionService } from '../shared/subscription.service';
+import { SubscriptionService } from '../shared/subscription.service';
 import { zip } from 'rxjs';
 import {TranslateService} from '@ngx-translate/core';
-import {isDifferentTimeZone} from '../shared/event.service';
 import {I18nService} from '../shared/i18n.service';
-import {getErrorObject, handleServerSideValidationError} from '../shared/validation-helper';
-import {ErrorDescriptor, ValidatedResponse} from '../model/validated-response';
+import {getErrorObject} from '../shared/validation-helper';
+import {ErrorDescriptor} from '../model/validated-response';
 import {FeedbackService} from '../shared/feedback/feedback.service';
 
 @Component({

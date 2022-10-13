@@ -20,24 +20,22 @@
       <div *ngFor="let err of globalErrors"><strong>{{err.code | translate: err.arguments}}</strong></div>
     </div>
 
-    <div class="row">
+    <div class="row g-2">
       <div class="col-12 col-sm-6">
         <div class="form-group">
-          <label for="first-name">{{'common.first-name'|translate}}{{' '}}*</label>
+          <label class="form-label" for="first-name">{{'common.first-name'|translate}}{{' '}}*</label>
           <input id="first-name" class="form-control" formControlName="firstName" aria-required="true" type="text" #contactFirstName autocomplete="fname" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('firstName', contactFirstName.value)">
         </div>
       </div>
       <div class="col-12 col-sm-6">
         <div class="form-group">
-          <label for="last-name">{{'common.last-name'|translate}}{{' '}}*</label>
+          <label class="form-label" for="last-name">{{'common.last-name'|translate}}{{' '}}*</label>
           <input id="last-name" class="form-control" formControlName="lastName" aria-required="true" type="text" #contactLastName autocomplete="lname" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('lastName', contactLastName.value)">
         </div>
       </div>
-    </div>
-    <div class="row">
       <div class="col-12">
         <div class="form-group">
-            <label for="email">{{'common.email'|translate}}{{' '}}*</label>
+            <label class="form-label" for="email">{{'common.email'|translate}}{{' '}}*</label>
             <input id="email" class="form-control" formControlName="email" aria-required="true" type="email" #contactLastEmail autocomplete="email" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('email', contactLastEmail.value)">
         </div>
       </div>
@@ -49,9 +47,9 @@
       <app-invoice-form [form]="contactAndTicketsForm" [purchaseContext]="purchaseContext"></app-invoice-form>
     </div>
     <div *ngIf="!reservationInfo.orderSummary.free && !purchaseContext.invoicingConfiguration.onlyInvoice && purchaseContext.invoicingConfiguration.invoiceAllowed" class="mb-4 mt-4">
-      <div class="custom-control custom-checkbox">
-        <input class="custom-control-input" type="checkbox" formControlName="invoiceRequested" (change)="handleInvoiceRequestedChange()" id="invoiceRequested">
-        <label for="invoiceRequested" class="custom-control-label">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" formControlName="invoiceRequested" (change)="handleInvoiceRequestedChange()" id="invoiceRequested">
+        <label for="invoiceRequested" class="form-check-label">
           {{' '}}<span translate="reservation-page.i-need-an-invoice"></span>
         </label>
       </div>
@@ -63,9 +61,9 @@
     <ng-container *ngIf="purchaseContextType === 'event'">
       <h2 translate="reservation-page.attendees"></h2>
 
-      <div class="custom-control custom-checkbox wMarginBottom" *ngIf="!purchaseContext.assignmentConfiguration.forceAssignment && ticketCounts > 1 && !reservationInfo.containsCategoriesLinkedToGroups">
-        <input class="custom-control-input" type="checkbox" formControlName="postponeAssignment" id="postpone-assignment" value="true">
-        <label class="custom-control-label" for="postpone-assignment">{{' '}}{{'reservation-page.postpone-assignment'|translate}}</label>
+      <div class="form-check wMarginBottom" *ngIf="!purchaseContext.assignmentConfiguration.forceAssignment && ticketCounts > 1 && !reservationInfo.containsCategoriesLinkedToGroups">
+        <input class="form-check-input" type="checkbox" formControlName="postponeAssignment" id="postpone-assignment" value="true">
+        <label class="form-check-label" for="postpone-assignment">{{' '}}{{'reservation-page.postpone-assignment'|translate}}</label>
       </div>
 
       <ng-container *ngIf="!contactAndTicketsForm.value.postponeAssignment">
@@ -95,29 +93,30 @@
       </ng-container>
     </ng-container>
     <ng-container *ngIf="purchaseContextType === 'subscription'">
-      <div class="custom-control custom-checkbox mb-3">
-        <input class="custom-control-input" type="checkbox" formControlName="differentSubscriptionOwner" id="show-subscription-owner" value="true">
-        <label class="custom-control-label" for="show-subscription-owner">{{' '}}{{'reservation-page.subscription.different-owner' | translate}}</label>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" formControlName="differentSubscriptionOwner" id="show-subscription-owner" value="true">
+        <label class="form-check-label" for="show-subscription-owner">{{' '}}{{'reservation-page.subscription.different-owner' | translate}}</label>
       </div>
       <div *ngIf="contactAndTicketsForm.value.differentSubscriptionOwner" [formGroup]="getSubscriptionForm()">
-        <div class="form-row">
+        <div class="row g-2">
           <div class="col-12 col-md-6">
             <div class="form-group">
-              <label for="subscription-first-name">{{'common.first-name' | translate}} *</label>
+              <label class="form-label" for="subscription-first-name">{{'common.first-name' | translate}} *</label>
               <input id="subscription-first-name" class="form-control" formControlName="firstName" type="text" appInvalidFeedback>
             </div>
           </div>
           <div class="col-12 col-md-6">
             <div class="form-group">
-              <label for="subscription-last-name">{{'common.last-name' | translate}} *</label>
+              <label class="form-label" for="subscription-last-name">{{'common.last-name' | translate}} *</label>
               <input class="form-control" id="subscription-last-name" formControlName="lastName" type="text" appInvalidFeedback>
             </div>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="subscription-email">{{'common.email' | translate}} *</label>
-          <input id="subscription-email" formControlName="email" type="email" class="form-control" appInvalidFeedback>
+          <div class="col-12">
+            <div class="form-group">
+              <label class="form-label" class="form-label" for="subscription-email">{{'common.email' | translate}} *</label>
+              <input id="subscription-email" formControlName="email" type="email" class="form-control" appInvalidFeedback>
+            </div>
+          </div>
         </div>
       </div>
     </ng-container>

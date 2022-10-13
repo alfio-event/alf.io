@@ -7,16 +7,16 @@
         <small>{{ 'my-profile.description' | translate }}</small>
       </div>
 
-      <div class="row mt-3" [formGroup]="userForm">
+      <div class="row g-2" [formGroup]="userForm">
         <div class="col-12 col-sm-6">
           <div class="form-group">
-            <label for="first-name">{{'common.first-name'|translate}}{{' '}}*</label>
+            <label class="form-label" for="first-name">{{'common.first-name'|translate}}{{' '}}*</label>
             <input id="first-name" class="form-control" formControlName="firstName" aria-required="true" type="text" autocomplete="fname" [attr.maxlength]="255" appInvalidFeedback>
           </div>
         </div>
         <div class="col-12 col-sm-6">
           <div class="form-group">
-            <label for="last-name">{{'common.last-name'|translate}}{{' '}}*</label>
+            <label class="form-label" for="last-name">{{'common.last-name'|translate}}{{' '}}*</label>
             <input id="last-name" class="form-control" formControlName="lastName" aria-required="true" type="text" autocomplete="lname" [attr.maxlength]="255" appInvalidFeedback>
           </div>
         </div>
@@ -31,7 +31,7 @@
           <h2 translate="my-profile.additional-info"></h2>
         </div>
         <div class="form-group" *ngFor="let item of additionalData | keyvalue">
-          <label [attr.for]="item.key">{{item.value.label | translateDescription}}</label>
+          <label class="form-label" [attr.for]="item.key">{{item.value.label | translateDescription}}</label>
           <input type="text" class="form-control" [attr.name]="'additional-'+item.key" [formControlName]="item.key" appInvalidFeedback>
         </div>
       </div>

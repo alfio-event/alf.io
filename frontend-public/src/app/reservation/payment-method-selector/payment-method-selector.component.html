@@ -1,18 +1,18 @@
 <div class="row" [formGroup]="overviewForm">
     <div class="col-12" [class.col-md-5]="verticalLayout" *ngIf="activePaymentsCount > 1">
         <div *ngIf="verticalLayout" class="mb-md-4">
-            <div *ngFor="let method of sortedAvailablePaymentMethods" class="custom-control custom-radio pt-3 pb-3"
+            <div *ngFor="let method of sortedAvailablePaymentMethods" class="form-check pt-3 pb-3"
                 [ngClass]="{ 'font-weight-bold border-top border-bottom': selectedPaymentMethod == method, 'text-muted border-right-md': selectedPaymentMethod != null && selectedPaymentMethod != method }">
-                <input class="custom-control-input" [attr.id]="method" type="radio" [value]="method" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" role="radiogroup" [attr.aria-labelledby]="method + '-label'">
-                <label class="custom-control-label w-100 h-100" [attr.for]="method" [id]="method + '-label'"><fa-icon [icon]="getPaymentMethodDetails(method).icon" a11yRole="presentation" class="ml-2 mr-3"></fa-icon> {{ getPaymentMethodDetails(method).labelKey | translate }}</label>
+                <input class="form-check-input" [attr.id]="method" type="radio" [value]="method" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" role="radiogroup" [attr.aria-labelledby]="method + '-label'">
+                <label class="form-check-label ms-2 w-100 h-100" [attr.for]="method" [id]="method + '-label'"><fa-icon [icon]="getPaymentMethodDetails(method).icon" a11yRole="presentation" class="ms-2 me-3"></fa-icon> {{ getPaymentMethodDetails(method).labelKey | translate }}</label>
             </div>
         </div>
-        <div class="form-row align-items-center mb-3" *ngIf="!verticalLayout">
-            <div class="col-12 col-md-auto mb-2 mb-md-0 mr-0 mr-md-3" *ngFor="let method of sortedAvailablePaymentMethods" [class.active]="selectedPaymentMethod == method">
-                <div class="custom-control custom-radio mr-sm-2">
-                    <input class="custom-control-input" [attr.id]="method" type="radio" [value]="method" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" [attr.aria-labelledby]="method + '-label'">
-                    <label class="custom-control-label w-100 h-100" [attr.for]="method" [id]="method + '-label'" [ngClass]="{ 'font-weight-bold': selectedPaymentMethod == method, 'text-muted': selectedPaymentMethod != null && selectedPaymentMethod != method }">
-                        <fa-icon [icon]="getPaymentMethodDetails(method).icon" class="ml-2 mr-3" a11yRole="presentation"></fa-icon> {{ getPaymentMethodDetails(method).labelKey | translate }}
+        <div class="row align-items-center mb-3" *ngIf="!verticalLayout">
+            <div class="col-12 col-md-auto mb-2 mb-md-0 me-0 me-md-3" *ngFor="let method of sortedAvailablePaymentMethods" [class.active]="selectedPaymentMethod == method">
+                <div class="form-check me-sm-2">
+                    <input class="form-check-input" [attr.id]="method" type="radio" [value]="method" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" [attr.aria-labelledby]="method + '-label'">
+                    <label class="form-check-label ms-2 w-100 h-100" [attr.for]="method" [id]="method + '-label'" [ngClass]="{ 'font-weight-bold': selectedPaymentMethod == method, 'text-muted': selectedPaymentMethod != null && selectedPaymentMethod != method }">
+                        <fa-icon [icon]="getPaymentMethodDetails(method).icon" class="ms-2 me-3" a11yRole="presentation"></fa-icon> {{ getPaymentMethodDetails(method).labelKey | translate }}
                     </label>
                 </div>
             </div>
@@ -20,7 +20,7 @@
     </div>
     <div class="col-12" *ngIf="activePaymentsCount == 1">
         <h4 class="mt-2">
-            <fa-icon [icon]="getPaymentMethodDetails(selectedPaymentMethod).icon" class="ml-2 mr-3" a11yRole="presentation"></fa-icon> {{ getPaymentMethodDetails(selectedPaymentMethod).labelKey | translate }}
+            <fa-icon [icon]="getPaymentMethodDetails(selectedPaymentMethod).icon" class="ms-2 me-3" a11yRole="presentation"></fa-icon> {{ getPaymentMethodDetails(selectedPaymentMethod).labelKey | translate }}
         </h4>
     </div>
 

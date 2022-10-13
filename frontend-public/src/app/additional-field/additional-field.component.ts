@@ -1,5 +1,5 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-import { FormGroup, FormArray } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormArray } from '@angular/forms';
 import { AdditionalField } from '../model/ticket';
 import { TranslateService } from '@ngx-translate/core';
 import { I18nService } from '../shared/i18n.service';
@@ -16,7 +16,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   field: AdditionalField;
 
   @Input()
-  form: FormGroup;
+  form: UntypedFormGroup;
 
   @Input()
   ticketUUID: string;
@@ -81,7 +81,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   }
 
   selectedCheckBox(index: number, value: string, checked: boolean) {
-    const fa = this.form.get(this.field.name) as FormArray;
+    const fa = this.form.get(this.field.name) as UntypedFormArray;
     fa.controls[index].setValue(checked ? value : null, {emitEvent: false, emitViewToModelChange: false});
   }
 

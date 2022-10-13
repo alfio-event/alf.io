@@ -1,5 +1,5 @@
 import {Component, Input} from '@angular/core';
-import {FormGroup} from '@angular/forms';
+import {UntypedFormGroup} from '@angular/forms';
 import {TicketCategory} from '../model/ticket-category';
 import {AdditionalService} from '../model/additional-service';
 import { BasicEventInfo } from '../model/basic-event-info';
@@ -11,7 +11,7 @@ import { BasicEventInfo } from '../model/basic-event-info';
 })
 export class ItemCardComponent {
   @Input()
-  parentFormGroup: FormGroup;
+  parentFormGroup: UntypedFormGroup;
 
   @Input()
   item: TicketCategory | AdditionalService;

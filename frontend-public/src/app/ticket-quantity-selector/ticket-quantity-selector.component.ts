@@ -1,6 +1,6 @@
 import {Component, Input, Output, EventEmitter} from '@angular/core';
 import {TicketCategory} from '../model/ticket-category';
-import {FormGroup} from '@angular/forms';
+import {UntypedFormGroup} from '@angular/forms';
 
 @Component({
   selector: 'app-ticket-quantity-selector',
@@ -9,7 +9,7 @@ import {FormGroup} from '@angular/forms';
 export class TicketQuantitySelectorComponent {
 
   @Input()
-  parentGroup: FormGroup;
+  parentGroup: UntypedFormGroup;
 
   @Input()
   category: TicketCategory;
@@ -20,7 +20,7 @@ export class TicketQuantitySelectorComponent {
   @Output()
   valueChange = new EventEmitter<number>();
 
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
 
   selectionChanged(): void {
     this.valueChange.next(this.parentGroup.get('amount').value);

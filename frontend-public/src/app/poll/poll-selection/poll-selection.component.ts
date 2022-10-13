@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormBuilder } from '@angular/forms';
+import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 import { Poll } from '../model/poll';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PollService } from '../shared/poll.service';
@@ -15,7 +15,7 @@ import { ErrorDescriptor } from '../../model/validated-response';
 })
 export class PollSelectionComponent implements OnInit {
 
-  pinForm: FormGroup;
+  pinForm: UntypedFormGroup;
   polls: Poll[];
   eventShortName: string;
   globalErrors: ErrorDescriptor[];
@@ -25,7 +25,7 @@ export class PollSelectionComponent implements OnInit {
     private router: Router,
     private pollService: PollService, 
     public translate: TranslateService,
-    private fb: FormBuilder) { }
+    private fb: UntypedFormBuilder) { }
 
   ngOnInit(): void {
     this.pinForm = this.fb.group({pin: null});

@@ -7,9 +7,9 @@
   </h4>
   <p class="mt-5 mb-5">{{ 'my-profile.delete-profile.description' | translate }}</p>
   <form [formGroup]="form" (ngSubmit)="confirm()">
-    <div class="custom-control custom-checkbox mb-4">
-      <input class="custom-control-input" id="acknowledge" type="checkbox" required name="acknowledge" formControlName="acknowledge" value="true" appInvalidFeedback [invalidFeedbackInLabel]="true">
-      <label class="custom-control-label" for="acknowledge">
+    <div class="form-check mb-4">
+      <input class="form-check-input" id="acknowledge" type="checkbox" required name="acknowledge" formControlName="acknowledge" value="true" appInvalidFeedback [invalidFeedbackInLabel]="true">
+      <label class="form-check-label" for="acknowledge">
         {{'my-profile.delete-profile.confirm' | translate}}
       </label>
     </div>

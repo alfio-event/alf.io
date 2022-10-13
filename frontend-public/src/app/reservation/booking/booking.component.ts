@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ReservationService} from '../../shared/reservation.service';
 import {ActivatedRoute, Router} from '@angular/router';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 import {TicketService} from 'src/app/shared/ticket.service';
 import {BillingDetails, ItalianEInvoicing, ReservationInfo, ReservationSubscriptionInfo, TicketsByTicketCategory} from 'src/app/model/reservation-info';
 import {Observable, of, Subject, zip} from 'rxjs';
@@ -31,7 +31,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
 
   reservationInfo: ReservationInfo;
   purchaseContext: PurchaseContext;
-  contactAndTicketsForm: FormGroup;
+  contactAndTicketsForm: UntypedFormGroup;
   private publicIdentifier: string;
   reservationId: string;
   expired: boolean;
@@ -69,7 +69,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
     private reservationService: ReservationService,
     private ticketService: TicketService,
     private purchaseContextService: PurchaseContextService,
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     private i18nService: I18nService,
     private translate: TranslateService,
     private analytics: AnalyticsService,
@@ -161,7 +161,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
       });
   }
 
-  private buildSubscriptionOwnerFormGroup(subscriptionInfos: Array<ReservationSubscriptionInfo> | undefined, user?: User): FormGroup {
+  private buildSubscriptionOwnerFormGroup(subscriptionInfos: Array<ReservationSubscriptionInfo> | undefined, user?: User): UntypedFormGroup {
     if (subscriptionInfos != null) {
       const subscriptionInfo = subscriptionInfos[0];
       return this.formBuilder.group({
@@ -174,7 +174,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
     }
   }
 
-  private buildTicketsFormGroup(ticketsByCategory: TicketsByTicketCategory[], user: User): FormGroup {
+  private buildTicketsFormGroup(ticketsByCategory: TicketsByTicketCategory[], user: User): UntypedFormGroup {
     const tickets = {};
     ticketsByCategory.forEach(t => {
       t.tickets.forEach((ticket, idx) => {
@@ -268,12 +268,12 @@ export class BookingComponent implements OnInit, AfterViewInit {
     }
   }
 
-  getTicketForm(ticket: Ticket): FormGroup {
-    return this.contactAndTicketsForm.get('tickets.' + ticket.uuid) as FormGroup;
+  getTicketForm(ticket: Ticket): UntypedFormGroup {
+    return this.contactAndTicketsForm.get('tickets.' + ticket.uuid) as UntypedFormGroup;
   }
 
-  getSubscriptionForm(): FormGroup {
-    return this.contactAndTicketsForm.get('subscriptionOwner') as FormGroup;
+  getSubscriptionForm(): UntypedFormGroup {
+    return this.contactAndTicketsForm.get('subscriptionOwner') as UntypedFormGroup;
   }
 
   copyContactInfoTo(ticket: Ticket) {

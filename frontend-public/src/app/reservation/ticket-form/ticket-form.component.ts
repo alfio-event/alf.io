@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { Ticket } from 'src/app/model/ticket';
 import { PurchaseContext } from 'src/app/model/purchase-context';
 
@@ -10,7 +10,7 @@ import { PurchaseContext } from 'src/app/model/purchase-context';
 export class TicketFormComponent implements OnInit {
 
   @Input()
-  form: FormGroup;
+  form: UntypedFormGroup;
 
   @Input()
   ticket: Ticket;
@@ -26,7 +26,7 @@ export class TicketFormComponent implements OnInit {
     }
   }
 
-  getAdditional(form: FormGroup) {
-    return form.get('additional') as FormGroup;
+  getAdditional(form: UntypedFormGroup) {
+    return form.get('additional') as UntypedFormGroup;
   }
 }

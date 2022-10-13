@@ -1,7 +1,7 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
 import { ReservationService } from '../../shared/reservation.service';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { PaymentMethod, PaymentProxy, PaymentProxyWithParameters } from 'src/app/model/event';
 import { ReservationInfo, SummaryRow } from 'src/app/model/reservation-info';
 import { PaymentProvider, SimplePaymentProvider, PaymentResult, PaymentStatusNotification } from 'src/app/payment/payment-provider';
@@ -27,7 +27,7 @@ import {SearchParams} from '../../model/search-params';
 export class OverviewComponent implements OnInit {
 
   reservationInfo: ReservationInfo;
-  overviewForm: FormGroup;
+  overviewForm: UntypedFormGroup;
   globalErrors: ErrorDescriptor[];
 
   private publicIdentifier: string;
@@ -47,13 +47,13 @@ export class OverviewComponent implements OnInit {
 
   @ViewChild('subscriptionInput')
   subscriptionInput: ElementRef<HTMLInputElement>;
-  subscriptionCodeForm: FormGroup;
+  subscriptionCodeForm: UntypedFormGroup;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private reservationService: ReservationService,
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     private i18nService: I18nService,
     private translate: TranslateService,
     private analytics: AnalyticsService,

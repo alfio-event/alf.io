@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, OnDestroy } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { I18nService } from 'src/app/shared/i18n.service';
 import { Subscription } from 'rxjs';
@@ -14,7 +14,7 @@ import {InvoicingConfiguration} from '../../model/event';
 export class InvoiceFormComponent implements OnInit, OnDestroy {
 
   @Input()
-  form: FormGroup;
+  form: UntypedFormGroup;
 
   @Input()
   purchaseContext?: PurchaseContext;

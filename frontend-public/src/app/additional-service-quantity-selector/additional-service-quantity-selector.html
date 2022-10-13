@@ -5,7 +5,7 @@
     <input type="number" min="0" step="1" class="form-control" placeholder="0" autocomplete="off" formControlName="quantity" [id]="'additional-'+additionalService.id+'-qty'">
   </div>
   <div *ngIf="additionalService.fixPrice && [null, 'OPTIONAL_MAX_AMOUNT_PER_RESERVATION', 'OPTIONAL_MAX_AMOUNT_PER_TICKET'].indexOf(additionalService.supplementPolicy) >= 0 ">
-    <select class="custom-select text-align-center" placeholder="0" autocomplete="off" formControlName="quantity" [id]="'additional-'+additionalService.id+'-qty'">
+    <select class="form-select text-align-center" placeholder="0" autocomplete="off" formControlName="quantity" [id]="'additional-'+additionalService.id+'-qty'">
       <option *ngFor="let amount of validSelectionValues" [ngValue]="amount">{{amount}}</option>
     </select>
   </div>

@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { PaymentMethod, PaymentProxyWithParameters, PaymentMethodDetails, paymentMethodDetails, PaymentProxy } from 'src/app/model/event';
 import { PaymentProvider } from 'src/app/payment/payment-provider';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { ReservationInfo } from 'src/app/model/reservation-info';
 import { PurchaseContext } from 'src/app/model/purchase-context';
 
@@ -17,7 +17,7 @@ export class PaymentMethodSelectorComponent implements OnInit {
     @Input()
     reservationInfo: ReservationInfo;
     @Input()
-    overviewForm: FormGroup;
+    overviewForm: UntypedFormGroup;
     @Output()
     selectedPaymentProvider = new EventEmitter<PaymentProvider>();
 

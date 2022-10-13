@@ -4,7 +4,7 @@ import { PollService } from '../shared/poll.service';
 import { combineLatest } from 'rxjs';
 import { PollWithOptions } from '../model/poll-with-options';
 import { TranslateService } from '@ngx-translate/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-display-poll',
@@ -19,14 +19,14 @@ export class DisplayPollComponent implements OnInit {
   pin: string;
   poll: PollWithOptions;
 
-  pollForm: FormGroup;
+  pollForm: UntypedFormGroup;
   pollSubmittedWithSuccess: boolean;
 
   constructor(
     private route: ActivatedRoute,
     public translate: TranslateService,
     private pollService: PollService,
-    private fb: FormBuilder) { }
+    private fb: UntypedFormBuilder) { }
 
   ngOnInit(): void {
 

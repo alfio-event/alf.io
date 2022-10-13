@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { PaymentMethod, PaymentProxy } from 'src/app/model/event';
 import { PaymentProvider, SimplePaymentProvider } from '../payment-provider';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-offline-payment-proxy',
@@ -19,7 +19,7 @@ export class OfflinePaymentProxyComponent implements OnChanges {
   parameters: {[key: string]: any};
 
   @Input()
-  overviewForm: FormGroup;
+  overviewForm: UntypedFormGroup;
 
   @Output()
   paymentProvider: EventEmitter<PaymentProvider> = new EventEmitter<PaymentProvider>();

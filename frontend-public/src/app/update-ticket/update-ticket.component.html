@@ -15,7 +15,7 @@
         <div class="card mt-5" [ngClass]="{'border-left-warning': !ticket.assigned}">
             <div class="card-body">
               <div class="attendees-data d-md-flex w-100 justify-content-between">
-                <h3 class="card-title flex-md-shrink-1"><fa-icon [icon]="['fas', ticket.assigned ? 'check' : 'exclamation-triangle']" size="xs" [classes]="[ ticket.assigned ? 'text-success' : 'text-warning', 'd-none', 'd-md-inline']" a11yRole="presentation"></fa-icon> <small class="ml-2 text-muted">{{categoryName}}</small></h3>
+                <h3 class="card-title flex-md-shrink-1"><fa-icon [icon]="['fas', ticket.assigned ? 'check' : 'exclamation-triangle']" size="xs" [classes]="[ ticket.assigned ? 'text-success' : 'text-warning', 'd-none', 'd-md-inline']" a11yRole="presentation"></fa-icon> <small class="ms-2 text-muted">{{categoryName}}</small></h3>
                 <h3 class="card-title flex-md-shrink-0" *ngIf="ticket.assigned">{{ticket.fullName}}</h3>
                 <h3 class="card-title text-muted" *ngIf="!ticket.assigned">{{'reservation-page-complete.ticket-not-assigned' | translate }}</h3>
               </div>
@@ -58,7 +58,7 @@
               </div>
 
               <div class="alert alert-success mt-2 mb-2 hidden alert-dismissible" role="alert" *ngIf="emailSent">
-                <button type="button" class="close" (click)="emailSent = false"><span aria-hidden="true">&times;</span><span class="sr-only" translate="reservation-page-complete.cancel"></span></button>
+                <button type="button" class="btn-close" (click)="emailSent = false"><span class="sr-only" translate="reservation-page-complete.cancel"></span></button>
                 <strong translate="email.ticket-email-sent"></strong>
               </div>
             </div>

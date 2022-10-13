@@ -9,9 +9,7 @@ import { ReservationInfo, TicketsByTicketCategory } from 'src/app/model/reservat
 import { I18nService } from 'src/app/shared/i18n.service';
 import { AnalyticsService } from 'src/app/shared/analytics.service';
 import { handleServerSideValidationError } from 'src/app/shared/validation-helper';
-import { FormGroup } from '@angular/forms';
-import { TicketCategory } from 'src/app/model/ticket-category';
-import { TryCatchStmt } from '@angular/compiler';
+import { UntypedFormGroup } from '@angular/forms';
 import {TranslateService} from '@ngx-translate/core';
 
 @Component({
@@ -29,7 +27,7 @@ export class SuccessComponent implements OnInit {
 
   reservationMailSent = false;
   sendEmailForTicketStatus: {[key: string]: boolean} = {};
-  ticketsFormControl: {[key: string]: FormGroup} = {};
+  ticketsFormControl: {[key: string]: UntypedFormGroup} = {};
   ticketsFormShow: {[key: string]: boolean} = {};
   ticketsReleaseShow: {[key: string]: boolean} = {};
 

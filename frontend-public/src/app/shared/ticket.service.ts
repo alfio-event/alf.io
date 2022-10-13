@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {from, Observable, of} from 'rxjs';
 import {TicketInfo} from '../model/ticket-info';
-import {FormBuilder, FormGroup} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
 import {AdditionalField, Ticket} from '../model/ticket';
 import {ValidatedResponse} from '../model/validated-response';
 import {TicketsByTicketCategory} from '../model/reservation-info';
@@ -27,7 +27,7 @@ export class TicketService {
 
     constructor(
         private http: HttpClient,
-        private formBuilder: FormBuilder,
+        private formBuilder: UntypedFormBuilder,
         private modalService: NgbModal) { }
 
     getTicketInfo(eventName: string, ticketIdentifier: string): Observable<TicketInfo> {
@@ -50,7 +50,7 @@ export class TicketService {
         return this.http.post<boolean>(`/api/v2/public/event/${eventName}/ticket/${ticketIdentifier}/send-ticket-by-email`, {});
     }
 
-    buildFormGroupForTicket(ticket: Ticket, user?: User): FormGroup {
+    buildFormGroupForTicket(ticket: Ticket, user?: User): UntypedFormGroup {
         return this.formBuilder.group(this.buildTicket(ticket, user));
     }
 
@@ -74,7 +74,7 @@ export class TicketService {
       return this.http.delete<boolean>(`/api/v2/public/event/${eventName}/ticket/${ticketIdentifier}`, {});
     }
 
-    private buildTicket(ticket: Ticket, user?: User): {firstName: string, lastName: string, email: string, userLanguage, additional: FormGroup} {
+    private buildTicket(ticket: Ticket, user?: User): {firstName: string, lastName: string, email: string, userLanguage, additional: UntypedFormGroup} {
       return {
           firstName: ticket.firstName || user?.firstName,
           lastName: ticket.lastName || user?.lastName,
@@ -85,7 +85,7 @@ export class TicketService {
       };
     }
 
-    private buildAdditionalFields(before: AdditionalField[], after: AdditionalField[], userLanguage: string, userData?: UserAdditionalData): FormGroup {
+    private buildAdditionalFields(before: AdditionalField[], after: AdditionalField[], userLanguage: string, userData?: UserAdditionalData): UntypedFormGroup {
       const additional = {};
       if (before) {
         this.buildSingleAdditionalField(before, additional, userLanguage, userData);

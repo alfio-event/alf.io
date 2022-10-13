@@ -1,9 +1,10 @@
-import {EMPTY, Observable, Subject, Subscriber} from 'rxjs';
-import {PaymentProvider, PaymentResult, PaymentStatusNotification} from '../payment-provider';
-import {TranslateService} from '@ngx-translate/core';
-import {ReservationInfo} from 'src/app/model/reservation-info';
-import {ReservationService} from 'src/app/shared/reservation.service';
-import {PurchaseContext} from 'src/app/model/purchase-context';
+import { Event } from 'src/app/model/event';
+import { Observable, Subscriber, Subject, EMPTY } from 'rxjs';
+import { PaymentProvider, PaymentResult, PaymentStatusNotification } from '../payment-provider';
+import { TranslateService } from '@ngx-translate/core';
+import { ReservationInfo } from 'src/app/model/reservation-info';
+import { ReservationService } from 'src/app/shared/reservation.service';
+import { PurchaseContext } from 'src/app/model/purchase-context';
 
 // global variable defined by stripe when the scripts are loaded
 declare const StripeCheckout: any;
@@ -94,12 +95,6 @@ export class StripePaymentV3 implements PaymentProvider {
     ) {
     }
 
-    private static toCountryISOCode(country: string): string {
-      // The form contains EU-VAT prefix for Greece (EL).
-      // Here we need the country ISO Code instead
-      return country === 'EL' ? 'GR' : country;
-    }
-
     get paymentMethodDeferred(): boolean {
         return false;
     }
@@ -111,12 +106,8 @@ export class StripePaymentV3 implements PaymentProvider {
             this.reservationService.initPayment(this.reservation.id).subscribe(res => {
 
                 if (res.reservationStatusChanged || res.clientSecret == null) {
-                  if (res.errorMessage != null) {
-                    subscriber.error(new PaymentResult(false, null, res.errorMessage, res.reservationStatusChanged));
-                  } else {
                     subscriber.next(new PaymentResult(false, null, null, res.reservationStatusChanged));
-                  }
-                  return;
+                    return;
                 }
 
                 const clientSecret = res.clientSecret;
@@ -173,5 +164,11 @@ export class StripePaymentV3 implements PaymentProvider {
 
     statusNotifications(): Observable<PaymentStatusNotification> {
         return this.notificationSubject.asObservable();
+    }
+
+    private static toCountryISOCode(country: string): string {
+      // The form contains EU-VAT prefix for Greece (EL).
+      // Here we need the country ISO Code instead
+      return country === 'EL' ? 'GR' : country;
     }
 }

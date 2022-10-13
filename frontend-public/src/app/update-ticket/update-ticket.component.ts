@@ -7,7 +7,7 @@ import { zip } from 'rxjs';
 import { I18nService } from '../shared/i18n.service';
 import { AnalyticsService } from '../shared/analytics.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 import { Ticket } from '../model/ticket';
 import { handleServerSideValidationError } from '../shared/validation-helper';
 import { TicketsByTicketCategory } from '../model/reservation-info';
@@ -24,7 +24,7 @@ export class UpdateTicketComponent implements OnInit {
   event: Event;
   ticketIdentifier: string;
   ticket: Ticket;
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
   categoryName: string;
   emailSent: boolean;
   ticketFormVisible: boolean;

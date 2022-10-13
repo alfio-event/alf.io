@@ -1,7 +1,7 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {EventService} from '../shared/event.service';
 import {ActivatedRoute, Router} from '@angular/router';
-import {FormArray, FormBuilder, FormGroup} from '@angular/forms';
+import {UntypedFormArray, UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
 import {ReservationService} from '../shared/reservation.service';
 import {Event as AlfioEvent} from '../model/event';
 import {TranslateService} from '@ngx-translate/core';
@@ -32,7 +32,7 @@ export class EventDisplayComponent implements OnInit {
   supplementCategories: AdditionalService[];
   donationCategories: AdditionalService[];
   //
-  reservationForm: FormGroup;
+  reservationForm: UntypedFormGroup;
   globalErrors: ErrorDescriptor[] = [];
   //
   ticketCategoryAmount: {[key: number]: number[]};
@@ -42,7 +42,7 @@ export class EventDisplayComponent implements OnInit {
   preSales: boolean;
   waitingList: boolean;
   ticketCategoriesForWaitingList: TicketCategoryForWaitingList[];
-  waitingListForm: FormGroup;
+  waitingListForm: UntypedFormGroup;
   waitingListRequestSubmitted: boolean;
   waitingListRequestResult: boolean;
   //
@@ -51,7 +51,7 @@ export class EventDisplayComponent implements OnInit {
   eventCodeError: boolean;
 
   displayPromoCodeForm: boolean;
-  promoCodeForm: FormGroup;
+  promoCodeForm: UntypedFormGroup;
   @ViewChild('promoCode')
   promoCodeElement: ElementRef<HTMLInputElement>;
   @ViewChild('tickets')
@@ -67,7 +67,7 @@ export class EventDisplayComponent implements OnInit {
     private router: Router,
     private eventService: EventService,
     private reservationService: ReservationService,
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     public translate: TranslateService,
     private i18nService: I18nService,
     private analytics: AnalyticsService) { }
@@ -145,7 +145,7 @@ export class EventDisplayComponent implements OnInit {
     }
   }
 
-  private createItems(ticketCategories: TicketCategory[]): FormGroup[] {
+  private createItems(ticketCategories: TicketCategory[]): UntypedFormGroup[] {
     return ticketCategories.map(category => this.formBuilder.group({ticketCategoryId: category.id, amount: 0}));
   }
 
@@ -242,8 +242,8 @@ export class EventDisplayComponent implements OnInit {
        && this.ticketCategories.every(tc => !tc.bounded);
   }
 
-  reservationFormItem(parent: FormGroup, counter: number): FormGroup {
-    return (parent.get('reservation') as FormArray).at(counter) as FormGroup;
+  reservationFormItem(parent: UntypedFormGroup, counter: number): UntypedFormGroup {
+    return (parent.get('reservation') as UntypedFormArray).at(counter) as UntypedFormGroup;
   }
 
   ticketsLeftCountVisibleForCategory(category: TicketCategory): boolean {

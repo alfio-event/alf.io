@@ -10,5 +10,5 @@ export class FooterLinksComponent {
     marginClass = 'mb-5';
 
     @Input()
-    linksContainer: TermsPrivacyLinksContainer;
+    linksContainer?: TermsPrivacyLinksContainer;
 }

@@ -5,7 +5,7 @@ import {TranslateService} from '@ngx-translate/core';
 import {I18nService} from '../shared/i18n.service';
 import {InvoicingConfiguration, Language} from '../model/event';
 import {zip} from 'rxjs';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 import {BookingComponent} from '../reservation/booking/booking.component';
 import {handleServerSideValidationError} from '../shared/validation-helper';
 import {ErrorDescriptor} from '../model/validated-response';
@@ -24,7 +24,7 @@ export class MyProfileComponent implements OnInit {
 
   user?: User;
   languages: Language[];
-  userForm?: FormGroup;
+  userForm?: UntypedFormGroup;
   invoicingConfiguration?: InvoicingConfiguration;
   globalErrors: ErrorDescriptor[];
   additionalData?: UserAdditionalData;
@@ -32,7 +32,7 @@ export class MyProfileComponent implements OnInit {
   constructor(private userService: UserService,
               private translateService: TranslateService,
               private i18nService: I18nService,
-              private formBuilder: FormBuilder,
+              private formBuilder: UntypedFormBuilder,
               private infoService: InfoService,
               private modalService: NgbModal,
               private feedbackService: FeedbackService) {
@@ -91,7 +91,7 @@ export class MyProfileComponent implements OnInit {
         const additionalData = user.profile?.additionalData;
         this.additionalData = additionalData;
         if (additionalData != null) {
-          const additionalInfoGroup = this.userForm.get('additionalInfo') as FormGroup;
+          const additionalInfoGroup = this.userForm.get('additionalInfo') as UntypedFormGroup;
           for (const additionalOptionKey of Object.keys(additionalData)) {
             additionalInfoGroup.addControl(additionalOptionKey, this.formBuilder.control(additionalData[additionalOptionKey].values[0]));
           }

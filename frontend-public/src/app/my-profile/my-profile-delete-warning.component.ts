@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
 
 @Component({
   selector: 'app-my-profile-delete-warning',
@@ -8,9 +8,9 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 })
 export class MyProfileDeleteWarningComponent {
 
-  form: FormGroup;
+  form: UntypedFormGroup;
 
-  constructor(public activeModal: NgbActiveModal, builder: FormBuilder) {
+  constructor(public activeModal: NgbActiveModal, builder: UntypedFormBuilder) {
     this.form = builder.group({
       acknowledge: builder.control(false, Validators.required)
     });

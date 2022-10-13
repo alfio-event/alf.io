@@ -3,8 +3,8 @@
     <tr>
       <th translate="reservation-page.category"></th>
       <th class="text-center" translate="reservation-page.amount"></th>
-      <th class="text-right" translate="reservation-page.price"></th>
-      <th class="text-right" translate="reservation-page.subtotal"></th>
+      <th class="text-end" translate="reservation-page.price"></th>
+      <th class="text-end" translate="reservation-page.subtotal"></th>
     </tr>
   </thead>
   <tbody>
@@ -26,22 +26,22 @@
         <span *ngIf="summaryRow.type !== 'DYNAMIC_DISCOUNT' && summaryRow.type !== 'APPLIED_SUBSCRIPTION' && summaryRow.type !== 'TAX_DETAIL' ">{{summaryRow.name}}</span>
       </td>
       <td class="text-center"><ng-container *ngIf="summaryRow.type !== 'TAX_DETAIL'">{{summaryRow.amount}}</ng-container></td>
-      <td class="text-right">{{summaryRow.price}}</td>
-      <td class="text-right"><app-price-tag [purchaseContext]="purchaseContext" [formattedPrice]="summaryRow.subTotal"></app-price-tag></td>
+      <td class="text-end">{{summaryRow.price}}</td>
+      <td class="text-end"><app-price-tag [purchaseContext]="purchaseContext" [formattedPrice]="summaryRow.subTotal"></app-price-tag></td>
     </tr>
   </tbody>
   <tfoot>
       <tr *ngIf="!reservationInfo.orderSummary.free && reservationInfo.orderSummary.displayVat && !purchaseContext.vatIncluded" class="bg-light">
           <td colspan="3">{{'reservation-page.vat'|translate:{'0': purchaseContext.vat, '1': ('common.vat' | translate)} }}</td>
-          <td class="text-right"><app-price-tag [purchaseContext]="purchaseContext" [formattedPrice]="reservationInfo.orderSummary.totalVAT"></app-price-tag></td>
+          <td class="text-end"><app-price-tag [purchaseContext]="purchaseContext" [formattedPrice]="reservationInfo.orderSummary.totalVAT"></app-price-tag></td>
       </tr>
       <tr>
         <th colspan="3" translate="reservation-page.total"><span *ngIf="displaySplitPaymentNote"> *</span></th>
-        <td class="text-right"><strong><app-price-tag [purchaseContext]="purchaseContext" [formattedPrice]="reservationInfo.orderSummary.totalPrice"></app-price-tag></strong></td>
+        <td class="text-end"><strong><app-price-tag [purchaseContext]="purchaseContext" [formattedPrice]="reservationInfo.orderSummary.totalPrice"></app-price-tag></strong></td>
       </tr>
       <tr *ngIf="!reservationInfo.orderSummary.free && reservationInfo.orderSummary.displayVat && purchaseContext.vatIncluded">
           <td colspan="3">{{'reservation-page.vat-included'|translate: {'0': purchaseContext.vat, '1': ('common.vat' | translate)} }}</td>
-          <td class="text-right"><app-price-tag [purchaseContext]="purchaseContext" [formattedPrice]="reservationInfo.orderSummary.totalVAT"></app-price-tag></td>
+          <td class="text-end"><app-price-tag [purchaseContext]="purchaseContext" [formattedPrice]="reservationInfo.orderSummary.totalVAT"></app-price-tag></td>
       </tr>
       <tr *ngIf="!reservationInfo.orderSummary.free && !reservationInfo.orderSummary.displayVat">
           <td colspan="4">{{'invoice.vat-voided'|translate: {'0': ('common.vat' | translate)} }}</td>

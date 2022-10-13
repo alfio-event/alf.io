@@ -154,7 +154,6 @@
       }
     }
   },
-  "defaultProject": "alfio-public-frontend",
   "schematics": {
     "@schematics/angular:component": {
       "style": "scss"

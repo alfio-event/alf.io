@@ -27,7 +27,7 @@
           <div class="page-header d-block d-md-none"><h2 translate="reservation-page.invoice-details"></h2></div>
           <div class="row">
             <div class="col-12" *ngIf="reservationInfo.invoiceRequested">
-              <address class="text-left">
+              <address class="text-start">
                 <div class="preformatted">{{reservationInfo.billingAddress}}</div>
                 <div *ngIf="hasTaxId">{{'invoice.vat' |translate: {'0': ('common.vat' | translate)} }} {{reservationInfo.billingDetails.taxId}}</div>
                 <hr *ngIf="enabledItalyEInvoicing"/>
@@ -62,7 +62,7 @@
       </div>
 
       <div *ngIf="displaySubscriptionForm" class="mt-2">
-        <div class="form-row">
+        <div class="row">
           <div class="col-12 col-md-6">
             <div class="form-group" [formGroup]="subscriptionCodeForm">
               <label for="subscription-input-code" class="sr-only">{{'reservation-page.overview.insert-subscription-code' | translate }}</label>
@@ -72,7 +72,7 @@
           </div>
           <div class="col-12 col-md-6">
             <button class="btn btn-success" translate="reservation-page.overview.apply-subscription-code" type="button" (click)="applySubscription()"></button>
-            <button class="btn btn-light ml-2" translate="reservation-page-complete.cancel" type="button" (click)="toggleSubscriptionFormVisible()"></button>
+            <button class="btn btn-light ms-2" translate="reservation-page-complete.cancel" type="button" (click)="toggleSubscriptionFormVisible()"></button>
           </div>
         </div>
       </div>
@@ -105,15 +105,15 @@
       <app-recaptcha [apiKey]="purchaseContext.captchaConfiguration.recaptchaApiKey" (recaptchaResponse)="handleRecaptchaResponse($event)"></app-recaptcha>
     </div>
 
-    <div class="custom-control custom-checkbox" *ngIf="purchaseContext.privacyPolicyUrl" [class.invisible]="submitting">
-        <input class="custom-control-input" id="privacyPolicyAccepted" formControlName="privacyPolicyAccepted" type="checkbox" aria-labelledby="privacy-policy-label">{{' '}} <!-- ugly, see  https://github.com/angular/angular/issues/21049 -->
-        <label for="privacyPolicyAccepted" class="custom-control-label" id="privacy-policy-label">
+    <div class="form-check" *ngIf="purchaseContext.privacyPolicyUrl" [class.invisible]="submitting">
+        <input class="form-check-input" id="privacyPolicyAccepted" formControlName="privacyPolicyAccepted" type="checkbox" aria-labelledby="privacy-policy-label">{{' '}} <!-- ugly, see  https://github.com/angular/angular/issues/21049 -->
+        <label for="privacyPolicyAccepted" class="form-check-label" id="privacy-policy-label">
           <span [innerHTML]="'reservation-page.privacy.prefix' | translate"></span>{{' '}}<a [attr.href]="purchaseContext.privacyPolicyUrl" target="_blank" rel="noopener" translate="reservation-page.privacy.link.text"></a>{{' '}}<span translate="reservation-page.privacy.suffix"></span>
         </label>
     </div>
-    <div class="custom-control custom-checkbox" [class.invisible]="submitting">
-        <input class="custom-control-input" id="termsAndConditionsAccepted" formControlName="termAndConditionsAccepted" type="checkbox" aria-labelledby="terms-conditions-label">
-        <label class="custom-control-label" for="termsAndConditionsAccepted" id="terms-conditions-label">
+    <div class="form-check" [class.invisible]="submitting">
+        <input class="form-check-input" id="termsAndConditionsAccepted" formControlName="termAndConditionsAccepted" type="checkbox" aria-labelledby="terms-conditions-label">
+        <label class="form-check-label" for="termsAndConditionsAccepted" id="terms-conditions-label">
           {{' '}}<span [innerHTML]="'reservation-page.tc.prefix' | translate"></span>{{' '}}<a [attr.href]="purchaseContext.termsAndConditionsUrl" target="_blank" rel="noopener" translate="reservation-page.tc.link.text"></a>{{' '}}<span translate="reservation-page.tc.suffix"></span>
         </label>
     </div>

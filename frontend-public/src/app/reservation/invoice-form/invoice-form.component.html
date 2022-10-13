@@ -2,135 +2,112 @@
     <h2 translate="reservation-page.invoice-details"></h2>
 </div>
 
-
 <div [formGroup]="form">
-
-  <div class="row">
+  <div class="row g-2">
     <div class="col-12">
       <div class="form-group">
         <label translate="invoice.type" id="invoiceTypeLabel"></label>
         <div>
-          <div class="custom-control custom-radio custom-control-inline">
-              <input class="custom-control-input" type="radio" role="radiogroup" aria-labelledby="invoiceTypeLabel" formControlName="addCompanyBillingDetails" [value]="false" id="invoiceTypePrivate" >
-              <label class="custom-control-label radio-inline" for="invoiceTypePrivate">{{' '}}{{'invoice.type.private' | translate}}</label>
+          <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" role="radiogroup" aria-labelledby="invoiceTypeLabel" formControlName="addCompanyBillingDetails" [value]="false" id="invoiceTypePrivate" >
+              <label class="form-check-label radio-inline" for="invoiceTypePrivate">{{' '}}{{'invoice.type.private' | translate}}</label>
           </div>
-          <div class="custom-control custom-radio custom-control-inline">
-              <input class="custom-control-input" type="radio" role="radiogroup" aria-labelledby="invoiceTypeLabel" formControlName="addCompanyBillingDetails" [value]="true" id="invoiceTypeBusiness">
-              <label class="custom-control-label radio-inline" for="invoiceTypeBusiness">{{' '}}{{'invoice.type.business' | translate}}</label>
+          <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" role="radiogroup" aria-labelledby="invoiceTypeLabel" formControlName="addCompanyBillingDetails" [value]="true" id="invoiceTypeBusiness">
+              <label class="form-check-label radio-inline" for="invoiceTypeBusiness">{{' '}}{{'invoice.type.business' | translate}}</label>
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="row" *ngIf="invoiceBusiness">
-      <div class="col-12">
-          <div class="form-group">
-              <label for="billingAddressCompany" class="control-label" translate="reservation-page-complete.company"></label>
-              <input id="billingAddressCompany" formControlName="billingAddressCompany" class="form-control" type="text" [attr.maxlength]="255" appInvalidFeedback>
-          </div>
-      </div>
-  </div>
-
-  <div class="row">
-      <div class="col-12">
-          <div class="form-group">
-              <label for="billingAddressLine1" class="control-label">{{'reservation-page.address-line-1' | translate}}{{' *'}}</label>
-              <input id="billingAddressLine1" aria-required="true" formControlName="billingAddressLine1" class="form-control" type="text" required [attr.maxlength]="255" appInvalidFeedback>
-          </div>
-      </div>
-  </div>
-
-  <div class="row">
-      <div class="col-12">
-          <div class="form-group">
-              <label for="billingAddressLine2" class="control-label">{{'reservation-page.address-line-2' | translate}}</label>
-              <input id="billingAddressLine2" formControlName="billingAddressLine2" class="form-control" type="text" [attr.maxlength]="255" appInvalidFeedback>
-          </div>
-      </div>
-  </div>
-
-  <div class="row">
-      <div class="col-12 col-md-3">
-          <div class="form-group">
-              <label for="billingAddressZip" class="control-label">{{'reservation-page.zip-postal-code' | translate}}{{' *'}}</label>
-              <input id="billingAddressZip" aria-required="true" formControlName="billingAddressZip" class="form-control" type="text" required [attr.maxlength]="50" appInvalidFeedback>
-          </div>
-      </div>
-      <div class="col-12 col-md-6">
-          <div class="form-group">
-              <label for="billingAddressCity" class="control-label">{{'reservation-page.city' | translate}}{{' *'}}</label>
-              <input id="billingAddressCity" aria-required="true" formControlName="billingAddressCity" class="form-control" type="text" required  [attr.maxlength]="255" appInvalidFeedback>
-          </div>
-      </div>
-      <div class="col-12 col-md-3">
+    <div class="col-12" *ngIf="invoiceBusiness">
         <div class="form-group">
-          <label for="billingAddressState">{{'reservation-page.state'|translate}}<span *ngIf="enabledItalyEInvoicing"> *</span></label>
-          <input id="billingAddressState" [attr.required]="enabledItalyEInvoicing" [attr.aria-required]="enabledItalyEInvoicing" type="text" formControlName="billingAddressState" class="form-control" appInvalidFeedback>
+            <label for="billingAddressCompany" class="form-label" translate="reservation-page-complete.company"></label>
+            <input id="billingAddressCompany" formControlName="billingAddressCompany" class="form-control" type="text" [attr.maxlength]="255" appInvalidFeedback>
         </div>
-      </div>
-  </div>
-
-  <div class="row">
-      <div class="col-12" [ngClass]="{'col-md-6': customerReferenceEnabled && invoiceBusiness}">
-          <div class="form-group">
-              <label for="vatCountry" id="vatCountryLabel" class="control-label">{{'reservation-page-complete.country' | translate}}{{' *'}}</label>
-              <ng-select aria-required="true" placeholder="{{'reservation-page.country.select'|translate}}"
-                        [items]="countries" bindLabel="name" bindValue="isoCode" [selectOnTab]="true"
-                        formControlName="vatCountryCode" class="form-control field-required"
-                        [searchFn]="searchCountry" required appInvalidFeedback
-                        labelForId="vatCountry" aria-labelledby="vatCountryLabel" [inputAttrs]="{autocomplete: 'nope'}">
-                  <ng-template ng-option-tmp let-item="item">{{item.name}} ({{item.isoCode}})</ng-template>
-                  <ng-template ng-label-tmp let-item="item">{{item.name}} ({{item.isoCode}})</ng-template>
-                  <ng-template ng-notfound-tmp let-searchTerm="searchTerm"></ng-template>
-              </ng-select>
-          </div>
-      </div>
-
-      <div *ngIf="customerReferenceEnabled && invoiceBusiness" class="col-12 col-md-6">
-          <div class="form-group">
-            <label for="customerReference" class="control-label" translate="common.customer-reference"></label>
-            <input type="text" formControlName="customerReference" id="customerReference" class="form-control" [attr.maxlength]="50" appInvalidFeedback>
-          </div>
-      </div>
-  </div>
-
-  <div class="row" *ngIf="invoiceBusiness">
-    <div [ngClass]="{'col-md-12': vatNumberStrictlyRequired, 'col-md-6': !vatNumberStrictlyRequired}">
+    </div>
+    <div class="col-12">
         <div class="form-group">
-            <label for="vatNr">{{'invoice.vat' |translate: {'0': ('common.vat' | translate)} }}<span *ngIf="taxIdIsRequired"> *</span></label>
-            <div class="input-group">
-                <div class="input-group-prepend" *ngIf="form.value.vatCountryCode"><span class="input-group-text">{{form.value.vatCountryCode}}</span></div>
-                <input id="vatNr" type="text" formControlName="vatNr" class="form-control" appInvalidFeedback [attr.aria-required]="taxIdIsRequired">
-            </div>
+            <label for="billingAddressLine1" class="form-label">{{'reservation-page.address-line-1' | translate}}{{' *'}}</label>
+            <input id="billingAddressLine1" aria-required="true" formControlName="billingAddressLine1" class="form-control" type="text" required [attr.maxlength]="255" appInvalidFeedback>
         </div>
     </div>
-    <div class="col-md-6" *ngIf="!vatNumberStrictlyRequired">
-        <div class="custom-control custom-checkbox checkbox-in-form-group">
-            <input class="custom-control-input" type="checkbox" formControlName="skipVatNr" [value]="true" id="skip-vat-nr" appInvalidFeedback>
-            <label class="custom-control-label" for="skip-vat-nr">{{' '}}{{'reservation-page.skipVatNr' | translate: {'0': ('common.vat' | translate)} }}</label>
+    <div class="col-12">
+        <div class="form-group">
+            <label for="billingAddressLine2" class="form-label">{{'reservation-page.address-line-2' | translate}}</label>
+            <input id="billingAddressLine2" formControlName="billingAddressLine2" class="form-control" type="text" [attr.maxlength]="255" appInvalidFeedback>
         </div>
     </div>
-  </div>
+    <div class="col-12 col-md-3">
+        <div class="form-group">
+            <label for="billingAddressZip" class="form-label">{{'reservation-page.zip-postal-code' | translate}}{{' *'}}</label>
+            <input id="billingAddressZip" aria-required="true" formControlName="billingAddressZip" class="form-control" type="text" required [attr.maxlength]="50" appInvalidFeedback>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="form-group">
+            <label for="billingAddressCity" class="form-label">{{'reservation-page.city' | translate}}{{' *'}}</label>
+            <input id="billingAddressCity" aria-required="true" formControlName="billingAddressCity" class="form-control" type="text" required  [attr.maxlength]="255" appInvalidFeedback>
+        </div>
+    </div>
+    <div class="col-12 col-md-3">
+      <div class="form-group">
+        <label class="form-label" for="billingAddressState">{{'reservation-page.state'|translate}}<span *ngIf="enabledItalyEInvoicing"> *</span></label>
+        <input id="billingAddressState" [attr.required]="enabledItalyEInvoicing" [attr.aria-required]="enabledItalyEInvoicing" type="text" formControlName="billingAddressState" class="form-control" appInvalidFeedback>
+      </div>
+    </div>
+    <div class="col-12" [ngClass]="{'col-md-6': customerReferenceEnabled && invoiceBusiness}">
+        <div class="form-group">
+            <label for="vatCountry" id="vatCountryLabel" class="form-label">{{'reservation-page-complete.country' | translate}}{{' *'}}</label>
+            <ng-select aria-required="true" placeholder="{{'reservation-page.country.select'|translate}}"
+                      [items]="countries" bindLabel="name" bindValue="isoCode" [selectOnTab]="true"
+                      formControlName="vatCountryCode" class="form-control field-required"
+                      [searchFn]="searchCountry" required appInvalidFeedback
+                      labelForId="vatCountry" aria-labelledby="vatCountryLabel" [inputAttrs]="{autocomplete: 'nope'}">
+                <ng-template ng-option-tmp let-item="item">{{item.name}} ({{item.isoCode}})</ng-template>
+                <ng-template ng-label-tmp let-item="item">{{item.name}} ({{item.isoCode}})</ng-template>
+                <ng-template ng-notfound-tmp let-searchTerm="searchTerm"></ng-template>
+            </ng-select>
+        </div>
+    </div>
 
+    <div *ngIf="customerReferenceEnabled && invoiceBusiness" class="col-12 col-md-6">
+        <div class="form-group">
+          <label for="customerReference" class="form-label" translate="common.customer-reference"></label>
+          <input type="text" formControlName="customerReference" id="customerReference" class="form-control" [attr.maxlength]="50" appInvalidFeedback>
+        </div>
+    </div>
 
-  <div id="italyEInvoicingTaxId" *ngIf="enabledItalyEInvoicing && countrySelected">
-    <div class="row">
-      <div class="col-12">
+    <ng-container *ngIf="invoiceBusiness">
+      <div [ngClass]="{'col-md-12': vatNumberStrictlyRequired, 'col-md-6': !vatNumberStrictlyRequired}">
           <div class="form-group">
-              <label for="italyEInvoicingFiscalCode">{{ (italyEInvoicingFormDisplayed ? 'invoice-fields.fiscalCode' : 'invoice-fields.tax-id') | translate}}{{' *'}}</label>
+              <label class="form-label" for="vatNr">{{'invoice.vat' |translate: {'0': ('common.vat' | translate)} }}<span *ngIf="taxIdIsRequired"> *</span></label>
+              <div class="input-group">
+                  <div class="input-group-prepend" *ngIf="form.value.vatCountryCode"><span class="input-group-text">{{form.value.vatCountryCode}}</span></div>
+                  <input id="vatNr" type="text" formControlName="vatNr" class="form-control" appInvalidFeedback [attr.aria-required]="taxIdIsRequired">
+              </div>
+          </div>
+      </div>
+      <div class="col-md-6" *ngIf="!vatNumberStrictlyRequired">
+          <div class="form-check checkbox-in-form-group">
+              <input class="form-check-input" type="checkbox" formControlName="skipVatNr" [value]="true" id="skip-vat-nr" appInvalidFeedback>
+              <label class="form-check-label" for="skip-vat-nr">{{' '}}{{'reservation-page.skipVatNr' | translate: {'0': ('common.vat' | translate)} }}</label>
+          </div>
+      </div>
+    </ng-container>
+    <ng-container *ngIf="enabledItalyEInvoicing && countrySelected">
+      <div class="col-12" id="italyEInvoicingTaxId">
+          <div class="form-group">
+              <label class="form-label" for="italyEInvoicingFiscalCode">{{ (italyEInvoicingFormDisplayed ? 'invoice-fields.fiscalCode' : 'invoice-fields.tax-id') | translate}}{{' *'}}</label>
               <input id="italyEInvoicingFiscalCode" required aria-required="true" type="text" formControlName="italyEInvoicingFiscalCode" class="form-control" appInvalidFeedback>
           </div>
       </div>
-    </div>
-  </div>
+    </ng-container>
 
-  <div id="italyEInvoicing" *ngIf="italyEInvoicingFormDisplayed">
-    <div class="row">
+    <ng-container *ngIf="italyEInvoicingFormDisplayed">
       <div class="col-12 col-md-6">
         <div class="form-group">
-          <label for="italyEInvoicingReferenceType">{{'invoice-fields.addresseeItalyEInvoice' | translate}}{{' *'}}</label>
-          <select class="custom-select" id="italyEInvoicingReferenceType" required aria-required="true" formControlName="italyEInvoicingReferenceType">
+          <label class="form-label" for="italyEInvoicingReferenceType">{{'invoice-fields.addresseeItalyEInvoice' | translate}}{{' *'}}</label>
+          <select class="form-select" id="italyEInvoicingReferenceType" required aria-required="true" formControlName="italyEInvoicingReferenceType">
             <option value="ADDRESSEE_CODE" translate="invoice-fields.addressee-code"></option>
             <option value="PEC" translate="invoice-fields.pec"></option>
             <option value="NONE" translate="invoice.fields.neither"></option>
@@ -139,24 +116,24 @@
       </div>
       <div class="col-12 col-md-6" *ngIf="addresseeCodeSelected || pecSelected">
         <div class="form-group" *ngIf="addresseeCodeSelected">
-          <label for="italyEInvoicingReferenceAddresseeCode">{{'invoice-fields.addressee-code'|translate}}{{' *'}}</label>
+          <label class="form-label" for="italyEInvoicingReferenceAddresseeCode">{{'invoice-fields.addressee-code'|translate}}{{' *'}}</label>
           <input id="italyEInvoicingReferenceAddresseeCode" required aria-required="true" type="text" [attr.maxlength]="7" class="form-control" formControlName="italyEInvoicingReferenceAddresseeCode" appInvalidFeedback>
         </div>
         <div class="form-group" *ngIf="pecSelected">
-          <label for="italyEInvoicingReferencePEC">{{'invoice-fields.pec' | translate}}{{' *'}}</label>
+          <label class="form-label" for="italyEInvoicingReferencePEC">{{'invoice-fields.pec' | translate}}{{' *'}}</label>
           <input id="italyEInvoicingReferencePEC" type="email" required aria-required="true" class="form-control" formControlName="italyEInvoicingReferencePEC" appInvalidFeedback>
         </div>
       </div>
-    </div>
-    <div class="row mt-2" *ngIf="invoiceBusiness">
-      <div class="col-12">
-        <div class="custom-control custom-checkbox">
-          <input class="custom-control-input" id="italyEInvoicingSplitPayment" formControlName="italyEInvoicingSplitPayment" type="checkbox" aria-labelledby="split-payment-label">
-          <label class="custom-control-label" for="italyEInvoicingSplitPayment" id="split-payment-label">{{'invoice-fields.split-payment' | translate}}</label>
+
+      <ng-container *ngIf="invoiceBusiness">
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" id="italyEInvoicingSplitPayment" formControlName="italyEInvoicingSplitPayment" type="checkbox" aria-labelledby="split-payment-label">
+            <label class="form-check-label" for="italyEInvoicingSplitPayment" id="split-payment-label">{{'invoice-fields.split-payment' | translate}}</label>
+          </div>
         </div>
-      </div>
-    </div>
+      </ng-container>
+    </ng-container>
+
   </div>
-
-
 </div>

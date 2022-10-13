@@ -4,7 +4,7 @@
 
 @include media-breakpoint-up(md) {
   .invoice-details {
-    padding: $table-cell-padding;
+    padding: $table-cell-padding-x;
   }
   .invoice-details h5 {
     font-weight: bold;

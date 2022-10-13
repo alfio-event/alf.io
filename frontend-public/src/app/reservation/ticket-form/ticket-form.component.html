@@ -4,36 +4,38 @@
       <app-additional-field [field]="field" [ticketUUID]="ticket.uuid" [form]="getAdditional(form)" [ticketAcquired]="ticket.acquired"></app-additional-field>
     </div>
 
-    <div class="form-row">
+    <div class="row g-2">
       <div class="col-12 col-md-6">
         <div class="form-group">
-          <label [attr.for]="ticket.uuid + '-first-name'">{{'common.first-name' | translate}} *</label>
+          <label class="form-label" [attr.for]="ticket.uuid + '-first-name'">{{'common.first-name' | translate}} *</label>
           <input [attr.id]="ticket.uuid + '-first-name'" formControlName="firstName" type="text" [ngClass]="{'form-control': ticket.locked !== true, 'form-control-plaintext': ticket.locked}" appInvalidFeedback [readonly]="ticket.locked === true">
         </div>
       </div>
       <div class="col-12 col-md-6">
         <div class="form-group">
-          <label [attr.for]="ticket.uuid + '-last-name'">{{'common.last-name' | translate}} *</label>
+          <label class="form-label" [attr.for]="ticket.uuid + '-last-name'">{{'common.last-name' | translate}} *</label>
           <input [attr.id]="ticket.uuid + '-last-name'" formControlName="lastName" type="text" [ngClass]="{'form-control': ticket.locked !== true, 'form-control-plaintext': ticket.locked}" appInvalidFeedback [readonly]="ticket.locked === true">
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="form-group">
+          <label class="form-label" [attr.for]="ticket.uuid + '-email'">{{'common.email' | translate}} *</label>
+          <input [attr.id]="ticket.uuid + '-email'" formControlName="email" type="email" [ngClass]="{'form-control': ticket.locked !== true, 'form-control-plaintext': ticket.locked}" appInvalidFeedback [readonly]="ticket.locked === true">
+        </div>
+      </div>
+      <div *ngFor="let field of ticket.ticketFieldConfigurationAfterStandard" class="col-12">
+        <app-additional-field [field]="field" [ticketUUID]="ticket.uuid" [form]="getAdditional(form)" [ticketAcquired]="ticket.acquired"></app-additional-field>
+      </div>
+      <div class="col-12">
+        <div class="form-group" *ngIf="purchaseContext && purchaseContext.contentLanguages.length > 1">
+            <label class="form-label" [attr.for]="ticket.uuid + '-userLanguage'" translate="reservation-page-complete.language"></label>
+            <select [attr.id]="ticket.uuid + '-userLanguage'" formControlName="userLanguage" class="form-select" appInvalidFeedback>
+              <option value=""></option>
+              <option *ngFor="let lang of purchaseContext.contentLanguages" [ngValue]="lang.locale">{{lang.displayLanguage}}</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="form-group">
-      <label [attr.for]="ticket.uuid + '-email'">{{'common.email' | translate}} *</label>
-      <input [attr.id]="ticket.uuid + '-email'" formControlName="email" type="email" [ngClass]="{'form-control': ticket.locked !== true, 'form-control-plaintext': ticket.locked}" appInvalidFeedback [readonly]="ticket.locked === true">
-    </div>
-
-    <div *ngFor="let field of ticket.ticketFieldConfigurationAfterStandard">
-      <app-additional-field [field]="field" [ticketUUID]="ticket.uuid" [form]="getAdditional(form)" [ticketAcquired]="ticket.acquired"></app-additional-field>
-    </div>
-
-    <div class="form-group" *ngIf="purchaseContext && purchaseContext.contentLanguages.length > 1">
-      <label [attr.for]="ticket.uuid + '-userLanguage'" translate="reservation-page-complete.language"></label>
-      <select [attr.id]="ticket.uuid + '-userLanguage'" formControlName="userLanguage" class="custom-select" appInvalidFeedback>
-        <option value=""></option>
-        <option *ngFor="let lang of purchaseContext.contentLanguages" [ngValue]="lang.locale">{{lang.displayLanguage}}</option>
-      </select>
-    </div>
-  </div>
 </div>

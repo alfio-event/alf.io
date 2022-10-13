@@ -1,5 +1,5 @@
 import { Directive, OnInit, ElementRef, OnDestroy, Input, Optional } from '@angular/core';
-import { FormGroup, AbstractControl, FormControlName, ValidationErrors } from '@angular/forms';
+import { UntypedFormGroup, AbstractControl, FormControlName, ValidationErrors } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
 import { ErrorDescriptor } from '../model/validated-response';
@@ -19,7 +19,7 @@ export class InvalidFeedbackDirective implements OnInit, OnDestroy {
   invalidFeedbackFieldName: string;
 
   @Input()
-  invalidFeedbackForm: FormGroup;
+  invalidFeedbackForm: UntypedFormGroup;
 
   private targetControl: AbstractControl;
 
