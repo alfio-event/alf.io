@@ -1,0 +1,11 @@
+<div class="d-inline-flex" [class.flex-md-column]="!singleLineLayout">
+    <div [class.text-align-right]="!singleLineLayout">
+        <span *ngIf="currencyDescriptor" [ngClass]="{'me-2': !displayTextInline && displayCurrencySymbol, 'me-1': !displayTextInline && !displayCurrencySymbol}">{{currencyDescriptor.symbol}}</span><ng-container *ngIf="displayTextInline">{{' '}}</ng-container>
+        <span *ngIf="displayDiscountedPrice" class="text-align-right"><del>{{formattedPrice}}</del>{{' '}}<mark>{{discountedPrice}}</mark></span>
+        <span *ngIf="!displayDiscountedPrice" class="text-align-right">{{formattedPrice}}</span>
+    </div>
+    <div class="ms-2" *ngIf="singleLineLayout">&nbsp;</div>
+    <div *ngIf="showTaxes">
+      <small class="text-align-right text-muted align-self-end ms-2 ms-md-0"><i>{{(purchaseContext.vatIncluded ? 'show-event.incVat' : 'show-event.excVat') | translate:{'0': purchaseContext.vat, '1': ('common.vat' | translate)} }}</i></small>
+    </div>
+  </div>

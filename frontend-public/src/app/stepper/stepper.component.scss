@@ -1,0 +1,60 @@
+/* based on https://material-ui.com/demos/steppers/ */
+.wizard2 {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    margin: 4rem 0;
+}
+
+.wizard2 > div {
+    flex: 1;
+    position:relative
+}
+
+.wizard2 > div > div:first-child {
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+}
+
+.wizard2 .badge {
+    display: inline-block;
+    min-width: 35px;
+    padding: 3px 7px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 2;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: top;
+    background-color: #777;
+    border-radius: 17px;
+    min-height: 30px;
+}
+
+.wizard2 .wizard2-line {
+    top: 17px;
+    left: calc(50% + 20px);
+    right: calc(-50% + 20px);
+    position: absolute;
+    border-top: 1px solid #bdbdbd;
+}
+
+.badge-success {
+    background-color: #449d44 !important;
+}
+
+.wizard2 .wizard2-current .badge {
+    background-color: #007ACC;
+}
+
+.wizard2 span:nth-child(2) {
+    margin-top: 1em;
+    text-align: center;
+}
+
+.wizard2 .wizard2-current span:nth-child(2) {
+    font-weight:bold;
+    color: black;
+}

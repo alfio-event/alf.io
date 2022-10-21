@@ -1,0 +1,25 @@
+.poll-text {
+    display: inline-block;
+    vertical-align: top;
+    padding-left: 1rem;
+}
+
+.poll-title, .poll-description {
+    display: block;
+}
+
+.poll-title {
+    font-weight: bold;
+}
+
+.poll-question {
+    border-bottom:1px solid rgba(0, 0, 0, 0.125);;
+}
+
+.poll-question.last {
+    border-bottom: none;
+}
+
+.selected {
+    background-color: #eee;
+}

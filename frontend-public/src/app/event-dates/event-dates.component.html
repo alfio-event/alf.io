@@ -1,0 +1,24 @@
+<!-- same day-->
+<span *ngIf="dateValidityProvider.sameDay">
+  <span *ngIf="displayIcon"><fa-icon [icon]="['far', 'calendar-alt']" class="text-muted" [title]="'ticket.date-time' | translate"></fa-icon>&nbsp;</span>
+  {{' ' + dateValidityProvider.formattedBeginDate[translate.currentLang]}}&nbsp;{{'event-days.single-day.hours'|translate: {'0': dateValidityProvider.formattedBeginTime[translate.currentLang], '1': dateValidityProvider.formattedEndTime[translate.currentLang]} }}
+  <span class="text-muted" *ngIf="displayTimeZoneInfo">&nbsp; ({{dateValidityProvider.timeZone}})</span>
+</span>
+<!-- more than one day-->
+<div *ngIf="!dateValidityProvider.sameDay">
+  <div class="row">
+    <div class="col-1" *ngIf="displayIcon"><fa-icon [icon]="['far', 'calendar-alt']" class="text-muted" [title]="'ticket.date-time' | translate"></fa-icon></div>
+    <div [ngClass]="{'col-11': displayIcon, 'col-12': !displayIcon}">
+      <div>
+        <span class="me-2"><strong translate="event-days.from"></strong></span>
+        <span>{{localizedStartDateForMultiDay}}</span>
+        <span class="text-muted" *ngIf="displayTimeZoneInfo">&nbsp; ({{dateValidityProvider.timeZone}})</span>
+      </div>
+      <div>
+        <span class="me-2"><strong translate="event-days.to"></strong></span>
+        <span>{{localizedEndDateForMultiDay}}</span>
+        <span class="text-muted" *ngIf="displayTimeZoneInfo">&nbsp; ({{dateValidityProvider.timeZone}})</span>
+      </div>
+    </div>
+  </div>
+</div>

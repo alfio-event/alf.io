@@ -1,0 +1,8 @@
+<div *ngIf="matchProxyAndMethod" class="row mb-2 mt-2">
+    <div class="col-12">
+        <div class="text-muted" translate="reservation-page.on-site.description"></div>
+    </div>
+    <div class="col-12 mt-2" *ngIf="parameters && parameters.captchaRequestedForOffline && parameters.recaptchaApiKey">
+        <app-recaptcha [apiKey]="parameters.recaptchaApiKey" (recaptchaResponse)="handleRecaptchaResponse($event)"></app-recaptcha>
+    </div>
+</div>

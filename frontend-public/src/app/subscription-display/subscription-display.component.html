@@ -1,0 +1,30 @@
+<app-purchase-context-container [purchaseContext]="subscription">
+  <div *ngIf="subscription" class="add-margin-bottom">
+    <header>
+      <app-purchase-context-header [purchaseContext]="subscription" type="subscription"></app-purchase-context-header>
+    </header>
+    <main>
+      <hr>
+      <h2>{{ subscription.title[translateService.currentLang] }}</h2>
+      <div class="mt-3">
+        <app-subscription-summary [subscription]="subscription"></app-subscription-summary>
+      </div>
+      <hr>
+        <form (submit)="submitForm()">
+
+          <div class="markdown-content" [innerHTML]="subscription.description[translateService.currentLang]"></div>
+
+          <div class="alert alert-warning text-center" role="alert" *ngIf="subscription.numAvailable == 0">
+            <h3 translate="show-subscription.sold-out.message"></h3>
+          </div>
+
+          <hr class="mt-5">
+
+          <div class="row d-flex justify-content-between mobile-add-margin-bottom">
+            <div class="col-md-5 order-md-1 col-12"><button type="submit" *ngIf="subscription.numAvailable > 0" class="block-button btn btn-success" translate="show-event.continue"></button></div>
+            <div class="col-md-5 order-md-0 col-12 "><a [href]="subscription.websiteUrl" class="block-button btn btn-light" translate="common.back-to-organizer"></a></div>
+          </div>
+        </form>
+    </main>
+  </div>
+</app-purchase-context-container>

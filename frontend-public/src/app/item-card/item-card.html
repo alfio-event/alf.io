@@ -1,0 +1,23 @@
+<div class="card mt-4" [formGroup]="parentFormGroup" [ngClass]="additionalClass">
+  <div class="card-body">
+    <div class="item-content-except-desc">
+      <h3 class="card-title pe-1">
+        <ng-content select=".item-title"></ng-content>
+      </h3>
+      <div class="card-sale-period">
+        <ng-content select=".item-badges"></ng-content>
+        <app-item-sale-period [item]="item" [currentLang]="currentLang"></app-item-sale-period>
+      </div>
+      <div class="card-item-price">
+        <ng-content select=".item-price"></ng-content>
+      </div>
+      <div class="card-qty-container">
+        <ng-content select=".item-qty-selector"></ng-content>
+      </div>
+    </div>
+    <hr class="d-md-none" *ngIf="item.description[currentLang] && item.description[currentLang].length > 0" />
+    <div class="card-text pt-2">
+      <div class="markdown-content mt-2" [innerHTML]="item.description[currentLang]"></div>
+    </div>
+  </div>
+</div>

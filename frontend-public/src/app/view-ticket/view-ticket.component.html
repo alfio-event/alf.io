@@ -1,0 +1,61 @@
+<div *ngIf="event && ticketInfo" class="container mt-2">
+  <div class="application-container add-margin-bottom p-md-4">
+
+    <header>
+      <app-purchase-context-header [purchaseContext]="event" type="event"></app-purchase-context-header>
+    </header>
+    <main>
+      <hr>
+      <div class="ticket">
+        <div class="row">
+          <div class="col-md-8 col-12">
+            <app-event-summary [event]="event" [dateValidityProvider]="ticketInfo"></app-event-summary>
+          </div>
+          <div class="col-md-4 col-12">
+            <img src="/api/v2/public/event/{{event.shortName}}/ticket/{{ticketInfo.uuid}}/code.png"
+                 class="img-responsive img-center">
+          </div>
+        </div>
+
+        <div class="mt-3 mb-3">
+          <h2 translate="ticket.ticket"></h2>
+          <dl class="row">
+            <dt class="col-sm-3 align-right-mobile-aware" translate="ticket.holder"></dt>
+            <dd class="col-sm-9">{{ticketInfo.fullName}} &lt;{{ticketInfo.email}}&gt;</dd>
+            <dt class="col-sm-3 align-right-mobile-aware" translate="ticket.type"></dt>
+            <dd class="col-sm-9">{{ticketInfo.ticketCategoryName}}</dd>
+            <dt class="col-sm-3 align-right-mobile-aware" translate="ticket.reference-number"></dt>
+            <dd class="col-sm-9">{{ticketInfo.uuid}}</dd>
+            <dt class="col-sm-3 align-right-mobile-aware" translate="ticket.order-information"></dt>
+            <dd class="col-sm-9">{{'ticket.order-information-values' | translate:  {
+              '0': ticketInfo.reservationId,
+              '1': ticketInfo.reservationFullName
+            } }}</dd>
+          </dl>
+        </div>
+
+
+        <div *ngIf="ticketInfo.deskPaymentRequired" class="text-center mt-3 mb-3">
+          <h3 translate="ticket.payment-required"></h3>
+        </div>
+
+        <div class="row" *ngIf="event.format !== 'ONLINE'">
+          <div class="col-md-4 offset-md-8 col-12">
+            <a
+              [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticketInfo.uuid + '/download-ticket'"
+              class="btn btn-success btn-block">
+              <fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon>
+              {{'reservation-page-complete.download-ticket'|translate}}
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </main>
+    <footer>
+      <div class="text-center mt-5">
+        <a href="https://alf.io" [attr.title]="'alfio.credits' | translate" target="_blank" rel="noreferrer noopener" translate="alfio.credits"></a>
+      </div>
+    </footer>
+  </div>
+</div>

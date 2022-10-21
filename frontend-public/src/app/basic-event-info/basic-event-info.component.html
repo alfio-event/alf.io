@@ -1,0 +1,18 @@
+<div class="card card-light home-card mt-3">
+  <div class="card-header bg-white event-header">
+    <img [src]="'/file/'+event.fileBlobId" class="mx-auto img-responsive" alt="" aria-hidden="true" role="presentation">
+    <div class="h4 online-flag" *ngIf="isEventOnline"><span class="badge badge-secondary">{{'event.online.badge' | translate}}</span></div>
+  </div>
+  <div class="card-body">
+    <h2 class="card-title">{{title}}</h2>
+    <app-event-dates [dateValidityProvider]="event" [displayIcon]="true"></app-event-dates>
+    <div class="text-muted mt-1" *ngIf="!isEventOnline">
+      <fa-icon [icon]="['fas', 'map-marker-alt']"></fa-icon> &nbsp; {{event.location}}
+    </div>
+  </div>
+  <div class="card-footer border-top-0 bg-white">
+    <div class="d-flex justify-content-end">
+      <a [routerLink]="['/event', event.shortName]" [queryParams]="params" class="btn btn-success stretched-link">{{'event-list.link' | translate}}<span class="sr-only"> {{title}}</span></a>
+    </div>
+  </div>
+</div>

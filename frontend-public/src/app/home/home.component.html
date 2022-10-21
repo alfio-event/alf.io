@@ -1,0 +1,42 @@
+<div class="container-xl">
+  <div *ngIf="events" class="application-container p-2 p-md-5">
+    <app-topbar [contentLanguages]="languages"></app-topbar>
+
+    <div *ngIf="containsEvents || !containsSubscriptions" class="mb-2">
+      <h1 translate="event-list.title"></h1>
+
+      <div class="row justify-content-center mb-3 mt-3">
+        <div class="col-md-5" *ngFor="let event of events">
+          <app-basic-event-info [event]="event"></app-basic-event-info>
+        </div>
+      </div>
+      <div *ngIf="displayViewAllEventsButton" class="text-center mt-5 mb-5">
+        <a [routerLink]="allEventsPath" class="btn btn-default" translate="home.view.all.events"></a>
+      </div>
+
+
+      <div class="alert text-center" *ngIf="events.length == 0">
+        <div class="h3" translate="event-list.no-events"></div>
+      </div>
+    </div>
+
+    <hr *ngIf="containsEvents && containsSubscriptions" class="mt-5 mb-5">
+
+    <div *ngIf="containsSubscriptions" class="mb-2">
+      <h1 translate="subscription.title"></h1>
+
+      <div class="row justify-content-center mb-3 mt-3">
+        <div class="col-md-5" *ngFor="let subscription of subscriptions">
+          <app-basic-subscription-info [subscription]="subscription"></app-basic-subscription-info>
+        </div>
+      </div>
+
+      <div *ngIf="displayViewAllSubscriptionsButton" class="text-center mt-5 mb-5">
+        <a [routerLink]="allSubscriptionsPath" class="btn btn-default" translate="home.view.all.subscriptions"></a>
+      </div>
+    </div>
+
+    <hr class="mt-5" *ngIf="linksContainer.termsAndConditionsUrl || linksContainer.privacyPolicyUrl">
+    <app-footer-links [linksContainer]="linksContainer"></app-footer-links>
+  </div>
+</div>

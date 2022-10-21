@@ -1,0 +1,25 @@
+<div class="d-flex justify-content-end">
+  <div>
+    <app-language-selector [contentLanguages]="contentLanguages"></app-language-selector>
+  </div>
+  <div class="ms-4" *ngIf="authenticationEnabled">
+    <div *ngIf="user && !displayLoginButton" class="text-muted">
+        <fa-icon [icon]="['fas', 'user-astronaut']" aria-hidden="true" [title]="'user.menu.title' | translate"></fa-icon> {{user?.firstName}} {{user?.lastName}}
+    </div>
+    <div ngbDropdown *ngIf="user && displayLoginButton">
+      <button type="button" class="btn btn-link text-muted" id="userDropdown" ngbDropdownToggle>
+        <fa-icon [icon]="['fas', 'user-astronaut']" aria-hidden="true" [title]="'user.menu.title' | translate"></fa-icon> {{user?.firstName}} {{user?.lastName}}
+      </button>
+      <div ngbDropdownMenu aria-labelledby="userDropdown">
+        <button type="button" ngbDropdownItem class="btn btn-link" (click)="myProfile()"><fa-icon [icon]="['fas', 'user-astronaut']" a11yRole="presentation"></fa-icon> <span class="ms-3">{{ 'user.menu.my-profile' | translate }}</span></button>
+        <button type="button" ngbDropdownItem class="btn btn-link" (click)="myOrders()"><fa-icon [icon]="['fas', 'ticket-alt']" [classes]="['rotate-45']" a11yRole="presentation"></fa-icon> <span class="ms-3">{{ 'user.menu.my-orders' | translate }}</span></button>
+        <button type="button" ngbDropdownItem class="btn btn-link" (click)="logout()"><fa-icon [icon]="['fas', 'sign-out-alt']" a11yRole="presentation"></fa-icon> <span class="ms-3">{{ 'user.menu.logout' | translate }}</span></button>
+      </div>
+    </div>
+    <div *ngIf="!user && displayLoginButton">
+      <a href="/openid/authentication" class="btn btn-link text-muted">
+        <fa-icon [icon]="['fas', 'sign-in-alt']" a11yRole="presentation"></fa-icon> {{ 'user.menu.login' | translate }}
+      </a>
+    </div>
+  </div>
+</div>

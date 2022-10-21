@@ -1,0 +1,20 @@
+<app-reservation>
+
+<div *ngIf="reservationInfo && purchaseContext">
+
+  <app-stepper [currentStep]="3" [free]="reservationInfo.orderSummary.free" [inProgress]="true"></app-stepper>
+
+  <div class="page-header">
+    <h2 translate="reservation-page.title"></h2>
+  </div>
+
+  <app-summary-table [purchaseContext]="purchaseContext" [reservationInfo]="reservationInfo"></app-summary-table>
+
+  <div class="alert text-center" [ngClass]="{'alert-info': !providerWarningVisible, 'alert-warning': providerWarningVisible}">
+    <div class="h5" *ngIf="!forceCheckVisible && !providerWarningVisible"><span translate="reservation.payment-in-progress"></span><app-animated-dots></app-animated-dots></div>
+    <div class="h5" *ngIf="forceCheckVisible || providerWarningVisible"><span>{{ (providerWarningVisible ? 'reservation.payment-processing.warning.message' : 'reservation.payment-processing.delay.message') | translate }}</span><app-animated-dots></app-animated-dots></div>
+    <div class="text-center" *ngIf="forceCheckVisible"><button class="btn btn-default ms-5" translate="reservation.payment-processing.force-check" (click)="forceCheck()"></button></div>
+  </div>
+</div>
+
+</app-reservation>
