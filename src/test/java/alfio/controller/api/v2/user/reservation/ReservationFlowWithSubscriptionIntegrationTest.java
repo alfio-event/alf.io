@@ -135,7 +135,9 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
                                                           FileUploadManager fileUploadManager,
                                                           UserRepository userRepository,
                                                           PlatformTransactionManager platformTransactionManager,
-                                                          OrganizationDeleter organizationDeleter) {
+                                                          OrganizationDeleter organizationDeleter,
+                                                          PromoCodeDiscountRepository promoCodeDiscountRepository,
+                                                          PromoCodeRequestManager promoCodeRequestManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -168,7 +170,9 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
             clockProvider,
             notificationManager,
             userRepository,
-            organizationDeleter);
+            organizationDeleter,
+            promoCodeDiscountRepository,
+            promoCodeRequestManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.subscriptionManager = subscriptionManager;
