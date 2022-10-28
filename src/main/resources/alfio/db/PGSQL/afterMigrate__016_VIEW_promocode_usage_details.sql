@@ -38,6 +38,7 @@ reservations as (
                    'paymentType', tr.payment_method,
                    'finalPriceCts', tr.final_price_cts,
                    'currency', tr.currency_code,
+                   'confirmationTimestamp', to_char(tr.confirmation_ts, 'YYYY-MM-DD') || 'T' || to_char(tr.confirmation_ts, 'HH24:MI:SS.MSZ'),
                    'tickets', t.items
                )) as agg
     from tickets_reservation tr

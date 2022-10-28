@@ -24,7 +24,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PromoCodeUsageResult {
 
@@ -38,7 +40,10 @@ public class PromoCodeUsageResult {
                                 @Column("reservations") String reservationsJson) {
         this.promoCode = promoCode;
         this.event = new EventInfo(eventShortName, eventDisplayName);
-        this.reservations = Json.fromJson(reservationsJson, new TypeReference<>() {});
+        List<ReservationInfo> parsed = Json.fromJson(reservationsJson, new TypeReference<>() {});
+        this.reservations = parsed.stream()
+            .sorted(Comparator.comparing(ReservationInfo::getConfirmationTimestamp))
+            .collect(Collectors.toList());
     }
 
     public String getPromoCode() {
@@ -62,6 +67,7 @@ public class PromoCodeUsageResult {
         private final PaymentProxy paymentType;
         private final Integer finalPriceCts;
         private final String currency;
+        private final String confirmationTimestamp;
         private final List<TicketInfo> tickets;
 
         @JsonCreator
@@ -73,6 +79,7 @@ public class PromoCodeUsageResult {
                         @JsonProperty("paymentType") PaymentProxy paymentType,
                         @JsonProperty("finalPriceCts") Integer finalPriceCts,
                         @JsonProperty("currency") String currency,
+                        @JsonProperty("confirmationTimestamp") String confirmationTimestamp,
                         @JsonProperty("tickets") List<TicketInfo> tickets) {
             this.id = id;
             this.invoiceNumber = invoiceNumber;
@@ -82,6 +89,7 @@ public class PromoCodeUsageResult {
             this.paymentType = paymentType;
             this.finalPriceCts = finalPriceCts;
             this.currency = currency;
+            this.confirmationTimestamp = confirmationTimestamp;
             this.tickets = tickets;
         }
 
@@ -116,6 +124,14 @@ public class PromoCodeUsageResult {
             return MonetaryUtil.formatCents(finalPriceCts, currency);
         }
 
+        public String getCurrency() {
+            return currency;
+        }
+
+        public String getConfirmationTimestamp() {
+            return confirmationTimestamp;
+        }
+
         public List<TicketInfo> getTickets() {
             return tickets;
         }
@@ -138,6 +154,10 @@ public class PromoCodeUsageResult {
 
         public String getDisplayName() {
             return displayName;
+        }
+
+        public String getPublicIdentifier() {
+            return getShortName();
         }
     }
 

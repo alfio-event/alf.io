@@ -719,6 +719,13 @@
                 update: function(promoCodeId, toUpdate) {
                     addUtfOffsetIfNecessary(toUpdate);
                     return $http.post('/admin/api/promo-code/' + promoCodeId, toUpdate);
+                },
+                getUsageDetails: function(promoCodeId, eventShortName) {
+                    return $http.get('/admin/api/promo-code/' + promoCodeId + '/detailed-usage', {
+                        params: {
+                            eventShortName
+                        }
+                    });
                 }
         };
     });
