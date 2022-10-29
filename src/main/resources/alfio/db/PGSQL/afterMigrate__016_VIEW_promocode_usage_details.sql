@@ -38,11 +38,13 @@ reservations as (
                    'paymentType', tr.payment_method,
                    'finalPriceCts', tr.final_price_cts,
                    'currency', tr.currency_code,
-                   'confirmationTimestamp', to_char(tr.confirmation_ts, 'YYYY-MM-DD') || 'T' || to_char(tr.confirmation_ts, 'HH24:MI:SS.MSZ'),
+                   'confirmationTimestamp', to_char(tr.confirmation_ts at time zone 'UTC', 'YYYY-MM-DD') || 'T' || to_char(tr.confirmation_ts at time zone 'UTC', 'HH24:MI:SS.MSZ'),
                    'tickets', t.items
                )) as agg
     from tickets_reservation tr
-    join promo_code pc ON tr.promo_code_id_fk = pc.id and tr.event_id_fk = pc.event_id_fk
+    join promo_code pc ON tr.promo_code_id_fk = pc.id and
+                          pc.organization_id_fk = tr.organization_id_fk and
+                          (pc.event_id_fk is null or tr.event_id_fk = pc.event_id_fk)
     join tickets t on t.tickets_reservation_id = tr.id
     where tr.promo_code_id_fk is not null and tr.status in ('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT', 'COMPLETE', 'CANCELLED')
     group by pc.promo_code, tr.event_id_fk
