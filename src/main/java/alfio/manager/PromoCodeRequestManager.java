@@ -20,6 +20,7 @@ import alfio.controller.form.ReservationForm;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
+import alfio.model.PromoCodeUsageResult;
 import alfio.model.SpecialPrice;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.result.ValidationResult;
@@ -43,6 +44,7 @@ import java.security.Principal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -224,6 +226,28 @@ public class PromoCodeRequestManager {
                                                      Principal principal) {
         return ReservationUtil.validateCreateRequest(reservation, bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult, principal));
+    }
+
+    public Optional<PromoCodeDiscount> findById(int id) {
+        return promoCodeRepository.findOptionalById(id);
+    }
+
+    public void disablePromoCode(int promoCodeId) {
+        promoCodeRepository.updateEventPromoCodeEnd(promoCodeId, ZonedDateTime.now(clockProvider.getClock()));
+    }
+
+    public int countUsage(int promoCodeId) {
+        Optional<PromoCodeDiscount> code = findById(promoCodeId);
+        if(code.isEmpty()) {
+            return 0;
+        }
+        return promoCodeRepository.countConfirmedPromoCode(promoCodeId, categoriesOrNull(code.get()), null, categoriesOrNull(code.get()) != null ? "X" : null);
+    }
+
+    public List<PromoCodeUsageResult> retrieveDetailedUsage(int promoCodeId, Integer eventId) {
+        return findById(promoCodeId)
+            .map(pc -> promoCodeRepository.findDetailedUsage(pc.getPromoCode(), eventId))
+            .orElse(List.of());
     }
 
 }

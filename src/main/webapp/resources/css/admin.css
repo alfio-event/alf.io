@@ -839,3 +839,15 @@ span.path {
 .bg-white {
     background-color: white;
 }
+
+.bg-gray {
+    background-color: #f9f9f9;
+}
+
+table.table.transparent {
+    background-color: transparent;
+}
+
+table.usage-details.tbody:not(:first-of-type) {
+    margin-top: 15px;
+}

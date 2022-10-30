@@ -17,40 +17,37 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
+import alfio.manager.PromoCodeRequestManager;
 import alfio.model.PromoCodeDiscount;
+import alfio.model.PromoCodeUsageResult;
 import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import alfio.util.ClockProvider;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
-
-import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 
 @RestController
 @RequestMapping("/admin/api")
 public class PromoCodeDiscountApiController {
 
     private final EventRepository eventRepository;
-    private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventManager eventManager;
-    private final ClockProvider clockProvider;
+    private final PromoCodeRequestManager promoCodeRequestManager;
 
     public PromoCodeDiscountApiController(EventRepository eventRepository,
-                                          PromoCodeDiscountRepository promoCodeRepository,
                                           EventManager eventManager,
-                                          ClockProvider clockProvider) {
+                                          PromoCodeRequestManager promoCodeRequestManager) {
         this.eventRepository = eventRepository;
-        this.promoCodeRepository = promoCodeRepository;
         this.eventManager = eventManager;
-        this.clockProvider = clockProvider;
+        this.promoCodeRequestManager = promoCodeRequestManager;
     }
 
     @PostMapping("/promo-code")
@@ -73,7 +70,7 @@ public class PromoCodeDiscountApiController {
 
     @PostMapping("/promo-code/{promoCodeId}")
     public void updatePromoCode(@PathVariable("promoCodeId") int promoCodeId, @RequestBody PromoCodeDiscountModification promoCode) {
-        PromoCodeDiscount pcd = promoCodeRepository.findById(promoCodeId);
+        PromoCodeDiscount pcd = promoCodeRequestManager.findById(promoCodeId).orElseThrow();
         ZoneId zoneId = zoneIdFromEventId(pcd.getEventId(), promoCode.getUtcOffset());
         eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), promoCode.getMaxUsage(), promoCode.getCategories(),
@@ -105,15 +102,22 @@ public class PromoCodeDiscountApiController {
     
     @PostMapping("/promo-code/{promoCodeId}/disable")
     public void disablePromoCode(@PathVariable("promoCodeId") int promoCodeId) {
-        promoCodeRepository.updateEventPromoCodeEnd(promoCodeId, ZonedDateTime.now(clockProvider.getClock()));
+        promoCodeRequestManager.disablePromoCode(promoCodeId);
     }
     
     @GetMapping("/promo-code/{promoCodeId}/count-use")
     public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId) {
-        Optional<PromoCodeDiscount> code = promoCodeRepository.findOptionalById(promoCodeId);
-        if(code.isEmpty()) {
-            return 0;
+        return promoCodeRequestManager.countUsage(promoCodeId);
+    }
+
+    @GetMapping("/promo-code/{promoCodeId}/detailed-usage")
+    public List<PromoCodeUsageResult> retrieveDetailedUsage(@PathVariable("promoCodeId") int promoCodeId,
+                                                            @RequestParam(value = "eventShortName", required = false) String eventShortName,
+                                                            Principal principal) {
+        Integer eventId = null;
+        if (StringUtils.isNotBlank(eventShortName)) {
+            eventId = eventManager.getEventAndOrganizationId(eventShortName, principal.getName()).getId();
         }
-        return promoCodeRepository.countConfirmedPromoCode(promoCodeId, categoriesOrNull(code.get()), null, categoriesOrNull(code.get()) != null ? "X" : null);
+        return promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, eventId);
     }
 }
