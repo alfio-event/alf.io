@@ -59,12 +59,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
-import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static alfio.test.util.IntegrationTestUtil.*;
 
 @SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
@@ -74,8 +71,6 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;
-
-    private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
 
     @Autowired
     public ReservationFlowIntegrationTest(OrganizationRepository organizationRepository,
@@ -112,7 +107,9 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                           PollRepository pollRepository,
                                           NotificationManager notificationManager,
                                           UserRepository userRepository,
-                                          OrganizationDeleter organizationDeleter) {
+                                          OrganizationDeleter organizationDeleter,
+                                          PromoCodeDiscountRepository promoCodeDiscountRepository,
+                                          PromoCodeRequestManager promoCodeRequestManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -145,7 +142,9 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
             clockProvider,
             notificationManager,
             userRepository,
-            organizationDeleter);
+            organizationDeleter,
+            promoCodeDiscountRepository,
+            promoCodeRequestManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
     }

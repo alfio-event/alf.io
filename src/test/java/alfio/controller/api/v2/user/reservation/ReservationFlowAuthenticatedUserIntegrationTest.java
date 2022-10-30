@@ -118,7 +118,9 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
                                                            NotificationManager notificationManager,
                                                            UserRepository userRepository,
                                                            UserApiV2Controller publicUserApiController,
-                                                           OrganizationDeleter organizationDeleter) {
+                                                           OrganizationDeleter organizationDeleter,
+                                                           PromoCodeDiscountRepository promoCodeDiscountRepository,
+                                                           PromoCodeRequestManager promoCodeRequestManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -151,7 +153,9 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
             clockProvider,
             notificationManager,
             userRepository,
-            organizationDeleter);
+            organizationDeleter,
+            promoCodeDiscountRepository,
+            promoCodeRequestManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.publicUserApiController = publicUserApiController;
@@ -171,7 +175,7 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         publicUserName = UUID.randomUUID().toString();
         var userIdContainer = userRepository.create(publicUserName, UUID.randomUUID().toString(), "First", "Last", "email@example.org", true, User.Type.PUBLIC, null, "");
-        return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner", null, null, publicUserName, userIdContainer.getKey(), true);
+        return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner", null, null, publicUserName, userIdContainer.getKey(), true, false);
     }
 
     @BeforeEach
