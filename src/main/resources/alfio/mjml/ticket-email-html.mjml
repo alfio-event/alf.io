@@ -126,9 +126,16 @@
 
         <mj-raw>{{#walletEnabled}}</mj-raw>
         <mj-section>
-            <mj-column width="100%">
-                <mj-image width="283px" rel="notrack" src="{{baseUrl}}/resources/images/email/enUS_add_to_google_wallet_wallet-button.png" alt="Add to Google Wallet" align="center" padding="8dp" href="{{baseUrl}}/api/wallet/event/{{event.shortName}}/v1/version/passes/{{ticket.uuid}}"></mj-image>
+            <mj-raw>{{#googleWalletEnabled}}</mj-raw>
+            <mj-column>
+                <mj-image width="217" rel="notrack" src="{{baseUrl}}/resources/images/email/enUS_add_to_google_wallet_wallet-button.png" alt="Add to Google Wallet" align="center" padding="8dp" href="{{baseUrl}}/api/wallet/event/{{event.shortName}}/v1/version/passes/{{ticket.uuid}}"></mj-image>
             </mj-column>
+            <mj-raw>{{/googleWalletEnabled}}</mj-raw>
+            <mj-raw>{{#appleWalletEnabled}}</mj-raw>
+            <mj-column>
+                <mj-image width="193" rel="notrack" src="{{baseUrl}}/resources/images/email/add-to-apple-wallet-button.png" alt="Add to Apple Wallet" align="center" padding="8dp" href="{{baseUrl}}/api/pass/event/{{event.shortName}}/v1/version/passes/{{ticket.uuid}}"></mj-image>
+            </mj-column>
+            <mj-raw>{{/appleWalletEnabled}}</mj-raw>
         </mj-section>
         <mj-raw>{{/walletEnabled}}</mj-raw>
 

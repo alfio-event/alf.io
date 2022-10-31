@@ -155,7 +155,7 @@ public class TemplateManager {
     private String render(Resource resource, Map<String, Object> model, Locale locale, PurchaseContext purchaseContext, TemplateOutput templateOutput) {
         try {
             var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
-            var configuration = configurationManager.getFor(EnumSet.of(ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ConfigurationKeys.ENABLE_WALLET), ConfigurationLevel.purchaseContext(purchaseContext));
+            var configuration = configurationManager.getFor(EnumSet.of(ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ConfigurationKeys.ENABLE_WALLET, ConfigurationKeys.ENABLE_PASS), ConfigurationLevel.purchaseContext(purchaseContext));
             boolean usePartnerCode = Objects.requireNonNull(configuration.get(ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
                 .getValueAsBooleanOrDefault();
             ModelAndView mv = new ModelAndView();
@@ -171,7 +171,11 @@ public class TemplateManager {
             updatedModel.putIfAbsent("custom-header-text", "");
             updatedModel.putIfAbsent("custom-body-text", "");
             updatedModel.putIfAbsent("custom-footer-text", "");
-            updatedModel.putIfAbsent("walletEnabled", configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault());
+            boolean googleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault();
+            boolean appleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_PASS).getValueAsBooleanOrDefault();
+            updatedModel.putIfAbsent("googleWalletEnabled", googleWalletEnabled);
+            updatedModel.putIfAbsent("appleWalletEnabled", appleWalletEnabled);
+            updatedModel.putIfAbsent("walletEnabled", googleWalletEnabled || appleWalletEnabled);
             return compile(resource, templateOutput).execute(mv.getModel());
         } catch (Exception e) {
             log.error("TemplateManager: got exception while generating a template", e);

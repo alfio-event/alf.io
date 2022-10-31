@@ -79,9 +79,11 @@ public class CustomMessageManager {
         Organization organization = eventManager.loadOrganizer(event, username);
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
         var categoriesById = ticketCategoryRepository.findByEventIdAsMap(event.getId());
-        var configuration = configurationManager.getFor(EnumSet.of(ConfigurationKeys.BASE_URL, ConfigurationKeys.ENABLE_WALLET), event.getConfigurationLevel());
+        var configuration = configurationManager.getFor(EnumSet.of(ConfigurationKeys.BASE_URL,
+            ConfigurationKeys.ENABLE_WALLET, ConfigurationKeys.ENABLE_PASS, ConfigurationKeys.ENABLE_HTML_EMAILS), event.getConfigurationLevel());
         var baseUrl = configuration.get(ConfigurationKeys.BASE_URL).getRequiredValue();
-        boolean walletEnabled = configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault();
+        boolean googleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault();
+        boolean appleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_PASS).getValueAsBooleanOrDefault();
 
         sendMessagesExecutor.execute(() -> {
             var messageSource = messageSourceManager.getMessageSourceFor(event);
@@ -136,11 +138,16 @@ public class CustomMessageManager {
                             text.append(notificationManager.buildOnlineCheckInText(onlineCheckInModel, Locale.forLanguageTag(ticket.getUserLanguage()), messageSource));
                             templateModel.putAll(onlineCheckInModel);
                         } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
-                            attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
+                            boolean htmlEmailsEnabled = configuration.get(ConfigurationKeys.ENABLE_HTML_EMAILS).getValueAsBooleanOrDefault();
+                            attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization, htmlEmailsEnabled));
                         }
-                        templateModel.put("walletEnabled", walletEnabled && !onlineTicket);
+                        templateModel.put("googleWalletEnabled", googleWalletEnabled && !onlineTicket);
+                        templateModel.put("appleWalletEnabled", appleWalletEnabled && !onlineTicket);
+                        templateModel.put("walletEnabled", (googleWalletEnabled || appleWalletEnabled) && !onlineTicket);
                     } else {
                         // ticket attachment was not requested. Do not display wallet
+                        templateModel.put("googleWalletEnabled", false);
+                        templateModel.put("appleWalletEnabled", false);
                         templateModel.put("walletEnabled", false);
                     }
                     templateModel.put("message", text);
@@ -170,8 +177,15 @@ public class CustomMessageManager {
                 .collect(Collectors.toList());
     }
 
-    public static Mailer.Attachment generateTicketAttachment(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {
+    public static Mailer.Attachment generateTicketAttachment(Ticket ticket,
+                                                             TicketReservation reservation,
+                                                             TicketCategory ticketCategory,
+                                                             Organization organization,
+                                                             boolean htmlEmailEnabled) {
         Map<String, String> model = getModelForTicket(ticket, reservation, ticketCategory, organization);
+        if (htmlEmailEnabled) {
+            model.put(Mailer.SKIP_PASSBOOK, "true");
+        }
         return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
     }
 

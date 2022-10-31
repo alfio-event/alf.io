@@ -258,6 +258,8 @@ public class NotificationManager {
 
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
+        boolean htmlEmailEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, event.getConfigurationLevel())
+            .getValueAsBooleanOrDefault();
         // pre-generate template in order to reuse model
         var renderedTemplate = textBuilder.generate(ticket);
 
@@ -274,7 +276,7 @@ public class NotificationManager {
             });
             attachments.add(CustomMessageManager.generateCalendarAttachmentForOnlineEvent(attachmentModel));
         } else {
-            attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
+            attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization, htmlEmailEnabled));
         }
 
         String displayName = event.getDisplayName();
