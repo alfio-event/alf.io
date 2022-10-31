@@ -45,12 +45,28 @@
         </div>
 
         <div class="page-header" id="PASS_INTEGRATION">
-            <h2>Pass Integration</h2>
-            <span>Integration with Apple (tm) Pass</span>
+            <h2>Mobile wallet integration</h2>
+            <span>Integration with mobile Wallets</span>
         </div>
-        <div>
-            <div data-ng-repeat="setting in systemConf.passIntegration.settings">
-                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title">Google Wallet (tm) integration</div>
+            </div>
+            <div class="panel-body">
+                <div data-ng-repeat="setting in systemConf.walletIntegration.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title">Apple Pass (tm) integration</div>
+            </div>
+            <div class="panel-body">
+                <div data-ng-repeat="setting in systemConf.passIntegration.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
             </div>
         </div>
 
