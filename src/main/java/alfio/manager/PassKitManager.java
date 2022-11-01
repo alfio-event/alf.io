@@ -213,7 +213,7 @@ public class PassKitManager {
         });
 
         pass.files(passResources.toArray(new PassResource[0]));
-        try(InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {
+        try(InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCAG4.cer").getInputStream()) {
             PassSigner signer = PassSignerImpl.builder()
                 .keystore(new ByteArrayInputStream(keystoreRaw), keystorePwd)
                 .alias(privateKeyAlias)
