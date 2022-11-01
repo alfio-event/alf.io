@@ -153,10 +153,10 @@ However, if you decide to do so, then you need to make a couple of changes:
  docker build -t alfio/alf.io ./build/dockerize
  ```
 
-### About the included AppleWWDRCA.cer
+### About the included AppleWWDRCAG4.cer
 
-The certificate at src/main/resources/alfio/certificates/AppleWWDRCA.cer has been imported for https://github.com/ryantenney/passkit4j#usage functionality.
-It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).
+The certificate at src/main/resources/alfio/certificates/AppleWWDRCAG4.cer has been imported for https://github.com/ryantenney/passkit4j#usage functionality.
+It will expire the 2030-10-12 (YYYY-MM-DD - as of https://www.apple.com/certificateauthority/).
 
 ## Available spring profiles:
 
