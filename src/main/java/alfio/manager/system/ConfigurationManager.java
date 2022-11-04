@@ -19,6 +19,7 @@ package alfio.manager.system;
 import alfio.config.Initializer;
 import alfio.controller.api.v2.model.AlfioInfo;
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
+import alfio.controller.api.v2.model.WalletConfiguration;
 import alfio.controller.api.v2.user.support.PurchaseContextInfoBuilder;
 import alfio.manager.system.ConfigurationLevels.CategoryLevel;
 import alfio.manager.system.ConfigurationLevels.EventLevel;
@@ -227,7 +228,7 @@ public class ConfigurationManager {
         Optional<Configuration> conf = findByConfigurationPathAndKey(Configuration.system(), key);
         if(key.isBooleanComponentType()) {
             Optional<Boolean> state = getThreeStateValue(value);
-            if(conf.isPresent()) {
+            if(conf.filter(c -> c.getConfigurationPathLevel() != EXTERNAL).isPresent()) {
                 if(state.isPresent()) {
                     configurationRepository.update(key.getValue(), value);
                 } else {
@@ -696,7 +697,9 @@ public class ConfigurationManager {
             COUNTRY_OF_BUSINESS,
             ENABLE_REVERSE_CHARGE_IN_PERSON,
             ENABLE_REVERSE_CHARGE_ONLINE,
-            ANNOUNCEMENT_BANNER_CONTENT);
+            ANNOUNCEMENT_BANNER_CONTENT,
+            ENABLE_WALLET,
+            ENABLE_PASS);
         var conf = getFor(options, ConfigurationLevel.system());
 
         var analyticsConf = AnalyticsConfiguration.build(conf, session);
@@ -708,7 +711,8 @@ public class ConfigurationManager {
             conf.get(GLOBAL_PRIVACY_POLICY).getValueOrNull(),
             conf.get(GLOBAL_TERMS).getValueOrNull(),
             PurchaseContextInfoBuilder.invoicingInfo(this, conf),
-            StringUtils.trimToNull(conf.get(ANNOUNCEMENT_BANNER_CONTENT).getValueOrNull()));
+            StringUtils.trimToNull(conf.get(ANNOUNCEMENT_BANNER_CONTENT).getValueOrNull()),
+            new WalletConfiguration(conf.get(ENABLE_WALLET).getValueAsBooleanOrDefault(), conf.get(ENABLE_PASS).getValueAsBooleanOrDefault()));
     }
 
     public Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getPublicOpenIdConfiguration() {
