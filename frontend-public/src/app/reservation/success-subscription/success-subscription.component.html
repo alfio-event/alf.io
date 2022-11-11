@@ -11,19 +11,19 @@
       </div>
       <div class="row mt-3">
         <div class="col-12 col-md-5 mb-1 mb-md-0" [class.offset-md-2]="downloadBillingDocumentVisible" [class.offset-md-7]="!downloadBillingDocumentVisible">
-          <button type="button" (click)="reSendReservationEmail()" class="btn btn-default btn-block"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.resend-reservation-email'|translate}}</button>
+          <button type="button" (click)="reSendReservationEmail()" class="btn btn-default block-button"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.resend-reservation-email'|translate}}</button>
         </div>
         <div class="col-12 col-md-5 mb-md-0" *ngIf="downloadBillingDocumentVisible">
           <ng-container>
             {{' '}}
             <a *ngIf="reservationInfo.invoiceNumber !== null"
-               class="btn btn-default btn-block"
+               class="btn btn-default block-button"
                [href]="'/api/v2/public/event/'+purchaseContext.shortName+'/reservation/'+reservationInfo.id+'/invoice'"
                target="_blank">
               <fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-your-invoice'|translate}}
             </a>
             <a *ngIf="reservationInfo.invoiceNumber === null"
-               class="btn btn-default btn-block"
+               class="btn btn-default block-button"
                [href]="'/api/v2/public/event/'+purchaseContext.shortName+'/reservation/'+reservationInfo.id+'/receipt'"
                target="_blank">
               <fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-your-receipt'|translate}}

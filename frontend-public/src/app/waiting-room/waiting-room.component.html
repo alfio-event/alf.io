@@ -27,7 +27,7 @@
       </div>
       <div class="row justify-content-center mt-5" *ngIf="!eventEnded">
         <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2">
-          <a [attr.href]="'/event/' + event.shortName + '/ticket/' + ticket.uuid + '/check-in/' + checkInCode" class="btn btn-default btn-block">
+          <a [attr.href]="'/event/' + event.shortName + '/ticket/' + ticket.uuid + '/check-in/' + checkInCode" class="btn btn-default block-button">
             <fa-icon [icon]="['fas', 'redo-alt']" a11yRole="presentation"></fa-icon> <span class="ms-2">{{ 'online.check-in.waiting-room.button' | translate }}</span>
           </a>
         </div>

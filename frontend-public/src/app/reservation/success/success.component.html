@@ -18,19 +18,19 @@
       </div>
       <div class="row mt-3">
         <div class="col-12 col-md-5 mb-1 mb-md-0" [class.offset-md-2]="downloadBillingDocumentVisible" [class.offset-md-7]="!downloadBillingDocumentVisible">
-          <button type="button" (click)="reSendReservationEmail()" class="btn btn-default btn-block"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.resend-reservation-email'|translate}}</button>
+          <button type="button" (click)="reSendReservationEmail()" class="btn btn-default block-button"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.resend-reservation-email'|translate}}</button>
         </div>
         <div class="col-12 col-md-5 mb-md-0" *ngIf="downloadBillingDocumentVisible">
             <ng-container>
                 {{' '}}
                 <a *ngIf="reservationInfo.invoiceNumber !== null"
-                    class="btn btn-default btn-block"
+                    class="btn btn-default block-button"
                     [href]="'/api/v2/public/event/'+event.shortName+'/reservation/'+reservationInfo.id+'/invoice'"
                     target="_blank">
                     <fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-your-invoice'|translate}}
                 </a>
                 <a *ngIf="reservationInfo.invoiceNumber === null"
-                    class="btn btn-default btn-block"
+                    class="btn btn-default block-button"
                     [href]="'/api/v2/public/event/'+event.shortName+'/reservation/'+reservationInfo.id+'/receipt'"
                     target="_blank">
                     <fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-your-receipt'|translate}}
@@ -54,19 +54,19 @@
 
         <div class="row justify-content-end" *ngIf="!ticketFormVisible">
           <div class="col-lg-3 col-sm-6 col-12 mb-2" *ngIf="!isOnlineTicket(tc) && ticket.assigned && !ticket.cancellationEnabled && ticket.downloadEnabled" >
-            <a [routerLink]="['/event', event.shortName, 'ticket', ticket.uuid, 'view']" target="_blank" class="btn btn-default btn-block"><fa-icon [icon]="['fas', 'search-plus']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.show-ticket'|translate}}</a>
+            <a [routerLink]="['/event', event.shortName, 'ticket', ticket.uuid, 'view']" target="_blank" class="btn btn-default block-button"><fa-icon [icon]="['fas', 'search-plus']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.show-ticket'|translate}}</a>
           </div>
           <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" *ngIf="!isOnlineTicket(tc) && ticket.assigned && ticket.downloadEnabled">
-            <a [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticket.uuid + '/download-ticket'" class="btn btn-default btn-block"><fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-ticket'|translate}}</a>
+            <a [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticket.uuid + '/download-ticket'" class="btn btn-default block-button"><fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-ticket'|translate}}</a>
           </div>
           <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" *ngIf="ticket.assigned && ticket.sendMailEnabled">
-            <button type="button" class="btn btn-default btn-block send-ticket-by-email" (click)="sendEmailForTicket(ticket.uuid)"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.send-ticket-by-email-to'|translate}}</button>
+            <button type="button" class="btn btn-default block-button send-ticket-by-email" (click)="sendEmailForTicket(ticket.uuid)"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.send-ticket-by-email-to'|translate}}</button>
           </div>
           <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" [ngClass]="{'offset-lg-9 offset-sm-6': !ticket.assigned}">
-            <button type="button" class="btn btn-default btn-block update-ticket-owner" (click)="ticketsFormShow[ticket.uuid] = true"><fa-icon [icon]="ticket.assigned ? ['far', 'edit'] : ['fas', 'check']" a11yRole="presentation"></fa-icon> {{(ticket.assigned ? 'reservation-page-complete.update-ticket-owner' : 'reservation-page-complete.assign') |translate}}</button>
+            <button type="button" class="btn btn-default block-button update-ticket-owner" (click)="ticketsFormShow[ticket.uuid] = true"><fa-icon [icon]="ticket.assigned ? ['far', 'edit'] : ['fas', 'check']" a11yRole="presentation"></fa-icon> {{(ticket.assigned ? 'reservation-page-complete.update-ticket-owner' : 'reservation-page-complete.assign') |translate}}</button>
           </div>
           <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" *ngIf="ticket.assigned && ticket.cancellationEnabled">
-            <button type="button" class="btn btn-danger btn-block" (click)="releaseTicket(ticket)"><fa-icon [icon]="['fas', 'eraser']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.release-button.text'|translate}}</button>
+            <button type="button" class="btn btn-danger block-button" (click)="releaseTicket(ticket)"><fa-icon [icon]="['fas', 'eraser']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.release-button.text'|translate}}</button>
           </div>
         </div>
 
@@ -77,10 +77,10 @@
             <div class="bg-white pb-3 pt-3" [class.sticky]="ticket.ticketFieldConfigurationAfterStandard.length > 0">
               <div class="row d-flex justify-content-between">
                 <div class="col-md-5 order-md-1 col-12">
-                  <button type="submit" class="btn btn-success btn-block">{{ (ticket.assigned ? 'reservation-page-complete.update' : 'reservation-page-complete.assign') | translate}}</button>
+                  <button type="submit" class="btn btn-success block-button">{{ (ticket.assigned ? 'reservation-page-complete.update' : 'reservation-page-complete.assign') | translate}}</button>
                 </div>
                 <div class="col-md-5 mt-2 mt-md-0 order-md-0 col-12">
-                  <button type="button" (click)="hideTicketForm(ticket.uuid)" translate="reservation-page-complete.cancel" class="btn btn-light btn-block"></button>
+                  <button type="button" (click)="hideTicketForm(ticket.uuid)" translate="reservation-page-complete.cancel" class="btn btn-light block-button"></button>
                 </div>
               </div>
             </div>

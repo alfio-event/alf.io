@@ -49,10 +49,10 @@
       </div>
     </div>
 
-    <div *ngIf="purchaseContext.canApplySubscriptions && !appliedSubscription">
+    <div *ngIf="purchaseContext.canApplySubscriptions && !appliedSubscription" class="mb-3">
       <h2 class="page-header mt-2" translate="reservation-page.subscription"></h2>
 
-      <div *ngIf="!displaySubscriptionForm" class="row mt-2">
+      <div *ngIf="!displaySubscriptionForm" class="row mt-2 mb-3">
         <div class="col-12 col-md-6">
           <p class="lead" translate="reservation-page.overview.pay-with-subscription"></p>
         </div>
@@ -61,8 +61,8 @@
         </div>
       </div>
 
-      <div *ngIf="displaySubscriptionForm" class="mt-2">
-        <div class="row">
+      <div *ngIf="displaySubscriptionForm" class="mt-3 mb-3">
+        <div class="row mb-2">
           <div class="col-12 col-md-6">
             <div class="form-group" [formGroup]="subscriptionCodeForm">
               <label for="subscription-input-code" class="sr-only">{{'reservation-page.overview.insert-subscription-code' | translate }}</label>
@@ -111,7 +111,7 @@
           <span [innerHTML]="'reservation-page.privacy.prefix' | translate"></span>{{' '}}<a [attr.href]="purchaseContext.privacyPolicyUrl" target="_blank" rel="noopener" translate="reservation-page.privacy.link.text"></a>{{' '}}<span translate="reservation-page.privacy.suffix"></span>
         </label>
     </div>
-    <div class="form-check" [class.invisible]="submitting">
+    <div class="form-check mb-3" [class.invisible]="submitting">
         <input class="form-check-input" id="termsAndConditionsAccepted" formControlName="termAndConditionsAccepted" type="checkbox" aria-labelledby="terms-conditions-label">
         <label class="form-check-label" for="termsAndConditionsAccepted" id="terms-conditions-label">
           {{' '}}<span [innerHTML]="'reservation-page.tc.prefix' | translate"></span>{{' '}}<a [attr.href]="purchaseContext.termsAndConditionsUrl" target="_blank" rel="noopener" translate="reservation-page.tc.link.text"></a>{{' '}}<span translate="reservation-page.tc.suffix"></span>

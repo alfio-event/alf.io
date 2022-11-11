@@ -10,7 +10,7 @@
 
 @include media-breakpoint-up(md) {
   
-  /* deskop here */
+  /* desktop here */
   .card-title {
     order: 0;
     max-width: 65%;
@@ -25,6 +25,8 @@
     order: 1;
     padding-right: 3rem!important;
     margin-left: auto;
+    display: flex;
+    align-items: center;
   }
   
   .card-qty-container {
