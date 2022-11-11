@@ -242,7 +242,7 @@ public enum ConfigurationKeys {
     //WALLET
     ENABLE_WALLET("Enable Google Wallet(tm) integration  (default: false)", false, SettingCategory.WALLET_INTEGRATION, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
     WALLET_ISSUER_IDENTIFIER("Google Wallet Issuer ID", false, SettingCategory.WALLET_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    WALLET_SERVICE_ACCOUNT_KEY("Google Wallet Service Account Key in JSON format", false, SettingCategory.WALLET_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    WALLET_SERVICE_ACCOUNT_KEY("Google Wallet Service Account Key in JSON format", false, SettingCategory.WALLET_INTEGRATION, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
     WALLET_OVERWRITE_PREVIOUS_CLASSES_AND_EVENTS("Overwrite previous EventClass and EventObject definitions (use after code changes affecting the JSON, default: false)", false, SettingCategory.WALLET_INTEGRATION, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
     //CHECK-IN
     CHECK_IN_STATS("Display check-in statistics in mobile apps", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), BooleanUtils.TRUE),
