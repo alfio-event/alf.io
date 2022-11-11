@@ -16,40 +16,31 @@
  */
 package alfio.controller;
 
-import alfio.config.Initializer;
-import alfio.config.WebSecurityConfig;
-import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.api.v2.user.support.EventLoader;
+import alfio.controller.support.CSPConfigurer;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.*;
+import alfio.model.ContentLanguage;
+import alfio.model.EventDescription;
+import alfio.model.FileBlobMetadata;
+import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
-import alfio.util.TemplateManager;
 import ch.digitalfondue.jfiveparse.*;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.collections4.IterableUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -61,48 +52,25 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.security.Principal;
-import java.security.SecureRandom;
-import java.util.*;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
-import static alfio.config.Initializer.XSRF_TOKEN;
-import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.config.Initializer.PROFILE_LIVE;
+import static alfio.controller.Constants.*;
+import static alfio.model.system.ConfigurationKeys.BASE_CUSTOM_CSS;
 import static java.util.Objects.requireNonNull;
 
 @Controller
+@Profile(PROFILE_LIVE)
 public class IndexController {
 
-    private static final String REDIRECT_ADMIN = "redirect:/admin/";
-    private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
-    private static final String UTF_8 = "UTF-8";
-
-
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-
-    private static final Document INDEX_PAGE;
-    private static final Document OPEN_GRAPH_PAGE;
-    private static final String NONCE = "nonce";
-    private static final String REDIRECT = "redirect:";
-    private static final String EVENT_SHORT_NAME = "eventShortName";
-    private static final String NOT_FOUND = "not-found";
-
-    static {
-        try (var idxIs = new ClassPathResource("alfio-public-frontend-index.html").getInputStream();
-             var idxOpenIs = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream();
-             var idxIsR = new InputStreamReader(idxIs, StandardCharsets.UTF_8);
-             var idxOpenGraphReader = new InputStreamReader(idxOpenIs, StandardCharsets.UTF_8)) {
-            INDEX_PAGE = JFiveParse.parse(idxIsR);
-            OPEN_GRAPH_PAGE = JFiveParse.parse(idxOpenGraphReader);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
+    private final Document indexPage;
+    private final Document openGraphPage;
     private final ConfigurationManager configurationManager;
     private final EventRepository eventRepository;
-    private final Environment environment;
-    private final TemplateManager templateManager;
     private final FileUploadRepository fileUploadRepository;
     private final MessageSourceManager messageSourceManager;
     private final EventDescriptionRepository eventDescriptionRepository;
@@ -112,11 +80,10 @@ public class IndexController {
     private final EventLoader eventLoader;
     private final PurchaseContextManager purchaseContextManager;
     private final CsrfTokenRepository csrfTokenRepository;
+    private final CSPConfigurer cspConfigurer;
 
     public IndexController(ConfigurationManager configurationManager,
                            EventRepository eventRepository,
-                           Environment environment,
-                           TemplateManager templateManager,
                            FileUploadRepository fileUploadRepository,
                            MessageSourceManager messageSourceManager,
                            EventDescriptionRepository eventDescriptionRepository,
@@ -125,11 +92,10 @@ public class IndexController {
                            SubscriptionRepository subscriptionRepository,
                            EventLoader eventLoader,
                            PurchaseContextManager purchaseContextManager,
-                           CsrfTokenRepository csrfTokenRepository) {
+                           CsrfTokenRepository csrfTokenRepository,
+                           CSPConfigurer cspConfigurer) {
         this.configurationManager = configurationManager;
         this.eventRepository = eventRepository;
-        this.environment = environment;
-        this.templateManager = templateManager;
         this.fileUploadRepository = fileUploadRepository;
         this.messageSourceManager = messageSourceManager;
         this.eventDescriptionRepository = eventDescriptionRepository;
@@ -139,6 +105,16 @@ public class IndexController {
         this.eventLoader = eventLoader;
         this.purchaseContextManager = purchaseContextManager;
         this.csrfTokenRepository = csrfTokenRepository;
+        this.cspConfigurer = cspConfigurer;
+        try (var idxIs = new ClassPathResource("alfio-public-frontend-index.html").getInputStream();
+             var idxOpenIs = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream();
+             var idxIsR = new InputStreamReader(idxIs, StandardCharsets.UTF_8);
+             var idxOpenGraphReader = new InputStreamReader(idxOpenIs, StandardCharsets.UTF_8)) {
+            indexPage = JFiveParse.parse(idxIsR);
+            openGraphPage = JFiveParse.parse(idxOpenGraphReader);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
 
@@ -235,17 +211,17 @@ public class IndexController {
 
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
         response.setCharacterEncoding(UTF_8);
-        var nonce = addCspHeader(response, detectConfigurationLevel(eventShortName, subscriptionId), true);
+        var nonce = cspConfigurer.addCspHeader(response, detectConfigurationLevel(eventShortName, subscriptionId), true);
 
         if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventRepository.existsByShortName(eventShortName)) {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
-                var res = getOpenGraphPage((Document) OPEN_GRAPH_PAGE.cloneNode(true), eventShortName, request, lang);
+                var res = getOpenGraphPage((Document) openGraphPage.cloneNode(true), eventShortName, request, lang);
                 JFiveParse.serialize(res, osw);
             }
         } else {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrNull();
-                var idx = INDEX_PAGE.cloneNode(true);
+                var idx = indexPage.cloneNode(true);
                 if(session.getAttribute(OpenIdAuthenticationManager.USER_SIGNED_UP) != null) {
                     Optional.ofNullable(IterableUtils.get(idx.getElementsByTagName("html"), 0))
                             .ifPresent(html -> html.setAttribute("data-signed-up", "true"));
@@ -269,9 +245,8 @@ public class IndexController {
                     head.appendChild(style);
                 }
                 if (eventShortName != null) {
-                    eventLoader.loadEventInfo(eventShortName, session).ifPresent(ev -> {
-                        head.appendChild(buildScripTag(Json.toJson(ev), MediaType.APPLICATION_JSON.toString(), "preload-event", eventShortName));
-                    });
+                    eventLoader.loadEventInfo(eventShortName, session)
+                        .ifPresent(ev -> head.appendChild(buildScripTag(Json.toJson(ev), MediaType.APPLICATION_JSON.toString(), "preload-event", eventShortName)));
                 }
                 JFiveParse.serialize(idx, osw);
             }
@@ -348,21 +323,21 @@ public class IndexController {
 
         //
 
-        getMetaElement(eventOpenGraph, "name", "twitter:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
+        getMetaElement(eventOpenGraph, "name", "twitter:image").setAttribute(CONTENT, baseUrl + "/file/" + event.getFileBlobId());
         //
 
         eventOpenGraph.getElementsByTagName("title").get(0).appendChild(new Text(title));
-        getMetaElement(eventOpenGraph, "property", "og:title").setAttribute("content", title);
-        getMetaElement(eventOpenGraph, "property","og:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
+        getMetaElement(eventOpenGraph, PROPERTY, "og:title").setAttribute(CONTENT, title);
+        getMetaElement(eventOpenGraph, PROPERTY,"og:image").setAttribute(CONTENT, baseUrl + "/file/" + event.getFileBlobId());
 
         var eventDesc = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.toLanguageTag()).orElse("").trim();
         var firstLine = Pattern.compile("\n").splitAsStream(MustacheCustomTag.renderToTextCommonmark(eventDesc)).findFirst().orElse("");
-        getMetaElement(eventOpenGraph, "property","og:description").setAttribute("content", firstLine);
+        getMetaElement(eventOpenGraph, PROPERTY,"og:description").setAttribute(CONTENT, firstLine);
 
 
         var org = organizationRepository.getById(event.getOrganizationId());
         var author = String.format("%s <%s>", org.getName(), org.getEmail());
-        getMetaElement(eventOpenGraph, "name", "author").setAttribute("content", author);
+        getMetaElement(eventOpenGraph, "name", "author").setAttribute(CONTENT, author);
 
         fileUploadRepository.findById(event.getFileBlobId()).ifPresent(metadata -> {
             var attributes = metadata.getAttributes();
@@ -376,7 +351,7 @@ public class IndexController {
     }
 
     private static Element buildOGMetaTag(String propertyValue, String contentValue) {
-        return buildMetaTag("property", propertyValue, contentValue);
+        return buildMetaTag(PROPERTY, propertyValue, contentValue);
     }
 
     private static Element buildMetaTag(String name, String content) {
@@ -386,7 +361,7 @@ public class IndexController {
     private static Element buildMetaTag(String property, String propertyValue, String content) {
         var meta = new Element("meta");
         meta.setAttribute(property, propertyValue);
-        meta.setAttribute("content", content);
+        meta.setAttribute(CONTENT, content);
         return meta;
     }
 
@@ -406,148 +381,6 @@ public class IndexController {
     @GetMapping("/e/{eventShortName}")
     public String redirectEvent(@PathVariable(EVENT_SHORT_NAME) String eventName) {
         return REDIRECT + UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of(EVENT_SHORT_NAME, eventName));
-    }
-
-    // login related
-    @GetMapping("/authentication")
-    public void getLoginPage(@RequestParam(value="failed", required = false) String failed,
-                             @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed,
-                             Model model,
-                             Principal principal,
-                             HttpServletRequest request,
-                             HttpServletResponse response,
-                             @Value("${alfio.version}") String version) throws IOException {
-
-        if(principal != null) {
-            response.sendRedirect("/admin/");
-            return;
-        }
-        model.addAttribute("failed", failed != null);
-        model.addAttribute("recaptchaFailed", recaptchaFailed != null);
-        model.addAttribute("hasRecaptchaApiKey", false);
-
-        //
-        addCommonModelAttributes(model, request, version);
-        model.addAttribute("request", request);
-
-        //
-
-        var configuration = configurationManager.getFor(EnumSet.of(RECAPTCHA_API_KEY, ENABLE_CAPTCHA_FOR_LOGIN), ConfigurationLevel.system());
-
-        configuration.get(RECAPTCHA_API_KEY).getValue()
-            .filter(key -> configuration.get(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault())
-            .ifPresent(key -> {
-                model.addAttribute("hasRecaptchaApiKey", true);
-                model.addAttribute("recaptchaApiKey", key);
-            });
-        try (var os = response.getOutputStream()) {
-            response.setContentType(TEXT_HTML_CHARSET_UTF_8);
-            response.setCharacterEncoding(UTF_8);
-            var nonce = addCspHeader(response, false);
-            model.addAttribute(NONCE, nonce);
-            templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
-        }
-    }
-
-    @PostMapping("/authenticate")
-    public String doLogin() {
-        return REDIRECT_ADMIN;
-    }
-    //
-
-
-    // admin index
-    @GetMapping("/admin")
-    public void adminHome(Model model, @Value("${alfio.version}") String version, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
-        model.addAttribute("alfioVersion", version);
-        model.addAttribute("username", principal.getName());
-        model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
-
-        boolean isDBAuthentication = !(principal instanceof OpenIdAlfioAuthentication);
-        model.addAttribute("isDBAuthentication", isDBAuthentication);
-        if (!isDBAuthentication) {
-            String idpLogoutRedirectionUrl = ((OpenIdAlfioAuthentication) SecurityContextHolder.getContext().getAuthentication()).getIdpLogoutRedirectionUrl();
-            model.addAttribute("idpLogoutRedirectionUrl", idpLogoutRedirectionUrl);
-        } else {
-            model.addAttribute("idpLogoutRedirectionUrl", null);
-        }
-
-        Collection<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-            .stream().map(GrantedAuthority::getAuthority).toList();
-
-        boolean isAdmin = authorities.contains(Role.ADMIN.getRoleName());
-        model.addAttribute("isOwner", isAdmin || authorities.contains(Role.OWNER.getRoleName()));
-        model.addAttribute("isAdmin", isAdmin);
-        //
-        addCommonModelAttributes(model, request, version);
-        model.addAttribute("displayProjectBanner", isAdmin && configurationManager.getForSystem(SHOW_PROJECT_BANNER).getValueAsBooleanOrDefault());
-        //
-
-        try (var os = response.getOutputStream()) {
-            response.setContentType(TEXT_HTML_CHARSET_UTF_8);
-            response.setCharacterEncoding(UTF_8);
-            var nonce = addCspHeader(response, false);
-            model.addAttribute(NONCE, nonce);
-            templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
-        }
-    }
-
-    private void addCommonModelAttributes(Model model, HttpServletRequest request, String version) {
-        var contextPath = StringUtils.appendIfMissing(request.getContextPath(), "/") + version;
-        model.addAttribute("contextPath", contextPath);
-        model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
-        model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
-        model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-        model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
-    }
-
-
-    private static String getNonce() {
-        var nonce = new byte[16]; //128 bit = 16 bytes
-        SECURE_RANDOM.nextBytes(nonce);
-        return Hex.encodeHexString(nonce);
-    }
-
-    public String addCspHeader(HttpServletResponse response, boolean embeddingSupported) {
-        return addCspHeader(response, ConfigurationLevel.system(), embeddingSupported);
-    }
-
-    public String addCspHeader(HttpServletResponse response, ConfigurationLevel configurationLevel, boolean embeddingSupported) {
-
-        var nonce = getNonce();
-
-        String reportUri = "";
-
-        var conf = configurationManager.getFor(List.of(SECURITY_CSP_REPORT_ENABLED, SECURITY_CSP_REPORT_URI, EMBED_ALLOWED_ORIGINS), configurationLevel);
-
-        boolean enabledReport = conf.get(SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault();
-        if (enabledReport) {
-            reportUri = " report-uri " + conf.get(SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
-        }
-        //
-        // https://csp.withgoogle.com/docs/strict-csp.html
-        // with base-uri set to 'self'
-
-        var frameAncestors = "'none'";
-        var allowedContainer = conf.get(EMBED_ALLOWED_ORIGINS).getValueOrNull();
-        if (embeddingSupported && StringUtils.isNotBlank(allowedContainer)) {
-            var splitHosts = allowedContainer.split("[,\n]");
-            frameAncestors = String.join(" ", splitHosts);
-            // IE11
-            response.addHeader("X-Frame-Options", "ALLOW-FROM "+splitHosts[0]);
-        } else {
-            response.addHeader("X-Frame-Options", "DENY");
-        }
-
-        response.addHeader("Content-Security-Policy", "object-src 'none'; "+
-            "script-src 'strict-dynamic' 'nonce-" + nonce + "' 'unsafe-inline' http: https: " +
-                "'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='" // see https://github.com/angular/angular-cli/issues/20864#issuecomment-983672336
-                +"; " +
-            "base-uri 'self'; " +
-            "frame-ancestors " + frameAncestors + "; "
-            + reportUri);
-
-        return nonce;
     }
 
     private ConfigurationLevel detectConfigurationLevel(String eventShortName, String subscriptionId) {
