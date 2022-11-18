@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { PollService } from '../shared/poll.service';
-import { combineLatest } from 'rxjs';
-import { PollWithOptions } from '../model/poll-with-options';
-import { TranslateService } from '@ngx-translate/core';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute} from '@angular/router';
+import {PollService} from '../shared/poll.service';
+import {combineLatest} from 'rxjs';
+import {PollWithOptions} from '../model/poll-with-options';
+import {TranslateService} from '@ngx-translate/core';
+import {FormGroup, UntypedFormBuilder} from '@angular/forms';
+import {PollVoteForm} from "../model/poll-vote-form";
 
 @Component({
   selector: 'app-display-poll',
@@ -19,7 +20,7 @@ export class DisplayPollComponent implements OnInit {
   pin: string;
   poll: PollWithOptions;
 
-  pollForm: UntypedFormGroup;
+  pollForm: FormGroup<PollVoteForm>;
   pollSubmittedWithSuccess: boolean;
 
   constructor(

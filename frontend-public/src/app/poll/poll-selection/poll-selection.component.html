@@ -1,6 +1,6 @@
 <ng-container *ngIf="ready">
   <div *ngIf="!polls" class="mt-4">
-    <form [formGroup]="pinForm" (submit)="confirmPin()" *ngIf="!polls">
+    <form [formGroup]="pinForm" (submit)="confirmPin()">
       <div class="row">
         <div class="col-12 col-md-6 offset-md-3">
           <h2 translate="poll.title"></h2>

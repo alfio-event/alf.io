@@ -1,12 +1,12 @@
-import { Component, OnInit } from '@angular/core';
-import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
-import { Poll } from '../model/poll';
-import { ActivatedRoute, Router } from '@angular/router';
-import { PollService } from '../shared/poll.service';
-import { TranslateService } from '@ngx-translate/core';
-import { combineLatest } from 'rxjs';
-import { handleServerSideValidationError } from '../../shared/validation-helper';
-import { ErrorDescriptor } from '../../model/validated-response';
+import {Component, OnInit} from '@angular/core';
+import {FormControl, FormGroup, UntypedFormBuilder} from '@angular/forms';
+import {Poll} from '../model/poll';
+import {ActivatedRoute, Router} from '@angular/router';
+import {PollService} from '../shared/poll.service';
+import {TranslateService} from '@ngx-translate/core';
+import {combineLatest} from 'rxjs';
+import {handleServerSideValidationError} from '../../shared/validation-helper';
+import {ErrorDescriptor} from '../../model/validated-response';
 
 @Component({
   selector: 'app-poll-selection',
@@ -15,7 +15,9 @@ import { ErrorDescriptor } from '../../model/validated-response';
 })
 export class PollSelectionComponent implements OnInit {
 
-  pinForm: UntypedFormGroup;
+  pinForm: FormGroup<{
+    pin: FormControl<string>
+  }>;
   polls: Poll[];
   eventShortName: string;
   globalErrors: ErrorDescriptor[];
@@ -34,6 +36,8 @@ export class PollSelectionComponent implements OnInit {
       this.eventShortName = params['eventShortName'];
       if (query['pin']) {
         this.loadPolls(this.eventShortName, query['pin']);
+      } else {
+        this.ready = true;
       }
     });
   }
