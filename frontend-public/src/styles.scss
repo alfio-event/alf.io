@@ -8,6 +8,13 @@ $card-spacer-y: 1.25rem;
 $card-spacer-x: 1.25rem;
 @import "~bootstrap/scss/functions";
 @import "~bootstrap/scss/variables";
+$custom-colors: (
+  "default": $white
+);
+
+// Merge the maps
+$theme-colors: map-merge($theme-colors, $custom-colors);
+
 $custom-control-indicator-border-color: $gray-700;
 
 @import "~bootstrap/scss/bootstrap";
@@ -254,7 +261,7 @@ div.is-invalid ~ div.invalid-feedback {
     border-color: #ccc;
 }
 
-.btn-default:hover {
+:not(.btn-check) + .btn + .btn-default:hover, .btn.btn-default:first-child:hover {
     color: #212529;
     background-color: #e2e6ea;
     border-color: #ccc;

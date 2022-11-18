@@ -19,6 +19,7 @@ export class PollSelectionComponent implements OnInit {
   polls: Poll[];
   eventShortName: string;
   globalErrors: ErrorDescriptor[];
+  ready: boolean;
 
   constructor(
     private route: ActivatedRoute, 
@@ -38,6 +39,7 @@ export class PollSelectionComponent implements OnInit {
   }
 
   private loadPolls(eventShortName: string, pin: string) {
+    this.ready = false;
     this.pollService.getAllPolls(eventShortName, pin).subscribe(res => {
       if (res.success) {
         this.router.navigate([], {queryParamsHandling: 'merge', queryParams: {pin: pin}});
@@ -46,8 +48,10 @@ export class PollSelectionComponent implements OnInit {
           this.router.navigate([this.polls[0].id], {relativeTo: this.route, queryParamsHandling: 'merge', queryParams: {pin: pin}});
         }
       }
+      this.ready = true;
     }, (err) => {
       this.globalErrors = handleServerSideValidationError(err, this.pinForm);
+      this.ready = true;
     });
   }
 
