@@ -98,7 +98,7 @@ public class UtilsApiController {
             //we don't support pseudo currencies, as it is very unlikely that payment providers would support them
             .filter(c -> !c.isPseudoCurrency() && !CURRENCIES_BLOCKLIST.contains(c.getCode()) && Wrappers.optionally(() -> Currency.getInstance(c.getCode())).isPresent())
             .map(c -> new CurrencyDescriptor(c.getCode(), c.toCurrency().getDisplayName(Locale.ENGLISH), c.getSymbol(Locale.ENGLISH), c.getDecimalPlaces()))
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @GetMapping("/countriesForVat")

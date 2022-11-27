@@ -186,21 +186,20 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
         // call implementation-specific logic
         addAdditionalFilters(http);
 
-        //FIXME create session and set csrf cookie if we are getting a v2 public api, an admin api call , will switch to pure cookie based
         http.addFilterBefore((servletRequest, servletResponse, filterChain) -> {
 
             HttpServletRequest req = (HttpServletRequest) servletRequest;
             HttpServletResponse res = (HttpServletResponse) servletResponse;
             var reqUri = req.getRequestURI();
 
-            if ((reqUri.startsWith(API_V2_PUBLIC_PATH) || reqUri.startsWith(ADMIN_API) || reqUri.startsWith("/api/v2/admin/")) && "GET".equalsIgnoreCase(req.getMethod())) {
+            if ((reqUri.startsWith(API_V2_PUBLIC_PATH) || reqUri.startsWith(ADMIN_API) || reqUri.startsWith("/api/v2/admin/") || reqUri.equals(AUTHENTICATION_STATUS)) && "GET".equalsIgnoreCase(req.getMethod())) {
                 CsrfToken csrf = csrfTokenRepository.loadToken(req);
                 if (csrf == null) {
                     csrf = csrfTokenRepository.generateToken(req);
                 }
-                if (reqUri.startsWith(API_V2_PUBLIC_PATH)) {
-                    res.addHeader(XSRF_TOKEN, csrf.getToken());
-                } else {
+                res.addHeader(XSRF_TOKEN, csrf.getToken());
+                if (!reqUri.startsWith(API_V2_PUBLIC_PATH)) {
+                    // FIXME remove this after the new admin is complete
                     addCookie(res, csrf);
                 }
             }

@@ -16,13 +16,16 @@
  */
 package alfio.controller;
 
+import alfio.config.authentication.support.AuthenticationConstants;
 import alfio.controller.support.CSPConfigurer;
+import alfio.controller.support.UserStatus;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.util.TemplateManager;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,6 +61,20 @@ public class AuthenticationController {
         this.environment = environment;
         this.cspConfigurer = cspConfigurer;
         this.templateManager = templateManager;
+    }
+
+    @GetMapping(AuthenticationConstants.AUTHENTICATION_STATUS)
+    public ResponseEntity<UserStatus> authenticationStatus(Principal principal,
+                                                           @Value("${alfio.version}") String version) {
+
+        return ResponseEntity.ok(new UserStatus(
+            principal != null,
+            principal != null ? principal.getName() : null,
+            version,
+            demoModeEnabled(environment),
+            devModeEnabled(environment),
+            prodModeEnabled(environment)
+        ));
     }
 
     @GetMapping("/authentication")

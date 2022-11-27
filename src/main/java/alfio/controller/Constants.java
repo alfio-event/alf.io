@@ -39,9 +39,26 @@ public interface Constants {
     static void addCommonModelAttributes(Model model, HttpServletRequest request, String version, Environment environment) {
         var contextPath = StringUtils.appendIfMissing(request.getContextPath(), "/") + version;
         model.addAttribute("contextPath", contextPath);
-        model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
-        model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
-        model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
+        model.addAttribute("demoModeEnabled", demoModeEnabled(environment));
+        model.addAttribute("devModeEnabled", devModeEnabled(environment));
+        model.addAttribute("prodModeEnabled", prodModeEnabled(environment));
         model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
     }
+
+    static boolean prodModeEnabled(Environment environment) {
+        return profileActive(environment, Initializer.PROFILE_LIVE);
+    }
+
+    static boolean devModeEnabled(Environment environment) {
+        return profileActive(environment, Initializer.PROFILE_DEV);
+    }
+
+    static boolean demoModeEnabled(Environment environment) {
+        return profileActive(environment, Initializer.PROFILE_DEMO);
+    }
+
+    private static boolean profileActive(Environment environment, String profile) {
+        return environment.acceptsProfiles(Profiles.of(profile));
+    }
+
 }
