@@ -24,11 +24,9 @@ import alfio.util.HttpUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -149,6 +147,10 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         }
     }
 
+    private static void clickWithJs(WebDriver driver, WebElement element) {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+    }
+
     @Test
     @Timeout(value = 15L, unit = TimeUnit.MINUTES)
     public void testFlow() throws InterruptedException {
@@ -156,7 +158,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             var driver = browserWebDriver.driver;
             try {
                 driver.navigate().to(eventUrl);
-                WebDriverWait wait = new WebDriverWait(driver, 10);
+                WebDriverWait wait = new WebDriverWait(driver, 30);
                 wait.until(presenceOfElementLocated(By.cssSelector("div.markdown-content")));
                 page1TicketSelection(browserWebDriver);
                 //wait until page is loaded
@@ -203,7 +205,10 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         driver.findElement(By.id("billingAddressCity")).sendKeys("Zürich");
 
 
-        driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode']")).click();
+        Actions actions = new Actions(driver);
+        actions.moveToElement(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode']")));
+        clickWithJs(driver, driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode']")));
+
         driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] input[id=vatCountry]")).sendKeys("switzerland");
         wait.until(presenceOfElementLocated(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")));
         selectElement(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")), browserWebDriver, Keys.TAB);
@@ -264,7 +269,8 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
         if(driver.browser == BrowserWebDriver.Browser.SAFARI) {
             element.sendKeys(keyToSend);
         } else {
-            element.click();
+            // click with js...
+            clickWithJs(driver.driver, element);
         }
     }
 
