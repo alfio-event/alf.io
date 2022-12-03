@@ -254,7 +254,8 @@ public enum ConfigurationKeys {
     SECURITY_CSP_REPORT_ENABLED("Enable Content-Security-Policy reporting (default: false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), BooleanUtils.FALSE),
     SECURITY_CSP_REPORT_URI("Define Content-Security-Policy reporting URI (default: /report-csp-violation)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
-    EMBED_ALLOWED_ORIGINS("Allowed origins for embedding the reservation process in an iFrame. Separate different origins with a newline", false, SettingCategory.GENERAL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    EMBED_ALLOWED_ORIGINS("Allowed origins. Separate different origins with a newline", false, SettingCategory.RESERVATION_EMBED, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
+    EMBED_POST_MESSAGE_ORIGIN("URI to notify container (via PostMessage API) for Reservation success / cancel", false, SettingCategory.RESERVATION_EMBED, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
     //
     TRANSLATION_OVERRIDE("Translation override (json)", false, SettingCategory.TRANSLATIONS, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
@@ -274,6 +275,7 @@ public enum ConfigurationKeys {
     public enum SettingCategory {
         GENERAL("General settings"),
         RESERVATION_UI("Reservation Process UI"),
+        RESERVATION_EMBED("Embedding reservation process"),
         PAYMENT("Payment"),
         PAYMENT_STRIPE("Stripe.com settings"),
         PAYMENT_SAFERPAY("Saferpay settings"),

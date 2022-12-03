@@ -68,7 +68,8 @@ public class PurchaseContextInfoBuilder {
             ENABLE_REVERSE_CHARGE_ONLINE,
 
             DISPLAY_TICKETS_LEFT_INDICATOR,
-            EVENT_CUSTOM_CSS
+            EVENT_CUSTOM_CSS,
+            EMBED_POST_MESSAGE_ORIGIN
         ), purchaseContext.getConfigurationLevel());
     }
 
