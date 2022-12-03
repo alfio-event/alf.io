@@ -64,6 +64,8 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
 
     private final OfflinePaymentConfiguration offlinePaymentConfiguration;
 
+    private final EmbeddingConfiguration embeddingConfiguration;
+
     private final Map<String, Map<String, String>> i18nOverride;
 
     private final Integer availableTicketsCount;
@@ -88,6 +90,7 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
                                    PromotionsConfiguration promotionsConfiguration,
                                    AnalyticsConfiguration analyticsConfiguration,
                                    OfflinePaymentConfiguration offlinePaymentConfiguration,
+                                   EmbeddingConfiguration embeddingConfiguration,
                                    Map<String, Map<String, String>> i18nOverride,
                                    Integer availableTicketsCount,
                                    String customCss,
@@ -108,6 +111,7 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
         this.promotionsConfiguration = promotionsConfiguration;
         this.analyticsConfiguration = analyticsConfiguration;
         this.offlinePaymentConfiguration = offlinePaymentConfiguration;
+        this.embeddingConfiguration = embeddingConfiguration;
         this.i18nOverride = i18nOverride;
         this.availableTicketsCount = availableTicketsCount;
         this.customCss = customCss;
@@ -282,6 +286,11 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
     @Override
     public OfflinePaymentConfiguration getOfflinePaymentConfiguration() {
         return offlinePaymentConfiguration;
+    }
+
+    @Override
+    public EmbeddingConfiguration getEmbeddingConfiguration() {
+        return embeddingConfiguration;
     }
 
     @Getter

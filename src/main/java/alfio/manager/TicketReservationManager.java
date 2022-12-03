@@ -2459,6 +2459,10 @@ public class TicketReservationManager {
         );
     }
 
+    public void setReservationMetadata(String reservationId, ReservationMetadata metadata) {
+        Validate.isTrue(ticketReservationRepository.setMetadata(reservationId, metadata) == 1, "Error while updating metadata");
+    }
+
     static String buildCompleteBillingAddress(CustomerName customerName,
                                               String billingAddressCompany,
                                               String billingAddressLine1,

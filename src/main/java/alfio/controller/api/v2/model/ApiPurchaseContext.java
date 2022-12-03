@@ -33,6 +33,9 @@ public interface ApiPurchaseContext {
 
     OfflinePaymentConfiguration getOfflinePaymentConfiguration();
     EventWithAdditionalInfo.CaptchaConfiguration getCaptchaConfiguration();
+
+    EmbeddingConfiguration getEmbeddingConfiguration();
+
     boolean isVatIncluded();
     boolean isFree();
     String getCurrency();

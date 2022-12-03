@@ -19,6 +19,7 @@ package alfio.controller.api.v2.model;
 import alfio.controller.api.support.BookingInfoTicket;
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
+import alfio.model.ReservationMetadata;
 import alfio.model.SummaryRow.SummaryType;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation.TicketReservationStatus;
@@ -76,6 +77,8 @@ public class ReservationInfo {
 
     private final List<SubscriptionInfo> subscriptionInfos;
 
+    private final ReservationMetadata metadata;
+
     public ReservationInfo(String id,
                            String shortId,
                            String firstName,
@@ -100,7 +103,8 @@ public class ReservationInfo {
                            BillingDetails billingDetails,
                            boolean containsCategoriesLinkedToGroups,
                            Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods,
-                           List<SubscriptionInfo> subscriptionInfos) {
+                           List<SubscriptionInfo> subscriptionInfos,
+                           ReservationMetadata reservationMetadata) {
         this.id = id;
         this.shortId = shortId;
         this.firstName = firstName;
@@ -126,6 +130,7 @@ public class ReservationInfo {
         this.containsCategoriesLinkedToGroups = containsCategoriesLinkedToGroups;
         this.activePaymentMethods = activePaymentMethods;
         this.subscriptionInfos = subscriptionInfos;
+        this.metadata = reservationMetadata;
     }
 
 
