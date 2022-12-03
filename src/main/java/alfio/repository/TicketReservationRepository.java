@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.*;
+import alfio.model.support.JSONData;
 import alfio.model.support.UserIdAndOrganizationId;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
@@ -231,6 +232,13 @@ public interface TicketReservationRepository {
         " add_company_billing_details, invoicing_additional_information, vat_country, vat_nr " +
         " from tickets_reservation where id = :id")
     TicketReservationAdditionalInfo getAdditionalInfo(@Bind("id") String reservationId);
+
+    @Query("select metadata from tickets_reservation where id = :id")
+    @JSONData
+    ReservationMetadata getMetadata(@Bind("id") String reservationId);
+
+    @Query("update tickets_reservation set metadata = :metadata::jsonb where id = :id")
+    int setMetadata(@Bind("id") String reservationId, @Bind("metadata") @JSONData ReservationMetadata metadata);
 
     @Query("update tickets_reservation set validated_for_overview = :validated where id = :reservationId")
     int updateValidationStatus(@Bind("reservationId") String reservationId, @Bind("validated") boolean validated);

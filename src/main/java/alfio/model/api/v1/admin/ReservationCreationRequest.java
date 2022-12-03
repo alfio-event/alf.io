@@ -28,6 +28,7 @@ public class ReservationCreationRequest implements ReservationCreate {
 
     private final List<TicketReservationModification> tickets;
     private final List<AdditionalServiceReservationModification> additionalServices;
+    private final ReservationConfiguration reservationConfiguration;
     private final ReservationUser user;
     private final String promoCode;
     private final String language;
@@ -35,11 +36,13 @@ public class ReservationCreationRequest implements ReservationCreate {
     @JsonCreator
     public ReservationCreationRequest(@JsonProperty("tickets") List<TicketReservationModification> tickets,
                                       @JsonProperty("additionalServices") List<AdditionalServiceReservationModification> additionalServices,
+                                      @JsonProperty("configuration") ReservationConfiguration reservationConfiguration,
                                       @JsonProperty("user") ReservationUser user,
                                       @JsonProperty("promoCode") String promoCode,
                                       @JsonProperty("language") String language) {
         this.tickets = tickets;
         this.additionalServices = additionalServices;
+        this.reservationConfiguration = reservationConfiguration;
         this.user = user;
         this.promoCode = promoCode;
         this.language = language;
@@ -72,5 +75,9 @@ public class ReservationCreationRequest implements ReservationCreate {
 
     public ReservationUser getUser() {
         return user;
+    }
+
+    public ReservationConfiguration getReservationConfiguration() {
+        return reservationConfiguration;
     }
 }

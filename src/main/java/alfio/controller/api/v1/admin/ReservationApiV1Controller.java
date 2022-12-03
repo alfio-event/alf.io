@@ -19,6 +19,7 @@ package alfio.controller.api.v1.admin;
 import alfio.manager.EventManager;
 import alfio.manager.PromoCodeRequestManager;
 import alfio.manager.TicketReservationManager;
+import alfio.model.ReservationMetadata;
 import alfio.model.api.v1.admin.ReservationCreationRequest;
 import alfio.model.result.ErrorCode;
 import alfio.util.ReservationUtil;
@@ -26,6 +27,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,6 +57,7 @@ public class ReservationApiV1Controller {
     }
 
     @PostMapping("/{slug}/reservation")
+    @Transactional
     public ResponseEntity<CreationResponse> createReservation(@PathVariable("slug") String eventSlug,
                                                   @RequestBody ReservationCreationRequest reservationCreationRequest,
                                                   Principal principal) {
@@ -75,6 +78,9 @@ public class ReservationApiV1Controller {
                     var user = reservationCreationRequest.getUser();
                     if(user != null) {
                         ticketReservationManager.setReservationOwner(id, user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(), locale.getLanguage());
+                    }
+                    if(reservationCreationRequest.getReservationConfiguration() != null) {
+                        ticketReservationManager.setReservationMetadata(id, new ReservationMetadata(reservationCreationRequest.getReservationConfiguration().isHideContactData()));
                     }
                     return ResponseEntity.ok(CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, event, locale.getLanguage(), user != null)));
                 })

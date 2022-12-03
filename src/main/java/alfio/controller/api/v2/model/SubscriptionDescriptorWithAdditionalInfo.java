@@ -33,6 +33,7 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     private final InvoicingConfiguration invoicingConfiguration;
     private final AnalyticsConfiguration analyticsConfiguration;
     private final EventWithAdditionalInfo.CaptchaConfiguration captchaConfiguration;
+    private final EmbeddingConfiguration embeddingConfiguration;
 
     //payment related information
     private final String bankAccount;
@@ -191,6 +192,11 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
     public OfflinePaymentConfiguration getOfflinePaymentConfiguration() {
         // offline payment is not supported for subscriptions
         return null;
+    }
+
+    @Override
+    public EmbeddingConfiguration getEmbeddingConfiguration() {
+        return embeddingConfiguration;
     }
 
     @Override

@@ -47,8 +47,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.PriceContainer.VatStatus.isVatIncluded;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
+import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
 
 @RestController
@@ -56,6 +55,7 @@ import static java.util.stream.Collectors.toList;
 @AllArgsConstructor
 public class SubscriptionsApiController {
 
+    private static final String DATE_FORMAT_KEY = "common.event.date-format";
     private final SubscriptionManager subscriptionManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager reservationManager;
@@ -67,8 +67,6 @@ public class SubscriptionsApiController {
 
     @GetMapping("subscriptions")
     public ResponseEntity<List<BasicSubscriptionDescriptorInfo>> listSubscriptions(SearchOptions searchOptions) {
-        var contentLanguages = i18nManager.getAvailableLanguages();
-
         var now = ZonedDateTime.now(ClockProvider.clock());
         var activeSubscriptions = subscriptionManager.getActivePublicSubscriptionsDescriptor(now, searchOptions)
             .stream()
@@ -100,10 +98,10 @@ public class SubscriptionsApiController {
             currencyDescriptor,
             s.getVat(),
             isVatIncluded(s.getVatStatus()),
-            Formatters.getFormattedDate(s, s.getOnSaleFrom(), "common.event.date-format", messageSource),
-            Formatters.getFormattedDate(s, s.getOnSaleTo(), "common.event.date-format", messageSource),
-            Formatters.getFormattedDate(s, s.getValidityFrom(), "common.event.date-format", messageSource),
-            Formatters.getFormattedDate(s, s.getValidityTo(), "common.event.date-format", messageSource),
+            Formatters.getFormattedDate(s, s.getOnSaleFrom(), DATE_FORMAT_KEY, messageSource),
+            Formatters.getFormattedDate(s, s.getOnSaleTo(), DATE_FORMAT_KEY, messageSource),
+            Formatters.getFormattedDate(s, s.getValidityFrom(), DATE_FORMAT_KEY, messageSource),
+            Formatters.getFormattedDate(s, s.getValidityTo(), DATE_FORMAT_KEY, messageSource),
             s.getContentLanguages().stream().map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage())).collect(toList())
         );
     }
@@ -133,16 +131,17 @@ public class SubscriptionsApiController {
                     invoicingInfo,
                     analyticsConf,
                     captchaConf,
+                    new EmbeddingConfiguration(configurationsValues.get(EMBED_POST_MESSAGE_ORIGIN).getValueOrNull()),
                     bankAccount,
                     bankAccountOwner,
                     orgContact.getEmail(),
                     orgContact.getName(),
                     DatesWithTimeZoneOffset.fromDates(s.getOnSaleFrom(), s.getOnSaleTo()),
-                    Formatters.getFormattedDate(s, s.getOnSaleFrom(), "common.event.date-format", messageSource),
-                    Formatters.getFormattedDate(s, s.getOnSaleTo(), "common.event.date-format", messageSource),
+                    Formatters.getFormattedDate(s, s.getOnSaleFrom(), DATE_FORMAT_KEY, messageSource),
+                    Formatters.getFormattedDate(s, s.getOnSaleTo(), DATE_FORMAT_KEY, messageSource),
                     s.getZoneId().toString(),
-                    Formatters.getFormattedDate(s, s.getValidityFrom(), "common.event.date-format", messageSource),
-                    Formatters.getFormattedDate(s, s.getValidityTo(), "common.event.date-format", messageSource),
+                    Formatters.getFormattedDate(s, s.getValidityFrom(), DATE_FORMAT_KEY, messageSource),
+                    Formatters.getFormattedDate(s, s.getValidityTo(), DATE_FORMAT_KEY, messageSource),
                     available);
             })
             .map(ResponseEntity::ok)

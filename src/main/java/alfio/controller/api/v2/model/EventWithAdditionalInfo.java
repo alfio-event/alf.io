@@ -66,6 +66,8 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
 
     private final OfflinePaymentConfiguration offlinePaymentConfiguration;
 
+    private final EmbeddingConfiguration embeddingConfiguration;
+
     private final Map<String, Map<String, String>> i18nOverride;
 
     private final Integer availableTicketsCount;
@@ -241,6 +243,11 @@ public class EventWithAdditionalInfo implements DateValidity, ApiPurchaseContext
     @Override
     public OfflinePaymentConfiguration getOfflinePaymentConfiguration() {
         return offlinePaymentConfiguration;
+    }
+
+    @Override
+    public EmbeddingConfiguration getEmbeddingConfiguration() {
+        return embeddingConfiguration;
     }
 
     @AllArgsConstructor

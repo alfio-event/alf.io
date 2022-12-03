@@ -160,9 +160,6 @@ public class ReservationApiV2Controller {
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
 
             var shortReservationId =  ticketReservationManager.getShortReservationID(purchaseContext, reservation);
-            var italianInvoicing = additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing() == null ?
-                new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(null, null, null, null, false) :
-                additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing();
             //
 
 
@@ -211,7 +208,8 @@ public class ReservationApiV2Controller {
                 //
                 containsCategoriesLinkedToGroups,
                 getActivePaymentMethods(purchaseContext, ticketsByCategory.keySet(), orderSummary, reservationId),
-                subscriptionInfos
+                subscriptionInfos,
+                ticketReservationRepository.getMetadata(reservationId)
                 ));
         }));
 
