@@ -14,22 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.model;
+package alfio.model.api.v1.admin;
 
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class EmbeddingConfiguration {
-    private final String notificationOrigin;
+public class ReservationConfiguration {
+    private final boolean hideContactData;
 
-    public EmbeddingConfiguration(String notificationOrigin) {
-        this.notificationOrigin = Objects.requireNonNullElse(notificationOrigin, "");
+    @JsonCreator
+    public ReservationConfiguration(@JsonProperty("hideContactData") boolean hideContactData) {
+        this.hideContactData = hideContactData;
     }
 
-    public boolean isEnabled() {
-        return notificationOrigin != null && !notificationOrigin.isBlank();
-    }
-
-    public String getNotificationOrigin() {
-        return notificationOrigin;
+    public boolean isHideContactData() {
+        return hideContactData;
     }
 }

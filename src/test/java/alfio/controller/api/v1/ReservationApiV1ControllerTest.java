@@ -26,6 +26,7 @@ import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
+import alfio.model.api.v1.admin.ReservationConfiguration;
 import alfio.model.api.v1.admin.ReservationCreationRequest;
 import alfio.model.api.v1.admin.ReservationUser;
 import alfio.model.metadata.AlfioMetadata;
@@ -128,6 +129,7 @@ class ReservationApiV1ControllerTest {
         var creationRequest = new ReservationCreationRequest(
             List.of(ticket),
             List.of(),
+            new ReservationConfiguration(true),
             null,
             null,
             "en"
@@ -152,6 +154,9 @@ class ReservationApiV1ControllerTest {
         var attributes = metadata.getMetadataForKey(TicketMetadataContainer.GENERAL);
         assertTrue(attributes.isPresent());
         assertEquals(firstTicketProperties, attributes.get().getAttributes());
+        var reservationMetadata = ticketReservationRepository.getMetadata(reservationId);
+        assertNotNull(reservationMetadata);
+        assertTrue(reservationMetadata.isHideContactData());
     }
 
     @Test
@@ -166,6 +171,7 @@ class ReservationApiV1ControllerTest {
         var creationRequest = new ReservationCreationRequest(
             List.of(ticket),
             List.of(),
+            null,
             null,
             null,
             "en"
@@ -193,6 +199,9 @@ class ReservationApiV1ControllerTest {
             var attributes = metadata.getMetadataForKey(TicketMetadataContainer.GENERAL);
             return attributes.isPresent() && attributes.get().getAttributes().equals(firstTicketProperties);
         }).count());
+        var reservationMetadata = ticketReservationRepository.getMetadata(reservationId);
+        assertNotNull(reservationMetadata);
+        assertFalse(reservationMetadata.isHideContactData());
     }
 
     @Test
@@ -214,6 +223,7 @@ class ReservationApiV1ControllerTest {
         var creationRequest = new ReservationCreationRequest(
             List.of(ticket),
             List.of(),
+            null,
             user,
             null,
             "en"
