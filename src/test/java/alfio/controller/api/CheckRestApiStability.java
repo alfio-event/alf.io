@@ -19,9 +19,12 @@ package alfio.controller.api;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import jakarta.json.Json;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openapitools.openapidiff.core.OpenApiCompare;
+import org.openapitools.openapidiff.core.output.MarkdownRender;
 import org.springdoc.core.*;
 import org.springdoc.webmvc.core.SpringDocWebMvcConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,15 +81,17 @@ class TestCheckRestApiStability {
         // for generating the result
         if (updateDescriptor) {
             try (var writer = Files.newBufferedWriter(Paths.get(DESCRIPTOR_JSON_PATH), StandardCharsets.UTF_8)) {
-                writer.write(descriptor);
+                var formattedDescriptor = new ObjectMapper().readTree(descriptor).toPrettyString();
+                writer.write(formattedDescriptor);
             }
         }
 
-        var referenceDescriptor = Json.createReader(new FileReader(DESCRIPTOR_JSON_PATH)).readValue();
-        var currentDescriptor = Json.createReader(new StringReader(descriptor)).readValue();
-
-        var diff = Json.createDiff(referenceDescriptor.asJsonObject(), currentDescriptor.asJsonObject());
-        Assertions.assertEquals(Json.createArrayBuilder().build(), diff.toJsonArray());
+        var referenceDescriptor = IOUtils.toString(new FileReader(DESCRIPTOR_JSON_PATH));
+        var currentDescriptor = IOUtils.toString(new StringReader(descriptor));
+        var compareResult = OpenApiCompare.fromContents(referenceDescriptor, currentDescriptor);
+        if (compareResult.isDifferent()) {
+            Assertions.fail(new MarkdownRender().render(compareResult));
+        }
     }
 
 

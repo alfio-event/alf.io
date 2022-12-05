@@ -201,7 +201,7 @@ dependencies {
     testImplementation "org.junit.platform:junit-platform-engine"
 
     testImplementation "org.springdoc:springdoc-openapi-ui:1.6.9"
-    testImplementation "org.glassfish:jakarta.json:2.0.1"
+    testImplementation "org.openapitools.openapidiff:openapi-diff-core:2.0.1"
 
     providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
