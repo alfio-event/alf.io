@@ -33,7 +33,7 @@ export class AuthenticationComponent {
       _csrf: this.xsrfProvider.getToken()
     }).subscribe(result => {
       if (result.success) {
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/']);
       } else {
         console.log('error', result.errorMessage);
       }
