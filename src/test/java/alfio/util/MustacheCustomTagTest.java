@@ -87,4 +87,13 @@ public class MustacheCustomTagTest {
         //for absolute link we add target="_blank"
         assertEquals("<p>link <a href=\"http://test\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">bla</a> link</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("link [bla](http://test) link"));
     }
+
+    @Test
+    public void acceptOnlyHttpOrHttpsProtocols() {
+        assertEquals("<p><a href=\"http://google.com\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">google</a></p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("[google](http://google.com)"));
+        assertEquals("<p><a href=\"https://google.com\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">google</a></p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("[google](https://google.com)"));
+        assertEquals("<p><a>google</a></p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("[google](any:google.com)"));
+        assertEquals("<p><a>google</a></p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("[google](other:google.com)"));
+        assertEquals("<p><a>google</a></p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("[google](protocols:/google.com)"));
+    }
 }
