@@ -168,7 +168,15 @@ public class MustacheCustomTag {
         public void setAttributes(Node node, String tagName, Map<String, String> attributes) {
             if (node instanceof Link l) {
                 String destination = StringUtils.trimToEmpty(l.getDestination());
+                var scheme = getScheme(destination);
+                scheme.ifPresent(resolvedScheme -> {
+                    if (!Set.of("http", "https").contains(resolvedScheme)) {
+                        log.info("User tried to set an url with scheme {}, only http/https are accepted, href has been removed", resolvedScheme);
+                        attributes.remove("href");
+                    }
+                });
                 if (UrlUtils.isAbsoluteUrl(destination)) {
+                    // accept only http or https protocols if we have an absolute link, else we override with an empty string
                     attributes.put("target", "_blank");
                     attributes.put("rel", "nofollow noopener noreferrer");
                     var newTabLabel = A11Y_NEW_TAB_LABEL.get();
@@ -181,6 +189,14 @@ public class MustacheCustomTag {
     }
     public static String renderToHtmlCommonmarkEscaped(String input) {
         return renderToHtmlCommonmarkEscaped(input, null);
+    }
+
+    /**
+     * return lowercase scheme if present
+     */
+    private static Optional<String> getScheme(String uri) {
+        var s = StringUtils.trimToEmpty(uri).toLowerCase(Locale.ROOT);
+        return s.indexOf(':') >= 0 ? Optional.of(StringUtils.substringBefore(s, ':')) : Optional.empty();
     }
 
     public static String renderToHtmlCommonmarkEscaped(String input, String localizedNewWindowLabel) {
