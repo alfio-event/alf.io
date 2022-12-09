@@ -8,10 +8,12 @@ import {CommonModule} from "@angular/common";
 import {EventService} from "../shared/event.service";
 import {OrganizationConfigurationComponent} from './organization-configuration/organization-configuration.component';
 import {provideSvgIcons, SvgIconComponent} from '@ngneat/svg-icon';
+import { TranslateModule } from '@ngx-translate/core'
 import { ICONS } from "../shared/icons";
 
 @NgModule({
   imports: [
+    TranslateModule.forChild(),
     CommonModule,
     NgbModule,
     RouterModule.forChild([
