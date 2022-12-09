@@ -34,6 +34,16 @@
             </div>
         </div>
 
+        <div class="page-header" id="EMBED_PUBLIC_RESERVATION">
+            <h2>Embedding options</h2>
+            <span>Embed public reservation process in an iFrame</span>
+        </div>
+        <div>
+            <div data-ng-repeat="setting in systemConf.reservationEmbed.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+            </div>
+        </div>
+
         <div class="page-header" id="OPENID">
             <h2>End-Users Authentication</h2>
             <span>End-Users authentication save profile</span>

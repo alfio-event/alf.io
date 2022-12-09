@@ -32,17 +32,18 @@ class ReservationFlowContext {
     final String publicUsername;
     final Integer publicUserId;
     final boolean checkInStationsEnabled;
+    final boolean applyDiscount;
     private final Authentication authentication;
 
     ReservationFlowContext(Event event, String userId) {
-        this(event, userId, null, null, null, null, true);
+        this(event, userId, null, null, null, null, true, false);
     }
 
     ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin) {
-        this(event, userId, subscriptionId, subscriptionPin, null, null, true);
+        this(event, userId, subscriptionId, subscriptionPin, null, null, true, false);
     }
 
-    ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin, String publicUsername, Integer publicUserId, boolean checkInStationsEnabled) {
+    ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin, String publicUsername, Integer publicUserId, boolean checkInStationsEnabled, boolean applyDiscount) {
         this.event = event;
         this.userId = userId;
         this.subscriptionId = subscriptionId;
@@ -55,6 +56,7 @@ class ReservationFlowContext {
             this.authentication = null;
         }
         this.checkInStationsEnabled = checkInStationsEnabled;
+        this.applyDiscount = applyDiscount;
     }
 
     Principal getPublicUser() {

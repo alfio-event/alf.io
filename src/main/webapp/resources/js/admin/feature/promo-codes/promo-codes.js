@@ -13,7 +13,7 @@
             }
         })
         .component('promoCodeList', {
-            controller: [PromoCodeListCtrl],
+            controller: ['$uibModal', 'PromoCodeService', 'NotificationHandler', PromoCodeListCtrl],
             templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/promo-codes/list.html',
             bindings: {
                 forEvent: '<',
@@ -28,7 +28,34 @@
             }
         });
 
-    function PromoCodeListCtrl() {}
+    function PromoCodeListCtrl($uibModal, PromoCodeService, NotificationHandler) {
+        var ctrl = this;
+        ctrl.openPromoCodeDetails = openPromoCodeDetails;
+
+        function openPromoCodeDetails(promoCode) {
+            PromoCodeService.getUsageDetails(promoCode.id, ctrl.event ? ctrl.event.shortName : '')
+                .then(function(result) {
+                    var data = result.data;
+                    if (data.length === 0) {
+                        NotificationHandler.showError('No reservations found.');
+                    } else {
+                        $uibModal.open({
+                            size: 'lg',
+                            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/promo-codes/usage-details.html',
+                            backdrop: 'static',
+                            controllerAs: '$ctrl',
+                            bindToController: true,
+                            controller: function($scope) {
+                                this.data = data;
+                                this.close = function() {
+                                    $scope.$dismiss();
+                                }
+                            }
+                        });
+                    }
+                });
+        }
+    }
 
     function PromoCodeCtrl($window, $uibModal, $q, PromoCodeService, ConfigurationService, UtilsService) {
         var ctrl = this;

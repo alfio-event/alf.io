@@ -17,6 +17,7 @@
 package alfio.repository;
 
 import alfio.model.PromoCodeDiscount;
+import alfio.model.PromoCodeUsageResult;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -114,4 +115,9 @@ public interface PromoCodeDiscountRepository {
 
     @Query("select id from promo_code where code_type = 'ACCESS' and id = :id for update")
     Integer lockAccessCodeForUpdate(@Bind("id") int id);
+
+    @Query("select * from promocode_usage_details where promo_code = :promoCode" +
+        " and (:eventId is null or :eventId = event_id)")
+    List<PromoCodeUsageResult> findDetailedUsage(@Bind("promoCode") String promoCode,
+                                                 @Bind("eventId") Integer eventId);
 }

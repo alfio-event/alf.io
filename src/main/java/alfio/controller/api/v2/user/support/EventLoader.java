@@ -17,6 +17,7 @@
 package alfio.controller.api.v2.user.support;
 
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
+import alfio.controller.api.v2.model.EmbeddingConfiguration;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
 import alfio.controller.api.v2.model.OfflinePaymentConfiguration;
 import alfio.controller.support.Formatters;
@@ -116,6 +117,7 @@ public class EventLoader {
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf, offlinePaymentConfiguration,
+                    new EmbeddingConfiguration(configurationsValues.get(EMBED_POST_MESSAGE_ORIGIN).getValueOrNull()),
                     MessageSourceManager.convertPlaceholdersForEachLanguage(i18nOverride), availableTicketsCount, customCss, hasLinkedSubscription);
             });
     }
