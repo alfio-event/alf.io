@@ -160,4 +160,30 @@ class GroupManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("value.duplicate", items.getFirstErrorOrNull().getCode());
         assertEquals("test@test.ch", items.getFirstErrorOrNull().getDescription());
     }
+
+    @Test
+    void testEscape() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, 10,
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(1), LocalTime.now(ClockProvider.clock())),
+                new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(2), LocalTime.now(ClockProvider.clock())),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = pair.getKey();
+        Group group = groupManager.createNew("test > 1", "This is a test < 1", event.getOrganizationId());
+        assertNotNull(group);
+        assertEquals("This is a test &lt; 1", group.getDescription());
+        assertEquals("test &gt; 1", group.getName());
+        LinkedGroupModification modification = new LinkedGroupModification(null, group.getId(), event.getId(), null, LinkedGroup.Type.ONCE_PER_VALUE, LinkedGroup.MatchType.FULL, null);
+        LinkedGroup configuration = groupManager.createLink(group.getId(), event.getId(), modification);
+        assertNotNull(configuration);
+        Result<Integer> items = groupManager.insertMembers(group.getId(), List.of(new GroupMemberModification(null,"test@test.ch", "description <>")));
+        assertTrue(items.isSuccess());
+        var persistedGroup = groupManager.loadComplete(group.getId()).orElseThrow();
+        assertEquals("description &lt;&gt;", persistedGroup.getItems().get(0).getDescription());
+        groupManager.update(group.getId(), new GroupModification(group.getId(), "test > 1", "This is a test < 1", event.getOrganizationId(), List.of(new GroupMemberModification(null,"test@test.ch", "description <>"))));
+        persistedGroup = groupManager.loadComplete(group.getId()).orElseThrow();
+        assertEquals("This is a test &lt; 1", persistedGroup.getDescription());
+        assertEquals("test &gt; 1", persistedGroup.getName());
+    }
 }
