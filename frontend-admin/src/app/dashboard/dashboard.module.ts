@@ -10,6 +10,9 @@ import {OrganizationConfigurationComponent} from './organization-configuration/o
 import {provideSvgIconsConfig, SvgIconComponent} from '@ngneat/svg-icon';
 import { TranslateModule } from '@ngx-translate/core'
 import { ICON_CONFIG } from "../shared/icons";
+import { SubscriptionsComponent } from './subscriptions/subscriptions.component';
+import { OrganizationInfoComponent } from './organization-info/organization-info.component';
+import { GroupsComponent } from './groups/groups.component';
 
 @NgModule({
   imports: [
@@ -19,7 +22,10 @@ import { ICON_CONFIG } from "../shared/icons";
     RouterModule.forChild([
       { path: '', component: DashboardComponent},
       { path: '', component: DashboardMenuComponent, outlet: 'sidebar-content'},
-      { path: 'configuration', component: OrganizationConfigurationComponent }
+      { path: 'configuration', component: OrganizationConfigurationComponent },
+      { path: 'subscriptions', component: SubscriptionsComponent },
+      { path: 'organization-info', component: OrganizationInfoComponent },
+      { path: 'groups', component: GroupsComponent },
     ]),
     SvgIconComponent,
   ],
@@ -27,6 +33,9 @@ import { ICON_CONFIG } from "../shared/icons";
     DashboardComponent,
     DashboardMenuComponent,
     OrganizationConfigurationComponent,
+    SubscriptionsComponent,
+    OrganizationInfoComponent,
+    GroupsComponent,
   ],
   providers: [
     OrganizationService,
