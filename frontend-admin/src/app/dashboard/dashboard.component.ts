@@ -14,7 +14,7 @@ export class DashboardComponent implements OnInit {
   public expiredEvents$: Observable<EventInfo[]> = of();
 
   constructor(route: ActivatedRoute, private readonly eventService: EventService) {
-    this.organizationId = route.snapshot.paramMap.get('id') as string;
+    this.organizationId = route.snapshot.paramMap.get('organizationId') as string;
   }
 
   ngOnInit(): void {

@@ -4,7 +4,7 @@ import { MissingOrgComponent } from './missing-org/missing-org.component';
 
 const routes: Routes = [
   {
-    path: 'organization/:id',
+    path: 'organization/:organizationId',
     loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule)
   },
   {

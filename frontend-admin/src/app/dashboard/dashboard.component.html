@@ -1,5 +1,6 @@
 <h1 translate="admin.dashboard.my-events"></h1>
-<svg-icon key="check"></svg-icon>
+<button type="button" class="btn btn-primary"><svg-icon key="check" size="md"></svg-icon> Active</button>
+<button type="button" class="btn btn-outline-primary">Inactive</button>
 <h2>Active</h2>
 <ul>
     <li *ngFor="let ev of activeEvents$ | async">
