@@ -1,16 +1,19 @@
 <h1 translate="admin.dashboard.my-events"></h1>
-<button type="button" class="btn btn-primary"><svg-icon key="check" size="md"></svg-icon> Active</button>
-<button type="button" class="btn btn-outline-primary">Inactive</button>
-<h2>Active</h2>
-<ul>
-    <li *ngFor="let ev of activeEvents$ | async">
-        {{ev.displayName}} {{ev.formattedBegin}} {{ev.formattedEnd}}
-    </li>
-</ul>
-
-<h2>Expired</h2>
-<ul>
-    <li *ngFor="let ev of expiredEvents$ | async">
-        {{ev.displayName}} {{ev.formattedBegin}} {{ev.formattedEnd}}
-    </li>
-</ul>
+<app-filter-button text="Active" [checked]="activeFilter" (toggleFilter)="toggleActiveFilter($event)"></app-filter-button>
+<app-filter-button text="Inactive" [checked]="inactiveFilter"  (toggleFilter)="toggleInactiveFilter($event)"></app-filter-button>
+<ng-container *ngIf="activeFilter">
+    <h2>Active</h2>
+    <ul>
+        <li *ngFor="let ev of activeEvents$ | async">
+            {{ev.displayName}} {{ev.formattedBegin}} {{ev.formattedEnd}}
+        </li>
+    </ul>
+</ng-container>
+<ng-container *ngIf="inactiveFilter">
+    <h2>Expired</h2>
+    <ul>
+        <li *ngFor="let ev of expiredEvents$ | async">
+            {{ev.displayName}} {{ev.formattedBegin}} {{ev.formattedEnd}}
+        </li>
+    </ul>
+</ng-container>
