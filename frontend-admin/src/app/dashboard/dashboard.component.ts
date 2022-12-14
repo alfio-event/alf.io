@@ -1,6 +1,6 @@
 import {Component, OnInit} from "@angular/core";
 import {ActivatedRoute} from "@angular/router";
-import { Observable, of } from "rxjs";
+import { map, mergeMap, Observable, of } from "rxjs";
 import { EventInfo } from "../model/event";
 import { EventService } from "../shared/event.service";
 
@@ -9,24 +9,32 @@ import { EventService } from "../shared/event.service";
 })
 export class DashboardComponent implements OnInit {
 
-  public readonly organizationId: string;
+  public organizationId$: Observable<string | null> = of();
   public activeEvents$: Observable<EventInfo[]> = of();
   public expiredEvents$: Observable<EventInfo[]> = of();
   public activeFilter: boolean = true;
   public inactiveFilter: boolean = false;
 
   constructor(route: ActivatedRoute, private readonly eventService: EventService) {
-    this.organizationId = route.snapshot.paramMap.get('organizationId') as string;
+    this.organizationId$ = route.paramMap.pipe(map((pm) => pm.get('organizationId')))
   }
 
   public ngOnInit(): void {
-    this.activeEvents$ = this.eventService.getActiveEvents(this.organizationId); // default
+    this.activeEvents$ = this.loadActiveEvents(); // default
+  }
+
+  private loadActiveEvents() {
+    return this.organizationId$.pipe(mergeMap(orgId => orgId != null ? this.eventService.getActiveEvents(orgId) : []));
+  }
+
+  private loadInactiveEvents() {
+    return this.organizationId$.pipe(mergeMap(orgId => orgId != null ? this.eventService.getExpiredEvents(orgId) : []));
   }
 
   public toggleActiveFilter(toggle: boolean): void {
     this.activeFilter = toggle;
     if (toggle) {
-      this.activeEvents$ = this.eventService.getActiveEvents(this.organizationId);
+      this.activeEvents$ = this.loadActiveEvents();
     } else {
       this.activeEvents$ = of();
     }
@@ -35,7 +43,7 @@ export class DashboardComponent implements OnInit {
   public toggleInactiveFilter(toggle: boolean): void {
     this.inactiveFilter = toggle;
     if (toggle) {
-      this.expiredEvents$ = this.eventService.getExpiredEvents(this.organizationId);
+      this.expiredEvents$ = this.loadInactiveEvents();
     } else {
       this.expiredEvents$ = of();
     }

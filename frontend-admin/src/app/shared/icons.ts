@@ -1,4 +1,5 @@
 import { addIcon } from '../svg/add';
+import { arrowdropdownIcon } from '../svg/arrowdropdown';
 import {checkIcon} from '../svg/check';
 import {homeIcon} from '../svg/home';
 import { organizationIcon } from '../svg/organization';
@@ -11,6 +12,7 @@ const ICONS = [
   addIcon,
   organizationIcon,
   settingsIcon,
+  arrowdropdownIcon,
 ];
 export const ICON_CONFIG = {
   sizes: {

@@ -2,8 +2,15 @@
 <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
     <span class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6">
         <img src="assets/alfio-logo.svg" height="48">
+        <span>
+            <button class="btn btn-light" (click)="openOrgSelector()">
+                <svg-icon key="organization" size="lg"></svg-icon>
+                {{(currentOrganization$ | async)?.name}}
+                <svg-icon key="arrowdropdown"></svg-icon>
+            </button>
+        </span>
     </span>
-    <span style="color: white;">org id {{organizationId$ | async}}</span>
+    <span style="color: white;">user: {{(currentUser$ | async)?.username}}</span>
     <!-- <input class="form-control form-control-dark w-100 rounded-0 border-0" type="text" placeholder="Search"
         aria-label="Search">
     <div class="navbar-nav">

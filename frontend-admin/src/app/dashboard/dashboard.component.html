@@ -1,19 +1,19 @@
 <h1 translate="admin.dashboard.my-events"></h1>
 <app-filter-button text="Active" [checked]="activeFilter" (toggleFilter)="toggleActiveFilter($event)"></app-filter-button>
-<app-filter-button text="Inactive" [checked]="inactiveFilter"  (toggleFilter)="toggleInactiveFilter($event)"></app-filter-button>
+<app-filter-button text="Past" [checked]="inactiveFilter"  (toggleFilter)="toggleInactiveFilter($event)"></app-filter-button>
 <ng-container *ngIf="activeFilter">
     <h2>Active</h2>
     <ul>
         <li *ngFor="let ev of activeEvents$ | async">
-            {{ev.displayName}} {{ev.formattedBegin}} {{ev.formattedEnd}}
+            <a [routerLink]="['./event', ev.id]">{{ev.displayName}} {{ev.formattedBegin}} {{ev.formattedEnd}}</a>
         </li>
     </ul>
 </ng-container>
 <ng-container *ngIf="inactiveFilter">
-    <h2>Expired</h2>
+    <h2>Past</h2>
     <ul>
         <li *ngFor="let ev of expiredEvents$ | async">
-            {{ev.displayName}} {{ev.formattedBegin}} {{ev.formattedEnd}}
+            <a [routerLink]="['./event', ev.id]">{{ev.displayName}} {{ev.formattedBegin}} {{ev.formattedEnd}}</a>
         </li>
     </ul>
 </ng-container>
