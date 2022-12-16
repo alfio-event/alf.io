@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivationEnd, Router } from '@angular/router';
+import { ActivatedRoute, ActivationEnd, Router } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TranslateService } from '@ngx-translate/core';
-import { filter, map, Observable, of, tap, zip } from 'rxjs';
+import { combineLatest, filter, map, Observable, of } from 'rxjs';
 import { Organization } from './model/organization';
 import { UserInfo } from './model/user';
 import { OrgSelectorComponent } from './org-selector/org-selector.component';
@@ -36,10 +36,10 @@ export class AppComponent implements OnInit {
     this.organizations$ = this.organizationService.getOrganizations();
     this.organizationId$ = this.router.events.pipe(filter(a => a instanceof ActivationEnd), map(a => {
       const ae = a as ActivationEnd;
-      return ae.snapshot.paramMap.get('organizationId');
+      return ae.snapshot.params['organizationId'];
     }));
     this.currentUser$ = this.userService.getCurrent();
-    this.currentOrganization$ = zip(this.organizationId$, this.organizations$)
+    this.currentOrganization$ = combineLatest([this.organizationId$, this.organizations$])
       .pipe(map(([id, orgs]) => orgs.find(o => id !== null && o.id === Number.parseInt(id))));
   }
 
