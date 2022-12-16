@@ -49,6 +49,7 @@ import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
+import alfio.model.modification.AttendeeData;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
@@ -117,12 +118,14 @@ import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.MiscUtils.getAtIndexOrNull;
 import static alfio.util.MonetaryUtil.*;
 import static alfio.util.Wrappers.optionally;
 import static alfio.util.checkin.TicketCheckInUtil.ticketOnlineCheckInUrl;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.*;
@@ -135,7 +138,7 @@ import static org.apache.commons.lang3.time.DateUtils.truncate;
 public class TicketReservationManager {
 
     private static final Logger log = LoggerFactory.getLogger(TicketReservationManager.class);
-    
+
     public static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
     private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
     private static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
@@ -436,69 +439,7 @@ public class TicketReservationManager {
         }
 
         TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticketReservation.getTicketCategoryId(), event.getId());
-        List<Map<String, String>> ticketMetadata = requireNonNullElse(ticketReservation.getMetadata(), List.of());
-        if (!specialPrices.isEmpty()) {
-            if(specialPrices.size() != reservedForUpdate.size()) {
-                throw new NotEnoughTicketsException();
-            }
-
-            AtomicInteger counter = new AtomicInteger(0);
-            var ticketsAndSpecialPrices = specialPrices.stream()
-                .map(sp -> {
-                    int index = counter.getAndIncrement();
-                    return Triple.of(reservedForUpdate.get(index), sp, getAtIndexOrNull(ticketMetadata, index));
-                }).toList();
-
-            if(specialPrices.size() == 1) {
-                var ticketId = reservedForUpdate.get(0);
-                var sp = specialPrices.get(0);
-                var accessCodeId = accessCodeOrDiscount != null && accessCodeOrDiscount.getHiddenCategoryId() != null ? accessCodeOrDiscount.getId() : null;
-                TicketMetadata metadata = null;
-                var attributes = getAtIndexOrNull(ticketMetadata, 0);
-                if(attributes != null) {
-                    metadata = new TicketMetadata(null, null, attributes);
-                }
-                ticketRepository.reserveTicket(reservationId,
-                    ticketId,
-                    sp.getId(),
-                    locale.getLanguage(),
-                    category.getSrcPriceCts(),
-                    category.getCurrencyCode(),
-                    event.getVatStatus(),
-                    TicketMetadataContainer.fromMetadata(metadata));
-                specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), null, accessCodeId);
-            } else {
-                jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicketsForSpecialPrice(), ticketsAndSpecialPrices.stream().map(
-                    triple -> {
-                        TicketMetadataContainer metadata = null;
-                        if(triple.getRight() != null) {
-                            metadata = TicketMetadataContainer.fromMetadata(new TicketMetadata(null, null, triple.getRight()));
-                        }
-                        return new MapSqlParameterSource(RESERVATION_ID, reservationId)
-                            .addValue("ticketId", triple.getLeft())
-                            .addValue("specialCodeId", triple.getMiddle().getId())
-                            .addValue("userLanguage", locale.getLanguage())
-                            .addValue("srcPriceCts", category.getSrcPriceCts())
-                            .addValue("currencyCode", category.getCurrencyCode())
-                            .addValue("ticketMetadata", json.asJsonString(metadata))
-                            .addValue("vatStatus", event.getVatStatus().toString());
-                    }
-                ).toArray(MapSqlParameterSource[]::new));
-                specialPriceRepository.batchUpdateStatus(
-                    specialPrices.stream().map(SpecialPrice::getId).toList(),
-                    Status.PENDING,
-                    Objects.requireNonNull(accessCodeOrDiscount).getId());
-            }
-        } else {
-            int reserved = ticketRepository.reserveTickets(reservationId, reservedForUpdate, category, locale.getLanguage(), event.getVatStatus(), idx -> {
-                var metadata = getAtIndexOrNull(ticketMetadata, idx);
-                if (metadata != null) {
-                    return json.asJsonString(TicketMetadataContainer.fromMetadata(new TicketMetadata(null, null, metadata)));
-                }
-                return null;
-            });
-            Validate.isTrue(reserved == reservedForUpdate.size(), "Cannot reserve all tickets");
-        }
+        initTicketsForReservation(event, reservationId, locale, accessCodeOrDiscount, specialPrices, reservedForUpdate, category, ticketReservation);
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), category.getId());
         var discountToApply = ObjectUtils.firstNonNull(dynamicDiscount, accessCodeOrDiscount);
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), discountToApply);
@@ -514,11 +455,86 @@ public class TicketReservationManager {
             priceContainer.getVatStatus());
     }
 
-    private static <T> T getAtIndexOrNull(List<T> elements, int index) {
-        if (elements == null || index >= elements.size()) {
-            return null;
+    private void initTicketsForReservation(Event event,
+                                           String reservationId,
+                                           Locale locale,
+                                           PromoCodeDiscount accessCodeOrDiscount,
+                                           List<SpecialPrice> specialPrices,
+                                           List<Integer> reservedForUpdate,
+                                           TicketCategory category,
+                                           TicketReservationWithOptionalCodeModification ticketReservation) {
+        var attendees = requireNonNull(ticketReservation.getAttendees());
+        if (!specialPrices.isEmpty()) {
+            if(specialPrices.size() != reservedForUpdate.size()) {
+                throw new NotEnoughTicketsException();
+            }
+
+            if(specialPrices.size() == 1) {
+                var ticketId = reservedForUpdate.get(0);
+                var sp = specialPrices.get(0);
+                var accessCodeId = accessCodeOrDiscount != null && accessCodeOrDiscount.getHiddenCategoryId() != null ? accessCodeOrDiscount.getId() : null;
+                TicketMetadata metadata = null;
+                var attendee = getAtIndexOrEmpty(attendees, 0);
+                if(attendee.hasMetadata()) {
+                    metadata = new TicketMetadata(null, null, attendee.getMetadata());
+                }
+                ticketRepository.reserveTicket(reservationId,
+                    ticketId,
+                    sp.getId(),
+                    locale.getLanguage(),
+                    category.getSrcPriceCts(),
+                    category.getCurrencyCode(),
+                    event.getVatStatus(),
+                    TicketMetadataContainer.fromMetadata(metadata));
+                if (attendee.hasContactData()) {
+                    ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmail(), null, attendee.getFirstName(), attendee.getLastName());
+                }
+                specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), null, accessCodeId);
+            } else {
+                AtomicInteger counter = new AtomicInteger(0);
+                var ticketsAndSpecialPrices = specialPrices.stream()
+                    .map(sp -> {
+                        int index = counter.getAndIncrement();
+                        return Triple.of(reservedForUpdate.get(index), sp, getAtIndexOrEmpty(attendees, index));
+                    }).toList();
+                jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicketsForSpecialPrice(), ticketsAndSpecialPrices.stream().map(
+                    triple -> {
+                        String metadata = null;
+                        var attendee = triple.getRight();
+                        if(attendee.hasMetadata()) {
+                            metadata = json.asJsonString(TicketMetadataContainer.fromMetadata(new TicketMetadata(null, null, attendee.getMetadata())));
+                        }
+                        return new MapSqlParameterSource(RESERVATION_ID, reservationId)
+                            .addValue("ticketId", triple.getLeft())
+                            .addValue("specialCodeId", triple.getMiddle().getId())
+                            .addValue("userLanguage", locale.getLanguage())
+                            .addValue("srcPriceCts", category.getSrcPriceCts())
+                            .addValue("currencyCode", category.getCurrencyCode())
+                            .addValue("ticketMetadata", requireNonNullElse(metadata, "{}"))
+                            .addValue("firstName", attendee.getFirstName())
+                            .addValue("lastName", attendee.getLastName())
+                            .addValue("email", attendee.getEmail())
+                            .addValue("vatStatus", event.getVatStatus().toString());
+                    }
+                ).toArray(MapSqlParameterSource[]::new));
+                specialPriceRepository.batchUpdateStatus(
+                    specialPrices.stream().map(SpecialPrice::getId).toList(),
+                    Status.PENDING,
+                    Objects.requireNonNull(accessCodeOrDiscount).getId());
+            }
+        } else {
+            int reserved = ticketRepository.reserveTickets(reservationId,
+                reservedForUpdate,
+                category,
+                locale.getLanguage(),
+                event.getVatStatus(),
+                idx -> getAtIndexOrEmpty(attendees, idx));
+            Validate.isTrue(reserved == reservedForUpdate.size(), "Cannot reserve all tickets");
         }
-        return elements.get(index);
+    }
+
+    private static AttendeeData getAtIndexOrEmpty(List<AttendeeData> attendees, int index) {
+        return requireNonNullElse(getAtIndexOrNull(attendees, index), AttendeeData.empty());
     }
 
     List<SpecialPrice> reserveTokensForAccessCode(TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount accessCode) {

@@ -19,11 +19,14 @@ package alfio.repository;
 import alfio.model.*;
 import alfio.model.checkin.AttendeeSearchResultsCount;
 import alfio.model.checkin.CheckInFullInfo;
+import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
+import alfio.model.modification.AttendeeData;
 import alfio.model.poll.PollParticipant;
 import alfio.model.support.Array;
 import alfio.model.support.EnumTypeAsString;
 import alfio.model.support.JSONData;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -115,17 +118,27 @@ public interface TicketRepository {
                                TicketCategory category,
                                String userLanguage,
                                PriceContainer.VatStatus vatStatus,
-                               IntFunction<String> ticketMetadataSupplier) {
+                               IntFunction<AttendeeData> attendeeDataSupplier) {
         var idx = new AtomicInteger();
         var batchReserveParameters = ticketIds.stream()
-            .map(id -> new MapSqlParameterSource("reservationId", reservationId)
-                .addValue("id", id)
-                .addValue("categoryId", category.getId())
-                .addValue("userLanguage", userLanguage)
-                .addValue("srcPriceCts", category.getSrcPriceCts())
-                .addValue("currencyCode", category.getCurrencyCode())
-                .addValue("ticketMetadata", Objects.requireNonNullElse(ticketMetadataSupplier.apply(idx.getAndIncrement()), "{}"))
-                .addValue("vatStatus", vatStatus.name())).toArray(MapSqlParameterSource[]::new);
+            .map(id -> {
+                var attendee = Objects.requireNonNullElse(attendeeDataSupplier.apply(idx.getAndIncrement()), AttendeeData.empty());
+                String metadata = null;
+                if (attendee.hasMetadata()) {
+                    metadata = Json.toJson(TicketMetadataContainer.fromMetadata(new TicketMetadata(null, null, attendee.getMetadata())));
+                }
+                return new MapSqlParameterSource("reservationId", reservationId)
+                    .addValue("id", id)
+                    .addValue("categoryId", category.getId())
+                    .addValue("userLanguage", userLanguage)
+                    .addValue("srcPriceCts", category.getSrcPriceCts())
+                    .addValue("currencyCode", category.getCurrencyCode())
+                    .addValue("ticketMetadata", Objects.requireNonNullElse(metadata, "{}"))
+                    .addValue("firstName", attendee.getFirstName())
+                    .addValue("lastName", attendee.getLastName())
+                    .addValue("email", attendee.getEmail())
+                    .addValue("vatStatus", vatStatus.name());
+            }).toArray(MapSqlParameterSource[]::new);
         return (int) Arrays.stream(getNamedParameterJdbcTemplate().batchUpdate(batchReserveTickets(), batchReserveParameters))
             .asLongStream()
             .sum();
@@ -134,14 +147,15 @@ public interface TicketRepository {
     @Query(type = QueryType.TEMPLATE,
         value = "update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', category_id = :categoryId, " +
             "user_language = :userLanguage, src_price_cts = :srcPriceCts, currency_code = :currencyCode, metadata = :ticketMetadata::jsonb, " +
-            "vat_status = :vatStatus::VAT_STATUS where id = :id")
+            "vat_status = :vatStatus::VAT_STATUS, first_name = :firstName, last_name = :lastName, email_address = :email where id = :id")
     String batchReserveTickets();
 
     @Query(type = QueryType.TEMPLATE,
         value = "update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
             " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts," +
             " currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS," +
-            " metadata = :ticketMetadata::jsonb where id = :ticketId")
+            " metadata = :ticketMetadata::jsonb, first_name = :firstName, last_name = :lastName, email_address = :email" +
+            " where id = :ticketId")
     String batchReserveTicketsForSpecialPrice();
 
     @Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
@@ -245,6 +259,9 @@ public interface TicketRepository {
 
     @Query("update ticket set email_address = :email, full_name = :fullName, first_name = :firstName, last_name = :lastName where id = :id")
     int updateTicketOwnerById(@Bind("id") int id, @Bind("email") String email, @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName);
+
+    @Query(type = QueryType.TEMPLATE, value = "update ticket set email_address = :email, full_name = :fullName, first_name = :firstName, last_name = :lastName, metadata = :metadata::jsonb where id = :id")
+    String updateTicketOwnerAndMetadataById();
 
     @Query("update ticket set locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int toggleTicketLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("lockedAssignment") boolean locked);

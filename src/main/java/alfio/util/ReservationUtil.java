@@ -23,10 +23,7 @@ import alfio.manager.PromoCodeRequestManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.model.*;
-import alfio.model.modification.ASReservationWithOptionalCodeModification;
-import alfio.model.modification.AdditionalServiceReservationModification;
-import alfio.model.modification.TicketReservationModification;
-import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.modification.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
@@ -46,7 +43,7 @@ public class ReservationUtil {
     private ReservationUtil() {
     }
 
-    public static Optional<String> checkPromoCode(ReservationCreate createRequest,
+    public static <T extends ReservationRequest> Optional<String> checkPromoCode(ReservationCreate<T> createRequest,
                                                   Event event,
                                                   PromoCodeRequestManager promoCodeRequestManager,
                                                   BindingResult bindingResult) {
@@ -66,7 +63,7 @@ public class ReservationUtil {
     }
 
 
-    public static Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validateCreateRequest(ReservationCreate request,
+    public static Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validateCreateRequest(ReservationCreate<? extends ReservationRequest> request,
                                                                                                                                                       Errors bindingResult,
                                                                                                                                                       TicketReservationManager tickReservationManager,
                                                                                                                                                       EventManager eventManager,
@@ -82,9 +79,9 @@ public class ReservationUtil {
             return Optional.empty();
         }
 
-        List<Pair<TicketReservationModification, Integer>> maxTicketsByTicketReservation = selected(request.getTickets()).stream()
-            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event, r.getTicketCategoryId(), validatedPromoCodeDiscount))).toList();
-        Optional<Pair<TicketReservationModification, Integer>> error = maxTicketsByTicketReservation.stream()
+        List<Pair<ReservationRequest, Integer>> maxTicketsByTicketReservation = selected(request.getTickets()).stream()
+            .map(r -> Pair.of((ReservationRequest) r, tickReservationManager.maxAmountOfTicketsForCategory(event, r.getTicketCategoryId(), validatedPromoCodeDiscount))).toList();
+        Optional<Pair<ReservationRequest, Integer>> error = maxTicketsByTicketReservation.stream()
             .filter(p -> p.getKey().getQuantity() > p.getValue())
             .findAny();
 
@@ -93,7 +90,7 @@ public class ReservationUtil {
             return Optional.empty();
         }
 
-        final List<TicketReservationModification> categories = selected(request.getTickets());
+        final var categories = selected(request.getTickets());
         final List<AdditionalServiceReservationModification> additionalServices = selectedAdditionalServices(request.getAdditionalServices());
 
         final boolean validCategorySelection = categories.stream().allMatch(c -> {
@@ -127,13 +124,13 @@ public class ReservationUtil {
         return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).toList()));
     }
 
-    private static int ticketSelectionCount(List<TicketReservationModification> tickets) {
-        return selected(tickets).stream().mapToInt(TicketReservationModification::getQuantity).sum();
+    private static <T extends ReservationRequest> int ticketSelectionCount(List<T> tickets) {
+        return selected(tickets).stream().mapToInt(ReservationRequest::getQuantity).sum();
     }
 
-    private static void validateCategory(Errors bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager,
+    private static <T extends ReservationRequest> void validateCategory(Errors bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager,
                                          Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res,
-                                         Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r) {
+                                         Optional<SpecialPrice> specialCode, ZonedDateTime now, T r) {
         TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
         SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager.countAvailableTickets(event, tc), maxAmountOfTicket, null);
 
@@ -145,7 +142,7 @@ public class ReservationUtil {
         res.add(new TicketReservationWithOptionalCodeModification(r, ticketCategory.isAccessRestricted() ? specialCode : Optional.empty()));
     }
 
-    private static List<TicketReservationModification> selected(List<TicketReservationModification> reservation) {
+    private static <T extends ReservationRequest> List<T> selected(List<T> reservation) {
         return ofNullable(reservation)
             .orElse(emptyList())
             .stream()

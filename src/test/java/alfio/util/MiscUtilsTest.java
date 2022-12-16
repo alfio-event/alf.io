@@ -14,16 +14,23 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.form;
+package alfio.util;
 
-import alfio.model.modification.AdditionalServiceReservationModification;
-import alfio.model.modification.ReservationRequest;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public interface ReservationCreate<T extends ReservationRequest> {
-    String getPromoCode();
-    List<T> getTickets();
-    List<AdditionalServiceReservationModification> getAdditionalServices();
-    String getCaptcha();
+import static org.junit.jupiter.api.Assertions.*;
+
+class MiscUtilsTest {
+
+    @Test
+    void getAtIndexOrNull() {
+        var listOfTwoElements = List.of("element1", "element2");
+        assertEquals("element1", MiscUtils.getAtIndexOrNull(listOfTwoElements, 0));
+        assertEquals("element2", MiscUtils.getAtIndexOrNull(listOfTwoElements, 1));
+        assertNull(MiscUtils.getAtIndexOrNull(listOfTwoElements, 3));
+        assertNull(MiscUtils.getAtIndexOrNull(listOfTwoElements, Integer.MAX_VALUE));
+        assertNull(MiscUtils.getAtIndexOrNull(listOfTwoElements, Integer.MIN_VALUE));
+    }
 }
