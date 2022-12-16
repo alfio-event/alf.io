@@ -4,6 +4,10 @@ import { MissingOrgComponent } from './missing-org/missing-org.component';
 
 const routes: Routes = [
   {
+    path: 'organization/:organizationId/event/:eventId',
+    loadChildren: () => import('./event/event.module').then(m => m.EventModule)
+  },
+  {
     path: 'organization/:organizationId',
     loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule)
   },

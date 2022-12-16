@@ -15,6 +15,7 @@ import {MissingOrgComponent} from './missing-org/missing-org.component';
 import { ICON_CONFIG } from './shared/icons';
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {CustomLoader} from './shared/i18n.service';
+import { OrgSelectorComponent } from './org-selector/org-selector.component';
 
 export function RedirectToLoginIfNeeded(userService: UserService, router: Router): () => Promise<boolean> {
   return async () => {
@@ -35,6 +36,7 @@ export function HttpLoaderFactory(http: HttpClient) {
   declarations: [
     AppComponent,
     MissingOrgComponent,
+    OrgSelectorComponent,
   ],
   imports: [
     BrowserModule,

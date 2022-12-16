@@ -13,7 +13,7 @@ import {ICON_CONFIG} from "../shared/icons";
 import {SubscriptionsComponent} from './subscriptions/subscriptions.component';
 import {OrganizationInfoComponent} from './organization-info/organization-info.component';
 import {GroupsComponent} from './groups/groups.component';
-import {FilterButtonComponent} from "../shared/filter-button/filter-button.component";
+import {FilterButtonComponent} from '../shared/filter-button/filter-button.component';
 
 @NgModule({
   imports: [
@@ -23,7 +23,7 @@ import {FilterButtonComponent} from "../shared/filter-button/filter-button.compo
     RouterModule.forChild([
       { path: '', component: DashboardComponent},
       { path: '', component: DashboardMenuComponent, outlet: 'sidebar-content'},
-      { path: 'configuration', component: OrganizationConfigurationComponent },
+      { path: 'configuration', component: OrganizationConfigurationComponent},
       { path: 'subscriptions', component: SubscriptionsComponent },
       { path: 'organization-info', component: OrganizationInfoComponent },
       { path: 'groups', component: GroupsComponent },
