@@ -18,15 +18,14 @@ package alfio.model.api.v1.admin;
 
 import alfio.controller.form.ReservationCreate;
 import alfio.model.modification.AdditionalServiceReservationModification;
-import alfio.model.modification.TicketReservationModification;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class ReservationCreationRequest implements ReservationCreate {
+public class ReservationCreationRequest implements ReservationCreate<AttendeesByCategory> {
 
-    private final List<TicketReservationModification> tickets;
+    private final List<AttendeesByCategory> tickets;
     private final List<AdditionalServiceReservationModification> additionalServices;
     private final ReservationConfiguration reservationConfiguration;
     private final ReservationUser user;
@@ -34,7 +33,7 @@ public class ReservationCreationRequest implements ReservationCreate {
     private final String language;
 
     @JsonCreator
-    public ReservationCreationRequest(@JsonProperty("tickets") List<TicketReservationModification> tickets,
+    public ReservationCreationRequest(@JsonProperty("tickets") List<AttendeesByCategory> tickets,
                                       @JsonProperty("additionalServices") List<AdditionalServiceReservationModification> additionalServices,
                                       @JsonProperty("configuration") ReservationConfiguration reservationConfiguration,
                                       @JsonProperty("user") ReservationUser user,
@@ -55,7 +54,7 @@ public class ReservationCreationRequest implements ReservationCreate {
     }
 
     @Override
-    public List<TicketReservationModification> getTickets() {
+    public List<AttendeesByCategory> getTickets() {
         return tickets;
     }
 
@@ -80,4 +79,5 @@ public class ReservationCreationRequest implements ReservationCreate {
     public ReservationConfiguration getReservationConfiguration() {
         return reservationConfiguration;
     }
+
 }

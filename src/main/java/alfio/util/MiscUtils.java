@@ -14,17 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.modification;
+package alfio.util;
 
-import alfio.model.SpecialPrice;
-import lombok.Data;
-import lombok.experimental.Delegate;
+import java.util.List;
 
-import java.util.Optional;
+public class MiscUtils {
+    private MiscUtils() {
+    }
 
-@Data
-public class TicketReservationWithOptionalCodeModification {
-    @Delegate
-    private final ReservationRequest ticketReservationModification;
-    private final Optional<SpecialPrice> specialPrice;
+    public static <T> T getAtIndexOrNull(List<T> elements, int index) {
+        if (elements == null || index < 0 || index >= elements.size()) {
+            return null;
+        }
+        return elements.get(index);
+    }
+
 }

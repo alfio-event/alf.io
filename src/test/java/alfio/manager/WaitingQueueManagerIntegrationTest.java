@@ -134,7 +134,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(firstCategory.getId()), reservation.getTicketCategoryId());
-        assertEquals(Integer.valueOf(1), reservation.getAmount());
+        assertEquals(Integer.valueOf(1), reservation.getQuantity());
         assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(clockProvider.getClock())));
 
     }
@@ -156,7 +156,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(firstCategory.getId()), reservation.getTicketCategoryId());
-        assertEquals(Integer.valueOf(1), reservation.getAmount());
+        assertEquals(Integer.valueOf(1), reservation.getQuantity());
         assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(clockProvider.getClock())));
 
     }
@@ -248,7 +248,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(unbounded.getId()), reservation.getTicketCategoryId());
-        assertEquals(Integer.valueOf(1), reservation.getAmount());
+        assertEquals(Integer.valueOf(1), reservation.getQuantity());
         assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(clockProvider.getClock())));
     }
 
@@ -310,7 +310,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(bounded.getId()), reservation.getTicketCategoryId());
-        assertEquals(Integer.valueOf(1), reservation.getAmount());
+        assertEquals(Integer.valueOf(1), reservation.getQuantity());
         assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(clockProvider.getClock())));
     }
 
@@ -364,14 +364,14 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("john@doe.com", subscriptionDetail.getLeft().getEmailAddress());
         TicketReservationWithOptionalCodeModification reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(first.getId()), reservation.getTicketCategoryId());
-        assertEquals(Integer.valueOf(1), reservation.getAmount());
+        assertEquals(Integer.valueOf(1), reservation.getQuantity());
         assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(clockProvider.getClock())));
 
         subscriptionDetail = subscriptions.get(1);
         assertEquals("john@doe2.com", subscriptionDetail.getLeft().getEmailAddress());
         reservation = subscriptionDetail.getMiddle();
         assertEquals(Integer.valueOf(second.getId()), reservation.getTicketCategoryId());
-        assertEquals(Integer.valueOf(1), reservation.getAmount());
+        assertEquals(Integer.valueOf(1), reservation.getQuantity());
         assertTrue(subscriptionDetail.getRight().isAfter(ZonedDateTime.now(clockProvider.getClock())));
     }
 
