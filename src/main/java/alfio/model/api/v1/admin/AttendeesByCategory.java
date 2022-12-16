@@ -16,6 +16,7 @@
  */
 package alfio.model.api.v1.admin;
 
+import alfio.model.modification.AttendeeData;
 import alfio.model.modification.ReservationRequest;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -52,8 +53,12 @@ public class AttendeesByCategory implements ReservationRequest {
         return quantity;
     }
 
+    @Override
     public List<AttendeeData> getAttendees() {
-        return attendees;
+        if (attendees != null && !attendees.isEmpty()) {
+            return attendees;
+        }
+        return ReservationRequest.metadataToAttendeesList(getQuantity(), metadata);
     }
 
     @Override

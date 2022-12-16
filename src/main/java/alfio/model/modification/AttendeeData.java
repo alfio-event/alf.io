@@ -14,24 +14,25 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.api.v1.admin;
+package alfio.model.modification;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
-class AttendeeData {
+public class AttendeeData {
     private final String firstName;
     private final String lastName;
     private final String email;
     private final Map<String, String> metadata;
 
     @JsonCreator
-    AttendeeData(@JsonProperty("firstName") String firstName,
-                 @JsonProperty("lastName") String lastName,
-                 @JsonProperty("email") String email,
-                 @JsonProperty("metadata") Map<String, String> metadata) {
+    public AttendeeData(@JsonProperty("firstName") String firstName,
+                        @JsonProperty("lastName") String lastName,
+                        @JsonProperty("email") String email,
+                        @JsonProperty("metadata") Map<String, String> metadata) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -52,5 +53,19 @@ class AttendeeData {
 
     public Map<String, String> getMetadata() {
         return metadata;
+    }
+
+    public boolean hasMetadata() {
+        return metadata != null;
+    }
+
+    public boolean hasContactData() {
+        return StringUtils.isNotBlank(firstName)
+            || StringUtils.isNotBlank(lastName)
+            || StringUtils.isNotBlank(email);
+    }
+
+    public static AttendeeData empty() {
+        return new AttendeeData(null, null, null, null);
     }
 }
