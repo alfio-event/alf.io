@@ -26,6 +26,7 @@ import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
+import alfio.model.api.v1.admin.AttendeesByCategory;
 import alfio.model.api.v1.admin.ReservationConfiguration;
 import alfio.model.api.v1.admin.ReservationCreationRequest;
 import alfio.model.api.v1.admin.ReservationUser;
@@ -121,11 +122,8 @@ class ReservationApiV1ControllerTest {
     @Test
     void createSingleTicketWithMetadata() {
         var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
-        var ticket = new TicketReservationModification();
-        ticket.setQuantity(1);
-        ticket.setTicketCategoryId(category.getId());
         var firstTicketProperties = Map.of("property", "value-first");
-        ticket.setMetadata(List.of(firstTicketProperties));
+        var ticket = new AttendeesByCategory(category.getId(), 1, List.of(), List.of(firstTicketProperties));
         var creationRequest = new ReservationCreationRequest(
             List.of(ticket),
             List.of(),
@@ -162,12 +160,8 @@ class ReservationApiV1ControllerTest {
     @Test
     void createTwoTicketsWithMetadata() {
         var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
-        var ticket = new TicketReservationModification();
-        ticket.setQuantity(2);
-        ticket.setTicketCategoryId(category.getId());
-        // metadata will be applied only to the first ticket
         var firstTicketProperties = Map.of("property", "value-first");
-        ticket.setMetadata(List.of(firstTicketProperties));
+        var ticket = new AttendeesByCategory(category.getId(), 2, null, List.of(firstTicketProperties));
         var creationRequest = new ReservationCreationRequest(
             List.of(ticket),
             List.of(),
@@ -208,11 +202,8 @@ class ReservationApiV1ControllerTest {
     void createSingleTicketWithAuthenticatedUser() {
         configurationRepository.insert(OPENID_PUBLIC_ENABLED.name(), "true", "");
         var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
-        var ticket = new TicketReservationModification();
-        ticket.setQuantity(1);
-        ticket.setTicketCategoryId(category.getId());
         var firstTicketProperties = Map.of("property", "value-first");
-        ticket.setMetadata(List.of(firstTicketProperties));
+        var ticket = new AttendeesByCategory(category.getId(), 1, List.of(), List.of(firstTicketProperties));
         var user = new ReservationUser(
             "test@example.org",
             "Test",

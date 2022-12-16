@@ -16,15 +16,11 @@
  */
 package alfio.model.modification;
 
-import alfio.model.SpecialPrice;
-import lombok.Data;
-import lombok.experimental.Delegate;
+import java.util.List;
+import java.util.Map;
 
-import java.util.Optional;
-
-@Data
-public class TicketReservationWithOptionalCodeModification {
-    @Delegate
-    private final ReservationRequest ticketReservationModification;
-    private final Optional<SpecialPrice> specialPrice;
+public interface ReservationRequest {
+    Integer getTicketCategoryId();
+    Integer getQuantity();
+    List<Map<String, String>> getMetadata();
 }

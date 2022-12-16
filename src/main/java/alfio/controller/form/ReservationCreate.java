@@ -17,13 +17,13 @@
 package alfio.controller.form;
 
 import alfio.model.modification.AdditionalServiceReservationModification;
-import alfio.model.modification.TicketReservationModification;
+import alfio.model.modification.ReservationRequest;
 
 import java.util.List;
 
-public interface ReservationCreate {
+public interface ReservationCreate<T extends ReservationRequest> {
     String getPromoCode();
-    List<TicketReservationModification> getTickets();
+    List<T> getTickets();
     List<AdditionalServiceReservationModification> getAdditionalServices();
     String getCaptcha();
 }
