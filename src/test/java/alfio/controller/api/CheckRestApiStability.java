@@ -66,7 +66,7 @@ class TestCheckRestApiStability {
     @Autowired
     private MockMvc mockMvc;
 
-    private boolean updateDescriptor = false; // change to true to regenerate the file
+    private final boolean updateDescriptor = false; // change to true to regenerate the file
 
     @Test
     void checkRestApiStability() throws Exception {

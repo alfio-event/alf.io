@@ -180,7 +180,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                                       ClockProvider clockProvider,
                                       NotificationManager notificationManager,
                                       UserRepository userRepository,
-                                      OrganizationDeleter organizationDeleter) {
+                                      OrganizationDeleter organizationDeleter,
+                                      PromoCodeDiscountRepository promoCodeDiscountRepository,
+                                      PromoCodeRequestManager promoCodeRequestManager) {
         this.configurationRepository = configurationRepository;
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;
@@ -214,6 +216,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         this.notificationManager = notificationManager;
         this.userRepository = userRepository;
         this.organizationDeleter = organizationDeleter;
+        this.promoCodeDiscountRepository = promoCodeDiscountRepository;
+        this.promoCodeRequestManager = promoCodeRequestManager;
     }
 
     private void ensureConfiguration(ReservationFlowContext context) {

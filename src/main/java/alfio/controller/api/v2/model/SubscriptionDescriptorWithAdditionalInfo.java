@@ -53,6 +53,7 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
                                                     InvoicingConfiguration invoicingConfiguration,
                                                     AnalyticsConfiguration analyticsConfiguration,
                                                     EventWithAdditionalInfo.CaptchaConfiguration captchaConfiguration,
+                                                    EmbeddingConfiguration embeddingConfiguration,
                                                     String bankAccount,
                                                     List<String> bankAccountOwner,
                                                     String organizationEmail,
@@ -68,6 +69,7 @@ public class SubscriptionDescriptorWithAdditionalInfo implements ApiPurchaseCont
         this.invoicingConfiguration = invoicingConfiguration;
         this.analyticsConfiguration = analyticsConfiguration;
         this.captchaConfiguration = captchaConfiguration;
+        this.embeddingConfiguration = embeddingConfiguration;
         this.bankAccount = bankAccount;
         this.bankAccountOwner = bankAccountOwner;
         this.organizationEmail = organizationEmail;
