@@ -20,6 +20,7 @@ import alfio.manager.support.PaymentWebhookResult;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
+import alfio.manager.testSupport.MaybeConfigurationBuilder;
 import alfio.model.Audit;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
@@ -30,8 +31,8 @@ import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.test.util.TestUtil;
 import com.stripe.model.Charge;
-import com.stripe.model.ChargeCollection;
 import com.stripe.model.PaymentIntent;
+import com.stripe.net.RequestOptions;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,7 @@ import static org.mockito.Mockito.*;
 
 class StripeWebhookPaymentManagerTest {
 
-    private static final String RESERVATION_ID = "abcdefg";
+    private static final String RESERVATION_ID = "RESERVATION_ID";
     private static final String PAYMENT_ID = "PAYMENT_ID";
     private static final int EVENT_ID = 11;
     private static final int TRANSACTION_ID = 22;
@@ -67,10 +68,12 @@ class StripeWebhookPaymentManagerTest {
     private AuditingRepository auditingRepository;
     private Environment environment;
     private TicketReservation ticketReservation;
+    private BaseStripeManager baseStripeManager;
 
+    private static final String SK_LIVE = "sk_live_";
     private static final MaybeConfiguration STRIPE_SECRET_KEY_CONF =
         new MaybeConfiguration(ConfigurationKeys.STRIPE_SECRET_KEY,
-            new ConfigurationKeyValuePathLevel(null, "sk_live_", null));
+            new ConfigurationKeyValuePathLevel(null, SK_LIVE, null));
 
     @BeforeEach
     void setup() {
@@ -92,6 +95,9 @@ class StripeWebhookPaymentManagerTest {
         ticketReservation = mock(TicketReservation.class);
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
+        baseStripeManager = mock(BaseStripeManager.class);
+        when(baseStripeManager.getSecretKey(any())).thenReturn(SK_LIVE);
+        when(baseStripeManager.options(any())).thenReturn(Optional.of(RequestOptions.builder().build()));
         stripeWebhookPaymentManager = new StripeWebhookPaymentManager(configurationManager, ticketRepository, transactionRepository, configurationRepository, ticketReservationRepository, eventRepository, auditingRepository, environment, TestUtil.clockProvider());
     }
 
@@ -105,26 +111,27 @@ class StripeWebhookPaymentManagerTest {
     }
 
     @Test
-    void transactionSucceeded() {
+    void transactionSucceeded() throws Exception {
         var paymentIntent = mock(PaymentIntent.class);
         var transactionWebhookPayload = mock(TransactionWebhookPayload.class);
         when(transactionWebhookPayload.getType()).thenReturn("payment_intent.succeeded");
         when(transactionWebhookPayload.getPayload()).thenReturn(paymentIntent);
         when(paymentIntent.getMetadata()).thenReturn(Map.of(MetadataBuilder.RESERVATION_ID, RESERVATION_ID));
         when(paymentIntent.getStatus()).thenReturn(BaseStripeManager.SUCCEEDED);
-        var chargeCollection = mock(ChargeCollection.class);
-        when(paymentIntent.getCharges()).thenReturn(chargeCollection);
         var charge = mock(Charge.class);
-        when(chargeCollection.getData()).thenReturn(List.of(charge));
+        when(paymentIntent.getLatestCharge()).thenReturn(CHARGE_ID);
+        when(baseStripeManager.retrieveCharge(eq(CHARGE_ID), any())).thenReturn(charge);
         when(charge.getId()).thenReturn(CHARGE_ID);
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
         var paymentContext = mock(PaymentContext.class);
         when(paymentContext.getPurchaseContext()).thenReturn(event);
         when(configurationManager.getFor(eq(STRIPE_SECRET_KEY), any())).thenReturn(STRIPE_SECRET_KEY_CONF);
+        when(configurationManager.getFor(eq(PLATFORM_MODE_ENABLED), any())).thenReturn(MaybeConfigurationBuilder.missing(PLATFORM_MODE_ENABLED));
         when(paymentIntent.getLivemode()).thenReturn(true);
         when(transactionRepository.updateIfStatus(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()), eq(Transaction.Status.PENDING))).thenReturn(1);
-        var paymentWebhookResult = stripeWebhookPaymentManager.processWebhook(transactionWebhookPayload, transaction, paymentContext);
+        var customWebHookPaymentManager = new StripeWebhookPaymentManager(configurationManager, transactionRepository, ticketReservationRepository, eventRepository, auditingRepository, TestUtil.clockProvider(), baseStripeManager);
+        var paymentWebhookResult = customWebHookPaymentManager.processWebhook(transactionWebhookPayload, transaction, paymentContext);
         assertEquals(PaymentWebhookResult.Type.SUCCESSFUL, paymentWebhookResult.getType());
         verify(transactionRepository).updateIfStatus(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()), eq(Transaction.Status.PENDING));
         Map<String, Object> changes = Map.of("paymentId", CHARGE_ID, "paymentMethod", "stripe");
@@ -132,26 +139,26 @@ class StripeWebhookPaymentManagerTest {
     }
 
     @Test
-    void transactionAlreadyConfirmed() {
+    void transactionAlreadyConfirmed() throws Exception {
         var paymentIntent = mock(PaymentIntent.class);
         var transactionWebhookPayload = mock(TransactionWebhookPayload.class);
         when(transactionWebhookPayload.getType()).thenReturn("payment_intent.succeeded");
         when(transactionWebhookPayload.getPayload()).thenReturn(paymentIntent);
         when(paymentIntent.getMetadata()).thenReturn(Map.of(MetadataBuilder.RESERVATION_ID, RESERVATION_ID));
         when(paymentIntent.getStatus()).thenReturn(BaseStripeManager.SUCCEEDED);
-        var chargeCollection = mock(ChargeCollection.class);
-        when(paymentIntent.getCharges()).thenReturn(chargeCollection);
         var charge = mock(Charge.class);
-        when(chargeCollection.getData()).thenReturn(List.of(charge));
-        when(charge.getId()).thenReturn(CHARGE_ID);
+        when(paymentIntent.getLatestCharge()).thenReturn(CHARGE_ID);
+        when(baseStripeManager.retrieveCharge(eq(CHARGE_ID), any())).thenReturn(charge);
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
         var paymentContext = mock(PaymentContext.class);
         when(paymentContext.getPurchaseContext()).thenReturn(event);
         when(configurationManager.getFor(eq(STRIPE_SECRET_KEY), any())).thenReturn(STRIPE_SECRET_KEY_CONF);
+        when(configurationManager.getFor(eq(PLATFORM_MODE_ENABLED), any())).thenReturn(MaybeConfigurationBuilder.missing(PLATFORM_MODE_ENABLED));
         when(paymentIntent.getLivemode()).thenReturn(true);
         when(transactionRepository.updateIfStatus(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()), eq(Transaction.Status.PENDING))).thenReturn(0);
-        var paymentWebhookResult = stripeWebhookPaymentManager.processWebhook(transactionWebhookPayload, transaction, paymentContext);
+        var customWebHookPaymentManager = new StripeWebhookPaymentManager(configurationManager, transactionRepository, ticketReservationRepository, eventRepository, auditingRepository, TestUtil.clockProvider(), baseStripeManager);
+        var paymentWebhookResult = customWebHookPaymentManager.processWebhook(transactionWebhookPayload, transaction, paymentContext);
         assertEquals(PaymentWebhookResult.Type.SUCCESSFUL, paymentWebhookResult.getType());
         verify(transactionRepository).updateIfStatus(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()), eq(Transaction.Status.PENDING));
         Map<String, Object> changes = Map.of("paymentId", CHARGE_ID, "paymentMethod", "stripe");
@@ -191,10 +198,8 @@ class StripeWebhookPaymentManagerTest {
         when(transactionWebhookPayload.getPayload()).thenReturn(paymentIntent);
         when(paymentIntent.getMetadata()).thenReturn(Map.of(MetadataBuilder.RESERVATION_ID, RESERVATION_ID));
         when(paymentIntent.getStatus()).thenReturn(BaseStripeManager.SUCCEEDED);
-        var chargeCollection = mock(ChargeCollection.class);
-        when(paymentIntent.getCharges()).thenReturn(chargeCollection);
         var charge = mock(Charge.class);
-        when(chargeCollection.getData()).thenReturn(List.of(charge));
+        when(paymentIntent.getLatestChargeObject()).thenReturn(charge);
         when(charge.getId()).thenReturn(CHARGE_ID);
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);

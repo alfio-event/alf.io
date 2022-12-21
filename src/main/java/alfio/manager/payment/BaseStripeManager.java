@@ -120,8 +120,7 @@ class BaseStripeManager {
         try {
             com.stripe.model.Event event = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
             if("account.application.deauthorized".equals(event.getType())
-                && event.getLivemode() != null
-                && event.getLivemode() == environment.acceptsProfiles(Profiles.of("dev", "test", "demo"))) {
+                && Boolean.TRUE.equals(event.getLivemode()) == environment.acceptsProfiles(Profiles.of("dev", "test", "demo"))) {
                 return Optional.of(revokeToken(event.getAccount()));
             }
             return Optional.of(true);
@@ -204,8 +203,12 @@ class BaseStripeManager {
         return PaymentResult.failed(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
     }
 
-    private BalanceTransaction retrieveBalanceTransaction(String balanceTransaction, RequestOptions options) throws StripeException {
+    BalanceTransaction retrieveBalanceTransaction(String balanceTransaction, RequestOptions options) throws StripeException {
         return BalanceTransaction.retrieve(balanceTransaction, options);
+    }
+
+    Charge retrieveCharge(String chargeId, RequestOptions requestOptions) throws StripeException {
+        return Charge.retrieve(chargeId, requestOptions);
     }
 
     Optional<RequestOptions> options(PurchaseContext purchaseContext) {
@@ -237,10 +240,10 @@ class BaseStripeManager {
             Optional<RequestOptions> requestOptionsOptional = options(purchaseContext);
             if(requestOptionsOptional.isPresent()) {
                 RequestOptions options = requestOptionsOptional.get();
-                Charge charge = Charge.retrieve(transaction.getTransactionId(), options);
+                Charge charge = retrieveCharge(transaction.getTransactionId(), options);
                 String paidAmount = MonetaryUtil.formatCents(charge.getAmount(), charge.getCurrency());
                 String refundedAmount = MonetaryUtil.formatCents(charge.getAmountRefunded(), charge.getCurrency());
-                List<BalanceTransaction.Fee> fees = retrieveBalanceTransaction(charge.getBalanceTransaction(), options).getFeeDetails();
+                List<BalanceTransaction.FeeDetail> fees = retrieveBalanceTransaction(charge.getBalanceTransaction(), options).getFeeDetails();
                 return Optional.of(new PaymentInformation(paidAmount, refundedAmount, getFeeAmount(fees, "stripe_fee"), getFeeAmount(fees, "application_fee")));
             }
             return Optional.empty();
@@ -249,11 +252,11 @@ class BaseStripeManager {
         }
     }
 
-    static String getFeeAmount(List<BalanceTransaction.Fee> fees, String feeType) {
+    static String getFeeAmount(List<BalanceTransaction.FeeDetail> fees, String feeType) {
         return fees.stream()
             .filter(f -> f.getType().equals(feeType))
             .findFirst()
-            .map(BalanceTransaction.Fee::getAmount)
+            .map(BalanceTransaction.FeeDetail::getAmount)
             .map(String::valueOf)
             .orElse(null);
     }
