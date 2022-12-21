@@ -93,7 +93,6 @@ import static alfio.util.HttpUtils.APPLICATION_JSON_UTF8;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Profile("!travis")
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional

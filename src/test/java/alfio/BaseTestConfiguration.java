@@ -125,7 +125,6 @@ public class BaseTestConfiguration {
     }
 
     @PostConstruct
-    @Profile("!travis")
     public void initStripeMock() {
         GenericContainer<?> stripeMock = new GenericContainer<>("stripe/stripe-mock:latest")
             .withExposedPorts(12111, 12112);
