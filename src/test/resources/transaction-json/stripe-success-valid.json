@@ -145,7 +145,7 @@
                 "fullName": "Test McTest",
                 "alfioBaseUrl": "https://alf.io",
                 "billingAddress": "Test McTest,Bahnhofstrasse 1,8000 Zürich,Switzerland",
-                "reservationId": "abcdefg",
+                "reservationId": "RESERVATION_ID",
                 "email": "noreply@example.org"
             },
             "next_action": null,

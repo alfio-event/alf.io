@@ -853,66 +853,12 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertTrue(owner.isEmpty());
             }
 
-            var paymentForm = new PaymentForm();
-            var handleResError = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new MockHttpServletRequest(), context.getPublicUser());
-            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
-
-
-            paymentForm.setPrivacyPolicyAccepted(true);
-            paymentForm.setTermAndConditionsAccepted(true);
-            paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
-            paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
-
-            // bank transfer does not have a transaction, it's created on confirmOverview call
-            var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
-            assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
-            //
             int promoCodeId = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(context.event.getId(), PROMO_CODE).orElseThrow().getId();
-            var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
-            assertTrue(promoCodeUsage.isEmpty());
 
-            var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new MockHttpServletRequest(), context.getPublicUser());
-
-            assertEquals(HttpStatus.OK, handleRes.getStatusCode());
-
-            checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, context);
-
-            tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
-            assertEquals(HttpStatus.OK, tStatus.getStatusCode());
-            assertNotNull(tStatus.getBody());
-            assertFalse(tStatus.getBody().isSuccess());
-
-            reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
-            assertNotNull(reservation);
-            checkOrderSummary(reservation);
-
-            //clear the extension_log table so that we can check the expectation
-            cleanupExtensionLog();
-
-            validatePayment(context.event.getShortName(), reservationId, context);
-
-            extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-
-            boolean online = containsOnlineTickets(context, reservationId);
-            assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 12 : 10);
-            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 12 : 10);
-            assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 12 : 10);
-            if(online) {
-                assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 12);
-            }
-            assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA, online ? 12 : 10);
-            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 10);
-
-
+            // initialize and confirm payment
+            performAndValidatePayment(context, reservationId, promoCodeId, this::cleanupExtensionLog);
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
-
-            tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
-            assertEquals(HttpStatus.OK, tStatus.getStatusCode());
-            assertNotNull(tStatus.getBody());
-            assertTrue(tStatus.getBody().isSuccess());
 
             reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
             assertNotNull(reservation);
@@ -1245,6 +1191,65 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     }
 
+    protected void performAndValidatePayment(ReservationFlowContext context,
+                                             String reservationId,
+                                             int promoCodeId,
+                                             Runnable cleanupExtensionLog) {
+        ReservationInfo reservation;
+        var paymentForm = new PaymentForm();
+        var handleResError = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+            new MockHttpServletRequest(), context.getPublicUser());
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
+
+
+        paymentForm.setPrivacyPolicyAccepted(true);
+        paymentForm.setTermAndConditionsAccepted(true);
+        paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
+        paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
+
+        // bank transfer does not have a transaction, it's created on confirmOverview call
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
+        //
+        var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
+        assertTrue(promoCodeUsage.isEmpty());
+
+        var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+            new MockHttpServletRequest(), context.getPublicUser());
+
+        assertEquals(HttpStatus.OK, handleRes.getStatusCode());
+
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, context);
+
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+        assertNotNull(tStatus.getBody());
+        assertFalse(tStatus.getBody().isSuccess());
+
+        reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
+        assertNotNull(reservation);
+        checkOrderSummary(reservation);
+        cleanupExtensionLog.run();
+        validatePayment(context.event.getShortName(), reservationId, context);
+
+        var extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
+
+        boolean online = containsOnlineTickets(context, reservationId);
+        assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 12 : 10);
+        assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 12 : 10);
+        assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 12 : 10);
+        if(online) {
+            assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 12);
+        }
+        assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA, online ? 12 : 10);
+        assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 10);
+
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+        assertNotNull(tStatus.getBody());
+        assertTrue(tStatus.getBody().isSuccess());
+    }
+
     protected void checkDiscountUsage(String reservationId, int promoCodeId, ReservationFlowContext context) {
         var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
         assertTrue(promoCodeUsage.isEmpty());
@@ -1407,7 +1412,11 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
     }
 
-    private void checkStatus(String reservationId,
+    protected void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event) {
+        assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
+    }
+
+    protected final void checkStatus(String reservationId,
                              HttpStatus expectedHttpStatus,
                              Boolean validated,
                              TicketReservation.TicketReservationStatus reservationStatus,
