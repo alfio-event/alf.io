@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
 
 class StripeWebhookPaymentManagerTest {
 
-    private static final String RESERVATION_ID = "abcdefg";
+    private static final String RESERVATION_ID = "RESERVATION_ID";
     private static final String PAYMENT_ID = "PAYMENT_ID";
     private static final int EVENT_ID = 11;
     private static final int TRANSACTION_ID = 22;

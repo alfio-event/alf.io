@@ -24,15 +24,22 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
+import com.stripe.Stripe;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
+import org.springframework.boot.context.event.ApplicationPreparedEvent;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.event.EventListener;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ByteArrayResource;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
@@ -115,5 +122,17 @@ public class BaseTestConfiguration {
     @Profile(Initializer.PROFILE_INTEGRATION_TEST)
     public ClockProvider clockProvider() {
         return FIXED_TIME_CLOCK;
+    }
+
+    @PostConstruct
+    @Profile("!travis")
+    public void initStripeMock() {
+        GenericContainer<?> stripeMock = new GenericContainer<>("stripe/stripe-mock:latest")
+            .withExposedPorts(12111, 12112);
+        stripeMock.start();
+        var httpPort = stripeMock.getMappedPort(12111);
+        Stripe.overrideApiBase("http://localhost:" + httpPort);
+        Stripe.overrideUploadBase("http://localhost:" + httpPort);
+        Stripe.enableTelemetry = false;
     }
 }
