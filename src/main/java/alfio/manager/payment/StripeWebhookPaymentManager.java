@@ -269,7 +269,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         try {
             return Optional.ofNullable(dataObjectDeserializer.deserializeUnsafe())
                 .map(stripeObject -> {
-                    // if we message we receive was built with an API version older than 2022-11-15
+                    // if the message we received was built with an API version older than 2022-11-15
                     // we need to save the raw JSON body to ensure we have all the information to parse the message
                     // see https://stripe.com/docs/upgrades#2022-11-15 and https://github.com/alfio-event/alf.io/issues/1159
                     if (stripeObject.getLastResponse() == null && "2022-11-15".compareTo(stripeEvent.getApiVersion()) > 0) {
