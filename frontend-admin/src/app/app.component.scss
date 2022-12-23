@@ -34,9 +34,11 @@ header {
   overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
 }
 
+$sidebarWidth: 90px;
+
 nav#sidebarMenu {
   @include media-breakpoint-up(md) {
-      width: 90px;
+      width: $sidebarWidth;
   }
 
   a {
@@ -63,4 +65,10 @@ nav#sidebarMenu {
   }
 
 
+}
+
+main {
+  @include media-breakpoint-up(md) {
+    width: calc(100% - $sidebarWidth);
+  }
 }

@@ -8,6 +8,7 @@ import {eventIcon} from "../svg/event";
 import {accessIcon} from "../svg/access";
 import {groupsIcon} from "../svg/groups";
 import {subscriptionIcon} from "../svg/subscription";
+import {accountcircleIcon} from "../svg/accountcircle";
 
 const ICONS = [
   checkIcon,
@@ -20,7 +21,8 @@ const ICONS = [
   eventIcon,
   accessIcon,
   groupsIcon,
-  subscriptionIcon
+  subscriptionIcon,
+  accountcircleIcon
 ];
 export const ICON_CONFIG = {
   sizes: {

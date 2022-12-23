@@ -1,13 +1,13 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, ActivationEnd, Router } from '@angular/router';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { TranslateService } from '@ngx-translate/core';
-import { combineLatest, filter, map, Observable, of } from 'rxjs';
-import { Organization } from './model/organization';
-import { UserInfo } from './model/user';
-import { OrgSelectorComponent } from './org-selector/org-selector.component';
-import { OrganizationService } from './shared/organization.service';
-import { UserService } from './shared/user.service';
+import {Component, OnInit} from '@angular/core';
+import {ActivationEnd, Router} from '@angular/router';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {TranslateService} from '@ngx-translate/core';
+import {combineLatest, filter, map, Observable, of} from 'rxjs';
+import {Organization} from './model/organization';
+import {UserInfo} from './model/user';
+import {OrgSelectorComponent} from './org-selector/org-selector.component';
+import {OrganizationService} from './shared/organization.service';
+import {UserService} from './shared/user.service';
 
 @Component({
   selector: 'app-root',
@@ -50,6 +50,8 @@ export class AppComponent implements OnInit {
     selector.organizationId$ = this.organizationId$;
     modalRef.result.then((res: Organization) => {
       this.router.navigate(['/organization', res.id]).then(r => {if (r) {this.currentOrganization$ = of(res)}});
+    }).catch(() => {
+      // we do nothing on dismiss
     });
   }
 }
