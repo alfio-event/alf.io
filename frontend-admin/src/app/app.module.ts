@@ -21,8 +21,9 @@ import {ICON_CONFIG} from './shared/icons';
 import {TranslateLoader, TranslateModule} from '@ngx-translate/core';
 import {CustomLoader} from './shared/i18n.service';
 import {OrgSelectorComponent} from './org-selector/org-selector.component';
-import {UserNamePipe} from "./shared/user-name.pipe";
 import {NgbDropdownModule} from "@ng-bootstrap/ng-bootstrap";
+import {SectionDashboardComponent} from "./shared/section-dashboard/section-dashboard.component";
+import {SharedModule} from "./shared/shared.module";
 
 export function RedirectToLoginIfNeeded(userService: UserService, router: Router): () => Promise<boolean> {
   return async () => {
@@ -44,7 +45,6 @@ export function HttpLoaderFactory(http: HttpClient) {
     AppComponent,
     MissingOrgComponent,
     OrgSelectorComponent,
-    UserNamePipe,
   ],
   imports: [
     BrowserModule,
@@ -64,16 +64,20 @@ export function HttpLoaderFactory(http: HttpClient) {
       }
     }),
     NgbDropdownModule,
+    SharedModule,
   ],
   providers: [
-    { provide: APP_INITIALIZER, useFactory: RedirectToLoginIfNeeded, deps: [UserService, Router], multi: true},
-    { provide: HTTP_INTERCEPTORS, useClass: AuthTokenInterceptor, multi: true },
-    { provide: HttpXsrfTokenExtractor, useClass: DOMXsrfTokenExtractor },
+    {provide: APP_INITIALIZER, useFactory: RedirectToLoginIfNeeded, deps: [UserService, Router], multi: true},
+    {provide: HTTP_INTERCEPTORS, useClass: AuthTokenInterceptor, multi: true},
+    {provide: HttpXsrfTokenExtractor, useClass: DOMXsrfTokenExtractor},
     provideSvgIconsConfig(ICON_CONFIG),
     DOMGidExtractor,
     DOMXsrfTokenExtractor,
     UserService,
     OrganizationService,
+  ],
+  exports: [
+    SectionDashboardComponent
   ],
   bootstrap: [AppComponent]
 })
