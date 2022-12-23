@@ -21,13 +21,35 @@
 </header>
 <div class="container-fluid">
     <div class="row">
-        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+      <nav id="sidebarMenu" class="d-md-block bg-light sidebar collapse">
             <div class="position-sticky pt-3 sidebar-sticky">
-              <router-outlet name="sidebar-content"></router-outlet>
+
+              <a class="d-flex flex-column gap-1 justify-content-center menu-item" [routerLink]="['./']" routerLinkActive="active">
+                <svg-icon key="home"></svg-icon> Events
+              </a>
+
+              <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./subscriptions']" routerLinkActive="active">
+                <svg-icon key="subscription"></svg-icon> Subscriptions
+              </a>
+
+              <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./organization-info']" routerLinkActive="active">
+                <svg-icon key="organization"></svg-icon> Organization
+              </a>
+              <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./access-control']" routerLinkActive="active">
+                <svg-icon key="access"></svg-icon> Security
+              </a>
+
+              <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./groups']" routerLinkActive="active">
+                <svg-icon key="groups"></svg-icon> Groups
+              </a>
+              <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./configuration']" routerLinkActive="active">
+                <svg-icon key="settings"></svg-icon> Settings
+              </a>
             </div>
         </nav>
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-          <router-outlet></router-outlet>
-        </main>
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <router-outlet name="sidebar-content"></router-outlet>
+        <router-outlet></router-outlet>
+      </main>
     </div>
 </div>

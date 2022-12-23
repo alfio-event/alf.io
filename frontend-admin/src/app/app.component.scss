@@ -1,3 +1,7 @@
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/variables';
+
 :host {
   --header-height: 58px;
 }
@@ -28,4 +32,35 @@ header {
   height: calc(100vh - var(--header-height));
   overflow-x: hidden;
   overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+}
+
+nav#sidebarMenu {
+  @include media-breakpoint-up(md) {
+      width: 90px;
+  }
+
+  a {
+    text-decoration: none;
+    color: $text-muted;
+    font-size: 70%;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 1rem;
+
+    &.active {
+      color: $primary;
+    }
+
+    &:hover {
+      color: $primary;
+    }
+
+    svg-icon, svg {
+      display: flex;
+      align-self: center;
+    }
+
+  }
+
+
 }
