@@ -1,33 +1,63 @@
 <!--based on https://getbootstrap.com/docs/5.2/examples/dashboard/ -->
-<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
-    <span class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6">
-        <img src="assets/alfio-logo.svg" height="48">
-        <span>
-            <button class="btn btn-light" (click)="openOrgSelector()">
-                <svg-icon key="organization" size="lg"></svg-icon>
-                {{(currentOrganization$ | async)?.name}}
-                <svg-icon key="arrowdropdown"></svg-icon>
-            </button>
-        </span>
-    </span>
-    <span style="color: white;">user: {{(currentUser$ | async)?.username}}</span>
-    <!-- <input class="form-control form-control-dark w-100 rounded-0 border-0" type="text" placeholder="Search"
-        aria-label="Search">
-    <div class="navbar-nav">
-        <div class="nav-item text-nowrap">
-            <a class="nav-link px-3" href="#">Sign out</a>
+<header class="navbar sticky-top navbar-light bg-light border-bottom flex-md-nowrap p-0">
+  <div class="container-fluid justify-content-start">
+    <a class="navbar-brand" [routerLink]="['./']">
+      <img src="assets/alfio-logo.svg" height="42" alt="Alf.io logo">
+    </a>
+    <form class="d-flex">
+        <button class="btn btn-light" (click)="openOrgSelector()" type="button">
+            <svg-icon key="organization" size="lg"></svg-icon>
+            {{(currentOrganization$ | async)?.name}}
+            <svg-icon key="arrowdropdown"></svg-icon>
+        </button>
+    </form>
+
+    <div class="d-flex flex-grow-1 justify-content-end">
+      <div ngbDropdown class="d-inline-block">
+        <button type="button" class="btn" id="profileBtn" ngbDropdownToggle>
+          <svg-icon key="accountcircle" size="lg"></svg-icon> {{(currentUser$ | async) | userName}}
+        </button>
+        <div ngbDropdownMenu aria-labelledby="profileBtn">
+          <button type="button" ngbDropdownItem>Sign out</button>
         </div>
-    </div>-->
+      </div>
+    </div>
+
+<!--    <input class="form-control form-control-dark w-100 rounded-0 border-0" type="text" placeholder="Search"-->
+<!--        aria-label="Search">-->
+
+  </div>
 </header>
 <div class="container-fluid">
     <div class="row">
-        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-            <div class="position-sticky pt-3 sidebar-sticky">
-              <router-outlet name="sidebar-content"></router-outlet>
-            </div>
-        </nav>
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-          <router-outlet></router-outlet>
-        </main>
+      <nav id="sidebarMenu" class="d-md-block bg-light sidebar collapse">
+        <div class="position-sticky pt-3 sidebar-sticky">
+
+          <a class="d-flex flex-column gap-1 justify-content-center menu-item" [routerLink]="['./']" routerLinkActive="active">
+            <svg-icon key="home"></svg-icon> Events
+          </a>
+
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./subscriptions']" routerLinkActive="active">
+            <svg-icon key="subscription"></svg-icon> Subscriptions
+          </a>
+
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./organization-info']" routerLinkActive="active">
+            <svg-icon key="organization"></svg-icon> Organization
+          </a>
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./access-control']" routerLinkActive="active">
+            <svg-icon key="access"></svg-icon> Security
+          </a>
+
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./groups']" routerLinkActive="active">
+            <svg-icon key="groups"></svg-icon> Groups
+          </a>
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['./configuration']" routerLinkActive="active">
+            <svg-icon key="settings"></svg-icon> Settings
+          </a>
+        </div>
+      </nav>
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <router-outlet></router-outlet>
+      </main>
     </div>
 </div>
