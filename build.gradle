@@ -24,9 +24,6 @@ buildscript {
             url "https://plugins.gradle.org/m2/"
         }
         mavenCentral()
-        maven {
-            url "https://jitpack.io"
-        }
     }
 }
 
@@ -102,9 +99,6 @@ configurations {
 repositories {
     mavenLocal()
     mavenCentral()
-    maven {
-        url "https://jitpack.io"
-    }
 }
 
 dependencies {
@@ -158,8 +152,6 @@ dependencies {
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.mozilla:rhino-runtime:1.7.13'
-
-    //implementation "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
 
     compileOnly "javax.servlet:javax.servlet-api:4.0.1"
     testImplementation "javax.servlet:javax.servlet-api:4.0.1"
