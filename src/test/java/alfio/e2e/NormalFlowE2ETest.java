@@ -49,7 +49,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -158,7 +160,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             var driver = browserWebDriver.driver;
             try {
                 driver.navigate().to(eventUrl);
-                WebDriverWait wait = new WebDriverWait(driver, 30);
+                WebDriverWait wait = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS));
                 wait.until(presenceOfElementLocated(By.cssSelector("div.markdown-content")));
                 page1TicketSelection(browserWebDriver);
                 //wait until page is loaded
@@ -169,7 +171,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
                 wait.until(presenceOfElementLocated(By.cssSelector("h2[translate='reservation-page.title']")));
                 //
                 page3Payment(browserWebDriver, wait);
-                WebElement fourthPageElem = new WebDriverWait(driver, 30).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
+                WebElement fourthPageElem = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS)).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
                 Assertions.assertNotNull(fourthPageElem);
             } finally {
                 driver.quit();
