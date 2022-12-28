@@ -130,6 +130,7 @@ abstract class AbstractFormBasedWebSecurity {
             .formLogin()
             .loginPage("/authentication")
             .loginProcessingUrl(AUTHENTICATE)
+            .defaultSuccessUrl("/admin")
             .failureUrl("/authentication?failed")
             .and().logout().permitAll();
 

@@ -24,12 +24,25 @@ import {OrgSelectorComponent} from './org-selector/org-selector.component';
 import {NgbDropdownModule} from "@ng-bootstrap/ng-bootstrap";
 import {SectionDashboardComponent} from "./shared/section-dashboard/section-dashboard.component";
 import {SharedModule} from "./shared/shared.module";
+import {environment} from "../environments/environment";
 
+/**
+ * This function should only work
+ * @param userService
+ * @param router
+ * @constructor
+ */
 export function RedirectToLoginIfNeeded(userService: UserService, router: Router): () => Promise<boolean> {
   return async () => {
     const loggedIn = await firstValueFrom(userService.checkUserLoggedIn())
     if (!loggedIn) {
-      return router.navigate(['/authentication']);
+      if (environment.production) {
+        // reload the current location to trigger server-side authentication
+        window.location.reload();
+      } else {
+        // dev mode: redirect to the /authentication local resource
+        return router.navigate(['/authentication']);
+      }
     }
     return true;
   };

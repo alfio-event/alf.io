@@ -1,35 +1,4 @@
-<form [formGroup]="formGroup" (ngSubmit)="submit()">
-  <div class="container">
-    <div class="row justify-content-md-center">
-      <div class="col col-md-6">
-        <h1>Authentication requested</h1>
-        <p>Please login with Username and Password</p>
-        <hr>
-        <div class="row">
-          <div class="col">
-            <label for="username" class="form-label">Username</label>
-            <input class="form-control" id="username" formControlName="username">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <label for="password" class="form-label">Password</label>
-            <input class="form-control" id="password" type="password" formControlName="password">
-          </div>
-        </div>
-        <div class="row justify-content-md-around">
-          <div class="col-12 col-md-3">
-            <div class="d-grid d-block">
-              <button class="btn btn-outline-secondary" type="reset">Cancel</button>
-            </div>
-          </div>
-          <div class="col-12 col-md-3">
-            <div class="d-grid d-block">
-              <button class="btn btn-success">Login</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</form>
+<div class="container text-center mt-5">
+  <h1>Authentication requested</h1>
+  <p>Please authenticate on the backend before continuing</p>
+</div>
