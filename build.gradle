@@ -37,7 +37,7 @@ plugins {
     id 'net.researchgate.release' version '3.0.2'
     id 'org.springframework.boot' version '2.7.7'
     id 'org.sonarqube' version '4.4.1.3373'
-    id 'net.ltgt.errorprone' version '2.0.2'
+    // id 'net.ltgt.errorprone' version '3.1.0'
     id 'com.github.node-gradle.node' version '7.0.1'
 }
 
@@ -216,7 +216,7 @@ dependencies {
 
     testImplementation 'org.seleniumhq.selenium:selenium-java:4.7.2'
 
-    errorprone('com.google.errorprone:error_prone_core:2.10.0')
+    //errorprone('com.google.errorprone:error_prone_core:2.24.0')
 }
 
 // -- license configuration
@@ -262,33 +262,33 @@ processResources {
 }
 
 compileTestJava {
-    options.errorprone.disable('UnusedVariable',
-        'MixedMutabilityReturnType',
-        'MissingOverride',
-        'ImmutableEnumChecker', // not too useful, as it does not take into account the actual value of the field
-        'AlmostJavadoc',
-        'MissingSummary',
-        'EscapedEntity',
-        'EmptyBlockTag',
-        'SameNameButDifferent'
-    )
+//    options.errorprone.disable('UnusedVariable',
+//        'MixedMutabilityReturnType',
+//        'MissingOverride',
+//        'ImmutableEnumChecker', // not too useful, as it does not take into account the actual value of the field
+//        'AlmostJavadoc',
+//        'MissingSummary',
+//        'EscapedEntity',
+//        'EmptyBlockTag',
+//        'SameNameButDifferent'
+//    )
 }
 
 compileJava {
     options.compilerArgs = ['-Xlint:all,-serial,-processing']
 
     // both checks are problematic with lombok code
-    options.errorprone.disable('UnusedVariable',
-        'MixedMutabilityReturnType',
-        'MissingOverride',
-        'ImmutableEnumChecker', // not too useful, as it does not take into account the actual value of the field
-        'AlmostJavadoc',
-        'MissingSummary',
-        'EscapedEntity',
-        'EmptyBlockTag',
-        'SameNameButDifferent',
-        'ReturnValueIgnored'
-    )
+//    options.errorprone.disable('UnusedVariable',
+//        'MixedMutabilityReturnType',
+//        'MissingOverride',
+//        'ImmutableEnumChecker', // not too useful, as it does not take into account the actual value of the field
+//        'AlmostJavadoc',
+//        'MissingSummary',
+//        'EscapedEntity',
+//        'EmptyBlockTag',
+//        'SameNameButDifferent',
+//        'ReturnValueIgnored'
+//    )
 }
 
 compileJava.dependsOn(processResources)
