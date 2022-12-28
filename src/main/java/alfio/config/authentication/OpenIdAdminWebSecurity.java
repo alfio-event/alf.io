@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -67,10 +68,10 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
     }
 
     @Override
-    protected void addAdditionalFilters(HttpSecurity http) throws Exception {
+    protected void addAdditionalFilters(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) {
         var callbackLoginFilter = new OpenIdCallbackLoginFilter(adminOpenIdAuthenticationManager,
             new AntPathRequestMatcher("/callback", "GET"),
-            authenticationManager());
+            jdbcAuthenticationManager);
         http.addFilterBefore(callbackLoginFilter, UsernamePasswordAuthenticationFilter.class);
         log.trace("adding openid filter");
         http.addFilterAfter(new OpenIdAuthenticationFilter("/authentication", adminOpenIdAuthenticationManager, "/", false), OpenIdCallbackLoginFilter.class);

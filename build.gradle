@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter
 buildscript {
 
     dependencies {
-        classpath 'org.postgresql:postgresql:42.2.20'
+        classpath 'org.postgresql:postgresql:42.5.1'
         //this is for processing the index.html at compile time
         classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.0.0"
         //
@@ -24,24 +24,21 @@ buildscript {
             url "https://plugins.gradle.org/m2/"
         }
         mavenCentral()
-        maven {
-            url "https://jitpack.io"
-        }
     }
 }
 
 plugins {
-    id 'io.freefair.lombok' version '6.3.0'
+    id 'io.freefair.lombok' version '6.6.1'
     id 'java'
     id 'idea'
-    id 'org.kordamp.gradle.jacoco' version '0.47.0'
-    id 'com.github.ben-manes.versions' version '0.41.0'
+    id 'org.kordamp.gradle.jacoco' version '0.48.0'
+    id 'com.github.ben-manes.versions' version '0.44.0'
     id 'com.github.hierynomus.license' version '0.16.1'
-    id 'net.researchgate.release' version '2.8.1'
-    id 'org.springframework.boot' version '2.6.6'
-    id 'org.sonarqube' version '3.3'
+    id 'net.researchgate.release' version '3.0.2'
+    id 'org.springframework.boot' version '2.7.7'
+    id 'org.sonarqube' version '3.5.0.2730'
     id 'net.ltgt.errorprone' version '2.0.2'
-	id 'com.github.node-gradle.node' version '3.4.0'
+	id 'com.github.node-gradle.node' version '3.5.1'
 }
 
 apply plugin: 'java'
@@ -56,7 +53,7 @@ node {
 }
 
 //as pointed out by @facundofarias, we should validate minimum javac version
-task validate {
+tasks.register('validate') {
     //check JDK version
     def javaVersion = JavaVersion.current()
     if (!javaVersion.isCompatibleWith(JavaVersion.VERSION_17)) {
@@ -102,14 +99,11 @@ configurations {
 repositories {
     mavenLocal()
     mavenCentral()
-    maven {
-        url "https://jitpack.io"
-    }
 }
 
 dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
-    implementation 'com.auth0:java-jwt:4.0.0'
+    implementation 'com.auth0:java-jwt:4.2.1'
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "org.springframework.boot:spring-boot-properties-migrator", {
@@ -125,48 +119,45 @@ dependencies {
     implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
     implementation 'ch.digitalfondue.jfiveparse:jfiveparse:1.0.0'
     /**/
-    implementation 'com.google.zxing:core:3.5.0'
-    implementation 'com.google.zxing:javase:3.5.0'
+    implementation 'com.google.zxing:core:3.5.1'
+    implementation 'com.google.zxing:javase:3.5.1'
     implementation "org.flywaydb:flyway-core"
     implementation "org.postgresql:postgresql"
     implementation "com.zaxxer:HikariCP"
 
     /* https://www.lunasec.io/docs/blog/log4j-zero-day/ */
-    implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
-    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
-    implementation 'org.apache.logging.log4j:log4j-jul:2.17.2'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-api:2.19.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.19.0'
+    implementation 'org.apache.logging.log4j:log4j-jul:2.19.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.19.0'
     /**/
 
-    implementation "com.stripe:stripe-java:22.3.0"
-    implementation 'com.paypal.sdk:checkout-sdk:1.0.5'
-    implementation 'com.google.code.gson:gson:2.9.0'
-    implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.1', {
+    implementation "com.stripe:stripe-java:22.4.0"
+    implementation 'com.paypal.sdk:checkout-sdk:2.0.0'
+    implementation 'com.google.code.gson:gson:2.10'
+    implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.2', {
         exclude module: 'gson'
     }
 
     implementation "org.apache.commons:commons-lang3:3.12.0"
-    implementation "org.apache.commons:commons-text:1.9"
-    implementation 'com.opencsv:opencsv:5.6'
+    implementation 'com.opencsv:opencsv:5.7.1'
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'net.sf.biweekly:biweekly:0.6.6'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
     implementation 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.17.0'
     implementation 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     implementation 'com.github.ben-manes.caffeine:caffeine'
-    implementation 'com.github.scribejava:scribejava-core:8.3.1'
+    implementation 'com.github.scribejava:scribejava-core:8.3.3'
     implementation 'ch.digitalfondue.vatchecker:vatchecker:1.5.0'
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.mozilla:rhino-runtime:1.7.13'
 
-    //implementation "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
-
     compileOnly "javax.servlet:javax.servlet-api:4.0.1"
     testImplementation "javax.servlet:javax.servlet-api:4.0.1"
-    testImplementation 'org.testcontainers:testcontainers:1.17.1'
-    testImplementation 'org.testcontainers:postgresql:1.17.1'
-    testImplementation 'org.testcontainers:junit-jupiter:1.17.1'
+    testImplementation 'org.testcontainers:testcontainers:1.17.6'
+    testImplementation 'org.testcontainers:postgresql:1.17.6'
+    testImplementation 'org.testcontainers:junit-jupiter:1.17.6'
     testImplementation "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }
@@ -200,7 +191,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-engine"
     testImplementation "org.junit.platform:junit-platform-engine"
 
-    testImplementation "org.springdoc:springdoc-openapi-ui:1.6.9"
+    testImplementation "org.springdoc:springdoc-openapi-ui:1.6.14"
     testImplementation "org.openapitools.openapidiff:openapi-diff-core:2.0.1"
 
     providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
@@ -214,14 +205,14 @@ dependencies {
         exclude module : 'spring-boot-starter-logging'
     }
 
-    implementation "org.joda:joda-money:1.0.1"
+    implementation "org.joda:joda-money:1.0.3"
 
     testImplementation 'org.mock-server:mockserver-netty:5.13.2', {
         exclude group: 'org.mozilla', module: 'rhino'
     }
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    testImplementation 'org.seleniumhq.selenium:selenium-java:4.1.4'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.7.2'
 
     errorprone('com.google.errorprone:error_prone_core:2.10.0')
 }
@@ -334,10 +325,6 @@ bootRun {
 
 // -- code-coverage
 
-jacoco {
-    toolVersion = '0.8.7'
-}
-
 jacocoTestReport {
     group = 'Reporting'
     description = 'Generate Jacoco coverage reports after running tests.'
@@ -351,35 +338,35 @@ jacocoTestReport {
     }
 }
 
-task dockerize(type: Copy) {
+tasks.register('dockerize', Copy) {
     from 'src/main/dist/Dockerfile'
     into "${buildDir}/dockerize"
     filter(ReplaceTokens, tokens: [ALFIO_VERSION: project.version])
 }
 
-task publicFrontendNpmInstall(type: NpmTask) {
+tasks.register('publicFrontendNpmInstall', NpmTask) {
     args = ['--prefix', "${project.projectDir}/frontend-public", 'install']
 }
 
-task publicFrontendBuild(type: NpmTask) {
+tasks.register('publicFrontendBuild', NpmTask) {
     dependsOn publicFrontendNpmInstall
     args = ['--prefix', "${project.projectDir}/frontend-public", 'run', 'build']
     outputs.dir("${project.projectDir}/frontend-public/dist")
 }
 
-task publicFrontendIndexTransform(type: PublicFrontendIndexTransformTask) {
+tasks.register('publicFrontendIndexTransform', PublicFrontendIndexTransformTask) {
     dependsOn publicFrontendBuild
     indexHtml.set(layout.projectDirectory.file("frontend-public/dist/alfio-public-frontend/index.html"))
     indexHtmlTransformed.set(layout.buildDirectory.file("index-transformed/alfio-public-frontend-index.html"))
 }
 
-task distribution(type: Copy) {
+tasks.register('distribution', Copy) {
     from zipTree("${project.buildDir}/libs/alfio-${project.version}-boot.war")
     into "${buildDir}/dockerize"
     dependsOn publicFrontendIndexTransform, build, dockerize
 }
 
-task clever(type: Copy) {
+tasks.register('clever', Copy) {
     from new File(project.buildDir, "libs/alfio-${project.version}-boot.war")
     rename(new Transformer<String, String>() {
         @Override
@@ -394,9 +381,9 @@ task clever(type: Copy) {
 release {
     buildTasks = ['distribution']
     git {
-        requireBranch = ''
-        pushToRemote = 'origin'
-        signTag = true
+        requireBranch.set('')
+        pushToRemote.set('origin')
+        signTag.set(true)
     }
 }
 

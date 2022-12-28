@@ -312,20 +312,15 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             }
             var reservation = optionalReservation.get();
             var purchaseContext = paymentContext.getPurchaseContext();
-            switch(payload.getType()) {
-                case PAYMENT_INTENT_CREATED: {
-                    return PaymentWebhookResult.processStarted(buildTokenFromTransaction(transaction, purchaseContext, false));
-                }
-                case PAYMENT_INTENT_SUCCEEDED: {
-                    return processSuccessfulPaymentIntent(transaction, paymentIntent, reservation, purchaseContext, baseStripeManager.options(purchaseContext).orElseThrow());
-                }
-                case PAYMENT_INTENT_PAYMENT_FAILED: {
-                    return processFailedPaymentIntent(transaction, reservation, purchaseContext);
-                }
-                default:
-                    return PaymentWebhookResult.notRelevant("event is not relevant");
-            }
-
+            return switch (payload.getType()) {
+                case PAYMENT_INTENT_CREATED ->
+                    PaymentWebhookResult.processStarted(buildTokenFromTransaction(transaction, purchaseContext, false));
+                case PAYMENT_INTENT_SUCCEEDED ->
+                    processSuccessfulPaymentIntent(transaction, paymentIntent, reservation, purchaseContext, baseStripeManager.options(purchaseContext).orElseThrow());
+                case PAYMENT_INTENT_PAYMENT_FAILED ->
+                    processFailedPaymentIntent(transaction, reservation, purchaseContext);
+                default -> PaymentWebhookResult.notRelevant("event is not relevant");
+            };
         } catch (Exception e) {
             log.error("Error while trying to confirm the reservation", e);
             return PaymentWebhookResult.error("unexpected error");

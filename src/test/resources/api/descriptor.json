@@ -5388,26 +5388,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -5448,26 +5428,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -5494,26 +5454,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -5540,26 +5480,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -5578,26 +5498,6 @@
         "tags" : [ "pass-kit-api-controller" ],
         "operationId" : "log",
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK"
           }
@@ -5609,26 +5509,6 @@
         "tags" : [ "pass-kit-api-controller" ],
         "operationId" : "register",
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK"
           }
@@ -5638,26 +5518,6 @@
         "tags" : [ "pass-kit-api-controller" ],
         "operationId" : "deleteRegistration",
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK"
           }
@@ -6520,8 +6380,8 @@
         "tags" : [ "resource-controller" ],
         "operationId" : "findAll",
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -6530,8 +6390,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -6589,8 +6449,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -6599,8 +6459,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -6659,8 +6519,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -6669,8 +6529,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -6737,8 +6597,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -6747,8 +6607,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -7707,8 +7567,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -7717,8 +7577,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -8352,8 +8212,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -8362,8 +8222,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -8438,8 +8298,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -8448,8 +8308,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -8515,8 +8375,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -8525,8 +8385,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -9620,8 +9480,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -9630,8 +9490,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -9700,8 +9560,8 @@
           "required" : true
         },
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -9710,8 +9570,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -12946,26 +12806,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -12992,26 +12832,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -15068,26 +14888,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -15121,26 +14921,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -15167,26 +14947,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK",
             "content" : {
@@ -15234,26 +14994,6 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK"
           }
@@ -15265,26 +15005,6 @@
         "tags" : [ "pass-kit-api-controller" ],
         "operationId" : "getRegisteredPasses",
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
           "200" : {
             "description" : "OK"
           }
@@ -16690,8 +16410,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16700,8 +16420,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16756,8 +16476,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16766,8 +16486,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16813,8 +16533,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16823,8 +16543,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16873,8 +16593,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16883,8 +16603,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16950,8 +16670,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -16960,8 +16680,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17024,8 +16744,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17034,8 +16754,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17089,8 +16809,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17099,8 +16819,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17157,8 +16877,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17167,8 +16887,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17242,8 +16962,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17252,8 +16972,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17324,8 +17044,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17334,8 +17054,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17397,8 +17117,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -17407,8 +17127,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -18612,8 +18332,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -18622,8 +18342,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -18663,8 +18383,8 @@
         "tags" : [ "resource-controller" ],
         "operationId" : "getOverridableTemplates",
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -18673,8 +18393,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19425,8 +19145,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19435,8 +19155,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19503,8 +19223,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19513,8 +19233,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19569,8 +19289,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19579,8 +19299,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19643,8 +19363,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19653,8 +19373,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19709,8 +19429,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -19719,8 +19439,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -20256,10 +19976,17 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/EventStatistic"
-                  }
+                  "oneOf" : [ {
+                    "type" : "array",
+                    "items" : {
+                      "$ref" : "#/components/schemas/EventListItem"
+                    }
+                  }, {
+                    "type" : "array",
+                    "items" : {
+                      "$ref" : "#/components/schemas/EventStatistic"
+                    }
+                  } ]
                 }
               }
             }
@@ -24174,8 +23901,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -24184,8 +23911,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -24249,8 +23976,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -24259,8 +23986,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -24332,8 +24059,8 @@
           }
         } ],
         "responses" : {
-          "500" : {
-            "description" : "Internal Server Error",
+          "400" : {
+            "description" : "Bad Request",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -24342,8 +24069,8 @@
               }
             }
           },
-          "400" : {
-            "description" : "Bad Request",
+          "500" : {
+            "description" : "Internal Server Error",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -25574,13 +25301,13 @@
           "emailAddress" : {
             "type" : "string"
           },
-          "validTo" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
           "validToEpochSecond" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "validTo" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         }
       },
@@ -25989,20 +25716,6 @@
           "refundedAmount" : {
             "type" : "string"
           },
-          "notYetPaid" : {
-            "type" : "boolean"
-          },
-          "vatExempt" : {
-            "type" : "boolean"
-          },
-          "priceInCents" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "ticketAmount" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "singleTicketOrder" : {
             "type" : "boolean"
           },
@@ -26020,6 +25733,20 @@
           },
           "priceBeforeTaxes" : {
             "type" : "string"
+          },
+          "ticketAmount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "notYetPaid" : {
+            "type" : "boolean"
+          },
+          "vatExempt" : {
+            "type" : "boolean"
+          },
+          "priceInCents" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -26213,13 +25940,13 @@
           "valid" : {
             "type" : "boolean"
           },
-          "pin" : {
-            "type" : "string"
-          },
           "formattedValidityTo" : {
             "type" : "string"
           },
           "formattedValidityFrom" : {
+            "type" : "string"
+          },
+          "pin" : {
             "type" : "string"
           }
         }
@@ -26705,6 +26432,10 @@
           "currencyCode" : {
             "type" : "string"
           },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
+          },
           "stuck" : {
             "type" : "boolean"
           },
@@ -26731,13 +26462,22 @@
             "type" : "string",
             "format" : "date-time"
           },
-          "status" : {
-            "type" : "string",
-            "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
-          },
           "promoCodeDiscountId" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "hasInvoiceNumber" : {
+            "type" : "boolean"
+          },
+          "invoiceNumber" : {
+            "type" : "string"
+          },
+          "paymentMethod" : {
+            "type" : "string",
+            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
+          },
+          "email" : {
+            "type" : "string"
           },
           "firstName" : {
             "type" : "string"
@@ -26754,6 +26494,16 @@
           },
           "discount" : {
             "$ref" : "#/components/schemas/PromoCodeDiscount"
+          },
+          "srcPriceCts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "finalPrice" : {
+            "type" : "number"
+          },
+          "appliedDiscount" : {
+            "type" : "number"
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -26776,26 +26526,6 @@
           "invoiceRequested" : {
             "type" : "boolean"
           },
-          "hasInvoiceNumber" : {
-            "type" : "boolean"
-          },
-          "invoiceNumber" : {
-            "type" : "string"
-          },
-          "paymentMethod" : {
-            "type" : "string",
-            "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
-          },
-          "srcPriceCts" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "finalPrice" : {
-            "type" : "number"
-          },
-          "appliedDiscount" : {
-            "type" : "number"
-          },
           "pendingOfflinePayment" : {
             "type" : "boolean"
           },
@@ -26803,9 +26533,6 @@
             "type" : "string"
           },
           "customerReference" : {
-            "type" : "string"
-          },
-          "email" : {
             "type" : "string"
           },
           "userLanguage" : {
@@ -26838,10 +26565,10 @@
               "type" : "string"
             }
           },
-          "directAssignmentRequested" : {
+          "vatIncluded" : {
             "type" : "boolean"
           },
-          "vatIncluded" : {
+          "directAssignmentRequested" : {
             "type" : "boolean"
           },
           "hasInvoiceOrReceiptDocument" : {
@@ -28539,12 +28266,6 @@
           "currencyCode" : {
             "type" : "string"
           },
-          "formattedNetPrice" : {
-            "type" : "string"
-          },
-          "extReference" : {
-            "type" : "string"
-          },
           "status" : {
             "type" : "string",
             "enum" : [ "FREE", "PENDING", "TO_BE_PAID", "ACQUIRED", "CANCELLED", "CHECKED_IN", "EXPIRED", "INVALIDATED", "RELEASED", "PRE_RESERVED" ]
@@ -28555,8 +28276,17 @@
               "type" : "string"
             }
           },
+          "formattedNetPrice" : {
+            "type" : "string"
+          },
+          "extReference" : {
+            "type" : "string"
+          },
           "assigned" : {
             "type" : "boolean"
+          },
+          "email" : {
+            "type" : "string"
           },
           "eventId" : {
             "type" : "integer",
@@ -28568,9 +28298,17 @@
           "lastName" : {
             "type" : "string"
           },
+          "subscriptionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "vatStatus" : {
             "type" : "string",
             "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          },
+          "srcPriceCts" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -28583,17 +28321,6 @@
           "discountCts" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "subscriptionId" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "srcPriceCts" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "email" : {
-            "type" : "string"
           },
           "userLanguage" : {
             "type" : "string"
@@ -29862,12 +29589,6 @@
           "currencyCode" : {
             "type" : "string"
           },
-          "formattedNetPrice" : {
-            "type" : "string"
-          },
-          "extReference" : {
-            "type" : "string"
-          },
           "status" : {
             "type" : "string",
             "enum" : [ "FREE", "PENDING", "TO_BE_PAID", "ACQUIRED", "CANCELLED", "CHECKED_IN", "EXPIRED", "INVALIDATED", "RELEASED", "PRE_RESERVED" ]
@@ -29878,8 +29599,17 @@
               "type" : "string"
             }
           },
+          "formattedNetPrice" : {
+            "type" : "string"
+          },
+          "extReference" : {
+            "type" : "string"
+          },
           "assigned" : {
             "type" : "boolean"
+          },
+          "email" : {
+            "type" : "string"
           },
           "eventId" : {
             "type" : "integer",
@@ -29891,9 +29621,17 @@
           "lastName" : {
             "type" : "string"
           },
+          "subscriptionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "vatStatus" : {
             "type" : "string",
             "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          },
+          "srcPriceCts" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -29906,17 +29644,6 @@
           "discountCts" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "subscriptionId" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "srcPriceCts" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "email" : {
-            "type" : "string"
           },
           "userLanguage" : {
             "type" : "string"
@@ -31801,6 +31528,18 @@
           "displayName" : {
             "type" : "string"
           },
+          "titleAsText" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "descriptionAsText" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
           "publicIdentifier" : {
             "type" : "string"
           },
@@ -31826,18 +31565,6 @@
           },
           "freeOfCharge" : {
             "type" : "boolean"
-          },
-          "titleAsText" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            }
-          },
-          "descriptionAsText" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            }
           },
           "fileBlobIdIsPresent" : {
             "type" : "boolean"
@@ -31939,15 +31666,6 @@
           "currencyCode" : {
             "type" : "string"
           },
-          "stuck" : {
-            "type" : "boolean"
-          },
-          "formattedNetPrice" : {
-            "type" : "string"
-          },
-          "extReference" : {
-            "type" : "string"
-          },
           "status" : {
             "type" : "string",
             "enum" : [ "FREE", "PENDING", "TO_BE_PAID", "ACQUIRED", "CANCELLED", "CHECKED_IN", "EXPIRED", "INVALIDATED", "RELEASED", "PRE_RESERVED" ]
@@ -31958,11 +31676,23 @@
               "type" : "string"
             }
           },
+          "stuck" : {
+            "type" : "boolean"
+          },
+          "formattedNetPrice" : {
+            "type" : "string"
+          },
+          "extReference" : {
+            "type" : "string"
+          },
           "assigned" : {
             "type" : "boolean"
           },
           "transaction" : {
             "$ref" : "#/components/schemas/Transaction"
+          },
+          "email" : {
+            "type" : "string"
           },
           "eventId" : {
             "type" : "integer",
@@ -31974,9 +31704,20 @@
           "lastName" : {
             "type" : "string"
           },
+          "subscriptionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "vatStatus" : {
             "type" : "string",
             "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          },
+          "srcPriceCts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "finalPrice" : {
+            "type" : "number"
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -31989,20 +31730,6 @@
           "discountCts" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "subscriptionId" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "srcPriceCts" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "finalPrice" : {
-            "type" : "number"
-          },
-          "email" : {
-            "type" : "string"
           },
           "userLanguage" : {
             "type" : "string"
@@ -32147,12 +31874,6 @@
           "currencyCode" : {
             "type" : "string"
           },
-          "formattedNetPrice" : {
-            "type" : "string"
-          },
-          "extReference" : {
-            "type" : "string"
-          },
           "status" : {
             "type" : "string",
             "enum" : [ "FREE", "PENDING", "TO_BE_PAID", "ACQUIRED", "CANCELLED", "CHECKED_IN", "EXPIRED", "INVALIDATED", "RELEASED", "PRE_RESERVED" ]
@@ -32163,8 +31884,17 @@
               "type" : "string"
             }
           },
+          "formattedNetPrice" : {
+            "type" : "string"
+          },
+          "extReference" : {
+            "type" : "string"
+          },
           "assigned" : {
             "type" : "boolean"
+          },
+          "email" : {
+            "type" : "string"
           },
           "eventId" : {
             "type" : "integer",
@@ -32176,9 +31906,17 @@
           "lastName" : {
             "type" : "string"
           },
+          "subscriptionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "vatStatus" : {
             "type" : "string",
             "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          },
+          "srcPriceCts" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -32191,17 +31929,6 @@
           "discountCts" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "subscriptionId" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "srcPriceCts" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "email" : {
-            "type" : "string"
           },
           "userLanguage" : {
             "type" : "string"
@@ -32268,11 +31995,11 @@
             "type" : "string",
             "enum" : [ "WAITING", "RETRY", "IN_PROCESS", "SENT", "ERROR" ]
           },
-          "organizationId" : {
+          "eventId" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "eventId" : {
+          "organizationId" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -32435,13 +32162,13 @@
           "emailAddress" : {
             "type" : "string"
           },
-          "validTo" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
           "validToEpochSecond" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "validTo" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         }
       },
@@ -32951,11 +32678,20 @@
           "description" : {
             "type" : "string"
           },
-          "organizationId" : {
+          "formattedStart" : {
+            "type" : "string"
+          },
+          "formattedEnd" : {
+            "type" : "string"
+          },
+          "formattedDiscountAmount" : {
+            "type" : "string"
+          },
+          "eventId" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "eventId" : {
+          "organizationId" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -33009,15 +32745,6 @@
           },
           "fixedAmount" : {
             "type" : "boolean"
-          },
-          "formattedStart" : {
-            "type" : "string"
-          },
-          "formattedEnd" : {
-            "type" : "string"
-          },
-          "formattedDiscountAmount" : {
-            "type" : "string"
           }
         }
       },
@@ -33307,6 +33034,29 @@
           "shortName" : {
             "type" : "string"
           },
+          "notSoldTickets" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "soldTickets" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pendingTickets" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "dynamicAllocation" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "releasedTickets" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "formattedEnd" : {
+            "type" : "string"
+          },
           "organizationId" : {
             "type" : "integer",
             "format" : "int32"
@@ -33336,29 +33086,6 @@
           "expired" : {
             "type" : "boolean"
           },
-          "notSoldTickets" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "soldTickets" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "pendingTickets" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "dynamicAllocation" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "releasedTickets" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "formattedEnd" : {
-            "type" : "string"
-          },
           "warningNeeded" : {
             "type" : "boolean"
           },
@@ -33370,6 +33097,68 @@
           },
           "displayStatistics" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "EventListItem" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "key" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "timeZone" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "begin" : {
+            "type" : "string"
+          },
+          "end" : {
+            "type" : "string"
+          },
+          "latitude" : {
+            "type" : "string"
+          },
+          "longitude" : {
+            "type" : "string"
+          },
+          "imageUrl" : {
+            "type" : "string"
+          },
+          "apiVersion" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "descriptions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PublicEventDescription"
+            }
+          },
+          "oneDay" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PublicEventDescription" : {
+        "type" : "object",
+        "properties" : {
+          "locale" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "shortDescription" : {
+            "type" : "string"
           }
         }
       },
@@ -33618,6 +33407,12 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "disabledValues" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "required" : {
             "type" : "boolean"
           },
@@ -33640,12 +33435,6 @@
           },
           "editable" : {
             "type" : "boolean"
-          },
-          "disabledValues" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
           },
           "inputField" : {
             "type" : "boolean"
