@@ -72,3 +72,11 @@ main {
     width: calc(100% - $sidebarWidth);
   }
 }
+
+@include media-breakpoint-up(md) {
+  .profile-menu-container .dropdown-menu[data-bs-popper] {
+    width: 100%;
+    right: 0;
+    left: unset;
+  }
+}

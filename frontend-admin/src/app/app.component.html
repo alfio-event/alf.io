@@ -13,7 +13,7 @@
     </form>
 
     <div class="d-flex flex-grow-1 justify-content-end">
-      <div ngbDropdown class="d-inline-block">
+      <div ngbDropdown class="d-inline-block profile-menu-container">
         <button type="button" class="btn" id="profileBtn" ngbDropdownToggle>
           <svg-icon key="accountcircle" size="lg"></svg-icon> {{(currentUser$ | async) | userName}}
         </button>
