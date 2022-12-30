@@ -513,7 +513,7 @@ public enum TemplateResource {
         model.put("additionalServices", additionalServiceItems.stream()
             .map(asi -> {
                 Map<String, Object> data = new HashMap<>();
-                data.put("name", titleFinder.apply(asi).map(AdditionalServiceText::getValue).orElse("N/A"));
+                data.put("name", titleFinder.apply(asi).map(AdditionalServiceText::value).orElse("N/A"));
                 data.put("amount", MonetaryUtil.centsToUnit(asi.getFinalPriceCts(), asi.getCurrencyCode()).toString() + event.getCurrency());
                 data.put("id", asi.getId());
                 return data;

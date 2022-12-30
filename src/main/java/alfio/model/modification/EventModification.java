@@ -448,7 +448,7 @@ public class EventModification {
         }
 
         public static AdditionalServiceText from(alfio.model.AdditionalServiceText src) {
-            return new AdditionalServiceText(src.getId(), src.getLocale(), src.getValue(), src.getType());
+            return new AdditionalServiceText(src.id(), src.locale(), src.value(), src.type());
         }
     }
 }

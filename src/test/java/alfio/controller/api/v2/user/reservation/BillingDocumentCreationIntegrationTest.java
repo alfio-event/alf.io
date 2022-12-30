@@ -273,8 +273,8 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertNotNull(resInfoRes.getBody());
         var ticketsByCat = resInfoRes.getBody().getTicketsByCategory();
         assertEquals(1, ticketsByCat.size());
-        assertEquals(1, ticketsByCat.get(0).getTickets().size());
-        var ticket = ticketsByCat.get(0).getTickets().get(0);
+        assertEquals(1, ticketsByCat.get(0).tickets().size());
+        var ticket = ticketsByCat.get(0).tickets().get(0);
 
         var contactForm = new ContactAndTicketsForm();
 

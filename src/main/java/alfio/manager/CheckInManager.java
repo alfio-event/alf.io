@@ -438,7 +438,7 @@ public class CheckInManager {
             // fetch polls for event, in order to determine if we have to print PIN or not
             var polls = pollRepository.findAllForEvent(event.getId());
             boolean hasPolls = !polls.isEmpty();
-            var allowedTags = hasPolls ? polls.stream().flatMap(p -> p.getAllowedTags().stream()).collect(Collectors.toList()) : List.<String>of();
+            var allowedTags = hasPolls ? polls.stream().flatMap(p -> p.allowedTags().stream()).collect(Collectors.toList()) : List.<String>of();
 
             Function<FullTicketInfo, String> encryptedBody = ticket -> {
                 Map<String, String> info = new HashMap<>();
@@ -546,12 +546,12 @@ public class CheckInManager {
         List<BookedAdditionalService> additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticketsReservationId, ticket.getUserLanguage(), ticket.getEventId());
         boolean additionalServicesEmpty = additionalServices.isEmpty();
         if(!additionalServicesEmpty) {
-            List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toList());
+            List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::additionalServiceId).collect(Collectors.toList());
             Map<Integer, List<TicketFieldValueForAdditionalService>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
                 .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::getAdditionalServiceId));
 
             return additionalServices.stream()
-                .map(as -> new AdditionalServiceInfo(as.getAdditionalServiceName(), as.getCount(), fields.get(as.getAdditionalServiceId())))
+                .map(as -> new AdditionalServiceInfo(as.additionalServiceName(), as.count(), fields.get(as.additionalServiceId())))
                 .collect(Collectors.toList());
         }
         return List.of();

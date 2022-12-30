@@ -106,8 +106,8 @@ public interface TicketCategoryRepository {
 
     default Map<Integer, AlfioMetadata> findCategoryMetadataForEventGroupByCategoryId(int eventId) {
         return findMetadataForCategoriesInEvent(eventId).stream()
-            .filter(ei -> ei.getMetadata() != null)
-            .collect(Collectors.toMap(EntityIdAndMetadata::getId, EntityIdAndMetadata::getMetadata));
+            .filter(ei -> ei.metadata() != null)
+            .collect(Collectors.toMap(EntityIdAndMetadata::id, EntityIdAndMetadata::metadata));
     }
     
     @Query("select count(*) from ticket_category_with_currency where event_id = :eventId and access_restricted = true")

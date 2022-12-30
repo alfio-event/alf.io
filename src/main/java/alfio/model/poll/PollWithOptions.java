@@ -18,20 +18,5 @@ package alfio.model.poll;
 
 import java.util.List;
 
-public class PollWithOptions {
-    private final Poll poll;
-    private final List<PollOption> options;
-
-    public PollWithOptions(Poll poll, List<PollOption> options) {
-        this.poll = poll;
-        this.options = options;
-    }
-
-    public List<PollOption> getOptions() {
-        return options;
-    }
-
-    public Poll getPoll() {
-        return poll;
-    }
+public record PollWithOptions(Poll poll, List<PollOption> options) {
 }

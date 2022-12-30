@@ -17,27 +17,11 @@
 package alfio.model.poll;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class PollParticipant {
+public record PollParticipant(@Column("t_id") int id,
+                              @Column("t_first_name") String firstName,
+                              @Column("t_last_name") String lastName,
+                              @Column("t_email_address") String emailAddress,
+                              @Column("tc_name") String categoryName) {
 
-    private final int id;
-    private final String firstName;
-    private final String lastName;
-    private final String emailAddress;
-    private final String categoryName;
-
-
-    public PollParticipant(@Column("t_id") int id,
-                           @Column("t_first_name") String firstName,
-                           @Column("t_last_name") String lastName,
-                           @Column("t_email_address") String emailAddress,
-                           @Column("tc_name") String categoryName) {
-        this.id = id;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.emailAddress = emailAddress;
-        this.categoryName = categoryName;
-    }
 }

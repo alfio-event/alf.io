@@ -336,8 +336,8 @@ class TicketReservationManagerUnitTest {
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
         when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
         AdditionalServiceText text = mock(AdditionalServiceText.class);
-        when(text.getId()).thenReturn(1);
-        when(text.getLocale()).thenReturn("en");
+        when(text.id()).thenReturn(1);
+        when(text.locale()).thenReturn("en");
         when(additionalServiceTextRepository.findBestMatchByLocaleAndType(anyInt(), eq("en"), eq(AdditionalServiceText.TextType.TITLE))).thenReturn(text);
     }
 

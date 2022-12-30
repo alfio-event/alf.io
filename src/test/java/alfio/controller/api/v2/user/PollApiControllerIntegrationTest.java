@@ -196,9 +196,9 @@ class PollApiControllerIntegrationTest {
         assertTrue(response.getBody().isSuccess());
         assertNotNull(response.getBody().getValue());
         var pollWithOptions = response.getBody().getValue();
-        assertEquals(2, pollWithOptions.getOptions().size());
-        assertEquals("first", pollWithOptions.getOptions().get(0).getTitle().get("en"));
-        assertEquals("second", pollWithOptions.getOptions().get(1).getTitle().get("en"));
+        assertEquals(2, pollWithOptions.options().size());
+        assertEquals("first", pollWithOptions.options().get(0).title().get("en"));
+        assertEquals("second", pollWithOptions.options().get(1).title().get("en"));
     }
 
     @Test
@@ -224,8 +224,8 @@ class PollApiControllerIntegrationTest {
 
         var statistics = pollRepository.getStatisticsFor(pollId, event.getId());
         assertEquals(1, statistics.size());
-        assertEquals(firstOptionId, statistics.get(0).getOptionId());
-        assertEquals(1, statistics.get(0).getVotes());
+        assertEquals(firstOptionId, statistics.get(0).optionId());
+        assertEquals(1, statistics.get(0).votes());
 
         // update vote
         form.setOptionId(secondOptionId);
@@ -233,8 +233,8 @@ class PollApiControllerIntegrationTest {
         assertTrue(response.getStatusCode().is2xxSuccessful());
         statistics = pollRepository.getStatisticsFor(pollId, event.getId());
         assertEquals(1, statistics.size());
-        assertEquals(secondOptionId, statistics.get(0).getOptionId());
-        assertEquals(1, statistics.get(0).getVotes());
+        assertEquals(secondOptionId, statistics.get(0).optionId());
+        assertEquals(1, statistics.get(0).votes());
     }
 
     private void updateVisibility(Poll.PollStatus status) {

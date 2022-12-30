@@ -168,7 +168,7 @@ class PollAdminApiControllerTest {
         assertTrue(res.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(res.getBody()));
         assertEquals(1, res.getBody().size());
-        assertEquals(firstTicket.getId(), res.getBody().get(0).getId());
+        assertEquals(firstTicket.getId(), res.getBody().get(0).id());
 
         // allow tickets to vote
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
@@ -183,7 +183,7 @@ class PollAdminApiControllerTest {
         assertTrue(participantRes.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(participantRes.getBody()));
         assertEquals(1, participantRes.getBody().size());
-        assertEquals(firstTicket.getId(), participantRes.getBody().get(0).getId());
+        assertEquals(firstTicket.getId(), participantRes.getBody().get(0).id());
 
         // now ticket should not be returned anymore
         res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First");

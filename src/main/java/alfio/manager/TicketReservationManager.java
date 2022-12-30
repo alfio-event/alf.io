@@ -1741,14 +1741,14 @@ public class TicketReservationManager {
             .map(entry -> {
                 String language = locale.getLanguage();
                 AdditionalServiceText title = additionalServiceTextRepository.findBestMatchByLocaleAndType(entry.getKey().getId(), language, AdditionalServiceText.TextType.TITLE);
-                if (!title.getLocale().equals(language) || title.getId() == -1) {
-                    log.debug("additional service {}: title not found for locale {}", title.getAdditionalServiceId(), language);
+                if (!title.locale().equals(language) || title.id() == -1) {
+                    log.debug("additional service {}: title not found for locale {}", title.additionalServiceId(), language);
                 }
                 var prices = generateASIPriceContainers(purchaseContext, null).apply(entry).toList();
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
                 final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
-                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts(), currencyCode), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryType.ADDITIONAL_SERVICE, null);
+                return new SummaryRow(title.value(), formatCents(first.getSrcPriceCts(), currencyCode), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryType.ADDITIONAL_SERVICE, null);
             }).toList());
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {

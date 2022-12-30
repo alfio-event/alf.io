@@ -17,31 +17,14 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class AdditionalServiceText {
+public record AdditionalServiceText(@Column("id") int id,
+                                    @Column("additional_service_id_fk") Integer additionalServiceId,
+                                    @Column("locale") String locale,
+                                    @Column("type") TextType type,
+                                    @Column("value") String value) {
 
     public enum TextType {
         TITLE, DESCRIPTION
     }
-
-    private final int id;
-    private final Integer additionalServiceId;
-    private final String locale;
-    private final TextType type;
-    private final String value;
-
-    public AdditionalServiceText(@Column("id") int id,
-                                 @Column("additional_service_id_fk") Integer additionalServiceId,
-                                 @Column("locale") String locale,
-                                 @Column("type") TextType type,
-                                 @Column("value") String value) {
-        this.id = id;
-        this.additionalServiceId = additionalServiceId;
-        this.locale = locale;
-        this.type = type;
-        this.value = value;
-    }
-
 }

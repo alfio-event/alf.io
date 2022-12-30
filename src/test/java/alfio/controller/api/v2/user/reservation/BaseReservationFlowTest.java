@@ -572,7 +572,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertNotNull(reservationInfo.getBody());
             assertEquals("1.00", reservationInfo.getBody().getOrderSummary().getTotalPrice());
-            assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).getName());
+            assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).name());
 
             var activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
             assertFalse(activePaymentMethods.isEmpty());
@@ -776,13 +776,13 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertNotNull(resInfoRes.getBody());
             var ticketsByCat = resInfoRes.getBody().getTicketsByCategory();
             assertEquals(1, ticketsByCat.size());
-            assertEquals(2, ticketsByCat.get(0).getTickets().size());
+            assertEquals(2, ticketsByCat.get(0).tickets().size());
 
-            var ticket1 = ticketsByCat.get(0).getTickets().get(0);
+            var ticket1 = ticketsByCat.get(0).tickets().get(0);
             assertEquals(1, ticket1.getTicketFieldConfigurationBeforeStandard().size()); // 1
             assertEquals(2, ticket1.getTicketFieldConfigurationAfterStandard().size()); // 1 + 1 additional service related field (appear only on first ticket)
 
-            var ticket2 = ticketsByCat.get(0).getTickets().get(1);
+            var ticket2 = ticketsByCat.get(0).tickets().get(1);
             assertEquals(1, ticket2.getTicketFieldConfigurationBeforeStandard().size()); // 1
             assertEquals(1, ticket2.getTicketFieldConfigurationAfterStandard().size()); // 1
 
@@ -863,9 +863,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertNotNull(reservation);
             assertEquals(reservationId, reservation.getId());
             assertEquals(1, reservation.getTicketsByCategory().size());
-            assertEquals(1, reservation.getTicketsByCategory().get(0).getTickets().size());
+            assertEquals(1, reservation.getTicketsByCategory().get(0).tickets().size());
 
-            var selectedTicket = reservation.getTicketsByCategory().get(0).getTickets().get(0);
+            var selectedTicket = reservation.getTicketsByCategory().get(0).tickets().get(0);
             assertEquals("field1", selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).getName());
             assertTrue(selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).isRequired());
             assertEquals("field2", selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).getName());
@@ -890,7 +890,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             ticketForm.setFirstName("ticketfull");
             ticketForm.setLastName("ticketname");
             ticketForm.setEmail("tickettest@test.com");
-            contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).getTickets().get(0).getUuid(), ticketForm));
+            contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).tickets().get(0).getUuid(), ticketForm));
 
             var overviewResFailed = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, overviewResFailed.getStatusCode());
@@ -949,7 +949,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             // trigger email processing
             triggerEmailProcessingAndCheck(context, reservationId);
 
-            var ticket = reservation.getTicketsByCategory().stream().findFirst().orElseThrow().getTickets().get(0);
+            var ticket = reservation.getTicketsByCategory().stream().findFirst().orElseThrow().tickets().get(0);
             assertEquals("tickettest@test.com", ticket.getEmail());
             assertEquals("ticketfull", ticket.getFirstName());
             assertEquals("ticketname", ticket.getLastName());
@@ -996,7 +996,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals("full name", ticketFoundBody.getReservationFullName());
             reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
             assertNotNull(reservation);
-            ticket = reservation.getTicketsByCategory().stream().findFirst().orElseThrow().getTickets().get(0);
+            ticket = reservation.getTicketsByCategory().stream().findFirst().orElseThrow().tickets().get(0);
             assertEquals("testmctest@test.com", ticket.getEmail());
             assertEquals("Test", ticket.getFirstName());
             assertEquals("Testson", ticket.getLastName());
@@ -1070,7 +1070,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc, new TestingAuthenticationToken("ciccio", "ciccio")).getResult().getStatus());
                 List<ScanAudit> audits = scanAuditRepository.findAllForEvent(context.event.getId());
                 assertFalse(audits.isEmpty());
-                assertTrue(audits.stream().anyMatch(sa -> sa.getTicketUuid().equals(ticketIdentifier)));
+                assertTrue(audits.stream().anyMatch(sa -> sa.ticketUuid().equals(ticketIdentifier)));
 
                 extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
                 assertEventLogged(extLogs, TICKET_CHECKED_IN, 2);
@@ -1400,7 +1400,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertNotNull(reservation);
         assertEquals(reservationId, reservation.getId());
         assertEquals(1, reservation.getTicketsByCategory().size());
-        assertEquals(numberOfTickets, reservation.getTicketsByCategory().get(0).getTickets().size());
+        assertEquals(numberOfTickets, reservation.getTicketsByCategory().get(0).tickets().size());
 
         var contactForm = new ContactAndTicketsForm();
 
@@ -1411,7 +1411,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         contactForm.setFirstName("full");
         contactForm.setLastName("name");
 
-        var tickets = reservation.getTicketsByCategory().get(0).getTickets().stream()
+        var tickets = reservation.getTicketsByCategory().get(0).tickets().stream()
             .map(t -> {
                 var ticketForm = new UpdateTicketOwnerForm();
                 ticketForm.setFirstName("ticketfull");
@@ -1448,9 +1448,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertTrue(reservation.getOrderSummary().isFree());
 
         // assert that there is a row in the summary for the subscription
-        var summaryRowSubscription = reservation.getOrderSummary().getSummary().stream().filter(r -> r.getType() == SummaryRow.SummaryType.APPLIED_SUBSCRIPTION).findFirst();
+        var summaryRowSubscription = reservation.getOrderSummary().getSummary().stream().filter(r -> r.type() == SummaryRow.SummaryType.APPLIED_SUBSCRIPTION).findFirst();
         assertTrue(summaryRowSubscription.isPresent());
-        assertEquals(numberOfTickets, summaryRowSubscription.get().getAmount());
+        assertEquals(numberOfTickets, summaryRowSubscription.get().amount());
 
         // proceed with the confirmation
         var paymentForm = new PaymentForm();

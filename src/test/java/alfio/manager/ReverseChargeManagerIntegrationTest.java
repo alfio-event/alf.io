@@ -152,10 +152,10 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
         // we expect to find two rows for VAT: the first one for in-person (1%), the second one for online (0%)
         var rows = summary.getSummary();
         assertEquals(3, rows.size());
-        assertEquals(SummaryRow.SummaryType.TAX_DETAIL, rows.get(1).getType());
-        assertEquals("0", rows.get(1).getTaxPercentage());
-        assertEquals("", rows.get(1).getPrice());
-        assertEquals("0.00", rows.get(1).getSubTotal());
+        assertEquals(SummaryRow.SummaryType.TAX_DETAIL, rows.get(1).type());
+        assertEquals("0", rows.get(1).taxPercentage());
+        assertEquals("", rows.get(1).price());
+        assertEquals("0.00", rows.get(1).subTotal());
     }
 
     @Test

@@ -56,17 +56,17 @@ public interface AdditionalServiceTextRepository {
 
         Map<Integer, Map<AdditionalServiceText.TextType, Map<String, String>>> res = new HashMap<>();
         findAllByAdditionalServiceIds(additionalServiceIds).forEach(t -> {
-            var id = t.getAdditionalServiceId();
+            var id = t.additionalServiceId();
 
             if (!res.containsKey(id)) {
                 res.put(id, new EnumMap<>(AdditionalServiceText.TextType.class));
             }
 
-            if(!res.get(id).containsKey(t.getType())) {
-                res.get(id).put(t.getType(), new HashMap<>());
+            if(!res.get(id).containsKey(t.type())) {
+                res.get(id).put(t.type(), new HashMap<>());
             }
 
-            res.get(id).get(t.getType()).put(t.getLocale(), t.getValue());
+            res.get(id).get(t.type()).put(t.locale(), t.value());
         });
 
         return res;

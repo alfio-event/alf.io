@@ -134,17 +134,8 @@ public class ReservationInfo {
     }
 
 
-    @Getter
-    public static class TicketsByTicketCategory {
-        private final String name;
-        private final TicketCategory.TicketAccessType ticketAccessType;
-        private final List<BookingInfoTicket> tickets;
-
-        public TicketsByTicketCategory(String name, TicketCategory.TicketAccessType ticketAccessType, List<BookingInfoTicket> tickets) {
-            this.name = name;
-            this.ticketAccessType = ticketAccessType;
-            this.tickets = tickets;
-        }
+    public record TicketsByTicketCategory(String name, TicketCategory.TicketAccessType ticketAccessType,
+                                          List<BookingInfoTicket> tickets) {
     }
 
     @Getter
@@ -177,51 +168,21 @@ public class ReservationInfo {
     }
 
 
-    @Getter
-    public static class ReservationInfoOrderSummaryRow {
-        private final String name;
-        private final int amount;
-        private final String price;
-        private final String subTotal;
-        private final SummaryType type;
-        private final String taxPercentage;
 
-        public ReservationInfoOrderSummaryRow(String name, int amount, String price, String subTotal, SummaryType type, String taxPercentage) {
-            this.name = name;
-            this.amount = amount;
-            this.price = price;
-            this.subTotal = subTotal;
-            this.type = type;
-            this.taxPercentage = taxPercentage;
-        }
+    public record ReservationInfoOrderSummaryRow(String name,
+                                                 int amount,
+                                                 String price,
+                                                 String subTotal,
+                                                 SummaryType type,
+                                                 String taxPercentage) {
     }
 
-    @Getter
-    public static class SubscriptionInfo {
-        private final UUID id;
-        private final String pin;
-        private final UsageDetails usageDetails;
-        private final SubscriptionOwner owner;
 
-        public SubscriptionInfo(UUID id, String pin, UsageDetails usageDetails, SubscriptionOwner owner) {
-            this.id = id;
-            this.pin = pin;
-            this.usageDetails = usageDetails;
-            this.owner = owner;
-        }
+    public record SubscriptionInfo(UUID id, String pin, UsageDetails usageDetails, SubscriptionOwner owner) {
     }
 
-    @Getter
-    public static class SubscriptionOwner {
-        private final String firstName;
-        private final String lastName;
-        private final String email;
 
-        public SubscriptionOwner(String firstName, String lastName, String email) {
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.email = email;
-        }
+    public record SubscriptionOwner(String firstName, String lastName, String email) {
     }
 
 }

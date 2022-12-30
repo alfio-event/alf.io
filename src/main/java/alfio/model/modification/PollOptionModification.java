@@ -45,6 +45,6 @@ public class PollOptionModification {
     }
 
     public static PollOptionModification from(PollOption option) {
-        return new PollOptionModification(option.getId(), option.getTitle(), option.getDescription());
+        return new PollOptionModification(option.id(), option.title(), option.description());
     }
 }
