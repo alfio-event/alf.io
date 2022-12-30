@@ -110,8 +110,7 @@ public class LocationDescriptor {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        LocationDescriptor that = (LocationDescriptor) o;
+        if (!(o instanceof LocationDescriptor that)) return false;
         return Objects.equals(timeZone, that.timeZone) && Objects.equals(latitude, that.latitude) && Objects.equals(longitude, that.longitude) && Objects.equals(mapUrl, that.mapUrl);
     }
 

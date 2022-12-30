@@ -21,7 +21,6 @@ import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
-import lombok.With;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -64,7 +63,6 @@ public class TicketReservation implements PriceContainer {
     private final String invoiceNumber;
     @JsonIgnore
     private final String invoiceModel;
-    @With
     private final PriceContainer.VatStatus vatStatus;
     private final String vatNr;
     private final String vatCountryCode;
@@ -202,6 +200,44 @@ public class TicketReservation implements PriceContainer {
             return MonetaryUtil.formatCents(finalPriceCts, currencyCode);
         }
         return null;
+    }
+
+    public TicketReservation withVatStatus(PriceContainer.VatStatus vatStatus) {
+        if (this.vatStatus == vatStatus) {
+            return this;
+        }
+        return new TicketReservation(this.id,
+            this.validity,
+            this.status,
+            this.fullName,
+            this.firstName,
+            this.lastName,
+            this.email,
+            this.billingAddress,
+            this.confirmationTimestamp,
+            this.latestReminder,
+            this.paymentMethod,
+            this.reminderSent,
+            this.promoCodeDiscountId,
+            this.automatic,
+            this.userLanguage,
+            this.directAssignmentRequested,
+            this.invoiceNumber,
+            this.invoiceModel,
+            vatStatus,
+            this.vatNr,
+            this.vatCountryCode,
+            this.invoiceRequested,
+            this.usedVatPercent,
+            this.vatIncluded,
+            this.creationTimestamp,
+            this.customerReference,
+            this.registrationTimestamp,
+            this.srcPriceCts,
+            this.finalPriceCts,
+            this.vatCts,
+            this.discountCts,
+            this.currencyCode);
     }
 
     @Override
