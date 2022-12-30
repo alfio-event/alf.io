@@ -195,9 +195,9 @@ public final class TemplateProcessor {
 
     public static String renderReceiptOrInvoicePdfTemplate(PurchaseContext purchaseContext, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
         extractImageModel(purchaseContext, fileUploadManager).ifPresent(imageData -> {
-            model.put("eventImage", imageData.getEventImage());
-            model.put("imageWidth", imageData.getImageWidth());
-            model.put("imageHeight", imageData.getImageHeight());
+            model.put("eventImage", imageData.eventImage());
+            model.put("imageWidth", imageData.imageWidth());
+            model.put("imageHeight", imageData.imageHeight());
         });
         return templateManager.renderTemplate(purchaseContext, templateResource, model, language).getTextPart();
     }

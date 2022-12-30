@@ -866,10 +866,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals(1, reservation.getTicketsByCategory().get(0).tickets().size());
 
             var selectedTicket = reservation.getTicketsByCategory().get(0).tickets().get(0);
-            assertEquals("field1", selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).getName());
-            assertTrue(selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).isRequired());
-            assertEquals("field2", selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).getName());
-            assertFalse(selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).isRequired());
+            assertEquals("field1", selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).name());
+            assertTrue(selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).required());
+            assertEquals("field2", selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).name());
+            assertFalse(selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).required());
 
             var contactForm = new ContactAndTicketsForm();
             var validationErrorsRes = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());

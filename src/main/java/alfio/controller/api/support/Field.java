@@ -16,12 +16,5 @@
  */
 package alfio.controller.api.support;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-@AllArgsConstructor
-@Getter
-public class Field {
-    private final int fieldIndex;
-    private final String fieldValue;
+public record Field(int fieldIndex, String fieldValue) {
 }

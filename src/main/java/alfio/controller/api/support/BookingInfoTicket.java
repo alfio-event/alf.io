@@ -110,11 +110,11 @@ public class BookingInfoTicket {
     }
 
     public List<AdditionalField> getTicketFieldConfigurationBeforeStandard() {
-        return ticketFieldConfiguration.stream().filter(AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
+        return ticketFieldConfiguration.stream().filter(AdditionalField::beforeStandardFields).collect(Collectors.toList());
     }
 
     public List<AdditionalField> getTicketFieldConfigurationAfterStandard() {
-        return ticketFieldConfiguration.stream().filter(tv -> !tv.isBeforeStandardFields()).collect(Collectors.toList());
+        return ticketFieldConfiguration.stream().filter(tv -> !tv.beforeStandardFields()).collect(Collectors.toList());
     }
 
     public Map<String, String> getFormattedOnlineCheckInDate() {

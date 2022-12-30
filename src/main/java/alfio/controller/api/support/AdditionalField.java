@@ -16,24 +16,19 @@
  */
 package alfio.controller.api.support;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.util.List;
 import java.util.Map;
 
-@AllArgsConstructor
-@Getter
-public class AdditionalField {
-    private final String name;
-    private final String value;
-    private final String type;
-    private final boolean required;
-    private final boolean editable;
-    private final Integer minLength;
-    private final Integer maxLength;
-    private final List<String> restrictedValues;
-    private final List<Field> fields;
-    private final boolean beforeStandardFields;
-    private final Map<String, Description> description;
+
+public record AdditionalField(String name,
+                              String value,
+                              String type,
+                              boolean required,
+                              boolean editable,
+                              Integer minLength,
+                              Integer maxLength,
+                              List<String> restrictedValues,
+                              List<Field> fields,
+                              boolean beforeStandardFields,
+                              Map<String, Description> description) {
 }
