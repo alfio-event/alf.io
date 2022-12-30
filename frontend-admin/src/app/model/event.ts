@@ -21,3 +21,8 @@ export interface EventInfo {
     formattedBegin: string;
     displayStatistics: boolean;
 }
+
+export interface Event {
+  id: number;
+  displayName: string;
+}

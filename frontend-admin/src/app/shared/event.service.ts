@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
 import { map, Observable } from "rxjs";
-import { EventInfo } from "../model/event";
+import { Event, EventInfo } from "../model/event";
 
 @Injectable()
 export class EventService {
@@ -19,5 +19,9 @@ export class EventService {
     const orgId = parseInt(organizationId);
     return this.httpClient.get<EventInfo[]>('/admin/api/expired-events')
         .pipe(map(events => events.filter(e => e.organizationId == orgId)));
+  }
+
+  getEvent(eventId: string): Observable<Event> {
+    return this.httpClient.get<Event>(`/admin/api/events/id/${eventId}`);
   }
 }

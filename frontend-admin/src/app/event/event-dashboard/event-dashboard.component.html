@@ -2,7 +2,8 @@
   <div menu>
     <app-event-menu></app-event-menu>
   </div>
-  <div>
-    event dashboard works!
+  <div *ngIf="event$ | async as event">
+    <h2>{{event.displayName}}</h2>
+    {{event | json}}
   </div>
 </app-section-dashboard>
