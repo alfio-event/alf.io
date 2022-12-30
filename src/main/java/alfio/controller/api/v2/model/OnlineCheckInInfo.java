@@ -67,8 +67,8 @@ public class OnlineCheckInInfo implements DateValidity {
                                                  EventWithCheckInInfo event,
                                                  ZoneId targetTz,
                                                  MessageSource messageSource) {
-        var start = joinLink.getValidFrom().atZone(event.getZoneId());
-        var end = joinLink.getValidFrom().atZone(event.getZoneId());
+        var start = joinLink.validFrom().atZone(event.getZoneId());
+        var end = joinLink.validFrom().atZone(event.getZoneId());
         return fromDates(event, start, end, targetTz, messageSource);
     }
 

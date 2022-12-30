@@ -18,31 +18,15 @@ package alfio.model.metadata;
 
 import alfio.model.LocalizedContent;
 import alfio.util.EventUtil;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Objects;
 
-@Getter
-public class JoinLink {
-    private final String link;
-    private final LocalDateTime validFrom;
-    private final LocalDateTime validTo;
-    private final Map<String, String> linkText;
-
-    @JsonCreator
-    public JoinLink(@JsonProperty("link") String link,
-                    @JsonProperty("validFrom") LocalDateTime validFrom,
-                    @JsonProperty("validTo") LocalDateTime validTo,
-                    @JsonProperty("linkText") Map<String, String> linkText) {
-        this.link = link;
-        this.validFrom = validFrom;
-        this.validTo = validTo;
-        this.linkText = Objects.requireNonNullElse(linkText, Map.of());
-    }
+public record JoinLink(@JsonProperty("link") String link,
+                       @JsonProperty("validFrom") LocalDateTime validFrom,
+                       @JsonProperty("validTo") LocalDateTime validTo,
+                       @JsonProperty("linkText") Map<String, String> linkText) {
 
     public boolean hasLinkText() {
         return !linkText.isEmpty();
@@ -50,25 +34,5 @@ public class JoinLink {
 
     public String getLocalizedText(String lang, LocalizedContent fallback) {
         return EventUtil.getLocalizedMessage(linkText, lang, fallback);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        JoinLink joinLink = (JoinLink) o;
-        return Objects.equals(link, joinLink.link)
-            && Objects.equals(validFrom, joinLink.validFrom)
-            && Objects.equals(validTo, joinLink.validTo)
-            && linkText.equals(joinLink.linkText);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(link, validFrom, validTo, linkText);
     }
 }

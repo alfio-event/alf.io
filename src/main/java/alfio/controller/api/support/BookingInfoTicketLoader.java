@@ -83,7 +83,7 @@ public class BookingInfoTicketLoader {
             var eventConfiguration = eventManager.getMetadataForEvent(event).getOnlineConfiguration();
             var ticketCategoryConfiguration = eventManager.getMetadataForCategory(event, ticket.getCategoryId()).getOnlineConfiguration();
             var checkInDate = EventUtil.firstMatchingCallLink(event.getZoneId(), ticketCategoryConfiguration, eventConfiguration)
-                .map(link -> link.getValidFrom().atZone(event.getZoneId()))
+                .map(link -> link.validFrom().atZone(event.getZoneId()))
                 .orElse(event.getBegin());
             formattedDates = Formatters.getFormattedDate(event, checkInDate, "common.ticket-category.date-format",
                 messageSourceManager.getMessageSourceFor(event));

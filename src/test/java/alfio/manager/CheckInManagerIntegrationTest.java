@@ -126,7 +126,7 @@ class CheckInManagerIntegrationTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.priceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);

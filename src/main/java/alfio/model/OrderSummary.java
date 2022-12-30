@@ -90,11 +90,11 @@ public class OrderSummary {
         if(free) {
             return null;
         }
-        return MonetaryUtil.formatCents(originalTotalPrice.getPriceWithVAT() - originalTotalPrice.getVAT(), originalTotalPrice.getCurrencyCode());// FIXME can be null
+        return MonetaryUtil.formatCents(originalTotalPrice.priceWithVAT() - originalTotalPrice.VAT(), originalTotalPrice.currencyCode());// FIXME can be null
     }
 
     public int getPriceInCents() {
-        return originalTotalPrice.getPriceWithVAT();
+        return originalTotalPrice.priceWithVAT();
     }
 
     public String getDescriptionForPayment() {
@@ -106,12 +106,12 @@ public class OrderSummary {
     }
 
     public String getPriceBeforeTaxes() {
-        String currencyCode = originalTotalPrice.getCurrencyCode();
+        String currencyCode = originalTotalPrice.currencyCode();
         if(PriceContainer.VatStatus.isVatIncluded(vatStatus)) {
-            var vat = vatStatus.extractVat(centsToUnit(originalTotalPrice.getPriceWithVAT(), currencyCode), new BigDecimal(vatPercentage));
+            var vat = vatStatus.extractVat(centsToUnit(originalTotalPrice.priceWithVAT(), currencyCode), new BigDecimal(vatPercentage));
             return formatUnit(new BigDecimal(getTotalPrice()).subtract(vat), currencyCode);
         } else {
-            return formatCents(originalTotalPrice.getPriceWithVAT() - originalTotalPrice.getVAT(), currencyCode);
+            return formatCents(originalTotalPrice.priceWithVAT() - originalTotalPrice.VAT(), currencyCode);
         }
     }
 }

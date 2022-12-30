@@ -240,7 +240,7 @@ public final class EventUtil {
 
     public static Optional<String> findMatchingLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
         return firstMatchingCallLink(eventZoneId, categoryConfiguration, eventConfiguration)
-            .map(JoinLink::getLink);
+            .map(JoinLink::link);
     }
 
     public static Optional<JoinLink> firstMatchingCallLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
@@ -252,8 +252,8 @@ public final class EventUtil {
     private static Optional<JoinLink> firstMatchingCallLink(OnlineConfiguration onlineConfiguration, ZoneId zoneId, ZonedDateTime now) {
         return Optional.ofNullable(onlineConfiguration).stream()
             .flatMap(configuration -> configuration.getCallLinks().stream())
-            .sorted(Comparator.comparing(JoinLink::getValidFrom).reversed())
-            .filter(joinLink -> now.isBefore(joinLink.getValidTo().atZone(zoneId)) && now.plusSeconds(1).isAfter(joinLink.getValidFrom().atZone(zoneId)))
+            .sorted(Comparator.comparing(JoinLink::validFrom).reversed())
+            .filter(joinLink -> now.isBefore(joinLink.validTo().atZone(zoneId)) && now.plusSeconds(1).isAfter(joinLink.validFrom().atZone(zoneId)))
             .findFirst();
     }
 

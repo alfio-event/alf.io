@@ -87,7 +87,7 @@ public class PaymentSpecification {
                                             OrderSummary orderSummary,
                                             boolean tcAccepted,
                                             boolean privacyAccepted) {
-        this(reservation.getId(), gatewayToken, totalPrice.getPriceWithVAT(),
+        this(reservation.getId(), gatewayToken, totalPrice.priceWithVAT(),
                 purchaseContext, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), true),
             reservation.getBillingAddress(), reservation.getCustomerReference(), LocaleUtil.forLanguageTag(reservation.getUserLanguage()), reservation.isInvoiceRequested(),
             !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),

@@ -337,7 +337,7 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentProxy(), paymentForm.getCaptcha(), request, event)) {
+            if(isCaptchaInvalid(reservationCost.priceWithVAT(), paymentForm.getPaymentProxy(), paymentForm.getCaptcha(), request, event)) {
                 log.debug("captcha validation failed.");
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
@@ -359,7 +359,7 @@ public class ReservationApiV2Controller {
                 paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentProxy(),
                     new PaymentContext(event, reservationId));
             }
-            PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
+            PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.priceWithVAT(),
                 event, reservation.getEmail(), customerName, reservation.getBillingAddress(), reservation.getCustomerReference(),
                 locale, reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(),
                 orderSummary, reservation.getVatCountryCode(), reservation.getVatNr(), reservation.getVatStatus(),
@@ -422,10 +422,10 @@ public class ReservationApiV2Controller {
 
             boolean invoiceOnly = configurationManager.isInvoiceOnly(purchaseContext);
 
-            if(invoiceOnly && reservationCost.getPriceWithVAT() > 0) {
+            if(invoiceOnly && reservationCost.priceWithVAT() > 0) {
                 //override, that's why we save it
                 contactAndTicketsForm.setInvoiceRequested(true);
-            } else if (reservationCost.getPriceWithVAT() == 0) {
+            } else if (reservationCost.priceWithVAT() == 0) {
                 contactAndTicketsForm.setInvoiceRequested(false);
             }
 
@@ -433,10 +433,10 @@ public class ReservationApiV2Controller {
 
 
             ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), purchaseContext.getVatStatus(),
-                reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
+                reservation.getSrcPriceCts(), reservationCost.priceWithVAT(), reservationCost.VAT(), Math.abs(reservationCost.discount()), reservation.getCurrencyCode());
             if(contactAndTicketsForm.isBusiness()) {
                 reverseChargeManager.checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
-            } else if(reservationCost.getPriceWithVAT() > 0) {
+            } else if(reservationCost.priceWithVAT() > 0) {
                 reverseChargeManager.resetVat(purchaseContext, reservationId);
             }
 

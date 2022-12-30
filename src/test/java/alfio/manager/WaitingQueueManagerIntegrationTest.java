@@ -182,7 +182,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TotalPrice reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
         var orderSummary = ticketReservationManager.orderSummaryForReservation(reservation, event);
-        PaymentSpecification spec = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(), event, "blabla", new CustomerName("a", "b", "c", true), "", null, Locale.ENGLISH, false, false, orderSummary, null, null, PriceContainer.VatStatus.INCLUDED, true, true);
+        PaymentSpecification spec = new PaymentSpecification(reservationId, null, reservationCost.priceWithVAT(), event, "blabla", new CustomerName("a", "b", "c", true), "", null, Locale.ENGLISH, false, false, orderSummary, null, null, PriceContainer.VatStatus.INCLUDED, true, true);
         PaymentResult result = ticketReservationManager.performPayment(spec, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
         assertEquals(0, eventRepository.findStatisticsFor(event.getId()).getDynamicAllocation());
@@ -219,7 +219,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.priceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
@@ -229,7 +229,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscountSingle = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCostSingle = priceAndDiscountSingle.getLeft();
         assertTrue(priceAndDiscountSingle.getRight().isEmpty());
-        specification = new PaymentSpecification(reservationIdSingle, null, reservationCostSingle.getPriceWithVAT(),
+        specification = new PaymentSpecification(reservationIdSingle, null, reservationCostSingle.priceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult resultSingle = ticketReservationManager.performPayment(specification, reservationCostSingle, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
@@ -283,7 +283,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.priceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
@@ -293,7 +293,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscountSingle = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCostSingle = priceAndDiscountSingle.getLeft();
         assertTrue(priceAndDiscountSingle.getRight().isEmpty());
-        specification = new PaymentSpecification(reservationIdSingle, null, reservationCostSingle.getPriceWithVAT(),
+        specification = new PaymentSpecification(reservationIdSingle, null, reservationCostSingle.priceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult resultSingle = ticketReservationManager.performPayment(specification, reservationCostSingle, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
@@ -384,7 +384,7 @@ class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         TotalPrice reservationCost = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.priceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);

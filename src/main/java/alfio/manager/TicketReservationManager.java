@@ -300,7 +300,7 @@ public class TicketReservationManager {
         }
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = subscriptionDescriptor.getVatStatus();
-        ticketReservationRepository.updateBillingData(subscriptionDescriptor.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), subscriptionDescriptor.getCurrency(), null, null, false, reservationId);
+        ticketReservationRepository.updateBillingData(subscriptionDescriptor.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.priceWithVAT(), totalPrice.VAT(), Math.abs(totalPrice.discount()), subscriptionDescriptor.getCurrency(), null, null, false, reservationId);
         auditingRepository.insert(reservationId, null, subscriptionDescriptor.event().map(Event::getId).orElse(null), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
         if (!canProceedWithPayment(subscriptionDescriptor, totalPrice, reservationId)) {
             throw new CannotProceedWithPayment("No payment method applicable for purchase context  " + subscriptionDescriptor.getType() + " with public id " + subscriptionDescriptor.getPublicIdentifier());
@@ -365,7 +365,7 @@ public class TicketReservationManager {
         additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = event.getVatStatus();
-        ticketReservationRepository.updateBillingData(event.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), event.getCurrency(), null, null, false, reservationId);
+        ticketReservationRepository.updateBillingData(event.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.priceWithVAT(), totalPrice.VAT(), Math.abs(totalPrice.discount()), event.getCurrency(), null, null, false, reservationId);
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
         if(isDiscountCodeUsageExceeded(reservationId)) {
             throw new TooManyTicketsForDiscountCodeException();
@@ -407,8 +407,8 @@ public class TicketReservationManager {
     }
 
     private int calculateSrcPrice(VatStatus vatStatus, TotalPrice totalPrice) {
-        return (vatStatus == VatStatus.INCLUDED ? totalPrice.getPriceWithVAT() : totalPrice.getPriceWithVAT() - totalPrice.getVAT())
-            + Math.abs(totalPrice.getDiscount());
+        return (vatStatus == VatStatus.INCLUDED ? totalPrice.priceWithVAT() : totalPrice.priceWithVAT() - totalPrice.VAT())
+            + Math.abs(totalPrice.discount());
     }
 
 
@@ -767,7 +767,7 @@ public class TicketReservationManager {
         if(proxy != null) {
             return proxy;
         }
-        if(reservationCost.getPriceWithVAT() == 0) {
+        if(reservationCost.priceWithVAT() == 0) {
             return PaymentProxy.NONE;
         }
         return PaymentProxy.STRIPE;
@@ -777,7 +777,7 @@ public class TicketReservationManager {
                                        PaymentProxy paymentProxy,
                                        PaymentSpecification spec,
                                        Principal principal) {
-        if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
+        if(reservationCost.priceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
             try {
                 transitionToInPayment(spec, principal);
             } catch (Exception e) {
@@ -834,8 +834,8 @@ public class TicketReservationManager {
 
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
-        int priceWithVAT = totalPrice.getPriceWithVAT();
-        long platformFee = FeeCalculator.getCalculator(event, configurationManager, requireNonNullElse(totalPrice.getCurrencyCode(), event.getCurrency()))
+        int priceWithVAT = totalPrice.priceWithVAT();
+        long platformFee = FeeCalculator.getCalculator(event, configurationManager, requireNonNullElse(totalPrice.currencyCode(), event.getCurrency()))
             .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
             .orElse(0L);
 
@@ -1633,7 +1633,7 @@ public class TicketReservationManager {
         TotalPrice reservationCost = totalPriceAndDiscount.getLeft();
         PromoCodeDiscount discount = totalPriceAndDiscount.getRight().orElse(null);
         //
-        boolean free = reservationCost.getPriceWithVAT() == 0;
+        boolean free = reservationCost.priceWithVAT() == 0;
         String refundedAmount = null;
 
         boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservation.getId(), Audit.EventType.REFUND) > 0;
@@ -1646,8 +1646,8 @@ public class TicketReservationManager {
         return new OrderSummary(reservationCost,
             extractSummary(reservation.getId(), reservation.getVatStatus(), context, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost),
             free,
-            formatCents(reservationCost.getPriceWithVAT(), currencyCode),
-            formatCents(reservationCost.getVAT(), currencyCode),
+            formatCents(reservationCost.priceWithVAT(), currencyCode),
+            formatCents(reservationCost.VAT(), currencyCode),
             reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
             reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
             reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
@@ -1660,14 +1660,14 @@ public class TicketReservationManager {
         var totalPriceAndDiscount = totalReservationCostWithVAT(null, purchaseContext, reservation, removedTickets, List.of(), List.of(), Optional.empty());
         TotalPrice reservationCost = totalPriceAndDiscount.getLeft();
         //
-        boolean free = reservationCost.getPriceWithVAT() == 0;
+        boolean free = reservationCost.priceWithVAT() == 0;
 
         var currencyCode = reservation.getCurrencyCode();
         return new OrderSummary(reservationCost,
             extractSummary(reservation.getVatStatus(), purchaseContext, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), null, reservationCost, removedTickets, Stream.empty(), subscriptionRepository.findSubscriptionsByReservationId(reservation.getId())),
             free,
-            formatCents(reservationCost.getPriceWithVAT(), currencyCode),
-            formatCents(reservationCost.getVAT(), currencyCode),
+            formatCents(reservationCost.priceWithVAT(), currencyCode),
+            formatCents(reservationCost.VAT(), currencyCode),
             reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
             reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
             reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
@@ -1686,7 +1686,7 @@ public class TicketReservationManager {
                                     List<Subscription> subscriptionsToInclude) {
         log.trace("extract summary subscriptionsToInclude {}", subscriptionsToInclude);
         List<SummaryRow> summary = new ArrayList<>();
-        var currencyCode = reservationCost.getCurrencyCode();
+        var currencyCode = reservationCost.currencyCode();
         List<TicketPriceContainer> tickets = ticketsToInclude.stream()
             .map(t -> TicketPriceContainer.from(t, reservationVatStatus, purchaseContext.getVat(), purchaseContext.getVatStatus(), promoCodeDiscount)).toList();
         purchaseContext.event().ifPresent(event -> {
@@ -1756,8 +1756,8 @@ public class TicketReservationManager {
             summary.add(new SummaryRow(formatPromoCode(promo, ticketsToInclude, locale, purchaseContext),
                 formattedSingleAmount,
                 formattedSingleAmount,
-                reservationCost.getDiscountAppliedCount(),
-                formatCents(reservationCost.getDiscount(), currencyCode), formatCents(reservationCost.getDiscount(), currencyCode), reservationCost.getDiscount(),
+                reservationCost.discountAppliedCount(),
+                formatCents(reservationCost.discount(), currencyCode), formatCents(reservationCost.discount(), currencyCode), reservationCost.discount(),
                 promo.isDynamic() ? SummaryType.DYNAMIC_DISCOUNT : SummaryType.PROMOTION_CODE,
                 null));
         });
@@ -2349,8 +2349,8 @@ public class TicketReservationManager {
         Optional<OrderSummary> optionalOrderSummary = optionally(() -> orderSummaryForReservationId(reservation.getId(), event));
         Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
         OrderSummary orderSummary = optionalOrderSummary.orElseThrow();
-        var currencyCode = orderSummary.getOriginalTotalPrice().getCurrencyCode();
-        Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT(), currencyCode).compareTo(paidAmount) == 0, "paid price differs from due price");
+        var currencyCode = orderSummary.getOriginalTotalPrice().currencyCode();
+        Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().priceWithVAT(), currencyCode).compareTo(paidAmount) == 0, "paid price differs from due price");
         confirmOfflinePayment(event, reservation.getId(), username);
     }
 
@@ -3061,15 +3061,15 @@ public class TicketReservationManager {
         var purchaseContext = purchaseContextManager.findByReservationId(reservation.getId()).orElseThrow();
         ticketReservationRepository.updateBillingData(reservation.getVatStatus(),
             calculateSrcPrice(purchaseContext.getVatStatus(), totalPrice),
-            totalPrice.getPriceWithVAT(),
-            totalPrice.getVAT(),
-            Math.abs(totalPrice.getDiscount()),
+            totalPrice.priceWithVAT(),
+            totalPrice.VAT(),
+            Math.abs(totalPrice.discount()),
             purchaseContext.getCurrency(),
             reservation.getVatNr(),
             reservation.getVatCountryCode(),
             reservation.isInvoiceRequested(),
             reservation.getId());
-        log.trace("subscription applied. totalPrice is {}", totalPrice.getPriceWithVAT());
+        log.trace("subscription applied. totalPrice is {}", totalPrice.priceWithVAT());
         return true;
     }
 

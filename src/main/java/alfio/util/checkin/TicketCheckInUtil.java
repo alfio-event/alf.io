@@ -60,7 +60,7 @@ public final class TicketCheckInUtil {
         if(customMetadataOptional.isPresent()) {
             var ticketMetadata = customMetadataOptional.get();
             var joinLink = ticketMetadata.getJoinLink();
-            result.put(ONLINE_CHECK_IN_URL, joinLink.getLink());
+            result.put(ONLINE_CHECK_IN_URL, joinLink.link());
             if(joinLink.hasLinkText()) {
                 result.put(CUSTOM_CHECK_IN_URL_TEXT, joinLink.getLocalizedText(ticketLanguage.getLanguage(), event));
             }
