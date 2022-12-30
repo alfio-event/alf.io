@@ -20,7 +20,7 @@ import {FilterButtonComponent} from '../shared/filter-button/filter-button.compo
     CommonModule,
     NgbModule,
     RouterModule.forChild([
-      { path: '', component: DashboardComponent},
+      { path: 'event', component: DashboardComponent},
       { path: 'configuration', component: OrganizationConfigurationComponent},
       { path: 'subscriptions', component: SubscriptionsComponent },
       { path: 'organization-info', component: OrganizationInfoComponent },

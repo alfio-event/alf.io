@@ -18,7 +18,7 @@ export class MissingOrgComponent implements OnInit {
   ngOnInit(): void {
     firstValueFrom(this.organizationService.getOrganizations()).then(orgs => {
       if (orgs.length > 0) {
-        this.router.navigate(['organization', orgs[0].id]);
+        this.router.navigate(['organization', orgs[0].id, 'event']);
       }
     });
   }

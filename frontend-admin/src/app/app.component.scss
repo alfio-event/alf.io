@@ -34,7 +34,7 @@ header {
   overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
 }
 
-$sidebarWidth: 90px;
+$sidebarWidth: 76px;
 
 nav#sidebarMenu {
   @include media-breakpoint-up(md) {
@@ -45,12 +45,13 @@ nav#sidebarMenu {
     text-decoration: none;
     color: $text-muted;
     font-size: 70%;
-    font-weight: bold;
+    font-weight: normal;
     text-align: center;
     margin-bottom: 1rem;
 
     &.active {
       color: $primary;
+      font-weight: bold;
     }
 
     &:hover {

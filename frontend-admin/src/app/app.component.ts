@@ -49,7 +49,7 @@ export class AppComponent implements OnInit {
 		selector.organizations$ = this.organizations$;
     selector.organizationId$ = this.organizationId$;
     modalRef.result.then((res: Organization) => {
-      this.router.navigate(['/organization', res.id]).then(r => {if (r) {this.currentOrganization$ = of(res)}});
+      this.router.navigate(['/organization', res.id, 'event']).then(r => {if (r) {this.currentOrganization$ = of(res)}});
     }).catch(() => {
       // we do nothing on dismiss
     });

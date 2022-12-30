@@ -33,7 +33,7 @@
       <nav id="sidebarMenu" class="d-md-block bg-light sidebar collapse">
         <div class="position-sticky pt-3 sidebar-sticky" *ngIf="organizationId$ | async as organizationId">
 
-          <a class="d-flex flex-column gap-1 justify-content-center menu-item" [routerLink]="['/organization/', organizationId]" routerLinkActive="active">
+          <a class="d-flex flex-column gap-1 justify-content-center menu-item" [routerLink]="['/organization/', organizationId, 'event']" routerLinkActive="active">
             <svg-icon key="home"></svg-icon> Events
           </a>
 
