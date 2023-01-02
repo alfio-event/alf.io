@@ -174,7 +174,7 @@ This project exists thanks to all the people who contribute.
 
 ### Translation Contributors (POEditor)
 
-A big "Thank you" goes also to our translators, who help us on [POEditor](https://poeditor.com/join/project/ttBYTmPYdr):
+A big "Thank you" goes also to our translators, who help us on [POEditor](https://github.com/alfio-event/alf.io/tree/master/src/main/resources/alfio/i18n):
 
 (we show the complete name/profile only if we have received explicit consent to do so)
 
