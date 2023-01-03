@@ -129,8 +129,8 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
             var configuration = openIdConfiguration();
             var result = userRepository.create(user.getEmail(),
                 passwordEncoder.encode(PasswordGenerator.generateRandomPassword()),
-                retrieveClaimOrBlank(idTokenClaims, configuration.getGivenNameClaim()),
-                retrieveClaimOrBlank(idTokenClaims, configuration.getFamilyNameClaim()),
+                retrieveClaimOrBlank(idTokenClaims, configuration.givenNameClaim()),
+                retrieveClaimOrBlank(idTokenClaims, configuration.familyNameClaim()),
                 user.getEmail(),
                 true,
                 getUserType(),
@@ -225,10 +225,10 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
 
         UriComponents uri = UriComponentsBuilder.newInstance()
             .scheme(HTTPS)
-            .host(openIdConfiguration().getDomain())
-            .path(openIdConfiguration().getAuthenticationUrl())
-            .queryParam(REDIRECT_URI, openIdConfiguration().getCallbackURI())
-            .queryParam("client_id", openIdConfiguration().getClientId())
+            .host(openIdConfiguration().domain())
+            .path(openIdConfiguration().authenticationUrl())
+            .queryParam(REDIRECT_URI, openIdConfiguration().callbackURI())
+            .queryParam("client_id", openIdConfiguration().clientId())
             .queryParam("state", state)
             .queryParam("scope", scopeParameter)
             .queryParam("response_type", "code")
@@ -240,8 +240,8 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     public String buildClaimsRetrieverUrl() {
         UriComponents uri = UriComponentsBuilder.newInstance()
             .scheme(HTTPS)
-            .host(openIdConfiguration().getDomain())
-            .path(openIdConfiguration().getTokenEndpoint())
+            .host(openIdConfiguration().domain())
+            .path(openIdConfiguration().tokenEndpoint())
             .build();
         return uri.toUriString();
     }
@@ -250,16 +250,16 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     public String buildLogoutUrl() {
         UriComponents uri = UriComponentsBuilder.newInstance()
             .scheme(HTTPS)
-            .host(openIdConfiguration().getDomain())
-            .path(openIdConfiguration().getLogoutUrl())
-            .queryParam(REDIRECT_URI, openIdConfiguration().getLogoutRedirectUrl())
+            .host(openIdConfiguration().domain())
+            .path(openIdConfiguration().logoutUrl())
+            .queryParam(REDIRECT_URI, openIdConfiguration().logoutRedirectUrl())
             .build();
         return uri.toString();
     }
 
     @Override
     public String buildRetrieveClaimsUrlBody(String code) {
-        var contentType = openIdConfiguration().getContentType();
+        var contentType = openIdConfiguration().contentType();
         if (contentType.equals(APPLICATION_JSON)) {
             return buildAccessTokenUrlJson(code);
         }
@@ -273,9 +273,9 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
         Map<String, String> body = Map.of(
             "grant_type", "authorization_code",
             "code", code,
-            "client_id", openIdConfiguration().getClientId(),
-            "client_secret", openIdConfiguration().getClientSecret(),
-            REDIRECT_URI, openIdConfiguration().getCallbackURI()
+            "client_id", openIdConfiguration().clientId(),
+            "client_secret", openIdConfiguration().clientSecret(),
+            REDIRECT_URI, openIdConfiguration().callbackURI()
         );
         return json.asJsonString(body);
     }
@@ -283,16 +283,16 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     private String buildAccessTokenUrlForm(String code) {
         return "grant_type=authorization_code" +
             "&code=" + code +
-            "&client_id=" + openIdConfiguration().getClientId() +
-            "&client_secret=" + openIdConfiguration().getClientSecret() +
-            "&redirect_uri=" + openIdConfiguration().getCallbackURI();
+            "&client_id=" + openIdConfiguration().clientId() +
+            "&client_secret=" + openIdConfiguration().clientSecret() +
+            "&redirect_uri=" + openIdConfiguration().callbackURI();
     }
 
     private Map<String, Object> retrieveAccessToken(String code){
         try {
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(buildClaimsRetrieverUrl()))
-                .header("Content-Type", openIdConfiguration().getContentType())
+                .header("Content-Type", openIdConfiguration().contentType())
                 .POST(HttpRequest.BodyPublishers.ofString(buildRetrieveClaimsUrlBody(code)))
                 .build();
 

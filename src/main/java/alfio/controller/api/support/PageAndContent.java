@@ -16,11 +16,6 @@
  */
 package alfio.controller.api.support;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
 public class PageAndContent<T> {
     private final T left;
     private final Integer right;
@@ -28,5 +23,13 @@ public class PageAndContent<T> {
     public PageAndContent(T left, Integer right) {
         this.left = left;
         this.right = right;
+    }
+
+    public Integer getRight() {
+        return right;
+    }
+
+    public T getLeft() {
+        return left;
     }
 }

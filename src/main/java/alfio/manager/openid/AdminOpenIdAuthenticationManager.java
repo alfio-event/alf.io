@@ -72,7 +72,7 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
 
     @Override
     protected OpenIdAlfioUser fromToken(String idToken, String subject, String email, Map<String, Claim> idTokenClaims) {
-        List<String> groupsList = idTokenClaims.get(openIdConfiguration().getRolesParameter()).asList(String.class);
+        List<String> groupsList = idTokenClaims.get(openIdConfiguration().rolesParameter()).asList(String.class);
         log.trace("IdToken contains the following groups: {}", groupsList);
         List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).toList();
         boolean isAdmin = groups.contains(ALFIO_ADMIN);
@@ -90,7 +90,7 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
             throw new RuntimeException(message);
         }
 
-        List<String> alfioOrganizationAuthorizationsRaw = idTokenClaims.get(openIdConfiguration().getAlfioGroupsParameter()).asList(String.class);
+        List<String> alfioOrganizationAuthorizationsRaw = idTokenClaims.get(openIdConfiguration().alfioGroupsParameter()).asList(String.class);
         log.trace("IdToken contains the following alfioGroups: {}", alfioOrganizationAuthorizationsRaw);
         Map<String, Set<String>> alfioOrganizationAuthorizations = extractOrganizationRoles(alfioOrganizationAuthorizationsRaw);
         Set<Role> alfioRoles = extractAlfioRoles(alfioOrganizationAuthorizations);
@@ -124,10 +124,10 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
             "openid",
             "email",
             "profile",
-            openIdConfiguration.getRolesParameter(),
-            openIdConfiguration.getAlfioGroupsParameter(),
-            openIdConfiguration.getGivenNameClaim(),
-            openIdConfiguration.getFamilyNameClaim()
+            openIdConfiguration.rolesParameter(),
+            openIdConfiguration.alfioGroupsParameter(),
+            openIdConfiguration.givenNameClaim(),
+            openIdConfiguration.familyNameClaim()
         );
     }
 

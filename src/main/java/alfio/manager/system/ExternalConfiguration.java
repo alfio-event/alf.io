@@ -26,8 +26,6 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationPathLevel;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,13 +44,27 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 @Component
 @Profile("!"+ Initializer.PROFILE_INTEGRATION_TEST)
 @ConfigurationProperties("alfio.override.system")
-@Getter
-@Setter
 public class ExternalConfiguration {
     private static final String EXTERNAL_EXTENSION_PATH = "::EXTERNAL::";
     private static final int EXTERNAL_CONFIGURATION_ID = Integer.MIN_VALUE;
     private Map<String, String> settings = new HashMap<>();
     private List<ExtensionOverride> extensions = new ArrayList<>();
+
+    public Map<String, String> getSettings() {
+        return settings;
+    }
+
+    public void setSettings(Map<String, String> settings) {
+        this.settings = settings;
+    }
+
+    public List<ExtensionOverride> getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(List<ExtensionOverride> extensions) {
+        this.extensions = extensions;
+    }
 
     public List<Configuration> load(String key) {
         return getSingle(key).map(List::of).orElse(List.of());

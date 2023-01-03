@@ -21,31 +21,26 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
+
 import org.springframework.core.env.Environment;
 
 import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 
-@Getter
-@Setter
-public class OpenIdConfiguration {
-    private final String domain;
-    private final String clientId;
-    private final String clientSecret;
-    private final String callbackURI;
-    private final String authenticationUrl;
-    private final String tokenEndpoint;
-    private final String givenNameClaim;
-    private final String familyNameClaim;
-    private final String contentType;
-    private final String rolesParameter;
-    private final String alfioGroupsParameter;
-    private final String logoutUrl;
-    private final String logoutRedirectUrl;
-
+public record OpenIdConfiguration(String domain,
+                                  String clientId,
+                                  String clientSecret,
+                                  String callbackURI,
+                                  String authenticationUrl,
+                                  String tokenEndpoint,
+                                  String givenNameClaim,
+                                  String familyNameClaim,
+                                  String contentType,
+                                  String rolesParameter,
+                                  String alfioGroupsParameter,
+                                  String logoutUrl,
+                                  String logoutRedirectUrl) {
     @JsonCreator
     public OpenIdConfiguration(@JsonProperty("domain") String domain,
                                @JsonProperty("clientId") String clientId,
@@ -81,7 +76,7 @@ public class OpenIdConfiguration {
             environment.getProperty("openid.domain"),
             environment.getProperty("openid.clientId"),
             environment.getProperty("openid.clientSecret"),
-            environment.getProperty("openid.callbackURI",baseUrl + "/callback"),
+            environment.getProperty("openid.callbackURI", baseUrl + "/callback"),
             environment.getProperty("openid.authenticationUrl"),
             environment.getProperty("openid.tokenEndpoint", "/authorize"),
             environment.getProperty("openid.givenNameClaim"),
@@ -95,16 +90,16 @@ public class OpenIdConfiguration {
     }
 
     public String toString() {
-        return "OpenIdConfiguration(domain=" + this.getDomain()
-            + ", clientId=" + (isNotBlank(this.getClientId()) ? "<redacted>" : "missing")
-            + ", clientSecret=" + (isNotBlank(this.getClientSecret()) ? "<redacted>" : "missing")
-            + ", callbackURI=" + this.getCallbackURI()
-            + ", authenticationUrl=" + this.getAuthenticationUrl()
-            + ", tokenEndpoint=" + this.getTokenEndpoint()
-            + ", contentType=" + this.getContentType()
-            + ", rolesParameter=" + this.getRolesParameter()
-            + ", alfioGroupsParameter=" + this.getAlfioGroupsParameter()
-            + ", logoutUrl=" + this.getLogoutUrl()
-            + ", logoutRedirectUrl=" + this.getLogoutRedirectUrl() + ")";
+        return "OpenIdConfiguration(domain=" + this.domain()
+            + ", clientId=" + (isNotBlank(this.clientId()) ? "<redacted>" : "missing")
+            + ", clientSecret=" + (isNotBlank(this.clientSecret()) ? "<redacted>" : "missing")
+            + ", callbackURI=" + this.callbackURI()
+            + ", authenticationUrl=" + this.authenticationUrl()
+            + ", tokenEndpoint=" + this.tokenEndpoint()
+            + ", contentType=" + this.contentType()
+            + ", rolesParameter=" + this.rolesParameter()
+            + ", alfioGroupsParameter=" + this.alfioGroupsParameter()
+            + ", logoutUrl=" + this.logoutUrl()
+            + ", logoutRedirectUrl=" + this.logoutRedirectUrl() + ")";
     }
 }

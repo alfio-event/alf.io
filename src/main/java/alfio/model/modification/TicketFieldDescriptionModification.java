@@ -16,17 +16,28 @@
  */
 package alfio.model.modification;
 
-
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.Map;
 
-@Getter
-@Setter
+
 public class TicketFieldDescriptionModification {
 
     private int ticketFieldConfigurationId;
     private String locale;
     private Map<String, Object> description;
+
+    public int getTicketFieldConfigurationId() {
+        return ticketFieldConfigurationId;
+    }
+
+    public void setTicketFieldConfigurationId(int ticketFieldConfigurationId) {
+        this.ticketFieldConfigurationId = ticketFieldConfigurationId;
+    }
+
+    public String getLocale() {
+        return locale;
+    }
+
+    public Map<String, Object> getDescription() {
+        return description;
+    }
 }

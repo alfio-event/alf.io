@@ -16,18 +16,21 @@
  */
 package alfio.controller.form;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
 import java.util.Map;
 
-@Getter
-@Setter
 public class UpdateProfileForm extends ContactAndTicketsForm implements Serializable {
     private Map<String, String> additionalInfo;
 
     public boolean hasAdditionalInfo() {
         return additionalInfo != null && !additionalInfo.isEmpty();
+    }
+
+    public Map<String, String> getAdditionalInfo() {
+        return additionalInfo;
+    }
+
+    public void setAdditionalInfo(Map<String, String> additionalInfo) {
+        this.additionalInfo = additionalInfo;
     }
 }
