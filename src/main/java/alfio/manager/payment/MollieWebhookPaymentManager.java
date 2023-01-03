@@ -148,8 +148,8 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         if(platformMode) {
             return requestBuilder.header("Authorization", "Bearer " + accessTokenCache.get(configurationLevel.getOrganizationId().orElseThrow(), org -> {
                 var accessTokenResponseDetails = mollieConnectManager.refreshAccessToken(configuration);
-                if(accessTokenResponseDetails.isSuccess()) {
-                    return accessTokenResponseDetails.getAccessToken();
+                if(accessTokenResponseDetails.success()) {
+                    return accessTokenResponseDetails.accessToken();
                 }
                 throw new IllegalStateException("cannot refresh access token");
             }));
@@ -616,13 +616,13 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                                            Map<ConfigurationKeys, MaybeConfiguration> configuration) {
 
             String billingCountry = null;
-            if(transactionRequest.getBillingDetails() != null) {
-                billingCountry = StringUtils.trimToNull(transactionRequest.getBillingDetails().getCountry());
+            if(transactionRequest.billingDetails() != null) {
+                billingCountry = StringUtils.trimToNull(transactionRequest.billingDetails().getCountry());
             }
             PaymentAmount amount = null;
-            if(transactionRequest.getPrice() != null) {
-                String currencyCode = transactionRequest.getPrice().currencyCode();
-                amount = new PaymentAmount(formatCents(transactionRequest.getPrice().priceWithVAT(), currencyCode), currencyCode);
+            if(transactionRequest.price() != null) {
+                String currencyCode = transactionRequest.price().currencyCode();
+                amount = new PaymentAmount(formatCents(transactionRequest.price().priceWithVAT(), currencyCode), currencyCode);
             }
             boolean testMode = !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault();
             return new MethodCacheKey(amount, billingCountry, testMode);

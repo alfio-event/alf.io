@@ -17,13 +17,10 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.PromoCodeDiscount;
-import lombok.Data;
 
 import java.util.Map;
 
-@Data
-public class DynamicDiscount {
-    private final String discount;
-    private final PromoCodeDiscount.DiscountType discountType;
-    private final Map<String, String> formattedMessage;
+public record DynamicDiscount(String discount,
+                              PromoCodeDiscount.DiscountType discountType,
+                              Map<String, String> formattedMessage) {
 }

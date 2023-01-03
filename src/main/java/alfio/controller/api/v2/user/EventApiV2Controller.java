@@ -417,7 +417,7 @@ public class EventApiV2Controller {
                         return new DynamicDiscount(formattedDiscount, d.getDiscountType(), formatDynamicCodeMessage(event, d));
                     });
             })
-            .filter(d -> d.getDiscountType() != PromoCodeDiscount.DiscountType.NONE)
+            .filter(d -> d.discountType() != PromoCodeDiscount.DiscountType.NONE)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.noContent().build());
     }

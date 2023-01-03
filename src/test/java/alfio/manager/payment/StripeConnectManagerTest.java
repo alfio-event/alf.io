@@ -60,7 +60,7 @@ class StripeConnectManagerTest {
         when(configurationManager.getFor(anyCollection(), any(ConfigurationLevel.class))).thenReturn(map);
         when(extensionManager.generateOAuth2StateParam(anyInt())).thenReturn(Optional.of(state));
         AuthorizationRequestDetails connectURL = stripeConnectManager.getConnectURL(1);
-        assertEquals(state, connectURL.getState());
+        assertEquals(state, connectURL.state());
     }
 
     @Test
@@ -74,6 +74,6 @@ class StripeConnectManagerTest {
         when(configurationManager.getFor(anyCollection(), any(ConfigurationLevel.class))).thenReturn(map);
         when(extensionManager.generateOAuth2StateParam(anyInt())).thenReturn(Optional.empty());
         AuthorizationRequestDetails connectURL = stripeConnectManager.getConnectURL(1);
-        assertNotEquals(state, connectURL.getState());
+        assertNotEquals(state, connectURL.state());
     }
 }

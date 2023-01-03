@@ -69,9 +69,9 @@ public class AdminConfigurationController {
                                                   HttpSession session) {
         if(CONNECT_PROVIDERS.contains(provider) && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
             var connectURL = getConnector(provider).getConnectURL(orgId);
-            session.setAttribute(provider+CONNECT_STATE_PREFIX +orgId, connectURL.getState());
+            session.setAttribute(provider+CONNECT_STATE_PREFIX +orgId, connectURL.state());
             session.setAttribute(provider+CONNECT_ORG, orgId);
-            return "redirect:" + connectURL.getAuthorizationUrl();
+            return "redirect:" + connectURL.authorizationUrl();
         }
         return REDIRECT_ADMIN;
     }
@@ -100,7 +100,7 @@ public class AdminConfigurationController {
                 boolean stateVerified = Objects.equals(persistedState, state);
                 if(stateVerified && code != null) {
                     AccessTokenResponseDetails connectResult = getConnector(provider).storeConnectedAccountId(code, orgId);
-                    if(connectResult.isSuccess()) {
+                    if(connectResult.success()) {
                         return "redirect:/admin/#/configuration/organization/"+orgId;
                     }
                 } else if(stateVerified && StringUtils.isNotEmpty(errorCode)) {

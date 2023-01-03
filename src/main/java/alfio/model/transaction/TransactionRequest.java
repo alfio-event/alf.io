@@ -18,15 +18,10 @@ package alfio.model.transaction;
 
 import alfio.model.BillingDetails;
 import alfio.model.TotalPrice;
-import lombok.Data;
 
-@Data
-public class TransactionRequest {
+public record TransactionRequest(TotalPrice price, BillingDetails billingDetails) {
 
     private static final TransactionRequest EMPTY = new TransactionRequest(null, null);
-
-    private final TotalPrice price;
-    private final BillingDetails billingDetails;
 
     public static TransactionRequest empty() {
         return EMPTY;

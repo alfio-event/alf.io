@@ -16,12 +16,8 @@
  */
 package alfio.util.oauth2;
 
-import lombok.Data;
-
-@Data
-public class AccessTokenResponseDetails {
-    private final String accessToken;
-    private final String refreshToken;
-    private final String errorMessage;
-    private final boolean success;
+public record AccessTokenResponseDetails(String accessToken,
+                                         String refreshToken,
+                                         String errorMessage,
+                                         boolean success) {
 }

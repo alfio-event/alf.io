@@ -16,10 +16,5 @@
  */
 package alfio.util.oauth2;
 
-import lombok.Data;
-
-@Data
-public class AuthorizationRequestDetails {
-    private final String authorizationUrl;
-    private final String state;
+public record AuthorizationRequestDetails(String authorizationUrl, String state) {
 }

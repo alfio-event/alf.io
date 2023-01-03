@@ -16,15 +16,13 @@
  */
 package alfio.model.modification;
 
-import lombok.Data;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-@Data
+
 public class UploadBase64FileModification {
 
     private byte[] file;
@@ -32,6 +30,38 @@ public class UploadBase64FileModification {
     private String type;
     private String name;
     private Map<String, String> attributes;
+
+    public void setFile(byte[] file) {
+        this.file = file;
+    }
+
+    public void setFileAsString(String fileAsString) {
+        this.fileAsString = fileAsString;
+    }
+
+    public String getFileAsString() {
+        return fileAsString;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
 
     public InputStream getInputStream() {
         return new ByteArrayInputStream(file);

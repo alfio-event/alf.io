@@ -395,7 +395,7 @@ public class ExtensionManager {
             if(response == null || response.isEmpty()) {
                 return false;
             }
-            Path tempFilePath = Paths.get(response.getTempFilePath());
+            Path tempFilePath = Paths.get(response.tempFilePath());
             if(Files.exists(tempFilePath)) {
                 Files.copy(tempFilePath, outputStream);
                 Files.delete(tempFilePath);

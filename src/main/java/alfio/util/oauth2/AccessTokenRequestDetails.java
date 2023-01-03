@@ -16,12 +16,6 @@
  */
 package alfio.util.oauth2;
 
-import lombok.Data;
 
-@Data
-public class AccessTokenRequestDetails {
-    private final String clientId;
-    private final String clientSecret;
-    private final String tokenUrl;
-    private final String code;
+public record AccessTokenRequestDetails(String clientId, String clientSecret, String tokenUrl, String code) {
 }

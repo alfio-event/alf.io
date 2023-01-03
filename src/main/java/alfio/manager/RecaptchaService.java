@@ -20,7 +20,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
-import lombok.Data;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -66,8 +65,15 @@ public class RecaptchaService {
         }
     }
 
-    @Data
     public static class RecatpchaResponse {
         private boolean success;
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
     }
 }

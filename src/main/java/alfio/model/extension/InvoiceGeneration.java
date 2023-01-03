@@ -17,9 +17,14 @@
 
 package alfio.model.extension;
 
-import lombok.Data;
-
-@Data
 public class InvoiceGeneration {
     private String invoiceNumber;
+
+    public String getInvoiceNumber() {
+        return invoiceNumber;
+    }
+
+    public void setInvoiceNumber(String invoiceNumber) {
+        this.invoiceNumber = invoiceNumber;
+    }
 }
