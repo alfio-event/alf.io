@@ -29,10 +29,8 @@ import alfio.model.EventAndOrganizationId;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.Organization;
 import alfio.util.ClockProvider;
 import alfio.util.RequestUtils;
-import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -278,15 +276,6 @@ public class ConfigurationApiController {
         return ResponseEntity.ok(adminJobManager.scheduleExecution(ASSIGN_TICKETS_TO_SUBSCRIBERS, requireNonNullElse(jobMetadata, Map.of())));
     }
 
-    @Data
-    static class OrganizationConfig {
-        private final Organization organization;
-        private final Map<ConfigurationKeys.SettingCategory, List<Configuration>> config;
-    }
-
-    @Data
-    static class InstanceSettings {
-        private final int descriptionMaxLength;
-        private final String baseUrl;
+    record InstanceSettings(int descriptionMaxLength, String baseUrl) {
     }
 }

@@ -29,7 +29,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.ExportUtils;
-import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -180,9 +179,16 @@ public class AdminWaitingQueueApiController {
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.BAD_REQUEST));
     }
 
-    @Data
     private static class SetStatusForm {
         private boolean status;
+
+        public void setStatus(boolean status) {
+            this.status = status;
+        }
+
+        public boolean isStatus() {
+            return status;
+        }
     }
 
 

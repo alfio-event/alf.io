@@ -24,7 +24,6 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
 import java.util.Collection;
 import java.util.List;
@@ -57,10 +56,19 @@ public interface ConfigurationRepository {
     @Query("SELECT ticket_category_id_fk, c_value FROM configuration_ticket_category where organization_id_fk = :organizationId and event_id_fk = :eventId and c_key = :key")
     List<CategoryAndValue> findAllCategoriesAndValueWith(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("key") String key);
 
-    @Getter
+
     class CategoryAndValue {
+
         final int ticketCategoryId;
         final String value;
+
+        public int getTicketCategoryId() {
+            return ticketCategoryId;
+        }
+
+        public String getValue() {
+            return value;
+        }
 
         public CategoryAndValue(@Column("ticket_category_id_fk") int ticketCategoryId, @Column("c_value") String value) {
             this.ticketCategoryId = ticketCategoryId;

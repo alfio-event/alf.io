@@ -238,7 +238,7 @@ class TicketReservationManagerUnitTest {
         initReservationWithTicket(1000, false);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0, "CHF"));
         Assertions.assertEquals(1, summaryRows.size());
-        Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+        Assertions.assertEquals("10.00", summaryRows.get(0).price());
     }
 
     @Test
@@ -246,7 +246,7 @@ class TicketReservationManagerUnitTest {
         initReservationWithTicket(1000, true);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(1, summaryRows.size());
-        Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+        Assertions.assertEquals("10.00", summaryRows.get(0).price());
     }
 
     @Test
@@ -256,7 +256,7 @@ class TicketReservationManagerUnitTest {
         when(ticket.getFinalPriceCts()).thenReturn(909);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(1, summaryRows.size());
-        Assertions.assertEquals("9.09", summaryRows.get(0).getPrice());
+        Assertions.assertEquals("9.09", summaryRows.get(0).price());
     }
 
     @Test
@@ -266,7 +266,7 @@ class TicketReservationManagerUnitTest {
         when(ticket.getFinalPriceCts()).thenReturn(1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(1, summaryRows.size());
-        Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+        Assertions.assertEquals("10.00", summaryRows.get(0).price());
     }
 
     @Test
@@ -274,7 +274,7 @@ class TicketReservationManagerUnitTest {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 1000, 1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0, "CHF"));
         Assertions.assertEquals(2, summaryRows.size());
-        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.price(), String.format("%s failed", r.type())));
     }
 
     @Test
@@ -282,7 +282,7 @@ class TicketReservationManagerUnitTest {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 1000, 1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0, "CHF"));
         Assertions.assertEquals(2, summaryRows.size());
-        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.price(), String.format("%s failed", r.type())));
     }
 
     @Test
@@ -290,7 +290,7 @@ class TicketReservationManagerUnitTest {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 1000, 1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(2, summaryRows.size());
-        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.price(), String.format("%s failed", r.type())));
     }
 
     @Test
@@ -298,8 +298,8 @@ class TicketReservationManagerUnitTest {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 1000, 1000);
         List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0, "CHF"));
         Assertions.assertEquals(2, summaryRows.size());
-        Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
-        Assertions.assertEquals("10.00", summaryRows.get(1).getPrice());
+        Assertions.assertEquals("10.00", summaryRows.get(0).price());
+        Assertions.assertEquals("10.00", summaryRows.get(1).price());
     }
 
     private void initReservationWithTicket(int ticketPaidPrice, boolean eventVatIncluded) {

@@ -532,11 +532,11 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("40.00", orderSummary.getTotalPrice());
         assertEquals("0.40", orderSummary.getTotalVAT());
         assertEquals(3, orderSummary.getTicketAmount());
-        List<SummaryRow> asRows = orderSummary.getSummary().stream().filter(s -> s.getType() == SummaryRow.SummaryType.ADDITIONAL_SERVICE).toList();
+        List<SummaryRow> asRows = orderSummary.getSummary().stream().filter(s -> s.type() == SummaryRow.SummaryType.ADDITIONAL_SERVICE).toList();
         assertEquals(1, asRows.size());
-        assertEquals("9.90", asRows.get(0).getPriceBeforeVat());
-        assertEquals("9.90", asRows.get(0).getSubTotalBeforeVat());
-        assertEquals("10.00", asRows.get(0).getSubTotal());
+        assertEquals("9.90", asRows.get(0).priceBeforeVat());
+        assertEquals("9.90", asRows.get(0).subTotalBeforeVat());
+        assertEquals("10.00", asRows.get(0).subTotal());
     }
 
     @Test

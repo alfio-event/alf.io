@@ -154,7 +154,7 @@ public class ReservationInfo {
         public ReservationInfoOrderSummary(OrderSummary orderSummary) {
             this.summary = orderSummary.getSummary()
                 .stream()
-                .map(s -> new ReservationInfoOrderSummaryRow(s.getName(), s.getAmount(), s.getPrice(), s.getSubTotal(), s.getType(), s.getTaxPercentage()))
+                .map(s -> new ReservationInfoOrderSummaryRow(s.name(), s.amount(), s.price(), s.subTotal(), s.type(), s.taxPercentage()))
                 .collect(Collectors.toList());
             this.totalPrice = orderSummary.getTotalPrice();
             this.free = orderSummary.getFree();

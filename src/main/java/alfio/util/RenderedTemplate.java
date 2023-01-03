@@ -16,15 +16,24 @@
  */
 package alfio.util;
 
-import lombok.Getter;
-
 import java.util.Map;
 
-@Getter
 public class RenderedTemplate {
     private final String textPart;
     private final String htmlPart;
     private final Map<String, Object> srcModel;
+
+    public Map<String, Object> getSrcModel() {
+        return srcModel;
+    }
+
+    public String getHtmlPart() {
+        return htmlPart;
+    }
+
+    public String getTextPart() {
+        return textPart;
+    }
 
     private RenderedTemplate(String textPart, String htmlPart, Map<String, Object> model) {
         this.textPart = textPart;

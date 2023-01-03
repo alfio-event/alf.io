@@ -21,7 +21,6 @@ import alfio.model.Event.EventFormat;
 import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
@@ -31,7 +30,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
-@Getter
 public class LocationDescriptor {
 
 
@@ -117,5 +115,21 @@ public class LocationDescriptor {
     @Override
     public int hashCode() {
         return Objects.hash(timeZone, latitude, longitude, mapUrl);
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public String getLatitude() {
+        return latitude;
+    }
+
+    public String getLongitude() {
+        return longitude;
+    }
+
+    public String getMapUrl() {
+        return mapUrl;
     }
 }

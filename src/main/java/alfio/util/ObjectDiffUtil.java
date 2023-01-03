@@ -17,7 +17,6 @@
 package alfio.util;
 
 import alfio.model.Ticket;
-import lombok.Getter;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.ReflectionUtils;
@@ -82,13 +81,27 @@ public class ObjectDiffUtil {
         return diffUntyped(beforeAsMap, afterAsMap, "/", "");
     }
 
-
-    @Getter
     public static class Change implements Comparable<Change> {
         private final String propertyName;
         private final State state;
         private final Object oldValue;
         private final Object newValue;
+
+        public String getPropertyName() {
+            return propertyName;
+        }
+
+        public State getState() {
+            return state;
+        }
+
+        public Object getOldValue() {
+            return oldValue;
+        }
+
+        public Object getNewValue() {
+            return newValue;
+        }
 
         public Change(String propertyName, State state, Object oldValue, Object newValue) {
             this.propertyName = propertyName;

@@ -57,8 +57,8 @@ public class OrderSummary {
     }
 
     public int getTicketAmount() {
-        return summary.stream().filter(s-> SummaryRow.SummaryType.TICKET == s.getType())
-            .mapToInt(SummaryRow::getAmount)
+        return summary.stream().filter(s-> SummaryRow.SummaryType.TICKET == s.type())
+            .mapToInt(SummaryRow::amount)
             .sum();
     }
 
@@ -66,7 +66,7 @@ public class OrderSummary {
 
         //filter out the promotions code that have been inserted in the order but not used
         return summary.stream()
-            .filter(s-> !(s.isDiscount() && s.getAmount() == 0))
+            .filter(s-> !(s.isDiscount() && s.amount() == 0))
             .collect(Collectors.toList());
     }
 

@@ -20,7 +20,6 @@ import alfio.controller.support.CustomBindingResult;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
 import alfio.model.result.WarningMessage;
-import lombok.Getter;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -103,11 +102,22 @@ public class ValidatedResponse<T> {
     }
 
 
-    @Getter
     public static class ErrorDescriptor {
         private final String fieldName;
         private final String code;
         private final Map<String, Object> arguments;
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public Map<String, Object> getArguments() {
+            return arguments;
+        }
 
         public ErrorDescriptor(String fieldName, String code, Map<String, Object> arguments) {
             this.fieldName = fieldName;

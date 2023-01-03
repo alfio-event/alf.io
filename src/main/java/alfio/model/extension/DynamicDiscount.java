@@ -17,17 +17,38 @@
 package alfio.model.extension;
 
 import alfio.model.PromoCodeDiscount;
-import lombok.Data;
 
 import java.util.Arrays;
 
-@Data
 public class DynamicDiscount {
 
     private String amount;
     private String type;
     private String code;
 
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setAmount(String amount) {
+        this.amount = amount;
+    }
+
+    public String getAmount() {
+        return amount;
+    }
 
     public PromoCodeDiscount.DiscountType getDiscountType() {
         return Arrays.stream(PromoCodeDiscount.DiscountType.values())
