@@ -1639,7 +1639,7 @@ public class TicketReservationManager {
         boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservation.getId(), Audit.EventType.REFUND) > 0;
 
         if(hasRefund) {
-            refundedAmount = paymentManager.getInfo(reservation, context).getPaymentInformation().getRefundedAmount();
+            refundedAmount = paymentManager.getInfo(reservation, context).paymentInformation().getRefundedAmount();
         }
 
         var currencyCode = reservation.getCurrencyCode();

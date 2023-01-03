@@ -28,7 +28,6 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -66,15 +65,39 @@ public class CheckInApiController {
         this.configurationManager = configurationManager;
     }
 
-    @Data
+
     public static class TicketCode {
         private String code;
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
     }
 
-    @Data
+
     public static class TicketIdentifierCode {
         private String identifier;
         private String code;
+
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        public void setIdentifier(String identifier) {
+            this.identifier = identifier;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
     }
     
     @GetMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
@@ -278,10 +301,8 @@ public class CheckInApiController {
             .flatMap(str -> optionally(() -> Json.fromJson(str, LabelLayout.class)));
     }
 
-    @Data
-    private static class OnSitePaymentConfirmation {
-        private final boolean status;
-        private final String message;
+
+    private record OnSitePaymentConfirmation(@JsonProperty("status") boolean status, @JsonProperty("message") String message) {
     }
 
     @Getter

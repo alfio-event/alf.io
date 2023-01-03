@@ -56,9 +56,9 @@ public class FileDownloadManagerIntegrationTest {
     @Test
     public void testFileDownloadSuccess() {
         var file = new FileDownloadManager(httpClient).downloadFile("http://localhost:4242/test.txt");
-        Assertions.assertEquals("text/plain; charset=utf-8", file.getType());
-        Assertions.assertEquals("test.txt", file.getName());
-        Assertions.assertEquals("Hello World!".length(), file.getFile().length);
+        Assertions.assertEquals("text/plain; charset=utf-8", file.type());
+        Assertions.assertEquals("test.txt", file.name());
+        Assertions.assertEquals("Hello World!".length(), file.file().length);
     }
 
     @Test

@@ -188,9 +188,9 @@ public class PaymentManager {
             .map(transaction -> internalGetInfo(reservation, purchaseContext, transaction));
         maybeTransaction.ifPresent(info -> {
             try {
-                Transaction transaction = info.getTransaction();
+                Transaction transaction = info.transaction();
                 String transactionId = transaction.getTransactionId();
-                PaymentInformation paymentInformation = info.getPaymentInformation();
+                PaymentInformation paymentInformation = info.paymentInformation();
                 if(paymentInformation != null && feesUpdated(transaction, paymentInformation)) {
                     transactionRepository.updateFees(transactionId, reservation.getId(), safeParseLong(paymentInformation.getPlatformFee()), safeParseLong(paymentInformation.getFee()));
                 }

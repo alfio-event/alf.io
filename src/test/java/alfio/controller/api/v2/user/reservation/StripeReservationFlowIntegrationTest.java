@@ -69,6 +69,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.validation.BeanPropertyBindingResult;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -283,7 +284,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
             var payload = Files.readString(Path.of(resource.toURI())).replaceAll("RESERVATION_ID", reservationId);
             var signedHeader = "t=" + timestamp + ",v1=" +Webhook.Util.computeHmacSha256(WEBHOOK_SECRET, timestamp + "." + payload);
             var httpRequest = new MockHttpServletRequest();
-            httpRequest.setContent(payload.getBytes());
+            httpRequest.setContent(payload.getBytes(StandardCharsets.UTF_8));
             httpRequest.setContentType(APPLICATION_JSON);
             var response = stripePaymentWebhookController.receivePaymentConfirmation(signedHeader, httpRequest);
             assertNotNull(response);
