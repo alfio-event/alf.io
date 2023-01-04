@@ -174,7 +174,7 @@ public interface TicketFieldRepository extends FieldRepository {
 
     default List<RestrictedValueStats> retrieveStats(int configurationId) {
         TicketFieldConfiguration configuration = findById(configurationId);
-        Map<String, Integer> valueStats = getValueStats(configurationId).stream().collect(Collectors.toMap(RestrictedValueStats.RestrictedValueCount::getName, RestrictedValueStats.RestrictedValueCount::getCount));
+        Map<String, Integer> valueStats = getValueStats(configurationId).stream().collect(Collectors.toMap(RestrictedValueStats.RestrictedValueCount::name, RestrictedValueStats.RestrictedValueCount::count));
         int total = valueStats.values().stream().mapToInt(i -> i).sum();
         if (configuration.isCountryField()) {
             // no restricted values

@@ -17,11 +17,10 @@
 package alfio.controller.api.support;
 
 import alfio.model.EventDescription;
-import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
 
 public class PublicEventDescription {
-    @Delegate(excludes = {EventDescriptionExcludes.class})
+
     private final EventDescription eventDescription;
 
     PublicEventDescription(EventDescription eventDescription) {
@@ -29,15 +28,19 @@ public class PublicEventDescription {
     }
 
     public String getShortDescription() {
-        return StringUtils.abbreviate(getDescription(), 100);
+        return StringUtils.abbreviate(eventDescription.description(), 100);
+    }
+
+    public String getLocale() {
+        return eventDescription.locale();
+    }
+
+    public String getDescription() {
+        return eventDescription.description();
     }
 
     static PublicEventDescription fromEventDescription(EventDescription eventDescription) {
         return new PublicEventDescription(eventDescription);
     }
 
-    interface EventDescriptionExcludes {
-        int getEventId();
-        EventDescription.EventDescriptionType getEventDescriptionType();
-    }
 }

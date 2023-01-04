@@ -17,9 +17,14 @@
 
 package alfio.model.extension;
 
-import lombok.Data;
-
-@Data
 public class CreditNoteGeneration {
     private String creditNoteNumber;
+
+    public String getCreditNoteNumber() {
+        return creditNoteNumber;
+    }
+
+    public void setCreditNoteNumber(String creditNoteNumber) {
+        this.creditNoteNumber = creditNoteNumber;
+    }
 }

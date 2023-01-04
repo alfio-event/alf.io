@@ -17,30 +17,11 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class AdminReservationRequestStats {
-
-    private final String requestId;
-    private final long userId;
-    private final long eventId;
-    private final int countSuccess;
-    private final int countPending;
-    private final int countError;
-
-
-    public AdminReservationRequestStats(@Column("request_id") String requestId,
-                                        @Column("user_id") long userId,
-                                        @Column("event_id") long eventId,
-                                        @Column("count_success") int countSuccess,
-                                        @Column("count_pending") int countPending,
-                                        @Column("count_error") int countError) {
-        this.requestId = requestId;
-        this.userId = userId;
-        this.eventId = eventId;
-        this.countSuccess = countSuccess;
-        this.countPending = countPending;
-        this.countError = countError;
-    }
+public record AdminReservationRequestStats(@Column("request_id") String requestId,
+                                           @Column("user_id") long userId,
+                                           @Column("event_id") long eventId,
+                                           @Column("count_success") int countSuccess,
+                                           @Column("count_pending") int countPending,
+                                           @Column("count_error") int countError) {
 }

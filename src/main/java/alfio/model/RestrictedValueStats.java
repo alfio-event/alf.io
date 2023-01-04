@@ -18,7 +18,6 @@ package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Data;
-import lombok.Getter;
 
 @Data
 public class RestrictedValueStats {
@@ -26,14 +25,7 @@ public class RestrictedValueStats {
     private final int count;
     private final int percentage;
 
-    @Getter
-    public static class RestrictedValueCount {
-        private final String name;
-        private final Integer count;
 
-        public RestrictedValueCount(@Column("name") String name, @Column("count") Integer count) {
-            this.name = name;
-            this.count = count;
-        }
+    public record RestrictedValueCount(@Column("name") String name, @Column("count") Integer count) {
     }
 }

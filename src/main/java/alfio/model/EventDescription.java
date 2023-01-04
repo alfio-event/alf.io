@@ -17,38 +17,17 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
 
-@Getter
-public class EventDescription {
+
+public record EventDescription(@Column("event_id_fk") Integer eventId, @Column("locale") String locale,
+                               @Column("type") EventDescriptionType eventDescriptionType,
+                               @Column("description") String description) {
 
     //
     public enum EventDescriptionType {
         DESCRIPTION
     }
 
-    private final Integer eventId;
-    private final String locale;
-    private final EventDescriptionType eventDescriptionType;
-    private final String description;
-
-    public EventDescription(@Column("event_id_fk") Integer eventId, @Column("locale") String locale,
-                            @Column("type") EventDescriptionType eventDescriptionType,
-                            @Column("description") String description) {
-        this.eventId = eventId;
-        this.locale = locale;
-        this.eventDescriptionType = eventDescriptionType;
-        this.description = description;
-    }
-
-    @Getter
-    public static class LocaleDescription {
-        private final String locale;
-        private final String description;
-
-        public LocaleDescription(@Column("locale") String locale, @Column("description") String description) {
-            this.locale = locale;
-            this.description = description;
-        }
+    public record LocaleDescription(@Column("locale") String locale, @Column("description") String description) {
     }
 }

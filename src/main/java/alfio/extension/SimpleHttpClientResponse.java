@@ -18,12 +18,10 @@ package alfio.extension;
 
 import alfio.util.Json;
 import com.google.gson.JsonSyntaxException;
-import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
 
-@Getter
 public class SimpleHttpClientResponse {
     private final boolean successful;
     private final int code;
@@ -53,11 +51,28 @@ public class SimpleHttpClientResponse {
         return tryParse(body, clazz);
     }
 
+
     private static <T> T tryParse(String body, Class<T> clazz) {
         try {
             return Json.GSON.fromJson(body, clazz);
         } catch (JsonSyntaxException jse) {
             return null;
         }
+    }
+
+    public boolean isSuccessful() {
+        return successful;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public Map<String, List<String>> getHeaders() {
+        return headers;
+    }
+
+    public String getBody() {
+        return body;
     }
 }

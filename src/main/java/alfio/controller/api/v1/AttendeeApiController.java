@@ -27,7 +27,6 @@ import alfio.util.EventUtil;
 import alfio.util.Wrappers;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,12 +120,27 @@ public class AttendeeApiController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @Getter
     public static class SponsorScanRequest {
         private final String eventName;
         private final String ticketIdentifier;
         private final String notes;
         private final SponsorScan.LeadStatus leadStatus;
+
+        public String getEventName() {
+            return eventName;
+        }
+
+        public String getTicketIdentifier() {
+            return ticketIdentifier;
+        }
+
+        public String getNotes() {
+            return notes;
+        }
+
+        public SponsorScan.LeadStatus getLeadStatus() {
+            return leadStatus;
+        }
 
         @JsonCreator
         public SponsorScanRequest(@JsonProperty("eventName") String eventName,

@@ -29,7 +29,6 @@ import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.AuditingRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
-import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -285,11 +284,17 @@ public class PaymentManager {
             }).orElse(false);
     }
 
-    @Data
+
     public static final class PaymentMethodDTO {
 
         public enum PaymentMethodStatus {
             ACTIVE, ERROR
+        }
+
+        public PaymentMethodDTO(PaymentProxy paymentProxy, PaymentMethod paymentMethod, PaymentMethodStatus status) {
+            this.paymentProxy = paymentProxy;
+            this.paymentMethod = paymentMethod;
+            this.status = status;
         }
 
         private final PaymentProxy paymentProxy;
@@ -308,6 +313,14 @@ public class PaymentManager {
 
         public PaymentMethod getPaymentMethod() {
             return paymentMethod;
+        }
+
+        public PaymentProxy getPaymentProxy() {
+            return paymentProxy;
+        }
+
+        public PaymentMethodStatus getStatus() {
+            return status;
         }
     }
 }
