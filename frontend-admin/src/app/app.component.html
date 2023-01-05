@@ -34,26 +34,39 @@
         <div class="position-sticky pt-3 sidebar-sticky" *ngIf="organizationId$ | async as organizationId">
 
           <a class="d-flex flex-column gap-1 justify-content-center menu-item" [routerLink]="['/organization/', organizationId, 'event']" routerLinkActive="active">
-            <svg-icon key="home"></svg-icon> Events
+            <svg-icon key="home"></svg-icon> <span translate="admin.menu.events"></span>
           </a>
 
           <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'subscriptions']" routerLinkActive="active">
-            <svg-icon key="subscription"></svg-icon> Subscriptions
+            <svg-icon key="subscription"></svg-icon> <span translate="admin.menu.subscriptions"></span>
           </a>
 
           <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'organization-info']" routerLinkActive="active">
-            <svg-icon key="organization"></svg-icon> Organization
+            <svg-icon key="organization"></svg-icon> <span translate="admin.menu.organization"></span>
           </a>
           <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'access-control']" routerLinkActive="active">
-            <svg-icon key="access"></svg-icon> Security
+            <svg-icon key="access"></svg-icon> <span translate="admin.menu.security"></span>
           </a>
 
           <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'groups']" routerLinkActive="active">
-            <svg-icon key="groups"></svg-icon> Groups
+            <svg-icon key="groups"></svg-icon> <span translate="admin.menu.groups"></span>
           </a>
           <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'configuration']" routerLinkActive="active">
-            <svg-icon key="settings"></svg-icon> Settings
+            <svg-icon key="settings"></svg-icon> <span translate="admin.menu.settings"></span>
           </a>
+          <ng-container *ngIf="(currentUser$ | async)?.role === 'ADMIN'">
+            <hr class="mt-5">
+            <p class="text-center text-muted mb-4" translate="admin.menu.system"></p>
+            <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organizations']" routerLinkActive="active">
+              <svg-icon key="organization"></svg-icon> <span translate="admin.menu.system.organizations"></span>
+            </a>
+            <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/access-control']" routerLinkActive="active">
+              <svg-icon key="access"></svg-icon> <span translate="admin.menu.system.security"></span>
+            </a>
+            <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/configuration']" routerLinkActive="active">
+              <svg-icon key="settings"></svg-icon> <span translate="admin.menu.system.settings"></span>
+            </a>
+          </ng-container>
         </div>
       </nav>
       <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">

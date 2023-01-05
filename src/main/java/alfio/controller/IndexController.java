@@ -230,7 +230,7 @@ public class IndexController {
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute(NONCE, nonce));
                 var head = idx.getElementsByTagName("head").get(0);
                 head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), MediaType.APPLICATION_JSON.toString(), "preload-info", null));
-                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), MediaType.APPLICATION_JSON.toString(), "preload-bundle", "en"));
+                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en", MessageSourceManager.PUBLIC_FRONTEND)), MediaType.APPLICATION_JSON.toString(), "preload-bundle", "en"));
                 var httpServletRequest = requireNonNull(request.getNativeRequest(HttpServletRequest.class));
                 head.appendChild(buildMetaTag("GID", request.getSessionId()));
                 var csrf = csrfTokenRepository.loadToken(httpServletRequest);

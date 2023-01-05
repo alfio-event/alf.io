@@ -50,16 +50,13 @@ public class TranslationsApiController {
     @GetMapping("/public/i18n/bundle/{lang}")
     public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang,
                                                      @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
-        return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang);
+        return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.PUBLIC_FRONTEND);
     }
 
     @GetMapping("/admin/i18n/bundle/{lang}")
     public Map<String, String> getAdminTranslations(@PathVariable("lang") String lang,
                                                     @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
-        var bundle = messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang);
-        return bundle.entrySet().stream()
-            .filter(kv -> kv.getKey().startsWith("admin."))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.ADMIN_FRONTEND);
     }
 
     @GetMapping("/public/i18n/countries/{lang}")
