@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -41,7 +42,7 @@ public class FileDownloadManager {
 
     public DownloadedFile downloadFile(String url) {
         HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url)).GET().build();
-        HttpResponse<byte[]> response = null;
+        HttpResponse<byte[]> response;
         try {
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofByteArray());
         } catch (IOException exception) {
@@ -82,12 +83,39 @@ public class FileDownloadManager {
     public record DownloadedFile(byte[] file, String name, String type) {
 
         public UploadBase64FileModification toUploadBase64FileModification() {
-                UploadBase64FileModification uf = new UploadBase64FileModification();
-                uf.setFile(file);
-                uf.setName(name);
-                uf.setType(type);
-                return uf;
-            }
+            UploadBase64FileModification uf = new UploadBase64FileModification();
+            uf.setFile(file);
+            uf.setName(name);
+            uf.setType(type);
+            return uf;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof DownloadedFile df)) {
+                return false;
+            }
+            return Arrays.equals(file, df.file) && name.equals(df.name) && type.equals(df.type);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(name, type);
+            result = 31 * result + Arrays.hashCode(file);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "DownloadedFile{" +
+                "file=" + Arrays.toString(file) +
+                ", name='" + name + '\'' +
+                ", type='" + type + '\'' +
+                '}';
+        }
+    }
 
 }
