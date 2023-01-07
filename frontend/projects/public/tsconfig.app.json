@@ -1,0 +1,24 @@
+/* To learn more about this file see: https://angular.io/config/tsconfig. */
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../out-tsc/app",
+    "types": [],
+    /* temporarily disable strict checks, see https://www.typescriptlang.org/tsconfig */
+    "strict": false,
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "angularCompilerOptions": {
+    /* temporarily disable strict checks */
+    "strictPropertyInitialization": false,
+    "strictInjectionParameters": false,
+    "strictTemplates": false
+  },
+  "files": [
+    "src/main.ts",
+    "src/polyfills.ts"
+  ],
+  "include": [
+    "src/**/*.d.ts"
+  ]
+}

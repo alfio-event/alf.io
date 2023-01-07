@@ -1,0 +1,29 @@
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/variables";
+.poll-text {
+    display: inline-block;
+    vertical-align: top;
+    padding-left: 1rem;
+}
+
+.poll-title, .poll-description {
+    display: block;
+}
+
+.poll-title {
+    font-weight: bold;
+}
+
+.poll-question {
+    border-bottom:1px solid rgba(0, 0, 0, 0.125);;
+}
+
+.poll-question.last {
+    border-bottom: none;
+}
+
+.selected {
+  --bs-bg-opacity: .5;
+  background-color: $success;
+}

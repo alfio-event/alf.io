@@ -28,10 +28,7 @@
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "tsConfig": "projects/common/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": "projects/common/polyfills.ts"
           }
         }
       }
@@ -54,9 +51,7 @@
             "outputPath": "dist/alfio-public-frontend",
             "index": "projects/public/src/index.html",
             "main": "projects/public/src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": "projects/public/src/polyfills.ts",
             "tsConfig": "projects/public/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -135,10 +130,7 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "polyfills": "projects/public/src/polyfills.ts",
             "tsConfig": "projects/public/tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -179,9 +171,7 @@
             "outputPath": "dist/alfio-admin-frontend",
             "index": "projects/admin/src/index.html",
             "main": "projects/admin/src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": "projects/admin/src/polyfills.ts",
             "tsConfig": "projects/admin/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -261,10 +251,7 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "polyfills": "projects/admin/polyfills.ts",
             "tsConfig": "projects/admin/tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -288,6 +275,5 @@
         }
       }
      }
-    }
-  }
+   }
 }

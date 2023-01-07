@@ -345,20 +345,32 @@ tasks.register('dockerize', Copy) {
     filter(ReplaceTokens, tokens: [ALFIO_VERSION: project.version])
 }
 
-tasks.register('publicFrontendNpmInstall', NpmTask) {
-    args = ['--prefix', "${project.projectDir}/frontend-public", 'install']
+tasks.register('frontendNpmInstall', NpmTask) {
+    args = ['--prefix', "${project.projectDir}/frontend", 'install']
 }
 
-tasks.register('publicFrontendBuild', NpmTask) {
-    dependsOn publicFrontendNpmInstall
-    args = ['--prefix', "${project.projectDir}/frontend-public", 'run', 'build']
-    outputs.dir("${project.projectDir}/frontend-public/dist")
+tasks.register('frontendBuild', NpmTask) {
+    dependsOn frontendNpmInstall
+    args = ['--prefix', "${project.projectDir}/frontend", 'run', 'build']
+    outputs.dir("${project.projectDir}/frontend/dist")
 }
 
-tasks.register('publicFrontendIndexTransform', PublicFrontendIndexTransformTask) {
-    dependsOn publicFrontendBuild
-    indexHtml.set(layout.projectDirectory.file("frontend-public/dist/alfio-public-frontend/index.html"))
+clean.doFirst {
+    delete "${project.projectDir}/frontend/dist"
+}
+
+tasks.register('publicFrontendIndexTransform', FrontendIndexTransformTask) {
+    dependsOn frontendBuild
+    basePath.set("frontend-public/")
+    indexHtml.set(layout.projectDirectory.file("frontend/dist/alfio-public-frontend/index.html"))
     indexHtmlTransformed.set(layout.buildDirectory.file("index-transformed/alfio-public-frontend-index.html"))
+}
+
+tasks.register('adminFrontendIndexTransform', FrontendIndexTransformTask) {
+    dependsOn frontendBuild
+    basePath.set("frontend-admin/")
+    indexHtml.set(layout.projectDirectory.file("frontend/dist/alfio-admin-frontend/index.html"))
+    indexHtmlTransformed.set(layout.buildDirectory.file("index-transformed/alfio-admin-frontend-index.html"))
 }
 
 tasks.register('distribution', Copy) {
@@ -376,7 +388,7 @@ tasks.register('clever', Copy) {
         }
     })
     into "${project.buildDir}/clevercloud"
-    dependsOn publicFrontendBuild, build
+    dependsOn publicFrontendIndexTransform, adminFrontendIndexTransform, build
 }
 
 release {
@@ -389,13 +401,16 @@ release {
 }
 
 bootWar {
-    dependsOn publicFrontendIndexTransform
+    dependsOn publicFrontendIndexTransform, adminFrontendIndexTransform
     archiveClassifier.set('boot')
-    from(tasks.named("publicFrontendBuild")) {
+    from(tasks.named("frontendBuild")) {
         into 'resources'
     }
     from(tasks.named("publicFrontendIndexTransform")) {
         rename 'alfio-public-frontend-index.html', 'WEB-INF/classes/alfio-public-frontend-index.html'
+    }
+    from(tasks.named("adminFrontendIndexTransform")) {
+        rename 'alfio-admin-frontend-index.html', 'WEB-INF/classes/alfio-admin-frontend-index.html'
     }
     def bowerDir = "resources/bower_components"
     def excludesFile = new File("./lib_exclude")
@@ -406,9 +421,11 @@ bootWar {
 
 // MJML email templates translations to HTML
 
-task mjmlToHtml( type: NodeTask, dependsOn: 'npmInstall' ) {
-    script = file( 'src/main/node/mjmlToHtml.js' )
+tasks.register('mjmlToHtml', NodeTask) {
+    dependsOn npmInstall
+    script = file('src/main/node/mjmlToHtml.js')
 }
+
 // We build HTML templates from MJML source files and then save them under "build/generated/resources" in order to be
 // included in the final artifact.
 // TODO should we do the same for plaintext templates? See https://gist.github.com/brasilikum/3cd515bad5541ca6c76873faf10445c2
@@ -416,7 +433,7 @@ processResources.dependsOn(mjmlToHtml)
 sourceSets.main.output.dir file("$buildDir/generated/resources"), builtBy: mjmlToHtml
 
 // transform index.html
-abstract class PublicFrontendIndexTransformTask extends org.gradle.api.DefaultTask {
+abstract class FrontendIndexTransformTask extends org.gradle.api.DefaultTask {
 
     @org.gradle.api.tasks.InputFile
     abstract org.gradle.api.file.RegularFileProperty getIndexHtml()
@@ -424,21 +441,28 @@ abstract class PublicFrontendIndexTransformTask extends org.gradle.api.DefaultTa
     @org.gradle.api.tasks.OutputFile
     abstract org.gradle.api.file.RegularFileProperty getIndexHtmlTransformed()
 
+    @org.gradle.api.tasks.Input
+    abstract Property<String> getBasePath()
+
+    FrontendIndexTransformTask() {
+        basePath.convention("frontend-public/")
+    }
+
+
     @org.gradle.api.tasks.TaskAction
     def doWork() {
         final resource = indexHtml.get().asFile.newInputStream()
         final indexDoc = new Parser().parse(new InputStreamReader(resource, StandardCharsets.UTF_8))
 
-        final basePath = "frontend-public/"
         NodeMatcher scriptNodes = Selector.select().element("script").toMatcher()
 
         indexDoc.getAllNodesMatching(scriptNodes).stream().forEach({
-            it.setAttribute("src", basePath + it.getAttribute("src"))
+            it.setAttribute("src", basePath.get() + it.getAttribute("src"))
         })
 
         NodeMatcher cssNodes = Selector.select().element("link").attrValEq("rel", "stylesheet").toMatcher()
         indexDoc.getAllNodesMatching(cssNodes).stream().forEach({
-            it.setAttribute("href", basePath + it.getAttribute("href"))
+            it.setAttribute("href", basePath.get() + it.getAttribute("href"))
         })
 
         indexHtmlTransformed.get().asFile.write(HtmlSerializer.serialize(indexDoc), "UTF-8", false)

@@ -94,6 +94,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
             .setCachePeriod(cacheMinutes * 60)
             .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
 
+        registry.addResourceHandler("/frontend-admin/**")
+            .addResourceLocations("/resources/alfio-admin-frontend/")
+            .setCachePeriod(cacheMinutes * 60)
+            .setCacheControl(CacheControl.maxAge(Duration.ofDays(60)));
+
     }
 
     @Override
