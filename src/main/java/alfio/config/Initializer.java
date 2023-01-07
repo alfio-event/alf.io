@@ -42,6 +42,8 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
     public static final String PROFILE_DEMO = "demo";
     public static final String PROFILE_OPENID = "openid";
     public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
+    public static final String API_V2_PUBLIC_PATH = "/api/v2/public/";
+    public static final String XSRF_TOKEN = "XSRF-TOKEN";
     private Environment environment;
 
     @Override
@@ -51,11 +53,11 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
 
         configureSessionCookie(servletContext);
-        
+
         CharacterEncodingFilter cef = new CharacterEncodingFilter();
         cef.setEncoding("UTF-8");
         cef.setForceEncoding(true);
-        
+
         Dynamic characterEncodingFilter = servletContext.addFilter("CharacterEncodingFilter", cef);
         characterEncodingFilter.setAsyncSupported(true);
         characterEncodingFilter.addMappingForUrlPatterns(null, false, "/*");
@@ -78,7 +80,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         SessionCookieConfig config = servletContext.getSessionCookieConfig();
 
         config.setHttpOnly(true);
-        
+
         Validate.notNull(environment, "environment cannot be null!");
         // set secure cookie only if current environment doesn't strictly need HTTP
         config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));

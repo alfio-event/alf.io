@@ -16,7 +16,6 @@
  */
 package alfio.manager.i18n;
 
-import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
@@ -32,11 +31,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Log4j2
 public class MessageSourceManager {
+
+    /**
+     * No-op filter used to load all keys in the resource bundle, to be used with the new Admin frontend
+     */
+    public static final Predicate<String> ADMIN_FRONTEND = key -> true;
+    /**
+     * Filters out all the "admin" keys which would not make sense to load on the public frontend
+     */
+    public static final Predicate<String> PUBLIC_FRONTEND = key -> !key.startsWith("admin.");
 
     private static final Pattern ARGUMENT_FINDER = Pattern.compile("\\{+(\\d+)}+");
     private final CustomResourceBundleMessageSource messageSource;
@@ -100,12 +109,16 @@ public class MessageSourceManager {
         return res;
     }
 
-    public Map<String, String> getBundleAsMap(String baseName, boolean withSystemOverride, String lang) {
+    public Map<String, String> getBundleAsMap(String baseName,
+                                              boolean withSystemOverride,
+                                              String lang,
+                                              Predicate<String> keysFilter) {
         var locale = LocaleUtil.forLanguageTag(lang);
-        var messageSource = getRootMessageSource(withSystemOverride);
+        var rootMessageSource = getRootMessageSource(withSystemOverride);
         return getKeys(baseName, locale)
             .stream()
-            .collect(Collectors.toMap(Function.identity(), k -> convertPlaceholder(messageSource.getMessage(k, EMPTY_ARRAY, locale))));
+            .filter(keysFilter)
+            .collect(Collectors.toMap(Function.identity(), k -> convertPlaceholder(rootMessageSource.getMessage(k, EMPTY_ARRAY, locale))));
     }
 
     private static class MessageSourceWithOverride extends AbstractMessageSource {

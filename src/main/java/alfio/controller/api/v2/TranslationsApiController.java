@@ -24,7 +24,6 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.LocaleUtil;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@AllArgsConstructor
 @RequestMapping("/api/v2/")
 public class TranslationsApiController {
 
@@ -43,16 +41,22 @@ public class TranslationsApiController {
     private final ConfigurationManager configurationManager;
     private final I18nManager i18nManager;
 
+    public TranslationsApiController(MessageSourceManager messageSourceManager, ConfigurationManager configurationManager, I18nManager i18nManager) {
+        this.messageSourceManager = messageSourceManager;
+        this.configurationManager = configurationManager;
+        this.i18nManager = i18nManager;
+    }
+
     @GetMapping("/public/i18n/bundle/{lang}")
     public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang,
                                                      @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
-        return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang);
+        return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.PUBLIC_FRONTEND);
     }
 
     @GetMapping("/admin/i18n/bundle/{lang}")
     public Map<String, String> getAdminTranslations(@PathVariable("lang") String lang,
                                                     @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
-        return messageSourceManager.getBundleAsMap("alfio.i18n.admin", withSystemOverride, lang);
+        return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.ADMIN_FRONTEND);
     }
 
     @GetMapping("/public/i18n/countries/{lang}")
