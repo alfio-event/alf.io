@@ -22,5 +22,6 @@ out/
 alfio-itest
 .gradletasknamecache
 public/
+!frontend/projects/public
 node_modules/
 lsp

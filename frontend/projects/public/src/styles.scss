@@ -1,0 +1,288 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import "font/font.scss";
+
+$toast-max-width: 20vw;
+$card-spacer-y: 1.25rem;
+$card-spacer-x: 1.25rem;
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+$custom-colors: (
+  "default": $white
+);
+
+// Merge the maps
+$theme-colors: map-merge($theme-colors, $custom-colors);
+
+$custom-control-indicator-border-color: $gray-700;
+
+@import "bootstrap/scss/bootstrap";
+
+
+@import "@ng-select/ng-select/themes/default.theme.css";
+
+.application-container {
+    background-color: white;
+}
+
+.list-container {
+
+}
+
+@include media-breakpoint-up(md) {
+    body {
+        background-color: #f2f2f2;
+    }
+    .application-container {
+        margin-top: $border-radius;
+        margin-bottom: $border-radius;
+        border-radius: $border-radius;
+    }
+}
+
+
+.block-button {
+    width: 100%;
+    display: block
+}
+
+.page-header {
+    padding-bottom: 9px;
+    margin: 40px 0 20px;
+    border-bottom: 1px solid #eee;
+}
+
+body {
+    counter-reset: ticket-counter;
+}
+
+.ticket-counter:before {
+    counter-increment: ticket-counter;
+    content: counter(ticket-counter);
+}
+
+.rotate-45 {
+    transform: rotate(-45deg);
+}
+
+@include media-breakpoint-up(sm) {
+    label.col-form-label, dt.align-right-mobile-aware {
+        text-align: right;
+    }
+}
+
+.list-group-item {
+    border-left:none;
+    border-right:none;
+}
+
+.list-group-item:first-child {
+    border-top:none;
+}
+
+.list-group-item:last-child {
+    border-bottom:none;
+}
+
+.img-responsive {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.img-center {
+    margin:auto;
+}
+
+.table>thead:first-child>tr:first-child>th {
+    border-top: 0;
+}
+
+.table th {
+  font-size: $font-size-base;
+}
+
+.text-align-right {
+    text-align: right;
+}
+
+.no-margin-bottom {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    font-weight: bold;
+}
+
+label.radio-inline {
+    font-weight: normal;
+}
+
+.checkbox-in-form-group {
+    margin-top:38px;
+}
+
+@include media-breakpoint-up(sm) {
+    .container { /*override bootstrap value*/
+        max-width: 100%;
+    }
+}
+
+@include media-breakpoint-up(xl) {
+    .container {
+        width: 960px;
+    }
+}
+
+.invalid-feedback.force-display {
+    display: block;
+}
+
+.c-container {
+    text-align: center;
+}
+
+.c-container > div {
+    display: inline-block;
+}
+
+
+.btn-xs {
+    padding: .30rem .5rem;
+    font-size: .875rem;
+    line-height: .5;
+    border-radius: .2rem;
+}
+
+.add-margin-bottom {
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 767px) {
+    .mobile-add-margin-bottom button.btn,
+    .mobile-add-margin-bottom a.btn
+    {
+        margin-bottom: 1rem;
+    }
+}
+
+
+/* basic style for markdown content */
+
+.markdown-content img {
+    max-width:100%;
+}
+
+.markdown-content table {
+    width:100%;
+}
+
+.markdown-content table th,
+.markdown-content table td {
+    padding-top:0.6rem;
+    padding-bottom:0.6rem;
+}
+
+.markdown-content table th {
+    border-bottom: 2px solid #e3e3e3;
+}
+
+.markdown-content table td {
+    border-top: 1px solid #e3e3e3;
+}
+
+/* end markdown styling */
+
+.ng-select.form-control {
+  padding: 0;
+}
+
+.ng-select.ng-select-focused.form-control {
+    color: #495057;
+    background-color: #fff;
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.ng-select .ng-arrow-wrapper {
+
+  font-weight: $form-select-font-weight;
+  line-height: $form-select-line-height;
+  color: $form-select-color;
+  background-color: $form-select-bg;
+  background-image: escape-svg($form-select-indicator);
+  background-repeat: no-repeat;
+  background-position: $form-select-bg-position;
+  background-size: $form-select-bg-size;
+
+  .ng-arrow {
+    border: 0;
+  }
+}
+
+.ng-select.form-control .ng-select-container {
+    border: none;
+    border-radius: 0;
+    color: #495057;
+    padding-left: 0!important;
+    outline: 0 !important;
+    background: transparent;
+}
+
+.ng-select.form-control.ng-select-focused:not(.ng-select-opened)>.ng-select-container {
+    outline: 0!important;
+    box-shadow: none!important;
+}
+
+div.preformatted {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+h2 .badge {
+  font-size: 42%;
+  vertical-align: middle;
+}
+
+h4 .badge {
+  font-size: 52%;
+  vertical-align: middle;
+}
+
+div.is-invalid ~ div.invalid-feedback {
+    display: block;
+}
+
+.btn-default {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+}
+
+:not(.btn-check) + .btn + .btn-default:hover, .btn.btn-default:first-child:hover {
+    color: #212529;
+    background-color: #e2e6ea;
+    border-color: #ccc;
+}
+
+.btn-default:focus, .btn-default.focus {
+    box-shadow: 0 0 0 0.2rem rgba(216, 217, 219, 0.5);
+}
+
+.border-left-warning {
+  border-left: 5px solid var(--bs-warning);
+}
+
+.border-left-success {
+  border-left: 5px solid var(--bs-success);
+}
+
+.home-card {
+  &:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+  }
+  h2.card-title {
+    font-size: 1.6rem;
+  }
+}

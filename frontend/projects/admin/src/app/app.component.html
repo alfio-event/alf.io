@@ -1,0 +1,76 @@
+<!--based on https://getbootstrap.com/docs/5.2/examples/dashboard/ -->
+<header class="navbar sticky-top navbar-light bg-light border-bottom flex-md-nowrap p-0">
+  <div class="container-fluid justify-content-start">
+    <a class="navbar-brand" [routerLink]="['./']">
+      <img src="assets/alfio-logo.svg" height="42" alt="Alf.io logo">
+    </a>
+    <form class="d-flex">
+        <button class="btn btn-light" (click)="openOrgSelector()" type="button">
+            <svg-icon key="organization" size="lg"></svg-icon>
+            {{(currentOrganization$ | async)?.name}}
+            <svg-icon key="arrowdropdown"></svg-icon>
+        </button>
+    </form>
+
+    <div class="d-flex flex-grow-1 justify-content-end">
+      <div ngbDropdown class="d-inline-block profile-menu-container">
+        <button type="button" class="btn" id="profileBtn" ngbDropdownToggle>
+          <svg-icon key="accountcircle" size="lg"></svg-icon> {{(currentUser$ | async) | userName}}
+        </button>
+        <div ngbDropdownMenu aria-labelledby="profileBtn">
+          <button type="button" ngbDropdownItem>Sign out</button>
+        </div>
+      </div>
+    </div>
+
+<!--    <input class="form-control form-control-dark w-100 rounded-0 border-0" type="text" placeholder="Search"-->
+<!--        aria-label="Search">-->
+
+  </div>
+</header>
+<div class="container-fluid">
+    <div class="row">
+      <nav id="sidebarMenu" class="d-md-block bg-light sidebar collapse">
+        <div class="position-sticky pt-3 sidebar-sticky" *ngIf="organizationId$ | async as organizationId">
+
+          <a class="d-flex flex-column gap-1 justify-content-center menu-item" [routerLink]="['/organization/', organizationId, 'event']" routerLinkActive="active">
+            <svg-icon key="home"></svg-icon> <span translate="admin.menu.events"></span>
+          </a>
+
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'subscriptions']" routerLinkActive="active">
+            <svg-icon key="subscription"></svg-icon> <span translate="admin.menu.subscriptions"></span>
+          </a>
+
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'organization-info']" routerLinkActive="active">
+            <svg-icon key="organization"></svg-icon> <span translate="admin.menu.organization"></span>
+          </a>
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'access-control']" routerLinkActive="active">
+            <svg-icon key="access"></svg-icon> <span translate="admin.menu.security"></span>
+          </a>
+
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'groups']" routerLinkActive="active">
+            <svg-icon key="groups"></svg-icon> <span translate="admin.menu.groups"></span>
+          </a>
+          <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'configuration']" routerLinkActive="active">
+            <svg-icon key="settings"></svg-icon> <span translate="admin.menu.settings"></span>
+          </a>
+          <ng-container *ngIf="(currentUser$ | async)?.role === 'ADMIN'">
+            <hr class="mt-5">
+            <p class="text-center text-muted mb-4" translate="admin.menu.system"></p>
+            <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organizations']" routerLinkActive="active">
+              <svg-icon key="organization"></svg-icon> <span translate="admin.menu.system.organizations"></span>
+            </a>
+            <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/access-control']" routerLinkActive="active">
+              <svg-icon key="access"></svg-icon> <span translate="admin.menu.system.security"></span>
+            </a>
+            <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/configuration']" routerLinkActive="active">
+              <svg-icon key="settings"></svg-icon> <span translate="admin.menu.system.settings"></span>
+            </a>
+          </ng-container>
+        </div>
+      </nav>
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+</div>
