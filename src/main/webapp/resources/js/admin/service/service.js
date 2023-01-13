@@ -313,7 +313,7 @@
                             var queryString = "format="+$scope.format+"&";
                             angular.forEach($scope.selected, function(v,k) {
                                 if(v) {
-                                    queryString+="fields="+k+"&";
+                                    queryString+="fields="+ encodeURIComponent(k) +"&";
                                 }
                             });
                             var pathName = $window.location.pathname;
