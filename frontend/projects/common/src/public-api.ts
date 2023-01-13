@@ -3,3 +3,4 @@
  */
 
 export * from './lib/alfio-common.module';
+export * from './lib/xsrf';

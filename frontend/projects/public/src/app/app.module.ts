@@ -7,7 +7,7 @@ import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {HomeComponent} from './home/home.component';
 import {EventDisplayComponent} from './event-display/event-display.component';
-import {HttpClient, HttpClientModule, HttpClientXsrfModule} from '@angular/common/http';
+import {HTTP_INTERCEPTORS, HttpClient, HttpClientModule, HttpClientXsrfModule, HttpXsrfTokenExtractor} from '@angular/common/http';
 
 import {FaIconLibrary, FontAwesomeModule} from '@fortawesome/angular-fontawesome';
 import {
@@ -105,6 +105,8 @@ import {MyProfileComponent} from './my-profile/my-profile.component';
 import {WaitingRoomComponent} from './waiting-room/waiting-room.component';
 import {MyProfileDeleteWarningComponent} from './my-profile/my-profile-delete-warning.component';
 import {TranslateDescriptionPipe} from './shared/translate-description.pipe';
+// import { AuthTokenInterceptor, DOMGidExtractor, DOMXsrfTokenExtractor } from 'common'; // FIXME: check why importing from common fail
+import { AuthTokenInterceptor, DOMGidExtractor, DOMXsrfTokenExtractor } from './xsrf';
 
 
 // AoT requires an exported function for factories
@@ -198,10 +200,15 @@ export function InitUserService(userService: UserService): () => Promise<boolean
         NgbModalModule,
         NgbDropdownModule,
         SharedModule,
-        AlfioCommonModule
+        AlfioCommonModule,
     ],
     providers: [
-        { provide: APP_INITIALIZER, useFactory: InitUserService, deps: [UserService], multi: true }
+      { provide: APP_INITIALIZER, useFactory: InitUserService, deps: [UserService], multi: true },
+      { provide: HTTP_INTERCEPTORS, useClass: AuthTokenInterceptor, multi: true },
+      { provide: HttpXsrfTokenExtractor, useClass: DOMXsrfTokenExtractor },
+      DOMGidExtractor,
+      DOMXsrfTokenExtractor,
+      AuthTokenInterceptor
     ],
     bootstrap: [AppComponent]
 })
