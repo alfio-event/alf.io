@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class ReservationCreationRequest implements ReservationCreate<AttendeesByCategory> {
+public class TicketReservationCreationRequest implements ReservationCreate<AttendeesByCategory>, ReservationAPICreationRequest {
 
     private final List<AttendeesByCategory> tickets;
     private final List<AdditionalServiceReservationModification> additionalServices;
@@ -33,12 +33,12 @@ public class ReservationCreationRequest implements ReservationCreate<AttendeesBy
     private final String language;
 
     @JsonCreator
-    public ReservationCreationRequest(@JsonProperty("tickets") List<AttendeesByCategory> tickets,
-                                      @JsonProperty("additionalServices") List<AdditionalServiceReservationModification> additionalServices,
-                                      @JsonProperty("configuration") ReservationConfiguration reservationConfiguration,
-                                      @JsonProperty("user") ReservationUser user,
-                                      @JsonProperty("promoCode") String promoCode,
-                                      @JsonProperty("language") String language) {
+    public TicketReservationCreationRequest(@JsonProperty("tickets") List<AttendeesByCategory> tickets,
+                                            @JsonProperty("additionalServices") List<AdditionalServiceReservationModification> additionalServices,
+                                            @JsonProperty("configuration") ReservationConfiguration reservationConfiguration,
+                                            @JsonProperty("user") ReservationUser user,
+                                            @JsonProperty("promoCode") String promoCode,
+                                            @JsonProperty("language") String language) {
         this.tickets = tickets;
         this.additionalServices = additionalServices;
         this.reservationConfiguration = reservationConfiguration;
@@ -68,14 +68,17 @@ public class ReservationCreationRequest implements ReservationCreate<AttendeesBy
         return null;
     }
 
+    @Override
     public String getLanguage() {
         return language;
     }
 
+    @Override
     public ReservationUser getUser() {
         return user;
     }
 
+    @Override
     public ReservationConfiguration getReservationConfiguration() {
         return reservationConfiguration;
     }
