@@ -1344,9 +1344,12 @@ public class TicketReservationManager {
             validityTo,
             confirmationTimestamp,
             subscriptionDescriptor.getTimeZone());
-        subscriptionRepository.findSubscriptionsByReservationId(reservationId) // at the moment it's safe because there can be only one subscription per reservation
-            .forEach(subscriptionId -> auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString()));
         Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
+        subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0); // at the moment it's safe because there can be only one subscription per reservation
+        var subscriptionId = subscription.getId();
+        auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString());
+        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, subscriptionRepository.getSubscriptionMetadata(subscriptionId))
+            .ifPresent(metadata -> subscriptionRepository.setMetadataForSubscription(subscriptionId, metadata));
     }
 
     private void acquireEventTickets(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, Event event) {
