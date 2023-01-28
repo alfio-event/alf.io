@@ -45,6 +45,7 @@ import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.extension.CustomEmailText;
 import alfio.model.group.LinkedGroup;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
@@ -275,7 +276,8 @@ public class TicketReservationManager {
     private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
                                                  Date reservationExpiration,
                                                  Locale locale,
-                                                 Integer userId) throws CannotProceedWithPayment, NotEnoughTicketsException {
+                                                 Integer userId,
+                                                 SubscriptionMetadata metadata) throws CannotProceedWithPayment, NotEnoughTicketsException {
         String reservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(reservationId,
             subscriptionDescriptor.now(clockProvider),
@@ -287,14 +289,18 @@ public class TicketReservationManager {
             subscriptionDescriptor.getCurrency(),
             subscriptionDescriptor.getOrganizationId(),
             userId);
+        UUID subscriptionId;
         if(subscriptionDescriptor.getMaxAvailable() > 0) {
             var optionalSubscription = subscriptionRepository.selectFreeSubscription(subscriptionDescriptor.getId());
             if(optionalSubscription.isEmpty()) {
                 throw new NotEnoughTicketsException();
             }
-            Validate.isTrue(subscriptionRepository.bindSubscriptionToReservation(reservationId, subscriptionDescriptor.getPrice(), AllocationStatus.PENDING, optionalSubscription.get()) == 1);
+            var subscription = optionalSubscription.get();
+            Validate.isTrue(subscriptionRepository.bindSubscriptionToReservation(reservationId, subscriptionDescriptor.getPrice(), AllocationStatus.PENDING, subscription) == 1);
+            subscriptionId = subscription;
         } else {
-            subscriptionRepository.createSubscription(UUID.randomUUID(), subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
+            subscriptionId = UUID.randomUUID();
+            subscriptionRepository.createSubscription(subscriptionId, subscriptionDescriptor.getId(), reservationId, subscriptionDescriptor.getMaxEntries(),
                 subscriptionDescriptor.getValidityFrom(), subscriptionDescriptor.getValidityTo(), subscriptionDescriptor.getPrice(), subscriptionDescriptor.getCurrency(),
                 subscriptionDescriptor.getOrganizationId(), AllocationStatus.PENDING, subscriptionDescriptor.getMaxEntries(), subscriptionDescriptor.getTimeZone());
         }
@@ -304,6 +310,10 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, null, subscriptionDescriptor.event().map(Event::getId).orElse(null), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
         if (!canProceedWithPayment(subscriptionDescriptor, totalPrice, reservationId)) {
             throw new CannotProceedWithPayment("No payment method applicable for purchase context  " + subscriptionDescriptor.getType() + " with public id " + subscriptionDescriptor.getPublicIdentifier());
+        }
+        // update metadata if present
+        if (metadata != null) {
+            Validate.isTrue(subscriptionRepository.setMetadataForSubscription(subscriptionId, metadata) == 1);
         }
         return reservationId;
     }
@@ -2764,9 +2774,17 @@ public class TicketReservationManager {
                                                           Locale locale,
                                                           BindingResult bindingResult,
                                                           Principal principal) {
+        return createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal, null);
+    }
+
+    public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
+                                                          Locale locale,
+                                                          BindingResult bindingResult,
+                                                          Principal principal,
+                                                          SubscriptionMetadata metadata) {
         Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(subscriptionDescriptor));
         try {
-            return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale, retrievePublicUserId(principal)));
+            return Optional.of(createSubscriptionReservation(subscriptionDescriptor, expiration, locale, retrievePublicUserId(principal), metadata));
         } catch (CannotProceedWithPayment cannotProceedWithPayment) {
             bindingResult.reject("error.STEP_1_PAYMENT_METHODS_ERROR");
             log.error("missing payment methods", cannotProceedWithPayment);
