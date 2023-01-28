@@ -160,6 +160,12 @@ class SubscriptionApiV1IntegrationTest {
 
     private SubscriptionDescriptorModificationRequest modificationRequest(SubscriptionUsageType usageType,
                                                                           boolean isPublic) {
+        return modificationRequest(usageType, isPublic, clockProvider);
+    }
+
+    static SubscriptionDescriptorModificationRequest modificationRequest(SubscriptionUsageType usageType,
+                                                                         boolean isPublic,
+                                                                         ClockProvider clockProvider) {
         return new SubscriptionDescriptorModificationRequest(
             usageType,
             SubscriptionDescriptorModificationRequest.TERM_STANDARD,

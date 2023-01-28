@@ -18,6 +18,7 @@ package alfio.repository;
 
 import alfio.model.AllocationStatus;
 import alfio.model.PriceContainer.VatStatus;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.subscription.*;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
@@ -388,4 +389,11 @@ public interface SubscriptionRepository {
 
     @Query("update subscription set max_entries = :maxEntries, max_usage = :maxEntries where subscription_descriptor_fk = :descriptorId")
     int updateMaxEntriesForSubscriptions(@Bind("descriptorId") UUID subscriptionDescriptorId, @Bind("maxEntries") int maxEntries);
+
+    @Query("update subscription set metadata = :metadata::jsonb where id = :id")
+    int setMetadataForSubscription(@Bind("id") UUID subscriptionId, @Bind("metadata") @JSONData SubscriptionMetadata metadata);
+
+    @Query("select metadata from subscription where id = :id")
+    @JSONData
+    SubscriptionMetadata getSubscriptionMetadata(@Bind("id") UUID subscriptionId);
 }
