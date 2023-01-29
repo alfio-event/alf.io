@@ -18,8 +18,12 @@ package alfio.controller.support;
 
 import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
+import alfio.model.metadata.SubscriptionMetadata;
+import alfio.model.subscription.Subscription;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.user.Organization;
 import alfio.util.EventUtil;
 import alfio.util.ImageUtil;
@@ -99,6 +103,23 @@ public final class TemplateProcessor {
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language).getTextPart();
         renderToPdf(page, os, extensionManager, event);
+    }
+
+    public static void renderSubscriptionPDF(Subscription subscription,
+                                             Locale locale,
+                                             SubscriptionDescriptor subscriptionDescriptor,
+                                             TicketReservation reservation,
+                                             SubscriptionMetadata metadata,
+                                             Organization organization,
+                                             TemplateManager templateManager,
+                                             FileUploadManager fileUploadManager,
+                                             String reservationId,
+                                             ByteArrayOutputStream os,
+                                             ExtensionManager extensionManager) throws IOException {
+        Optional<TemplateResource.ImageData> imageData = extractImageModel(subscriptionDescriptor, fileUploadManager);
+        Map<String, Object> model = TemplateResource.buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, metadata, imageData, reservationId, locale, reservation);
+        String page = templateManager.renderTemplate(subscriptionDescriptor, TemplateResource.SUBSCRIPTION_PDF, model, locale).getTextPart();
+        renderToPdf(page, os, extensionManager, subscriptionDescriptor);
     }
 
     public static void renderToPdf(String page, OutputStream os, ExtensionManager extensionManager, PurchaseContext purchaseContext) throws IOException {

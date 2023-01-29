@@ -130,6 +130,7 @@ import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
+import static org.springframework.http.MediaType.APPLICATION_PDF;
 
 @Component
 @Transactional
@@ -888,12 +889,14 @@ public class TicketReservationManager {
                 "includePin", true,
                 "fullName", firstSubscription.getFirstName() + " " + firstSubscription.getLastName());
             var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, List.of(), initialModel);
-            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : attachments));
+            var subscriptionAttachments = new ArrayList<>(attachments);
+            subscriptionAttachments.add(generateSubscriptionAttachment(firstSubscription, (SubscriptionDescriptor) purchaseContext));
+            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : subscriptionAttachments));
             if(sendSeparateEmailToOwner) {
                 var separateModel = new HashMap<>(model);
                 separateModel.put("includePin", false);
                 separateModel.put("fullName", ticketReservation.getFullName());
-                configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, ticketReservation.getEmail(), separateModel, attachments));
+                configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, ticketReservation.getEmail(), separateModel, subscriptionAttachments));
             }
         } else {
             var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, ticketRepository.findTicketsInReservation(ticketReservation.getId()), Map.of());
@@ -908,6 +911,13 @@ public class TicketReservationManager {
                () -> templateManager.renderTemplate(purchaseContext, configuration.getTemplateResource(), configuration.getModel(), language),
                 configuration.getAttachments());
         });
+    }
+
+    private Mailer.Attachment generateSubscriptionAttachment(Subscription subscription, SubscriptionDescriptor descriptor) {
+        var model = new HashMap<String, String>();
+        model.put("subscription", Json.toJson(subscription));
+        model.put("subscriptionDescriptor", Json.toJson(descriptor));
+        return new Mailer.Attachment(subscription.getId() + ".pdf", null, APPLICATION_PDF.toString(), model, Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF);
     }
 
     private List<Mailer.Attachment> generateAttachmentForConfirmationEmail(PurchaseContext purchaseContext,
