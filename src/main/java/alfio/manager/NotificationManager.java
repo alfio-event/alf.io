@@ -515,9 +515,10 @@ public class NotificationManager {
                                                                                  MessageSourceManager messageSourceManager) {
         return model -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            var subscription = Json.fromJson(model.get("subscription"), Subscription.class);
+            var subscriptionId = UUID.fromString(model.get("subscriptionId"));
+            var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
             try {
-                var subscriptionDescriptor = Json.fromJson(model.get("subscriptionDescriptor"), SubscriptionDescriptor.class);
+                var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
                 var reservation = ticketReservationRepository.findReservationById(subscription.getReservationId());
                 Organization organization = organizationRepository.getById(subscriptionDescriptor.getOrganizationId());
                 var metadata = subscriptionRepository.getSubscriptionMetadata(subscription.getId());

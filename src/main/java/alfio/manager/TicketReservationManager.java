@@ -890,7 +890,7 @@ public class TicketReservationManager {
                 "fullName", firstSubscription.getFirstName() + " " + firstSubscription.getLastName());
             var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, List.of(), initialModel);
             var subscriptionAttachments = new ArrayList<>(attachments);
-            subscriptionAttachments.add(generateSubscriptionAttachment(firstSubscription, (SubscriptionDescriptor) purchaseContext));
+            subscriptionAttachments.add(generateSubscriptionAttachment(firstSubscription));
             configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : subscriptionAttachments));
             if(sendSeparateEmailToOwner) {
                 var separateModel = new HashMap<>(model);
@@ -913,11 +913,10 @@ public class TicketReservationManager {
         });
     }
 
-    private Mailer.Attachment generateSubscriptionAttachment(Subscription subscription, SubscriptionDescriptor descriptor) {
+    private Mailer.Attachment generateSubscriptionAttachment(Subscription subscription) {
         var model = new HashMap<String, String>();
-        model.put("subscription", Json.toJson(subscription));
-        model.put("subscriptionDescriptor", Json.toJson(descriptor));
-        return new Mailer.Attachment(subscription.getId() + ".pdf", null, APPLICATION_PDF.toString(), model, Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF);
+        model.put("subscriptionId", subscription.getId().toString());
+        return new Mailer.Attachment("subscription_" + subscription.getId() + ".pdf", null, APPLICATION_PDF.toString(), model, Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF);
     }
 
     private List<Mailer.Attachment> generateAttachmentForConfirmationEmail(PurchaseContext purchaseContext,
