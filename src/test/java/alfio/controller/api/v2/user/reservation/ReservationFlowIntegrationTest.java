@@ -62,6 +62,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static alfio.test.util.IntegrationTestUtil.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
@@ -71,6 +73,7 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;
+    private final CheckInManager checkInManager;
 
     @Autowired
     public ReservationFlowIntegrationTest(OrganizationRepository organizationRepository,
@@ -109,7 +112,8 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                           UserRepository userRepository,
                                           OrganizationDeleter organizationDeleter,
                                           PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                          PromoCodeRequestManager promoCodeRequestManager) {
+                                          PromoCodeRequestManager promoCodeRequestManager,
+                                          CheckInManager checkInManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -147,6 +151,7 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
             promoCodeRequestManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
+        this.checkInManager = checkInManager;
     }
 
     private ReservationFlowContext createContext() {
@@ -173,5 +178,17 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
     protected void performAdditionalTests(ReservationFlowContext context) {
         var event = context.event;
         BaseIntegrationTest.testTransferEventToAnotherOrg(event.getId(), event.getOrganizationId(), context.userId, jdbcTemplate);
+    }
+
+    @Override
+    protected void validateCheckInData(ReservationFlowContext context) {
+        var entries = checkInManager.retrieveLogEntries(context.event.getShortName(), context.userId);
+        assertEquals(1, entries.size());
+        var entry = entries.get(0);
+        assertNotNull(entry.getTicketId());
+        assertNotNull(entry.getAttendeeData());
+        assertNotNull(entry.getAttendeeData().getMetadata());
+        assertNotNull(entry.getAudit());
+        entry.getAudit().forEach(audit -> assertEquals(context.userId + "_api", audit.getUsername()));
     }
 }

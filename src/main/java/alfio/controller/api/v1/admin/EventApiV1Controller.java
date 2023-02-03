@@ -25,6 +25,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
+import alfio.model.api.v1.admin.CheckInLogEntry;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.api.v1.admin.LinkedSubscriptions;
 import alfio.model.group.Group;
@@ -76,6 +77,7 @@ public class EventApiV1Controller {
     private final ExtensionRepository extensionRepository;
     private final ConfigurationManager configurationManager;
     private final AdminJobManager adminJobManager;
+    private final CheckInManager checkInManager;
 
     public EventApiV1Controller(EventManager eventManager,
                                 EventNameManager eventNameManager,
@@ -221,6 +223,17 @@ public class EventApiV1Controller {
             );
             return adminJobManager.scheduleExecution(ASSIGN_TICKETS_TO_SUBSCRIBERS, params);
         }));
+    }
+
+    @GetMapping("/{slug}/check-in-log")
+    public ResponseEntity<List<CheckInLogEntry>> checkInLog(@PathVariable("slug") String slug,
+                                                      Principal user) {
+        try {
+            return ResponseEntity.ok(checkInManager.retrieveLogEntries(slug, user.getName()));
+        } catch (Exception ex) {
+            log.error("Error while loading check-in log entries", ex);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     private LinkedSubscriptions retrieveLinkedSubscriptionsForEvent(String slug, int id, int organizationId) {

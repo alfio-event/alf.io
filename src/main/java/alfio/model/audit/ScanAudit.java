@@ -18,19 +18,25 @@ package alfio.model.audit;
 
 import alfio.manager.support.CheckInStatus;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 
 public record ScanAudit(
-    @Column("ticket_uuid") String ticketUuid,
-    @Column("event_id_fk") int eventId,
-    @Column("scan_ts") ZonedDateTime scanTimestamp,
-    @Column("username") String username,
-    @Column("check_in_status") CheckInStatus checkInStatus,
-    @Column("operation") ScanAudit.Operation operation) {
+    @JsonProperty("ticketUuid") @Column("ticket_uuid") String ticketUuid,
+    @JsonProperty("scanTimestamp") @Column("scan_ts") LocalDateTime scanTimestamp,
+    @JsonProperty("username") @Column("username") String username,
+    @JsonProperty("checkInStatus") @Column("check_in_status") CheckInStatus checkInStatus,
+    @JsonProperty("operation") @Column("operation") ScanAudit.Operation operation) {
 
     public enum Operation {
         SCAN,
         REVERT
+    }
+
+    @JsonIgnore
+    public String ticketUuid() {
+        return ticketUuid;
     }
 }
