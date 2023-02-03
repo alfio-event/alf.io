@@ -30,8 +30,11 @@ import alfio.model.PromoCodeDiscount.CodeType;
 import alfio.model.checkin.EventWithCheckInInfo;
 import alfio.model.extension.*;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
+import alfio.model.subscription.Subscription;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.model.user.PublicUserProfile;
@@ -537,5 +540,15 @@ public class ExtensionManager {
         context.put(TICKET, ticketWithMetadata.getTicket());
         context.put(TICKET_METADATA, ticketWithMetadata.getMetadata().getMetadataForKey(TicketMetadataContainer.GENERAL).orElseGet(TicketMetadata::empty));
         return Optional.ofNullable(syncCall(ExtensionEvent.TICKET_ASSIGNED_GENERATE_METADATA, event, context, TicketMetadata.class, false));
+    }
+
+    public Optional<SubscriptionMetadata> handleSubscriptionAssignmentMetadata(Subscription subscription,
+                                                                               SubscriptionDescriptor descriptor,
+                                                                               SubscriptionMetadata subscriptionMetadata) {
+        var context = new HashMap<String, Object>();
+        context.put("subscription", subscription);
+        context.put("metadata", subscriptionMetadata);
+        context.put("subscriptionDescriptor", descriptor);
+        return Optional.ofNullable(syncCall(ExtensionEvent.SUBSCRIPTION_ASSIGNED_GENERATE_METADATA, descriptor, context, SubscriptionMetadata.class, false));
     }
 }

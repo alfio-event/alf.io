@@ -75,7 +75,7 @@ public interface Mailer {
             public String contentType(String contentType) {
                 return "application/vnd.apple.pkpass";
             }
-        };
+        }, SUBSCRIPTION_PDF;
 
         public List<AttachmentIdentifier> reinterpretAs() {
             return Collections.emptyList();

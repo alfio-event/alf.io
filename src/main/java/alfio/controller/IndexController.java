@@ -59,13 +59,15 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static alfio.config.Initializer.PROFILE_LIVE;
-import static alfio.controller.Constants.*;
 import static alfio.model.system.ConfigurationKeys.BASE_CUSTOM_CSS;
 import static java.util.Objects.requireNonNull;
 
 @Controller
 @Profile(PROFILE_LIVE)
 public class IndexController {
+
+    private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
+    private static final String UTF_8 = "UTF-8";
 
     private final Document indexPage;
     private final Document openGraphPage;
@@ -258,8 +260,9 @@ public class IndexController {
         if (eventRepository.existsByShortName(eventShortName)) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
                 .map(IndexController::reservationStatusToUrlMapping).orElse(NOT_FOUND);
-
             return REDIRECT + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
+                // if subscription param is present, we forward it to the reservation resource
+                .queryParamIfPresent("subscription", Optional.ofNullable(StringUtils.trimToNull(subscriptionId)))
                 .buildAndExpand(Map.of(EVENT_SHORT_NAME, eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
                 .toUriString();
         } else {

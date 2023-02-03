@@ -25,7 +25,6 @@ import alfio.model.result.Result;
 import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptorWithStatistics;
-import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -276,6 +275,10 @@ public class SubscriptionManager {
                 .checkPrecondition(() -> Arrays.stream(result).allMatch(r -> r == 1), ErrorCode.custom("cannot-link", "Cannot link events"))
                 .build(() -> getLinkedEvents(organizationId, subscriptionId));
         }
+    }
+
+    public SubscriptionDescriptor findDescriptorBySubscriptionId(UUID subscriptionId) {
+        return subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
     }
 
     private void removeAllEventLinksForSubscription(int organizationId, UUID subscriptionId) {

@@ -16,19 +16,16 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
 import alfio.controller.api.v2.model.OnlineCheckInInfo;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.TicketInfo;
-import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.Formatters;
 import alfio.controller.support.TemplateProcessor;
-import alfio.manager.ExtensionManager;
-import alfio.manager.FileUploadManager;
-import alfio.manager.NotificationManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.model.*;
@@ -77,6 +74,7 @@ public class TicketApiV2Controller {
     private final NotificationManager notificationManager;
     private final BookingInfoTicketLoader bookingInfoTicketLoader;
     private final TicketRepository ticketRepository;
+    private final SubscriptionManager subscriptionManager;
 
     public TicketApiV2Controller(TicketHelper ticketHelper,
                                  TicketReservationManager ticketReservationManager,
@@ -145,10 +143,14 @@ public class TicketApiV2Controller {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
                 var ticketWithMetadata = TicketWithMetadataAttributes.build(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
-                TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(ticketReservation.getUserLanguage(), event)), event, ticketReservation,
+                var locale = LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(ticketReservation.getUserLanguage(), event));
+                TemplateProcessor.renderPDFTicket(
+                    locale, event, ticketReservation,
                     ticketWithMetadata, ticketCategory, organization,
                     templateManager, fileUploadManager,
-                    reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager);
+                    reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager,
+                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionManager::findDescriptorBySubscriptionId, locale)
+                );
             } catch (IOException ioe) {
                 throw new IllegalStateException(ioe);
             }

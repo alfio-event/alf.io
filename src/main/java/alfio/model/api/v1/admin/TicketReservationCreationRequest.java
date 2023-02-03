@@ -20,6 +20,7 @@ import alfio.controller.form.ReservationCreate;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class TicketReservationCreationRequest implements ReservationCreate<Atten
     private final ReservationUser user;
     private final String promoCode;
     private final String language;
+    private final String subscriptionId;
 
     @JsonCreator
     public TicketReservationCreationRequest(@JsonProperty("tickets") List<AttendeesByCategory> tickets,
@@ -38,13 +40,15 @@ public class TicketReservationCreationRequest implements ReservationCreate<Atten
                                             @JsonProperty("configuration") ReservationConfiguration reservationConfiguration,
                                             @JsonProperty("user") ReservationUser user,
                                             @JsonProperty("promoCode") String promoCode,
-                                            @JsonProperty("language") String language) {
+                                            @JsonProperty("language") String language,
+                                            @JsonProperty("subscriptionId") String subscriptionId) {
         this.tickets = tickets;
         this.additionalServices = additionalServices;
         this.reservationConfiguration = reservationConfiguration;
         this.user = user;
         this.promoCode = promoCode;
         this.language = language;
+        this.subscriptionId = StringUtils.trimToNull(subscriptionId);
     }
 
 
@@ -83,4 +87,7 @@ public class TicketReservationCreationRequest implements ReservationCreate<Atten
         return reservationConfiguration;
     }
 
+    public String getSubscriptionId() {
+        return subscriptionId;
+    }
 }

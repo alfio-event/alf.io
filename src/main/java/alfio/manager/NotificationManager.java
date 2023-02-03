@@ -106,7 +106,8 @@ public class NotificationManager {
                                AdditionalServiceItemRepository additionalServiceItemRepository,
                                ExtensionManager extensionManager,
                                ClockProvider clockProvider,
-                               PurchaseContextManager purchaseContextManager) {
+                               PurchaseContextManager purchaseContextManager,
+                               SubscriptionRepository subscriptionRepository) {
         this.messageSourceManager = messageSourceManager;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
@@ -129,7 +130,8 @@ public class NotificationManager {
             payload -> TemplateProcessor.buildCreditNotePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passKitManager::getPass);
         Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository, subscriptionRepository));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF, generateSubscriptionPDF(organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, extensionManager, subscriptionRepository, messageSourceManager));
     }
 
     private static Function<Map<String, String>, byte[]> generateTicketPDF(EventRepository eventRepository,
@@ -140,7 +142,8 @@ public class NotificationManager {
                                                                            TicketReservationRepository ticketReservationRepository,
                                                                            Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                                                            ExtensionManager extensionManager,
-                                                                           TicketRepository ticketRepository) {
+                                                                           TicketRepository ticketRepository,
+                                                                           SubscriptionRepository subscriptionRepository) {
         return model -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
@@ -150,9 +153,11 @@ public class NotificationManager {
                 Event event = eventRepository.findById(ticket.getEventId());
                 Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
                 var ticketWithMetadata = TicketWithMetadataAttributes.build(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
-                TemplateProcessor.renderPDFTicket(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), event, reservation,
+                var locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
+                TemplateProcessor.renderPDFTicket(locale, event, reservation,
                     ticketWithMetadata, ticketCategory, organization, templateManager, fileUploadManager,
-                    configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager);
+                    configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager,
+                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionRepository::findDescriptorBySubscriptionId, locale));
             } catch (IOException e) {
                 log.warn("was not able to generate ticket pdf for ticket with id {}", ticket.getId(), e);
             }
@@ -500,6 +505,41 @@ public class NotificationManager {
             Map<String, String> model = jsonObject.has(MODEL)  ? Json.fromJson(jsonObject.getAsJsonPrimitive(MODEL).getAsString(), new TypeReference<>() {}) : null;
             return new Mailer.Attachment(filename, source, contentType, model, identifier);
         }
+    }
+
+    private static Function<Map<String, String>, byte[]> generateSubscriptionPDF(OrganizationRepository organizationRepository,
+                                                                                 ConfigurationManager configurationManager,
+                                                                                 FileUploadManager fileUploadManager,
+                                                                                 TemplateManager templateManager,
+                                                                                 TicketReservationRepository ticketReservationRepository,
+                                                                                 ExtensionManager extensionManager,
+                                                                                 SubscriptionRepository subscriptionRepository,
+                                                                                 MessageSourceManager messageSourceManager) {
+        return model -> {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            var subscriptionId = UUID.fromString(model.get("subscriptionId"));
+            var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+            try {
+                var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
+                var reservation = ticketReservationRepository.findReservationById(subscription.getReservationId());
+                Organization organization = organizationRepository.getById(subscriptionDescriptor.getOrganizationId());
+                var metadata = subscriptionRepository.getSubscriptionMetadata(subscription.getId());
+                TemplateProcessor.renderSubscriptionPDF(subscription,
+                    LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
+                    subscriptionDescriptor,
+                    reservation,
+                    metadata,
+                    organization,
+                    templateManager,
+                    fileUploadManager,
+                    configurationManager.getShortReservationID(subscriptionDescriptor, reservation),
+                    baos,
+                    extensionManager);
+            } catch (IOException e) {
+                log.warn("was not able to generate subscription pdf for " + subscription.getId(), e);
+            }
+            return baos.toByteArray();
+        };
     }
 
     private static String purchaseContextCacheKey(EmailMessage message) {

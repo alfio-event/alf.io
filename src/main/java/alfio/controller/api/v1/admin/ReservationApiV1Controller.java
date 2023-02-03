@@ -130,7 +130,8 @@ public class ReservationApiV1Controller {
         if(creationRequest.getReservationConfiguration() != null) {
             ticketReservationManager.setReservationMetadata(id, new ReservationMetadata(creationRequest.getReservationConfiguration().isHideContactData()));
         }
-        return CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, purchaseContext, locale.getLanguage(), user != null));
+        var subscriptionId = creationRequest instanceof TicketReservationCreationRequest ? ((TicketReservationCreationRequest) creationRequest).getSubscriptionId() : null;
+        return CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, purchaseContext, locale.getLanguage(), user != null, subscriptionId));
     }
 
     public static class CreationResponse {

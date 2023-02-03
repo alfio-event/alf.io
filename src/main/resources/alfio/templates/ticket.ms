@@ -88,6 +88,12 @@
 				<td>{{#i18n}}ticket.reference-number{{/i18n}}</td>
 				<td>{{ticket.uuid}}</td>
 			</tr>
+			{{#hasSubscription}}
+			<tr>
+                <td>{{#i18n}}reservation-page.subscription{{/i18n}}</td>
+                <td>{{subscriptionTitle}}</td>
+            </tr>
+			{{/hasSubscription}}
 			<tr>
 				<td>{{#i18n}}ticket.order-information{{/i18n}}</td>
 				<td>{{#i18n}}ticket.order-information-values [{{reservationId}}] [{{reservation.fullName}}]{{/i18n}}</td>
