@@ -1876,18 +1876,28 @@ public class TicketReservationManager {
         return reservationUrl(ticketReservationRepository.findReservationById(reservationId), purchaseContext);
     }
 
-    public String reservationUrlForExternalClients(String reservationId, PurchaseContext purchaseContext, String userLanguage, boolean userLoggedIn) {
+    public String reservationUrlForExternalClients(String reservationId, PurchaseContext purchaseContext, String userLanguage, boolean userLoggedIn, String subscriptionId) {
         var configMap = configurationManager.getFor(EnumSet.of(BASE_URL, OPENID_PUBLIC_ENABLED), purchaseContext.getConfigurationLevel());
         var baseUrl = StringUtils.removeEnd(configMap.get(BASE_URL).getRequiredValue(), "/");
         if(userLoggedIn && configMap.get(OPENID_PUBLIC_ENABLED).getValueAsBooleanOrDefault()) {
             return baseUrl + "/openid/authentication?reservation=" + reservationId + "&contextType=" + purchaseContext.getType() + "&id=" + purchaseContext.getPublicIdentifier();
         } else {
-            return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage);
+            var cleanSubscriptionId = StringUtils.trimToNull(subscriptionId);
+            return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, cleanSubscriptionId != null ? "subscription="+cleanSubscriptionId : null);
         }
     }
 
+    String reservationUrl(String baseUrl, String reservationId, PurchaseContext purchaseContext, String userLanguage, String additionalParams) {
+        var cleanParams = StringUtils.trimToNull(additionalParams);
+        return StringUtils.removeEnd(baseUrl, "/")
+            + "/" + purchaseContext.getType()
+            + "/" + purchaseContext.getPublicIdentifier()
+            + "/reservation/" + reservationId
+            + "?lang="+userLanguage
+            + (cleanParams != null ? "&" + cleanParams : "");
+    }
     String reservationUrl(String baseUrl, String reservationId, PurchaseContext purchaseContext, String userLanguage) {
-        return StringUtils.removeEnd(baseUrl, "/") + "/" + purchaseContext.getType()+ "/" + purchaseContext.getPublicIdentifier() + "/reservation/" + reservationId + "?lang="+userLanguage;
+        return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, null);
     }
     
     String reservationUrl(TicketReservation reservation, PurchaseContext purchaseContext) {

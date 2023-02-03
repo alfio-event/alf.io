@@ -130,7 +130,7 @@ public class NotificationManager {
             payload -> TemplateProcessor.buildCreditNotePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passKitManager::getPass);
         Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository, subscriptionRepository));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF, generateSubscriptionPDF(organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, extensionManager, subscriptionRepository, messageSourceManager));
     }
 
@@ -142,7 +142,8 @@ public class NotificationManager {
                                                                            TicketReservationRepository ticketReservationRepository,
                                                                            Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                                                            ExtensionManager extensionManager,
-                                                                           TicketRepository ticketRepository) {
+                                                                           TicketRepository ticketRepository,
+                                                                           SubscriptionRepository subscriptionRepository) {
         return model -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
@@ -152,9 +153,11 @@ public class NotificationManager {
                 Event event = eventRepository.findById(ticket.getEventId());
                 Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
                 var ticketWithMetadata = TicketWithMetadataAttributes.build(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
-                TemplateProcessor.renderPDFTicket(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), event, reservation,
+                var locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
+                TemplateProcessor.renderPDFTicket(locale, event, reservation,
                     ticketWithMetadata, ticketCategory, organization, templateManager, fileUploadManager,
-                    configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager);
+                    configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager,
+                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionRepository::findDescriptorBySubscriptionId, locale));
             } catch (IOException e) {
                 log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
             }
