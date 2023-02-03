@@ -17,6 +17,7 @@
 package alfio.repository.audit;
 
 import alfio.manager.support.CheckInStatus;
+import alfio.model.api.v1.admin.CheckInLogEntry;
 import alfio.model.audit.ScanAudit;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
@@ -37,5 +38,13 @@ public interface ScanAuditRepository {
 
     @Query("select * from scan_audit where event_id_fk = :eventId")
     List<ScanAudit> findAllForEvent(@Bind("eventId") int eventId);
+
+    @Query("select t.uuid t_uuid, jsonb_build_object('firstName', t.first_name, 'lastName', t.last_name, 'email', t.email_address, 'metadata', coalesce(t.metadata::jsonb#>'{metadataMap, general, attributes}', '{}')) attendee_data, jsonb_agg(jsonb_build_object('ticketUuid', sa.ticket_uuid, 'scanTimestamp', sa.scan_ts, 'username', sa.username, 'checkInStatus', sa.check_in_status, 'operation', sa.operation)) scans from ticket t\n" +
+        "    join event e on t.event_id = e.id" +
+        "    join scan_audit sa on e.id = sa.event_id_fk and t.uuid = sa.ticket_uuid" +
+        "    where e.id = :eventId" +
+        "    and t.status = 'CHECKED_IN'" +
+        "    group by 1,2")
+    List<CheckInLogEntry> loadEntries(@Bind("eventId") int eventId);
 
 }
