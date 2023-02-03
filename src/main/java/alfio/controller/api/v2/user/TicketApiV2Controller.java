@@ -86,7 +86,8 @@ public class TicketApiV2Controller {
                                  TemplateManager templateManager,
                                  NotificationManager notificationManager,
                                  BookingInfoTicketLoader bookingInfoTicketLoader,
-                                 TicketRepository ticketRepository) {
+                                 TicketRepository ticketRepository,
+                                 SubscriptionManager subscriptionManager) {
         this.ticketHelper = ticketHelper;
         this.ticketReservationManager = ticketReservationManager;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -98,6 +99,7 @@ public class TicketApiV2Controller {
         this.notificationManager = notificationManager;
         this.bookingInfoTicketLoader = bookingInfoTicketLoader;
         this.ticketRepository = ticketRepository;
+        this.subscriptionManager = subscriptionManager;
     }
 
 

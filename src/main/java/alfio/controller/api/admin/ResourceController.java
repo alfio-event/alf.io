@@ -86,7 +86,8 @@ public class ResourceController {
                               OrganizationRepository organizationRepository,
                               FileUploadManager fileUploadManager,
                               ExtensionManager extensionManager,
-                              ClockProvider clockProvider) {
+                              ClockProvider clockProvider,
+                              SubscriptionManager subscriptionManager) {
         this.uploadedResourceManager = uploadedResourceManager;
         this.userManager = userManager;
         this.eventRepository = eventRepository;
@@ -96,6 +97,7 @@ public class ResourceController {
         this.fileUploadManager = fileUploadManager;
         this.extensionManager = extensionManager;
         this.clockProvider = clockProvider;
+        this.subscriptionManager = subscriptionManager;
     }
 
 

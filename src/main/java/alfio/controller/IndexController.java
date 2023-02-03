@@ -35,6 +35,7 @@ import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.jfiveparse.*;
 import org.apache.commons.collections4.IterableUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
@@ -59,6 +60,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static alfio.config.Initializer.PROFILE_LIVE;
+import static alfio.controller.Constants.*;
 import static alfio.model.system.ConfigurationKeys.BASE_CUSTOM_CSS;
 import static java.util.Objects.requireNonNull;
 
@@ -256,7 +258,9 @@ public class IndexController {
     }
 
     @GetMapping("/event/{eventShortName}/reservation/{reservationId}")
-    public String redirectEventToReservation(@PathVariable(value = EVENT_SHORT_NAME) String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
+    public String redirectEventToReservation(@PathVariable(value = EVENT_SHORT_NAME) String eventShortName,
+                                             @PathVariable(value = "reservationId") String reservationId,
+                                             @RequestParam(value = "subscription", required = false) String subscriptionId) {
         if (eventRepository.existsByShortName(eventShortName)) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
                 .map(IndexController::reservationStatusToUrlMapping).orElse(NOT_FOUND);

@@ -627,9 +627,9 @@ public enum TemplateResource {
         model.put(RESERVATION_ID, reservationId);
         model.put(METADATA_ATTRIBUTES_KEY, metadata.getProperties());
         imageData.ifPresent(iData -> {
-            model.put("logo", iData.getEventImage());
-            model.put("imageWidth", iData.getImageWidth());
-            model.put("imageHeight", iData.getImageHeight());
+            model.put("logo", iData.eventImage);
+            model.put("imageWidth", iData.imageWidth);
+            model.put("imageHeight", iData.imageHeight);
         });
         return model;
     }
