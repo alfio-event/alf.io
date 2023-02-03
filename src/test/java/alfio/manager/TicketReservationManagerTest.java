@@ -1148,13 +1148,16 @@ class TicketReservationManagerTest {
 
         // OpenID active
         when(maybeOpenId.getValueAsBooleanOrDefault()).thenReturn(true);
-        Assertions.assertEquals(BASE_URL + "openid/authentication?reservation=" + RESERVATION_ID + "&contextType=" + PurchaseContext.PurchaseContextType.event + "&id=" + shortName, trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true));
+        Assertions.assertEquals(BASE_URL + "openid/authentication?reservation=" + RESERVATION_ID + "&contextType=" + PurchaseContext.PurchaseContextType.event + "&id=" + shortName, trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true, null));
 
         // user not specified in the request
-        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", false));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", false, null));
         // OpenID not active
         when(maybeOpenId.getValueAsBooleanOrDefault()).thenReturn(false);
-        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true, null));
+        // SubscriptionId is present
+        var subscriptionId = "subscription-id";
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en&subscription=" + subscriptionId, trm.reservationUrlForExternalClients(RESERVATION_ID, event, "en", true, subscriptionId));
     }
 
     //sendReminderForOptionalInfo

@@ -130,6 +130,7 @@ import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
+import static org.springframework.http.MediaType.APPLICATION_PDF;
 
 @Component
 @Transactional
@@ -888,12 +889,14 @@ public class TicketReservationManager {
                 "includePin", true,
                 "fullName", firstSubscription.getFirstName() + " " + firstSubscription.getLastName());
             var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, List.of(), initialModel);
-            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : attachments));
+            var subscriptionAttachments = new ArrayList<>(attachments);
+            subscriptionAttachments.add(generateSubscriptionAttachment(firstSubscription));
+            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : subscriptionAttachments));
             if(sendSeparateEmailToOwner) {
                 var separateModel = new HashMap<>(model);
                 separateModel.put("includePin", false);
                 separateModel.put("fullName", ticketReservation.getFullName());
-                configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, ticketReservation.getEmail(), separateModel, attachments));
+                configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, ticketReservation.getEmail(), separateModel, subscriptionAttachments));
             }
         } else {
             var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, ticketRepository.findTicketsInReservation(ticketReservation.getId()), Map.of());
@@ -908,6 +911,12 @@ public class TicketReservationManager {
                () -> templateManager.renderTemplate(purchaseContext, configuration.getTemplateResource(), configuration.getModel(), language),
                 configuration.getAttachments());
         });
+    }
+
+    private Mailer.Attachment generateSubscriptionAttachment(Subscription subscription) {
+        var model = new HashMap<String, String>();
+        model.put("subscriptionId", subscription.getId().toString());
+        return new Mailer.Attachment("subscription_" + subscription.getId() + ".pdf", null, APPLICATION_PDF.toString(), model, Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF);
     }
 
     private List<Mailer.Attachment> generateAttachmentForConfirmationEmail(PurchaseContext purchaseContext,
@@ -1344,9 +1353,12 @@ public class TicketReservationManager {
             validityTo,
             confirmationTimestamp,
             subscriptionDescriptor.getTimeZone());
-        subscriptionRepository.findSubscriptionsByReservationId(reservationId) // at the moment it's safe because there can be only one subscription per reservation
-            .forEach(subscriptionId -> auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString()));
         Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
+        subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0); // at the moment it's safe because there can be only one subscription per reservation
+        var subscriptionId = subscription.getId();
+        auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString());
+        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, subscriptionRepository.getSubscriptionMetadata(subscriptionId))
+            .ifPresent(metadata -> subscriptionRepository.setMetadataForSubscription(subscriptionId, metadata));
     }
 
     private void acquireEventTickets(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, Event event) {
@@ -1864,18 +1876,28 @@ public class TicketReservationManager {
         return reservationUrl(ticketReservationRepository.findReservationById(reservationId), purchaseContext);
     }
 
-    public String reservationUrlForExternalClients(String reservationId, PurchaseContext purchaseContext, String userLanguage, boolean userLoggedIn) {
+    public String reservationUrlForExternalClients(String reservationId, PurchaseContext purchaseContext, String userLanguage, boolean userLoggedIn, String subscriptionId) {
         var configMap = configurationManager.getFor(EnumSet.of(BASE_URL, OPENID_PUBLIC_ENABLED), purchaseContext.getConfigurationLevel());
         var baseUrl = StringUtils.removeEnd(configMap.get(BASE_URL).getRequiredValue(), "/");
         if(userLoggedIn && configMap.get(OPENID_PUBLIC_ENABLED).getValueAsBooleanOrDefault()) {
             return baseUrl + "/openid/authentication?reservation=" + reservationId + "&contextType=" + purchaseContext.getType() + "&id=" + purchaseContext.getPublicIdentifier();
         } else {
-            return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage);
+            var cleanSubscriptionId = StringUtils.trimToNull(subscriptionId);
+            return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, cleanSubscriptionId != null ? "subscription="+cleanSubscriptionId : null);
         }
     }
 
+    String reservationUrl(String baseUrl, String reservationId, PurchaseContext purchaseContext, String userLanguage, String additionalParams) {
+        var cleanParams = StringUtils.trimToNull(additionalParams);
+        return StringUtils.removeEnd(baseUrl, "/")
+            + "/" + purchaseContext.getType()
+            + "/" + purchaseContext.getPublicIdentifier()
+            + "/reservation/" + reservationId
+            + "?lang="+userLanguage
+            + (cleanParams != null ? "&" + cleanParams : "");
+    }
     String reservationUrl(String baseUrl, String reservationId, PurchaseContext purchaseContext, String userLanguage) {
-        return StringUtils.removeEnd(baseUrl, "/") + "/" + purchaseContext.getType()+ "/" + purchaseContext.getPublicIdentifier() + "/reservation/" + reservationId + "?lang="+userLanguage;
+        return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, null);
     }
     
     String reservationUrl(TicketReservation reservation, PurchaseContext purchaseContext) {

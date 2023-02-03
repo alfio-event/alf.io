@@ -270,6 +270,10 @@ public class SubscriptionManager {
         }
     }
 
+    public SubscriptionDescriptor findDescriptorBySubscriptionId(UUID subscriptionId) {
+        return subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
+    }
+
     private void removeAllEventLinksForSubscription(int organizationId, UUID subscriptionId) {
         int removed = subscriptionRepository.removeAllLinksForSubscription(subscriptionId, organizationId);
         log.info("removed all event links ({}) for subscription {}", removed, subscriptionId);
