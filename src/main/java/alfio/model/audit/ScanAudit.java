@@ -18,9 +18,12 @@ package alfio.model.audit;
 
 import alfio.manager.support.CheckInStatus;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 
 @Getter
 public class ScanAudit {
@@ -31,23 +34,26 @@ public class ScanAudit {
     }
 
     private final String ticketUuid;
-    private final int eventId;
-    private final ZonedDateTime scanTimestamp;
+    private final LocalDateTime scanTimestamp;
     private final String username;
     private final CheckInStatus checkInStatus;
     private final Operation operation;
 
-    public ScanAudit(@Column("ticket_uuid") String ticketUuid,
-                     @Column("event_id_fk") int eventId,
-                     @Column("scan_ts") ZonedDateTime scanTimestamp,
-                     @Column("username") String username,
-                     @Column("check_in_status") CheckInStatus checkInStatus,
-                     @Column("operation") Operation operation) {
+    @JsonCreator
+    public ScanAudit(@JsonProperty("ticketUuid") @Column("ticket_uuid") String ticketUuid,
+                     @JsonProperty("scanTimestamp") @Column("scan_ts") LocalDateTime scanTimestamp,
+                     @JsonProperty("username") @Column("username") String username,
+                     @JsonProperty("checkInStatus") @Column("check_in_status") CheckInStatus checkInStatus,
+                     @JsonProperty("operation") @Column("operation") Operation operation) {
         this.ticketUuid = ticketUuid;
-        this.eventId = eventId;
         this.scanTimestamp = scanTimestamp;
         this.username = username;
         this.checkInStatus = checkInStatus;
         this.operation = operation;
+    }
+
+    @JsonIgnore
+    public String getTicketUuid() {
+        return ticketUuid;
     }
 }
