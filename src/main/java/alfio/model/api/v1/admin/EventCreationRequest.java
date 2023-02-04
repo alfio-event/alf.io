@@ -94,9 +94,9 @@ public class EventCreationRequest{
     }
 
     public EventModification toEventModification(Organization organization, UnaryOperator<String> slugGenerator, String imageRef) {
-        String slug = this.slug;
-        if(StringUtils.isBlank(slug)) {
-            slug = slugGenerator.apply(title);
+        String eventSlug = this.slug;
+        if(StringUtils.isBlank(eventSlug)) {
+            eventSlug = slugGenerator.apply(title);
         }
 
         int locales = description.stream()
@@ -114,7 +114,7 @@ public class EventCreationRequest{
             StringUtils.trimToNull(privacyPolicyUrl),
             null,
             imageRef,
-            slug,
+            eventSlug,
             title,
             organization.getId(),
             location.getFullAddress(),
@@ -124,13 +124,13 @@ public class EventCreationRequest{
             description.stream().collect(Collectors.toMap(DescriptionRequest::getLang,DescriptionRequest::getBody)),
             new DateTimeModification(startDate.toLocalDate(),startDate.toLocalTime()),
             new DateTimeModification(endDate.toLocalDate(),endDate.toLocalTime()),
-            tickets.freeOfCharge ? BigDecimal.ZERO : tickets.categories.stream().map(x -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ONE).max(BigDecimal.ONE),
+            Boolean.TRUE.equals(tickets.freeOfCharge) ? BigDecimal.ZERO : tickets.categories.stream().map(x -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ONE).max(BigDecimal.ONE),
             tickets.currency,
             tickets.max,
             tickets.taxPercentage,
             tickets.taxIncludedInPrice,
             tickets.paymentMethods,
-            tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()),
+            getTicketCategoryModificationList(),
             tickets.freeOfCharge,
             new LocationDescriptor(timezone, location.getCoordinate().getLatitude(), location.getCoordinate().getLongitude(), null),
             locales,
@@ -139,6 +139,14 @@ public class EventCreationRequest{
             AlfioMetadata.empty(),
             List.of()
         );
+    }
+
+    private List<TicketCategoryModification> getTicketCategoryModificationList() {
+        var result = new ArrayList<TicketCategoryModification>();
+        for (int c = 0; c < tickets.categories.size(); c++) {
+            result.add(tickets.categories.get(c).toNewTicketCategoryModification(c + 1 ));
+        }
+        return List.copyOf(result);
     }
 
     private static <T> T first(T value,T other) {
@@ -183,7 +191,7 @@ public class EventCreationRequest{
             tickets != null ? first(tickets.taxPercentage,original.getVat()) : original.getVat(),
             tickets != null ? first(tickets.taxIncludedInPrice,original.isVatIncluded()) : original.isVatIncluded(),
             tickets != null ? first(tickets.paymentMethods, original.getAllowedPaymentProxies()) : original.getAllowedPaymentProxies(),
-            tickets != null && tickets.categories != null ? tickets.categories.stream().map(tc -> tc.toTicketCategoryModification(findCategoryId(original, tc))).collect(Collectors.toList()) : null,
+            tickets != null && tickets.categories != null ? createFromExistingCategories(original) : null,
             tickets != null ? first(tickets.freeOfCharge,original.isFreeOfCharge()) : original.isFreeOfCharge(),
             null,
             locales,
@@ -194,12 +202,28 @@ public class EventCreationRequest{
         );
     }
 
-    private static Integer findCategoryId(EventWithAdditionalInfo event, CategoryRequest categoryRequest) {
-        return event.getTicketCategories().stream()
-            .filter(tc -> tc.getName().equals(categoryRequest.getName()))
-            .map(TicketCategoryWithAdditionalInfo::getId)
-            .findFirst()
-            .orElse(null);
+    private List<TicketCategoryModification> createFromExistingCategories(EventWithAdditionalInfo event) {
+        var result = new ArrayList<TicketCategoryModification>(tickets.categories.size());
+        for(int c = 0; c < tickets.categories.size(); c++) {
+            var categoryRequest = tickets.categories.get(c);
+            var existing = findExistingCategory(event.getTicketCategories(), categoryRequest.getName(), categoryRequest.getId());
+            if (existing.isPresent()) {
+                var category = existing.get();
+                result.add(categoryRequest.toExistingTicketCategoryModification(category.getId(), category.getOrdinal()));
+            } else {
+                result.add(categoryRequest.toNewTicketCategoryModification(c + 1));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    public static Optional<TicketCategoryWithAdditionalInfo> findExistingCategory(List<TicketCategoryWithAdditionalInfo> categories,
+                                                                                  String name,
+                                                                                  Integer id) {
+        return categories.stream()
+            // if specified, ID takes precedence over name
+            .filter(oc -> id != null ? id == oc.getId() : oc.getName().equals(name))
+            .findFirst();
     }
 
 
@@ -272,6 +296,7 @@ public class EventCreationRequest{
 
     @Getter
     public static class CategoryRequest {
+        private final Integer id;
         private final String name;
         private final List<DescriptionRequest> description;
         private final Integer maxTickets;
@@ -285,7 +310,8 @@ public class EventCreationRequest{
         private final TicketCategory.TicketAccessType ticketAccessType;
 
         @JsonCreator
-        public CategoryRequest(@JsonProperty("name") String name,
+        public CategoryRequest(@JsonProperty("id") Integer id,
+                               @JsonProperty("name") String name,
                                @JsonProperty("description") List<DescriptionRequest> description,
                                @JsonProperty("maxTickets") Integer maxTickets,
                                @JsonProperty("accessRestricted") boolean accessRestricted,
@@ -296,6 +322,7 @@ public class EventCreationRequest{
                                @JsonProperty("customValidity") CustomTicketValidityRequest customValidity,
                                @JsonProperty("groupLink") GroupLinkRequest groupLink,
                                @JsonProperty("ticketAccessType") TicketCategory.TicketAccessType ticketAccessType) {
+            this.id = id;
             this.name = name;
             this.description = description;
             this.maxTickets = maxTickets;
@@ -309,11 +336,11 @@ public class EventCreationRequest{
             this.ticketAccessType = ticketAccessType;
         }
 
-        TicketCategoryModification toTicketCategoryModification() {
-            return toTicketCategoryModification(null);
+        TicketCategoryModification toNewTicketCategoryModification(int ordinal) {
+            return toExistingTicketCategoryModification(null, ordinal);
         }
 
-        TicketCategoryModification toTicketCategoryModification(Integer categoryId) {
+        TicketCategoryModification toExistingTicketCategoryModification(Integer categoryId, int ordinal) {
             int capacity = Optional.ofNullable(maxTickets).orElse(0);
 
             Optional<CustomTicketValidityRequest> customValidityOpt = Optional.ofNullable(customValidity);
@@ -335,7 +362,7 @@ public class EventCreationRequest{
                 customValidityOpt.flatMap(x -> Optional.ofNullable(x.checkInTo)).map(x -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
                 customValidityOpt.flatMap(x -> Optional.ofNullable(x.validityStart)).map(x -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
                 customValidityOpt.flatMap(x -> Optional.ofNullable(x.validityEnd)).map(x -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
-                0,
+                ordinal,
                 null,
                 null,
                 AlfioMetadata.empty());
@@ -455,9 +482,9 @@ public class EventCreationRequest{
             String code = type != null ? type.code : AdditionalInfoType.GENERIC_TEXT.code;
             Integer minLength = contentLength != null ? contentLength.min : null;
             Integer maxLength = contentLength != null ? contentLength.max : null;
-            List<EventModification.RestrictedValue> restrictedValues = null;
+            List<EventModification.RestrictedValue> cleanRestrictedValues = null;
             if(!isEmpty(this.restrictedValues)) {
-                restrictedValues = this.restrictedValues.stream().map(rv -> new EventModification.RestrictedValue(rv.value, rv.enabled)).collect(Collectors.toList());
+                cleanRestrictedValues = this.restrictedValues.stream().map(rv -> new EventModification.RestrictedValue(rv.value, rv.enabled)).toList();
             }
 
             return new EventModification.AdditionalField(
@@ -469,36 +496,36 @@ public class EventCreationRequest{
                 false,
                 minLength,
                 maxLength,
-                restrictedValues,
+                cleanRestrictedValues,
                 toDescriptionMap(orEmpty(label), orEmpty(placeholder), orEmpty(this.restrictedValues)),
                 null,//TODO: linkedAdditionalService
                 null);//TODO: linkedCategoryIds
+        }
+
+        private static Map<String, EventModification.Description> toDescriptionMap(List<DescriptionRequest> label,
+                                                                                   List<DescriptionRequest> placeholder,
+                                                                                   List<RestrictedValueRequest> restrictedValues) {
+            Map<String, String> labelsByLang = label.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody));
+            Map<String, String> placeholdersByLang = placeholder.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody));
+            Map<String, List<Triple<String, String, String>>> valuesByLang = restrictedValues.stream()
+                .flatMap(rv -> rv.descriptions.stream().map(rvd -> Triple.of(rvd.lang, rv.value, rvd.body)))
+                .collect(Collectors.groupingBy(Triple::getLeft));
+
+
+            Set<String> keys = new HashSet<>(labelsByLang.keySet());
+            keys.addAll(placeholdersByLang.keySet());
+            keys.addAll(valuesByLang.keySet());
+
+            return keys.stream()
+                .map(lang -> {
+                    Map<String, String> rvsMap = valuesByLang.getOrDefault(lang, emptyList()).stream().collect(Collectors.toMap(Triple::getMiddle, Triple::getRight));
+                    return Pair.of(lang, new EventModification.Description(labelsByLang.get(lang), placeholdersByLang.get(lang), rvsMap));
+                }).collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
         }
     }
 
     private static <T> List<T> orEmpty(List<T> input) {
         return isEmpty(input) ? emptyList() : input;
-    }
-
-    private static Map<String, EventModification.Description> toDescriptionMap(List<DescriptionRequest> label,
-                                                                               List<DescriptionRequest> placeholder,
-                                                                               List<RestrictedValueRequest> restrictedValues) {
-        Map<String, String> labelsByLang = label.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody));
-        Map<String, String> placeholdersByLang = placeholder.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody));
-        Map<String, List<Triple<String, String, String>>> valuesByLang = restrictedValues.stream()
-            .flatMap(rv -> rv.descriptions.stream().map(rvd -> Triple.of(rvd.lang, rv.value, rvd.body)))
-            .collect(Collectors.groupingBy(Triple::getLeft));
-
-
-        Set<String> keys = new HashSet<>(labelsByLang.keySet());
-        keys.addAll(placeholdersByLang.keySet());
-        keys.addAll(valuesByLang.keySet());
-
-        return keys.stream()
-            .map(lang -> {
-                Map<String, String> rvsMap = valuesByLang.getOrDefault(lang, emptyList()).stream().collect(Collectors.toMap(Triple::getMiddle, Triple::getRight));
-                return Pair.of(lang, new EventModification.Description(labelsByLang.get(lang), placeholdersByLang.get(lang), rvsMap));
-            }).collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
     }
 
 
@@ -507,7 +534,7 @@ public class EventCreationRequest{
             return emptyList();
         }
         AtomicInteger counter = new AtomicInteger(1);
-        return additionalInfoRequests.stream().map(air -> air.toAdditionalField(counter.getAndIncrement())).collect(Collectors.toList());
+        return additionalInfoRequests.stream().map(air -> air.toAdditionalField(counter.getAndIncrement())).toList();
     }
 
     @Getter
