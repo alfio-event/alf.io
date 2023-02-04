@@ -189,6 +189,6 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
         assertNotNull(entry.getAttendeeData());
         assertNotNull(entry.getAttendeeData().getMetadata());
         assertNotNull(entry.getAudit());
-        entry.getAudit().forEach(audit -> assertEquals(context.userId + "_api", audit.getUsername()));
+        entry.getAudit().forEach(audit -> assertEquals(context.userId + "_api", audit.username()));
     }
 }

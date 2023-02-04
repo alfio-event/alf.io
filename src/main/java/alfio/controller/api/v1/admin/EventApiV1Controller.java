@@ -89,7 +89,8 @@ public class EventApiV1Controller {
                                 ExtensionService extensionService,
                                 ExtensionRepository extensionRepository,
                                 ConfigurationManager configurationManager,
-                                AdminJobManager adminJobManager) {
+                                AdminJobManager adminJobManager,
+                                CheckInManager checkInManager) {
         this.eventManager = eventManager;
         this.eventNameManager = eventNameManager;
         this.fileUploadManager = fileUploadManager;
@@ -101,6 +102,7 @@ public class EventApiV1Controller {
         this.extensionRepository = extensionRepository;
         this.configurationManager = configurationManager;
         this.adminJobManager = adminJobManager;
+        this.checkInManager = checkInManager;
     }
 
     @PostMapping("/create")
@@ -338,7 +340,7 @@ public class EventApiV1Controller {
                                 return pair.getRight().isPresent();
                             })
                             .map(pair -> new ExtensionMetadataValue(pair.getRight().get().getId(), pair.getLeft().getValue()))
-                            .collect(Collectors.toList());
+                            .toList();
                         extensionService.bulkUpdateEventSettings(organization, e, values);
                     });
 
