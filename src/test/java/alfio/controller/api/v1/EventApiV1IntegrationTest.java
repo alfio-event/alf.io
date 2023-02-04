@@ -25,6 +25,7 @@ import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
+import alfio.model.TicketCategoryWithAdditionalInfo;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.transaction.PaymentProxy;
@@ -36,7 +37,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
-import org.junit.jupiter.api.Assertions;
+import alfio.util.ClockProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,12 +51,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -94,7 +93,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     private Organization organization;
     private Principal mockPrincipal;
 
-    private String shortName = "test";
+    private final String slug = "test";
 
     @BeforeEach
     public void ensureConfiguration() {
@@ -125,8 +124,8 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 new EventCreationRequest.CoordinateRequest("45.5","9.00")
             ),
             "Europe/Zurich",
-            LocalDateTime.of(2020,1,10,12,0),
-            LocalDateTime.of(2020,1,10,18,0),
+            LocalDateTime.now(ClockProvider.clock()).plusDays(30),
+            LocalDateTime.now(ClockProvider.clock()).plusDays(30).plusHours(2),
             "https://alf.io",
             "https://alf.io",
             "https://alf.io",
@@ -140,6 +139,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 Arrays.asList(PaymentProxy.OFFLINE,PaymentProxy.STRIPE),
                 Collections.singletonList(
                     new EventCreationRequest.CategoryRequest(
+                        null, // forces new category
                         "standard",
                         Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
                         10,
@@ -166,14 +166,11 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     @Test
     void createTest() {
 
-        EventCreationRequest eventCreationRequest = creationRequest(shortName);
+        EventCreationRequest eventCreationRequest = creationRequest(slug);
 
-        String shortName = controller.create(eventCreationRequest,mockPrincipal).getBody();
-        Event event = eventManager.getSingleEvent(shortName,username);
+        String slug = controller.create(eventCreationRequest,mockPrincipal).getBody();
+        Event event = eventManager.getSingleEvent(slug,username);
         List<TicketCategory> tickets = ticketCategoryRepository.findAllTicketCategories(event.getId());
-
-
-
         assertEquals(eventCreationRequest.getTitle(),event.getDisplayName());
         assertEquals(eventCreationRequest.getSlug(),event.getShortName());
         assertEquals(eventCreationRequest.getTickets().getCurrency(),event.getCurrency());
@@ -185,39 +182,159 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 List<EventCreationRequest.CategoryRequest> requestCategories = eventCreationRequest.getTickets().getCategories().stream().filter((rt) -> rt.getName().equals(t.getName())).collect(Collectors.toList());
                 assertEquals(1,requestCategories.size());
                 requestCategories.forEach((rtc) -> {
+                        assertNotEquals(0, t.getOrdinal());
                         assertEquals(t.getMaxTickets(), rtc.getMaxTickets().intValue());
                         assertEquals(0, t.getPrice().compareTo(rtc.getPrice()));
                     }
                 );
             }
         );
+    }
 
+    @Test
+    void stats() {
+        controller.create(creationRequest(slug), mockPrincipal);
+        var statsResponse = controller.stats(slug, mockPrincipal);
+        assertTrue(statsResponse.getStatusCode().is2xxSuccessful());
+        var stats = requireNonNull(statsResponse.getBody());
+        int lastOrdinal = -1;
+        for (TicketCategoryWithAdditionalInfo ticketCategory : stats.getTicketCategories()) {
+            assertTrue(ticketCategory.getOrdinal() > 0);
+            assertTrue(ticketCategory.getOrdinal() > lastOrdinal);
+            lastOrdinal = ticketCategory.getOrdinal();
+        }
     }
 
     @Test
     void updateTest() {
-        controller.create(creationRequest(shortName),mockPrincipal);
-
-
+        controller.create(creationRequest(slug), mockPrincipal);
         String newTitle = "new title";
         EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null, null,null,null,null,null,null, null,null,
             new EventCreationRequest.TicketRequest(null,10,null,null,null,null,null,null), null, null
         );
-        controller.update(shortName,updateRequest,mockPrincipal);
-        Event event = eventManager.getSingleEvent(shortName,username);
+        controller.update(slug, updateRequest, mockPrincipal);
+        Event event = eventManager.getSingleEvent(slug,username);
         assertEquals(newTitle,event.getDisplayName());
+    }
 
+    @Test
+    void updateExistingCategoryUsingId() {
+        controller.create(creationRequest(slug), mockPrincipal);
+        var existing = requireNonNull(controller.stats(slug, mockPrincipal).getBody());
+        var existingCategory = existing.getTicketCategories().get(0);
+        var categoriesRequest = List.of(
+            new EventCreationRequest.CategoryRequest(
+                existingCategory.getId(),
+                existingCategory.getName() + "_1",
+                List.of(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                existingCategory.getMaxTickets(),
+                existingCategory.isAccessRestricted(),
+                existingCategory.getPrice(),
+                LocalDateTime.now(ClockProvider.clock()),
+                LocalDateTime.now(ClockProvider.clock()).plusHours(1),
+                existingCategory.getCode(),
+                null,
+                null,
+                existingCategory.getTicketAccessType()
+            )
+        );
+        var ticketRequest = new EventCreationRequest.TicketRequest(null,10,null,null,null,null, categoriesRequest,null);
+        EventCreationRequest updateRequest = new EventCreationRequest(null,null,null,null, null,null,null,null,null,null, null,null,
+            ticketRequest, null, null
+        );
+        assertTrue(controller.update(slug, updateRequest, mockPrincipal).getStatusCode().is2xxSuccessful());
+        var modifiedCategories = ticketCategoryRepository.findAllTicketCategories(existing.getId());
+        assertEquals(1, modifiedCategories.size());
+        assertEquals(existingCategory.getName() + "_1", modifiedCategories.get(0).getName());
+    }
+
+    @Test
+    void updateExistingCategoryAndAddNewUsingId() {
+        controller.create(creationRequest(slug), mockPrincipal);
+        var existing = requireNonNull(controller.stats(slug, mockPrincipal).getBody());
+        var existingCategory = existing.getTicketCategories().get(0);
+        var categoriesRequest = List.of(
+            new EventCreationRequest.CategoryRequest(
+                existingCategory.getId(),
+                existingCategory.getName() + "_1",
+                List.of(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                existingCategory.getMaxTickets() - 5,
+                existingCategory.isAccessRestricted(),
+                existingCategory.getPrice(),
+                LocalDateTime.now(ClockProvider.clock()),
+                LocalDateTime.now(ClockProvider.clock()).plusHours(1),
+                existingCategory.getCode(),
+                null,
+                null,
+                existingCategory.getTicketAccessType()
+            ),
+            new EventCreationRequest.CategoryRequest(
+                null,
+                existingCategory.getName() + "_2",
+                List.of(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                existingCategory.getMaxTickets() - 5,
+                existingCategory.isAccessRestricted(),
+                existingCategory.getPrice(),
+                LocalDateTime.now(ClockProvider.clock()),
+                LocalDateTime.now(ClockProvider.clock()).plusHours(1),
+                existingCategory.getCode(),
+                null,
+                null,
+                existingCategory.getTicketAccessType()
+            )
+        );
+        var ticketRequest = new EventCreationRequest.TicketRequest(null,10,null,null,null,null, categoriesRequest,null);
+        EventCreationRequest updateRequest = new EventCreationRequest(null,null,null,null, null,null,null,null,null,null, null,null,
+            ticketRequest, null, null
+        );
+        assertTrue(controller.update(slug, updateRequest, mockPrincipal).getStatusCode().is2xxSuccessful());
+        var modifiedCategories = ticketCategoryRepository.findAllTicketCategories(existing.getId());
+        assertEquals(2, modifiedCategories.size());
+        assertEquals(existingCategory.getName() + "_1", modifiedCategories.get(0).getName());
+        assertEquals(existingCategory.getOrdinal(), modifiedCategories.get(0).getOrdinal());
+        assertEquals(existingCategory.getName() + "_2", modifiedCategories.get(1).getName());
+        assertEquals(existingCategory.getOrdinal() + 1, modifiedCategories.get(1).getOrdinal());
+    }
+
+    @Test
+    void updateExistingCategoryUsingName() {
+        controller.create(creationRequest(slug), mockPrincipal);
+        var existing = requireNonNull(controller.stats(slug, mockPrincipal).getBody());
+        var existingCategory = existing.getTicketCategories().get(0);
+        var categoriesRequest = List.of(
+            new EventCreationRequest.CategoryRequest(null,
+                existingCategory.getName(),
+                List.of(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                existingCategory.getMaxTickets() - 1,
+                existingCategory.isAccessRestricted(),
+                existingCategory.getPrice(),
+                LocalDateTime.now(ClockProvider.clock()),
+                LocalDateTime.now(ClockProvider.clock()).plusHours(1),
+                existingCategory.getCode(),
+                null,
+                null,
+                existingCategory.getTicketAccessType()
+            )
+        );
+        var ticketRequest = new EventCreationRequest.TicketRequest(null,10,null,null,null,null, categoriesRequest,null);
+        EventCreationRequest updateRequest = new EventCreationRequest(null,null,null,null, null,null,null,null,null,null, null,null,
+            ticketRequest, null, null
+        );
+        assertTrue(controller.update(slug, updateRequest, mockPrincipal).getStatusCode().is2xxSuccessful());
+        var modifiedCategories = ticketCategoryRepository.findAllTicketCategories(existing.getId());
+        assertEquals(1, modifiedCategories.size());
+        assertEquals(existingCategory.getMaxTickets() - 1, modifiedCategories.get(0).getMaxTickets());
     }
 
     @Test
     void retrieveLinkedSubscriptions() {
-        controller.create(creationRequest(shortName),mockPrincipal);
-        var response = controller.getLinkedSubscriptions(shortName, mockPrincipal);
+        controller.create(creationRequest(slug),mockPrincipal);
+        var response = controller.getLinkedSubscriptions(slug, mockPrincipal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         var linkedSubscriptions = response.getBody();
         assertNotNull(linkedSubscriptions);
         assertTrue(linkedSubscriptions.getSubscriptions().isEmpty());
-        assertEquals(shortName, linkedSubscriptions.getEventSlug());
+        assertEquals(slug, linkedSubscriptions.getEventSlug());
     }
 
 
