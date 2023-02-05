@@ -19,13 +19,17 @@ package alfio.controller;
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
+import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.*;
+import alfio.model.ContentLanguage;
+import alfio.model.EventDescription;
+import alfio.model.FileBlobMetadata;
+import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
 import alfio.repository.*;
@@ -115,6 +119,7 @@ public class IndexController {
     private final SubscriptionRepository subscriptionRepository;
     private final EventLoader eventLoader;
     private final PurchaseContextManager purchaseContextManager;
+    private final Json json;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -228,18 +233,14 @@ public class IndexController {
                 }
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute(NONCE, nonce));
                 var head = idx.getElementsByTagName("head").get(0);
-                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), APPLICATION_JSON, "preload-info", null));
-                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
+                head.appendChild(buildScripTag(json.asJsonString(configurationManager.getInfo(session)), APPLICATION_JSON, "preload-info", null));
                 if (baseCustomCss != null) {
                     var style = new Element("style");
                     style.setAttribute("type", "text/css");
                     style.appendChild(new Text(baseCustomCss));
                     head.appendChild(style);
                 }
-                if (eventShortName != null) {
-                    eventLoader.loadEventInfo(eventShortName, session)
-                        .ifPresent(ev -> head.appendChild(buildScripTag(Json.toJson(ev), APPLICATION_JSON, "preload-event", eventShortName)));
-                }
+                preloadTranslations(eventShortName, session, eventLoader, head, messageSourceManager, idx, json, lang);
                 JFiveParse.serialize(idx, osw);
             }
         }
@@ -273,6 +274,39 @@ public class IndexController {
                 .toUriString();
         } else {
             return "redirect:/";
+        }
+    }
+
+    static void preloadTranslations(String eventShortName,
+                                    HttpSession session,
+                                    EventLoader eventLoader,
+                                    Element head,
+                                    MessageSourceManager messageSourceManager,
+                                    Node idx,
+                                    Json json,
+                                    String lang) {
+        String preloadLang = Objects.requireNonNullElse(lang, "en");
+        boolean clearLangAttribute = false;
+        if (eventShortName != null) {
+            var eventInfoOptional = eventLoader.loadEventInfo(eventShortName, session);
+            if (eventInfoOptional.isPresent()) {
+                var ev = eventInfoOptional.get();
+                head.appendChild(buildScripTag(json.asJsonString(ev), APPLICATION_JSON, "preload-event", eventShortName));
+                var firstLang = ev.getContentLanguages().get(0).getLocale();
+                preloadLang = ev.getContentLanguages().stream()
+                    .filter(l -> lang == null || l.getLocale().equals(lang))
+                    .findFirst()
+                    .map(Language::getLocale)
+                    .orElse(firstLang);
+                clearLangAttribute = ev.getContentLanguages().size() > 1;
+            }
+        }
+        head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, preloadLang)), "application/json", "preload-bundle", preloadLang));
+        var htmlElement = IterableUtils.get(idx.getElementsByTagName("html"), 0);
+        if (htmlElement != null && clearLangAttribute) {
+            htmlElement.setAttribute("lang", "");
+        } else if (htmlElement != null) {
+            htmlElement.setAttribute("lang", preloadLang);
         }
     }
 
