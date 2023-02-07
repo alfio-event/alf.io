@@ -25,12 +25,12 @@ A result of type [`SubscriptionMetadata`](https://github.com/alfio-event/alf.io/
         <tbody>
             <tr>
                 <td>`subscription`</td>
-                <td>[`Subscription`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Subscription.java)</td>
+                <td>[`Subscription`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/subscription/Subscription.java)</td>
                 <td>Details about the subscription to be acquired</td>
             </tr>
             <tr>
                 <td>`subscriptionDescriptor`</td>
-                <td>[`SubscriptionDescriptor`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/SubscriptionDescriptor.java)</td>
+                <td>[`SubscriptionDescriptor`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/subscription/SubscriptionDescriptor.java)</td>
                 <td>Subscription configuration (template)</td>
             </tr>
             <tr>
