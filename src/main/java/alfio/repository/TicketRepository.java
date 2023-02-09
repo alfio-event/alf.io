@@ -51,6 +51,8 @@ public interface TicketRepository {
 
     String RESET_TICKET = " TICKETS_RESERVATION_ID = null, FULL_NAME = null, EMAIL_ADDRESS = null, SPECIAL_PRICE_ID_FK = null, LOCKED_ASSIGNMENT = false, USER_LANGUAGE = null, REMINDER_SENT = false, SRC_PRICE_CTS = 0, FINAL_PRICE_CTS = 0, VAT_CTS = 0, DISCOUNT_CTS = 0, FIRST_NAME = null, LAST_NAME = null, EXT_REFERENCE = null, TAGS = array[]::text[], VAT_STATUS = null, METADATA = '{}'::jsonb ";
     String RELEASE_TICKET_QUERY = "update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status in('ACQUIRED', 'PENDING', 'TO_BE_PAID') and tickets_reservation_id = :reservationId and event_id = :eventId";
+    String FIND_BASIC_TICKET_INFO_BY_EVENT_ID = "select t.id t_id, t.uuid t_uuid, tc.id tc_id, tc.bounded tc_bounded, t.vat_status t_vat_status from ticket t inner join ticket_category tc on t.category_id = tc.id where t.event_id = :eventId";
+    String UPDATE_TICKET_PRICE = "update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS where event_id = :eventId and category_id = :categoryId";
 
 
     //TODO: refactor, try to move the MapSqlParameterSource inside the default method!
@@ -203,10 +205,12 @@ public interface TicketRepository {
                           @Bind("currencyCode") String currencyCode,
                           @Bind("vatStatus") @EnumTypeAsString PriceContainer.VatStatus vatStatus);
 
-    @Query(type = QueryType.TEMPLATE, value = "update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts," +
-        " vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode," +
-        " vat_status = :vatStatus::VAT_STATUS where event_id = :eventId and category_id = :categoryId and tickets_reservation_id = :reservationId")
+    @Query(type = QueryType.TEMPLATE, value = UPDATE_TICKET_PRICE +
+        " and tickets_reservation_id = :reservationId")
     String updateTicketPriceForCategoryInReservation();
+
+    @Query(type = QueryType.TEMPLATE, value = UPDATE_TICKET_PRICE + " and uuid = :uuid")
+    String bulkUpdateTicketPrice();
 
     @Query("update ticket set tags = :tags::text[] where id in(:ids)")
     int updateTicketTags(@Bind("ids") List<Integer> ticketIds, @Bind("tags") @Array List<String> tags);
@@ -378,13 +382,11 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
     Integer countWaiting(@Bind("eventId") int eventId);
 
-    @Query("select " +
-        " t.id t_id, " +
-        " tc.id tc_id, tc.bounded tc_bounded " +
-        " from ticket t " +
-        " inner join ticket_category tc on t.category_id = tc.id "+
-        " where t.event_id = :eventId and t.status = 'RELEASED' and tc.expiration <= :currentTs")
+    @Query(FIND_BASIC_TICKET_INFO_BY_EVENT_ID + " and t.status = 'RELEASED' and tc.expiration <= :currentTs")
     List<TicketInfo> findReleasedBelongingToExpiredCategories(@Bind("eventId") int eventId, @Bind("currentTs") ZonedDateTime now);
+
+    @Query(FIND_BASIC_TICKET_INFO_BY_EVENT_ID + " and t.tickets_reservation_id = :reservationId")
+    List<TicketInfo> findBasicTicketInfoForReservation(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
 
     @Query(REVERT_TO_FREE)
     int revertToFree(@Bind("eventId") int eventId);

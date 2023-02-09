@@ -18,6 +18,7 @@
 package alfio.manager;
 
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
+import alfio.controller.form.ContactAndTicketsForm;
 import alfio.extension.ExtensionService;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.payment.PaymentSpecification;
@@ -39,10 +40,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.model.user.PublicUserProfile;
 import alfio.model.user.User;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
-import alfio.repository.TransactionRepository;
+import alfio.repository.*;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
@@ -58,10 +56,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static alfio.extension.ExtensionService.toPath;
 import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
+import static java.util.stream.Collectors.toSet;
 
 @Component
 @AllArgsConstructor
@@ -86,6 +87,7 @@ public class ExtensionManager {
     private final TicketRepository ticketRepository;
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
 
     boolean isSupported(ExtensionCapability extensionCapability, PurchaseContext purchaseContext) {
@@ -536,5 +538,26 @@ public class ExtensionManager {
         context.put("metadata", subscriptionMetadata);
         context.put("subscriptionDescriptor", descriptor);
         return Optional.ofNullable(syncCall(ExtensionEvent.SUBSCRIPTION_ASSIGNED_GENERATE_METADATA, descriptor, context, SubscriptionMetadata.class, false));
+    }
+
+    public Optional<CustomTaxPolicy> handleCustomTaxPolicy(PurchaseContext purchaseContext,
+                                                           String reservationId,
+                                                           ContactAndTicketsForm form,
+                                                           TotalPrice reservationCost) {
+        if (!purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) || !reservationCost.requiresPayment()) {
+            return Optional.empty();
+        }
+        var event = (Event) purchaseContext;
+        var categoriesById = ticketCategoryRepository.findCategoriesInReservation(reservationId).stream()
+            .collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
+        var ticketInfoById = ticketRepository.findBasicTicketInfoForReservation(event.getId(), reservationId).stream()
+            .collect(Collectors.toMap(TicketInfo::getTicketUuid, Function.identity()));
+        var context = new HashMap<String, Object>();
+        context.put(EVENT, event);
+        context.put(RESERVATION_ID, reservationId);
+        context.put("reservationForm", form);
+        context.put("categoriesById", categoriesById);
+        context.put("ticketInfoByUuid", ticketInfoById);
+        return Optional.ofNullable(syncCall(CUSTOM_TAX_POLICY_APPLICATION, event, context, CustomTaxPolicy.class, false));
     }
 }

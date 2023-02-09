@@ -390,7 +390,17 @@ public class ReservationApiV2Controller {
 
             ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), purchaseContext.getVatStatus(),
                 reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
-            if(contactAndTicketsForm.isBusiness()) {
+
+            var optionalCustomTaxPolicy = extensionManager.handleCustomTaxPolicy(purchaseContext, reservationId, contactAndTicketsForm, reservationCost);
+            if (optionalCustomTaxPolicy.isPresent()) {
+                log.debug("Custom tax policy returned for reservation {}. Applying it.", reservationId);
+                reverseChargeManager.applyCustomTaxPolicy(
+                    purchaseContext,
+                    optionalCustomTaxPolicy.get(),
+                    reservationId,
+                    contactAndTicketsForm,
+                    bindingResult);
+            } else if(contactAndTicketsForm.isBusiness()) {
                 reverseChargeManager.checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
             } else if(reservationCost.getPriceWithVAT() > 0) {
                 reverseChargeManager.resetVat(purchaseContext, reservationId);

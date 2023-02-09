@@ -82,6 +82,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -205,12 +206,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     protected void testBasicFlow(Supplier<ReservationFlowContext> contextSupplier) throws Exception {
         // as soon as the test starts, insert the extension in the database (prepare the environment)
-        try (var extensionInputStream = requireNonNull(getClass().getResourceAsStream("/extension.js"))) {
-            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
-            String concatenation = String.join("\n", extensionStream).replace("EVENTS", Arrays.stream(ExtensionEvent.values()).map(ee -> "'"+ee.name()+"'").collect(Collectors.joining(",")));
-            extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
-            extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
-        }
+        insertExtension(extensionService, "/extension.js");
         List<BasicEventInfo> body = eventApiV2Controller.listEvents(SearchOptions.empty()).getBody();
         assertNotNull(body);
         assertTrue(body.isEmpty());
@@ -1189,6 +1185,23 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertTrue(organizationDeleter.deleteOrganization(context.event.getOrganizationId(), new APITokenAuthentication("TEST", "", List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT)))));
         }
 
+    }
+
+    static void insertExtension(ExtensionService extensionService, String path) throws IOException {
+        insertExtension(extensionService, path, true, true);
+    }
+
+    static void insertExtension(ExtensionService extensionService, String path, boolean async, boolean sync) throws IOException {
+        try (var extensionInputStream = requireNonNull(BaseReservationFlowTest.class.getResourceAsStream(path))) {
+            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
+            String concatenation = String.join("\n", extensionStream).replace("EVENTS", Arrays.stream(ExtensionEvent.values()).map(ee -> "'"+ee.name()+"'").collect(Collectors.joining(",")));
+            if (sync) {
+                extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
+            }
+            if (async) {
+                extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
+            }
+        }
     }
 
     protected void validateCheckInData(ReservationFlowContext context) {

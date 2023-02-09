@@ -27,8 +27,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import static alfio.util.MonetaryUtil.unitToCents;
-
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class TicketPriceContainer implements SummaryPriceContainer {
 
@@ -68,7 +66,9 @@ public class TicketPriceContainer implements SummaryPriceContainer {
 
     @Override
     public BigDecimal getTaxablePrice() {
-        if(vatStatus != VatStatus.INCLUDED_EXEMPT && vatStatus != VatStatus.NOT_INCLUDED_EXEMPT) {
+        if(vatStatus != VatStatus.INCLUDED_EXEMPT
+            && vatStatus != VatStatus.NOT_INCLUDED_EXEMPT
+            && vatStatus != VatStatus.CUSTOM_NOT_INCLUDED_EXEMPT) {
             return SummaryPriceContainer.super.getTaxablePrice();
         }
         return BigDecimal.ZERO;
