@@ -16,13 +16,13 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.PaymentProxyWithParameters;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.model.ReservationPaymentResult;
 import alfio.controller.api.v2.model.ReservationStatusInfo;
-import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
@@ -434,7 +434,17 @@ public class ReservationApiV2Controller {
 
             ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), purchaseContext.getVatStatus(),
                 reservation.getSrcPriceCts(), reservationCost.priceWithVAT(), reservationCost.VAT(), Math.abs(reservationCost.discount()), reservation.getCurrencyCode());
-            if(contactAndTicketsForm.isBusiness()) {
+
+            var optionalCustomTaxPolicy = extensionManager.handleCustomTaxPolicy(purchaseContext, reservationId, contactAndTicketsForm, reservationCost);
+            if (optionalCustomTaxPolicy.isPresent()) {
+                log.debug("Custom tax policy returned for reservation {}. Applying it.", reservationId);
+                reverseChargeManager.applyCustomTaxPolicy(
+                    purchaseContext,
+                    optionalCustomTaxPolicy.get(),
+                    reservationId,
+                    contactAndTicketsForm,
+                    bindingResult);
+            } else if(contactAndTicketsForm.isBusiness()) {
                 reverseChargeManager.checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
             } else if(reservationCost.priceWithVAT() > 0) {
                 reverseChargeManager.resetVat(purchaseContext, reservationId);

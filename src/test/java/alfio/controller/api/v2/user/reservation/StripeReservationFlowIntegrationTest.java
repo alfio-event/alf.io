@@ -77,6 +77,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.test.util.IntegrationTestUtil.*;
@@ -289,7 +290,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
             var response = stripePaymentWebhookController.receivePaymentConfirmation(signedHeader, httpRequest);
             assertNotNull(response);
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals(APPLICATION_JSON_UTF8, response.getHeaders().getContentType().toString());
+            assertEquals(APPLICATION_JSON_UTF8, Objects.requireNonNull(response.getHeaders().getContentType()).toString());
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }

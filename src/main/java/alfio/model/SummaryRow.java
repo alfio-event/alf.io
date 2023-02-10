@@ -24,7 +24,8 @@ public record SummaryRow(String name,
                          String subTotalBeforeVat,
                          int originalSubTotal,
                          SummaryType type,
-                         String taxPercentage) {
+                         String taxPercentage,
+                         PriceContainer.VatStatus vatStatus) {
     public enum SummaryType {
         TICKET, SUBSCRIPTION, PROMOTION_CODE, DYNAMIC_DISCOUNT, ADDITIONAL_SERVICE, APPLIED_SUBSCRIPTION, TAX_DETAIL
     }

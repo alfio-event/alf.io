@@ -135,7 +135,7 @@ public class ReservationPriceCalculator implements PriceContainer {
     }
 
     private int getTicketSrcPriceCts(Ticket t) {
-        if(t.getVatStatus() == VatStatus.INCLUDED_EXEMPT || t.getVatStatus() == VatStatus.NOT_INCLUDED_EXEMPT) {
+        if(VatStatus.isVatExempt(t.getVatStatus())) {
             return t.getSrcPriceCts() - Math.abs(t.getVatCts()); // VAT can be negative in some cases
         }
         return t.getSrcPriceCts();

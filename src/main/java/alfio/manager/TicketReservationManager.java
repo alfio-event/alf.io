@@ -1052,7 +1052,7 @@ public class TicketReservationManager {
         var cost = new TotalPrice(priceContainer.getSrcPriceCts(), unitToCents(priceContainer.getVAT(), currencyCode), 0, 0, currencyCode);
         var orderSummary = new OrderSummary(
             cost,
-            List.of(new SummaryRow(summaryRowTitle, formattedAmount, formattedPriceBeforeVat, 1, formattedAmount, formattedPriceBeforeVat, unitToCents(refundAmount, currencyCode), SummaryType.TICKET, null)),
+            List.of(new SummaryRow(summaryRowTitle, formattedAmount, formattedPriceBeforeVat, 1, formattedAmount, formattedPriceBeforeVat, unitToCents(refundAmount, currencyCode), SummaryType.TICKET, null, priceContainer.getVatStatus())),
             false,
             formattedAmount,
             formatUnit(priceContainer.getVAT(), currencyCode),
@@ -1743,8 +1743,8 @@ public class TicketReservationManager {
                 final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
                 final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(firstTicket));
                 String categoryName = categoriesById.get(categoryWithTickets.getKey()).getName();
-                summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts, currencyCode), formatCents(priceBeforeVat, currencyCode), categoryTickets.size(), formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET, null));
                 var ticketVatStatus = firstTicket.getVatStatus();
+                summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts, currencyCode), formatCents(priceBeforeVat, currencyCode), categoryTickets.size(), formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET, null, ticketVatStatus));
                 if (VatStatus.isVatExempt(ticketVatStatus) && ticketVatStatus != reservationVatStatus) {
                     summary.add(new SummaryRow(null,
                         "",
@@ -1754,7 +1754,7 @@ public class TicketReservationManager {
                         formatCents(0, currencyCode, true),
                         0,
                         SummaryType.TAX_DETAIL,
-                        "0"));
+                        "0", ticketVatStatus));
                 }
             }
         });
@@ -1770,7 +1770,7 @@ public class TicketReservationManager {
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
                 final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
-                return new SummaryRow(title.value(), formatCents(first.getSrcPriceCts(), currencyCode), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryType.ADDITIONAL_SERVICE, null);
+                return new SummaryRow(title.value(), formatCents(first.getSrcPriceCts(), currencyCode), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryType.ADDITIONAL_SERVICE, null, first.getVatStatus());
             }).toList());
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
@@ -1781,7 +1781,7 @@ public class TicketReservationManager {
                 reservationCost.discountAppliedCount(),
                 formatCents(reservationCost.discount(), currencyCode), formatCents(reservationCost.discount(), currencyCode), reservationCost.discount(),
                 promo.isDynamic() ? SummaryType.DYNAMIC_DISCOUNT : SummaryType.PROMOTION_CODE,
-                null));
+                null, reservationVatStatus));
         });
         //
         if(purchaseContext instanceof SubscriptionDescriptor subscriptionDescriptor) {
@@ -1797,8 +1797,8 @@ public class TicketReservationManager {
                     formatUnit(priceContainer.getNetPrice().multiply(new BigDecimal(subscriptionsToInclude.size())), currencyCode),
                     priceContainer.getSummarySrcPriceCts(),
                     SummaryType.SUBSCRIPTION,
-                    null
-                ));
+                    null,
+                    reservationVatStatus));
             }
         } else if(CollectionUtils.isNotEmpty(subscriptionsToInclude)) {
             log.trace("subscriptions to include is not empty");
@@ -1817,8 +1817,8 @@ public class TicketReservationManager {
                     "-" + formatCents(priceBeforeVat, currencyCode),
                     ticketPriceCts,
                     SummaryType.APPLIED_SUBSCRIPTION,
-                    null
-                ));
+                    null,
+                    reservationVatStatus));
             });
         }
 

@@ -98,7 +98,8 @@ public class OrderSummary {
     }
 
     public String getDescriptionForPayment() {
-        return summary.stream().filter(r -> !r.isDiscount()).map(SummaryRow::getDescriptionForPayment).collect(Collectors.joining(", "));
+        return summary.stream().filter(r -> !r.isDiscount() && !r.getTaxDetail())
+            .map(SummaryRow::getDescriptionForPayment).collect(Collectors.joining(", "));
     }
 
     public boolean getDisplaySplitPaymentNote() {

@@ -23,15 +23,21 @@ import lombok.Getter;
 public class TicketInfo {
 
     private final int ticketId;
+    private final String ticketUuid;
     private final int ticketCategoryId;
     private final boolean ticketCategoryBounded;
+    private final PriceContainer.VatStatus taxPolicy;
 
 
     public TicketInfo(@Column("t_id") int id,
+                      @Column("t_uuid") String ticketUuid,
                       @Column("tc_id") int tcId,
-                      @Column("tc_bounded") boolean bounded) {
+                      @Column("tc_bounded") boolean bounded,
+                      @Column("t_vat_status") PriceContainer.VatStatus taxPolicy) {
         this.ticketId = id;
+        this.ticketUuid = ticketUuid;
         this.ticketCategoryId = tcId;
         this.ticketCategoryBounded = bounded;
+        this.taxPolicy = taxPolicy;
     }
 }
