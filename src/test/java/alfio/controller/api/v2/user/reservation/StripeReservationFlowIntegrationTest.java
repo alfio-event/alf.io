@@ -75,6 +75,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
@@ -84,6 +85,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.manager.support.extension.ExtensionEvent.TICKET_MAIL_CUSTOM_TEXT;
@@ -292,12 +294,12 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
             var payload = Files.readString(Path.of(resource.toURI())).replaceAll("RESERVATION_ID", reservationId);
             var signedHeader = "t=" + timestamp + ",v1=" +Webhook.Util.computeHmacSha256(WEBHOOK_SECRET, timestamp + "." + payload);
             var httpRequest = new MockHttpServletRequest();
-            httpRequest.setContent(payload.getBytes());
+            httpRequest.setContent(payload.getBytes(StandardCharsets.UTF_8));
             httpRequest.setContentType(APPLICATION_JSON);
             var response = stripePaymentWebhookController.receivePaymentConfirmation(signedHeader, httpRequest);
             assertNotNull(response);
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals(APPLICATION_JSON_UTF8, response.getHeaders().getContentType().toString());
+            assertEquals(APPLICATION_JSON_UTF8, Objects.requireNonNull(response.getHeaders().getContentType()).toString());
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }

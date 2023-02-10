@@ -29,6 +29,7 @@ public class SummaryRow {
     private final int originalSubTotal;
     private final SummaryType type;
     private final String taxPercentage;
+    private final PriceContainer.VatStatus vatStatus;
 
     public enum SummaryType {
         TICKET, SUBSCRIPTION, PROMOTION_CODE, DYNAMIC_DISCOUNT, ADDITIONAL_SERVICE, APPLIED_SUBSCRIPTION, TAX_DETAIL
