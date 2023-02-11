@@ -135,7 +135,8 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                                 OrganizationDeleter organizationDeleter,
                                                 PromoCodeDiscountRepository promoCodeDiscountRepository,
                                                 PromoCodeRequestManager promoCodeRequestManager,
-                                                StripePaymentWebhookController stripePaymentWebhookController) {
+                                                StripePaymentWebhookController stripePaymentWebhookController,
+                                                ExportManager exportManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -170,7 +171,8 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
             userRepository,
             organizationDeleter,
             promoCodeDiscountRepository,
-            promoCodeRequestManager);
+            promoCodeRequestManager,
+            exportManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.stripePaymentWebhookController = stripePaymentWebhookController;

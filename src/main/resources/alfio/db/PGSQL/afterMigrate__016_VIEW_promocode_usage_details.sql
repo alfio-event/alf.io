@@ -21,7 +21,8 @@ with tickets as (
             'id', t.uuid,
             'firstName', t.first_name,
             'lastName', t.last_name,
-            'type', tc.name
+            'type', tc.name,
+            'status', t.status
     )) items
     from ticket t
     join ticket_category tc on t.category_id = tc.id

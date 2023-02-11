@@ -67,6 +67,7 @@ import com.google.zxing.qrcode.QRCodeReader;
 import com.opencsv.CSVReader;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,6 +90,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -141,6 +143,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     protected final OrganizationDeleter organizationDeleter;
     protected final PromoCodeDiscountRepository promoCodeDiscountRepository;
     protected final PromoCodeRequestManager promoCodeRequestManager;
+    protected final ExportManager exportManager;
 
     private Integer additionalServiceId;
 
@@ -289,6 +292,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         var context = contextSupplier.get();
         ensureConfiguration(context);
+        Assertions.assertEquals(1, eventManager.getEventsCount());
 
         // check if EVENT_CREATED was logged
         List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
@@ -1107,6 +1111,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     context.userId
                 ));
 
+                checkReservationExport();
 
                 //test revert check in
                 assertTrue(checkInApiController.revertCheckIn(context.event.getId(), ticketIdentifier, principal));
@@ -1259,6 +1264,23 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertTrue(organizationDeleter.deleteOrganization(context.event.getOrganizationId(), new APITokenAuthentication("TEST", "", List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT)))));
         }
 
+    }
+
+    private void checkReservationExport() {
+        // load all reservations
+        var now = LocalDate.now(clockProvider.getClock());
+        var reservationsByEvent = exportManager.reservationsForInterval(now.minusDays(1), now);
+        assertEquals(1, reservationsByEvent.size());
+        assertEquals(1, reservationsByEvent.get(0).getReservations().size());
+        assertEquals(1, reservationsByEvent.get(0).getReservations().get(0).getTickets().size());
+
+        // ensure that the filtering works as expected
+        reservationsByEvent = exportManager.reservationsForInterval(now.plusDays(1), now.plusDays(2));
+        assertEquals(0, reservationsByEvent.size());
+
+        // ensure that we get error if the interval is wrong
+        var wrongFrom = now.plusDays(1);
+        assertThrows(IllegalArgumentException.class, () -> exportManager.reservationsForInterval(wrongFrom, now));
     }
 
     static void insertExtension(ExtensionService extensionService, String path) throws IOException {

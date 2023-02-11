@@ -188,6 +188,12 @@ public class EventApiController {
         return eventStatisticsManager.getAllEventsWithStatistics(principal.getName());
     }
 
+    @GetMapping("/events-count")
+    public ResponseEntity<Integer> getEventsCount() {
+        return ResponseEntity.ok(eventManager.getEventsCount());
+    }
+
+
     @GetMapping("/active-events")
     public List<EventStatistic> getAllActiveEvents(Principal principal) {
         return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> !event.expiredSince(14));

@@ -109,7 +109,8 @@ class HybridEventReservationFlowIntegrationTest extends BaseReservationFlowTest 
                                                      UserRepository userRepository,
                                                      OrganizationDeleter organizationDeleter,
                                                      PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                                     PromoCodeRequestManager promoCodeRequestManager) {
+                                                     PromoCodeRequestManager promoCodeRequestManager,
+                                                     ExportManager exportManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -144,7 +145,8 @@ class HybridEventReservationFlowIntegrationTest extends BaseReservationFlowTest 
             userRepository,
             organizationDeleter,
             promoCodeDiscountRepository,
-            promoCodeRequestManager);
+            promoCodeRequestManager,
+            exportManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
     }

@@ -16,44 +16,43 @@
  */
 package alfio.model;
 
-import alfio.model.support.EventBasicInfo;
 import alfio.model.support.ReservationInfo;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class PromoCodeUsageResult {
+public class ReservationsByEvent {
 
-    private final String promoCode;
-    private final EventBasicInfo event;
+    private final int eventId;
+    private final String eventShortName;
+    private final String displayName;
     private final List<ReservationInfo> reservations;
 
-    public PromoCodeUsageResult(@Column("promo_code") String promoCode,
-                                @Column("event_short_name") String eventShortName,
-                                @Column("event_display_name") String eventDisplayName,
-                                @Column("reservations") String reservationsJson) {
-        this.promoCode = promoCode;
-        this.event = new EventBasicInfo(eventShortName, eventDisplayName);
-        List<ReservationInfo> parsed = Json.fromJson(reservationsJson, new TypeReference<>() {});
-        this.reservations = parsed.stream()
-            .sorted(Comparator.comparing(ReservationInfo::getConfirmationTimestamp))
-            .collect(Collectors.toList());
+    public ReservationsByEvent(@Column("event_id") int eventId,
+                               @Column("event_short_name") String eventShortName,
+                               @Column("event_display_name") String displayName,
+                               @Column("reservations") String reservations) {
+        this.eventId = eventId;
+        this.eventShortName = eventShortName;
+        this.displayName = displayName;
+        this.reservations = Json.fromJson(reservations, new TypeReference<>() {});
     }
 
-    public String getPromoCode() {
-        return promoCode;
+    public int getEventId() {
+        return eventId;
     }
 
-    public EventBasicInfo getEvent() {
-        return event;
+    public String getEventShortName() {
+        return eventShortName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
     }
 
     public List<ReservationInfo> getReservations() {
         return reservations;
     }
-
 }

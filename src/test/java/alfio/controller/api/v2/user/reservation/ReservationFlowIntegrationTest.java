@@ -113,7 +113,8 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                           OrganizationDeleter organizationDeleter,
                                           PromoCodeDiscountRepository promoCodeDiscountRepository,
                                           PromoCodeRequestManager promoCodeRequestManager,
-                                          CheckInManager checkInManager) {
+                                          CheckInManager checkInManager,
+                                          ExportManager exportManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -148,7 +149,8 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
             userRepository,
             organizationDeleter,
             promoCodeDiscountRepository,
-            promoCodeRequestManager);
+            promoCodeRequestManager,
+            exportManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.checkInManager = checkInManager;
