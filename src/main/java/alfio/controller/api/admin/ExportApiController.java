@@ -56,7 +56,7 @@ public class ExportApiController {
         if (allEvents.isEmpty()) {
             response.setContentType("text/plain");
             response.setStatus(HttpStatus.PRECONDITION_REQUIRED.value());
-            response.getWriter().write("No reservations found for the selected period ("+from+" - "+ to + ")");
+            response.getWriter().write("No reservations found for the selected period");
         } else {
             exportExcel("all-reservations.xlsx", response, workbook -> writeSheets(allEvents, workbook));
         }
