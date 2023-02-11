@@ -19,41 +19,33 @@ package alfio.controller.api.v2.user.reservation;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.controller.IndexController;
 import alfio.controller.api.ControllerConfiguration;
-import alfio.controller.api.admin.AdditionalServiceApiController;
-import alfio.controller.api.admin.CheckInApiController;
-import alfio.controller.api.admin.EventApiController;
-import alfio.controller.api.admin.UsersApiController;
-import alfio.controller.api.v1.AttendeeApiController;
-import alfio.controller.api.v2.InfoApiController;
-import alfio.controller.api.v2.TranslationsApiController;
-import alfio.controller.api.v2.user.EventApiV2Controller;
 import alfio.controller.api.v2.user.ReservationApiV2Controller;
-import alfio.controller.api.v2.user.TicketApiV2Controller;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.extension.ExtensionService;
-import alfio.manager.*;
+import alfio.manager.EventManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
-import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.metadata.AlfioMetadata;
-import alfio.model.modification.*;
-import alfio.repository.*;
-import alfio.repository.audit.ScanAuditRepository;
+import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.TicketReservationModification;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
-import alfio.repository.user.UserRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,38 +88,11 @@ class CustomTaxPolicyIntegrationTest {
                                           UserManager userManager,
                                           ClockProvider clockProvider,
                                           ConfigurationRepository configurationRepository,
-                                          EventStatisticsManager eventStatisticsManager,
                                           TicketCategoryRepository ticketCategoryRepository,
-                                          TicketReservationRepository ticketReservationRepository,
-                                          EventApiController eventApiController,
                                           TicketRepository ticketRepository,
-                                          TicketFieldRepository ticketFieldRepository,
-                                          AdditionalServiceApiController additionalServiceApiController,
-                                          SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                                          SpecialPriceRepository specialPriceRepository,
-                                          CheckInApiController checkInApiController,
-                                          AttendeeApiController attendeeApiController,
-                                          UsersApiController usersApiController,
-                                          ScanAuditRepository scanAuditRepository,
-                                          AuditingRepository auditingRepository,
-                                          AdminReservationManager adminReservationManager,
                                           TicketReservationManager ticketReservationManager,
-                                          InfoApiController infoApiController,
-                                          TranslationsApiController translationsApiController,
-                                          EventApiV2Controller eventApiV2Controller,
                                           ReservationApiV2Controller reservationApiV2Controller,
-                                          TicketApiV2Controller ticketApiV2Controller,
-                                          IndexController indexController,
-                                          NamedParameterJdbcTemplate jdbcTemplate,
-                                          ExtensionLogRepository extensionLogRepository,
-                                          ExtensionService extensionService,
-                                          PollRepository pollRepository,
-                                          NotificationManager notificationManager,
-                                          UserRepository userRepository,
-                                          OrganizationDeleter organizationDeleter,
-                                          PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                          PromoCodeRequestManager promoCodeRequestManager,
-                                          CheckInManager checkInManager) {
+                                          ExtensionService extensionService) {
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.extensionService = extensionService;
