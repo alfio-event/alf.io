@@ -120,7 +120,8 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
                                                            UserApiV2Controller publicUserApiController,
                                                            OrganizationDeleter organizationDeleter,
                                                            PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                                           PromoCodeRequestManager promoCodeRequestManager) {
+                                                           PromoCodeRequestManager promoCodeRequestManager,
+                                                           ExportManager exportManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -155,7 +156,8 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
             userRepository,
             organizationDeleter,
             promoCodeDiscountRepository,
-            promoCodeRequestManager);
+            promoCodeRequestManager,
+            exportManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.publicUserApiController = publicUserApiController;

@@ -1192,5 +1192,9 @@ public class EventManager {
         return subscriptionRepository.findLinkedSubscriptionIds(eventId, organizationId);
     }
 
+    public int getEventsCount() {
+        return eventRepository.countEvents();
+    }
+
 
 }
