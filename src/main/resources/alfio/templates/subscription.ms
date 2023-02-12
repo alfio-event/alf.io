@@ -44,13 +44,14 @@
 		</table>
 		<h4>{{#subscriptionDescription}}{{/subscriptionDescription}}</h4>
 
+        {{#displayPin}}
 		<p>{{#i18n}}reservation-page-complete.subscription.pin-description{{/i18n}}</p>
 		<h3>{{subscription.pin}}</h3>
 
 		<p>{{#i18n}}reservation-page-complete.subscription.id-description{{/i18n}}</p>
 		<p>{{subscription.id}}</p>
-
         <br><br>
+        {{/displayPin}}
 
         <table>
 			<tr>

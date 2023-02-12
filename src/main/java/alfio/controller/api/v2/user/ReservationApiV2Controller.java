@@ -39,6 +39,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -72,6 +73,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
 import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.toMap;
 
 @RestController
@@ -219,14 +221,16 @@ public class ReservationApiV2Controller {
             List<ReservationInfo.SubscriptionInfo> subscriptionInfos = null;
             if (purchaseContext.ofType(PurchaseContextType.subscription)) {
                 subscriptionInfos = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream()
-                    .limit(1) // since we support only one subscription for now, it make sense to limit the result to avoid N+1
+                    .limit(1) // since we support only one subscription for now, it makes sense to limit the result to avoid N+1
                     .map(s -> {
                         int usageCount = ticketRepository.countSubscriptionUsage(s.getId(), null);
+                        var metadata = requireNonNullElseGet(subscriptionRepository.getSubscriptionMetadata(s.getId()), SubscriptionMetadata::empty);
                         return new ReservationInfo.SubscriptionInfo(
                             s.getStatus() == AllocationStatus.ACQUIRED ? s.getId() : null,
                             s.getStatus() == AllocationStatus.ACQUIRED ? s.getPin() : null,
                             UsageDetails.fromSubscription(s, usageCount),
-                            new ReservationInfo.SubscriptionOwner(s.getFirstName(), s.getLastName(), s.getEmail()));
+                            new ReservationInfo.SubscriptionOwner(s.getFirstName(), s.getLastName(), s.getEmail()),
+                            metadata.getConfiguration());
                     })
                     .collect(Collectors.toList());
             }
