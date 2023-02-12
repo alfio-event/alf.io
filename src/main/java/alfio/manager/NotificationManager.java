@@ -26,6 +26,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
