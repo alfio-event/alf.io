@@ -2813,7 +2813,7 @@ public class TicketReservationManager {
                                                           Locale locale,
                                                           BindingResult bindingResult,
                                                           Principal principal) {
-        return createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal, null);
+        return createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal, SubscriptionMetadata.empty());
     }
 
     public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,

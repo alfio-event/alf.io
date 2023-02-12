@@ -535,7 +535,7 @@ public class ExtensionManager {
                                                                                SubscriptionMetadata subscriptionMetadata) {
         var context = new HashMap<String, Object>();
         context.put("subscription", subscription);
-        context.put("metadata", subscriptionMetadata);
+        context.put("metadata", Objects.requireNonNullElseGet(subscriptionMetadata, SubscriptionMetadata::empty));
         context.put("subscriptionDescriptor", descriptor);
         return Optional.ofNullable(syncCall(ExtensionEvent.SUBSCRIPTION_ASSIGNED_GENERATE_METADATA, descriptor, context, SubscriptionMetadata.class, false));
     }

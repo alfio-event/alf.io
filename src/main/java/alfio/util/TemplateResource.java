@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.subscription.Subscription;
@@ -237,7 +238,7 @@ public enum TemplateResource {
                 ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)),
                 subscriptionDescriptor.getTimeZone()
             );
-            var subscriptionMetadata = new SubscriptionMetadata(Map.of("key", "value"));
+            var subscriptionMetadata = new SubscriptionMetadata(Map.of("key", "value"), SubscriptionConfiguration.defaultConfiguration());
             return buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, subscriptionMetadata, imageData, RESERVATION_ID_VALUE, Locale.ENGLISH, sampleTicketReservation(zoneId));
         }
     },
@@ -627,6 +628,7 @@ public enum TemplateResource {
         model.put("reservation", reservation);
         model.put(RESERVATION_ID, reservationId);
         model.put(METADATA_ATTRIBUTES_KEY, metadata.getProperties());
+        model.put("displayPin", metadata.getConfiguration().isDisplayPin());
         imageData.ifPresent(iData -> {
             model.put("logo", iData.getEventImage());
             model.put("imageWidth", iData.getImageWidth());

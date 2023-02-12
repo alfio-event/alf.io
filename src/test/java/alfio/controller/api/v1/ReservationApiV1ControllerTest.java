@@ -420,7 +420,8 @@ class ReservationApiV1ControllerTest {
         var reservationRequest = new SubscriptionReservationCreationRequest(Map.of("key", "value"),
             new ReservationUser("test@test.org", "Test", "Test1", "test@test.org", null),
             "en",
-            new ReservationConfiguration(true));
+            new ReservationConfiguration(true),
+            null);
         var reservationResponse = controller.createSubscriptionReservation(descriptorId, reservationRequest, principal);
         assertTrue(reservationResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(reservationResponse.getBody());

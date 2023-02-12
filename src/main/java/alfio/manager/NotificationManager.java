@@ -131,7 +131,7 @@ public class NotificationManager {
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passKitManager::getPass);
         Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository, subscriptionRepository));
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF, generateSubscriptionPDF(organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, extensionManager, subscriptionRepository, messageSourceManager));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF, generateSubscriptionPDF(organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, extensionManager, subscriptionRepository));
     }
 
     private static Function<Map<String, String>, byte[]> generateTicketPDF(EventRepository eventRepository,
@@ -514,8 +514,7 @@ public class NotificationManager {
                                                                                  TemplateManager templateManager,
                                                                                  TicketReservationRepository ticketReservationRepository,
                                                                                  ExtensionManager extensionManager,
-                                                                                 SubscriptionRepository subscriptionRepository,
-                                                                                 MessageSourceManager messageSourceManager) {
+                                                                                 SubscriptionRepository subscriptionRepository) {
         return model -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             var subscriptionId = UUID.fromString(model.get("subscriptionId"));
@@ -524,7 +523,7 @@ public class NotificationManager {
                 var subscriptionDescriptor = subscriptionRepository.findDescriptorBySubscriptionId(subscriptionId);
                 var reservation = ticketReservationRepository.findReservationById(subscription.getReservationId());
                 Organization organization = organizationRepository.getById(subscriptionDescriptor.getOrganizationId());
-                var metadata = subscriptionRepository.getSubscriptionMetadata(subscription.getId());
+                var metadata = Objects.requireNonNullElseGet(subscriptionRepository.getSubscriptionMetadata(subscription.getId()), SubscriptionMetadata::empty);
                 TemplateProcessor.renderSubscriptionPDF(subscription,
                     LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
                     subscriptionDescriptor,
