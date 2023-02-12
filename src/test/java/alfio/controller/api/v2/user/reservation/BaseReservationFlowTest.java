@@ -186,7 +186,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                                       UserRepository userRepository,
                                       OrganizationDeleter organizationDeleter,
                                       PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                      PromoCodeRequestManager promoCodeRequestManager) {
+                                      PromoCodeRequestManager promoCodeRequestManager,
+                                      ExportManager exportManager) {
         this.configurationRepository = configurationRepository;
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;
@@ -222,6 +223,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         this.organizationDeleter = organizationDeleter;
         this.promoCodeDiscountRepository = promoCodeDiscountRepository;
         this.promoCodeRequestManager = promoCodeRequestManager;
+        this.exportManager = exportManager;
     }
 
     private void ensureConfiguration(ReservationFlowContext context) {
