@@ -51,6 +51,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +61,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
-import org.testcontainers.shaded.org.apache.commons.lang.time.DateUtils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -177,7 +177,7 @@ class CustomTaxPolicyIntegrationTest {
         var reservationId = ticketReservationManager.createTicketReservation(context.event, request, List.of(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
 
         var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
-        assertEquals(20000, totalPrice.getPriceWithVAT());
+        assertEquals(20000, totalPrice.priceWithVAT());
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(2, tickets.size());
@@ -200,7 +200,7 @@ class CustomTaxPolicyIntegrationTest {
         assertEquals(PriceContainer.VatStatus.CUSTOM_INCLUDED_EXEMPT, ticketRepository.findByUUID(firstUuid).getVatStatus());
         assertEquals(PriceContainer.VatStatus.INCLUDED, ticketRepository.findByUUID(secondUuid).getVatStatus());
         totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
-        assertEquals(19901, totalPrice.getPriceWithVAT());
+        assertEquals(19901, totalPrice.priceWithVAT());
     }
 
     @Test
@@ -216,7 +216,7 @@ class CustomTaxPolicyIntegrationTest {
         var reservationId = ticketReservationManager.createTicketReservation(context.event, request, List.of(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
 
         var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
-        assertEquals(20200, totalPrice.getPriceWithVAT());
+        assertEquals(20200, totalPrice.priceWithVAT());
 
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         assertEquals(2, tickets.size());
@@ -239,7 +239,7 @@ class CustomTaxPolicyIntegrationTest {
         assertEquals(PriceContainer.VatStatus.CUSTOM_NOT_INCLUDED_EXEMPT, ticketRepository.findByUUID(firstUuid).getVatStatus());
         assertEquals(PriceContainer.VatStatus.NOT_INCLUDED, ticketRepository.findByUUID(secondUuid).getVatStatus());
         totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
-        assertEquals(20100, totalPrice.getPriceWithVAT());
+        assertEquals(20100, totalPrice.priceWithVAT());
     }
 
     private static UpdateTicketOwnerForm updateTicketOwnerForm(String email) {

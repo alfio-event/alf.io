@@ -25864,7 +25864,7 @@
           },
           "vatStatus" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "refundedAmount" : {
             "type" : "string"
@@ -26093,13 +26093,13 @@
           "valid" : {
             "type" : "boolean"
           },
+          "formattedValidityFrom" : {
+            "type" : "string"
+          },
           "pin" : {
             "type" : "string"
           },
           "formattedValidityTo" : {
-            "type" : "string"
-          },
-          "formattedValidityFrom" : {
             "type" : "string"
           }
         }
@@ -26154,14 +26154,18 @@
           "taxPercentage" : {
             "type" : "string"
           },
+          "vatStatus" : {
+            "type" : "string",
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          },
           "discount" : {
+            "type" : "boolean"
+          },
+          "taxDetail" : {
             "type" : "boolean"
           },
           "descriptionForPayment" : {
             "type" : "string"
-          },
-          "taxDetail" : {
-            "type" : "boolean"
           }
         }
       },
@@ -26246,7 +26250,10 @@
           },
           "vatStatus" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          },
+          "formattedNetPrice" : {
+            "type" : "string"
           },
           "assigned" : {
             "type" : "boolean"
@@ -26255,9 +26262,6 @@
             "type" : "boolean"
           },
           "formattedFinalPrice" : {
-            "type" : "string"
-          },
-          "formattedNetPrice" : {
             "type" : "string"
           }
         }
@@ -26406,7 +26410,7 @@
           },
           "vatStatus" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "vatNr" : {
             "type" : "string"
@@ -26456,6 +26460,15 @@
           "cancelled" : {
             "type" : "boolean"
           },
+          "stuck" : {
+            "type" : "boolean"
+          },
+          "hasBillingAddress" : {
+            "type" : "boolean"
+          },
+          "hasVatNumber" : {
+            "type" : "boolean"
+          },
           "hasInvoiceNumber" : {
             "type" : "boolean"
           },
@@ -26475,15 +26488,6 @@
             "type" : "boolean"
           },
           "hasBeenPaid" : {
-            "type" : "boolean"
-          },
-          "stuck" : {
-            "type" : "boolean"
-          },
-          "hasBillingAddress" : {
-            "type" : "boolean"
-          },
-          "hasVatNumber" : {
             "type" : "boolean"
           },
           "finalPrice" : {
@@ -26585,6 +26589,32 @@
           "currencyCode" : {
             "type" : "string"
           },
+          "stuck" : {
+            "type" : "boolean"
+          },
+          "reminderSent" : {
+            "type" : "boolean"
+          },
+          "hasBillingAddress" : {
+            "type" : "boolean"
+          },
+          "hasVatNumber" : {
+            "type" : "boolean"
+          },
+          "latestReminder" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "invoiceModel" : {
+            "type" : "string"
+          },
+          "usedVatPercent" : {
+            "type" : "number"
+          },
+          "creationTimestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "status" : {
             "type" : "string",
             "enum" : [ "PENDING", "IN_PAYMENT", "EXTERNAL_PROCESSING_PAYMENT", "WAITING_EXTERNAL_CONFIRMATION", "OFFLINE_PAYMENT", "DEFERRED_OFFLINE_PAYMENT", "COMPLETE", "STUCK", "CANCELLED", "CREDIT_NOTE_ISSUED" ]
@@ -26597,16 +26627,14 @@
             "type" : "string",
             "enum" : [ "STRIPE", "ON_SITE", "OFFLINE", "NONE", "ADMIN", "PAYPAL", "MOLLIE", "SAFERPAY" ]
           },
+          "vatStatus" : {
+            "type" : "string",
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          },
           "hasInvoiceNumber" : {
             "type" : "boolean"
           },
           "invoiceNumber" : {
-            "type" : "string"
-          },
-          "firstName" : {
-            "type" : "string"
-          },
-          "lastName" : {
             "type" : "string"
           },
           "finalPriceCts" : {
@@ -26630,9 +26658,11 @@
           "invoiceRequested" : {
             "type" : "boolean"
           },
-          "vatStatus" : {
-            "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+          "firstName" : {
+            "type" : "string"
+          },
+          "lastName" : {
+            "type" : "string"
           },
           "srcPriceCts" : {
             "type" : "integer",
@@ -26709,32 +26739,6 @@
           },
           "taxablePrice" : {
             "type" : "number"
-          },
-          "stuck" : {
-            "type" : "boolean"
-          },
-          "reminderSent" : {
-            "type" : "boolean"
-          },
-          "hasBillingAddress" : {
-            "type" : "boolean"
-          },
-          "hasVatNumber" : {
-            "type" : "boolean"
-          },
-          "latestReminder" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
-          "invoiceModel" : {
-            "type" : "string"
-          },
-          "usedVatPercent" : {
-            "type" : "number"
-          },
-          "creationTimestamp" : {
-            "type" : "string",
-            "format" : "date-time"
           }
         }
       },
@@ -27871,7 +27875,7 @@
           "taxPolicy" : {
             "type" : "string",
             "writeOnly" : true,
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "currencyCode" : {
             "type" : "string",
@@ -28460,6 +28464,12 @@
           "currencyCode" : {
             "type" : "string"
           },
+          "formattedNetPrice" : {
+            "type" : "string"
+          },
+          "extReference" : {
+            "type" : "string"
+          },
           "status" : {
             "type" : "string",
             "enum" : [ "FREE", "PENDING", "TO_BE_PAID", "ACQUIRED", "CANCELLED", "CHECKED_IN", "EXPIRED", "INVALIDATED", "RELEASED", "PRE_RESERVED" ]
@@ -28477,15 +28487,9 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "firstName" : {
-            "type" : "string"
-          },
-          "lastName" : {
-            "type" : "string"
-          },
-          "subscriptionId" : {
+          "vatStatus" : {
             "type" : "string",
-            "format" : "uuid"
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -28499,9 +28503,15 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "vatStatus" : {
+          "firstName" : {
+            "type" : "string"
+          },
+          "lastName" : {
+            "type" : "string"
+          },
+          "subscriptionId" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "format" : "uuid"
           },
           "srcPriceCts" : {
             "type" : "integer",
@@ -28534,12 +28544,6 @@
             "format" : "date-time"
           },
           "formattedFinalPrice" : {
-            "type" : "string"
-          },
-          "formattedNetPrice" : {
-            "type" : "string"
-          },
-          "extReference" : {
             "type" : "string"
           },
           "categoryName" : {
@@ -28881,7 +28885,7 @@
           },
           "vatStatus" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "currency" : {
             "type" : "string"
@@ -29025,12 +29029,12 @@
                           "type" : "string",
                           "format" : "date-time"
                         },
+                        "overlap" : {
+                          "type" : "boolean"
+                        },
                         "instant" : {
                           "type" : "string",
                           "format" : "date-time"
-                        },
-                        "overlap" : {
-                          "type" : "boolean"
                         }
                       }
                     }
@@ -29419,7 +29423,7 @@
           },
           "vatStatus" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "priceInCents" : {
             "type" : "integer",
@@ -29783,6 +29787,12 @@
           "currencyCode" : {
             "type" : "string"
           },
+          "formattedNetPrice" : {
+            "type" : "string"
+          },
+          "extReference" : {
+            "type" : "string"
+          },
           "status" : {
             "type" : "string",
             "enum" : [ "FREE", "PENDING", "TO_BE_PAID", "ACQUIRED", "CANCELLED", "CHECKED_IN", "EXPIRED", "INVALIDATED", "RELEASED", "PRE_RESERVED" ]
@@ -29800,15 +29810,9 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "firstName" : {
-            "type" : "string"
-          },
-          "lastName" : {
-            "type" : "string"
-          },
-          "subscriptionId" : {
+          "vatStatus" : {
             "type" : "string",
-            "format" : "uuid"
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -29822,9 +29826,15 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "vatStatus" : {
+          "firstName" : {
+            "type" : "string"
+          },
+          "lastName" : {
+            "type" : "string"
+          },
+          "subscriptionId" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "format" : "uuid"
           },
           "srcPriceCts" : {
             "type" : "integer",
@@ -29857,12 +29867,6 @@
             "format" : "date-time"
           },
           "formattedFinalPrice" : {
-            "type" : "string"
-          },
-          "formattedNetPrice" : {
-            "type" : "string"
-          },
-          "extReference" : {
             "type" : "string"
           }
         }
@@ -30020,7 +30024,7 @@
           },
           "vatStatus" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "items" : {
             "type" : "array",
@@ -30179,12 +30183,12 @@
                           "type" : "string",
                           "format" : "date-time"
                         },
+                        "overlap" : {
+                          "type" : "boolean"
+                        },
                         "instant" : {
                           "type" : "string",
                           "format" : "date-time"
-                        },
-                        "overlap" : {
-                          "type" : "boolean"
                         }
                       }
                     }
@@ -31657,7 +31661,7 @@
           },
           "vatStatus" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "currency" : {
             "type" : "string"
@@ -31860,6 +31864,15 @@
           "currencyCode" : {
             "type" : "string"
           },
+          "formattedNetPrice" : {
+            "type" : "string"
+          },
+          "extReference" : {
+            "type" : "string"
+          },
+          "stuck" : {
+            "type" : "boolean"
+          },
           "status" : {
             "type" : "string",
             "enum" : [ "FREE", "PENDING", "TO_BE_PAID", "ACQUIRED", "CANCELLED", "CHECKED_IN", "EXPIRED", "INVALIDATED", "RELEASED", "PRE_RESERVED" ]
@@ -31880,15 +31893,9 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "firstName" : {
-            "type" : "string"
-          },
-          "lastName" : {
-            "type" : "string"
-          },
-          "subscriptionId" : {
+          "vatStatus" : {
             "type" : "string",
-            "format" : "uuid"
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -31902,9 +31909,15 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "vatStatus" : {
+          "firstName" : {
+            "type" : "string"
+          },
+          "lastName" : {
+            "type" : "string"
+          },
+          "subscriptionId" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "format" : "uuid"
           },
           "srcPriceCts" : {
             "type" : "integer",
@@ -31941,15 +31954,6 @@
           },
           "formattedFinalPrice" : {
             "type" : "string"
-          },
-          "formattedNetPrice" : {
-            "type" : "string"
-          },
-          "extReference" : {
-            "type" : "string"
-          },
-          "stuck" : {
-            "type" : "boolean"
           },
           "transactionTimestamp" : {
             "type" : "string",
@@ -32108,6 +32112,12 @@
           "currencyCode" : {
             "type" : "string"
           },
+          "formattedNetPrice" : {
+            "type" : "string"
+          },
+          "extReference" : {
+            "type" : "string"
+          },
           "status" : {
             "type" : "string",
             "enum" : [ "FREE", "PENDING", "TO_BE_PAID", "ACQUIRED", "CANCELLED", "CHECKED_IN", "EXPIRED", "INVALIDATED", "RELEASED", "PRE_RESERVED" ]
@@ -32125,15 +32135,9 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "firstName" : {
-            "type" : "string"
-          },
-          "lastName" : {
-            "type" : "string"
-          },
-          "subscriptionId" : {
+          "vatStatus" : {
             "type" : "string",
-            "format" : "uuid"
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "finalPriceCts" : {
             "type" : "integer",
@@ -32147,9 +32151,15 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "vatStatus" : {
+          "firstName" : {
+            "type" : "string"
+          },
+          "lastName" : {
+            "type" : "string"
+          },
+          "subscriptionId" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "format" : "uuid"
           },
           "srcPriceCts" : {
             "type" : "integer",
@@ -32182,12 +32192,6 @@
             "format" : "date-time"
           },
           "formattedFinalPrice" : {
-            "type" : "string"
-          },
-          "formattedNetPrice" : {
-            "type" : "string"
-          },
-          "extReference" : {
             "type" : "string"
           },
           "additionalFields" : {
@@ -32721,7 +32725,7 @@
           },
           "eventType" : {
             "type" : "string",
-            "enum" : [ "RESERVATION_CREATE", "RESERVATION_COMPLETE", "RESERVATION_OFFLINE_PAYMENT_CONFIRMED", "CANCEL_RESERVATION_EXPIRED", "CANCEL_RESERVATION", "RESET_PAYMENT", "INIT_PAYMENT", "UPDATE_EVENT", "CANCEL_TICKET", "PAYMENT_CONFIRMED", "PAYMENT_ALREADY_CONFIRMED", "REFUND", "REFUND_ATTEMPT_FAILED", "CHECK_IN", "MANUAL_CHECK_IN", "REVERT_CHECK_IN", "BADGE_SCAN", "UPDATE_TICKET", "TAG_TICKET", "UNTAG_TICKET", "UPDATE_TICKET_CATEGORY", "UPDATE_INVOICE", "FORCED_UPDATE_INVOICE", "TERMS_CONDITION_ACCEPTED", "PRIVACY_POLICY_ACCEPTED", "EXTERNAL_INVOICE_NUMBER", "EXTERNAL_CREDIT_NOTE_NUMBER", "VAT_VALIDATION_SUCCESSFUL", "VAT_FORMAL_VALIDATION_SUCCESSFUL", "VAT_VALIDATION_SKIPPED", "GROUP_MEMBER_ACQUIRED", "CREDIT_NOTE_ISSUED", "BILLING_DATA_UPDATED", "BILLING_DOCUMENT_GENERATED", "BILLING_DOCUMENT_INVALIDATED", "BILLING_DOCUMENT_RESTORED", "FORCE_VAT_APPLICATION", "PAYMENT_FAILED", "MATCHING_PAYMENT_FOUND", "MATCHING_PAYMENT_DISCARDED", "AUTOMATIC_PAYMENT_CONFIRMATION", "AUTOMATIC_PAYMENT_CONFIRMATION_FAILED", "DYNAMIC_DISCOUNT_CODE_CREATED", "SUBSCRIPTION_ACQUIRED", "UPDATE_TICKET_METADATA", "WARNING_IGNORED" ]
+            "enum" : [ "RESERVATION_CREATE", "RESERVATION_COMPLETE", "RESERVATION_OFFLINE_PAYMENT_CONFIRMED", "CANCEL_RESERVATION_EXPIRED", "CANCEL_RESERVATION", "RESET_PAYMENT", "INIT_PAYMENT", "UPDATE_EVENT", "CANCEL_TICKET", "PAYMENT_CONFIRMED", "PAYMENT_ALREADY_CONFIRMED", "REFUND", "REFUND_ATTEMPT_FAILED", "CHECK_IN", "MANUAL_CHECK_IN", "REVERT_CHECK_IN", "BADGE_SCAN", "UPDATE_TICKET", "TAG_TICKET", "UNTAG_TICKET", "UPDATE_TICKET_CATEGORY", "UPDATE_INVOICE", "FORCED_UPDATE_INVOICE", "TERMS_CONDITION_ACCEPTED", "PRIVACY_POLICY_ACCEPTED", "EXTERNAL_INVOICE_NUMBER", "EXTERNAL_CREDIT_NOTE_NUMBER", "VAT_VALIDATION_SUCCESSFUL", "VAT_FORMAL_VALIDATION_SUCCESSFUL", "VAT_VALIDATION_SKIPPED", "VAT_CUSTOM_CONFIGURATION_APPLIED", "GROUP_MEMBER_ACQUIRED", "CREDIT_NOTE_ISSUED", "BILLING_DATA_UPDATED", "BILLING_DOCUMENT_GENERATED", "BILLING_DOCUMENT_INVALIDATED", "BILLING_DOCUMENT_RESTORED", "FORCE_VAT_APPLICATION", "PAYMENT_FAILED", "MATCHING_PAYMENT_FOUND", "MATCHING_PAYMENT_DISCARDED", "AUTOMATIC_PAYMENT_CONFIRMATION", "AUTOMATIC_PAYMENT_CONFIRMATION_FAILED", "DYNAMIC_DISCOUNT_CODE_CREATED", "SUBSCRIPTION_ACQUIRED", "UPDATE_TICKET_METADATA", "WARNING_IGNORED" ]
           },
           "eventTime" : {
             "type" : "string",
@@ -33297,9 +33301,6 @@
           "expired" : {
             "type" : "boolean"
           },
-          "formattedEnd" : {
-            "type" : "string"
-          },
           "notSoldTickets" : {
             "type" : "integer",
             "format" : "int32"
@@ -33319,6 +33320,9 @@
           "releasedTickets" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "formattedEnd" : {
+            "type" : "string"
           },
           "warningNeeded" : {
             "type" : "boolean"
@@ -33664,12 +33668,6 @@
           "editable" : {
             "type" : "boolean"
           },
-          "disabledValues" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
           "inputField" : {
             "type" : "boolean"
           },
@@ -33696,6 +33694,12 @@
             "items" : {
               "type" : "integer",
               "format" : "int32"
+            }
+          },
+          "disabledValues" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
             }
           }
         }
@@ -33816,7 +33820,7 @@
           },
           "vatStatus" : {
             "type" : "string",
-            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
+            "enum" : [ "NONE", "INCLUDED", "NOT_INCLUDED", "INCLUDED_EXEMPT", "NOT_INCLUDED_EXEMPT", "CUSTOM_INCLUDED_EXEMPT", "CUSTOM_NOT_INCLUDED_EXEMPT", "INCLUDED_NOT_CHARGED", "NOT_INCLUDED_NOT_CHARGED" ]
           },
           "version" : {
             "type" : "string"

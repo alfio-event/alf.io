@@ -93,13 +93,15 @@ public class ExtensionManager {
                             TicketReservationRepository ticketReservationRepository,
                             TicketRepository ticketRepository,
                             ConfigurationManager configurationManager,
-                            TransactionRepository transactionRepository) {
+                            TransactionRepository transactionRepository,
+                            TicketCategoryRepository ticketCategoryRepository) {
         this.extensionService = extensionService;
         this.eventRepository = eventRepository;
         this.ticketReservationRepository = ticketReservationRepository;
         this.ticketRepository = ticketRepository;
         this.configurationManager = configurationManager;
         this.transactionRepository = transactionRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
     }
 
 
