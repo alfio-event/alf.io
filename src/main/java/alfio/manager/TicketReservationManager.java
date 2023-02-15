@@ -886,10 +886,11 @@ public class TicketReservationManager {
         if(purchaseContext.ofType(PurchaseContextType.subscription)) {
             var firstSubscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
             boolean sendSeparateEmailToOwner = !Objects.equals(firstSubscription.getEmail(), ticketReservation.getEmail());
+            var metadata = Objects.requireNonNullElseGet(subscriptionRepository.getSubscriptionMetadata(firstSubscription.getId()), SubscriptionMetadata::empty);
             Map<String, Object> initialModel = Map.of(
                 "pin", firstSubscription.getPin(),
                 "subscriptionId", firstSubscription.getId(),
-                "includePin", true,
+                "includePin", metadata.getConfiguration().isDisplayPin(),
                 "fullName", firstSubscription.getFirstName() + " " + firstSubscription.getLastName());
             var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, List.of(), initialModel);
             var subscriptionAttachments = new ArrayList<>(attachments);
