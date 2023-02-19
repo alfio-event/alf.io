@@ -25,7 +25,7 @@ import java.util.List;
 
 //step 1 : choose tickets
 @Data
-public class ReservationForm implements Serializable, ReservationCreate {
+public class ReservationForm implements Serializable, ReservationCreate<TicketReservationModification> {
 
     private String promoCode;
     private List<TicketReservationModification> reservation;

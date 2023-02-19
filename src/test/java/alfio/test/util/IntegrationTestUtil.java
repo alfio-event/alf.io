@@ -102,6 +102,17 @@ public class IntegrationTestUtil {
                                                 List<EventModification.AdditionalService> additionalServices,
                                                 Event.EventFormat eventFormat) {
 
+        return initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, additionalServices, eventFormat, PriceContainer.VatStatus.INCLUDED);
+    }
+
+    public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,
+                                                OrganizationRepository organizationRepository,
+                                                UserManager userManager,
+                                                EventManager eventManager,
+                                                EventRepository eventRepository,
+                                                List<EventModification.AdditionalService> additionalServices,
+                                                Event.EventFormat eventFormat,
+                                                PriceContainer.VatStatus eventVatStatus) {
         String organizationName = UUID.randomUUID().toString();
         String username = UUID.randomUUID().toString();
         String eventName = UUID.randomUUID().toString();
@@ -120,11 +131,11 @@ public class IntegrationTestUtil {
         desc.put("de", "muh description");
 
         EventModification em = new EventModification(null, eventFormat, "url", "url", "url", "privacy","url", null,
-                eventName, "event display name", organization.getId(),
-                "muh location", "0.0", "0.0", ClockProvider.clock().getZone().getId(), desc,
-                new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),
-                new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
-                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty(), List.of());
+            eventName, "event display name", organization.getId(),
+            "muh location", "0.0", "0.0", ClockProvider.clock().getZone().getId(), desc,
+            new DateTimeModification(LocalDate.now(ClockProvider.clock()).plusDays(5), LocalTime.now(ClockProvider.clock())),
+            new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
+            BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, PriceContainer.VatStatus.isVatIncluded(eventVatStatus), Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty(), List.of());
         eventManager.createEvent(em, username);
         Event event = eventManager.getSingleEvent(eventName, username);
         Assertions.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());

@@ -167,6 +167,7 @@ public class TemplateManager {
             mv.addObject("metadata-value", ADDITIONAL_FIELD_VALUE.apply(model.get(METADATA_ATTRIBUTES_KEY)));
             mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
             mv.addObject("discountCodeDescription", messageSource.getMessage("show-event.promo-code-type." + (usePartnerCode ? "partner" : "promotional"), null, locale));
+            mv.addObject("subscriptionDescription", MustacheCustomTag.subscriptionDescriptionGenerator(messageSource, model, locale));
             var updatedModel = mv.getModel();
             updatedModel.putIfAbsent("custom-header-text", "");
             updatedModel.putIfAbsent("custom-body-text", "");

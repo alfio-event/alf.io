@@ -17,11 +17,18 @@
 package alfio.manager;
 
 import alfio.controller.form.ContactAndTicketsForm;
+import alfio.controller.support.CustomBindingResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
+import alfio.model.decorator.TicketPriceContainer;
+import alfio.model.extension.CustomTaxPolicy;
 import alfio.repository.*;
+import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -29,12 +36,13 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
+import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.PriceContainer.VatStatus.NOT_INCLUDED_NOT_CHARGED;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -46,6 +54,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @Component
 public class ReverseChargeManager {
 
+    private static final Logger log = LoggerFactory.getLogger(ReverseChargeManager.class);
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
@@ -57,6 +66,7 @@ public class ReverseChargeManager {
     private final TicketReservationManager ticketReservationManager;
     private final TicketRepository ticketRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final AuditingRepository auditingRepository;
 
 
 
@@ -111,7 +121,7 @@ public class ReverseChargeManager {
                     var currencyCode = reservation.getCurrencyCode();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(purchaseContext.getVatStatus(), vatValidation.isVatExempt());
                     // standard case: Reverse Charge is applied to the entire reservation
-                    var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
+                    var discount = getDiscountOrNull(reservation);
                     if(!isEvent || (reverseChargeOnline && reverseChargeInPerson)) {
                         if(isEvent) {
                             var event = purchaseContext.event().orElseThrow();
@@ -152,11 +162,63 @@ public class ReverseChargeManager {
         }
     }
 
+    private PromoCodeDiscount getDiscountOrNull(TicketReservation reservation) {
+        if (reservation.getPromoCodeDiscountId() != null) {
+            return promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId());
+        }
+        return null;
+    }
+
+    public void applyCustomTaxPolicy(PurchaseContext purchaseContext,
+                                     CustomTaxPolicy customTaxPolicy,
+                                     String reservationId,
+                                     ContactAndTicketsForm contactAndTicketsForm,
+                                     CustomBindingResult bindingResult) {
+
+        if (!purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+            throw new IllegalStateException("Custom tax policy is only supported for events");
+        }
+
+        var event = (Event) purchaseContext;
+        // first, validate that categories in CustomTaxPolicy are actually present in the form
+        var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+        var currencyCode = reservation.getCurrencyCode();
+        var ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId).stream()
+            .collect(toMap(Ticket::getUuid, Function.identity()));
+        var ticketIds = ticketsInReservation.keySet();
+        if (customTaxPolicy.getTicketPolicies().stream().anyMatch(tp -> !ticketIds.contains(tp.getUuid()))) {
+            log.warn("Error in custom tax policy: some tickets are not included in reservation {}", reservationId);
+            bindingResult.reject("error.generic");
+        } else {
+            // log the received policy to the auditing
+            auditingRepository.insert(reservationId, null, purchaseContext, Audit.EventType.VAT_CUSTOM_CONFIGURATION_APPLIED, new Date(), RESERVATION, reservationId, List.of(Map.of("policy", customTaxPolicy)));
+            var priceMapping = customTaxPolicy.getTicketPolicies().stream()
+                .map(tcp -> toTicketPriceContainer(ticketsInReservation.get(tcp.getUuid()), tcp, getDiscountOrNull(reservation), event))
+                .collect(Collectors.toList());
+            updateTicketPrices(priceMapping, currencyCode, event);
+            // update billing data for the reservation, using the original VatStatus from reservation
+            updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, reservation.getVatCountryCode(), trimToNull(reservation.getVatNr()), reservation, reservation.getVatStatus());
+        }
+    }
+
+    private static TicketPriceContainer toTicketPriceContainer(Ticket ticket,
+                                                               CustomTaxPolicy.TicketTaxPolicy categoryTaxPolicy,
+                                                               PromoCodeDiscount discount,
+                                                               Event event) {
+        return TicketPriceContainer.from(
+            ticket.withVatStatus(categoryTaxPolicy.getTaxPolicy()),
+            categoryTaxPolicy.getTaxPolicy(),
+            event.getVat(),
+            event.getVatStatus(),
+            discount
+        );
+    }
+
     public void resetVat(PurchaseContext purchaseContext, String reservationId) {
         if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             var reservation = ticketReservationRepository.findReservationById(reservationId);
             var categoriesList = ticketCategoryRepository.findCategoriesInReservation(reservationId);
-            var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
+            var discount = getDiscountOrNull(reservation);
             var event = purchaseContext.event().orElseThrow();
             var priceContainers = mapPriceContainersByCategoryId(categoriesList,
                 (a) -> true,
@@ -188,21 +250,36 @@ public class ReverseChargeManager {
                                               Event event,
                                               Map<Integer, TicketCategoryPriceContainer> matchingCategories) {
         MapSqlParameterSource[] parameterSources = matchingCategories.entrySet().stream()
-            .map(entry -> {
-                    var value = entry.getValue();
-                    return new MapSqlParameterSource()
-                        .addValue("reservationId", reservationId)
-                        .addValue("categoryId", entry.getKey())
-                        .addValue("eventId", event.getId())
-                        .addValue("srcPriceCts", value.getSrcPriceCts())
-                        .addValue("finalPriceCts", value.getFinalPriceCts())
-                        .addValue("vatCts", value.getVatCts())
-                        .addValue("discountCts", value.getDiscountCts())
-                        .addValue("currencyCode", currencyCode)
-                        .addValue("vatStatus", vatStatus.name());
-                }
-            ).toArray(MapSqlParameterSource[]::new);
+            .map(entry -> buildParameterSourceForPriceUpdate(entry.getValue(), event.getId(), entry.getKey(), currencyCode, vatStatus,
+                m -> m.addValue("reservationId", reservationId)))
+            .toArray(MapSqlParameterSource[]::new);
         jdbcTemplate.batchUpdate(ticketRepository.updateTicketPriceForCategoryInReservation(), parameterSources);
+    }
+
+    private void updateTicketPrices(List<TicketPriceContainer> ticketPrices, String currencyCode, Event event) {
+        MapSqlParameterSource[] parameterSources = ticketPrices.stream()
+            .map(entry -> buildParameterSourceForPriceUpdate(entry, event.getId(), entry.getCategoryId(), currencyCode, entry.getVatStatus(),
+                m -> m.addValue("uuid", entry.getUuid())))
+            .toArray(MapSqlParameterSource[]::new);
+        var updateResult = jdbcTemplate.batchUpdate(ticketRepository.bulkUpdateTicketPrice(), parameterSources);
+        Validate.isTrue(Arrays.stream(updateResult).allMatch(i -> i == 1), "Error while updating ticket prices");
+    }
+
+    private static MapSqlParameterSource buildParameterSourceForPriceUpdate(PriceContainer value,
+                                                                            int eventId,
+                                                                            int categoryId,
+                                                                            String currencyCode,
+                                                                            PriceContainer.VatStatus vatStatus,
+                                                                            UnaryOperator<MapSqlParameterSource> modifier) {
+        return modifier.apply(new MapSqlParameterSource()
+            .addValue("categoryId", categoryId)
+            .addValue("eventId", eventId)
+            .addValue("srcPriceCts", value.getSrcPriceCts())
+            .addValue("finalPriceCts", MonetaryUtil.unitToCents(value.getFinalPrice(), currencyCode))
+            .addValue("vatCts", MonetaryUtil.unitToCents(value.getVAT(), currencyCode))
+            .addValue("discountCts", MonetaryUtil.unitToCents(value.getAppliedDiscount(), currencyCode))
+            .addValue("currencyCode", currencyCode)
+            .addValue("vatStatus", vatStatus.name()));
     }
 
     private Predicate<TicketCategory> findReverseChargeCategory(boolean reverseChargeInPerson, boolean reverseChargeOnline, Event.EventFormat eventFormat) {
@@ -216,7 +293,7 @@ public class ReverseChargeManager {
     }
 
     private void updateBillingData(String reservationId, ContactAndTicketsForm contactAndTicketsForm, PurchaseContext purchaseContext, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
-        var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
+        var discount = getDiscountOrNull(reservation);
         var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservation.getId());
         var tickets = ticketReservationManager.findTicketsInReservation(reservation.getId());
         var additionalServices = purchaseContext.event().map(event -> additionalServiceRepository.loadAllForEvent(event.getId())).orElse(List.of());

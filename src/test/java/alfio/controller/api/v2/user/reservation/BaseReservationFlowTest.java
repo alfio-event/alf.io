@@ -69,6 +69,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -82,11 +83,13 @@ import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -138,6 +141,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     protected final OrganizationDeleter organizationDeleter;
     protected final PromoCodeDiscountRepository promoCodeDiscountRepository;
     protected final PromoCodeRequestManager promoCodeRequestManager;
+    protected final ExportManager exportManager;
 
     private Integer additionalServiceId;
 
@@ -205,12 +209,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     protected void testBasicFlow(Supplier<ReservationFlowContext> contextSupplier) throws Exception {
         // as soon as the test starts, insert the extension in the database (prepare the environment)
-        try (var extensionInputStream = requireNonNull(getClass().getResourceAsStream("/extension.js"))) {
-            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
-            String concatenation = String.join("\n", extensionStream).replace("EVENTS", Arrays.stream(ExtensionEvent.values()).map(ee -> "'"+ee.name()+"'").collect(Collectors.joining(",")));
-            extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
-            extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
-        }
+        insertExtension(extensionService, "/extension.js");
         List<BasicEventInfo> body = eventApiV2Controller.listEvents(SearchOptions.empty()).getBody();
         assertNotNull(body);
         assertTrue(body.isEmpty());
@@ -219,6 +218,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         var context = contextSupplier.get();
         ensureConfiguration(context);
+        Assertions.assertEquals(1, eventManager.getEventsCount());
 
         // check if EVENT_CREATED was logged
         List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
@@ -853,66 +853,12 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertTrue(owner.isEmpty());
             }
 
-            var paymentForm = new PaymentForm();
-            var handleResError = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new MockHttpServletRequest(), context.getPublicUser());
-            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
-
-
-            paymentForm.setPrivacyPolicyAccepted(true);
-            paymentForm.setTermAndConditionsAccepted(true);
-            paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
-            paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
-
-            // bank transfer does not have a transaction, it's created on confirmOverview call
-            var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
-            assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
-            //
             int promoCodeId = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(context.event.getId(), PROMO_CODE).orElseThrow().getId();
-            var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
-            assertTrue(promoCodeUsage.isEmpty());
 
-            var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new MockHttpServletRequest(), context.getPublicUser());
-
-            assertEquals(HttpStatus.OK, handleRes.getStatusCode());
-
-            checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, context);
-
-            tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
-            assertEquals(HttpStatus.OK, tStatus.getStatusCode());
-            assertNotNull(tStatus.getBody());
-            assertFalse(tStatus.getBody().isSuccess());
-
-            reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
-            assertNotNull(reservation);
-            checkOrderSummary(reservation);
-
-            //clear the extension_log table so that we can check the expectation
-            cleanupExtensionLog();
-
-            validatePayment(context.event.getShortName(), reservationId, context);
-
-            extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-
-            boolean online = containsOnlineTickets(context, reservationId);
-            assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 12 : 10);
-            assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 12 : 10);
-            assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 12 : 10);
-            if(online) {
-                assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 12);
-            }
-            assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA, online ? 12 : 10);
-            assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 10);
-
-
+            // initialize and confirm payment
+            performAndValidatePayment(context, reservationId, promoCodeId, this::cleanupExtensionLog);
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
-
-            tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
-            assertEquals(HttpStatus.OK, tStatus.getStatusCode());
-            assertNotNull(tStatus.getBody());
-            assertTrue(tStatus.getBody().isSuccess());
 
             reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
             assertNotNull(reservation);
@@ -1047,7 +993,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
                 CheckInApiController.TicketCode tc = new CheckInApiController.TicketCode();
                 tc.setCode(ticketCode);
-                assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc, new TestingAuthenticationToken("ciccio", "ciccio")).getResult().getStatus());
+                assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc, new TestingAuthenticationToken(context.userId + "_api", "")).getResult().getStatus());
                 List<ScanAudit> audits = scanAuditRepository.findAllForEvent(context.event.getId());
                 assertFalse(audits.isEmpty());
                 assertTrue(audits.stream().anyMatch(sa -> sa.getTicketUuid().equals(ticketIdentifier)));
@@ -1055,7 +1001,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
                 assertEventLogged(extLogs, TICKET_CHECKED_IN, 2);
 
-
+                validateCheckInData(context);
 
                 TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode);
                 assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
@@ -1091,6 +1037,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     context.userId
                 ));
 
+                checkReservationExport();
 
                 //test revert check in
                 assertTrue(checkInApiController.revertCheckIn(context.event.getId(), ticketIdentifier, principal));
@@ -1243,6 +1190,103 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertTrue(organizationDeleter.deleteOrganization(context.event.getOrganizationId(), new APITokenAuthentication("TEST", "", List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT)))));
         }
 
+    }
+
+    private void checkReservationExport() {
+        // load all reservations
+        var now = LocalDate.now(clockProvider.getClock());
+        var reservationsByEvent = exportManager.reservationsForInterval(now.minusDays(1), now);
+        assertEquals(1, reservationsByEvent.size());
+        assertEquals(1, reservationsByEvent.get(0).getReservations().size());
+        assertEquals(1, reservationsByEvent.get(0).getReservations().get(0).getTickets().size());
+
+        // ensure that the filtering works as expected
+        reservationsByEvent = exportManager.reservationsForInterval(now.plusDays(1), now.plusDays(2));
+        assertEquals(0, reservationsByEvent.size());
+
+        // ensure that we get error if the interval is wrong
+        var wrongFrom = now.plusDays(1);
+        assertThrows(IllegalArgumentException.class, () -> exportManager.reservationsForInterval(wrongFrom, now));
+    }
+
+    static void insertExtension(ExtensionService extensionService, String path) throws IOException {
+        insertExtension(extensionService, path, true, true);
+    }
+
+    static void insertExtension(ExtensionService extensionService, String path, boolean async, boolean sync) throws IOException {
+        try (var extensionInputStream = requireNonNull(BaseReservationFlowTest.class.getResourceAsStream(path))) {
+            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
+            String concatenation = String.join("\n", extensionStream).replace("EVENTS", Arrays.stream(ExtensionEvent.values()).map(ee -> "'"+ee.name()+"'").collect(Collectors.joining(",")));
+            if (sync) {
+                extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
+            }
+            if (async) {
+                extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
+            }
+        }
+    }
+
+    protected void validateCheckInData(ReservationFlowContext context) {
+
+    }
+
+    protected void performAndValidatePayment(ReservationFlowContext context,
+                                             String reservationId,
+                                             int promoCodeId,
+                                             Runnable cleanupExtensionLog) {
+        ReservationInfo reservation;
+        var paymentForm = new PaymentForm();
+        var handleResError = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+            new MockHttpServletRequest(), context.getPublicUser());
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
+
+
+        paymentForm.setPrivacyPolicyAccepted(true);
+        paymentForm.setTermAndConditionsAccepted(true);
+        paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
+        paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
+
+        // bank transfer does not have a transaction, it's created on confirmOverview call
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
+        //
+        var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
+        assertTrue(promoCodeUsage.isEmpty());
+
+        var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+            new MockHttpServletRequest(), context.getPublicUser());
+
+        assertEquals(HttpStatus.OK, handleRes.getStatusCode());
+
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, context);
+
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+        assertNotNull(tStatus.getBody());
+        assertFalse(tStatus.getBody().isSuccess());
+
+        reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
+        assertNotNull(reservation);
+        checkOrderSummary(reservation);
+        cleanupExtensionLog.run();
+        validatePayment(context.event.getShortName(), reservationId, context);
+
+        var extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
+
+        boolean online = containsOnlineTickets(context, reservationId);
+        assertEventLogged(extLogs, RESERVATION_CONFIRMED, online ? 12 : 10);
+        assertEventLogged(extLogs, CONFIRMATION_MAIL_CUSTOM_TEXT, online ? 12 : 10);
+        assertEventLogged(extLogs, TICKET_ASSIGNED, online ? 12 : 10);
+        if(online) {
+            assertEventLogged(extLogs, CUSTOM_ONLINE_JOIN_URL, 12);
+        }
+        assertEventLogged(extLogs, TICKET_ASSIGNED_GENERATE_METADATA, online ? 12 : 10);
+        assertEventLogged(extLogs, TICKET_MAIL_CUSTOM_TEXT, online ? 12 : 10);
+
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, "BANK_TRANSFER");
+        assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+        assertNotNull(tStatus.getBody());
+        assertTrue(tStatus.getBody().isSuccess());
     }
 
     protected void checkDiscountUsage(String reservationId, int promoCodeId, ReservationFlowContext context) {
@@ -1407,7 +1451,11 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
     }
 
-    private void checkStatus(String reservationId,
+    protected void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event) {
+        assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
+    }
+
+    protected final void checkStatus(String reservationId,
                              HttpStatus expectedHttpStatus,
                              Boolean validated,
                              TicketReservation.TicketReservationStatus reservationStatus,

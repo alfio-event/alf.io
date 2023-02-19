@@ -105,6 +105,7 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/metadata-editor/metadata-editor.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/project-banner/project-banner.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/polls/polls.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/export-reservations/export-reservations.js"></script>
 
 
     <link rel="stylesheet" href="{{contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />

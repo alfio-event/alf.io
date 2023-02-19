@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
+
 @QueryRepository
 public interface GroupRepository {
 
@@ -66,7 +68,9 @@ public interface GroupRepository {
 
     default int[] insert(int groupId, List<GroupMemberModification> members) {
         MapSqlParameterSource[] params = members.stream()
-            .map(i -> new MapSqlParameterSource("groupId", groupId).addValue("value", i.getValue().toLowerCase()).addValue("description", i.getDescription()))
+            .map(i -> new MapSqlParameterSource("groupId", groupId)
+                .addValue("value", i.getValue().toLowerCase())
+                .addValue("description", escapeHtml4(i.getDescription())))
             .toArray(MapSqlParameterSource[]::new);
 
         return getNamedParameterJdbcTemplate().batchUpdate("insert into group_member(a_group_id_fk, value, description) values(:groupId, :value, :description)", params);

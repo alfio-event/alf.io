@@ -56,6 +56,9 @@
 
         var service = {
             data: {},
+            getEventsCount: function () {
+                return $http.get('/admin/api/events-count').error(HttpErrorHandler.handle);
+            },
             getAllEvents : function() {
                 return $http.get('/admin/api/events').error(HttpErrorHandler.handle);
             },
@@ -313,7 +316,7 @@
                             var queryString = "format="+$scope.format+"&";
                             angular.forEach($scope.selected, function(v,k) {
                                 if(v) {
-                                    queryString+="fields="+k+"&";
+                                    queryString+="fields="+ encodeURIComponent(k) +"&";
                                 }
                             });
                             var pathName = $window.location.pathname;
@@ -622,20 +625,26 @@
         };
     }]);
 
-    baseServices.service("NotificationHandler", ["growl", function (growl) {
+    baseServices.service("NotificationHandler", ["growl", "$sanitize", function (growl, $sanitize) {
         var config = {ttl: 5000, disableCountDown: true};
+        var sanitize = function(message) {
+            var sanitized = $sanitize(message);
+            return sanitized.split(' ').map(function(part) {
+                return encodeURIComponent(part);
+            }).join(' ');
+        };
         return {
             showSuccess: function (message) {
-                return growl.success(message, config);
+                return growl.success(sanitize(message), config);
             },
             showWarning: function (message) {
-                return growl.warning(message, config);
+                return growl.warning(sanitize(message), config);
             },
             showInfo : function (message) {
-                return growl.info(message, config);
+                return growl.info(sanitize(message), config);
             },
             showError : function (message) {
-                return growl.error(message, config);
+                return growl.error(sanitize(message), config);
             }
         }
 

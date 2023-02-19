@@ -50,7 +50,7 @@ class ExtensionManagerTest {
         when(eventRepository.findOrganizationIdByEventId(1)).thenReturn(1);
         when(eventRepository.findById(1)).thenReturn(event);
         extensionService = mock(ExtensionService.class);
-        extensionManager = new ExtensionManager(extensionService, eventRepository, null, null, mock(ConfigurationManager.class), null);
+        extensionManager = new ExtensionManager(extensionService, eventRepository, null, null, mock(ConfigurationManager.class), null, null);
     }
 
     @Test

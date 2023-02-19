@@ -20,6 +20,7 @@ import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
+import alfio.model.api.v1.admin.CheckInLogEntry;
 import alfio.model.audit.ScanAudit;
 import alfio.model.checkin.AttendeeSearchResults;
 import alfio.model.decorator.TicketPriceContainer;
@@ -531,6 +532,13 @@ public class CheckInManager {
             .filter(EventManager.checkOwnership(username, organizationRepository))
             .map(event -> eventRepository.retrieveCheckInStatisticsForEvent(event.getId()))
             .orElse(null);
+    }
+
+    public List<CheckInLogEntry> retrieveLogEntries(String eventName, String username) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .filter(EventManager.checkOwnership(username, organizationRepository))
+            .map(event -> scanAuditRepository.loadEntries(event.getId()))
+            .orElse(List.of());
     }
 
     private boolean areStatsEnabled(EventAndOrganizationId event) {

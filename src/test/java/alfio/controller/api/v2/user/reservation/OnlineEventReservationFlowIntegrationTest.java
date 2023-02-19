@@ -109,7 +109,8 @@ public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFl
                                                      UserRepository userRepository,
                                                      OrganizationDeleter organizationDeleter,
                                                      PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                                     PromoCodeRequestManager promoCodeRequestManager) {
+                                                     PromoCodeRequestManager promoCodeRequestManager,
+                                                     ExportManager exportManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -144,7 +145,8 @@ public class OnlineEventReservationFlowIntegrationTest extends BaseReservationFl
             userRepository,
             organizationDeleter,
             promoCodeDiscountRepository,
-            promoCodeRequestManager);
+            promoCodeRequestManager,
+            exportManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
     }

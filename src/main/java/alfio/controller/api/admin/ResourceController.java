@@ -19,14 +19,14 @@ package alfio.controller.api.admin;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
+import alfio.manager.SubscriptionManager;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.user.UserManager;
-import alfio.model.ContentLanguage;
-import alfio.model.Event;
-import alfio.model.PriceContainer;
-import alfio.model.UploadedResource;
+import alfio.model.*;
 import alfio.model.modification.UploadBase64FileModification;
+import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -55,10 +55,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,6 +67,7 @@ import java.util.stream.Stream;
 public class ResourceController {
 
 
+    private static final String TIMEZONE = "Europe/Zurich";
     private final UploadedResourceManager uploadedResourceManager;
     private final UserManager userManager;
     private final EventRepository eventRepository;
@@ -78,6 +77,7 @@ public class ResourceController {
     private final FileUploadManager fileUploadManager;
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
+    private final SubscriptionManager subscriptionManager;
 
 
     @ExceptionHandler(Exception.class)
@@ -112,6 +112,7 @@ public class ResourceController {
     public void previewTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale,
                                 @RequestParam(required = false, value = "organizationId") Integer organizationId,
                                 @RequestParam(required = false, value = "eventId") Integer eventId,
+                                @RequestParam(required = false, value = "subscriptionDescriptorId") UUID subscriptionDescriptorId,
                                 @RequestBody UploadBase64FileModification template,
                                 Principal principal,
                                 HttpServletResponse response) throws IOException {
@@ -120,23 +121,12 @@ public class ResourceController {
         Locale loc = LocaleUtil.forLanguageTag(locale);
 
         if (organizationId != null) {
-            Event event;
-            if (eventId!= null) {
-                checkAccess(organizationId, eventId, principal);
-                event =  eventRepository.findById(eventId);
-            } else {
-                checkAccess(organizationId, principal);
-                var zoneId = ZoneId.of("Europe/Zurich");
-                event = new Event(-1, Event.EventFormat.IN_PERSON, "TEST", "TEST", "TEST", "0", "0", ZonedDateTime.now(clockProvider.withZone(zoneId)),
-                    ZonedDateTime.now(clockProvider.withZone(zoneId)), "Europe/Zurich", "http://localhost", "http://localhost", null,
-                    "http://localhost", null, null, "CHF", BigDecimal.TEN, null, "42", organizationId,
-                    ContentLanguage.ALL_LANGUAGES_IDENTIFIER, 0, PriceContainer.VatStatus.NONE, "1", Event.Status.PUBLIC);
-            }
+            PurchaseContext purchaseContext = getPurchaseContext(organizationId, eventId, subscriptionDescriptorId, principal, name);
 
             Organization organization = organizationRepository.getById(organizationId);
-            Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(event, fileUploadManager);
-            Map<String, Object> model = name.prepareSampleModel(organization, event, image);
-            String renderedTemplate = templateManager.renderString(event, template.getFileAsString(), model, loc, name.getTemplateOutput());
+            Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(purchaseContext, fileUploadManager);
+            Map<String, Object> model = name.prepareSampleModel(organization, purchaseContext, image);
+            String renderedTemplate = templateManager.renderString(purchaseContext, template.getFileAsString(), model, loc, name.getTemplateOutput());
             if(MediaType.TEXT_PLAIN_VALUE.equals(name.getRenderedContentType()) || TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE.equals(name.getRenderedContentType())) {
                 response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".txt");
                 response.setContentType(MediaType.TEXT_PLAIN_VALUE);
@@ -148,12 +138,85 @@ public class ResourceController {
                 try (OutputStream os = response.getOutputStream()) {
                     response.setContentType(MediaType.APPLICATION_PDF_VALUE);
                     response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".pdf");
-                    TemplateProcessor.renderToPdf(renderedTemplate, os, extensionManager, event);
+                    TemplateProcessor.renderToPdf(renderedTemplate, os, extensionManager, purchaseContext);
                 }
             } else {
                 throw new IllegalStateException("cannot enter here!");
             }
         }
+    }
+
+    private PurchaseContext getPurchaseContext(int organizationId,
+                                               Integer eventId,
+                                               UUID subscriptionDescriptorId,
+                                               Principal principal,
+                                               TemplateResource templateResource) {
+        if (templateResource.getPurchaseContextType() == PurchaseContext.PurchaseContextType.event) {
+            return getEvent(organizationId, eventId, principal);
+        }
+        return getSubscriptionDescriptor(organizationId, subscriptionDescriptorId, principal);
+    }
+
+    private SubscriptionDescriptor getSubscriptionDescriptor(int organizationId, UUID subscriptionDescriptorId, Principal principal) {
+        if (subscriptionDescriptorId != null) {
+            return subscriptionManager.getSubscriptionById(subscriptionDescriptorId).orElseThrow();
+        }
+
+        Function<String, Map<String, String>> contentProducer = prefix -> ContentLanguage.ALL_LANGUAGES.stream()
+            .map(cl -> Map.entry(cl.getLanguage(), cl.getDisplayLanguage() + " " + prefix))
+            .reduce(new HashMap<String, String>(), (map, entry) -> {
+                map.put(entry.getKey(), entry.getValue());
+                return map;
+            }, (map1, map2) -> {
+                map1.putAll(map2);
+                return map1;
+            });
+        checkAccess(organizationId, principal);
+        var zoneId = ZoneId.of(TIMEZONE);
+        return new SubscriptionDescriptor(UUID.randomUUID(),
+            contentProducer.apply("title"),
+            contentProducer.apply("description"),
+            -1,
+            ZonedDateTime.now(clockProvider.withZone(zoneId)),
+            ZonedDateTime.now(clockProvider.withZone(zoneId)),
+            ZonedDateTime.now(clockProvider.withZone(zoneId)).plusDays(1),
+            100,
+            new BigDecimal("7.7"),
+            PriceContainer.VatStatus.INCLUDED,
+            "CHF",
+            true,
+            organizationId,
+            1,
+            SubscriptionDescriptor.SubscriptionValidityType.NOT_SET,
+            null,
+            -1,
+            ZonedDateTime.now(clockProvider.withZone(zoneId)),
+            ZonedDateTime.now(clockProvider.withZone(zoneId)).plusDays(1),
+            SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT,
+            "https://alf.io",
+            "https://alf.io",
+            null,
+            List.of(PaymentProxy.STRIPE.name()),
+            "42",
+            TIMEZONE,
+            true
+        );
+    }
+
+    private Event getEvent(Integer organizationId, Integer eventId, Principal principal) {
+        Event event;
+        if (eventId != null) {
+            checkAccess(organizationId, eventId, principal);
+            event = eventRepository.findById(eventId);
+        } else {
+            checkAccess(organizationId, principal);
+            var zoneId = ZoneId.of(TIMEZONE);
+            event = new Event(-1, Event.EventFormat.IN_PERSON, "TEST", "TEST", "TEST", "0", "0", ZonedDateTime.now(clockProvider.withZone(zoneId)),
+                ZonedDateTime.now(clockProvider.withZone(zoneId)), TIMEZONE, "http://localhost", "http://localhost", null,
+                "http://localhost", null, null, "CHF", BigDecimal.TEN, null, "42", organizationId,
+                ContentLanguage.ALL_LANGUAGES_IDENTIFIER, 0, PriceContainer.VatStatus.NONE, "1", Event.Status.PUBLIC);
+        }
+        return event;
     }
 
 

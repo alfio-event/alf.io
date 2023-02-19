@@ -68,6 +68,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.HttpUtils.APPLICATION_JSON;
 
 @Controller
 @AllArgsConstructor
@@ -83,6 +84,12 @@ public class IndexController {
 
     private static final Document INDEX_PAGE;
     private static final Document OPEN_GRAPH_PAGE;
+    private static final String REDIRECT_PREFIX = "redirect:";
+    private static final String NOT_FOUND = "not-found";
+    private static final String EVENT_SHORT_NAME = "eventShortName";
+    private static final String NONCE = "nonce";
+    private static final String CONTENT = "content";
+    private static final String PROPERTY = "property";
 
     static {
         try (var idxIs = new ClassPathResource("alfio-public-frontend-index.html").getInputStream();
@@ -193,7 +200,7 @@ public class IndexController {
         "/my-orders",
         "/my-profile",
     })
-    public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
+    public void replyToIndex(@PathVariable(value = EVENT_SHORT_NAME, required = false) String eventShortName,
                              @PathVariable(value = "subscriptionId", required = false) String subscriptionId,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
                              @RequestParam(value = "lang", required = false) String lang,
@@ -219,9 +226,9 @@ public class IndexController {
                             .ifPresent(html -> html.setAttribute("data-signed-up", "true"));
                     session.removeAttribute(OpenIdAuthenticationManager.USER_SIGNED_UP);
                 }
-                idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
+                idx.getElementsByTagName("script").forEach(element -> element.setAttribute(NONCE, nonce));
                 var head = idx.getElementsByTagName("head").get(0);
-                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), "application/json", "preload-info", null));
+                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), APPLICATION_JSON, "preload-info", null));
                 head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
                 if (baseCustomCss != null) {
                     var style = new Element("style");
@@ -230,9 +237,8 @@ public class IndexController {
                     head.appendChild(style);
                 }
                 if (eventShortName != null) {
-                    eventLoader.loadEventInfo(eventShortName, session).ifPresent(ev -> {
-                        head.appendChild(buildScripTag(Json.toJson(ev), "application/json", "preload-event", eventShortName));
-                    });
+                    eventLoader.loadEventInfo(eventShortName, session)
+                        .ifPresent(ev -> head.appendChild(buildScripTag(Json.toJson(ev), APPLICATION_JSON, "preload-event", eventShortName)));
                 }
                 JFiveParse.serialize(idx, osw);
             }
@@ -240,13 +246,16 @@ public class IndexController {
     }
 
     @GetMapping("/event/{eventShortName}/reservation/{reservationId}")
-    public String redirectEventToReservation(@PathVariable(value = "eventShortName") String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
+    public String redirectEventToReservation(@PathVariable(value = EVENT_SHORT_NAME) String eventShortName,
+                                             @PathVariable(value = "reservationId") String reservationId,
+                                             @RequestParam(value = "subscription", required = false) String subscriptionId) {
         if (eventRepository.existsByShortName(eventShortName)) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
-                .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
-
-            return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
-                .buildAndExpand(Map.of("eventShortName", eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
+                .map(IndexController::reservationStatusToUrlMapping).orElse(NOT_FOUND);
+            return REDIRECT_PREFIX + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
+                // if subscription param is present, we forward it to the reservation resource
+                .queryParamIfPresent("subscription", Optional.ofNullable(StringUtils.trimToNull(subscriptionId)))
+                .buildAndExpand(Map.of(EVENT_SHORT_NAME, eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
                 .toUriString();
         } else {
             return "redirect:/";
@@ -257,9 +266,9 @@ public class IndexController {
     public String redirectSubscriptionToReservation(@PathVariable("subscriptionId") String subscriptionId, @PathVariable("reservationId") String reservationId) {
         if (subscriptionRepository.existsById(UUID.fromString(subscriptionId))) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
-                .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
+                .map(IndexController::reservationStatusToUrlMapping).orElse(NOT_FOUND);
 
-            return "redirect:" + UriComponentsBuilder.fromPath("/subscription/{subscriptionId}/reservation/{reservationId}/{status}")
+            return REDIRECT_PREFIX + UriComponentsBuilder.fromPath("/subscription/{subscriptionId}/reservation/{reservationId}/{status}")
                 .buildAndExpand(Map.of("subscriptionId", subscriptionId, "reservationId", reservationId, "status",reservationStatusUrlSegment))
                 .toUriString();
         } else {
@@ -288,7 +297,7 @@ public class IndexController {
             case WAITING_EXTERNAL_CONFIRMATION: return "processing-payment";
             case IN_PAYMENT:
             case STUCK: return "error";
-            default: return "not-found"; // <- this may be a little bit aggressive
+            default: return NOT_FOUND; // <- this may be a little bit aggressive
         }
     }
 
@@ -311,21 +320,21 @@ public class IndexController {
 
         //
 
-        getMetaElement(eventOpenGraph, "name", "twitter:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
+        getMetaElement(eventOpenGraph, "name", "twitter:image").setAttribute(CONTENT, baseUrl + "/file/" + event.getFileBlobId());
         //
 
         eventOpenGraph.getElementsByTagName("title").get(0).appendChild(new Text(title));
-        getMetaElement(eventOpenGraph, "property", "og:title").setAttribute("content", title);
-        getMetaElement(eventOpenGraph, "property","og:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
+        getMetaElement(eventOpenGraph, PROPERTY, "og:title").setAttribute(CONTENT, title);
+        getMetaElement(eventOpenGraph, PROPERTY,"og:image").setAttribute(CONTENT, baseUrl + "/file/" + event.getFileBlobId());
 
         var eventDesc = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.toLanguageTag()).orElse("").trim();
         var firstLine = Pattern.compile("\n").splitAsStream(MustacheCustomTag.renderToTextCommonmark(eventDesc)).findFirst().orElse("");
-        getMetaElement(eventOpenGraph, "property","og:description").setAttribute("content", firstLine);
+        getMetaElement(eventOpenGraph, PROPERTY,"og:description").setAttribute(CONTENT, firstLine);
 
 
         var org = organizationRepository.getById(event.getOrganizationId());
         var author = String.format("%s <%s>", org.getName(), org.getEmail());
-        getMetaElement(eventOpenGraph, "name", "author").setAttribute("content", author);
+        getMetaElement(eventOpenGraph, "name", "author").setAttribute(CONTENT, author);
 
         fileUploadRepository.findById(event.getFileBlobId()).ifPresent(metadata -> {
             var attributes = metadata.getAttributes();
@@ -340,8 +349,8 @@ public class IndexController {
 
     private static Element buildMetaTag(String propertyValue, String contentValue) {
         var meta = new Element("meta");
-        meta.setAttribute("property", propertyValue);
-        meta.setAttribute("content", contentValue);
+        meta.setAttribute(PROPERTY, propertyValue);
+        meta.setAttribute(CONTENT, contentValue);
         return meta;
     }
 
@@ -352,15 +361,15 @@ public class IndexController {
     @GetMapping(value = {
         "/event/{eventShortName}/code/{code}",
         "/e/{eventShortName}/c/{code}"})
-    public String redirectCode(@PathVariable("eventShortName") String eventName,
+    public String redirectCode(@PathVariable(EVENT_SHORT_NAME) String eventName,
                                @PathVariable("code") String code) {
-        return "redirect:" + UriComponentsBuilder.fromPath("/api/v2/public/event/{eventShortName}/code/{code}")
-            .build(Map.of("eventShortName", eventName, "code", code));
+        return REDIRECT_PREFIX + UriComponentsBuilder.fromPath("/api/v2/public/event/{eventShortName}/code/{code}")
+            .build(Map.of(EVENT_SHORT_NAME, eventName, "code", code));
     }
 
     @GetMapping("/e/{eventShortName}")
-    public String redirectEvent(@PathVariable("eventShortName") String eventName) {
-        return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of("eventShortName", eventName));
+    public String redirectEvent(@PathVariable(EVENT_SHORT_NAME) String eventName) {
+        return REDIRECT_PREFIX + UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of(EVENT_SHORT_NAME, eventName));
     }
 
     // login related
@@ -399,7 +408,7 @@ public class IndexController {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
             var nonce = addCspHeader(response, false);
-            model.addAttribute("nonce", nonce);
+            model.addAttribute(NONCE, nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
     }
@@ -442,7 +451,7 @@ public class IndexController {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
             var nonce = addCspHeader(response, false);
-            model.addAttribute("nonce", nonce);
+            model.addAttribute(NONCE, nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
         }
     }

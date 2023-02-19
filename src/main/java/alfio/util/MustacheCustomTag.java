@@ -17,6 +17,8 @@
 package alfio.util;
 
 import alfio.controller.api.support.TicketHelper;
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.model.subscription.SubscriptionDescriptor;
 import com.samskivert.mustache.Mustache;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -31,11 +33,13 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.AttributeProvider;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.commonmark.renderer.text.TextContentRenderer;
+import org.springframework.context.MessageSource;
 import org.springframework.security.web.util.UrlUtils;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,6 +64,8 @@ import static org.apache.commons.lang3.StringUtils.substring;
  */
 @Log4j2
 public class MustacheCustomTag {
+
+    public static final String SUBSCRIPTION_DESCRIPTOR_ATTRIBUTE = "subscriptionDescriptor";
 
     private MustacheCustomTag() {}
 
@@ -139,6 +145,40 @@ public class MustacheCustomTag {
             out.write(prefix + fieldNamesAndValues.get(name) + suffix);
         }
     };
+
+    static Mustache.Lambda subscriptionDescriptionGenerator(MessageSource messageSource, Map<String, Object> model, Locale locale) {
+        return (frag, out) -> {
+            var subscriptionDescriptor = (SubscriptionDescriptor) Objects.requireNonNull(model.get(SUBSCRIPTION_DESCRIPTOR_ATTRIBUTE));
+            var usageType = messageSource.getMessage("subscription.usage-type." + subscriptionDescriptor.getUsageType(), null, locale);
+            switch (subscriptionDescriptor.getValidityType()) {
+                case STANDARD:
+                    var standardParams = new Object[] {
+                        subscriptionDescriptor.getValidityUnits(),
+                        messageSource.getMessage("subscription.time-unit." + subscriptionDescriptor.getValidityTimeUnit(), null, locale),
+                        usageType
+                    };
+                    out.write(messageSource.getMessage("subscription.detail.validity.STANDARD.description", standardParams, locale));
+                    break;
+                case NOT_SET:
+                    var notSetParams = new Object[] {
+                        subscriptionDescriptor.getMaxEntries(),
+                        messageSource.getMessage("subscription.usage-type." + subscriptionDescriptor.getUsageType(), null, locale),
+                        usageType
+                    };
+                    out.write(messageSource.getMessage("subscription.detail.validity.NOT_SET.description", notSetParams, locale));
+                    break;
+                case CUSTOM:
+                    var formatter = DateTimeFormatter.ofPattern(messageSource.getMessage("common.event.date-format", null, locale));
+                    out.write(messageSource.getMessage("subscription.detail.validity.CUSTOM.from", null, locale));
+                    out.write(" " + formatter.format(subscriptionDescriptor.getValidityFrom()));
+                    out.write(messageSource.getMessage("subscription.detail.validity.CUSTOM.to", null, locale));
+                    out.write(" " + formatter.format(subscriptionDescriptor.getValidityTo()));
+                    out.write(" - " + usageType);
+                    break;
+            }
+        };
+    }
+
 
     private static Pair<String, Optional<Locale>> parseParams(String r) {
 

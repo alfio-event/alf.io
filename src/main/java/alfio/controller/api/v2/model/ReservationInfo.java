@@ -23,6 +23,7 @@ import alfio.model.ReservationMetadata;
 import alfio.model.SummaryRow.SummaryType;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -138,6 +139,7 @@ public class ReservationInfo {
         private final String pin;
         private final UsageDetails usageDetails;
         private final SubscriptionOwner owner;
+        private final SubscriptionConfiguration configuration;
     }
 
     @AllArgsConstructor

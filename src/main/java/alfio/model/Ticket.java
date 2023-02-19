@@ -158,4 +158,31 @@ public class Ticket implements TicketInfoContainer {
     public String getFormattedNetPrice() {
         return MonetaryUtil.formatCents(finalPriceCts - vatCts, currencyCode);
     }
+
+    public Ticket withVatStatus(PriceContainer.VatStatus newVatStatus) {
+        return new Ticket(
+            id,
+            uuid,
+            creation,
+            categoryId,
+            status.name(),
+            eventId,
+            ticketsReservationId,
+            fullName,
+            firstName,
+            lastName,
+            email,
+            lockedAssignment,
+            userLanguage,
+            srcPriceCts,
+            finalPriceCts,
+            vatCts,
+            discountCts,
+            extReference,
+            currencyCode,
+            tags,
+            subscriptionId,
+            newVatStatus
+        );
+    }
 }

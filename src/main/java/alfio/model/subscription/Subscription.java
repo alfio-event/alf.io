@@ -91,11 +91,11 @@ public class Subscription implements TimeZoneInfo {
         this.currency = currency;
         this.status = status;
         this.maxEntries = maxEntries;
-        var zoneId = ZoneId.of(timeZone);
-        this.zoneId = zoneId;
-        this.validityFrom = atZone(validityFrom, zoneId);
-        this.validityTo = atZone(validityTo, zoneId);
-        this.confirmationTimestamp = atZone(confirmationTimestamp, zoneId);
+        var zone = ZoneId.of(timeZone);
+        this.zoneId = zone;
+        this.validityFrom = atZone(validityFrom, zone);
+        this.validityTo = atZone(validityTo, zone);
+        this.confirmationTimestamp = atZone(confirmationTimestamp, zone);
     }
 
     public boolean isValid(Optional<BindingResult> bindingResult) {

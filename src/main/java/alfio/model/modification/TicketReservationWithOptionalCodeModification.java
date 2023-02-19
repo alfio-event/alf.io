@@ -25,6 +25,6 @@ import java.util.Optional;
 @Data
 public class TicketReservationWithOptionalCodeModification {
     @Delegate
-    private final TicketReservationModification ticketReservationModification;
+    private final ReservationRequest ticketReservationModification;
     private final Optional<SpecialPrice> specialPrice;
 }
