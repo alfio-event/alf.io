@@ -7,18 +7,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                postgresql: ['10','14']
-        services:
-            postgres:
-                image: postgres:${{ matrix.postgresql }}
-                env:
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                    POSTGRES_DB: postgres
-                ports:
-                    - 5432:5432
-                # needed because the postgres container does not provide a healthcheck
-                options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+                postgresql: ['10','15']
         steps:
             - uses: actions/checkout@v1
             - uses: actions/cache@v1
@@ -37,15 +26,8 @@ jobs:
               uses: actions/setup-java@v1
               with:
                   java-version: 17
-            - name: Set up DB
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install --yes postgresql-client
-                  psql -h 127.0.0.1 -U postgres postgres -c 'create database alfio;' -f src/test/resources/init-db-user.sql
-              env:
-                  PGPASSWORD: postgres
             - name: Build with Gradle
-              run: ./gradlew dist jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
+              run: ./gradlew dist jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
             - name: upload to sonarcloud
               if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '14'}}
               run: ./gradlew sonarqube
