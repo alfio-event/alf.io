@@ -69,6 +69,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
@@ -78,6 +79,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
@@ -98,12 +100,14 @@ import java.util.stream.Collectors;
 
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static alfio.manager.support.extension.ExtensionEvent.*;
+import static alfio.model.system.ConfigurationKeys.TRANSLATION_OVERRIDE;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 @RequiredArgsConstructor
 @Log4j2
+//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     protected final ConfigurationRepository configurationRepository;
@@ -312,7 +316,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals(context.event.getFileBlobId(), selectedEvent.getFileBlobId());
         assertTrue(selectedEvent.getI18nOverride().isEmpty());
 
-        configurationRepository.insert("TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("show-context.event.tickets.left", "{0} left!"))), "");
+        configurationRepository.insert(TRANSLATION_OVERRIDE.name(), Json.toJson(Map.of("en", Map.of("show-context.event.tickets.left", "{0} left!"))), "");
         configurationRepository.insertEventLevel(context.event.getOrganizationId(), context.event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "context.event.vat"))), "");
         eventRes = eventApiV2Controller.getEvent(context.event.getShortName(), new MockHttpSession());
         selectedEvent = eventRes.getBody();

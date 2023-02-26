@@ -25,6 +25,9 @@ import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.PaymentWebhookResult;
 import alfio.manager.support.TemplateGenerator;
+import alfio.manager.support.reservation.OrderSummaryGenerator;
+import alfio.manager.support.reservation.ReservationCostCalculator;
+import alfio.manager.support.reservation.ReservationEmailContentHelper;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
 import alfio.manager.testSupport.MaybeConfigurationBuilder;
@@ -55,6 +58,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -242,7 +246,12 @@ class TicketReservationManagerTest {
             TestUtil.clockProvider(),
             purchaseContextManager,
             mock(SubscriptionRepository.class),
-            mock(UserManager.class));
+            mock(UserManager.class),
+            mock(ApplicationEventPublisher.class),
+            mock(ReservationCostCalculator.class),
+            mock(ReservationEmailContentHelper.class),
+            mock(ReservationFinalizer.class),
+            mock(OrderSummaryGenerator.class));
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -1128,7 +1137,7 @@ class TicketReservationManagerTest {
         //generate the ticket URL
         Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
         //generate the ticket update URL
-        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId/update?lang=it", trm.ticketUpdateUrl(event, "ticketId"));
+        Assertions.assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId/update?lang=it", ReservationUtil.ticketUpdateUrl(event, ticket, configurationManager));
     }
 
     @Test
@@ -1438,10 +1447,16 @@ class TicketReservationManagerTest {
         private MaybeConfiguration sendReservationEmailIfNecessary;
         private MaybeConfiguration sendTickets;
         private final String reservationEmail = "blabla@example.org";
+        private ReservationFinalizer finalizer;
 
         @BeforeEach
         @SuppressWarnings("unchecked")
         void setUp() {
+            finalizer = new ReservationFinalizer(mock(PlatformTransactionManager.class),
+                ticketReservationRepository, userRepository, mock(ExtensionManager.class), auditingRepository, mock(ClockProvider.class), configurationManager,
+                mock(SubscriptionRepository.class), ticketRepository, mock(ReservationEmailContentHelper.class), mock(SpecialPriceRepository.class),
+                waitingQueueManager, ticketCategoryRepository, mock(ReservationCostCalculator.class), billingDocumentManager, mock(AdditionalServiceItemRepository.class),
+                mock(OrderSummaryGenerator.class), transactionRepository);
             sendReservationEmailIfNecessary = mock(MaybeConfiguration.class);
             sendTickets = mock(MaybeConfiguration.class);
             when(ticketReservation.getSrcPriceCts()).thenReturn(0);
@@ -1457,39 +1472,39 @@ class TicketReservationManagerTest {
         @Test
         void emailSentBecauseReservationIsNotFreeOfCharge() {
             when(ticketReservation.getSrcPriceCts()).thenReturn(1);
-            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
         }
 
         @Test
         void emailSentBecauseThereIsMoreThanOneTicketInTheReservation() {
-            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket, ticket), event, Locale.ENGLISH, null);
+            finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket, ticket), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
         }
 
         @Test
         void emailSentBecauseTicketListIsNull() {
-            trm.sendConfirmationEmailIfNecessary(ticketReservation, null, event, Locale.ENGLISH, null);
+            finalizer.sendConfirmationEmailIfNecessary(ticketReservation, null, event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
         }
 
         @Test
         void emailSentBecauseTicketListIsEmpty() {
-            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(), event, Locale.ENGLISH, null);
+            finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
         }
 
         @Test
         void emailSentBecauseTicketHolderEmailIsDifferentFromReservation() {
             when(ticket.getEmail()).thenReturn("blabla2@example.org");
-            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
         }
 
         @Test
         void emailSentBecauseFlagIsSetToFalse() {
             when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(false);
-            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
         }
 
@@ -1497,7 +1512,7 @@ class TicketReservationManagerTest {
         void emailSentBecauseTicketIsNotSent() {
             when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
             when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(false);
-            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
         }
 
@@ -1505,7 +1520,7 @@ class TicketReservationManagerTest {
         void emailNOTSentBecauseFlagIsSetToTrue() {
             when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
             when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(true);
-            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
             verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
         }
     }

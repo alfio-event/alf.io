@@ -198,7 +198,7 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.STUCK_RESERVATIONS, event, payload);
     }
 
-    Optional<CustomEmailText> handleReservationEmailCustomText(PurchaseContext purchaseContext, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
+    public Optional<CustomEmailText> handleReservationEmailCustomText(PurchaseContext purchaseContext, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
         Map<String, Object> payload = Map.of(
             RESERVATION, reservation,
             "purchaseContext", purchaseContext,

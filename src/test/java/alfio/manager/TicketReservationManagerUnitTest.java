@@ -17,6 +17,9 @@
 package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.reservation.OrderSummaryGenerator;
+import alfio.manager.support.reservation.ReservationCostCalculator;
+import alfio.manager.support.reservation.ReservationEmailContentHelper;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -30,7 +33,9 @@ import alfio.util.TemplateManager;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -158,7 +163,12 @@ class TicketReservationManagerUnitTest {
             TestUtil.clockProvider(),
             purchaseContextManager,
             mock(SubscriptionRepository.class),
-            mock(UserManager.class));
+            mock(UserManager.class),
+            mock(ApplicationEventPublisher.class),
+            mock(ReservationCostCalculator.class),
+            mock(ReservationEmailContentHelper.class),
+            mock(ReservationFinalizer.class),
+            mock(OrderSummaryGenerator.class));
 
     }
 
@@ -233,73 +243,86 @@ class TicketReservationManagerUnitTest {
         Assertions.assertEquals(1, fourth.getVAT());
     }
 
-    @Test
-    void testExtractSummaryVatNotIncluded() {
-        initReservationWithTicket(1000, false);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0, "CHF"));
-        Assertions.assertEquals(1, summaryRows.size());
-        Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
-    }
+    @Nested
+    class GenerateSummary {
 
-    @Test
-    void testExtractSummaryVatIncluded() {
-        initReservationWithTicket(1000, true);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
-        Assertions.assertEquals(1, summaryRows.size());
-        Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
-    }
+        private OrderSummaryGenerator generator;
 
-    @Test
-    void testExtractSummaryVatIncludedExempt() {
-        initReservationWithTicket(1000, true);
-        when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED_EXEMPT);
-        when(ticket.getFinalPriceCts()).thenReturn(909);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
-        Assertions.assertEquals(1, summaryRows.size());
-        Assertions.assertEquals("9.09", summaryRows.get(0).getPrice());
-    }
+        @BeforeEach
+        void setUp() {
+            var subscriptionRepository = mock(SubscriptionRepository.class);
+            generator = new OrderSummaryGenerator(ticketReservationRepository, auditingRepository, paymentManager, ticketCategoryRepository, additionalServiceTextRepository, subscriptionRepository, ticketRepository, messageSourceManager,
+                new ReservationCostCalculator(ticketReservationRepository, mock(PurchaseContextManager.class), promoCodeDiscountRepository, subscriptionRepository, ticketRepository, additionalServiceRepository, additionalServiceItemRepository));
+        }
 
-    @Test
-    void testExtractSummaryVatNotIncludedExempt() {
-        initReservationWithTicket(1000, false);
-        when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT);
-        when(ticket.getFinalPriceCts()).thenReturn(1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
-        Assertions.assertEquals(1, summaryRows.size());
-        Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
-    }
+        @Test
+        void testExtractSummaryVatNotIncluded() {
+            initReservationWithTicket(1000, false);
+            List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0, "CHF"));
+            Assertions.assertEquals(1, summaryRows.size());
+            Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+        }
 
-    @Test
-    void testExtractSummaryVatNotIncludedASInherited() {
-        initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0, "CHF"));
-        Assertions.assertEquals(2, summaryRows.size());
-        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
-    }
+        @Test
+        void testExtractSummaryVatIncluded() {
+            initReservationWithTicket(1000, true);
+            List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
+            Assertions.assertEquals(1, summaryRows.size());
+            Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+        }
 
-    @Test
-    void testExtractSummaryVatIncludedASInherited() {
-        initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0, "CHF"));
-        Assertions.assertEquals(2, summaryRows.size());
-        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
-    }
+        @Test
+        void testExtractSummaryVatIncludedExempt() {
+            initReservationWithTicket(1000, true);
+            when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED_EXEMPT);
+            when(ticket.getFinalPriceCts()).thenReturn(909);
+            List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
+            Assertions.assertEquals(1, summaryRows.size());
+            Assertions.assertEquals("9.09", summaryRows.get(0).getPrice());
+        }
 
-    @Test
-    void testExtractSummaryVatNotIncludedASNone() {
-        initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
-        Assertions.assertEquals(2, summaryRows.size());
-        summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
-    }
+        @Test
+        void testExtractSummaryVatNotIncludedExempt() {
+            initReservationWithTicket(1000, false);
+            when(ticket.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT);
+            when(ticket.getFinalPriceCts()).thenReturn(1000);
+            List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
+            Assertions.assertEquals(1, summaryRows.size());
+            Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+        }
 
-    @Test
-    void testExtractSummaryVatIncludedASNone() {
-        initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0, "CHF"));
-        Assertions.assertEquals(2, summaryRows.size());
-        Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
-        Assertions.assertEquals("10.00", summaryRows.get(1).getPrice());
+        @Test
+        void testExtractSummaryVatNotIncludedASInherited() {
+            initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 1000, 1000);
+            List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0, "CHF"));
+            Assertions.assertEquals(2, summaryRows.size());
+            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+        }
+
+        @Test
+        void testExtractSummaryVatIncludedASInherited() {
+            initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 1000, 1000);
+            List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0, "CHF"));
+            Assertions.assertEquals(2, summaryRows.size());
+            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+        }
+
+        @Test
+        void testExtractSummaryVatNotIncludedASNone() {
+            initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 1000, 1000);
+            List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
+            Assertions.assertEquals(2, summaryRows.size());
+            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+        }
+
+        @Test
+        void testExtractSummaryVatIncludedASNone() {
+            initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 1000, 1000);
+            List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0, "CHF"));
+            Assertions.assertEquals(2, summaryRows.size());
+            Assertions.assertEquals("10.00", summaryRows.get(0).getPrice());
+            Assertions.assertEquals("10.00", summaryRows.get(1).getPrice());
+        }
     }
 
     private void initReservationWithTicket(int ticketPaidPrice, boolean eventVatIncluded) {

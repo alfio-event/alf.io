@@ -21,6 +21,7 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.IncompatibleStateException;
 import alfio.manager.support.DuplicateReferenceException;
+import alfio.manager.support.reservation.ReservationEmailContentHelper;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
@@ -119,6 +120,7 @@ public class AdminReservationManager {
     private final BillingDocumentManager billingDocumentManager;
     private final ClockProvider clockProvider;
     private final SubscriptionRepository subscriptionRepository;
+    private final ReservationEmailContentHelper reservationEmailContentHelper;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,
@@ -247,7 +249,7 @@ public class AdminReservationManager {
             .forEach(t -> {
                 Locale locale = LocaleUtil.forLanguageTag(t.getUserLanguage());
                 var additionalInfo = ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(t);
-                ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale, additionalInfo));
+                reservationEmailContentHelper.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale, additionalInfo));
             });
     }
 

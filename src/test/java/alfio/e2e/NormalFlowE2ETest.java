@@ -18,6 +18,7 @@ package alfio.e2e;
 
 import alfio.BaseTestConfiguration;
 import alfio.config.Initializer;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
@@ -74,8 +75,8 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElemen
  */
 @ContextConfiguration(classes = { BaseTestConfiguration.class, NormalFlowE2ETest.E2EConfiguration.class })
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@SpringBootTest
-public class NormalFlowE2ETest extends BaseIntegrationTest {
+@AlfioIntegrationTest
+class NormalFlowE2ETest extends BaseIntegrationTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NormalFlowE2ETest.class);
     private static final String JSON_BODY;
