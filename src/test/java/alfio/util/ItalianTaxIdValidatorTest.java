@@ -47,7 +47,7 @@ class ItalianTaxIdValidatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { "63828920583", "58148510562", "61579460221" })
+    @ValueSource(strings = { "63828920583", "58148510562", "61579460221", "615794602211", "615794602" })
     void vatIdValidationFailure(String number) {
         assertFalse(ItalianTaxIdValidator.validateVatId(number));
     }

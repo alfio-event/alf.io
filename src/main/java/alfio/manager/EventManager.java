@@ -202,18 +202,39 @@ public class EventManager {
             .findFirst()
             .orElseThrow();
         int eventId = insertEvent(em);
+        Optional<EventAndOrganizationId> srcEvent = getCopiedFrom(em, username);
         Event event = eventRepository.findById(eventId);
         createOrUpdateEventDescription(eventId, em);
         createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId(), event.getCurrency());
         createAdditionalFields(event, em);
-        createCategoriesForEvent(em, event);
+        createCategoriesForEvent(em, event, srcEvent);
         createAllTicketsForEvent(event, em);
         createSubscriptionLinks(eventId, organization.getId(), em.getLinkedSubscriptions());
+        srcEvent.ifPresent(eventAndOrganizationId -> copySettings(event, eventAndOrganizationId));
         extensionManager.handleEventCreation(event);
         var eventMetadata = extensionManager.handleMetadataUpdate(event, organization, AlfioMetadata.empty());
         if(eventMetadata != null) {
             eventRepository.updateMetadata(eventMetadata, eventId);
         }
+    }
+
+    private Optional<EventAndOrganizationId> getCopiedFrom(EventModification em, String username) {
+        if (em.getMetadata() != null && StringUtils.isNotBlank(em.getMetadata().getCopiedFrom())) {
+            return getOptionalEventAndOrganizationIdByName(em.getMetadata().getCopiedFrom(), username);
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Copies settings from a copied event into the new one
+     * Supported settings are:
+     * - Event-specific configuration
+     * @param event event
+     * @param srcEvent source event
+     */
+    private void copySettings(Event event, EventAndOrganizationId srcEvent) {
+        int count = configurationRepository.copyEventConfiguration(event.getId(), event.getOrganizationId(), srcEvent.getId(), srcEvent.getOrganizationId());
+        log.info("copied {} settings from source event", count);
     }
 
     private void createSubscriptionLinks(int eventId, int organizationId, List<UUID> linkedSubscriptions) {
@@ -640,7 +661,7 @@ public class EventManager {
                     .map(ps -> buildTicketParams(event.getId(), creationDate, filteredTC, tc.getSrcPriceCts(), ps));
     }
 
-    private void createCategoriesForEvent(EventModification em, Event event) {
+    private void createCategoriesForEvent(EventModification em, Event event, Optional<EventAndOrganizationId> srcEventOptional) {
         boolean freeOfCharge = em.isFreeOfCharge();
         ZoneId zoneId = TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
         int eventId = event.getId();
@@ -673,6 +694,17 @@ public class EventManager {
             if (tc.isTokenGenerationRequested()) {
                 final TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), event.getId());
                 specialPriceRepository.bulkInsert(ticketCategory, ticketCategory.getMaxTickets());
+            }
+
+            if (srcEventOptional.isPresent() && tc.getMetadata() != null && StringUtils.isNumeric(tc.getMetadata().getCopiedFrom())) {
+                int count = configurationRepository.copyCategoryConfiguration(event.getId(),
+                    event.getOrganizationId(),
+                    category.getKey(),
+                    srcEventOptional.get().getId(),
+                    srcEventOptional.get().getOrganizationId(),
+                    Integer.parseInt(tc.getMetadata().getCopiedFrom())
+                );
+                log.info("Copied {} settings for category {}", count, tc.getName());
             }
         });
     }
@@ -1151,13 +1183,15 @@ public class EventManager {
     }
 
     public boolean updateMetadata(Event event, AlfioMetadata metadata) {
+        var existing = eventRepository.getMetadataForEvent(event.getId());
         var updatedMetadata = extensionManager.handleMetadataUpdate(event, organizationRepository.getById(event.getOrganizationId()), metadata);
-        eventRepository.updateMetadata(Objects.requireNonNullElse(updatedMetadata, metadata), event.getId());
+        eventRepository.updateMetadata(existing.merge(Objects.requireNonNullElse(updatedMetadata, metadata)), event.getId());
         return true;
     }
 
     public boolean updateCategoryMetadata(EventAndOrganizationId event, int categoryId, AlfioMetadata metadata) {
-        return ticketCategoryRepository.updateMetadata(metadata, event.getId(), categoryId) == 1;
+        var existing = ticketCategoryRepository.getMetadata(event.getId(), categoryId);
+        return ticketCategoryRepository.updateMetadata(existing.merge(metadata), event.getId(), categoryId) == 1;
     }
 
     public AlfioMetadata getMetadataForEvent(EventAndOrganizationId event) {
