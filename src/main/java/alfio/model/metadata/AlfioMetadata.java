@@ -25,6 +25,7 @@ import java.util.Map;
 
 @Getter
 public class AlfioMetadata {
+    private static final AlfioMetadata EMPTY = new AlfioMetadata(null, Map.of(), List.of(), null);
     private final OnlineConfiguration onlineConfiguration;
     // list of requirements for participants, e.g. software
     private final Map<String, String> requirementsDescriptions;
@@ -43,7 +44,7 @@ public class AlfioMetadata {
     }
 
     public static AlfioMetadata empty() {
-        return new AlfioMetadata(null, Map.of(), List.of(), null);
+        return EMPTY;
     }
 
     /**

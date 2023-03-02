@@ -16,13 +16,13 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.PaymentProxyWithParameters;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.model.ReservationPaymentResult;
 import alfio.controller.api.v2.model.ReservationStatusInfo;
-import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
@@ -103,6 +103,7 @@ public class ReservationApiV2Controller {
     private final TicketRepository ticketRepository;
     private final PublicUserManager publicUserManager;
     private final ReverseChargeManager reverseChargeManager;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -404,7 +405,7 @@ public class ReservationApiV2Controller {
                     reservationId,
                     contactAndTicketsForm,
                     bindingResult);
-            } else if(contactAndTicketsForm.isBusiness()) {
+            } else if(reservationCost.getPriceWithVAT() > 0 && (contactAndTicketsForm.isBusiness() || configurationManager.noTaxesFlagDefinedFor(ticketCategoryRepository.findCategoriesInReservation(reservationId)))) {
                 reverseChargeManager.checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
             } else if(reservationCost.getPriceWithVAT() > 0) {
                 reverseChargeManager.resetVat(purchaseContext, reservationId);

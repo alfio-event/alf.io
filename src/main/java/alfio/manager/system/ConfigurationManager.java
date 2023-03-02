@@ -24,10 +24,7 @@ import alfio.manager.system.ConfigurationLevels.CategoryLevel;
 import alfio.manager.system.ConfigurationLevels.EventLevel;
 import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
 import alfio.manager.user.UserManager;
-import alfio.model.Configurable;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.PurchaseContext;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
@@ -603,6 +600,10 @@ public class ConfigurationManager {
 
     public List<Integer> getCategoriesWithNoTaxes(List<Integer> categoriesIds) {
         return configurationRepository.getCategoriesWithFlag(categoriesIds, APPLY_TAX_TO_CATEGORY.name(), BooleanUtils.FALSE);
+    }
+
+    public boolean noTaxesFlagDefinedFor(List<TicketCategory> categories) {
+        return !getCategoriesWithNoTaxes(categories.stream().map(TicketCategory::getId).collect(toList())).isEmpty();
     }
 
     public static class MaybeConfiguration {
