@@ -28,7 +28,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.CookieHttpSessionIdResolver;
 import org.springframework.session.web.http.HeaderHttpSessionIdResolver;
 import org.springframework.session.web.http.HttpSessionIdResolver;
@@ -127,6 +129,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
         var resolver = new UrlBasedViewResolver();
         resolver.setViewClass(AbstractUrlBasedView.class);
         return resolver;
+    }
+
+    @Bean
+    public SpringSessionBackedSessionRegistry<?> sessionRegistry(FindByIndexNameSessionRepository<?> sessionRepository) {
+        return new SpringSessionBackedSessionRegistry<>(sessionRepository);
     }
 
     @Bean

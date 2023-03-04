@@ -25,7 +25,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.http.HttpCookie;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -93,7 +92,7 @@ abstract class AbstractFormBasedWebSecurity {
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
     private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
-    private final FindByIndexNameSessionRepository<?> sessionRepository;
+    private final SpringSessionBackedSessionRegistry<?> sessionRegistry;
 
     protected AbstractFormBasedWebSecurity(Environment environment,
                                            UserManager userManager,
@@ -103,7 +102,7 @@ abstract class AbstractFormBasedWebSecurity {
                                            DataSource dataSource,
                                            PasswordEncoder passwordEncoder,
                                            PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
-                                           FindByIndexNameSessionRepository<?> sessionRepository) {
+                                           SpringSessionBackedSessionRegistry<?> sessionRegistry) {
         this.environment = environment;
         this.userManager = userManager;
         this.recaptchaService = recaptchaService;
@@ -112,7 +111,7 @@ abstract class AbstractFormBasedWebSecurity {
         this.dataSource = dataSource;
         this.passwordEncoder = passwordEncoder;
         this.publicOpenIdAuthenticationManager = publicOpenIdAuthenticationManager;
-        this.sessionRepository = sessionRepository;
+        this.sessionRegistry = sessionRegistry;
     }
 
 
@@ -141,7 +140,7 @@ abstract class AbstractFormBasedWebSecurity {
             .and().logout().permitAll()
             .and()
             // this allows us to sync between spring session and spring security, thus saving the principal name in the session table
-            .sessionManagement().maximumSessions(-1).sessionRegistry(sessionRegistry());
+            .sessionManagement().maximumSessions(-1).sessionRegistry(sessionRegistry);
 
         http.addFilterBefore(openIdPublicCallbackLoginFilter(publicOpenIdAuthenticationManager, authenticationManager), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(openIdPublicAuthenticationFilter(publicOpenIdAuthenticationManager), AnonymousAuthenticationFilter.class);
@@ -161,12 +160,6 @@ abstract class AbstractFormBasedWebSecurity {
 
         return http.build();
     }
-
-
-    @Bean
-	public SpringSessionBackedSessionRegistry<?> sessionRegistry() {
-		return new SpringSessionBackedSessionRegistry<>(sessionRepository);
-	}
 
     private JdbcUserDetailsManager createUserDetailsManager() {
         var userDetailsManager = new JdbcUserDetailsManager(dataSource);

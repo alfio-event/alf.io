@@ -26,7 +26,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import javax.sql.DataSource;
 
@@ -45,7 +45,7 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
                                 DataSource dataSource,
                                 PasswordEncoder passwordEncoder,
                                 PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
-                                FindByIndexNameSessionRepository<?> sessionRepository) {
+                                SpringSessionBackedSessionRegistry<?> sessionRegistry) {
         super(environment,
             userManager,
             recaptchaService,
@@ -54,6 +54,6 @@ public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
             dataSource,
             passwordEncoder,
             publicOpenIdAuthenticationManager,
-            sessionRepository);
+            sessionRegistry);
     }
 }
