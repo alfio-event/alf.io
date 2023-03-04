@@ -26,12 +26,17 @@ import alfio.repository.system.ConfigurationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
+import org.springframework.transaction.support.TransactionOperations;
 
 import java.time.Duration;
 import java.util.Map;
@@ -67,5 +72,10 @@ public class TestConfiguration {
     @Bean
     CsrfTokenRepository csrfTokenRepository() {
         return new CookieCsrfTokenRepository();
+    }
+
+    @Bean
+    FindByIndexNameSessionRepository<?> sessionsByPrincipalFinder() {
+        return Mockito.mock(FindByIndexNameSessionRepository.class);
     }
 }
