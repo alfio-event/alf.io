@@ -45,6 +45,8 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import javax.servlet.Filter;
 import javax.servlet.RequestDispatcher;
@@ -90,6 +92,7 @@ abstract class AbstractFormBasedWebSecurity {
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
     private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
+    private final SpringSessionBackedSessionRegistry<?> sessionRegistry;
 
     protected AbstractFormBasedWebSecurity(Environment environment,
                                            UserManager userManager,
@@ -98,7 +101,8 @@ abstract class AbstractFormBasedWebSecurity {
                                            CsrfTokenRepository csrfTokenRepository,
                                            DataSource dataSource,
                                            PasswordEncoder passwordEncoder,
-                                           PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager) {
+                                           PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
+                                           SpringSessionBackedSessionRegistry<?> sessionRegistry) {
         this.environment = environment;
         this.userManager = userManager;
         this.recaptchaService = recaptchaService;
@@ -107,6 +111,7 @@ abstract class AbstractFormBasedWebSecurity {
         this.dataSource = dataSource;
         this.passwordEncoder = passwordEncoder;
         this.publicOpenIdAuthenticationManager = publicOpenIdAuthenticationManager;
+        this.sessionRegistry = sessionRegistry;
     }
 
 
@@ -132,7 +137,10 @@ abstract class AbstractFormBasedWebSecurity {
             .loginProcessingUrl(AUTHENTICATE)
             .defaultSuccessUrl("/admin")
             .failureUrl("/authentication?failed")
-            .and().logout().permitAll();
+            .and().logout().permitAll()
+            .and()
+            // this allows us to sync between spring session and spring security, thus saving the principal name in the session table
+            .sessionManagement().maximumSessions(-1).sessionRegistry(sessionRegistry);
 
         http.addFilterBefore(openIdPublicCallbackLoginFilter(publicOpenIdAuthenticationManager, authenticationManager), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(openIdPublicAuthenticationFilter(publicOpenIdAuthenticationManager), AnonymousAuthenticationFilter.class);
