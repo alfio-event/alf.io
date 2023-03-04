@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
@@ -268,7 +267,7 @@ public class UsersApiController {
     @PostMapping("/users/current/update-password")
     public ValidationResult updateCurrentUserPassword(@RequestBody PasswordModification passwordModification, Principal principal) {
         return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
-            .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
+            .ifSuccess(() -> userManager.updateCurrentUserPassword(principal.getName(), passwordModification.newPassword));
     }
 
     @PostMapping("/users/current/edit")
@@ -279,8 +278,8 @@ public class UsersApiController {
     }
 
     @PutMapping("/users/{id}/reset-password")
-    public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl) {
-        UserWithPassword userWithPassword = userManager.resetPassword(userId);
+    public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl, Principal principal) {
+        UserWithPassword userWithPassword = userManager.resetPassword(userId, principal.getName());
         return new UserWithPasswordAndQRCode(userWithPassword, Base64.getEncoder().encodeToString(generateQRCode(userWithPassword, baseUrl)));
     }
 
