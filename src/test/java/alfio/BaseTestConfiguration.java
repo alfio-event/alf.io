@@ -71,7 +71,7 @@ public class BaseTestConfiguration {
     @Profile("!travis")
     public DataSource getDataSource() {
         String POSTGRES_DB = "alfio";
-        String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "9.6");
+        String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "10");
         log.debug("Running tests using PostgreSQL v.{}", postgresVersion);
         PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("docker.io/postgres:"+postgresVersion)
             .asCompatibleSubstituteFor("postgres"))

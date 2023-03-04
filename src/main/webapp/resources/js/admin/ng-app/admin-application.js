@@ -941,6 +941,9 @@
                     $scope.event.vatIncluded = eventToCopy.vatIncluded;
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
                     $scope.event.format = eventToCopy.format;
+                    $scope.event.metadata = {
+                        copiedFrom: eventToCopy.shortName
+                    };
 
                     //legacy event, has all the ticket categories with ordinal 0
                     var isAllOrdinal0 = eventToCopy.ticketCategories.reduce(function(accumulator, tc) {return accumulator && (tc.ordinal === 0);}, true);
@@ -961,7 +964,10 @@
                             tokenGenerationRequested: tc.accessRestricted,
                             code: tc.code,
                             description: tc.description ? angular.copy(tc.description) : null,
-                            ticketAccessType: eventToCopy.format === 'HYBRID' ? tc.ticketAccessType : null
+                            ticketAccessType: eventToCopy.format === 'HYBRID' ? tc.ticketAccessType : null,
+                            metadata: {
+                                copiedFrom: tc.id
+                            }
                         };
 
                         if (tc.formattedValidCheckInFrom) {

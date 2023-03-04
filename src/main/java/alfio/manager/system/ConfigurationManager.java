@@ -24,10 +24,7 @@ import alfio.manager.system.ConfigurationLevels.CategoryLevel;
 import alfio.manager.system.ConfigurationLevels.EventLevel;
 import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
 import alfio.manager.user.UserManager;
-import alfio.model.Configurable;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.PurchaseContext;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
@@ -41,6 +38,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import org.apache.commons.collections4.IterableUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -60,7 +58,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
@@ -606,6 +603,14 @@ public class ConfigurationManager {
 
     private static boolean toBeSaved(ConfigurationModification c) {
         return Optional.ofNullable(c.getId()).orElse(-1) > -1 || !StringUtils.isBlank(c.getValue());
+    }
+
+    public List<Integer> getCategoriesWithNoTaxes(List<Integer> categoriesIds) {
+        return configurationRepository.getCategoriesWithFlag(categoriesIds, APPLY_TAX_TO_CATEGORY.name(), BooleanUtils.FALSE);
+    }
+
+    public boolean noTaxesFlagDefinedFor(List<TicketCategory> categories) {
+        return !getCategoriesWithNoTaxes(categories.stream().map(TicketCategory::getId).toList()).isEmpty();
     }
 
     public static class MaybeConfiguration {
