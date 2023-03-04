@@ -31,12 +31,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
-import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.session.FindByIndexNameSessionRepository;
-import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
-import org.springframework.transaction.support.TransactionOperations;
 
 import java.time.Duration;
 import java.util.Map;
