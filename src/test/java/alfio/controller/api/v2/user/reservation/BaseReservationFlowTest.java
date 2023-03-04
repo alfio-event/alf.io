@@ -1037,7 +1037,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     context.userId
                 ));
 
-                checkReservationExport();
+                checkReservationExport(context);
 
                 //test revert check in
                 assertTrue(checkInApiController.revertCheckIn(context.event.getId(), ticketIdentifier, principal));
@@ -1192,21 +1192,23 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     }
 
-    private void checkReservationExport() {
+    private void checkReservationExport(ReservationFlowContext context) {
+        Principal principal = mock(Principal.class);
+        Mockito.when(principal.getName()).thenReturn(context.userId);
         // load all reservations
         var now = LocalDate.now(clockProvider.getClock());
-        var reservationsByEvent = exportManager.reservationsForInterval(now.minusDays(1), now);
+        var reservationsByEvent = exportManager.reservationsForInterval(now.minusDays(1), now, principal);
         assertEquals(1, reservationsByEvent.size());
         assertEquals(1, reservationsByEvent.get(0).getReservations().size());
         assertEquals(1, reservationsByEvent.get(0).getReservations().get(0).getTickets().size());
 
         // ensure that the filtering works as expected
-        reservationsByEvent = exportManager.reservationsForInterval(now.plusDays(1), now.plusDays(2));
+        reservationsByEvent = exportManager.reservationsForInterval(now.plusDays(1), now.plusDays(2), principal);
         assertEquals(0, reservationsByEvent.size());
 
         // ensure that we get error if the interval is wrong
         var wrongFrom = now.plusDays(1);
-        assertThrows(IllegalArgumentException.class, () -> exportManager.reservationsForInterval(wrongFrom, now));
+        assertThrows(IllegalArgumentException.class, () -> exportManager.reservationsForInterval(wrongFrom, now, principal));
     }
 
     static void insertExtension(ExtensionService extensionService, String path) throws IOException {
