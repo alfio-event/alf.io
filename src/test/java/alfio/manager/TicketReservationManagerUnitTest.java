@@ -30,7 +30,6 @@ import alfio.repository.user.UserRepository;
 import alfio.test.util.TestUtil;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -85,6 +84,7 @@ class TicketReservationManagerUnitTest {
     private ExtensionManager extensionManager;
     private GroupManager groupManager;
     private Json json;
+    private ReservationCostCalculator reservationCostCalculator;
 
     @BeforeEach
     public void setUp() {
@@ -130,7 +130,7 @@ class TicketReservationManagerUnitTest {
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
         var purchaseContextManager = mock(PurchaseContextManager.class);
         when(purchaseContextManager.findByReservationId(anyString())).thenReturn(Optional.of(event));
-
+        reservationCostCalculator = mock(ReservationCostCalculator.class);
         manager = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
@@ -165,82 +165,22 @@ class TicketReservationManagerUnitTest {
             mock(SubscriptionRepository.class),
             mock(UserManager.class),
             mock(ApplicationEventPublisher.class),
-            mock(ReservationCostCalculator.class),
+            reservationCostCalculator,
             mock(ReservationEmailContentHelper.class),
             mock(ReservationFinalizer.class),
             mock(OrderSummaryGenerator.class));
-
     }
 
     @Test
-    void calcReservationCostOnlyTickets() {
-        when(event.isVatIncluded()).thenReturn(true, false);
-        when(event.getVat()).thenReturn(BigDecimal.TEN);
-        when(eventRepository.findByReservationId(eq(TICKET_RESERVATION_ID))).thenReturn(event);
-        when(ticketReservationRepository.findReservationById(eq(TICKET_RESERVATION_ID))).thenReturn(reservation);
-        when(reservation.getId()).thenReturn(TICKET_RESERVATION_ID);
-        when(ticket.getSrcPriceCts()).thenReturn(10);
-        when(ticketRepository.findTicketsInReservation(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
-        AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
-        when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
-
-        when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED);
-        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        TotalPrice included = priceAndDiscount.getLeft();
-        Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(10, included.getPriceWithVAT());
-        Assertions.assertEquals(1, included.getVAT());
-
-        when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
-        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscountNotIncluded = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        TotalPrice notIncluded = priceAndDiscountNotIncluded.getLeft();
-        Assertions.assertTrue(priceAndDiscountNotIncluded.getRight().isEmpty());
-        Assertions.assertEquals(11, notIncluded.getPriceWithVAT());
-        Assertions.assertEquals(1, notIncluded.getVAT());
+    void totalReservationCostByID() {
+        manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        verify(reservationCostCalculator).totalReservationCostWithVAT(TICKET_RESERVATION_ID);
     }
 
     @Test
-    void calcReservationCostWithASVatIncludedInherited() {
-        initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 10, 10);
-        //first: event price vat included, additional service VAT inherited
-        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        TotalPrice first = priceAndDiscount.getLeft();
-        Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(20, first.getPriceWithVAT());
-        Assertions.assertEquals(2, first.getVAT());
-    }
-
-    @Test
-    void calcReservationCostWithASVatIncludedASNoVat() {
-        initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 10, 10);
-        //second: event price vat included, additional service VAT n/a
-        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        TotalPrice second = priceAndDiscount.getLeft();
-        Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(20, second.getPriceWithVAT());
-        Assertions.assertEquals(1, second.getVAT());
-    }
-
-    @Test
-    void calcReservationCostWithASVatNotIncludedASInherited() {
-        initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 10, 10);
-        //third: event price vat not included, additional service VAT inherited
-        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        TotalPrice third = priceAndDiscount.getLeft();
-        Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(22, third.getPriceWithVAT());
-        Assertions.assertEquals(2, third.getVAT());
-    }
-
-    @Test
-    void calcReservationCostWithASVatNotIncludedASNone() {
-        initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 10, 10);
-        //fourth: event price vat not included, additional service VAT n/a
-        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        TotalPrice fourth = priceAndDiscount.getLeft();
-        Assertions.assertTrue(priceAndDiscount.getRight().isEmpty());
-        Assertions.assertEquals(21, fourth.getPriceWithVAT());
-        Assertions.assertEquals(1, fourth.getVAT());
+    void totalReservationCost() {
+        manager.totalReservationCostWithVAT(reservation);
+        verify(reservationCostCalculator).totalReservationCostWithVAT(reservation);
     }
 
     @Nested
