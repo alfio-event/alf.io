@@ -195,7 +195,7 @@
                             <ul class="nav navbar-nav visible-sm visible-xs">
                                 <li class="nav-divider"></li>
                                 <li class="visible-xs visible-sm">
-                                    <div class="pull-left"><a href="#" class="navbar-link" ng-click="ctrl.menuCollapsed = true" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></div>
+                                    <div class="pull-left"><a href="#" class="navbar-link" ng-click="ctrl.menuCollapsed = true" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> <span ng-non-bindable>{{username}}</span></a></div>
                                     <div class="pull-right"><a href="" class="navbar-link" data-ng-click="ctrl.doLogout('{{idpLogoutRedirectionUrl}}')"><i class="fa fa-sign-out"></i> Log out</a></div>
                                 </li>
                             </ul>
@@ -203,7 +203,7 @@
                     </div>
                     <div class="navbar-right hidden-sm hidden-xs">
                         <ul class="nav navbar-nav">
-                            <li role="presentation" class="navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
+                            <li role="presentation" class="navbar-text"><i class="fa fa-user"></i> Logged in as <span ng-non-bindable>{{username}}</span></li>
                             {{#isDBAuthentication}}
                             <li role="presentation" data-ui-sref-active="active"> <a data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-edit"></i> edit account</a></li>
                             {{/isDBAuthentication}}
