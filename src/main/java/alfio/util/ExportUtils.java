@@ -20,6 +20,7 @@ import ch.digitalfondue.basicxlsx.Cell;
 import ch.digitalfondue.basicxlsx.StreamingWorkbook;
 import ch.digitalfondue.basicxlsx.Style;
 import com.opencsv.CSVWriter;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -74,6 +75,17 @@ public class ExportUtils {
         }
     }
 
+    // https://owasp.org/www-community/attacks/CSV_Injection
+    private static String escapeFormulaChar(String s) {
+        var trimmed = StringUtils.trimToEmpty(s);
+        // tab and carriage return are removed by the trimming
+        var res = trimmed;
+        if (StringUtils.startsWithAny(trimmed, "=", "+", "-", "@")) {
+            res = "\t" + trimmed; // http://georgemauer.net/2017/10/07/csv-injection.html starting with a tab seems to be enough?
+        }
+        return res;
+    }
+
     public static void exportCsv(String fileName, String[] header, Stream<String[]> data, HttpServletResponse response) throws IOException {
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
@@ -83,7 +95,14 @@ public class ExportUtils {
                 out.write(marker);
             }
             writer.writeNext(header);
-            data.forEachOrdered(writer::writeNext);
+            data.forEachOrdered(d -> {
+                var copy = Arrays.copyOf(d, d.length);
+                for (var i = 0; i < copy.length; i++) {
+                    var res = copy[i];
+                    copy[i] = escapeFormulaChar(res);
+                }
+                writer.writeNext(copy);
+            });
             writer.flush();
             out.flush();
         }
