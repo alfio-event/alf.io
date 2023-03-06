@@ -599,6 +599,9 @@ public class ConfigurationManager {
     }
 
     public List<Integer> getCategoriesWithNoTaxes(List<Integer> categoriesIds) {
+        if (categoriesIds.isEmpty()) {
+            return List.of();
+        }
         return configurationRepository.getCategoriesWithFlag(categoriesIds, APPLY_TAX_TO_CATEGORY.name(), BooleanUtils.FALSE);
     }
 
