@@ -16,8 +16,8 @@
  */
 package alfio.model.support;
 
+import alfio.model.PriceContainer;
 import alfio.model.transaction.PaymentProxy;
-import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -28,9 +28,15 @@ public class ReservationInfo {
     private final String invoiceNumber;
     private final String firstName;
     private final String lastName;
+    private final String companyName;
+    private final String taxId;
     private final String email;
     private final PaymentProxy paymentType;
     private final Integer finalPriceCts;
+    private final Integer srcPriceCts;
+    private final Integer taxCts;
+    private final PriceContainer.VatStatus taxStatus;
+    private final String taxCode;
     private final String currency;
     private final String confirmationTimestamp;
     private final List<TicketInfo> tickets;
@@ -40,9 +46,15 @@ public class ReservationInfo {
                     @JsonProperty("invoiceNumber") String invoiceNumber,
                     @JsonProperty("firstName") String firstName,
                     @JsonProperty("lastName") String lastName,
+                    @JsonProperty("companyName") String companyName,
+                    @JsonProperty("taxId") String taxId,
                     @JsonProperty("email") String email,
                     @JsonProperty("paymentType") PaymentProxy paymentType,
                     @JsonProperty("finalPriceCts") Integer finalPriceCts,
+                    @JsonProperty("srcPriceCts") Integer srcPriceCts,
+                    @JsonProperty("taxCts") Integer taxCts,
+                    @JsonProperty("taxStatus") PriceContainer.VatStatus taxStatus,
+                    @JsonProperty("taxCode") String taxCode,
                     @JsonProperty("currency") String currency,
                     @JsonProperty("confirmationTimestamp") String confirmationTimestamp,
                     @JsonProperty("tickets") List<TicketInfo> tickets) {
@@ -50,9 +62,15 @@ public class ReservationInfo {
         this.invoiceNumber = invoiceNumber;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.companyName = companyName;
+        this.taxId = taxId;
         this.email = email;
         this.paymentType = paymentType;
         this.finalPriceCts = finalPriceCts;
+        this.srcPriceCts = srcPriceCts;
+        this.taxCts = taxCts;
+        this.taxStatus = taxStatus;
+        this.taxCode = taxCode;
         this.currency = currency;
         this.confirmationTimestamp = confirmationTimestamp;
         this.tickets = tickets;
@@ -82,13 +100,6 @@ public class ReservationInfo {
         return paymentType;
     }
 
-    public String getFormattedAmount() {
-        if (finalPriceCts == null) {
-            return "";
-        }
-        return MonetaryUtil.formatCents(finalPriceCts, currency);
-    }
-
     public String getCurrency() {
         return currency;
     }
@@ -99,5 +110,33 @@ public class ReservationInfo {
 
     public List<TicketInfo> getTickets() {
         return tickets;
+    }
+
+    public Integer getFinalPriceCts() {
+        return finalPriceCts;
+    }
+
+    public Integer getSrcPriceCts() {
+        return srcPriceCts;
+    }
+
+    public PriceContainer.VatStatus getTaxStatus() {
+        return taxStatus;
+    }
+
+    public String getTaxCode() {
+        return taxCode;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public String getTaxId() {
+        return taxId;
+    }
+
+    public Integer getTaxCts() {
+        return taxCts;
     }
 }
