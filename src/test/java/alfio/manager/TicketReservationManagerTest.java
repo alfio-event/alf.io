@@ -38,6 +38,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.command.FinalizeReservation;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -54,6 +55,7 @@ import alfio.test.util.TestUtil;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -143,6 +145,10 @@ class TicketReservationManagerTest {
         BANK_ACCOUNT_OWNER,  new MaybeConfiguration(BANK_ACCOUNT_OWNER));
     private PromoCodeDiscountRepository promoCodeDiscountRepository;
     private BillingDocumentManager billingDocumentManager;
+    private ApplicationEventPublisher applicationEventPublisher;
+    private ReservationEmailContentHelper reservationHelper;
+    private ReservationFinalizer reservationFinalizer;
+    private ReservationCostCalculator reservationCostCalculator;
 
     @BeforeEach
     void init() {
@@ -214,6 +220,15 @@ class TicketReservationManagerTest {
         when(purchaseContextManager.findByReservationId(anyString())).thenReturn(Optional.of(event));
 
         billingDocumentManager = mock(BillingDocumentManager.class);
+        applicationEventPublisher = mock(ApplicationEventPublisher.class);
+        reservationHelper = mock(ReservationEmailContentHelper.class);
+        reservationCostCalculator = mock(ReservationCostCalculator.class);
+        var osm = mock(OrderSummaryGenerator.class);
+        reservationFinalizer = new ReservationFinalizer(transactionManager,
+            ticketReservationRepository, userRepository, extensionManager, auditingRepository, TestUtil.clockProvider(),
+            configurationManager, null, ticketRepository, reservationHelper, specialPriceRepository,
+            waitingQueueManager, ticketCategoryRepository, reservationCostCalculator, billingDocumentManager, additionalServiceItemRepository,
+            osm, transactionRepository);
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
@@ -247,11 +262,11 @@ class TicketReservationManagerTest {
             purchaseContextManager,
             mock(SubscriptionRepository.class),
             mock(UserManager.class),
-            mock(ApplicationEventPublisher.class),
-            mock(ReservationCostCalculator.class),
-            mock(ReservationEmailContentHelper.class),
-            mock(ReservationFinalizer.class),
-            mock(OrderSummaryGenerator.class));
+            applicationEventPublisher,
+            reservationCostCalculator,
+            reservationHelper,
+            reservationFinalizer,
+            osm);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -402,7 +417,7 @@ class TicketReservationManagerTest {
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
-        verify(notificationManager, times(1)).sendTicketByEmail(eq(modified), eq(event), eq(Locale.ENGLISH), any(), any(), any(), any());
+        verify(reservationHelper).sendTicketByEmail(eq(modified), eq(Locale.ENGLISH), eq(event), any(PartialTicketTextGenerator.class));
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(originalEmail), anyString(), any(TemplateGenerator.class));
     }
 
@@ -795,7 +810,7 @@ class TicketReservationManagerTest {
         when(configurationManager.getFor(eq(BANKING_KEY), any())).thenReturn(BANKING_INFO);
         mockBillingDocument();
         testPaidReservation(true, true);
-        verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any(), any());
+        verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -893,11 +908,15 @@ class TicketReservationManagerTest {
 
             var verificationMode = expectCompleteReservation ? times(1) : never();
             verify(ticketReservationRepository, verificationMode).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
-            verify(ticketRepository, verificationMode).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()));
-            verify(specialPriceRepository, verificationMode).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
-            verify(ticketReservationRepository, verificationMode).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
-            verify(waitingQueueManager, verificationMode).fireReservationConfirmed(eq(RESERVATION_ID));
             verify(billingDocumentManager, verificationMode).generateInvoiceNumber(eq(spec), any());
+
+            if (expectCompleteReservation) {
+                verify(applicationEventPublisher).publishEvent(new FinalizeReservation(spec, PaymentProxy.STRIPE, true, true, null));
+            }
+            verify(ticketRepository, never()).updateTicketsStatusWithReservationId(RESERVATION_ID, TicketStatus.ACQUIRED.toString());
+            verify(specialPriceRepository, never()).updateStatusForReservation(singletonList(RESERVATION_ID), SpecialPrice.Status.TAKEN.toString());
+            verify(ticketReservationRepository, never()).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
+            verify(waitingQueueManager, never()).fireReservationConfirmed(RESERVATION_ID);
             verify(ticketReservationRepository, never()).setInvoiceNumber(eq(RESERVATION_ID), any());
         } else {
             Assertions.assertFalse(result.isSuccessful());
@@ -919,16 +938,17 @@ class TicketReservationManagerTest {
         when(paymentManager.streamActiveProvidersByProxy(eq(PaymentProxy.STRIPE), any())).thenReturn(Stream.of(stripeCreditCardManager));
         when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.failed("error-code"));
         when(stripeCreditCardManager.accept(eq(PaymentMethod.CREDIT_CARD), any(), any())).thenReturn(true);
+        when(ticketReservationRepository.findOptionalStatusAndValidationById(RESERVATION_ID)).thenReturn(Optional.of(new TicketReservationStatusAndValidation(PENDING, true)));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "email@user", new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()), null, null, Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.STRIPE, PaymentMethod.CREDIT_CARD, null);
         Assertions.assertFalse(result.isSuccessful());
         Assertions.assertFalse(result.getGatewayId().isPresent());
         Assertions.assertEquals(Optional.of("error-code"), result.getErrorCode());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull());
-        verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
-        verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
-        verify(configurationManager, never()).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).findReservationByIdForUpdate(RESERVATION_ID);
+        verify(ticketReservationRepository).updateReservationStatus(RESERVATION_ID, TicketReservationStatus.PENDING.toString());
+        verify(configurationManager, never()).hasAllConfigurationsForInvoice(event);
+        verify(ticketReservationRepository).updateBillingData(PriceContainer.VatStatus.INCLUDED, 100, 100, 0, 0, EVENT_CURRENCY, "12345", "IT", true, RESERVATION_ID);
     }
 
     @Test
@@ -954,11 +974,13 @@ class TicketReservationManagerTest {
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), PaymentProxy.ON_SITE, PaymentMethod.ON_SITE, null);
         Assertions.assertTrue(result.isSuccessful());
         Assertions.assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
-        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
+        verify(applicationEventPublisher).publishEvent(new FinalizeReservation(spec, PaymentProxy.ON_SITE, true, true, null));
+        verify(ticketRepository, never()).updateTicketsStatusWithReservationId(RESERVATION_ID, TicketStatus.ACQUIRED.toString());
+        verify(specialPriceRepository, never()).updateStatusForReservation(singletonList(RESERVATION_ID), SpecialPrice.Status.TAKEN.toString());
+        verify(ticketReservationRepository, never()).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
+        verify(waitingQueueManager, never()).fireReservationConfirmed(RESERVATION_ID);
+        verify(ticketReservationRepository, never()).setInvoiceNumber(eq(RESERVATION_ID), any());
         verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
-        verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()));
-        verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
-        verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(billingDocumentManager).generateInvoiceNumber(eq(spec), any());
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
@@ -1032,7 +1054,7 @@ class TicketReservationManagerTest {
         when(json.fromJsonString(anyString(), eq(OrderSummary.class))).thenReturn(mock(OrderSummary.class));
         when(json.asJsonString(any())).thenReturn("{}");
         when(configurationManager.getFor(eq(EnumSet.of(DEFERRED_BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL)), any())).thenReturn(Map.of(DEFERRED_BANK_TRANSFER_ENABLED, new MaybeConfiguration(DEFERRED_BANK_TRANSFER_ENABLED)));
-
+        when(reservationCostCalculator.totalReservationCostWithVAT(RESERVATION_ID)).thenReturn(Pair.of(new TotalPrice(0, 0, 0, 0, "CHF"), Optional.empty()));
         trm.confirmOfflinePayment(event, RESERVATION_ID, "username");
         verify(ticketReservationRepository, atLeastOnce()).findOptionalReservationById(RESERVATION_ID);
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
@@ -1043,7 +1065,7 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(RESERVATION_ID);
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
-        verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), any(TicketReservation.class));
+        verify(reservationHelper).sendConfirmationEmail(event, copy, Locale.ENGLISH, "username");
         verify(ticketRepository).countTicketsInReservation(eq(RESERVATION_ID));
         verify(configurationManager).getFor(eq(PLATFORM_MODE_ENABLED), any());
     }
@@ -1124,6 +1146,7 @@ class TicketReservationManagerTest {
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticketRepository.findByUUID(ticketId)).thenReturn(ticket);
+        when(ticket.getUuid()).thenReturn(ticketId);
         when(ticket.getUserLanguage()).thenReturn(USER_LANGUAGE);
         //generate the reservationUrl from RESERVATION_ID
         Assertions.assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID));
@@ -1357,7 +1380,7 @@ class TicketReservationManagerTest {
         private static final String PAYMENT_ID = "paymentId";
         private final List<String> reservationIds = List.of(EXPIRED_RESERVATION_ID, PENDING_RESERVATION_ID);
         private final List<String> expiredReservationIds = List.of(EXPIRED_RESERVATION_ID);
-        Date now = new Date(Instant.now(ClockProvider.clock()).getEpochSecond());
+        Date now = new Date(Instant.now(TestUtil.clockProvider().getClock()).getEpochSecond());
         Transaction transactionMock;
         TicketReservation pendingReservationMock;
         PurchaseContext purchaseContextMock;
@@ -1392,6 +1415,7 @@ class TicketReservationManagerTest {
                 .thenReturn(Optional.of(stripeManager));
             when(stripeManager.forceTransactionCheck(eq(pendingReservationMock), eq(transactionMock), any()))
                 .thenReturn(PaymentWebhookResult.successful(new StripeCreditCardToken("")));
+            when(reservationCostCalculator.totalReservationCostWithVAT(pendingReservationMock)).thenReturn(Pair.of(new TotalPrice(0, 0, 0, 0, "CHF"), Optional.empty()));
             trm.cleanupExpiredReservations(now);
             verify(ticketReservationRepository).findExpiredReservationForUpdate(now);
             verify(specialPriceRepository).resetToFreeAndCleanupForReservation(expiredReservationIds);
@@ -1402,7 +1426,6 @@ class TicketReservationManagerTest {
             verify(ticketReservationRepository).getReservationIdAndEventId(expiredReservationIds);
             verify(ticketReservationRepository).findReservationsWithPendingTransaction(reservationIds);
             verify(ticketReservationRepository).findOptionalStatusAndValidationById(PENDING_RESERVATION_ID);
-            verify(ticketRepository, atLeastOnce()).findTicketsInReservation(PENDING_RESERVATION_ID);
             verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository);
         }
 
@@ -1454,7 +1477,7 @@ class TicketReservationManagerTest {
         void setUp() {
             finalizer = new ReservationFinalizer(mock(PlatformTransactionManager.class),
                 ticketReservationRepository, userRepository, mock(ExtensionManager.class), auditingRepository, mock(ClockProvider.class), configurationManager,
-                mock(SubscriptionRepository.class), ticketRepository, mock(ReservationEmailContentHelper.class), mock(SpecialPriceRepository.class),
+                mock(SubscriptionRepository.class), ticketRepository, reservationHelper, mock(SpecialPriceRepository.class),
                 waitingQueueManager, ticketCategoryRepository, mock(ReservationCostCalculator.class), billingDocumentManager, mock(AdditionalServiceItemRepository.class),
                 mock(OrderSummaryGenerator.class), transactionRepository);
             sendReservationEmailIfNecessary = mock(MaybeConfiguration.class);
@@ -1473,39 +1496,39 @@ class TicketReservationManagerTest {
         void emailSentBecauseReservationIsNotFreeOfCharge() {
             when(ticketReservation.getSrcPriceCts()).thenReturn(1);
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
-            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+            verify(reservationHelper).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
 
         @Test
         void emailSentBecauseThereIsMoreThanOneTicketInTheReservation() {
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket, ticket), event, Locale.ENGLISH, null);
-            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+            verify(reservationHelper).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
 
         @Test
         void emailSentBecauseTicketListIsNull() {
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, null, event, Locale.ENGLISH, null);
-            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
+            verify(reservationHelper).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
 
         @Test
         void emailSentBecauseTicketListIsEmpty() {
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(), event, Locale.ENGLISH, null);
-            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
+            verify(reservationHelper).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
 
         @Test
         void emailSentBecauseTicketHolderEmailIsDifferentFromReservation() {
             when(ticket.getEmail()).thenReturn("blabla2@example.org");
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
-            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+            verify(reservationHelper).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
 
         @Test
         void emailSentBecauseFlagIsSetToFalse() {
             when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(false);
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
-            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+            verify(reservationHelper).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
 
         @Test
@@ -1513,7 +1536,7 @@ class TicketReservationManagerTest {
             when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
             when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(false);
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
-            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+            verify(reservationHelper).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
 
         @Test
@@ -1521,7 +1544,7 @@ class TicketReservationManagerTest {
             when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
             when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(true);
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
-            verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
+            verify(reservationHelper, never()).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
     }
 }

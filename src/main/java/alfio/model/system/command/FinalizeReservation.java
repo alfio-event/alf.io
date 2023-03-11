@@ -19,6 +19,8 @@ package alfio.model.system.command;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.model.transaction.PaymentProxy;
 
+import java.util.Objects;
+
 public class FinalizeReservation {
     private final PaymentSpecification paymentSpecification;
     private final PaymentProxy paymentProxy;
@@ -52,5 +54,23 @@ public class FinalizeReservation {
 
     public String getUsername() {
         return username;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof FinalizeReservation)) {
+            return false;
+        }
+        FinalizeReservation that = (FinalizeReservation) o;
+        return sendReservationConfirmationEmail == that.sendReservationConfirmationEmail
+            && sendTickets == that.sendTickets
+            && paymentSpecification.equals(that.paymentSpecification)
+            && paymentProxy == that.paymentProxy
+            && Objects.equals(username, that.username);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(paymentSpecification, paymentProxy, sendReservationConfirmationEmail, sendTickets, username);
     }
 }
