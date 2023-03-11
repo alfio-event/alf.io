@@ -18,16 +18,12 @@ package alfio.util;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.jdbc.datasource.DelegatingDataSource;
 
 import javax.sql.DataSource;
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
-public class RefreshableDataSource implements DataSource {
+public class RefreshableDataSource extends DelegatingDataSource {
 
     private final HikariConfig config;
     private final AtomicReference<HikariDataSource> dataSource = new AtomicReference<>();
@@ -38,48 +34,8 @@ public class RefreshableDataSource implements DataSource {
     }
 
     @Override
-    public Connection getConnection() throws SQLException {
-        return this.dataSource.get().getConnection();
-    }
-
-    @Override
-    public Connection getConnection(String username, String password) throws SQLException {
-        return this.dataSource.get().getConnection(username, password);
-    }
-
-    @Override
-    public PrintWriter getLogWriter() throws SQLException {
-        return this.dataSource.get().getLogWriter();
-    }
-
-    @Override
-    public void setLogWriter(PrintWriter out) throws SQLException {
-        this.dataSource.get().setLogWriter(out);
-    }
-
-    @Override
-    public void setLoginTimeout(int seconds) throws SQLException {
-        this.dataSource.get().setLoginTimeout(seconds);
-    }
-
-    @Override
-    public int getLoginTimeout() throws SQLException {
-        return this.dataSource.get().getLoginTimeout();
-    }
-
-    @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return this.dataSource.get().getParentLogger();
-    }
-
-    @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException {
-        return this.dataSource.get().unwrap(iface);
-    }
-
-    @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        return this.dataSource.get().isWrapperFor(iface);
+    public DataSource getTargetDataSource() {
+        return dataSource.get();
     }
 
     public void refresh() {
