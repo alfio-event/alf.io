@@ -669,7 +669,7 @@ public class TicketReservationManager {
 
             if (paymentResult.isSuccessful()) {
                 reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
-                transitionToComplete(spec, reservationCost, paymentProxy, null);
+                transitionToComplete(spec, paymentProxy, null);
             } else if(paymentResult.isFailed()) {
                 reTransitionToPending(spec.getReservationId());
             }
@@ -722,11 +722,9 @@ public class TicketReservationManager {
         return false;
     }
 
-    private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, PaymentProxy paymentProxy, String username) {
+    private void transitionToComplete(PaymentSpecification spec, PaymentProxy paymentProxy, String username) {
         var status = ticketReservationRepository.findOptionalStatusAndValidationById(spec.getReservationId()).orElseThrow().getStatus();
         if(status != COMPLETE) {
-            billingDocumentManager.generateInvoiceNumber(spec, reservationCost)
-                .ifPresent(invoiceNumber -> ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceNumber));
             completeReservation(spec, paymentProxy, true, true, username);
         }
     }
@@ -1877,7 +1875,7 @@ public class TicketReservationManager {
                 var paymentToken = paymentWebhookResult.getPaymentToken();
                 var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, paymentToken,
                     orderSummaryForReservation(reservation, purchaseContext), true, hasPrivacyPolicy(purchaseContext));
-                transitionToComplete(paymentSpecification, totalPrice, paymentToken.getPaymentProvider(), null);
+                transitionToComplete(paymentSpecification, paymentToken.getPaymentProvider(), null);
                 break;
             }
             case FAILED: {

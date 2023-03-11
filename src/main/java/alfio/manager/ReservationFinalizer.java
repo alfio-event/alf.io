@@ -56,6 +56,7 @@ import java.util.*;
 import java.util.function.Function;
 
 import static alfio.model.Audit.EventType.SUBSCRIPTION_ACQUIRED;
+import static alfio.model.TicketReservation.TicketReservationStatus.COMPLETE;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.ReservationUtil.hasPrivacyPolicy;
 import static java.util.Collections.singletonList;
@@ -130,11 +131,31 @@ public class ReservationFinalizer {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void finalizeCommandReceived(FinalizeReservation spec) {
+    public void finalizeCommandReceived(FinalizeReservation finalizeReservation) {
         transactionTemplate.execute(ctx -> {
-            completeReservation(spec.getPaymentSpecification(), spec.getPaymentProxy(), spec.isSendReservationConfirmationEmail(), spec.isSendTickets(), spec.getUsername());
+            var spec = finalizeReservation.getPaymentSpecification();
+            var reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
+            var totalPrice = reservationCostCalculator.totalReservationCostWithVAT(reservation);
+            // generate invoice number
+            if (reservation.getStatus() != COMPLETE && StringUtils.isBlank(reservation.getInvoiceNumber())) {
+                boolean traceEnabled = log.isTraceEnabled();
+                if (traceEnabled) {
+                    log.trace("Generating invoice number for reservation {}", reservation.getId());
+                }
+                billingDocumentManager.generateInvoiceNumber(spec, totalPrice.getKey())
+                    .ifPresent(invoiceNumber -> setInvoiceNumber(spec.getReservationId(), invoiceNumber));
+            }
+            // complete reservation
+            completeReservation(spec, finalizeReservation.getPaymentProxy(), finalizeReservation.isSendReservationConfirmationEmail(), finalizeReservation.isSendTickets(), finalizeReservation.getUsername());
             return null;
         });
+    }
+
+    private void setInvoiceNumber(String reservationId, String invoiceNumber) {
+        if (log.isTraceEnabled()) {
+            log.trace("Set invoice number {} for reservation {}", invoiceNumber, reservationId);
+        }
+        ticketReservationRepository.setInvoiceNumber(reservationId, invoiceNumber);
     }
 
     private void completeReservation(PaymentSpecification spec, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets, String username) {
@@ -215,7 +236,7 @@ public class ReservationFinalizer {
 
         acquireSpecialPriceTokens(reservationId);
         ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
-        int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservation.TicketReservationStatus.COMPLETE.toString(), email,
+        int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, COMPLETE.toString(), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
 
 
@@ -315,7 +336,7 @@ public class ReservationFinalizer {
         Validate.isTrue(ticketReservation.isPendingOfflinePayment(), "invalid status");
 
 
-        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservation.TicketReservationStatus.COMPLETE.name(), event.now(clockProvider));
+        ticketReservationRepository.confirmOfflinePayment(reservationId, COMPLETE.name(), event.now(clockProvider));
 
         registerAlfioTransaction(event, reservationId, PaymentProxy.OFFLINE);
 

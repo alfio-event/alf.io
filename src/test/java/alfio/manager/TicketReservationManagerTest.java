@@ -908,7 +908,7 @@ class TicketReservationManagerTest {
 
             var verificationMode = expectCompleteReservation ? times(1) : never();
             verify(ticketReservationRepository, verificationMode).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
-            verify(billingDocumentManager, verificationMode).generateInvoiceNumber(eq(spec), any());
+            verify(billingDocumentManager, never()).generateInvoiceNumber(eq(spec), any());
             verify(specialPriceRepository, verificationMode).updateStatusForReservation(singletonList(RESERVATION_ID), SpecialPrice.Status.TAKEN.toString());
 
             if (expectCompleteReservation) {
@@ -982,7 +982,7 @@ class TicketReservationManagerTest {
         verify(ticketReservationRepository, never()).setInvoiceNumber(eq(RESERVATION_ID), any());
         verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
-        verify(billingDocumentManager).generateInvoiceNumber(eq(spec), any());
+        verify(billingDocumentManager, never()).generateInvoiceNumber(eq(spec), any());
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
     }
@@ -1008,8 +1008,8 @@ class TicketReservationManagerTest {
         Assertions.assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
-        verify(billingDocumentManager).generateInvoiceNumber(eq(spec), any());
-        verify(ticketReservationRepository).setInvoiceNumber(RESERVATION_ID, invoiceNumber);
+        verify(billingDocumentManager, never()).generateInvoiceNumber(eq(spec), any());
+        verify(ticketReservationRepository, never()).setInvoiceNumber(RESERVATION_ID, invoiceNumber);
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
 
