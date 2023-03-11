@@ -42,11 +42,4 @@ public class RefreshableDataSource extends DelegatingDataSource {
         this.dataSource.getAndSet(new HikariDataSource(config)).close();
     }
 
-    public int getIdleConnections() {
-        return this.dataSource.get().getHikariPoolMXBean().getIdleConnections();
-    }
-
-    public int getActiveConnections() {
-        return this.dataSource.get().getHikariPoolMXBean().getActiveConnections();
-    }
 }

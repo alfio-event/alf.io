@@ -981,9 +981,13 @@ public class TicketReservationManager {
     }
 
     /**
-     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally, it will save email/fullName/billingaddress/userLanguage.
+     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state.
+     * Additionally, it will save email/fullName/billingAddress/userLanguage.
      */
     void completeReservation(PaymentSpecification spec, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets, String username) {
+        // pre-acquire special price tokens before committing, in order to ensure atomicity
+        reservationFinalizer.acquireSpecialPriceTokens(spec.getReservationId());
+        // run detached reservation confirmation
         this.applicationEventPublisher.publishEvent(new FinalizeReservation(spec, paymentProxy, sendReservationConfirmationEmail, sendTickets, username));
     }
 

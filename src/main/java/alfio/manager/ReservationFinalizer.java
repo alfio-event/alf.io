@@ -195,7 +195,11 @@ public class ReservationFinalizer {
         }
     }
 
-    public List<Ticket> acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
+    public void acquireSpecialPriceTokens(String reservationId) {
+        specialPriceRepository.updateStatusForReservation(singletonList(reservationId), SpecialPrice.Status.TAKEN.toString());
+    }
+
+    private List<Ticket> acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
                                      String userLanguage, String billingAddress, String customerReference, PurchaseContext purchaseContext, boolean sendTickets) {
         switch (purchaseContext.getType()) {
             case event: {
@@ -209,7 +213,7 @@ public class ReservationFinalizer {
             default: throw new IllegalStateException("not supported purchase context");
         }
 
-        specialPriceRepository.updateStatusForReservation(singletonList(reservationId), SpecialPrice.Status.TAKEN.toString());
+        acquireSpecialPriceTokens(reservationId);
         ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
         int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservation.TicketReservationStatus.COMPLETE.toString(), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
