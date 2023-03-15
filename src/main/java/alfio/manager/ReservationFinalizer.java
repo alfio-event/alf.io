@@ -17,11 +17,13 @@
 package alfio.manager;
 
 import alfio.manager.payment.PaymentSpecification;
-import alfio.manager.support.*;
+import alfio.manager.support.FeeCalculator;
+import alfio.manager.support.IncompatibleStateException;
 import alfio.manager.support.reservation.OrderSummaryGenerator;
 import alfio.manager.support.reservation.ReservationAuditingHelper;
 import alfio.manager.support.reservation.ReservationCostCalculator;
 import alfio.manager.support.reservation.ReservationEmailContentHelper;
+import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -33,6 +35,7 @@ import alfio.model.system.command.FinalizeReservation;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import alfio.repository.*;
+import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
 import alfio.util.LocaleUtil;
@@ -45,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -55,6 +59,7 @@ import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.function.Function;
 
+import static alfio.manager.system.AdminJobExecutor.JobName.RETRY_RESERVATION_CONFIRMATION;
 import static alfio.model.Audit.EventType.SUBSCRIPTION_ACQUIRED;
 import static alfio.model.TicketReservation.TicketReservationStatus.COMPLETE;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -87,6 +92,7 @@ public class ReservationFinalizer {
     private final OrderSummaryGenerator orderSummaryGenerator;
     private final ReservationEmailContentHelper reservationHelper;
     private final TransactionRepository transactionRepository;
+    private final AdminJobQueueRepository adminJobQueueRepository;
 
 
     public ReservationFinalizer(PlatformTransactionManager transactionManager,
@@ -106,7 +112,8 @@ public class ReservationFinalizer {
                                 BillingDocumentManager billingDocumentManager,
                                 AdditionalServiceItemRepository additionalServiceItemRepository,
                                 OrderSummaryGenerator orderSummaryGenerator,
-                                TransactionRepository transactionRepository) {
+                                TransactionRepository transactionRepository,
+                                AdminJobQueueRepository adminJobQueueRepository) {
         this.ticketReservationRepository = ticketReservationRepository;
         this.userRepository = userRepository;
         this.extensionManager = extensionManager;
@@ -128,28 +135,59 @@ public class ReservationFinalizer {
         this.orderSummaryGenerator = orderSummaryGenerator;
         this.reservationHelper = reservationEmailContentHelper;
         this.auditingHelper = new ReservationAuditingHelper(auditingRepository);
+        this.adminJobQueueRepository = adminJobQueueRepository;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void finalizeCommandReceived(FinalizeReservation finalizeReservation) {
-        transactionTemplate.execute(ctx -> {
-            var spec = finalizeReservation.getPaymentSpecification();
+        transactionTemplate.executeWithoutResult(ctx -> processFinalizeReservation(finalizeReservation, ctx));
+    }
+
+    private void processFinalizeReservation(FinalizeReservation finalizeReservation, TransactionStatus ctx) {
+        Object savepoint = ctx.createSavepoint();
+        var spec = finalizeReservation.getPaymentSpecification();
+        try {
             var reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
             var totalPrice = reservationCostCalculator.totalReservationCostWithVAT(reservation);
+            var metadata = ticketReservationRepository.getMetadata(reservation.getId());
             // generate invoice number
-            if (reservation.getStatus() != COMPLETE && StringUtils.isBlank(reservation.getInvoiceNumber())) {
+            if (reservation.getStatus() != COMPLETE && StringUtils.isBlank(reservation.getInvoiceNumber()) && !metadata.isReadyForConfirmation()) {
                 boolean traceEnabled = log.isTraceEnabled();
                 if (traceEnabled) {
                     log.trace("Generating invoice number for reservation {}", reservation.getId());
                 }
-                billingDocumentManager.generateInvoiceNumber(spec, totalPrice.getKey())
-                    .ifPresent(invoiceNumber -> setInvoiceNumber(spec.getReservationId(), invoiceNumber));
+                var invoiceNumberOptional = billingDocumentManager.generateInvoiceNumber(spec, totalPrice.getKey());
+                invoiceNumberOptional.ifPresent(s -> setInvoiceNumber(spec.getReservationId(), s));
             }
+            // no exceptions here. We can save the progress
+            ticketReservationRepository.setMetadata(reservation.getId(), metadata.withReadyForConfirmation(true));
+            ctx.releaseSavepoint(savepoint);
+            savepoint = ctx.createSavepoint();
+
             // complete reservation
             completeReservation(spec, finalizeReservation.getPaymentProxy(), finalizeReservation.isSendReservationConfirmationEmail(), finalizeReservation.isSendTickets(), finalizeReservation.getUsername());
-            return null;
-        });
+        } catch(Exception e) {
+            ctx.rollbackToSavepoint(savepoint);
+            boolean scheduled = AdminJobManager.executionScheduler(
+                RETRY_RESERVATION_CONFIRMATION,
+                Map.ofEntries(
+                    Map.entry("reservationId", finalizeReservation.getPaymentSpecification().getReservationId()),
+                    Map.entry("username", StringUtils.trimToEmpty(finalizeReservation.getUsername()))
+                ),
+                ZonedDateTime.now(clockProvider.getClock()).plusSeconds(2L)
+            ).apply(adminJobQueueRepository);
+            if(!scheduled) {
+                log.warn("Cannot schedule retry for reservation {}", spec.getReservationId());
+                // throw exception only if we can't schedule the retry
+                throw e;
+            } else {
+                log.warn("Error while confirming reservation "+ spec.getReservationId() + ". Will retry in 2s", e);
+            }
+        } finally {
+            ctx.releaseSavepoint(savepoint);
+        }
     }
+
 
     private void setInvoiceNumber(String reservationId, String invoiceNumber) {
         if (log.isTraceEnabled()) {
@@ -158,10 +196,18 @@ public class ReservationFinalizer {
         ticketReservationRepository.setInvoiceNumber(reservationId, invoiceNumber);
     }
 
-    private void completeReservation(PaymentSpecification spec, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets, String username) {
+    private void completeReservation(PaymentSpecification spec,
+                                     PaymentProxy paymentProxy,
+                                     boolean sendReservationConfirmationEmail,
+                                     boolean sendTickets,
+                                     String username) {
         String reservationId = spec.getReservationId();
         var purchaseContext = spec.getPurchaseContext();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        var metadata = ticketReservationRepository.getMetadata(reservationId);
+        if (!metadata.isReadyForConfirmation()) {
+            throw new IncompatibleStateException("Reservation is not ready to be confirmed");
+        }
         // retrieve reservation owner if username is null
         Integer userId;
         if(username != null) {
@@ -171,6 +217,7 @@ public class ReservationFinalizer {
                 .map(UserIdAndOrganizationId::getUserId)
                 .orElse(null);
         }
+        ticketReservationRepository.setMetadata(reservationId, metadata.withFinalized(true));
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         List<Ticket> tickets = null;
         if(paymentProxy != PaymentProxy.OFFLINE) {
@@ -201,6 +248,9 @@ public class ReservationFinalizer {
                                           PurchaseContext purchaseContext,
                                           Locale locale,
                                           String username) {
+        if (!ticketReservationRepository.getMetadata(ticketReservation.getId()).isFinalized()) {
+            throw new IncompatibleStateException("Reservation confirmed but not yet finalized");
+        }
         if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), purchaseContext.getConfigurationLevel());
             if(ticketReservation.getSrcPriceCts() > 0
@@ -238,7 +288,6 @@ public class ReservationFinalizer {
         ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
         int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, COMPLETE.toString(), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
-
 
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
 
@@ -332,6 +381,10 @@ public class ReservationFinalizer {
     public void confirmOfflinePayment(Event event, String reservationId, String username) {
         TicketReservation ticketReservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
         ticketReservationRepository.lockReservationForUpdate(reservationId);
+        var metadata = ticketReservationRepository.getMetadata(reservationId);
+        if (!metadata.isReadyForConfirmation()) {
+            throw new IncompatibleStateException("Reservation is not ready to be confirmed");
+        }
         Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
         Validate.isTrue(ticketReservation.isPendingOfflinePayment(), "invalid status");
 
@@ -348,9 +401,9 @@ public class ReservationFinalizer {
             ticketReservation.getCustomerReference(), event, true);
 
         Locale language = ReservationUtil.getReservationLocale(ticketReservation);
-
         final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
         billingDocumentManager.createBillingDocument(event, finalReservation, username, orderSummaryGenerator.orderSummaryForReservation(finalReservation, event));
+        ticketReservationRepository.setMetadata(reservationId, metadata.withFinalized(true));
         var configuration = configurationManager.getFor(EnumSet.of(DEFERRED_BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL), ConfigurationLevel.event(event));
         if(!configuration.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault() || configuration.get(DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL).getValueAsBooleanOrDefault()) {
             reservationHelper.sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language, username);

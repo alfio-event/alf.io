@@ -46,11 +46,12 @@ import static java.util.stream.Collectors.*;
 public class AdminJobManager {
 
     static final int MAX_ATTEMPTS = 17; // will retry for approximately 36h
-    private static final Set<String> ADMIN_JOBS = EnumSet.complementOf(EnumSet.of(JobName.EXECUTE_EXTENSION))
-        .stream()
+    private static final Set<JobName> REGULAR = EnumSet.complementOf(EnumSet.of(JobName.EXECUTE_EXTENSION, JobName.RETRY_RESERVATION_CONFIRMATION));
+    private static final Set<String> ADMIN_JOBS = REGULAR.stream()
         .map(Enum::name)
         .collect(toSet());
     private static final Set<String> EXTENSIONS_JOB = Set.of(JobName.EXECUTE_EXTENSION.name());
+    private static final Set<String> RESERVATIONS_JOB = Set.of(JobName.RETRY_RESERVATION_CONFIRMATION.name());
     private final Map<JobName, List<AdminJobExecutor>> executorsByJobId;
     private final AdminJobQueueRepository adminJobQueueRepository;
     private final TransactionTemplate nestedTransactionTemplate;
@@ -81,9 +82,20 @@ public class AdminJobManager {
         log.trace("done processing pending extensions retry");
     }
 
+    @Scheduled(fixedDelay = 1000L)
+    void processPendingReservationsRetry() {
+        log.trace("Processing pending reservations retry");
+        processPendingReservationsRetry(ZonedDateTime.now(clockProvider.getClock()));
+        log.trace("done processing pending reservations retry");
+    }
+
     // internal method invoked by tests
     void processPendingExtensionRetry(ZonedDateTime timestamp) {
         internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(EXTENSIONS_JOB, timestamp));
+    }
+
+    void processPendingReservationsRetry(ZonedDateTime timestamp) {
+        internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(RESERVATIONS_JOB, timestamp));
     }
 
     @Scheduled(fixedDelay = 60 * 1000)
@@ -102,12 +114,11 @@ public class AdminJobManager {
                 var partitionedResults = scheduleWithResults.getRight().stream().collect(Collectors.partitioningBy(Result::isSuccess));
                 if(!partitionedResults.get(false).isEmpty()) {
                     partitionedResults.get(false).forEach(r -> log.warn("Processing failed for {}: {}", schedule.getJobName(), r.getErrors()));
-                    if (schedule.getJobName() != JobName.EXECUTE_EXTENSION || schedule.getAttempts() > MAX_ATTEMPTS) {
+                    if (REGULAR.contains(schedule.getJobName()) || schedule.getAttempts() > MAX_ATTEMPTS) {
                         adminJobQueueRepository.updateSchedule(schedule.getId(), AdminJobSchedule.Status.FAILED, ZonedDateTime.now(clockProvider.getClock()), Map.of());
                     } else {
                         var nextExecution = getNextExecution(schedule.getAttempts());
-                        var extensionName = schedule.getMetadata().get("extensionName");
-                        log.debug("scheduling failed extension {} to be executed at {}", extensionName, nextExecution);
+                        logReschedule(nextExecution, schedule.getMetadata(), schedule.getJobName());
                         adminJobQueueRepository.scheduleRetry(schedule.getId(), nextExecution);
                     }
                 } else {
@@ -164,7 +175,10 @@ public class AdminJobManager {
     public static Function<AdminJobQueueRepository, Boolean> executionScheduler(JobName jobName, Map<String, Object> metadata, ZonedDateTime executionTime) {
         return adminJobQueueRepository -> {
             try {
-                int result = adminJobQueueRepository.schedule(jobName, executionTime, metadata);
+                int result = adminJobQueueRepository.schedule(jobName, executionTime, metadata,
+                    // by setting a null value, we actually disable the unique constraint for this job name
+                    // and allow multiple rows to be present for the same timestamp
+                    jobName.allowsMultipleScheduling() ? null : "N");
                 if (result == 0) {
                     log.trace("Possible duplication detected while inserting {}", jobName);
                 }
@@ -174,5 +188,16 @@ public class AdminJobManager {
                 return false;
             }
         };
+    }
+
+    private static void logReschedule(ZonedDateTime nextExecution, Map<String, Object> metadata, JobName jobName) {
+        String name;
+        boolean isExtension = jobName == JobName.EXECUTE_EXTENSION;
+        if (isExtension) {
+            name = String.valueOf(metadata.get("extensionName"));
+        } else {
+            name = String.valueOf(metadata.get("reservationId"));
+        }
+        log.debug("scheduling failed {} {} to be executed at {}", isExtension ? "extension" : "reservation", name, nextExecution);
     }
 }

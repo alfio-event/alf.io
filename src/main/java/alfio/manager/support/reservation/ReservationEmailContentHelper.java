@@ -22,6 +22,7 @@ import alfio.manager.ExtensionManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.ConfirmationEmailConfiguration;
+import alfio.manager.support.IncompatibleStateException;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -103,7 +104,7 @@ public class ReservationEmailContentHelper {
 
     public void sendConfirmationEmail(PurchaseContext purchaseContext, TicketReservation ticketReservation, Locale language, String username) {
         String reservationId = ticketReservation.getId();
-
+        checkIfFinalized(reservationId);
         OrderSummary summary = orderSummaryGenerator.orderSummaryForReservationId(reservationId, purchaseContext);
 
         List<Mailer.Attachment> attachments;
@@ -168,12 +169,15 @@ public class ReservationEmailContentHelper {
     }
 
     public void sendReservationCompleteEmailToOrganizer(PurchaseContext purchaseContext, TicketReservation ticketReservation, Locale language, String username) {
+        String reservationId = ticketReservation.getId();
+
+        checkIfFinalized(reservationId);
+
         Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
         List<String> cc = notificationManager.getCCForEventOrganizer(purchaseContext);
 
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation);
 
-        String reservationId = ticketReservation.getId();
         OrderSummary summary = orderSummaryGenerator.orderSummaryForReservationId(reservationId, purchaseContext);
 
         List<Mailer.Attachment> attachments = Collections.emptyList();
@@ -274,8 +278,15 @@ public class ReservationEmailContentHelper {
 
     public void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
+        checkIfFinalized(reservation.getId());
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory, () -> retrieveAttendeeAdditionalInfoForTicket(ticket));
+    }
+
+    private void checkIfFinalized(String reservationId) {
+        if (!Boolean.TRUE.equals(ticketReservationRepository.checkIfFinalized(reservationId))) {
+            throw new IncompatibleStateException("Reservation was confirmed but not finalized yet. Cannot send emails.");
+        }
     }
 
     public Map<String, List<String>> retrieveAttendeeAdditionalInfoForTicket(Ticket ticket) {

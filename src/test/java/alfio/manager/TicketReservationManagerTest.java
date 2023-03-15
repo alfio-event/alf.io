@@ -49,6 +49,7 @@ import alfio.model.transaction.token.StripeCreditCardToken;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
+import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.test.util.TestUtil;
@@ -228,7 +229,7 @@ class TicketReservationManagerTest {
             ticketReservationRepository, userRepository, extensionManager, auditingRepository, TestUtil.clockProvider(),
             configurationManager, null, ticketRepository, reservationHelper, specialPriceRepository,
             waitingQueueManager, ticketCategoryRepository, reservationCostCalculator, billingDocumentManager, additionalServiceItemRepository,
-            osm, transactionRepository);
+            osm, transactionRepository, mock(AdminJobQueueRepository.class));
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
@@ -1479,7 +1480,7 @@ class TicketReservationManagerTest {
                 ticketReservationRepository, userRepository, mock(ExtensionManager.class), auditingRepository, mock(ClockProvider.class), configurationManager,
                 mock(SubscriptionRepository.class), ticketRepository, reservationHelper, mock(SpecialPriceRepository.class),
                 waitingQueueManager, ticketCategoryRepository, mock(ReservationCostCalculator.class), billingDocumentManager, mock(AdditionalServiceItemRepository.class),
-                mock(OrderSummaryGenerator.class), transactionRepository);
+                mock(OrderSummaryGenerator.class), transactionRepository, mock(AdminJobQueueRepository.class));
             sendReservationEmailIfNecessary = mock(MaybeConfiguration.class);
             sendTickets = mock(MaybeConfiguration.class);
             when(ticketReservation.getSrcPriceCts()).thenReturn(0);

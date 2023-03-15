@@ -69,7 +69,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
@@ -79,7 +78,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
@@ -107,7 +105,6 @@ import static org.mockito.Mockito.mock;
 
 @RequiredArgsConstructor
 @Log4j2
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     protected final ConfigurationRepository configurationRepository;
@@ -816,6 +813,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             contactForm.setFirstName("full");
             contactForm.setLastName("name");
 
+            customizeContactFormForSuccessfulReservation(contactForm);
+
             var ticketForm = new UpdateTicketOwnerForm();
             ticketForm.setFirstName("ticketfull");
             ticketForm.setLastName("ticketname");
@@ -862,7 +861,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             // initialize and confirm payment
             performAndValidatePayment(context, reservationId, promoCodeId, this::cleanupExtensionLog);
 
-            checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
+            ensureReservationIsComplete(reservationId, context);
 
             reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
             assertNotNull(reservation);
@@ -1196,6 +1195,14 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     }
 
+    protected void customizeContactFormForSuccessfulReservation(ContactAndTicketsForm contactForm) {
+
+    }
+
+    protected void ensureReservationIsComplete(String reservationId, ReservationFlowContext context) {
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
+    }
+
     private void checkReservationExport(ReservationFlowContext context) {
         Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(context.userId);
@@ -1452,7 +1459,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         jdbcTemplate.update("delete from extension_log", Map.of());
     }
 
-    private void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event, int logSize) {
+    protected void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event, int logSize) {
         assertEquals(logSize, extLog.size()); // each event logs exactly two logs
         assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
     }
@@ -1487,9 +1494,13 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals(10, reservation.getVatCts());
         assertEquals(0, reservation.getDiscountCts());
         assertEquals(1, eventApiController.getPendingPayments(eventName).size());
-        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal));
+        confirmPayment(eventName, reservationIdentifier, principal);
         assertEquals(0, eventApiController.getPendingPayments(eventName).size());
         assertEquals(1000, eventRepository.getGrossIncome(context.event.getId()));
+    }
+
+    private void confirmPayment(String eventName, String reservationIdentifier, Principal principal) {
+        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal));
     }
 
     private void checkCalendar(String eventName) {

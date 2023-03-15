@@ -24,7 +24,6 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -45,7 +44,7 @@ public class DataCleaner implements AfterEachCallback, BeforeEachCallback {
 
     @Override
     public void afterEach(ExtensionContext context) {
-        if (context.getExecutionException().isEmpty() && hasDataSource(context)) {
+        if (hasDataSource(context)) {
             // test succeeded
             var applicationContext = SpringExtension.getApplicationContext(context);
             var jdbc = applicationContext.getBean(NamedParameterJdbcTemplate.class);
@@ -59,6 +58,7 @@ public class DataCleaner implements AfterEachCallback, BeforeEachCallback {
                 assertTrue(jdbc.update("delete from extension_configuration_metadata", Map.of()) >= 0);
                 assertTrue(jdbc.update("delete from extension_log", Map.of()) >= 0);
                 assertTrue(jdbc.update("delete from extension_support", Map.of()) >= 0);
+                assertTrue(jdbc.update("delete from admin_job_queue", Map.of()) >= 0);
                 // delete organization
                 var organizationDeleter = applicationContext.getBean(OrganizationDeleter.class);
                 jdbc.queryForList("select id from organization", Map.of(), Integer.class)
