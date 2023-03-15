@@ -21,10 +21,7 @@ import alfio.manager.PaymentManager.PaymentMethodDTO;
 import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.*;
-import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.manager.support.PaymentResult;
-import alfio.manager.support.PaymentWebhookResult;
-import alfio.manager.support.TemplateGenerator;
+import alfio.manager.support.*;
 import alfio.manager.support.reservation.OrderSummaryGenerator;
 import alfio.manager.support.reservation.ReservationCostCalculator;
 import alfio.manager.support.reservation.ReservationEmailContentHelper;
@@ -150,6 +147,7 @@ class TicketReservationManagerTest {
     private ReservationEmailContentHelper reservationHelper;
     private ReservationFinalizer reservationFinalizer;
     private ReservationCostCalculator reservationCostCalculator;
+    private ReservationMetadata metadata;
 
     @BeforeEach
     void init() {
@@ -302,6 +300,9 @@ class TicketReservationManagerTest {
         when(messageSource.getMessage(eq("reminder.ticket-not-assigned.subject"), any(), any())).thenReturn("subject");
         when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(), anyString(), any(), anyInt())).thenReturn(new AffectedRowCountAndKey<>(1, 1L));
         totalPrice = mock(TotalPrice.class);
+        metadata = mock(ReservationMetadata.class);
+        when(ticketReservationRepository.getMetadata(RESERVATION_ID)).thenReturn(metadata);
+        when(metadata.isFinalized()).thenReturn(true);
     }
 
     private void initUpdateTicketOwner(Ticket original, Ticket modified, String ticketId, String originalEmail, String originalName, UpdateTicketOwnerForm form) {
@@ -1056,10 +1057,12 @@ class TicketReservationManagerTest {
         when(json.asJsonString(any())).thenReturn("{}");
         when(configurationManager.getFor(eq(EnumSet.of(DEFERRED_BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL)), any())).thenReturn(Map.of(DEFERRED_BANK_TRANSFER_ENABLED, new MaybeConfiguration(DEFERRED_BANK_TRANSFER_ENABLED)));
         when(reservationCostCalculator.totalReservationCostWithVAT(RESERVATION_ID)).thenReturn(Pair.of(new TotalPrice(0, 0, 0, 0, "CHF"), Optional.empty()));
+        assertThrows(IncompatibleStateException.class, () -> trm.confirmOfflinePayment(event, RESERVATION_ID, "username"));
+        when(metadata.isReadyForConfirmation()).thenReturn(true);
         trm.confirmOfflinePayment(event, RESERVATION_ID, "username");
         verify(ticketReservationRepository, atLeastOnce()).findOptionalReservationById(RESERVATION_ID);
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
-        verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
+        verify(ticketReservationRepository, times(2)).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository).confirmOfflinePayment(eq(RESERVATION_ID), eq(COMPLETE.toString()), any(ZonedDateTime.class));
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()));
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), any(), eq(PaymentProxy.OFFLINE.toString()), isNull());
@@ -1545,6 +1548,15 @@ class TicketReservationManagerTest {
             when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
             when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(true);
             finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            verify(reservationHelper, never()).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
+        }
+
+        @Test
+        void emailNotSentBecauseReservationNotFinalized() {
+            when(metadata.isFinalized()).thenReturn(false);
+            when(sendReservationEmailIfNecessary.getValueAsBooleanOrDefault()).thenReturn(true);
+            when(sendTickets.getValueAsBooleanOrDefault()).thenReturn(true);
+            assertThrows(IncompatibleStateException.class, () -> finalizer.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null));
             verify(reservationHelper, never()).sendConfirmationEmail(event, ticketReservation, Locale.ENGLISH, null);
         }
     }
