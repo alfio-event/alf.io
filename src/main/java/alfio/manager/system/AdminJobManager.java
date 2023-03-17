@@ -25,7 +25,6 @@ import alfio.util.ClockProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,20 +74,6 @@ public class AdminJobManager {
         this.clockProvider = clockProvider;
     }
 
-    @Scheduled(fixedDelay = 1000L)
-    void processPendingExtensionRetry() {
-        log.trace("Processing pending extensions retry");
-        processPendingExtensionRetry(ZonedDateTime.now(clockProvider.getClock()));
-        log.trace("done processing pending extensions retry");
-    }
-
-    @Scheduled(fixedDelay = 1000L)
-    void processPendingReservationsRetry() {
-        log.trace("Processing pending reservations retry");
-        processPendingReservationsRetry(ZonedDateTime.now(clockProvider.getClock()));
-        log.trace("done processing pending reservations retry");
-    }
-
     // internal method invoked by tests
     void processPendingExtensionRetry(ZonedDateTime timestamp) {
         internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(EXTENSIONS_JOB, timestamp));
@@ -98,7 +83,6 @@ public class AdminJobManager {
         internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(RESERVATIONS_JOB, timestamp));
     }
 
-    @Scheduled(fixedDelay = 60 * 1000)
     void processPendingRequests() {
         log.trace("Processing pending requests");
         internalProcessPendingSchedules(adminJobQueueRepository.loadPendingSchedules(ADMIN_JOBS, ZonedDateTime.now(clockProvider.getClock())));
@@ -137,7 +121,6 @@ public class AdminJobManager {
             .plusSeconds((long) Math.pow(2, currentAttempt + 1D));
     }
 
-    @Scheduled(cron = "#{environment.acceptsProfiles('dev') ? '0 * * * * *' : '0 0 0 * * *'}")
     void cleanupExpiredRequests() {
         log.trace("Cleanup expired requests");
         ZonedDateTime now = ZonedDateTime.now(clockProvider.getClock());

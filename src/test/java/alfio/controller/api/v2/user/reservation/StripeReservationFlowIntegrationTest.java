@@ -59,7 +59,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -78,7 +77,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.test.util.IntegrationTestUtil.*;
@@ -91,7 +89,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
-    private static final String WEBHOOK_SECRET = "WEBHOOK_SECRET";
+    public static final String WEBHOOK_SECRET = "WEBHOOK_SECRET";
     private static final String PAYLOAD_FILENAME = "payloadFilename";
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;

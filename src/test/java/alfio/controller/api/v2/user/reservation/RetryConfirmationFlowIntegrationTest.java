@@ -28,10 +28,13 @@ import alfio.controller.api.admin.UsersApiController;
 import alfio.controller.api.v1.AttendeeApiController;
 import alfio.controller.api.v2.InfoApiController;
 import alfio.controller.api.v2.TranslationsApiController;
+import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.user.EventApiV2Controller;
 import alfio.controller.api.v2.user.ReservationApiV2Controller;
 import alfio.controller.api.v2.user.TicketApiV2Controller;
 import alfio.controller.form.ContactAndTicketsForm;
+import alfio.controller.form.PaymentForm;
+import alfio.controller.payment.api.stripe.StripePaymentWebhookController;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
@@ -48,6 +51,9 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.AdminJobQueueRepository;
@@ -56,26 +62,35 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.ClockProvider;
+import com.stripe.net.Webhook;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.validation.BeanPropertyBindingResult;
 
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
+import static alfio.controller.api.v2.user.reservation.StripeReservationFlowIntegrationTest.WEBHOOK_SECRET;
 import static alfio.test.util.IntegrationTestUtil.*;
+import static alfio.util.HttpUtils.APPLICATION_JSON;
+import static alfio.util.HttpUtils.APPLICATION_JSON_UTF8;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,6 +105,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
     private final UserManager userManager;
     private final AdminJobQueueRepository adminJobQueueRepository;
     private final AdminJobManagerInvoker adminJobManagerInvoker;
+    private final StripePaymentWebhookController stripePaymentWebhookController;
 
     @Autowired
     public RetryConfirmationFlowIntegrationTest(ConfigurationRepository configurationRepository,
@@ -131,7 +147,8 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
                                                 OrganizationRepository organizationRepository,
                                                 UserManager userManager,
                                                 AdminJobQueueRepository adminJobQueueRepository,
-                                                AdminJobManager adminJobManager) {
+                                                AdminJobManager adminJobManager,
+                                                StripePaymentWebhookController stripePaymentWebhookController) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -172,6 +189,15 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
         this.userManager = userManager;
         this.adminJobQueueRepository = adminJobQueueRepository;
         this.adminJobManagerInvoker = new AdminJobManagerInvoker(adminJobManager);
+        this.stripePaymentWebhookController = stripePaymentWebhookController;
+    }
+
+    @BeforeEach
+    void setUp() {
+        configurationRepository.insert(ConfigurationKeys.STRIPE_ENABLE_SCA.name(), "true", "");
+        configurationRepository.insert(ConfigurationKeys.STRIPE_PUBLIC_KEY.name(), "pk_test_123", "");
+        configurationRepository.insert(ConfigurationKeys.STRIPE_SECRET_KEY.name(), "sk_test_123", "");
+        configurationRepository.insert(ConfigurationKeys.STRIPE_WEBHOOK_PAYMENT_KEY.name(), WEBHOOK_SECRET, "");
     }
 
     private ReservationFlowContext createContext(boolean invoiceExtensionFailure) {
@@ -206,7 +232,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
     @Override
     protected void ensureReservationIsComplete(String reservationId, ReservationFlowContext context) {
         var ctx = (CustomReservationFlowContext) context;
-        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT, context);
         var reservation = ticketReservationRepository.findReservationById(reservationId);
         if (ctx.invoiceExtensionFailure) {
             // in this case the transaction must have been rolled back completely
@@ -214,6 +240,10 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
         } else {
             assertEquals("ABCD", reservation.getInvoiceNumber());
         }
+        // transaction must be present
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+        assertTrue(requireNonNull(tStatus.getBody()).isSuccess());
         // check that the confirmation has been rescheduled
         var now = ZonedDateTime.now(clockProvider.getClock()).plusSeconds(3);
         var schedules = adminJobQueueRepository.loadPendingSchedules(Set.of(AdminJobExecutor.JobName.RETRY_RESERVATION_CONFIRMATION.name()), now);
@@ -235,6 +265,75 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
                 assertTrue(metadata.isPresent());
                 assertEquals(t.getUuid(), metadata.get().getAttributes().get("uuid"));
             });
+    }
+
+    @Override
+    protected void performAndValidatePayment(ReservationFlowContext context,
+                                             String reservationId,
+                                             int promoCodeId,
+                                             Runnable cleanupExtensionLog) {
+        ReservationInfo reservation;
+        var paymentForm = new PaymentForm();
+
+        paymentForm.setPrivacyPolicyAccepted(true);
+        paymentForm.setTermAndConditionsAccepted(true);
+        paymentForm.setPaymentProxy(PaymentProxy.STRIPE);
+        paymentForm.setSelectedPaymentMethod(PaymentMethod.CREDIT_CARD);
+
+        var tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
+
+        // init payment
+        var initPaymentRes = reservationApiV2Controller.initTransaction(reservationId, PaymentMethod.CREDIT_CARD.name(), new LinkedMultiValueMap<>());
+        assertEquals(HttpStatus.OK, initPaymentRes.getStatusCode());
+
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+
+        var resInfoResponse = reservationApiV2Controller.getReservationInfo(reservationId, null);
+        assertEquals(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT, Objects.requireNonNull(resInfoResponse.getBody()).getStatus());
+
+        //
+        var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());
+        assertTrue(promoCodeUsage.isEmpty());
+
+        var handleRes = reservationApiV2Controller.confirmOverview(reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+            new MockHttpServletRequest(), context.getPublicUser());
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleRes.getStatusCode());
+
+        cleanupExtensionLog.run();
+        processWebHook(reservationId);
+
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT, context);
+
+        tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
+        assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+        assertNotNull(tStatus.getBody());
+        assertTrue(tStatus.getBody().isSuccess());
+
+        reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
+        assertNotNull(reservation);
+        checkOrderSummary(reservation);
+    }
+
+    private void processWebHook(String reservationId) {
+        try {
+            var resource = getClass().getResource("/transaction-json/stripe-success-valid.json");
+            assertNotNull(resource);
+            var timestamp = String.valueOf(Webhook.Util.getTimeNow());
+            var payload = Files.readString(Path.of(resource.toURI())).replaceAll("RESERVATION_ID", reservationId);
+            var signedHeader = "t=" + timestamp + ",v1=" +Webhook.Util.computeHmacSha256(WEBHOOK_SECRET, timestamp + "." + payload);
+            var httpRequest = new MockHttpServletRequest();
+            httpRequest.setContent(payload.getBytes(StandardCharsets.UTF_8));
+            httpRequest.setContentType(APPLICATION_JSON);
+            var response = stripePaymentWebhookController.receivePaymentConfirmation(signedHeader, httpRequest);
+            assertNotNull(response);
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(APPLICATION_JSON_UTF8, Objects.requireNonNull(response.getHeaders().getContentType()).toString());
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     @Override
@@ -264,6 +363,22 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    @Override
+    protected Stream<String> getExtensionEventsToRegister() {
+        return EnumSet.complementOf(EnumSet.of(ExtensionEvent.INVOICE_GENERATION, ExtensionEvent.TICKET_ASSIGNED_GENERATE_METADATA))
+            .stream()
+            .map(ee -> "'"+ee.name()+"'");
+    }
+
+    @Override
+    protected void checkOrderSummary(ReservationInfo reservation) {
+        var orderSummary = reservation.getOrderSummary();
+        assertFalse(orderSummary.isNotYetPaid());
+        assertEquals("10.00", orderSummary.getTotalPrice());
+        assertEquals("0.10", orderSummary.getTotalVAT());
+        assertEquals("1.00", orderSummary.getVatPercentage());
     }
 
     static class CustomReservationFlowContext extends ReservationFlowContext {

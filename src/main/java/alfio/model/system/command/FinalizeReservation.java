@@ -18,6 +18,8 @@ package alfio.model.system.command;
 
 import alfio.manager.payment.PaymentSpecification;
 import alfio.model.transaction.PaymentProxy;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
@@ -28,7 +30,12 @@ public class FinalizeReservation {
     private final boolean sendTickets;
     private final String username;
 
-    public FinalizeReservation(PaymentSpecification paymentSpecification, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets, String username) {
+    @JsonCreator
+    public FinalizeReservation(@JsonProperty("paymentSpecification") PaymentSpecification paymentSpecification,
+                               @JsonProperty("paymentProxy") PaymentProxy paymentProxy,
+                               @JsonProperty("sendReservationConfirmationEmail") boolean sendReservationConfirmationEmail,
+                               @JsonProperty("sendTickets") boolean sendTickets,
+                               @JsonProperty("username") String username) {
         this.paymentSpecification = paymentSpecification;
         this.paymentProxy = paymentProxy;
         this.sendReservationConfirmationEmail = sendReservationConfirmationEmail;
