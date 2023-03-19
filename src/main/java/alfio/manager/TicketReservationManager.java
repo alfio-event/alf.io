@@ -100,13 +100,14 @@ import java.util.stream.Stream;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
-import static alfio.model.BillingDocument.Type.*;
+import static alfio.model.BillingDocument.Type.CREDIT_NOTE;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MiscUtils.getAtIndexOrNull;
-import static alfio.util.MonetaryUtil.*;
+import static alfio.util.MonetaryUtil.formatUnit;
+import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.ReservationUtil.getReservationLocale;
 import static alfio.util.ReservationUtil.hasPrivacyPolicy;
 import static alfio.util.Wrappers.optionally;
@@ -985,8 +986,13 @@ public class TicketReservationManager {
     void completeReservation(PaymentSpecification spec, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets, String username) {
         // pre-acquire special price tokens before committing, in order to ensure atomicity
         reservationFinalizer.acquireSpecialPriceTokens(spec.getReservationId());
+        // update reservation status to mark the finalization, but first retrieve the current one
+        // set by the payment provider. This is useful especially in case a single "PaymentProxy" can produce different statuses
+        // like OFFLINE_PAYMENT and DEFERRED_OFFLINE_PAYMENT
+        var currentStatus = ticketReservationRepository.findOptionalStatusAndValidationById(spec.getReservationId()).orElseThrow().getStatus();
+        ticketReservationRepository.updateReservationStatus(spec.getReservationId(), FINALIZING.name());
         // run detached reservation confirmation
-        this.applicationEventPublisher.publishEvent(new FinalizeReservation(spec, paymentProxy, sendReservationConfirmationEmail, sendTickets, username));
+        this.applicationEventPublisher.publishEvent(new FinalizeReservation(spec, paymentProxy, sendReservationConfirmationEmail, sendTickets, username, currentStatus));
     }
 
     public PartialTicketTextGenerator getTicketEmailGenerator(Event event,

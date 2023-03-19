@@ -16,6 +16,7 @@
  */
 package alfio.manager.support;
 
+import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.command.FinalizeReservation;
 import alfio.model.transaction.PaymentProxy;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -30,6 +31,7 @@ public class RetryFinalizeReservation {
     private final String username;
     private final boolean tcAccepted;
     private final boolean privacyPolicyAccepted;
+    private final TicketReservationStatus originalStatus;
 
     @JsonCreator
     public RetryFinalizeReservation(@JsonProperty("reservationId") String reservationId,
@@ -38,7 +40,8 @@ public class RetryFinalizeReservation {
                                     @JsonProperty("sendTickets") boolean sendTickets,
                                     @JsonProperty("username") String username,
                                     @JsonProperty("tcAccepted") boolean tcAccepted,
-                                    @JsonProperty("privacyPolicyAccepted") boolean privacyPolicyAccepted) {
+                                    @JsonProperty("privacyPolicyAccepted") boolean privacyPolicyAccepted,
+                                    @JsonProperty("originalStatus") TicketReservationStatus originalStatus) {
         this.reservationId = reservationId;
         this.paymentProxy = paymentProxy;
         this.sendReservationConfirmationEmail = sendReservationConfirmationEmail;
@@ -46,6 +49,7 @@ public class RetryFinalizeReservation {
         this.username = username;
         this.tcAccepted = tcAccepted;
         this.privacyPolicyAccepted = privacyPolicyAccepted;
+        this.originalStatus = originalStatus;
     }
 
     public String getReservationId() {
@@ -76,6 +80,10 @@ public class RetryFinalizeReservation {
         return privacyPolicyAccepted;
     }
 
+    public TicketReservationStatus getOriginalStatus() {
+        return originalStatus;
+    }
+
     public static RetryFinalizeReservation fromFinalizeReservation(FinalizeReservation finalizeReservation) {
         var paymentSpecification = finalizeReservation.getPaymentSpecification();
         return new RetryFinalizeReservation(paymentSpecification.getReservationId(),
@@ -84,6 +92,8 @@ public class RetryFinalizeReservation {
             finalizeReservation.isSendTickets(),
             finalizeReservation.getUsername(),
             paymentSpecification.isTcAccepted(),
-            paymentSpecification.isPrivacyAccepted());
+            paymentSpecification.isPrivacyAccepted(),
+            finalizeReservation.getOriginalStatus()
+        );
     }
 }

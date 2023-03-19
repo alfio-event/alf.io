@@ -64,6 +64,7 @@ import java.util.function.Function;
 import static alfio.manager.system.AdminJobExecutor.JobName.RETRY_RESERVATION_CONFIRMATION;
 import static alfio.model.Audit.EventType.SUBSCRIPTION_ACQUIRED;
 import static alfio.model.TicketReservation.TicketReservationStatus.COMPLETE;
+import static alfio.model.TicketReservation.TicketReservationStatus.FINALIZING;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.ReservationUtil.hasPrivacyPolicy;
 import static java.util.Collections.singletonList;
@@ -158,13 +159,8 @@ public class ReservationFinalizer {
         var costResult = reservationCostCalculator.totalReservationCostWithVAT(reservation);
         var totalPrice = costResult.getLeft();
         var orderSummary = orderSummaryGenerator.orderSummaryForReservation(reservation, purchaseContext);
-
-        /*String paymentToken = null;
-        if (totalPrice.requiresPayment()) {
-            paymentToken = transactionRepository.loadByReservationId(retryFinalizeReservation.getReservationId()).getTransactionId();
-        }*/
         var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, null, orderSummary, retryFinalizeReservation.isTcAccepted(), retryFinalizeReservation.isPrivacyPolicyAccepted());
-        transactionTemplate.executeWithoutResult(ctx -> processFinalizeReservation(new FinalizeReservation(paymentSpecification, retryFinalizeReservation.getPaymentProxy(), retryFinalizeReservation.isSendReservationConfirmationEmail(), retryFinalizeReservation.isSendTickets(), retryFinalizeReservation.getUsername()), ctx, false));
+        transactionTemplate.executeWithoutResult(ctx -> processFinalizeReservation(new FinalizeReservation(paymentSpecification, retryFinalizeReservation.getPaymentProxy(), retryFinalizeReservation.isSendReservationConfirmationEmail(), retryFinalizeReservation.isSendTickets(), retryFinalizeReservation.getUsername(), retryFinalizeReservation.getOriginalStatus()), ctx, false));
     }
 
     private void processFinalizeReservation(FinalizeReservation finalizeReservation, TransactionStatus ctx, boolean scheduleRetryOnError) {
@@ -189,7 +185,7 @@ public class ReservationFinalizer {
             savepoint = ctx.createSavepoint();
 
             // complete reservation
-            completeReservation(spec, finalizeReservation.getPaymentProxy(), finalizeReservation.isSendReservationConfirmationEmail(), finalizeReservation.isSendTickets(), finalizeReservation.getUsername());
+            completeReservation(finalizeReservation);
         } catch(Exception e) {
             ctx.rollbackToSavepoint(savepoint);
             if (!scheduleRetryOnError) {
@@ -220,14 +216,16 @@ public class ReservationFinalizer {
         ticketReservationRepository.setInvoiceNumber(reservationId, invoiceNumber);
     }
 
-    private void completeReservation(PaymentSpecification spec,
-                                     PaymentProxy paymentProxy,
-                                     boolean sendReservationConfirmationEmail,
-                                     boolean sendTickets,
-                                     String username) {
-        String reservationId = spec.getReservationId();
+    private void completeReservation(FinalizeReservation finalizeReservation) {
+        var spec = finalizeReservation.getPaymentSpecification();
+        var paymentProxy = finalizeReservation.getPaymentProxy();
+        var username = finalizeReservation.getUsername();
+        var reservationId = spec.getReservationId();
         var purchaseContext = spec.getPurchaseContext();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        if (reservation.getStatus() != FINALIZING) {
+            throw new IncompatibleStateException("Status " + reservation.getStatus() + " is not compatible with finalization.");
+        }
         var metadata = ticketReservationRepository.getMetadata(reservationId);
         if (!metadata.isReadyForConfirmation()) {
             throw new IncompatibleStateException("Reservation is not ready to be confirmed");
@@ -245,8 +243,12 @@ public class ReservationFinalizer {
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         List<Ticket> tickets = null;
         if(paymentProxy != PaymentProxy.OFFLINE) {
-            tickets = acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getPurchaseContext(), sendTickets);
+            ticketReservationRepository.updateReservationStatus(reservationId, COMPLETE.name());
+            tickets = acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getPurchaseContext(), finalizeReservation.isSendTickets());
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), spec.getPurchaseContext());
+        } else {
+            // if paymentProxy is offline, we set the appropriate status to wait for payment
+            ticketReservationRepository.updateReservationStatus(reservationId, finalizeReservation.getOriginalStatus().name());
         }
 
         Date eventTime = new Date();
@@ -260,7 +262,7 @@ public class ReservationFinalizer {
             auditingRepository.insert(reservationId, userId, purchaseContext, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getPurchaseContext().getPrivacyPolicyUrl())));
         }
 
-        if(sendReservationConfirmationEmail) {
+        if(finalizeReservation.isSendReservationConfirmationEmail()) {
             TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
             sendConfirmationEmailIfNecessary(updatedReservation, tickets, purchaseContext, locale, username);
             reservationOperationHelper.sendReservationCompleteEmailToOrganizer(spec.getPurchaseContext(), updatedReservation, locale, username);

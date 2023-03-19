@@ -17,6 +17,7 @@
 package alfio.model.system.command;
 
 import alfio.manager.payment.PaymentSpecification;
+import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.transaction.PaymentProxy;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,18 +30,21 @@ public class FinalizeReservation {
     private final boolean sendReservationConfirmationEmail;
     private final boolean sendTickets;
     private final String username;
+    private final TicketReservationStatus originalStatus;
 
     @JsonCreator
     public FinalizeReservation(@JsonProperty("paymentSpecification") PaymentSpecification paymentSpecification,
                                @JsonProperty("paymentProxy") PaymentProxy paymentProxy,
                                @JsonProperty("sendReservationConfirmationEmail") boolean sendReservationConfirmationEmail,
                                @JsonProperty("sendTickets") boolean sendTickets,
-                               @JsonProperty("username") String username) {
+                               @JsonProperty("username") String username,
+                               @JsonProperty("originalStatus") TicketReservationStatus originalStatus) {
         this.paymentSpecification = paymentSpecification;
         this.paymentProxy = paymentProxy;
         this.sendReservationConfirmationEmail = sendReservationConfirmationEmail;
         this.sendTickets = sendTickets;
         this.username = username;
+        this.originalStatus = originalStatus;
     }
 
     public PaymentSpecification getPaymentSpecification() {
@@ -61,6 +65,10 @@ public class FinalizeReservation {
 
     public String getUsername() {
         return username;
+    }
+
+    public TicketReservationStatus getOriginalStatus() {
+        return originalStatus;
     }
 
     @Override

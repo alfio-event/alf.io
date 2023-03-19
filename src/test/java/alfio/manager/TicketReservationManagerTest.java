@@ -914,7 +914,7 @@ class TicketReservationManagerTest {
             verify(specialPriceRepository, verificationMode).updateStatusForReservation(singletonList(RESERVATION_ID), SpecialPrice.Status.TAKEN.toString());
 
             if (expectCompleteReservation) {
-                verify(applicationEventPublisher).publishEvent(new FinalizeReservation(spec, PaymentProxy.STRIPE, true, true, null));
+                verify(applicationEventPublisher).publishEvent(new FinalizeReservation(spec, PaymentProxy.STRIPE, true, true, null, PENDING));
             }
             verify(ticketRepository, never()).updateTicketsStatusWithReservationId(RESERVATION_ID, TicketStatus.ACQUIRED.toString());
             verify(ticketReservationRepository, never()).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
@@ -977,7 +977,7 @@ class TicketReservationManagerTest {
         Assertions.assertTrue(result.isSuccessful());
         Assertions.assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(specialPriceRepository).updateStatusForReservation(singletonList(RESERVATION_ID), SpecialPrice.Status.TAKEN.toString());
-        verify(applicationEventPublisher).publishEvent(new FinalizeReservation(spec, PaymentProxy.ON_SITE, true, true, null));
+        verify(applicationEventPublisher).publishEvent(new FinalizeReservation(spec, PaymentProxy.ON_SITE, true, true, null, PENDING));
         verify(ticketRepository, never()).updateTicketsStatusWithReservationId(RESERVATION_ID, TicketStatus.ACQUIRED.toString());
         verify(ticketReservationRepository, never()).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
         verify(waitingQueueManager, never()).fireReservationConfirmed(RESERVATION_ID);

@@ -39,6 +39,7 @@ public class TicketReservation implements PriceContainer {
         WAITING_EXTERNAL_CONFIRMATION,
         OFFLINE_PAYMENT,
         DEFERRED_OFFLINE_PAYMENT,
+        FINALIZING,
         COMPLETE,
         STUCK,
         CANCELLED,

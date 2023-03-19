@@ -232,7 +232,13 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
     @Override
     protected void ensureReservationIsComplete(String reservationId, ReservationFlowContext context) {
         var ctx = (CustomReservationFlowContext) context;
-        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT, context);
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.FINALIZING, context);
+
+        // check that the IndexController is redirecting properly
+        var shortName = context.event.getShortName();
+        var redirect = indexController.redirectEventToReservation(shortName, reservationId, null);
+        assertEquals("redirect:/event/"+shortName+"/reservation/"+reservationId+"/success", redirect);
+
         var reservation = ticketReservationRepository.findReservationById(reservationId);
         if (ctx.invoiceExtensionFailure) {
             // in this case the transaction must have been rolled back completely
@@ -305,7 +311,8 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
         cleanupExtensionLog.run();
         processWebHook(reservationId);
 
-        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT, context);
+        // status must be FINALIZING
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.FINALIZING, context);
 
         tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
