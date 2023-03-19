@@ -37,6 +37,11 @@ public class SandboxNativeJavaMap extends NativeJavaMap {
             throw new OutOfBoundariesException("Out of boundaries class use.");
         }
 
+        if (map.get(name) == null) {
+            // prevent NPE on Rhino when map has an explicit null value for a given key
+            return null;
+        }
+
         return super.get(name, start);
     }
 }

@@ -63,8 +63,7 @@ import java.util.function.Function;
 
 import static alfio.manager.system.AdminJobExecutor.JobName.RETRY_RESERVATION_CONFIRMATION;
 import static alfio.model.Audit.EventType.SUBSCRIPTION_ACQUIRED;
-import static alfio.model.TicketReservation.TicketReservationStatus.COMPLETE;
-import static alfio.model.TicketReservation.TicketReservationStatus.FINALIZING;
+import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.ReservationUtil.hasPrivacyPolicy;
 import static java.util.Collections.singletonList;
@@ -223,7 +222,7 @@ public class ReservationFinalizer {
         var reservationId = spec.getReservationId();
         var purchaseContext = spec.getPurchaseContext();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        if (reservation.getStatus() != FINALIZING) {
+        if (reservation.getStatus() != FINALIZING && reservation.getStatus() != OFFLINE_FINALIZING) {
             throw new IncompatibleStateException("Status " + reservation.getStatus() + " is not compatible with finalization.");
         }
         var metadata = ticketReservationRepository.getMetadata(reservationId);

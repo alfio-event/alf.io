@@ -990,7 +990,11 @@ public class TicketReservationManager {
         // set by the payment provider. This is useful especially in case a single "PaymentProxy" can produce different statuses
         // like OFFLINE_PAYMENT and DEFERRED_OFFLINE_PAYMENT
         var currentStatus = ticketReservationRepository.findOptionalStatusAndValidationById(spec.getReservationId()).orElseThrow().getStatus();
-        ticketReservationRepository.updateReservationStatus(spec.getReservationId(), FINALIZING.name());
+        TicketReservationStatus targetStatus = FINALIZING;
+        if (currentStatus == OFFLINE_PAYMENT || currentStatus == DEFERRED_OFFLINE_PAYMENT) {
+            targetStatus = OFFLINE_FINALIZING;
+        }
+        ticketReservationRepository.updateReservationStatus(spec.getReservationId(), targetStatus.name());
         // run detached reservation confirmation
         this.applicationEventPublisher.publishEvent(new FinalizeReservation(spec, paymentProxy, sendReservationConfirmationEmail, sendTickets, username, currentStatus));
     }
