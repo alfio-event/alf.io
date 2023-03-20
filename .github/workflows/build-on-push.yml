@@ -52,6 +52,8 @@ jobs:
               uses: actions/download-artifact@v3
               with:
                   name: dist
+            -   name: Set up QEMU
+                uses: docker/setup-qemu-action@v2
             -   name: Configure Docker
                 uses: docker/setup-buildx-action@v2
             -   name: Login to Container Registry
@@ -68,4 +70,5 @@ jobs:
                     context: ./dockerize
                     tags: |
                         ghcr.io/alfio-event/alf.io/dev-${{ env.GITHUB_REF_SLUG }}:latest
+                    platforms: linux/amd64,linux/arm64
                     push: true
