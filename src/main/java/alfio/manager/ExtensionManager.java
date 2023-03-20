@@ -62,7 +62,6 @@ import java.util.stream.Collectors;
 import static alfio.extension.ExtensionService.toPath;
 import static alfio.manager.support.extension.ExtensionEvent.*;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
-import static java.util.stream.Collectors.toSet;
 
 @Component
 @AllArgsConstructor
@@ -198,7 +197,7 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.STUCK_RESERVATIONS, event, payload);
     }
 
-    Optional<CustomEmailText> handleReservationEmailCustomText(PurchaseContext purchaseContext, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
+    public Optional<CustomEmailText> handleReservationEmailCustomText(PurchaseContext purchaseContext, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
         Map<String, Object> payload = Map.of(
             RESERVATION, reservation,
             "purchaseContext", purchaseContext,
@@ -260,7 +259,7 @@ public class ExtensionManager {
         payload.put("vatNr", billingDetails.getTaxId());
         payload.put("vatStatus", spec.getVatStatus());
 
-        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchaseContext(), payload, InvoiceGeneration.class));
+        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchaseContext(), payload, InvoiceGeneration.class, false));
     }
 
     public Optional<CreditNoteGeneration> handleCreditNoteGeneration(PurchaseContext purchaseContext,

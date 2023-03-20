@@ -19,8 +19,9 @@ package alfio.manager;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
-import alfio.manager.support.IncompatibleStateException;
 import alfio.manager.support.DuplicateReferenceException;
+import alfio.manager.support.IncompatibleStateException;
+import alfio.manager.support.reservation.ReservationEmailContentHelper;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
@@ -81,6 +82,7 @@ import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.Wrappers.optionally;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.firstNonBlank;
@@ -119,6 +121,7 @@ public class AdminReservationManager {
     private final BillingDocumentManager billingDocumentManager;
     private final ClockProvider clockProvider;
     private final SubscriptionRepository subscriptionRepository;
+    private final ReservationEmailContentHelper reservationEmailContentHelper;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,
@@ -129,25 +132,26 @@ public class AdminReservationManager {
                                                                                         UUID subscriptionId) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
-        return template.execute(status -> {
+        Result<String> result = template.execute(status -> {
             try {
-                Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> result = purchaseContextManager.findBy(purchaseContextType, eventName)
+                Result<String> confirmationResult = purchaseContextManager.findBy(purchaseContextType, eventName)
                     .map(purchaseContext -> ticketReservationRepository.findOptionalReservationById(reservationId)
                         .filter(r -> r.getStatus() == TicketReservationStatus.PENDING || r.getStatus() == TicketReservationStatus.STUCK)
                         .map(r -> performConfirmation(reservationId, purchaseContext, r, notification, username, subscriptionId))
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
-                if(!result.isSuccess()) {
+                if(!confirmationResult.isSuccess()) {
                     log.debug("Reservation confirmation failed for eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
                     status.setRollbackOnly();
                 }
-                return result;
+                return confirmationResult;
             } catch (Exception e) {
                 log.error("Error during confirmation of reservation eventName: {} reservationId: {}, username: {}", eventName, reservationId, username);
                 status.setRollbackOnly();
                 return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
             }
         });
+        return requireNonNull(result).flatMap(this::loadReservation);
     }
     public Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,
                                                                                                String eventName,
@@ -247,7 +251,7 @@ public class AdminReservationManager {
             .forEach(t -> {
                 Locale locale = LocaleUtil.forLanguageTag(t.getUserLanguage());
                 var additionalInfo = ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(t);
-                ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale, additionalInfo));
+                reservationEmailContentHelper.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale, additionalInfo));
             });
     }
 
@@ -357,12 +361,12 @@ public class AdminReservationManager {
             .orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
     }
 
-    private Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> performConfirmation(String reservationId,
-                                                                                                 PurchaseContext purchaseContext,
-                                                                                                 TicketReservation original,
-                                                                                                 Notification notification,
-                                                                                                 String username,
-                                                                                                 UUID subscriptionId) {
+    private Result<String> performConfirmation(String reservationId,
+                                               PurchaseContext purchaseContext,
+                                               TicketReservation original,
+                                               Notification notification,
+                                               String username,
+                                               UUID subscriptionId) {
         try {
 
             var reservation = original;
@@ -417,7 +421,7 @@ public class AdminReservationManager {
                 notification.isCustomer(),
                 notification.isAttendees(),
                 username);
-            return loadReservation(reservationId);
+            return Result.success(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);
         }

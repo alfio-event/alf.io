@@ -162,7 +162,7 @@ public class ReservationApiV2Controller {
 
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
 
-            var shortReservationId =  ticketReservationManager.getShortReservationID(purchaseContext, reservation);
+            var shortReservationId =  configurationManager.getShortReservationID(purchaseContext, reservation);
             //
 
 

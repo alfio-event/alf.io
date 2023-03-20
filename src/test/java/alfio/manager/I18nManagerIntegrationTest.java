@@ -22,6 +22,7 @@ import alfio.config.Initializer;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.ContentLanguage;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +38,10 @@ import java.time.format.DateTimeFormatter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
-public class I18nManagerIntegrationTest extends BaseIntegrationTest {
+class I18nManagerIntegrationTest extends BaseIntegrationTest {
 
     private static final ZonedDateTime DATE = ZonedDateTime.of(1999, 2, 3, 4, 5, 6, 7, ZoneId.of("Europe/Zurich"));
 

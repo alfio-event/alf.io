@@ -28,4 +28,8 @@ public class AdminJobManagerInvoker {
     public void invokeProcessPendingExtensionRetry(ZonedDateTime timestamp) {
         adminJobManager.processPendingExtensionRetry(timestamp);
     }
+
+    public void invokeProcessPendingReservationsRetry(ZonedDateTime timestamp) {
+        adminJobManager.processPendingReservationsRetry(timestamp);
+    }
 }

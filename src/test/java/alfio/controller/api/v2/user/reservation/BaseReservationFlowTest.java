@@ -95,9 +95,11 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static alfio.manager.support.extension.ExtensionEvent.*;
+import static alfio.model.system.ConfigurationKeys.TRANSLATION_OVERRIDE;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -207,9 +209,13 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         specialPriceTokenGenerator.generatePendingCodes();
     }
 
+    protected Stream<String> getExtensionEventsToRegister() {
+        return allEvents();
+    }
+
     protected void testBasicFlow(Supplier<ReservationFlowContext> contextSupplier) throws Exception {
         // as soon as the test starts, insert the extension in the database (prepare the environment)
-        insertExtension(extensionService, "/extension.js");
+        insertExtension(extensionService, "/extension.js", getExtensionEventsToRegister());
         List<BasicEventInfo> body = eventApiV2Controller.listEvents(SearchOptions.empty()).getBody();
         assertNotNull(body);
         assertTrue(body.isEmpty());
@@ -312,7 +318,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals(context.event.getFileBlobId(), selectedEvent.getFileBlobId());
         assertTrue(selectedEvent.getI18nOverride().isEmpty());
 
-        configurationRepository.insert("TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("show-context.event.tickets.left", "{0} left!"))), "");
+        configurationRepository.insert(TRANSLATION_OVERRIDE.name(), Json.toJson(Map.of("en", Map.of("show-context.event.tickets.left", "{0} left!"))), "");
         configurationRepository.insertEventLevel(context.event.getOrganizationId(), context.event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "context.event.vat"))), "");
         eventRes = eventApiV2Controller.getEvent(context.event.getShortName(), new MockHttpSession());
         selectedEvent = eventRes.getBody();
@@ -812,6 +818,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             contactForm.setFirstName("full");
             contactForm.setLastName("name");
 
+            customizeContactFormForSuccessfulReservation(contactForm);
+
             var ticketForm = new UpdateTicketOwnerForm();
             ticketForm.setFirstName("ticketfull");
             ticketForm.setLastName("ticketname");
@@ -858,7 +866,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             // initialize and confirm payment
             performAndValidatePayment(context, reservationId, promoCodeId, this::cleanupExtensionLog);
 
-            checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
+            ensureReservationIsComplete(reservationId, context);
 
             reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
             assertNotNull(reservation);
@@ -948,8 +956,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
 
             //no invoice, but receipt
-            assertEquals(HttpStatus.NOT_FOUND, reservationApiV2Controller.getInvoice(context.event.getShortName(), reservationId, new MockHttpServletResponse(), context.getPublicAuthentication()).getStatusCode());
-            assertEquals(HttpStatus.OK, reservationApiV2Controller.getReceipt(context.event.getShortName(), reservationId, new MockHttpServletResponse(), context.getPublicAuthentication()).getStatusCode());
+            assertEquals(contactForm.isInvoiceRequested() ? HttpStatus.OK : HttpStatus.NOT_FOUND, reservationApiV2Controller.getInvoice(context.event.getShortName(), reservationId, new MockHttpServletResponse(), context.getPublicAuthentication()).getStatusCode());
+            assertEquals(contactForm.isInvoiceRequested() ? HttpStatus.NOT_FOUND : HttpStatus.OK, reservationApiV2Controller.getReceipt(context.event.getShortName(), reservationId, new MockHttpServletResponse(), context.getPublicAuthentication()).getStatusCode());
 
 
 
@@ -1192,6 +1200,14 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
     }
 
+    protected void customizeContactFormForSuccessfulReservation(ContactAndTicketsForm contactForm) {
+
+    }
+
+    protected void ensureReservationIsComplete(String reservationId, ReservationFlowContext context) {
+        checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE, context);
+    }
+
     private void checkReservationExport(ReservationFlowContext context) {
         Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(context.userId);
@@ -1211,14 +1227,18 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertThrows(IllegalArgumentException.class, () -> exportManager.reservationsForInterval(wrongFrom, now, principal));
     }
 
-    static void insertExtension(ExtensionService extensionService, String path) throws IOException {
-        insertExtension(extensionService, path, true, true);
+    static void insertExtension(ExtensionService extensionService, String path, Stream<String> events) throws IOException {
+        insertExtension(extensionService, path, true, true, events);
     }
 
-    static void insertExtension(ExtensionService extensionService, String path, boolean async, boolean sync) throws IOException {
+    static Stream<String> allEvents() {
+        return Arrays.stream(ExtensionEvent.values()).map(ee -> "'"+ee.name()+"'");
+    }
+
+    static void insertExtension(ExtensionService extensionService, String path, boolean async, boolean sync, Stream<String> events) throws IOException {
         try (var extensionInputStream = requireNonNull(BaseReservationFlowTest.class.getResourceAsStream(path))) {
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
-            String concatenation = String.join("\n", extensionStream).replace("EVENTS", Arrays.stream(ExtensionEvent.values()).map(ee -> "'"+ee.name()+"'").collect(Collectors.joining(",")));
+            String concatenation = String.join("\n", extensionStream).replace("EVENTS", events.collect(Collectors.joining(",")));
             if (sync) {
                 extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
             }
@@ -1448,13 +1468,13 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         jdbcTemplate.update("delete from extension_log", Map.of());
     }
 
-    private void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event, int logSize) {
+    protected void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event, int logSize) {
         assertEquals(logSize, extLog.size()); // each event logs exactly two logs
         assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
     }
 
     protected void assertEventLogged(List<ExtensionLog> extLog, ExtensionEvent event) {
-        assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())));
+        assertTrue(extLog.stream().anyMatch(l -> l.getDescription().equals(event.name())), event.name() + " not found");
     }
 
     protected final void checkStatus(String reservationId,
@@ -1483,9 +1503,13 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals(10, reservation.getVatCts());
         assertEquals(0, reservation.getDiscountCts());
         assertEquals(1, eventApiController.getPendingPayments(eventName).size());
-        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal));
+        confirmPayment(eventName, reservationIdentifier, principal);
         assertEquals(0, eventApiController.getPendingPayments(eventName).size());
         assertEquals(1000, eventRepository.getGrossIncome(context.event.getId()));
+    }
+
+    private void confirmPayment(String eventName, String reservationIdentifier, Principal principal) {
+        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal));
     }
 
     private void checkCalendar(String eventName) {

@@ -36,6 +36,7 @@ import alfio.repository.EventRepository;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.apache.commons.io.IOUtils;
@@ -63,10 +64,9 @@ import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class RetryFailedExtensionJobExecutorTest {
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");

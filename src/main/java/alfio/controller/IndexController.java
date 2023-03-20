@@ -26,7 +26,9 @@ import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
@@ -290,8 +292,12 @@ public class IndexController {
     private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
         switch (status.getStatus()) {
             case PENDING: return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
-            case COMPLETE: return "success";
-            case OFFLINE_PAYMENT: return "waiting-payment";
+            case COMPLETE:
+            case FINALIZING:
+                return "success";
+            case OFFLINE_PAYMENT:
+            case OFFLINE_FINALIZING:
+                return "waiting-payment";
             case DEFERRED_OFFLINE_PAYMENT: return "deferred-payment";
             case EXTERNAL_PROCESSING_PAYMENT:
             case WAITING_EXTERNAL_CONFIRMATION: return "processing-payment";
