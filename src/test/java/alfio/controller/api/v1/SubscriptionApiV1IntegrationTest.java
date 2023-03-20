@@ -40,6 +40,7 @@ import alfio.model.user.User;
 import alfio.repository.SubscriptionRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.junit.jupiter.api.Assertions;
@@ -69,10 +70,9 @@ import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class SubscriptionApiV1IntegrationTest {
 
     @Autowired

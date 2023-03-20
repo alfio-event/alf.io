@@ -36,6 +36,7 @@ import alfio.model.poll.Poll;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
@@ -48,11 +49,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -62,10 +61,9 @@ import java.util.*;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class PollApiControllerIntegrationTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(PollApiControllerIntegrationTest.class);
 

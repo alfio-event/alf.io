@@ -23,14 +23,11 @@ import alfio.manager.system.ExternalConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
+import alfio.util.RefreshableDataSource;
 import com.stripe.Stripe;
 import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
-import org.springframework.boot.context.event.ApplicationPreparedEvent;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -41,7 +38,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.net.http.HttpClient;
@@ -59,6 +55,7 @@ import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
 @Configuration(proxyBeanMethods = false)
 public class BaseTestConfiguration {
 
+    public static final int MAX_POOL_SIZE = 5;
     private static final Logger log = LoggerFactory.getLogger(BaseTestConfiguration.class);
 
     @Bean
@@ -69,7 +66,7 @@ public class BaseTestConfiguration {
 
     @Bean
     @Profile("!travis")
-    public DataSource getDataSource() {
+    public RefreshableDataSource dataSource() {
         String POSTGRES_DB = "alfio";
         String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "10");
         log.debug("Running tests using PostgreSQL v.{}", postgresVersion);
@@ -83,8 +80,8 @@ public class BaseTestConfiguration {
         config.setUsername("alfio_user");
         config.setPassword("password");
         config.setDriverClassName(postgres.getDriverClassName());
-        config.setMaximumPoolSize(5);
-        return new HikariDataSource(config);
+        config.setMaximumPoolSize(MAX_POOL_SIZE);
+        return new RefreshableDataSource(config);
     }
 
     @Bean

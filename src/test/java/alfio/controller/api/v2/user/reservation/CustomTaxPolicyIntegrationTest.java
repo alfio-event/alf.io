@@ -40,16 +40,15 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 
 import java.io.IOException;
@@ -58,15 +57,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
-import static alfio.controller.api.v2.user.reservation.BaseReservationFlowTest.URL_CODE_HIDDEN;
-import static alfio.controller.api.v2.user.reservation.BaseReservationFlowTest.insertExtension;
+import static alfio.controller.api.v2.user.reservation.BaseReservationFlowTest.*;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class CustomTaxPolicyIntegrationTest {
 
     private final OrganizationRepository organizationRepository;
@@ -109,7 +106,7 @@ class CustomTaxPolicyIntegrationTest {
     private ReservationFlowContext createContext(PriceContainer.VatStatus vatStatus) {
         try {
             IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
-            insertExtension(extensionService, "/custom-tax-policy-extension.js", false, true);
+            insertExtension(extensionService, "/custom-tax-policy-extension.js", false, true, allEvents());
             List<TicketCategoryModification> categories = Arrays.asList(
                 new TicketCategoryModification(null, "default", TicketCategory.TicketAccessType.INHERIT, AVAILABLE_SEATS,
                     new DateTimeModification(LocalDate.now(clockProvider.getClock()).minusDays(1), LocalTime.now(clockProvider.getClock())),

@@ -26,10 +26,7 @@ import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.EventUtil;
-import alfio.util.LocaleUtil;
-import alfio.util.TemplateManager;
-import alfio.util.Validator;
+import alfio.util.*;
 import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -235,7 +232,7 @@ public class TicketHelper {
 
     private PartialTicketTextGenerator getOwnerChangeTextBuilder(Locale ticketLanguage, Ticket t, Event event) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, t.getUuid());
+        String ticketUrl = ReservationUtil.ticketUpdateUrl(event, t, configurationManager);
         return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, ticketLanguage);
     }
 

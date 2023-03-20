@@ -20,14 +20,37 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ReservationMetadata {
+
     private final boolean hideContactData;
+    private final boolean readyForConfirmation;
+    private final boolean finalized;
 
     @JsonCreator
-    public ReservationMetadata(@JsonProperty("hideContactData") Boolean hideContactData) {
+    public ReservationMetadata(@JsonProperty("hideContactData") Boolean hideContactData,
+                               @JsonProperty("readyForConfirmation") Boolean readyForConfirmation,
+                               @JsonProperty("finalized") Boolean finalized) {
         this.hideContactData = Boolean.TRUE.equals(hideContactData);
+        this.readyForConfirmation = Boolean.TRUE.equals(readyForConfirmation);
+        this.finalized = Boolean.TRUE.equals(finalized);
     }
 
     public boolean isHideContactData() {
         return hideContactData;
+    }
+
+    public boolean isFinalized() {
+        return finalized;
+    }
+
+    public boolean isReadyForConfirmation() {
+        return readyForConfirmation;
+    }
+
+    public ReservationMetadata withFinalized(boolean newValue) {
+        return new ReservationMetadata(hideContactData, readyForConfirmation, newValue);
+    }
+
+    public ReservationMetadata withReadyForConfirmation(boolean newValue) {
+        return new ReservationMetadata(hideContactData, newValue, finalized);
     }
 }

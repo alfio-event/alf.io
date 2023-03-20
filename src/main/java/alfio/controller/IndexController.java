@@ -27,7 +27,10 @@ import alfio.model.ContentLanguage;
 import alfio.model.EventDescription;
 import alfio.model.FileBlobMetadata;
 import alfio.model.TicketReservationStatusAndValidation;
+import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
+import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
@@ -302,8 +305,8 @@ public class IndexController {
     private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
         return switch (status.getStatus()) {
             case PENDING -> Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
-            case COMPLETE -> "success";
-            case OFFLINE_PAYMENT -> "waiting-payment";
+            case COMPLETE, FINALIZING -> "success";
+            case OFFLINE_PAYMENT, OFFLINE_FINALIZING -> "waiting-payment";
             case DEFERRED_OFFLINE_PAYMENT -> "deferred-payment";
             case EXTERNAL_PROCESSING_PAYMENT, WAITING_EXTERNAL_CONFIRMATION -> "processing-payment";
             case IN_PAYMENT, STUCK -> "error";

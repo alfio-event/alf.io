@@ -37,6 +37,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
@@ -57,7 +58,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 class DataMigratorIntegrationTest extends BaseIntegrationTest {
