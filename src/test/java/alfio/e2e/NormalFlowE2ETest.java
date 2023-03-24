@@ -16,9 +16,9 @@
  */
 package alfio.e2e;
 
-import alfio.BaseTestConfiguration;
 import alfio.config.Initializer;
-import alfio.util.BaseIntegrationTest;
+import alfio.test.util.TestUtil;
+import alfio.util.ActiveTravisProfileResolver;
 import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -60,21 +60,19 @@ import static java.util.Objects.requireNonNull;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 
 /**
- * For testing with browserstack you need:
- * Enable the profiles e2e and travis
- *  -Dspring.profiles.active=e2e,travis
+ * For testing with browserstack you need to set the following VM run options:
+ * -Dspring.profiles.active=e2e,travis
+ * -De2e.server.url=https://master.test.alf.io
+ * -De2e.server.apikey=
+ * -De2e.browser=safari|firefox|chrome
+ * -Dbrowserstack.username=
+ * -Dbrowserstack.access.key=
  *
- * And pass the following env var:
- *  - browserstack.username=
- *  - browserstack.access.key=
- *  - e2e.server.url=
- *  - e2e.server.apikey=
- *  - e2e.browser=safari|firefox|chrome
  */
-@ContextConfiguration(classes = { BaseTestConfiguration.class, NormalFlowE2ETest.E2EConfiguration.class })
-@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
+@ContextConfiguration(classes = { NormalFlowE2ETest.E2EConfiguration.class })
+@ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST}, resolver = ActiveTravisProfileResolver.class)
 @SpringBootTest
-public class NormalFlowE2ETest extends BaseIntegrationTest {
+public class NormalFlowE2ETest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NormalFlowE2ETest.class);
     private static final String JSON_BODY;
@@ -97,11 +95,10 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
 
     @Autowired
     public NormalFlowE2ETest(List<BrowserWebDriver> webDrivers,
-                             Environment environment,
-                             ClockProvider clockProvider) {
+                             Environment environment) {
         this.webDrivers = webDrivers;
         this.environment = environment;
-        this.clockProvider = clockProvider;
+        this.clockProvider = TestUtil.clockProvider();
     }
 
     @BeforeEach
@@ -189,6 +186,13 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
 
     }
 
+    private static WebElement scrollTo(WebDriver driver, WebElement element) {
+        if (driver instanceof JavascriptExecutor js) {
+            js.executeScript("arguments[0].scrollIntoView();", element);
+        }
+        return element;
+    }
+
     private void page2ContactDetails(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
         var driver = browserWebDriver.driver;
         driver.findElement(By.id("first-name")).sendKeys("Test");
@@ -201,7 +205,7 @@ public class NormalFlowE2ETest extends BaseIntegrationTest {
             selectElement(invoiceRequested.get(0), browserWebDriver);
         }
 
-        driver.findElement(By.cssSelector("label[for=invoiceTypePrivate]")).click();
+        scrollTo(driver, driver.findElement(By.id("invoiceTypePrivate"))).click();
         driver.findElement(By.id("billingAddressLine1")).sendKeys("Bahnhofstrasse 1");
         driver.findElement(By.id("billingAddressZip")).sendKeys("8000");
         driver.findElement(By.id("billingAddressCity")).sendKeys("Zürich");
