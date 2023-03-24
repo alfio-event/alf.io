@@ -161,6 +161,7 @@ class CustomTaxPolicyIntegrationTest {
         assertEquals(PriceContainer.VatStatus.INCLUDED, ticketRepository.findByUUID(secondUuid).getVatStatus());
         totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
         assertEquals(19901, totalPrice.getPriceWithVAT());
+        assertEquals(19901, ticketReservationManager.findById(reservationId).orElseThrow().getFinalPriceCts());
     }
 
     @Test
@@ -200,6 +201,7 @@ class CustomTaxPolicyIntegrationTest {
         assertEquals(PriceContainer.VatStatus.NOT_INCLUDED, ticketRepository.findByUUID(secondUuid).getVatStatus());
         totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
         assertEquals(20100, totalPrice.getPriceWithVAT());
+        assertEquals(20100, ticketReservationManager.findById(reservationId).orElseThrow().getFinalPriceCts());
     }
 
     private static UpdateTicketOwnerForm updateTicketOwnerForm(String email) {
