@@ -240,7 +240,7 @@ public class IndexController {
                     style.appendChild(new Text(baseCustomCss));
                     head.appendChild(style);
                 }
-                preloadTranslations(eventShortName, session, eventLoader, head, messageSourceManager, idx, json, lang);
+                preloadTranslations(eventShortName, request, session, eventLoader, head, messageSourceManager, idx, json, lang);
                 JFiveParse.serialize(idx, osw);
             }
         }
@@ -278,6 +278,7 @@ public class IndexController {
     }
 
     static void preloadTranslations(String eventShortName,
+                                    ServletWebRequest request,
                                     HttpSession session,
                                     EventLoader eventLoader,
                                     Element head,
@@ -286,28 +287,21 @@ public class IndexController {
                                     Json json,
                                     String lang) {
         String preloadLang = Objects.requireNonNullElse(lang, "en");
-        boolean clearLangAttribute = false;
         if (eventShortName != null) {
             var eventInfoOptional = eventLoader.loadEventInfo(eventShortName, session);
             if (eventInfoOptional.isPresent()) {
                 var ev = eventInfoOptional.get();
                 head.appendChild(buildScripTag(json.asJsonString(ev), APPLICATION_JSON, "preload-event", eventShortName));
-                var firstLang = ev.getContentLanguages().get(0).getLocale();
-                preloadLang = ev.getContentLanguages().stream()
-                    .filter(l -> lang == null || l.getLocale().equals(lang))
-                    .findFirst()
-                    .map(Language::getLocale)
-                    .orElse(firstLang);
-                clearLangAttribute = ev.getContentLanguages().size() > 1;
+                preloadLang = getMatchingLocale(request, ev.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toList()), lang).getLanguage();
             }
         }
         head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, preloadLang)), "application/json", "preload-bundle", preloadLang));
-        var htmlElement = IterableUtils.get(idx.getElementsByTagName("html"), 0);
-        if (htmlElement != null && clearLangAttribute) {
-            htmlElement.setAttribute("lang", "");
-        } else if (htmlElement != null) {
-            htmlElement.setAttribute("lang", preloadLang);
+        // add fallback in english
+        if (!"en".equals(preloadLang)) {
+            head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
         }
+        var htmlElement = IterableUtils.get(idx.getElementsByTagName("html"), 0);
+        htmlElement.setAttribute("lang", preloadLang);
     }
 
     private static Element buildScripTag(String content, String type, String id, String param) {
@@ -335,14 +329,28 @@ public class IndexController {
         }
     }
 
+
+    /**
+     * Return the best matching locale.
+     *
+     * @param request
+     * @param contextLanguages list of languages configured for the event (o other contexts)
+     * @param lang override passed as parameter
+     * @return
+     */
+    private static Locale getMatchingLocale(ServletWebRequest request, List<String> contextLanguages, String lang) {
+        var locale = RequestUtils.getMatchingLocale(request, contextLanguages);
+        if (lang != null && contextLanguages.stream().anyMatch(lang::equalsIgnoreCase)) {
+            locale = Locale.forLanguageTag(lang);
+        }
+        return locale;
+    }
+
     // see https://github.com/alfio-event/alf.io/issues/708
     // use ngrok to test the preview
     private Document getOpenGraphPage(Document eventOpenGraph, String eventShortName, ServletWebRequest request, String lang) {
         var event = eventRepository.findByShortName(eventShortName);
-        var locale = RequestUtils.getMatchingLocale(request, event);
-        if (lang != null && event.getContentLanguages().stream().map(ContentLanguage::getLanguage).anyMatch(lang::equalsIgnoreCase)) {
-            locale = Locale.forLanguageTag(lang);
-        }
+        var locale = getMatchingLocale(request, event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toList()), lang);
 
         var baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
 
