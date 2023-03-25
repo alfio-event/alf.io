@@ -39,6 +39,7 @@ import alfio.extension.ExtensionService;
 import alfio.manager.*;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.IncompatibleStateException;
+import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.support.extension.ExtensionEvent;
 import alfio.model.*;
@@ -1135,9 +1136,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
 
                 // check failures
-                assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null, null), sponsorPrincipal).getBody().getResult().getStatus());
-                assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket", null, null), sponsorPrincipal).getBody().getResult().getStatus());
-                assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier, null, null), sponsorPrincipal).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket", null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
                 //
 
 
@@ -1194,7 +1195,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
                     // check register sponsor scan success flow
                     assertTrue(attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    // scanned badges returns only unique values for a limited subset of columns
                     assertEquals(1, attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
 
                     // check export
@@ -1209,14 +1212,18 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
                     assertEquals("", csvSponsorScan.get(1)[8]);
                     assertEquals(SponsorScan.LeadStatus.WARM.name(), csvSponsorScan.get(1)[9]);
+                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(1)[10]);
                     //
 
                     // check update notes
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal).getBody().getResult().getStatus());
-                    assertEquals(1, attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    var scannedBadges = attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody();
+                    assertEquals(1, requireNonNull(scannedBadges).size());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    scannedBadges = attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody();
+                    assertEquals(1, requireNonNull(scannedBadges).size());
                     response = new MockHttpServletResponse();
                     eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
-                    response.getContentAsString();
                     csvReader = new CSVReader(new StringReader(response.getContentAsString()));
                     csvSponsorScan = csvReader.readAll();
                     assertEquals(2, csvSponsorScan.size());
@@ -1225,6 +1232,27 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
                     assertEquals("this is a very good lead!", csvSponsorScan.get(1)[8]);
                     assertEquals(SponsorScan.LeadStatus.HOT.name(), csvSponsorScan.get(1)[9]);
+                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(1)[10]);
+
+                    // scan from a different operator
+                    response = new MockHttpServletResponse();
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, "OP2").getBody().getResult().getStatus());
+                    eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
+                    csvReader = new CSVReader(new StringReader(response.getContentAsString()));
+                    csvSponsorScan = csvReader.readAll();
+                    assertEquals(3, csvSponsorScan.size());
+                    assertEquals("sponsor", csvSponsorScan.get(1)[0]);
+                    assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
+                    assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
+                    assertEquals("this is a very good lead!", csvSponsorScan.get(1)[8]);
+                    assertEquals(SponsorScan.LeadStatus.HOT.name(), csvSponsorScan.get(1)[9]);
+                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(1)[10]);
+
+                    assertEquals("sponsor", csvSponsorScan.get(2)[0]);
+                    assertEquals("Test Testson", csvSponsorScan.get(2)[3]);
+                    assertEquals("testmctest@test.com", csvSponsorScan.get(2)[4]);
+                    assertEquals("", csvSponsorScan.get(2)[8]);
+                    assertEquals("OP2", csvSponsorScan.get(2)[10]);
 
                     // #742 - test multiple check-ins
 
