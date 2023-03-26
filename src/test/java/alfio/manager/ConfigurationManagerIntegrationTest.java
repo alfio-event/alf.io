@@ -100,7 +100,7 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         organizationRepository.create("org", "org", "email@example.com", null, null);
         Organization organization = organizationRepository.findByName("org").get();
 
-        userManager.insertUser(organization.getId(), USERNAME, "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);
+        userManager.insertUser(organization.getId(), USERNAME, "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL, null);
 
         Map<String, String> desc = new HashMap<>();
         desc.put("en", "muh description");

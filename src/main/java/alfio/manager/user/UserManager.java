@@ -64,10 +64,13 @@ public class UserManager {
     private final PasswordEncoder passwordEncoder;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
 
+
+    @Transactional(readOnly = true)
     private List<Authority> getUserAuthorities(User user) {
         return authorityRepository.findGrantedAuthorities(user.getUsername());
     }
 
+    @Transactional(readOnly = true)
     public List<UserWithOrganizations> findAllUsers(String username) {
         List<Organization> organizations = findUserOrganizations(username);
         Predicate<Collection<?>> isNotEmpty = ks -> !ks.isEmpty();
@@ -90,6 +93,7 @@ public class UserManager {
             }).orElseGet(Collections::emptyList);
     }
 
+    @Transactional(readOnly = true)
     public List<User> findAllEnabledUsers(String username) {
         return findUserOrganizations(username)
                 .stream()
@@ -99,26 +103,32 @@ public class UserManager {
                 .collect(toList());
     }
 
+    @Transactional(readOnly = true)
     public List<User> findAllApiKeysFor(int organizationId) {
         return userRepository.findAllApiKeysForOrganization(organizationId);
     }
 
+    @Transactional(readOnly = true)
     public User findUserByUsername(String username) {
         return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
     }
 
+    @Transactional(readOnly = true)
     public Optional<User> findOptionalEnabledUserByUsername(String username) {
         return userRepository.findEnabledByUsername(username);
     }
 
+    @Transactional(readOnly = true)
     public boolean usernameExists(String username) {
         return userRepository.findIdByUserName(username).isPresent();
     }
 
+    @Transactional(readOnly = true)
     public User findUser(int id) {
         return userRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public Collection<Role> getAvailableRoles(String username) {
         User user = findUserByUsername(username);
         return isAdmin(user) || isOwner(user) ? EnumSet.of(Role.OWNER, Role.OPERATOR, Role.SUPERVISOR, Role.SPONSOR, Role.API_CONSUMER) : Collections.emptySet();
@@ -129,18 +139,22 @@ public class UserManager {
      * @param user
      * @return user role
      */
+    @Transactional(readOnly = true)
     public Role getUserRole(User user) {
         return getUserAuthorities(user).stream().map(Authority::getRole).sorted().findFirst().orElse(Role.OPERATOR);
     }
 
+    @Transactional(readOnly = true)
     public List<Organization> findUserOrganizations(String username) {
         return organizationRepository.findAllForUser(username);
     }
 
+    @Transactional(readOnly = true)
     public Organization findOrganizationById(int id, String username) {
         return findOptionalOrganizationById(id, username).orElseThrow(IllegalArgumentException::new);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Organization> findOptionalOrganizationById(int id, String username) {
         return findUserOrganizations(username)
             .stream()
@@ -148,18 +162,22 @@ public class UserManager {
             .findFirst();
     }
 
+    @Transactional(readOnly = true)
     public boolean isAdmin(User user) {
         return checkRole(user, Collections.singleton(Role.ADMIN));
     }
 
+    @Transactional(readOnly = true)
     public boolean isOwner(User user) {
         return checkRole(user, EnumSet.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER));
     }
 
+    @Transactional(readOnly = true)
     public boolean isOwnerOfOrganization(User user, int organizationId) {
         return isAdmin(user) || (isOwner(user) && userOrganizationRepository.findByUserId(user.getId()).stream().anyMatch(uo -> uo.getOrganizationId() == organizationId));
     }
 
+    @Transactional(readOnly = true)
     public boolean isOwnerOfOrganization(String username, int organizationId) {
         return userRepository.findByUsername(username)
             .filter(user -> isOwnerOfOrganization(user, organizationId))
@@ -171,7 +189,8 @@ public class UserManager {
         return authorityRepository.checkRole(user.getUsername(), roleNames);
     }
 
-    public int createOrganization(OrganizationModification om) {
+    public int createOrganization(OrganizationModification om, Principal principal) {
+        // FIXME check if principal is admin (or null)
         var affectedRowNumAndKey = organizationRepository.create(om.getName(), om.getDescription(), om.getEmail(), om.getExternalId(), om.getSlug());
         int orgId = affectedRowNumAndKey.getKey();
         Validate.isTrue(invoiceSequencesRepository.initFor(orgId) == 2);
@@ -179,6 +198,7 @@ public class UserManager {
     }
 
     public void updateOrganization(OrganizationModification om, Principal principal) {
+        // FIXME check if principal is admin, or else, if om.getId is a resource that principal can modify (being the owner of the same org of userId)
         boolean isAdmin = RequestUtils.isAdmin(principal) || RequestUtils.isSystemApiKey(principal);
         var currentOrg = organizationRepository.getById(requireNonNull(om.getId()));
         organizationRepository.update(om.getId(),
@@ -189,6 +209,7 @@ public class UserManager {
             isAdmin ? om.getSlug() : currentOrg.getSlug());
     }
 
+    @Transactional(readOnly = true)
     public ValidationResult validateOrganizationSlug(OrganizationModification om, Principal principal) {
         if(!RequestUtils.isAdmin(principal)) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("slug", "Cannot update Organizer URL."));
@@ -203,6 +224,7 @@ public class UserManager {
         return ValidationResult.success();
     }
 
+    @Transactional(readOnly = true)
     public ValidationResult validateOrganization(OrganizationModification om, Principal principal) {
         if(om.getId() == null && organizationRepository.findByName(om.getName()).isPresent()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("name", "There is already another organization with the same name."));
@@ -219,7 +241,9 @@ public class UserManager {
         return ValidationResult.success();
     }
 
-    public void editUser(int id, int organizationId, String username, String firstName, String lastName, String emailAddress, String description, Role role, String currentUsername) {
+    public void editUser(int id, int organizationId, String username, String firstName, String lastName, String emailAddress, String description, Role role, Principal principal) {
+        // FIXME check if principal is admin, or else, if userId and organizationId is a resource that principal can modify (being the owner of the same org of userId)
+        String currentUsername = principal.getName();
         boolean admin = ADMIN_USERNAME.equals(username) && Role.ADMIN == role;
         if(!admin) {
             int userOrganizationResult = userOrganizationRepository.updateUserOrganization(id, organizationId);
@@ -234,16 +258,17 @@ public class UserManager {
         }
     }
 
-    public void updateUserContactInfo(int id, String firstName, String lastName, String emailAddress) {
+    public void updateCurrentUserContactInfo(String firstName, String lastName, String emailAddress, Principal principal) {
+        var id = userRepository.findIdByUserName(principal.getName()).orElseThrow();
         userRepository.updateContactInfo(id, firstName, lastName, emailAddress);
     }
 
-    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
-        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null, null);
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, Principal principal) {
+        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null, null, principal);
     }
 
 
-    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, ZonedDateTime validTo, String description) {
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, ZonedDateTime validTo, String description, Principal principal) {
         if (userType == User.Type.API_KEY) {
             username = UUID.randomUUID().toString();
             firstName = "apikey";
@@ -252,17 +277,18 @@ public class UserManager {
         }
 
         String userPassword = PasswordGenerator.generateRandomPassword();
-        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword, validTo, description);
+        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword, validTo, description, principal);
     }
 
-    public void bulkInsertApiKeys(int organizationId, Role role, List<String> descriptions) {
+    public void bulkInsertApiKeys(int organizationId, Role role, List<String> descriptions, Principal principal) {
         for (String description : descriptions) {
-            insertUser(organizationId, null, null, null, null, role, User.Type.API_KEY, null, description);
+            insertUser(organizationId, null, null, null, null, role, User.Type.API_KEY, null, description, principal);
         }
     }
 
 
-    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword, ZonedDateTime validTo, String description) {
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword, ZonedDateTime validTo, String description, Principal principal) {
+        // FIXME check if principal is admin, or else, if organizationId is a resource that principal can modify (being the owner of the same org of userId)
         Organization organization = organizationRepository.getById(organizationId);
         AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType, validTo, description);
         userOrganizationRepository.create(result.getKey(), organization.getId());
@@ -271,7 +297,8 @@ public class UserManager {
     }
 
 
-    public UserWithPassword resetPassword(int userId) {
+    public UserWithPassword resetPassword(int userId, Principal principal) {
+        // FIXME check if principal is admin, or else, if userId is a resource that principal can modify (being the owner of the same org of userId)
         User user = findUser(userId);
         String password = PasswordGenerator.generateRandomPassword();
         Validate.isTrue(userRepository.resetPassword(userId, passwordEncoder.encode(password)) == 1, "error during password reset");
@@ -279,26 +306,32 @@ public class UserManager {
     }
 
 
-    public void updatePassword(String username, String newPassword) {
+    public void updateCurrentUserPassword(String newPassword, Principal principal) {
+        var username = principal.getName();
         User user = userRepository.findByUsername(username).orElseThrow(IllegalStateException::new);
         Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
         Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
     }
 
 
-    public void deleteUser(int userId, String currentUsername) {
+    public void deleteUser(int userId, Principal principal) {
+        // FIXME check if principal is admin, or else, if userId is a resource that principal can modify (being the owner of the same org of userId)
+        var currentUsername = principal.getName();
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot delete your own account.");
         userRepository.deleteUserAndReferences(userId);
     }
 
-    public void enable(int userId, String currentUsername, boolean status) {
+    public void enable(int userId, boolean status, Principal principal) {
+        // FIXME check if principal is admin, or else, if userId is a resource that principal can modify (being the owner of the same org of userId)
+        var currentUsername = principal.getName();
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
 
         userRepository.toggleEnabled(userId, status);
     }
 
+    @Transactional(readOnly = true)
     public ValidationResult validateUser(Integer id, String username, String firstName, String lastName, String emailAddress) {
 
         Optional<User> existing = Optional.ofNullable(id).flatMap(userRepository::findOptionalById);
@@ -312,6 +345,7 @@ public class UserManager {
             .collect(toList()));
     }
 
+    @Transactional(readOnly = true)
     public ValidationResult validateNewPassword(String username, String oldPassword, String newPassword, String newPasswordConfirm) {
         return userRepository.findByUsername(username)
             .map(u -> {
