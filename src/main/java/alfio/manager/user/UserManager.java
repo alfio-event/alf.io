@@ -190,7 +190,9 @@ public class UserManager {
     }
 
     public int createOrganization(OrganizationModification om, Principal principal) {
-        // FIXME check if principal is admin (or null)
+        //
+        checkIsAdmin(principal);
+        //
         var affectedRowNumAndKey = organizationRepository.create(om.getName(), om.getDescription(), om.getEmail(), om.getExternalId(), om.getSlug());
         int orgId = affectedRowNumAndKey.getKey();
         Validate.isTrue(invoiceSequencesRepository.initFor(orgId) == 2);
@@ -198,9 +200,12 @@ public class UserManager {
     }
 
     public void updateOrganization(OrganizationModification om, Principal principal) {
-        // FIXME check if principal is admin, or else, if om.getId is a resource that principal can modify (being the owner of the same org of userId)
+        //
+        var orgId = requireNonNull(om.getId());
+        checkAccessToOrganizationId(principal, orgId);
+        //
         boolean isAdmin = RequestUtils.isAdmin(principal) || RequestUtils.isSystemApiKey(principal);
-        var currentOrg = organizationRepository.getById(requireNonNull(om.getId()));
+        var currentOrg = organizationRepository.getById(orgId);
         organizationRepository.update(om.getId(),
             om.getName(),
             om.getDescription(),
@@ -242,7 +247,9 @@ public class UserManager {
     }
 
     public void editUser(int id, int organizationId, String username, String firstName, String lastName, String emailAddress, String description, Role role, Principal principal) {
-        // FIXME check if principal is admin, or else, if userId and organizationId is a resource that principal can modify (being the owner of the same org of userId)
+        //
+        checkAccessToUserIdAndNewOrganization(principal, id, organizationId);
+        //
         String currentUsername = principal.getName();
         boolean admin = ADMIN_USERNAME.equals(username) && Role.ADMIN == role;
         if(!admin) {
@@ -288,7 +295,9 @@ public class UserManager {
 
 
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword, ZonedDateTime validTo, String description, Principal principal) {
-        // FIXME check if principal is admin, or else, if organizationId is a resource that principal can modify (being the owner of the same org of userId)
+        //
+        checkAccessToOrganizationId(principal, organizationId);
+        //
         Organization organization = organizationRepository.getById(organizationId);
         AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType, validTo, description);
         userOrganizationRepository.create(result.getKey(), organization.getId());
@@ -298,7 +307,9 @@ public class UserManager {
 
 
     public UserWithPassword resetPassword(int userId, Principal principal) {
-        // FIXME check if principal is admin, or else, if userId is a resource that principal can modify (being the owner of the same org of userId)
+        //
+        checkAccessToUserId(principal, userId);
+        //
         User user = findUser(userId);
         String password = PasswordGenerator.generateRandomPassword();
         Validate.isTrue(userRepository.resetPassword(userId, passwordEncoder.encode(password)) == 1, "error during password reset");
@@ -315,7 +326,9 @@ public class UserManager {
 
 
     public void deleteUser(int userId, Principal principal) {
-        // FIXME check if principal is admin, or else, if userId is a resource that principal can modify (being the owner of the same org of userId)
+        //
+        checkAccessToUserId(principal, userId);
+        //
         var currentUsername = principal.getName();
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot delete your own account.");
@@ -323,7 +336,9 @@ public class UserManager {
     }
 
     public void enable(int userId, boolean status, Principal principal) {
-        // FIXME check if principal is admin, or else, if userId is a resource that principal can modify (being the owner of the same org of userId)
+        //
+        checkAccessToUserId(principal, userId);
+        //
         var currentUsername = principal.getName();
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
@@ -380,4 +395,50 @@ public class UserManager {
         return userRepository.findIdByUserName(username).orElse(null);
     }
 
+
+    private void checkIsAdmin(Principal principal) {
+        if (principal == null) {
+            return;
+        }
+        if (isAdmin(findUserByUsername(principal.getName()))) {
+            return;
+        }
+        log.warn("User {} is not an admin", principal.getName());
+        throw new IllegalArgumentException("User " + principal.getName() + " is not an admin");
+    }
+
+    private void checkAccessToUserId(Principal principal, int userId) {
+        if (principal == null) {
+            return;
+        }
+        var currentUser = findUserByUsername(principal.getName());
+        if (isAdmin(currentUser)) {
+            return;
+        }
+        var targetUser = findUser(userId);
+        var targetUserOrgs = findUserOrganizations(targetUser.getUsername());
+        for (var org : targetUserOrgs) {
+            if (isOwnerOfOrganization(currentUser, org.getId())) {
+                return;
+            }
+        }
+        log.warn("User {} does not have access to userId {}", principal.getName(), userId);
+        throw new IllegalStateException("User " + principal.getName() + " does not have access to userId " + userId);
+    }
+
+    private void checkAccessToUserIdAndNewOrganization(Principal principal, int userId, int newOrganization) {
+        checkAccessToUserId(principal, userId);
+        checkAccessToOrganizationId(principal, newOrganization);
+    }
+
+    private void checkAccessToOrganizationId(Principal principal, int organizationId) {
+        if (principal == null) {
+            return;
+        }
+        if (isOwnerOfOrganization(principal.getName(), organizationId)) {
+            return;
+        }
+        log.warn("User {} don't have access to organizationId {}", principal.getName(), organizationId);
+        throw new IllegalArgumentException("User " + principal.getName() + " don't have access to organizationId " + organizationId);
+    }
 }
