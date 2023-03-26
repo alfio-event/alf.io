@@ -16,27 +16,32 @@
  */
 package alfio.model.api.v1.admin;
 
+import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
 import alfio.model.metadata.SubscriptionMetadata;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class SubscriptionReservationCreationRequest implements ReservationAPICreationRequest {
     private final Map<String, String> metadata;
     private final ReservationUser user;
     private final String language;
     private final ReservationConfiguration reservationConfiguration;
+    private final SubscriptionConfiguration subscriptionConfiguration;
 
     @JsonCreator
     public SubscriptionReservationCreationRequest(@JsonProperty("metadata") Map<String, String> metadata,
                                                   @JsonProperty("user") ReservationUser user,
                                                   @JsonProperty("language") String language,
-                                                  @JsonProperty("reservationConfiguration") ReservationConfiguration reservationConfiguration) {
+                                                  @JsonProperty("reservationConfiguration") ReservationConfiguration reservationConfiguration,
+                                                  @JsonProperty("subscriptionConfiguration") SubscriptionConfiguration subscriptionConfiguration) {
         this.metadata = metadata;
         this.user = user;
         this.language = language;
         this.reservationConfiguration = reservationConfiguration;
+        this.subscriptionConfiguration = Objects.requireNonNullElseGet(subscriptionConfiguration, SubscriptionConfiguration::defaultConfiguration);
     }
 
     public Map<String, String> getMetadata() {
@@ -58,9 +63,13 @@ public class SubscriptionReservationCreationRequest implements ReservationAPICre
         return reservationConfiguration;
     }
 
+    public SubscriptionConfiguration getSubscriptionConfiguration() {
+        return subscriptionConfiguration;
+    }
+
     public SubscriptionMetadata getMetadataOrNull() {
         if (metadata != null && !metadata.isEmpty()) {
-            return new SubscriptionMetadata(metadata);
+            return new SubscriptionMetadata(metadata, subscriptionConfiguration);
         }
         return null;
     }

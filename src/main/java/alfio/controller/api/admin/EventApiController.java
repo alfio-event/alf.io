@@ -158,6 +158,12 @@ public class EventApiController {
         return eventStatisticsManager.getAllEventsWithStatistics(principal.getName());
     }
 
+    @GetMapping("/events-count")
+    public ResponseEntity<Integer> getEventsCount() {
+        return ResponseEntity.ok(eventManager.getEventsCount());
+    }
+
+
     @GetMapping("/active-events")
     public List<EventStatistic> getAllActiveEvents(Principal principal) {
         return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> !event.expiredSince(14));
@@ -428,6 +434,7 @@ public class EventApiController {
         header.addAll(fields.stream().map(TicketFieldConfiguration::getName).collect(toList()));
         header.add("Sponsor notes");
         header.add("Lead Status");
+        header.add("Operator");
 
         Stream<String[]> sponsorScans = userManager.findAllEnabledUsers(principal.getName()).stream()
             .map(u -> Pair.of(u, userManager.getUserRole(u)))
@@ -454,6 +461,7 @@ public class EventApiController {
 
             line.add(sponsorScan.getNotes());
             line.add(sponsorScan.getLeadStatus().name());
+            line.add(sponsorScan.getOperator());
             return line.toArray(new String[0]);
         });
 

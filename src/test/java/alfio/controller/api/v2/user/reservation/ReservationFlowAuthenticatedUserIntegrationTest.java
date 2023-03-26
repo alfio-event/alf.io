@@ -47,6 +47,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
@@ -69,11 +70,10 @@ import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
-public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReservationFlowTest {
+class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;
@@ -120,7 +120,8 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
                                                            UserApiV2Controller publicUserApiController,
                                                            OrganizationDeleter organizationDeleter,
                                                            PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                                           PromoCodeRequestManager promoCodeRequestManager) {
+                                                           PromoCodeRequestManager promoCodeRequestManager,
+                                                           ExportManager exportManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -155,7 +156,8 @@ public class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReserva
             userRepository,
             organizationDeleter,
             promoCodeDiscountRepository,
-            promoCodeRequestManager);
+            promoCodeRequestManager,
+            exportManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.publicUserApiController = publicUserApiController;

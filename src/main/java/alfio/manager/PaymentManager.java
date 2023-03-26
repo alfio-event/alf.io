@@ -169,7 +169,7 @@ public class PaymentManager {
         return res;
     }
 
-    TransactionAndPaymentInfo getInfo(TicketReservation reservation, PurchaseContext purchaseContext) {
+    public TransactionAndPaymentInfo getInfo(TicketReservation reservation, PurchaseContext purchaseContext) {
         Optional<TransactionAndPaymentInfo> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId())
             .map(transaction -> internalGetInfo(reservation, purchaseContext, transaction));
         maybeTransaction.ifPresent(info -> {

@@ -16,19 +16,34 @@
  */
 package alfio.util;
 
+import alfio.BaseTestConfiguration;
+import alfio.config.authentication.support.APITokenAuthentication;
+import alfio.manager.OrganizationDeleter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.Base64;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
+import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ActiveProfiles(resolver = ActiveTravisProfileResolver.class)
-public class BaseIntegrationTest {
+public abstract class BaseIntegrationTest {
+
     public static final byte[] ONE_PIXEL_BLACK_GIF = Base64.getDecoder().decode("R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=");
 
     public static void testTransferEventToAnotherOrg(int eventId,

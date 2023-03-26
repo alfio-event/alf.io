@@ -24,14 +24,25 @@ import java.util.Set;
 public interface AdminJobExecutor {
 
     enum JobName {
-        CHECK_OFFLINE_PAYMENTS,
-        SEND_TICKET_ASSIGNMENT_REMINDER,
-        SEND_OFFLINE_PAYMENT_REMINDER,
-        UNKNOWN,
-        SEND_OFFLINE_PAYMENT_TO_ORGANIZER,
-        REGENERATE_INVOICES,
-        ASSIGN_TICKETS_TO_SUBSCRIBERS,
-        EXECUTE_EXTENSION;
+        CHECK_OFFLINE_PAYMENTS(false),
+        SEND_TICKET_ASSIGNMENT_REMINDER(false),
+        SEND_OFFLINE_PAYMENT_REMINDER(false),
+        UNKNOWN(false),
+        SEND_OFFLINE_PAYMENT_TO_ORGANIZER(false),
+        REGENERATE_INVOICES(false),
+        ASSIGN_TICKETS_TO_SUBSCRIBERS(false),
+        EXECUTE_EXTENSION(true),
+        RETRY_RESERVATION_CONFIRMATION(true);
+
+        private final boolean allowsMultiple;
+
+        JobName(boolean allowsMultiple) {
+            this.allowsMultiple = allowsMultiple;
+        }
+
+        public boolean allowsMultipleScheduling() {
+            return allowsMultiple;
+        }
 
         public static JobName safeValueOf(String value) {
             return Arrays.stream(values())

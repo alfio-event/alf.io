@@ -16,6 +16,7 @@
  */
 package alfio.model.metadata;
 
+import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -25,13 +26,25 @@ import java.util.Objects;
 public class SubscriptionMetadata {
 
     private final Map<String, String> properties;
+    private final SubscriptionConfiguration configuration;
 
     @JsonCreator
-    public SubscriptionMetadata(@JsonProperty("properties") Map<String, String> properties) {
+    public SubscriptionMetadata(@JsonProperty("properties") Map<String, String> properties,
+                                @JsonProperty("configuration") SubscriptionConfiguration configuration) {
         this.properties = Objects.requireNonNullElse(properties, Map.of());
+        this.configuration = Objects.requireNonNullElseGet(configuration, SubscriptionConfiguration::defaultConfiguration);
     }
+
 
     public Map<String, String> getProperties() {
         return properties;
+    }
+
+    public SubscriptionConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public static SubscriptionMetadata empty() {
+        return new SubscriptionMetadata(null, null);
     }
 }

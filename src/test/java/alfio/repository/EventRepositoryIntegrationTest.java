@@ -30,6 +30,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.Result;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
@@ -57,11 +58,10 @@ import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
-public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
+class EventRepositoryIntegrationTest extends BaseIntegrationTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";
     private static final String ORG_NAME = "name";

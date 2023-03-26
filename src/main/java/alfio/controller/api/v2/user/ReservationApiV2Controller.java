@@ -16,13 +16,13 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.PaymentProxyWithParameters;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.model.ReservationPaymentResult;
 import alfio.controller.api.v2.model.ReservationStatusInfo;
-import alfio.controller.api.support.BookingInfoTicketLoader;
 import alfio.controller.api.v2.user.support.ReservationAccessDenied;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
@@ -39,6 +39,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -72,6 +73,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
 import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.toMap;
 
 @RestController
@@ -101,6 +103,7 @@ public class ReservationApiV2Controller {
     private final TicketRepository ticketRepository;
     private final PublicUserManager publicUserManager;
     private final ReverseChargeManager reverseChargeManager;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -159,7 +162,7 @@ public class ReservationApiV2Controller {
 
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
 
-            var shortReservationId =  ticketReservationManager.getShortReservationID(purchaseContext, reservation);
+            var shortReservationId =  configurationManager.getShortReservationID(purchaseContext, reservation);
             //
 
 
@@ -175,14 +178,16 @@ public class ReservationApiV2Controller {
             List<ReservationInfo.SubscriptionInfo> subscriptionInfos = null;
             if (purchaseContext.ofType(PurchaseContextType.subscription)) {
                 subscriptionInfos = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream()
-                    .limit(1) // since we support only one subscription for now, it make sense to limit the result to avoid N+1
+                    .limit(1) // since we support only one subscription for now, it makes sense to limit the result to avoid N+1
                     .map(s -> {
                         int usageCount = ticketRepository.countSubscriptionUsage(s.getId(), null);
+                        var metadata = requireNonNullElseGet(subscriptionRepository.getSubscriptionMetadata(s.getId()), SubscriptionMetadata::empty);
                         return new ReservationInfo.SubscriptionInfo(
                             s.getStatus() == AllocationStatus.ACQUIRED ? s.getId() : null,
                             s.getStatus() == AllocationStatus.ACQUIRED ? s.getPin() : null,
                             UsageDetails.fromSubscription(s, usageCount),
-                            new ReservationInfo.SubscriptionOwner(s.getFirstName(), s.getLastName(), s.getEmail()));
+                            new ReservationInfo.SubscriptionOwner(s.getFirstName(), s.getLastName(), s.getEmail()),
+                            metadata.getConfiguration());
                     })
                     .collect(Collectors.toList());
             }
@@ -390,7 +395,17 @@ public class ReservationApiV2Controller {
 
             ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), purchaseContext.getVatStatus(),
                 reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
-            if(contactAndTicketsForm.isBusiness()) {
+
+            var optionalCustomTaxPolicy = extensionManager.handleCustomTaxPolicy(purchaseContext, reservationId, contactAndTicketsForm, reservationCost);
+            if (optionalCustomTaxPolicy.isPresent()) {
+                log.debug("Custom tax policy returned for reservation {}. Applying it.", reservationId);
+                reverseChargeManager.applyCustomTaxPolicy(
+                    purchaseContext,
+                    optionalCustomTaxPolicy.get(),
+                    reservationId,
+                    contactAndTicketsForm,
+                    bindingResult);
+            } else if(reservationCost.getPriceWithVAT() > 0 && (contactAndTicketsForm.isBusiness() || configurationManager.noTaxesFlagDefinedFor(ticketCategoryRepository.findCategoriesInReservation(reservationId)))) {
                 reverseChargeManager.checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
             } else if(reservationCost.getPriceWithVAT() > 0) {
                 reverseChargeManager.resetVat(purchaseContext, reservationId);

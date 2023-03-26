@@ -18,13 +18,16 @@ package alfio.util;
 
 import ch.digitalfondue.basicxlsx.Cell;
 import ch.digitalfondue.basicxlsx.StreamingWorkbook;
+import ch.digitalfondue.basicxlsx.Style;
 import com.opencsv.CSVWriter;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,16 +37,31 @@ public class ExportUtils {
 
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
+    private ExportUtils() {}
+
     public static void exportExcel(String fileName, String sheetName, String[] header, Stream<String[]> data, HttpServletResponse response) throws IOException {
+        exportExcel(fileName, response, workbook -> addSheetToWorkbook(sheetName, header, data, workbook, workbook.defineStyle().font().bold(true).build()));
+    }
+
+    public static void exportExcel(String fileName,
+                                   HttpServletResponse response,
+                                   Consumer<StreamingWorkbook> workbookConsumer) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
 
-
         try (ServletOutputStream out = response.getOutputStream(); StreamingWorkbook workbook = new StreamingWorkbook(out)) {
-            var boldFont = workbook.defineStyle().font().bold(true).build();
+            workbookConsumer.accept(workbook);
+        }
+    }
 
+    public static void addSheetToWorkbook(String sheetName,
+                                          String[] header,
+                                          Stream<String[]> data,
+                                          StreamingWorkbook workbook,
+                                          Style headerStyle) {
+        try {
             var headerRow = StreamingWorkbook.row(Arrays.stream(header)
-                .map(v -> Cell.cell(v).withStyle(boldFont))
+                .map(v -> Cell.cell(v).withStyle(headerStyle))
                 .collect(Collectors.toList()));
 
             var dataStream = data
@@ -51,7 +69,21 @@ public class ExportUtils {
                 .map(StreamingWorkbook::row);
 
             workbook.withSheet(sheetName, Stream.concat(Stream.of(headerRow), dataStream));
+
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
+    }
+
+    // https://owasp.org/www-community/attacks/CSV_Injection
+    private static String escapeFormulaChar(String s) {
+        var trimmed = StringUtils.trimToEmpty(s);
+        // tab and carriage return are removed by the trimming
+        var res = trimmed;
+        if (StringUtils.startsWithAny(trimmed, "=", "+", "-", "@")) {
+            res = "\t" + trimmed; // http://georgemauer.net/2017/10/07/csv-injection.html starting with a tab seems to be enough?
+        }
+        return res;
     }
 
     public static void exportCsv(String fileName, String[] header, Stream<String[]> data, HttpServletResponse response) throws IOException {
@@ -63,7 +95,14 @@ public class ExportUtils {
                 out.write(marker);
             }
             writer.writeNext(header);
-            data.forEachOrdered(writer::writeNext);
+            data.forEachOrdered(d -> {
+                var copy = Arrays.copyOf(d, d.length);
+                for (var i = 0; i < copy.length; i++) {
+                    var res = copy[i];
+                    copy[i] = escapeFormulaChar(res);
+                }
+                writer.writeNext(copy);
+            });
             writer.flush();
             out.flush();
         }

@@ -18,32 +18,27 @@ package alfio.manager;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.controller.support.TemplateProcessor;
 import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.*;
+import alfio.manager.support.reservation.*;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.Mailer;
-import alfio.manager.system.ReservationPriceCalculator;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
 import alfio.model.PriceContainer.VatStatus;
 import alfio.model.PromoCodeDiscount.CodeType;
-import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.SpecialPrice.Status;
 import alfio.model.SummaryRow.SummaryType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.checkin.CheckInFullInfo;
-import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
-import alfio.model.extension.CustomEmailText;
 import alfio.model.group.LinkedGroup;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
@@ -56,9 +51,7 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.WarningMessage;
 import alfio.model.subscription.*;
-import alfio.model.subscription.SubscriptionDescriptor.SubscriptionTimeUnit;
-import alfio.model.support.UserIdAndOrganizationId;
-import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.command.FinalizeReservation;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
 import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
@@ -69,15 +62,14 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
-import alfio.util.checkin.TicketCheckInUtil;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -91,17 +83,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -110,27 +99,27 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
-import static alfio.model.Audit.EntityType.TICKET;
 import static alfio.model.Audit.EventType.*;
-import static alfio.model.BillingDocument.Type.*;
+import static alfio.model.BillingDocument.Type.CREDIT_NOTE;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MiscUtils.getAtIndexOrNull;
-import static alfio.util.MonetaryUtil.*;
+import static alfio.util.MonetaryUtil.formatUnit;
+import static alfio.util.MonetaryUtil.unitToCents;
+import static alfio.util.ReservationUtil.getReservationLocale;
+import static alfio.util.ReservationUtil.hasPrivacyPolicy;
 import static alfio.util.Wrappers.optionally;
 import static alfio.util.checkin.TicketCheckInUtil.ticketOnlineCheckInUrl;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
-import static org.springframework.http.MediaType.APPLICATION_PDF;
 
 @Component
 @Transactional
@@ -179,26 +168,12 @@ public class TicketReservationManager {
     private final PurchaseContextManager purchaseContextManager;
     private final SubscriptionRepository subscriptionRepository;
     private final UserManager userManager;
-
-    public static class NotEnoughTicketsException extends RuntimeException {
-
-    }
-
-    public static class MissingSpecialPriceTokenException extends RuntimeException {
-    }
-
-    public static class InvalidSpecialPriceTokenException extends RuntimeException {
-
-    }
-
-    public static class TooManyTicketsForDiscountCodeException extends RuntimeException {
-    }
-
-    public static class CannotProceedWithPayment extends RuntimeException {
-        CannotProceedWithPayment(String message) {
-            super(message);
-        }
-    }
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final ReservationEmailContentHelper reservationHelper;
+    private final ReservationCostCalculator reservationCostCalculator;
+    private final OrderSummaryGenerator orderSummaryGenerator;
+    private final ReservationAuditingHelper auditingHelper;
+    private final ReservationFinalizer reservationFinalizer;
 
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
@@ -231,7 +206,12 @@ public class TicketReservationManager {
                                     ClockProvider clockProvider,
                                     PurchaseContextManager purchaseContextManager,
                                     SubscriptionRepository subscriptionRepository,
-                                    UserManager userManager) {
+                                    UserManager userManager,
+                                    ApplicationEventPublisher applicationEventPublisher,
+                                    ReservationCostCalculator reservationCostCalculator,
+                                    ReservationEmailContentHelper reservationHelper,
+                                    ReservationFinalizer reservationFinalizer,
+                                    OrderSummaryGenerator orderSummaryGenerator) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -269,6 +249,12 @@ public class TicketReservationManager {
         this.purchaseContextManager = purchaseContextManager;
         this.subscriptionRepository = subscriptionRepository;
         this.userManager = userManager;
+        this.applicationEventPublisher = applicationEventPublisher;
+        this.reservationCostCalculator = reservationCostCalculator;
+        this.orderSummaryGenerator = orderSummaryGenerator;
+        this.reservationHelper = reservationHelper;
+        this.auditingHelper = new ReservationAuditingHelper(auditingRepository);
+        this.reservationFinalizer = reservationFinalizer;
     }
 
     private String createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
@@ -684,7 +670,7 @@ public class TicketReservationManager {
 
             if (paymentResult.isSuccessful()) {
                 reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
-                transitionToComplete(spec, reservationCost, paymentProxy, null);
+                transitionToComplete(spec, paymentProxy, null);
             } else if(paymentResult.isFailed()) {
                 reTransitionToPending(spec.getReservationId());
             }
@@ -694,7 +680,7 @@ public class TicketReservationManager {
                 reTransitionToPending(spec.getReservationId());
             }
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
-            //thus it is safer to not rollback the reservation status
+            //thus it is safer to not roll back the reservation status
             log.error("unexpected error during payment confirmation", ex);
             return PaymentResult.failed("error.STEP2_STRIPE_unexpected");
         }
@@ -737,11 +723,9 @@ public class TicketReservationManager {
         return false;
     }
 
-    private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, PaymentProxy paymentProxy, String username) {
+    private void transitionToComplete(PaymentSpecification spec, PaymentProxy paymentProxy, String username) {
         var status = ticketReservationRepository.findOptionalStatusAndValidationById(spec.getReservationId()).orElseThrow().getStatus();
         if(status != COMPLETE) {
-            billingDocumentManager.generateInvoiceNumber(spec, reservationCost)
-                .ifPresent(invoiceNumber -> ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceNumber));
             completeReservation(spec, paymentProxy, true, true, username);
         }
     }
@@ -812,175 +796,21 @@ public class TicketReservationManager {
     }
 
     public void confirmOfflinePayment(Event event, String reservationId, String username) {
-        TicketReservation ticketReservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
-        ticketReservationRepository.lockReservationForUpdate(reservationId);
-        Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
-        Validate.isTrue(ticketReservation.isPendingOfflinePayment(), "invalid status");
-
-
-        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), event.now(clockProvider));
-
-        registerAlfioTransaction(event, reservationId, PaymentProxy.OFFLINE);
-
-        auditingRepository.insert(reservationId, userRepository.findIdByUserName(username).orElse(null), event.getId(), Audit.EventType.RESERVATION_OFFLINE_PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
-
-        CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
-        acquireItems(PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName,
-            ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress(),
-            ticketReservation.getCustomerReference(), event, true);
-
-        Locale language = findReservationLanguage(reservationId);
-
-        final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
-        billingDocumentManager.createBillingDocument(event, finalReservation, username, orderSummaryForReservation(finalReservation, event));
-        var configuration = configurationManager.getFor(EnumSet.of(DEFERRED_BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL), ConfigurationLevel.event(event));
-        if(!configuration.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault() || configuration.get(DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL).getValueAsBooleanOrDefault()) {
-            sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language, username);
-        }
-        extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event);
+        reservationFinalizer.confirmOfflinePayment(event, reservationId, username);
     }
 
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
-        var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
-        int priceWithVAT = totalPrice.getPriceWithVAT();
-        long platformFee = FeeCalculator.getCalculator(event, configurationManager, requireNonNullElse(totalPrice.getCurrencyCode(), event.getCurrency()))
-            .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
-            .orElse(0L);
-
-        //FIXME we must support multiple transactions for a reservation, otherwise we can't handle properly the case of ON_SITE payments
-
-        var transactionOptional = transactionRepository.loadOptionalByReservationId(reservationId);
-        String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
-        if(transactionOptional.isEmpty()) {
-            transactionRepository.insert(transactionId, null, reservationId, event.now(clockProvider),
-                priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
-                platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
-        } else if(paymentProxy == PaymentProxy.OFFLINE) {
-            var transaction = transactionOptional.get();
-            transactionRepository.update(transaction.getId(), transactionId, null, event.now(clockProvider),
-                platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
-        } else {
-            log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
-        }
-
+        reservationFinalizer.registerAlfioTransaction(event, reservationId, paymentProxy);
     }
 
 
     public void sendConfirmationEmail(PurchaseContext purchaseContext, TicketReservation ticketReservation, Locale language, String username) {
-        String reservationId = ticketReservation.getId();
-
-        OrderSummary summary = orderSummaryForReservationId(reservationId, purchaseContext);
-
-        List<Mailer.Attachment> attachments;
-        if (configurationManager.canGenerateReceiptOrInvoiceToCustomer(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
-            attachments = generateAttachmentForConfirmationEmail(purchaseContext, ticketReservation, language, summary, username);
-        } else{
-            attachments = List.of();
-        }
-        var vat = getVAT(purchaseContext);
-
-        List<ConfirmationEmailConfiguration> configurations = new ArrayList<>();
-        if(purchaseContext.ofType(PurchaseContextType.subscription)) {
-            var firstSubscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
-            boolean sendSeparateEmailToOwner = !Objects.equals(firstSubscription.getEmail(), ticketReservation.getEmail());
-            Map<String, Object> initialModel = Map.of(
-                "pin", firstSubscription.getPin(),
-                "subscriptionId", firstSubscription.getId(),
-                "includePin", true,
-                "fullName", firstSubscription.getFirstName() + " " + firstSubscription.getLastName());
-            var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, List.of(), initialModel);
-            var subscriptionAttachments = new ArrayList<>(attachments);
-            subscriptionAttachments.add(generateSubscriptionAttachment(firstSubscription));
-            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : subscriptionAttachments));
-            if(sendSeparateEmailToOwner) {
-                var separateModel = new HashMap<>(model);
-                separateModel.put("includePin", false);
-                separateModel.put("fullName", ticketReservation.getFullName());
-                configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, ticketReservation.getEmail(), separateModel, subscriptionAttachments));
-            }
-        } else {
-            var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, ticketRepository.findTicketsInReservation(ticketReservation.getId()), Map.of());
-            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL, ticketReservation.getEmail(), model, attachments));
-        }
-
-        var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
-        var localizedType = messageSource.getMessage("purchase-context."+purchaseContext.getType(), null, language);
-        configurations.forEach(configuration -> {
-            notificationManager.sendSimpleEmail(purchaseContext, ticketReservation.getId(), configuration.getEmailAddress(), messageSource.getMessage("reservation-email-subject",
-                    new Object[]{getShortReservationID(purchaseContext, ticketReservation), purchaseContext.getTitle().get(language.getLanguage()), localizedType}, language),
-               () -> templateManager.renderTemplate(purchaseContext, configuration.getTemplateResource(), configuration.getModel(), language),
-                configuration.getAttachments());
-        });
+        this.reservationHelper.sendConfirmationEmail(purchaseContext, ticketReservation, language, username);
     }
 
-    private Mailer.Attachment generateSubscriptionAttachment(Subscription subscription) {
-        var model = new HashMap<String, String>();
-        model.put("subscriptionId", subscription.getId().toString());
-        return new Mailer.Attachment("subscription_" + subscription.getId() + ".pdf", null, APPLICATION_PDF.toString(), model, Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF);
-    }
-
-    private List<Mailer.Attachment> generateAttachmentForConfirmationEmail(PurchaseContext purchaseContext,
-                                                                           TicketReservation ticketReservation,
-                                                                           Locale language,
-                                                                           OrderSummary summary,
-                                                                           String username) {
-        if(mustGenerateBillingDocument(summary, ticketReservation)) { //#459 - include PDF invoice in reservation email
-            BillingDocument.Type type = ticketReservation.getHasInvoiceNumber() ? INVOICE : RECEIPT;
-            return billingDocumentManager.generateBillingDocumentAttachment(purchaseContext, ticketReservation, language, type, username, summary);
-        }
-        return List.of();
-    }
-
-    public void sendReservationCompleteEmailToOrganizer(PurchaseContext purchaseContext, TicketReservation ticketReservation, Locale language, String username) {
-        Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
-        List<String> cc = notificationManager.getCCForEventOrganizer(purchaseContext);
-
-        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(purchaseContext, ticketReservation);
-
-        String reservationId = ticketReservation.getId();
-        OrderSummary summary = orderSummaryForReservationId(reservationId, purchaseContext);
-
-        List<Mailer.Attachment> attachments = Collections.emptyList();
-
-        if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(purchaseContext) || configurationManager.isInvoiceOnly(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
-            attachments = generateAttachmentForConfirmationEmail(purchaseContext, ticketReservation, language, summary, username);
-        }
-
-
-        String shortReservationID = configurationManager.getShortReservationID(purchaseContext, ticketReservation);
-        notificationManager.sendSimpleEmail(purchaseContext, null, organization.getEmail(), cc, "Reservation complete " + shortReservationID,
-        	() -> templateManager.renderTemplate(purchaseContext, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
-            attachments);
-    }
-
-    private static boolean mustGenerateBillingDocument(OrderSummary summary, TicketReservation ticketReservation) {
-        return !summary.getFree() && (!summary.getNotYetPaid() || (summary.getWaitingForPayment() && ticketReservation.isInvoiceRequested()));
-    }
-
-    private List<Mailer.Attachment> generateBillingDocumentAttachment(PurchaseContext purchaseContext,
-                                                                             TicketReservation ticketReservation,
-                                                                             Locale language,
-                                                                             Map<String, Object> billingDocumentModel,
-                                                                             BillingDocument.Type documentType) {
-        Map<String, String> model = new HashMap<>();
-        model.put(RESERVATION_ID, ticketReservation.getId());
-        purchaseContext.event().ifPresent(event -> model.put("eventId", Integer.toString(event.getId())));
-        model.put("language", json.asJsonString(language));
-        model.put("reservationEmailModel", json.asJsonString(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
-        switch (documentType) {
-            case INVOICE:
-                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-            case RECEIPT:
-                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
-            case CREDIT_NOTE:
-                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
-            default:
-                throw new IllegalStateException(documentType+" is not supported");
-        }
-    }
 
     private Locale findReservationLanguage(String reservationId) {
-        return ticketReservationRepository.findOptionalReservationById(reservationId).map(TicketReservationManager::getReservationLocale).orElse(Locale.ENGLISH);
+        return ticketReservationRepository.findOptionalReservationById(reservationId).map(ReservationUtil::getReservationLocale).orElse(Locale.ENGLISH);
     }
 
     public void deleteOfflinePayment(Event event, String reservationId, boolean expired, boolean credit, boolean notify, String username) {
@@ -991,9 +821,9 @@ public class TicketReservationManager {
             creditReservation(reservation, username, notify);
         } else {
             if (notify) {
-                Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
+                Map<String, Object> emailModel = reservationHelper.prepareModelForReservationEmail(event, reservation);
                 Locale reservationLanguage = findReservationLanguage(reservationId);
-                String subject = getReservationEmailSubject(event, reservationLanguage, "reservation-email-expired-subject", reservation.getId());
+                String subject = reservationHelper.getReservationEmailSubject(event, reservationLanguage, "reservation-email-expired-subject", reservation.getId());
                 notificationManager.sendSimpleEmail(event, reservationId, reservation.getEmail(), subject,
                     () ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
                 );
@@ -1002,28 +832,24 @@ public class TicketReservationManager {
         }
     }
 
-    private String getReservationEmailSubject(PurchaseContext purchaseContext, Locale reservationLanguage, String key, String id) {
-        return messageSourceManager.getMessageSourceFor(purchaseContext)
-            .getMessage(key, new Object[]{id, purchaseContext.getDisplayName()}, reservationLanguage);
-    }
-
     @Transactional
     public void issueCreditNoteForReservation(PurchaseContext purchaseContext, TicketReservation reservation, String username, boolean sendEmail) {
         var reservationId = reservation.getId();
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CREDIT_NOTE_ISSUED.toString());
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), purchaseContext, Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
-        var model = prepareModelForReservationEmail(purchaseContext, reservation, getVAT(purchaseContext), orderSummaryForReservation(reservation, purchaseContext), ticketRepository.findTicketsInReservation(reservation.getId()), Map.of());
+        var model = prepareModelForReservationEmail(purchaseContext, reservation, reservationHelper.getVAT(purchaseContext), orderSummaryForReservation(reservation, purchaseContext), ticketRepository.findTicketsInReservation(reservation.getId()), Map.of());
         BillingDocument billingDocument = billingDocumentManager.createBillingDocument(purchaseContext, reservation, username, BillingDocument.Type.CREDIT_NOTE, orderSummaryForReservation(reservation, purchaseContext));
         var organization = organizationRepository.getById(purchaseContext.getOrganizationId());
         extensionManager.handleCreditNoteGenerated(reservation, purchaseContext, ((OrderSummary) model.get("orderSummary")).getOriginalTotalPrice(), billingDocument.getId(), Map.of(ORGANIZATION, organization));
 
         if(sendEmail) {
+            var reservationLocale = getReservationLocale(reservation);
             notificationManager.sendSimpleEmail(purchaseContext,
                 reservationId,
                 reservation.getEmail(),
-                getReservationEmailSubject(purchaseContext, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
-                () -> templateManager.renderTemplate(purchaseContext, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
-                generateBillingDocumentAttachment(purchaseContext, reservation, getReservationLocale(reservation), billingDocument.getModel(), CREDIT_NOTE)
+                reservationHelper.getReservationEmailSubject(purchaseContext, reservationLocale, "credit-note-issued-email-subject", reservation.getId()),
+                () -> templateManager.renderTemplate(purchaseContext, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, reservationLocale),
+                reservationHelper.generateBillingDocumentAttachment(purchaseContext, reservation, reservationLocale, billingDocument.getModel(), CREDIT_NOTE)
             );
         }
     }
@@ -1051,7 +877,7 @@ public class TicketReservationManager {
         var cost = new TotalPrice(priceContainer.getSrcPriceCts(), unitToCents(priceContainer.getVAT(), currencyCode), 0, 0, currencyCode);
         var orderSummary = new OrderSummary(
             cost,
-            List.of(new SummaryRow(summaryRowTitle, formattedAmount, formattedPriceBeforeVat, 1, formattedAmount, formattedPriceBeforeVat, unitToCents(refundAmount, currencyCode), SummaryType.TICKET, null)),
+            List.of(new SummaryRow(summaryRowTitle, formattedAmount, formattedPriceBeforeVat, 1, formattedAmount, formattedPriceBeforeVat, unitToCents(refundAmount, currencyCode), SummaryType.TICKET, null, priceContainer.getVatStatus())),
             false,
             formattedAmount,
             formatUnit(priceContainer.getVAT(), currencyCode),
@@ -1075,83 +901,16 @@ public class TicketReservationManager {
                                                                OrderSummary summary,
                                                                List<Ticket> ticketsToInclude,
                                                                Map<String, Object> initialOptions) {
-        Organization organization = organizationRepository.getById(purchaseContext.getOrganizationId());
-        String baseUrl = configurationManager.baseUrl(purchaseContext);
-        var reservationId = reservation.getId();
-        String reservationUrl = reservationUrl(reservationId);
-        String reservationShortID = getShortReservationID(purchaseContext, reservation);
-
-        var bankingInfo = configurationManager.getFor(Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER), ConfigurationLevel.purchaseContext(purchaseContext));
-        Optional<String> invoiceAddress = bankingInfo.get(INVOICE_ADDRESS).getValue();
-        Optional<String> bankAccountNr = bankingInfo.get(BANK_ACCOUNT_NR).getValue();
-        Optional<String> bankAccountOwner = bankingInfo.get(BANK_ACCOUNT_OWNER).getValue();
-
-        Map<Integer, List<Ticket>> ticketsByCategory = ticketsToInclude
-            .stream()
-            .collect(groupingBy(Ticket::getCategoryId));
-        final List<TicketWithCategory> ticketsWithCategory;
-        if(!ticketsByCategory.isEmpty()) {
-            ticketsWithCategory = ticketCategoryRepository.findByIds(ticketsByCategory.keySet())
-                .stream()
-                .flatMap(tc -> ticketsByCategory.get(tc.getId()).stream().map(t -> new TicketWithCategory(t, tc)))
-                .collect(toList());
-        } else {
-            ticketsWithCategory = Collections.emptyList();
-        }
-        Map<String, Object> baseModel = new HashMap<>();
-        baseModel.putAll(initialOptions);
-        baseModel.putAll(extensionManager.handleReservationEmailCustomText(purchaseContext, reservation, ticketReservationRepository.getAdditionalInfo(reservationId))
-            .map(CustomEmailText::toMap)
-            .orElse(Map.of()));
-        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, purchaseContext, reservation, vat, ticketsWithCategory, summary, baseUrl, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner, baseModel);
-        boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
-            && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
-            && VatStatus.isVatExempt(reservation.getVatStatus());
-        model.put("euBusiness", euBusiness);
-        model.put("publicId", configurationManager.getPublicReservationID(purchaseContext, reservation));
-        model.put("invoicingAdditionalInfo", loadAdditionalInfo(reservationId).getInvoicingAdditionalInfo());
-        if(purchaseContext.getType() == PurchaseContextType.event) {
-            var event = purchaseContext.event().orElseThrow();
-            model.put("displayLocation", ticketsWithCategory.stream()
-                .noneMatch(tc -> EventUtil.isAccessOnline(tc.getCategory(), event)));
-        } else {
-            model.put("displayLocation", false);
-        }
-        if(ticketReservationRepository.hasSubscriptionApplied(reservationId)) {
-            model.put("displaySubscriptionUsage", true);
-            var subscription = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId).orElseThrow();
-            if(subscription.getMaxEntries() > -1) {
-                var subscriptionUsageDetails = UsageDetails.fromSubscription(subscription, ticketRepository.countSubscriptionUsage(subscription.getId(), null));
-                model.put("subscriptionUsageDetails", subscriptionUsageDetails);
-                model.put("subscriptionUrl", reservationUrl(subscription.getReservationId()));
-            }
-        }
-        return model;
-    }
-
-    @Transactional(readOnly = true)
-    public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation, Optional<String> vat, OrderSummary summary) {
-
-        var initialOptions = extensionManager.handleReservationEmailCustomText(event, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
-            .map(CustomEmailText::toMap)
-            .orElse(Map.of());
-        return prepareModelForReservationEmail(event, reservation, vat, summary, ticketRepository.findTicketsInReservation(reservation.getId()), initialOptions);
+        return reservationHelper.prepareModelForReservationEmail(purchaseContext, reservation, vat, summary, ticketsToInclude, initialOptions);
     }
 
     public TicketReservationAdditionalInfo loadAdditionalInfo(String reservationId) {
         return ticketReservationRepository.getAdditionalInfo(reservationId);
     }
 
-    @Transactional(readOnly = true)
-    public Map<String, Object> prepareModelForReservationEmail(PurchaseContext purchaseContext, TicketReservation reservation) {
-        Optional<String> vat = getVAT(purchaseContext);
-        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), purchaseContext);
-        return prepareModelForReservationEmail(purchaseContext, reservation, vat, summary, ticketRepository.findTicketsInReservation(reservation.getId()), Map.of());
-    }
-
     private Map<String, Object> prepareModelForPartialCreditNote(Event event, TicketReservation reservation, List<Ticket> removedTickets) {
-        var orderSummary = orderSummaryForCreditNote(reservation, event, removedTickets);
-        var optionalVat = getVAT(event);
+        var orderSummary = orderSummaryGenerator.orderSummaryForCreditNote(reservation, event, removedTickets);
+        var optionalVat = reservationHelper.getVAT(event);
         return prepareModelForReservationEmail(event, reservation, optionalVat, orderSummary, removedTickets, Map.of());
     }
 
@@ -1161,7 +920,7 @@ public class TicketReservationManager {
             if(optionalStatusAndValidation.isPresent() && optionalStatusAndValidation.get().getStatus() == COMPLETE) {
                 // reservation has been already completed. Let's check if there is a corresponding audit event
                 Validate.isTrue(auditingRepository.countAuditsOfTypeForReservation(spec.getReservationId(), PAYMENT_CONFIRMED) == 1, "Trying to confirm an already paid reservation, but can't find autiting event");
-            } else {
+            } else if(optionalStatusAndValidation.isPresent() && optionalStatusAndValidation.get().getStatus() == PENDING) {
                 int updatedReservation = ticketReservationRepository.updateTicketReservation(spec.getReservationId(),
                     IN_PAYMENT.toString(), spec.getEmail(), spec.getCustomerName().getFullName(),
                     spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(),
@@ -1221,211 +980,30 @@ public class TicketReservationManager {
     }
 
     /**
-     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
+     * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state.
+     * Additionally, it will save email/fullName/billingAddress/userLanguage.
      */
     void completeReservation(PaymentSpecification spec, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets, String username) {
-        String reservationId = spec.getReservationId();
-        var purchaseContext = spec.getPurchaseContext();
-        final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        // retrieve reservation owner if username is null
-        Integer userId;
-        if(username != null) {
-            userId = userRepository.getByUsername(username).getId();
-        } else {
-            userId = ticketReservationRepository.getReservationOwnerAndOrganizationId(reservationId)
-                .map(UserIdAndOrganizationId::getUserId)
-                .orElse(null);
+        // pre-acquire special price tokens before committing, in order to ensure atomicity
+        reservationFinalizer.acquireSpecialPriceTokens(spec.getReservationId());
+        // update reservation status to mark the finalization, but first retrieve the current one
+        // set by the payment provider. This is useful especially in case a single "PaymentProxy" can produce different statuses
+        // like OFFLINE_PAYMENT and DEFERRED_OFFLINE_PAYMENT
+        var currentStatus = ticketReservationRepository.findOptionalStatusAndValidationById(spec.getReservationId()).orElseThrow().getStatus();
+        TicketReservationStatus targetStatus = FINALIZING;
+        if (currentStatus == OFFLINE_PAYMENT || currentStatus == DEFERRED_OFFLINE_PAYMENT) {
+            targetStatus = OFFLINE_FINALIZING;
         }
-        Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
-        List<Ticket> tickets = null;
-        if(paymentProxy != PaymentProxy.OFFLINE) {
-            tickets = acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getPurchaseContext(), sendTickets);
-            extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), spec.getPurchaseContext());
-        }
-
-        Date eventTime = new Date();
-        auditingRepository.insert(reservationId, userId, purchaseContext, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
-        ticketReservationRepository.updateRegistrationTimestamp(reservationId, ZonedDateTime.now(clockProvider.withZone(spec.getPurchaseContext().getZoneId())));
-        if(spec.isTcAccepted()) {
-            auditingRepository.insert(reservationId, userId, purchaseContext, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getPurchaseContext().getTermsAndConditionsUrl())));
-        }
-
-        if(eventHasPrivacyPolicy(spec.getPurchaseContext()) && spec.isPrivacyAccepted()) {
-            auditingRepository.insert(reservationId, userId, purchaseContext, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getPurchaseContext().getPrivacyPolicyUrl())));
-        }
-
-        if(sendReservationConfirmationEmail) {
-            TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
-            sendConfirmationEmailIfNecessary(updatedReservation, tickets, purchaseContext, locale, username);
-            sendReservationCompleteEmailToOrganizer(spec.getPurchaseContext(), updatedReservation, locale, username);
-        }
-    }
-
-    void sendConfirmationEmailIfNecessary(TicketReservation ticketReservation,
-                                          List<Ticket> tickets,
-                                          PurchaseContext purchaseContext,
-                                          Locale locale,
-                                          String username) {
-        if(purchaseContext.ofType(PurchaseContextType.event)) {
-            var config = configurationManager.getFor(List.of(SEND_RESERVATION_EMAIL_IF_NECESSARY, SEND_TICKETS_AUTOMATICALLY), purchaseContext.getConfigurationLevel());
-            if(ticketReservation.getSrcPriceCts() > 0
-                || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
-                || !tickets.get(0).getEmail().equals(ticketReservation.getEmail())
-                || !config.get(SEND_RESERVATION_EMAIL_IF_NECESSARY).getValueAsBooleanOrDefault()
-                || !config.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault()
-                ) {
-                sendConfirmationEmail(purchaseContext, ticketReservation, locale, username);
-            }
-        } else {
-            sendConfirmationEmail(purchaseContext, ticketReservation, locale, username);
-        }
-    }
-
-    private boolean eventHasPrivacyPolicy(PurchaseContext event) {
-        return StringUtils.isNotBlank(event.getPrivacyPolicyLinkOrNull());
-    }
-
-    private List<Ticket> acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
-                              String userLanguage, String billingAddress, String customerReference, PurchaseContext purchaseContext, boolean sendTickets) {
-        switch (purchaseContext.getType()) {
-            case event: {
-                acquireEventTickets(paymentProxy, reservationId, purchaseContext, purchaseContext.event().orElseThrow());
-                break;
-            }
-            case subscription: {
-                acquireSubscription(paymentProxy, reservationId, purchaseContext, customerName, email);
-                break;
-            }
-            default: throw new IllegalStateException("not supported purchase context");
-        }
-
-        specialPriceRepository.updateStatusForReservation(singletonList(reservationId), Status.TAKEN.toString());
-        ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
-        int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email,
-            customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
-
-
-        Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
-
-        waitingQueueManager.fireReservationConfirmed(reservationId);
-        //we must notify the plugins about ticket assignment and send them by email
-        TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
-        List<Ticket> assignedTickets = findTicketsInReservation(reservationId);
-        assignedTickets.stream()
-            .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
-            .forEach(ticket -> {
-                var event = purchaseContext.event().orElseThrow();
-                Locale locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
-                var additionalInfo = retrieveAttendeeAdditionalInfoForTicket(ticket);
-                if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
-                    sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale, additionalInfo));
-                }
-                extensionManager.handleTicketAssignment(ticket, ticketCategoryRepository.getById(ticket.getCategoryId()), additionalInfo);
-            });
-        return assignedTickets;
-    }
-
-    private void acquireSubscription(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, CustomerName customerName, String email) {
-        var status = paymentProxy.isDeskPaymentRequired() ? AllocationStatus.TO_BE_PAID : AllocationStatus.ACQUIRED;
-        var subscriptionDescriptor = (SubscriptionDescriptor) purchaseContext;
-        ZonedDateTime validityFrom = null;
-        ZonedDateTime validityTo = null;
-        var confirmationTimestamp = subscriptionDescriptor.now(clockProvider);
-        if(subscriptionDescriptor.getValidityFrom() != null) {
-            validityFrom = subscriptionDescriptor.getValidityFrom();
-            validityTo   = subscriptionDescriptor.getValidityTo();
-        } else if(subscriptionDescriptor.getValidityUnits() != null) {
-            validityFrom = confirmationTimestamp;
-            var temporalUnit = requireNonNullElse(subscriptionDescriptor.getValidityTimeUnit(), SubscriptionTimeUnit.DAYS).getTemporalUnit();
-            validityTo = confirmationTimestamp.plus(subscriptionDescriptor.getValidityUnits(), temporalUnit)
-                .with(ChronoField.HOUR_OF_DAY, 23)
-                .with(ChronoField.MINUTE_OF_HOUR, 59)
-                .with(ChronoField.SECOND_OF_MINUTE, 59);
-        }
-        var subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
-        var updatedSubscriptions = subscriptionRepository.confirmSubscription(reservationId,
-            status,
-            requireNonNullElse(subscription.getFirstName(), customerName.getFirstName()),
-            requireNonNullElse(subscription.getLastName(), customerName.getLastName()),
-            requireNonNullElse(subscription.getEmail(), email),
-            subscriptionDescriptor.getMaxEntries(),
-            validityFrom,
-            validityTo,
-            confirmationTimestamp,
-            subscriptionDescriptor.getTimeZone());
-        Validate.isTrue(updatedSubscriptions > 0, "must have updated at least one subscription");
-        subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0); // at the moment it's safe because there can be only one subscription per reservation
-        var subscriptionId = subscription.getId();
-        auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString());
-        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, subscriptionRepository.getSubscriptionMetadata(subscriptionId))
-            .ifPresent(metadata -> subscriptionRepository.setMetadataForSubscription(subscriptionId, metadata));
-    }
-
-    private void acquireEventTickets(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, Event event) {
-        TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
-        AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
-        Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
-        int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
-        if(!configurationManager.getFor(ENABLE_TICKET_TRANSFER, purchaseContext.getConfigurationLevel()).getValueAsBooleanOrDefault()) {
-            //automatically lock assignment
-            int locked = ticketRepository.forbidReassignment(preUpdateTicket.keySet());
-            Validate.isTrue(updatedTickets == locked, "Expected to lock "+updatedTickets+" tickets, locked "+ locked);
-            Map<Integer, Ticket> postUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
-
-            postUpdateTicket.forEach(
-                (id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId()));
-        }
-        var ticketsWithMetadataById = ticketRepository.findTicketsInReservationWithMetadata(reservationId)
-            .stream().collect(toMap(twm -> twm.getTicket().getId(), Function.identity()));
-        ticketsWithMetadataById.forEach((id, ticketWithMetadata) -> {
-            var newMetadataOptional = extensionManager.handleTicketAssignmentMetadata(ticketWithMetadata, event);
-            newMetadataOptional.ifPresent(metadata -> {
-                var existingContainer = TicketMetadataContainer.copyOf(ticketWithMetadata.getMetadata());
-                var general = new HashMap<>(existingContainer.getMetadataForKey(TicketMetadataContainer.GENERAL)
-                    .orElseGet(TicketMetadata::empty).getAttributes());
-                general.putAll(metadata.getAttributes());
-                existingContainer.putMetadata(TicketMetadataContainer.GENERAL, new TicketMetadata(null, null, general));
-                ticketRepository.updateTicketMetadata(id, existingContainer);
-                auditUpdateMetadata(reservationId, id, event.getId(), existingContainer, ticketWithMetadata.getMetadata());
-            });
-            auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticketWithMetadata.getTicket(), Collections.emptyMap(), event.getId());
-        });
-        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
-        Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
+        ticketReservationRepository.updateReservationStatus(spec.getReservationId(), targetStatus.name());
+        // run detached reservation confirmation
+        this.applicationEventPublisher.publishEvent(new FinalizeReservation(spec, paymentProxy, sendReservationConfirmationEmail, sendTickets, username, currentStatus));
     }
 
     public PartialTicketTextGenerator getTicketEmailGenerator(Event event,
                                                               TicketReservation ticketReservation,
                                                               Locale ticketLanguage,
                                                               Map<String, List<String>> additionalInfo) {
-        return ticket -> {
-            Organization organization = organizationRepository.getById(event.getOrganizationId());
-            String ticketUrl = ticketUpdateUrl(event, ticket.getUuid());
-            var ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
-
-            var initialModel = new HashMap<>(extensionManager.handleTicketEmailCustomText(event, ticketReservation, ticketReservationRepository.getAdditionalInfo(ticketReservation.getId()), ticketFieldRepository.findAllByTicketId(ticket.getId()))
-                .map(CustomEmailText::toMap)
-                .orElse(Map.of()));
-            if(EventUtil.isAccessOnline(ticketCategory, event)) {
-                initialModel.putAll(TicketCheckInUtil.getOnlineCheckInInfo(
-                    extensionManager,
-                    eventRepository,
-                    ticketCategoryRepository,
-                    configurationManager,
-                    event,
-                    ticketLanguage,
-                    ticket,
-                    ticketCategory,
-                    additionalInfo
-                ));
-            }
-            var baseUrl = StringUtils.removeEnd(configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue(), "/");
-            var calendarUrl = UriComponentsBuilder.fromUriString(baseUrl + "/api/v2/public/event/{eventShortName}/calendar/{currentLang}")
-                .queryParam("type", "google")
-                .build(Map.of("eventShortName", event.getShortName(), "currentLang", ticketLanguage.getLanguage()))
-                .toString();
-            return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, ticketCategory, templateManager, baseUrl, ticketUrl, calendarUrl, ticketLanguage, initialModel).generate(ticket);
-        };
+        return reservationHelper.getTicketEmailGenerator(event, ticketReservation, ticketLanguage, additionalInfo);
     }
 
     @Transactional
@@ -1575,34 +1153,6 @@ public class TicketReservationManager {
             .collect(toList());
     }
 
-    private static Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
-                                                                                             PurchaseContext purchaseContext,
-                                                                                             TicketReservation reservation,
-                                                                                             List<Ticket> tickets,
-                                                                                             List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems,
-                                                                                             List<Subscription> subscriptions,
-                                                                                             Optional<Subscription> appliedSubscription) {
-
-        String currencyCode = purchaseContext.getCurrency();
-        List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), purchaseContext.getVat(), purchaseContext.getVatStatus(), promoCodeDiscount)).collect(toList());
-        int discountedTickets = (int) ticketPrices.stream().filter(t -> t.getAppliedDiscount().compareTo(BigDecimal.ZERO) > 0).count();
-        int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
-        if(discountAppliedCount == 0 && promoCodeDiscount != null && promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT_RESERVATION) {
-            discountAppliedCount = 1;
-        }
-        var reservationPriceCalculator = ReservationPriceCalculator.from(reservation, promoCodeDiscount, tickets, purchaseContext, additionalServiceItems, subscriptions, appliedSubscription);
-        var price = new TotalPrice(unitToCents(reservationPriceCalculator.getFinalPrice(), currencyCode),
-            unitToCents(reservationPriceCalculator.getVAT(), currencyCode),
-            -MonetaryUtil.unitToCents(reservationPriceCalculator.getAppliedDiscount(), currencyCode),
-            discountAppliedCount,
-            currencyCode);
-        return Pair.of(price, Optional.ofNullable(promoCodeDiscount));
-    }
-
-    private static Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Stream<? extends AdditionalServiceItemPriceContainer>> generateASIPriceContainers(PurchaseContext purchaseContext, PromoCodeDiscount discount) {
-        return p -> p.getValue().stream().map(asi -> AdditionalServiceItemPriceContainer.from(asi, p.getKey(), purchaseContext, discount));
-    }
-
     /**
      * Get the total cost with VAT if it's not included in the ticket price.
      * 
@@ -1610,260 +1160,19 @@ public class TicketReservationManager {
      * @return
      */
     public Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(String reservationId) {
-        return totalReservationCostWithVAT(ticketReservationRepository.findReservationById(reservationId));
+        return reservationCostCalculator.totalReservationCostWithVAT(reservationId);
     }
 
     public Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(TicketReservation reservation) {
-        return totalReservationCostWithVAT(purchaseContextManager.findByReservationId(reservation.getId()).orElseThrow(), reservation, ticketRepository.findTicketsInReservation(reservation.getId()));
-    }
-
-    private Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PurchaseContext purchaseContext, TicketReservation reservation, List<Ticket> tickets) {
-        var promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
-        var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservation.getId());
-        var appliedSubscription = subscriptionRepository.findAppliedSubscriptionByReservationId(reservation.getId());
-        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), purchaseContext, reservation, tickets,
-            purchaseContext.event().map(event -> collectAdditionalServiceItems(reservation.getId(), event)).orElse(List.of()),
-            subscriptions,
-            appliedSubscription);
-    }
-
-    private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets, Locale locale, PurchaseContext purchaseContext) {
-
-        if(promoCodeDiscount.getCodeType() == CodeType.DYNAMIC) {
-            return messageSourceManager.getMessageSourceFor(purchaseContext).getMessage("reservation.dynamic.discount.description", null, locale); //we don't expose the internal promo code
-        }
-
-        List<Ticket> filteredTickets = tickets.stream().filter(ticket -> promoCodeDiscount.getCategories().contains(ticket.getCategoryId())).collect(toList());
-
-        if (promoCodeDiscount.getCategories().isEmpty() || filteredTickets.isEmpty()) {
-            return promoCodeDiscount.getPromoCode();
-        }
-
-        String formattedDiscountedCategories = filteredTickets.stream()
-            .map(Ticket::getCategoryId)
-            .collect(toSet())
-            .stream()
-            .map(categoryId -> ticketCategoryRepository.getByIdAndActive(categoryId, promoCodeDiscount.getEventId()).getName())
-            .collect(Collectors.joining(", ", "(", ")"));
-
-
-        return promoCodeDiscount.getPromoCode() + " " + formattedDiscountedCategories;
+        return reservationCostCalculator.totalReservationCostWithVAT(reservation);
     }
 
     public OrderSummary orderSummaryForReservationId(String reservationId, PurchaseContext purchaseContext) {
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        return orderSummaryForReservation(reservation, purchaseContext);
+        return orderSummaryGenerator.orderSummaryForReservationId(reservationId, purchaseContext);
     }
 
     public OrderSummary orderSummaryForReservation(TicketReservation reservation, PurchaseContext context) {
-        var totalPriceAndDiscount = totalReservationCostWithVAT(reservation);
-        TotalPrice reservationCost = totalPriceAndDiscount.getLeft();
-        PromoCodeDiscount discount = totalPriceAndDiscount.getRight().orElse(null);
-        //
-        boolean free = reservationCost.getPriceWithVAT() == 0;
-        String refundedAmount = null;
-
-        boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservation.getId(), Audit.EventType.REFUND) > 0;
-
-        if(hasRefund) {
-            refundedAmount = paymentManager.getInfo(reservation, context).getPaymentInformation().getRefundedAmount();
-        }
-
-        var currencyCode = reservation.getCurrencyCode();
-        return new OrderSummary(reservationCost,
-            extractSummary(reservation.getId(), reservation.getVatStatus(), context, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost),
-            free,
-            formatCents(reservationCost.getPriceWithVAT(), currencyCode),
-            formatCents(reservationCost.getVAT(), currencyCode),
-            reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
-            reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
-            reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
-            Optional.ofNullable(context.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),
-            reservation.getVatStatus(),
-            refundedAmount);
-    }
-
-    private OrderSummary orderSummaryForCreditNote(TicketReservation reservation, PurchaseContext purchaseContext, List<Ticket> removedTickets) {
-        var totalPriceAndDiscount = totalReservationCostWithVAT(null, purchaseContext, reservation, removedTickets, List.of(), List.of(), Optional.empty());
-        TotalPrice reservationCost = totalPriceAndDiscount.getLeft();
-        //
-        boolean free = reservationCost.getPriceWithVAT() == 0;
-
-        var currencyCode = reservation.getCurrencyCode();
-        return new OrderSummary(reservationCost,
-            extractSummary(reservation.getVatStatus(), purchaseContext, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), null, reservationCost, removedTickets, Stream.empty(), subscriptionRepository.findSubscriptionsByReservationId(reservation.getId())),
-            free,
-            formatCents(reservationCost.getPriceWithVAT(), currencyCode),
-            formatCents(reservationCost.getVAT(), currencyCode),
-            reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
-            reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
-            reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
-            Optional.ofNullable(purchaseContext.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),
-            reservation.getVatStatus(),
-            null);
-    }
-
-    List<SummaryRow> extractSummary(VatStatus reservationVatStatus,
-                                    PurchaseContext purchaseContext,
-                                    Locale locale,
-                                    PromoCodeDiscount promoCodeDiscount,
-                                    TotalPrice reservationCost,
-                                    List<Ticket> ticketsToInclude,
-                                    Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServicesToInclude,
-                                    List<Subscription> subscriptionsToInclude) {
-        log.trace("extract summary subscriptionsToInclude {}", subscriptionsToInclude);
-        List<SummaryRow> summary = new ArrayList<>();
-        var currencyCode = reservationCost.getCurrencyCode();
-        List<TicketPriceContainer> tickets = ticketsToInclude.stream()
-            .map(t -> TicketPriceContainer.from(t, reservationVatStatus, purchaseContext.getVat(), purchaseContext.getVatStatus(), promoCodeDiscount)).collect(toList());
-        purchaseContext.event().ifPresent(event -> {
-            boolean multipleTaxRates = tickets.stream().map(TicketPriceContainer::getVatStatus).collect(Collectors.toSet()).size() > 1;
-            var ticketsByCategory = tickets.stream()
-                .collect(Collectors.groupingBy(TicketPriceContainer::getCategoryId));
-            List<Entry<Integer, List<TicketPriceContainer>>> sorted;
-            if (multipleTaxRates) {
-                sorted = ticketsByCategory
-                    .entrySet()
-                    .stream()
-                    .sorted(Comparator.comparing((Entry<Integer, List<TicketPriceContainer>> e) -> e.getValue().get(0).getVatStatus()).reversed())
-                    .collect(Collectors.toList());
-            } else {
-                sorted = new ArrayList<>(ticketsByCategory.entrySet());
-            }
-            Map<Integer, TicketCategory> categoriesById;
-
-            if(ticketsByCategory.isEmpty()) {
-                categoriesById = Map.of();
-            } else {
-                categoriesById = ticketCategoryRepository.getByIdsAndActive(ticketsByCategory.keySet(), event.getId())
-                    .stream()
-                    .collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
-            }
-
-            for (var categoryWithTickets : sorted) {
-                var categoryTickets = categoryWithTickets.getValue();
-                final int subTotal = categoryTickets.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
-                final int subTotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(categoryTickets);
-                var firstTicket = categoryTickets.get(0);
-                final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
-                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(firstTicket));
-                String categoryName = categoriesById.get(categoryWithTickets.getKey()).getName();
-                summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts, currencyCode), formatCents(priceBeforeVat, currencyCode), categoryTickets.size(), formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET, null));
-                var ticketVatStatus = firstTicket.getVatStatus();
-                if (VatStatus.isVatExempt(ticketVatStatus) && ticketVatStatus != reservationVatStatus) {
-                    summary.add(new SummaryRow(null,
-                        "",
-                        "",
-                        0,
-                        formatCents(0, currencyCode, true),
-                        formatCents(0, currencyCode, true),
-                        0,
-                        SummaryType.TAX_DETAIL,
-                        "0"));
-                }
-            }
-        });
-
-        summary.addAll(additionalServicesToInclude
-            .map(entry -> {
-                String language = locale.getLanguage();
-                AdditionalServiceText title = additionalServiceTextRepository.findBestMatchByLocaleAndType(entry.getKey().getId(), language, AdditionalServiceText.TextType.TITLE);
-                if(!title.getLocale().equals(language) || title.getId() == -1) {
-                    log.debug("additional service {}: title not found for locale {}", title.getAdditionalServiceId(), language);
-                }
-                List<AdditionalServiceItemPriceContainer> prices = generateASIPriceContainers(purchaseContext, null).apply(entry).collect(toList());
-                AdditionalServiceItemPriceContainer first = prices.get(0);
-                final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
-                final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
-                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts(), currencyCode), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryType.ADDITIONAL_SERVICE, null);
-            }).collect(toList()));
-
-        Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
-            String formattedSingleAmount = "-" + (DiscountType.isFixedAmount(promo.getDiscountType())  ? formatCents(promo.getDiscountAmount(), currencyCode) : (promo.getDiscountAmount()+"%"));
-            summary.add(new SummaryRow(formatPromoCode(promo, ticketsToInclude, locale, purchaseContext),
-                formattedSingleAmount,
-                formattedSingleAmount,
-                reservationCost.getDiscountAppliedCount(),
-                formatCents(reservationCost.getDiscount(), currencyCode), formatCents(reservationCost.getDiscount(), currencyCode), reservationCost.getDiscount(),
-                promo.isDynamic() ? SummaryType.DYNAMIC_DISCOUNT : SummaryType.PROMOTION_CODE,
-                null));
-        });
-        //
-        if(purchaseContext instanceof SubscriptionDescriptor) {
-            if(!subscriptionsToInclude.isEmpty()) {
-                var subscription = subscriptionsToInclude.get(0);
-                var priceContainer = new SubscriptionPriceContainer(subscription, promoCodeDiscount, (SubscriptionDescriptor) purchaseContext);
-                var priceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
-                summary.add(new SummaryRow(purchaseContext.getTitle().get(locale.getLanguage()),
-                    formatCents(priceContainer.getSummarySrcPriceCts(), currencyCode),
-                    priceBeforeVat,
-                    subscriptionsToInclude.size(),
-                    formatCents(priceContainer.getSummarySrcPriceCts() * subscriptionsToInclude.size(), currencyCode),
-                    formatUnit(priceContainer.getNetPrice().multiply(new BigDecimal(subscriptionsToInclude.size())), currencyCode),
-                    priceContainer.getSummarySrcPriceCts(),
-                    SummaryType.SUBSCRIPTION,
-                    null
-                ));
-            }
-        } else if(CollectionUtils.isNotEmpty(subscriptionsToInclude)) {
-            log.trace("subscriptions to include is not empty");
-            var subscription = subscriptionsToInclude.get(0);
-            subscriptionRepository.findOne(subscription.getSubscriptionDescriptorId(), subscription.getOrganizationId()).ifPresent(subscriptionDescriptor -> {
-                log.trace("found subscriptionDescriptor with ID {}", subscriptionDescriptor.getId());
-                // find tickets with subscription applied
-                var ticketsSubscription = tickets.stream().filter(t -> Objects.equals(subscription.getId(), t.getSubscriptionId())).collect(toList());
-                final int ticketPriceCts = ticketsSubscription.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
-                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(ticketsSubscription);
-                summary.add(new SummaryRow(subscriptionDescriptor.getLocalizedTitle(locale),
-                    "-" + formatCents(ticketPriceCts, currencyCode),
-                    "-" + formatCents(priceBeforeVat, currencyCode),
-                    ticketsSubscription.size(),
-                    "-" + formatCents(ticketPriceCts, currencyCode),
-                    "-" + formatCents(priceBeforeVat, currencyCode),
-                    ticketPriceCts,
-                    SummaryType.APPLIED_SUBSCRIPTION,
-                    null
-                ));
-            });
-        }
-
-        //
-        return summary;
-    }
-
-    List<SummaryRow> extractSummary(String reservationId, VatStatus reservationVatStatus,
-                                    PurchaseContext purchaseContext, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
-        List<Subscription> subscriptionsToInclude;
-        if(purchaseContext.ofType(PurchaseContextType.event)) {
-            subscriptionsToInclude = subscriptionRepository.findAppliedSubscriptionByReservationId(reservationId)
-                .map(List::of)
-                .orElse(List.of());
-        } else {
-            subscriptionsToInclude = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
-        }
-
-        return extractSummary(reservationVatStatus,
-            purchaseContext,
-            locale,
-            promoCodeDiscount,
-            reservationCost,
-            ticketRepository.findTicketsInReservation(reservationId),
-            streamAdditionalServiceItems(reservationId, purchaseContext),
-            subscriptionsToInclude);
-    }
-
-    private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> streamAdditionalServiceItems(String reservationId, PurchaseContext purchaseContext) {
-        return purchaseContext.event().map(event -> {
-            return additionalServiceItemRepository.findByReservationUuid(reservationId)
-            .stream()
-            .collect(Collectors.groupingBy(AdditionalServiceItem::getAdditionalServiceId))
-            .entrySet()
-            .stream()
-            .map(entry -> Pair.of(additionalServiceRepository.getById(entry.getKey(), event.getId()), entry.getValue()));
-        }).orElse(Stream.empty());
-    }
-    private List<Pair<AdditionalService, List<AdditionalServiceItem>>> collectAdditionalServiceItems(String reservationId, Event event) {
-        return streamAdditionalServiceItems(reservationId, event).collect(Collectors.toList());
+        return orderSummaryGenerator.orderSummaryForReservation(reservation, context);
     }
 
     String reservationUrl(String reservationId) {
@@ -1883,37 +1192,17 @@ public class TicketReservationManager {
             return baseUrl + "/openid/authentication?reservation=" + reservationId + "&contextType=" + purchaseContext.getType() + "&id=" + purchaseContext.getPublicIdentifier();
         } else {
             var cleanSubscriptionId = StringUtils.trimToNull(subscriptionId);
-            return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, cleanSubscriptionId != null ? "subscription="+cleanSubscriptionId : null);
+            return ReservationUtil.reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, cleanSubscriptionId != null ? "subscription="+cleanSubscriptionId : null);
         }
     }
 
-    String reservationUrl(String baseUrl, String reservationId, PurchaseContext purchaseContext, String userLanguage, String additionalParams) {
-        var cleanParams = StringUtils.trimToNull(additionalParams);
-        return StringUtils.removeEnd(baseUrl, "/")
-            + "/" + purchaseContext.getType()
-            + "/" + purchaseContext.getPublicIdentifier()
-            + "/reservation/" + reservationId
-            + "?lang="+userLanguage
-            + (cleanParams != null ? "&" + cleanParams : "");
-    }
-    String reservationUrl(String baseUrl, String reservationId, PurchaseContext purchaseContext, String userLanguage) {
-        return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, null);
-    }
-    
     String reservationUrl(TicketReservation reservation, PurchaseContext purchaseContext) {
-        return reservationUrl(configurationManager.baseUrl(purchaseContext), reservation.getId(), purchaseContext, reservation.getUserLanguage());
+        return ReservationUtil.reservationUrl(reservation, purchaseContext, configurationManager);
     }
 
     String ticketUrl(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-    
         return configurationManager.baseUrl(event) + "/event/" + event.getShortName() + "/ticket/" + ticketId + "?lang=" + ticket.getUserLanguage();
-    }
-
-    public String ticketUpdateUrl(Event event, String ticketId) {
-        Ticket ticket = ticketRepository.findByUUID(ticketId);
-        
-        return configurationManager.baseUrl(event) + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang=" + ticket.getUserLanguage();
     }
 
     public String ticketOnlineCheckIn(Event event, String ticketId) {
@@ -2032,10 +1321,6 @@ public class TicketReservationManager {
         return ticketRepository.findFirstTicketInReservation(reservationId);
     }
 
-    public Optional<String> getVAT(PurchaseContext purchaseContext) {
-        return configurationManager.getFor(VAT_NR, purchaseContext.getConfigurationLevel()).getValue();
-    }
-
     public void updateTicketOwner(Ticket ticket,
                                   Locale locale,
                                   Event event,
@@ -2066,7 +1351,7 @@ public class TicketReservationManager {
         boolean sendTicketAllowed = configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
         if (sendTicketAllowed && (newTicket.getStatus() == TicketStatus.ACQUIRED || newTicket.getStatus() == TicketStatus.TO_BE_PAID)
             && (!equalsIgnoreCase(newEmail, ticket.getEmail()) || !equalsIgnoreCase(customerName.getFullName(), ticket.getFullName()))) {
-            sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
+            reservationHelper.sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
         }
 
         boolean admin = isAdmin(userDetails);
@@ -2095,7 +1380,7 @@ public class TicketReservationManager {
         Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
         Map<String, String> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
 
-        auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
+        auditingHelper.auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
     }
 
     boolean isTicketBeingReassigned(Ticket original, UpdateTicketOwnerForm updated, Event event) {
@@ -2107,48 +1392,10 @@ public class TicketReservationManager {
             && (!equalsIgnoreCase(original.getEmail(), updated.getEmail()) || !equalsIgnoreCase(original.getFullName(), customerName.getFullName()));
     }
 
-    private void auditUpdateMetadata(String reservationId,
-                                     int ticketId,
-                                     int eventId,
-                                     TicketMetadataContainer newMetadata,
-                                     TicketMetadataContainer oldMetadata) {
-        List<Map<String, Object>> changes = ObjectDiffUtil.diff(oldMetadata, newMetadata, TicketMetadataContainer.class).stream()
-            .map(this::processChange)
-            .collect(Collectors.toList());
 
-        auditingRepository.insert(reservationId, null, eventId, Audit.EventType.UPDATE_TICKET_METADATA, new Date(),
-            TICKET, Integer.toString(ticketId), changes);
-    }
-
-    private void auditUpdateTicket(Ticket preUpdateTicket, Map<String, String> preUpdateTicketFields, Ticket postUpdateTicket, Map<String, String> postUpdateTicketFields, int eventId) {
-        List<ObjectDiffUtil.Change> diffTicket = ObjectDiffUtil.diff(preUpdateTicket, postUpdateTicket);
-        List<ObjectDiffUtil.Change> diffTicketFields = ObjectDiffUtil.diff(preUpdateTicketFields, postUpdateTicketFields);
-
-        List<Map<String, Object>> changes = Stream.concat(diffTicket.stream(), diffTicketFields.stream())
-            .map(this::processChange)
-            .collect(Collectors.toList());
-
-        auditingRepository.insert(preUpdateTicket.getTicketsReservationId(), null, eventId,
-            Audit.EventType.UPDATE_TICKET, new Date(), TICKET, Integer.toString(preUpdateTicket.getId()), changes);
-    }
-
-    private HashMap<String, Object> processChange(ObjectDiffUtil.Change change) {
-        var v = new HashMap<String, Object>();
-        v.put("propertyName", change.getPropertyName());
-        v.put("state", change.getState());
-        v.put("oldValue", change.getOldValue());
-        v.put("newValue", change.getNewValue());
-        return v;
-    }
 
     private boolean isAdmin(Optional<UserDetails> userDetails) {
         return userDetails.flatMap(u -> u.getAuthorities().stream().map(a -> Role.fromRoleName(a.getAuthority())).filter(Role.ADMIN::equals).findFirst()).isPresent();
-    }
-
-    void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
-        TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
-        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-        notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory, () -> retrieveAttendeeAdditionalInfoForTicket(ticket));
     }
 
     public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String ticketIdentifier) {
@@ -2202,11 +1449,11 @@ public class TicketReservationManager {
                 .forEach(p -> {
                     TicketReservation reservation = p.getLeft();
                     Event event = p.getMiddle();
-                    Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
+                    Map<String, Object> model = reservationHelper.prepareModelForReservationEmail(event, reservation);
                     Locale locale = p.getRight();
                     ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
                     notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSourceManager.getMessageSourceFor(event).getMessage("reservation.reminder.mail.subject",
-                    		new Object[]{getShortReservationID(event, reservation)}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
+                    		new Object[]{configurationManager.getShortReservationID(event, reservation)}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
                 });
     }
 
@@ -2260,7 +1507,7 @@ public class TicketReservationManager {
                     .forEach(t -> {
                         int result = ticketRepository.flagTicketAsReminderSent(t.getId());
                         Validate.isTrue(result == 1);
-                        Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
+                        Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ReservationUtil.ticketUpdateUrl(event, t, configurationManager));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(LocaleUtil::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
                         notificationManager.sendSimpleEmail(event, t.getTicketsReservationId(), t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", 
                         		new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
@@ -2290,7 +1537,7 @@ public class TicketReservationManager {
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .forEach(reservation -> {
-                        Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
+                        Map<String, Object> model = reservationHelper.prepareModelForReservationEmail(event, reservation);
                         ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(clockProvider.withZone(eventZoneId)));
                         Locale locale = findReservationLanguage(reservation.getId());
                         notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", 
@@ -2316,9 +1563,6 @@ public class TicketReservationManager {
         return configurationManager.getShortReservationID(event, findById(reservationId).orElseThrow());
     }
 
-    public String getShortReservationID(Configurable event, TicketReservation reservation) {
-        return configurationManager.getShortReservationID(event, reservation);
-    }
 
     public int countAvailableTickets(EventAndOrganizationId event, TicketCategory category) {
         if(category.isBounded()) {
@@ -2550,10 +1794,6 @@ public class TicketReservationManager {
         ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, json.asJsonString(ticketReservationInvoicingAdditionalInfo));
     }
 
-    private static Locale getReservationLocale(TicketReservation reservation) {
-        return StringUtils.isEmpty(reservation.getUserLanguage()) ? Locale.ENGLISH : LocaleUtil.forLanguageTag(reservation.getUserLanguage());
-    }
-
     public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentProxy paymentProxy, Map<String, String> additionalInfo) {
         return processTransactionWebhook(body, signature, paymentProxy, additionalInfo, new PaymentContext());
     }
@@ -2644,8 +1884,8 @@ public class TicketReservationManager {
                 var totalPrice = totalReservationCostWithVAT(reservation).getLeft();
                 var paymentToken = paymentWebhookResult.getPaymentToken();
                 var paymentSpecification = new PaymentSpecification(reservation, totalPrice, purchaseContext, paymentToken,
-                    orderSummaryForReservation(reservation, purchaseContext), true, eventHasPrivacyPolicy(purchaseContext));
-                transitionToComplete(paymentSpecification, totalPrice, paymentToken.getPaymentProvider(), null);
+                    orderSummaryForReservation(reservation, purchaseContext), true, hasPrivacyPolicy(purchaseContext));
+                transitionToComplete(paymentSpecification, paymentToken.getPaymentProvider(), null);
                 break;
             }
             case FAILED: {
@@ -2653,7 +1893,7 @@ public class TicketReservationManager {
                 // depending on when we actually receive the event, we could have two possibilities:
                 //
                 //      1) the user is still waiting on the payment page. In this case, there's no harm in reverting the reservation status to PENDING
-                //      2) the user has given up and we're officially in background mode.
+                //      2) the user has given up, and we're officially in background mode.
                 //
                 // either way, we have to notify the user about the charge failure. Then:
                 //
@@ -2737,7 +1977,7 @@ public class TicketReservationManager {
     }
 
     private void sendTransactionFailedEmail(PurchaseContext purchaseContext, TicketReservation reservation, PaymentMethod paymentMethod, PaymentWebhookResult paymentWebhookResult, boolean cancelReservation) {
-        var shortReservationID = getShortReservationID(purchaseContext, reservation);
+        var shortReservationID = configurationManager.getShortReservationID(purchaseContext, reservation);
         var messageSource = messageSourceManager.getMessageSourceFor(purchaseContext);
         Map<String, Object> model = Map.of(
             ORGANIZATION, organizationRepository.getById(purchaseContext.getOrganizationId()),
@@ -2745,7 +1985,7 @@ public class TicketReservationManager {
         "reservation", reservation,
             RESERVATION_ID, shortReservationID,
         "eventName", purchaseContext.getDisplayName(),
-        "provider", requireNonNullElse(paymentMethod.name(), ""),
+        "provider", requireNonNullElse(paymentMethod, PaymentMethod.NONE).name(),
         "reason", paymentWebhookResult.getReason(),
         "reservationUrl", reservationUrl(reservation, purchaseContext));
 
@@ -2813,7 +2053,7 @@ public class TicketReservationManager {
                                                           Locale locale,
                                                           BindingResult bindingResult,
                                                           Principal principal) {
-        return createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal, null);
+        return createSubscriptionReservation(subscriptionDescriptor, locale, bindingResult, principal, SubscriptionMetadata.empty());
     }
 
     public Optional<String> createSubscriptionReservation(SubscriptionDescriptor subscriptionDescriptor,
@@ -2852,13 +2092,13 @@ public class TicketReservationManager {
                 false,
                 principal);
             return Optional.of(reservationId);
-        } catch (TicketReservationManager.NotEnoughTicketsException nete) {
+        } catch (NotEnoughTicketsException nete) {
             bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-        } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+        } catch (MissingSpecialPriceTokenException missing) {
             bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
-        } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+        } catch (InvalidSpecialPriceTokenException invalid) {
             bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-        } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
+        } catch (TooManyTicketsForDiscountCodeException tooMany) {
             bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
         } catch (CannotProceedWithPayment cannotProceedWithPayment) {
             bindingResult.reject(ErrorsCode.STEP_1_CATEGORIES_NOT_COMPATIBLE);
@@ -3178,9 +2418,7 @@ public class TicketReservationManager {
     }
 
     public Map<String, List<String>> retrieveAttendeeAdditionalInfoForTicket(Ticket ticket) {
-        return ticketFieldRepository.findNameAndValue(ticket.getId())
-            .stream()
-            .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
+        return reservationHelper.retrieveAttendeeAdditionalInfoForTicket(ticket);
     }
 
     private Integer retrievePublicUserId(Principal principal) {

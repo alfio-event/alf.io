@@ -45,6 +45,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -68,10 +69,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
@@ -114,7 +114,8 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                                     PromoCodeDiscountRepository promoCodeDiscountRepository,
                                                     PromoCodeRequestManager promoCodeRequestManager,
                                                     OrganizationRepository organizationRepository,
-                                                    UserManager userManager) {
+                                                    UserManager userManager,
+                                                    ExportManager exportManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -149,7 +150,8 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
             userRepository,
             organizationDeleter,
             promoCodeDiscountRepository,
-            promoCodeRequestManager);
+            promoCodeRequestManager,
+            exportManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
     }

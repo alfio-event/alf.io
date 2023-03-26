@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.subscription.Subscription;
@@ -237,7 +238,7 @@ public enum TemplateResource {
                 ZonedDateTime.now(ClockProvider.clock().withZone(zoneId)),
                 subscriptionDescriptor.getTimeZone()
             );
-            var subscriptionMetadata = new SubscriptionMetadata(Map.of("key", "value"));
+            var subscriptionMetadata = new SubscriptionMetadata(Map.of("key", "value"), SubscriptionConfiguration.defaultConfiguration());
             return buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, subscriptionMetadata, imageData, RESERVATION_ID_VALUE, Locale.ENGLISH, sampleTicketReservation(zoneId));
         }
     },
@@ -367,7 +368,7 @@ public enum TemplateResource {
         Optional<String> vat = Optional.of("VAT-NR");
         List<TicketWithCategory> tickets = Collections.singletonList(new TicketWithCategory(sampleTicket(event.getZoneId()), sampleCategory(event.getZoneId())));
         OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0, "CHF"),
-            List.of(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET, null)), false, "10.00", "0.80", false, false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
+            List.of(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET, null, PriceContainer.VatStatus.INCLUDED)), false, "10.00", "0.80", false, false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
         String baseUrl = "http://your-domain.tld";
         String reservationUrl = baseUrl + "/reservation-url/";
         String reservationShortId = "597e7e7b";
@@ -627,6 +628,7 @@ public enum TemplateResource {
         model.put("reservation", reservation);
         model.put(RESERVATION_ID, reservationId);
         model.put(METADATA_ATTRIBUTES_KEY, metadata.getProperties());
+        model.put("displayPin", metadata.getConfiguration().isDisplayPin());
         imageData.ifPresent(iData -> {
             model.put("logo", iData.getEventImage());
             model.put("imageWidth", iData.getImageWidth());

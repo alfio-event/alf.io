@@ -22,6 +22,7 @@ import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
 import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -111,7 +112,10 @@ public class SaleableTicketCategory implements PriceContainer {
     }
 
     public String getFormattedFinalPrice() {
-        return MonetaryUtil.formatUnit(getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()), getCurrencyCode());
+        if (StringUtils.isNotEmpty(getCurrencyCode())) {
+            return MonetaryUtil.formatUnit(getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()), getCurrencyCode());
+        }
+        return "";
     }
 
     public int getMaxTicketsAfterConfiguration() {

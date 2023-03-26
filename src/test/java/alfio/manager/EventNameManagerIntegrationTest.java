@@ -29,6 +29,7 @@ import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,11 +53,10 @@ import java.util.UUID;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
-public class EventNameManagerIntegrationTest  extends BaseIntegrationTest {
+class EventNameManagerIntegrationTest  extends BaseIntegrationTest {
 
     @Autowired
     private EventRepository eventRepository;

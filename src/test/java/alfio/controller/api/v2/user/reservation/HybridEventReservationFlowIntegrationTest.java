@@ -44,6 +44,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
@@ -63,10 +64,9 @@ import java.util.List;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class HybridEventReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
     private final OrganizationRepository organizationRepository;
@@ -109,7 +109,8 @@ class HybridEventReservationFlowIntegrationTest extends BaseReservationFlowTest 
                                                      UserRepository userRepository,
                                                      OrganizationDeleter organizationDeleter,
                                                      PromoCodeDiscountRepository promoCodeDiscountRepository,
-                                                     PromoCodeRequestManager promoCodeRequestManager) {
+                                                     PromoCodeRequestManager promoCodeRequestManager,
+                                                     ExportManager exportManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -144,7 +145,8 @@ class HybridEventReservationFlowIntegrationTest extends BaseReservationFlowTest 
             userRepository,
             organizationDeleter,
             promoCodeDiscountRepository,
-            promoCodeRequestManager);
+            promoCodeRequestManager,
+            exportManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
     }

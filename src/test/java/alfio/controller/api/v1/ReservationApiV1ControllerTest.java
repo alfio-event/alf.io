@@ -40,6 +40,7 @@ import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.StringUtils;
@@ -62,10 +63,9 @@ import static alfio.model.system.ConfigurationKeys.OPENID_PUBLIC_ENABLED;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class ReservationApiV1ControllerTest {
 
     private static final String DEFAULT_CATEGORY_NAME = "default";
@@ -420,7 +420,8 @@ class ReservationApiV1ControllerTest {
         var reservationRequest = new SubscriptionReservationCreationRequest(Map.of("key", "value"),
             new ReservationUser("test@test.org", "Test", "Test1", "test@test.org", null),
             "en",
-            new ReservationConfiguration(true));
+            new ReservationConfiguration(true),
+            null);
         var reservationResponse = controller.createSubscriptionReservation(descriptorId, reservationRequest, principal);
         assertTrue(reservationResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(reservationResponse.getBody());
