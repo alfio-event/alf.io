@@ -65,7 +65,6 @@ public class UserManager {
     private final InvoiceSequencesRepository invoiceSequencesRepository;
 
 
-    @Transactional(readOnly = true)
     private List<Authority> getUserAuthorities(User user) {
         return authorityRepository.findGrantedAuthorities(user.getUsername());
     }
