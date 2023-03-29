@@ -415,12 +415,11 @@ public class EventApiController {
             if(fields.contains("Confirmation")) {line.add(reservation.getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
             if(fields.contains("Billing Address")) {line.add(reservation.getBillingAddress());}
             if(fields.contains("Country Code")) {line.add(reservation.getVatCountryCode());}
-            boolean paymentIdRequested = fields.contains("Payment ID");
-            boolean paymentGatewayRequested = fields.contains(PAYMENT_METHOD);
-            if((paymentIdRequested || paymentGatewayRequested)) {
-                Optional<Transaction> transaction = trs.getTransaction();
-                if(paymentIdRequested) { line.add(defaultString(transaction.map(Transaction::getPaymentId).orElse(null), transaction.map(Transaction::getTransactionId).orElse(""))); }
-                if(paymentGatewayRequested) { line.add(transaction.map(tr -> tr.getPaymentProxy().name()).orElse("")); }
+            if((paymentIdRequested = fields.contains("Payment ID")){
+                addPaymentIdToLineIfRequested(line,trs);
+            }
+            if(paymentGatewayRequested = fields.contains(PAYMENT_METHOD)){
+                addPaymentGatewayToLineIfRequested(line, trs);
             }
 
             if(eInvoicingEnabled) {
@@ -444,6 +443,23 @@ public class EventApiController {
 
             return line.toArray(new String[0]);
         });
+    }
+
+    public void addPaymentIdToLineIfRequested(Line line, TransactionService trs) {
+        Optional<Transaction> transactionOpt = trs.getTransaction();
+        String paymentId = transactionOpt.map(Transaction::getPaymentId).orElse(null);
+        String transactionId = transactionOpt.map(Transaction::getTransactionId).orElse("");
+        if (paymentIdRequested) {
+            line.add(defaultString(paymentId, transactionId));
+        }
+    }
+
+    public void addPaymentGatewayToLineIfRequested(Line line, TransactionService trs) {
+        Optional<Transaction> transactionOpt = trs.getTransaction();
+        String paymentGateway = transactionOpt.map(tr -> tr.getPaymentProxy().name()).orElse("");
+        if (paymentGatewayRequested) {
+            line.add(paymentGateway);
+        }
     }
 
     @GetMapping("/events/{eventName}/sponsor-scan/export")
