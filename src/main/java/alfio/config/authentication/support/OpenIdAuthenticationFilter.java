@@ -54,33 +54,44 @@ public class OpenIdAuthenticationFilter extends GenericFilterBean {
         this.redirectURL = redirectURL;
         this.publicAuthentication = publicAuthentication;
     }
-
-    @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
-        if (requestMatcher.matches(req) && openIdAuthenticationManager.isEnabled()) {
-            if (SecurityContextHolder.getContext().getAuthentication() != null || req.getParameterMap().containsKey("logout")) {
-                res.sendRedirect(redirectURL);
-                return;
-            }
-            var parameterMap = request.getParameterMap();
-            if(publicAuthentication
-                && parameterMap.containsKey("reservation")
-                && parameterMap.containsKey("contextType")
-                && parameterMap.containsKey("id")) {
-
-                var session = req.getSession();
-                session.setAttribute(RESERVATION_KEY, request.getParameter("reservation"));
-                session.setAttribute(CONTEXT_TYPE_KEY, request.getParameter("contextType"));
-                session.setAttribute(CONTEXT_ID_KEY, request.getParameter("id"));
-            }
-            log.trace("calling buildAuthorizeUrl");
-            res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(UUID.randomUUID().toString()));
+        if (checkRedirect(req)) {
+            redirectToAuthorization(res, req);
             return;
         }
 
         chain.doFilter(request, response);
     }
+
+    private boolean checkRedirect(HttpServletRequest req) {
+        return requestMatcher.matches(req) && openIdAuthenticationManager.isEnabled() && isUserPresent(req) && isPublicAuthenticationRequest(req);
+    }
+
+    private boolean isUserPresent(HttpServletRequest req) {
+        return SecurityContextHolder.getContext().getAuthentication() == null || req.getParameterMap().containsKey("logout");
+    }
+
+    private boolean isPublicAuthenticationRequest(HttpServletRequest req) {
+        var parameterMap = req.getParameterMap();
+        return publicAuthentication && parameterMap.containsKey("reservation") && parameterMap.containsKey("contextType") && parameterMap.containsKey("id");
+    }
+
+    private void redirectToAuthorization(HttpServletResponse res, HttpServletRequest req) throws IOException {
+        if (isPublicAuthenticationRequest(req)) {
+            storePublicAuthenticationRequestInSession(req.getSession(), req.getParameter("reservation"), req.getParameter("contextType"), req.getParameter("id"));
+        }
+
+        log.trace("calling buildAuthorizeUrl");
+        res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(UUID.randomUUID().toString()));
+    }
+
+    private void storePublicAuthenticationRequestInSession(HttpSession session, String reservation, String contextType, String id) {
+        session.setAttribute(RESERVATION_KEY, reservation);
+        session.setAttribute(CONTEXT_TYPE_KEY, contextType);
+        session.setAttribute(CONTEXT_ID_KEY, id);
+    }
+
 }
