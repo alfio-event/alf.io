@@ -183,19 +183,46 @@ abstract class AbstractFormBasedWebSecurity {
             HttpServletResponse res = (HttpServletResponse) servletResponse;
             var reqUri = req.getRequestURI();
 
-            if ((reqUri.startsWith(API_V2_PUBLIC_PATH) || reqUri.startsWith(ADMIN_API) || reqUri.startsWith("/api/v2/admin/") || reqUri.equals(AUTHENTICATION_STATUS)) && "GET".equalsIgnoreCase(req.getMethod())) {
+            if (isGetRequestAndRequiresCsrfToken(reqUri)) {
                 CsrfToken csrf = csrfTokenRepository.loadToken(req);
                 if (csrf == null) {
                     csrf = csrfTokenRepository.generateToken(req);
                 }
                 res.addHeader(XSRF_TOKEN, csrf.getToken());
-                if (!reqUri.startsWith(API_V2_PUBLIC_PATH)) {
-                    // FIXME remove this after the new admin is complete
-                    addCookie(res, csrf);
+                if (isNotPublicApiRequest(reqUri)) {
+                    addCsrfTokenToCookie(res, csrf);
                 }
             }
+
             filterChain.doFilter(servletRequest, servletResponse);
         };
+    }
+
+    private boolean isGetRequestAndRequiresCsrfToken(String reqUri) {
+        return ("GET".equalsIgnoreCase(req.getMethod()) &&
+            (reqUri.startsWith(API_V2_PUBLIC_PATH) ||
+                reqUri.startsWith(ADMIN_API) ||
+                reqUri.startsWith("/api/v2/admin/") ||
+                reqUri.equals(AUTHENTICATION_STATUS)));
+    }
+
+    private boolean isNotPublicApiRequest(String reqUri) {
+        return !reqUri.startsWith(API_V2_PUBLIC_PATH);
+    }
+
+    private void addCsrfTokenToHeader(HttpServletResponse res, CsrfToken csrf) {
+        res.addHeader(XSRF_TOKEN, csrf.getToken());
+    }
+
+    private void addCsrfTokenToCookie(HttpServletResponse res, CsrfToken csrf) {
+        addCookie(res, csrf);
+    }
+
+    private void addCookie(HttpServletResponse res, CsrfToken csrf) {
+        Cookie cookie = new Cookie(CSRF_COOKIE, csrf.getToken());
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        res.addCookie(cookie);
     }
 
     private static void authorizeRequests(ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry auth) {
