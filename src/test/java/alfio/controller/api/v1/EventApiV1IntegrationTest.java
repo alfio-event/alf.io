@@ -105,9 +105,9 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         this.username = UUID.randomUUID().toString();
 
         var organizationModification = new OrganizationModification(null, organizationName, "email@example.com", "org", null, null);
-        userManager.createOrganization(organizationModification);
+        userManager.createOrganization(organizationModification, null);
         this.organization = organizationRepository.findByName(organizationName).orElseThrow();
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL);
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL, null);
 
         this.mockPrincipal = Mockito.mock(Principal.class);
         Mockito.when(mockPrincipal.getName()).thenReturn(username);

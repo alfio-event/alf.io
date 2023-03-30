@@ -103,9 +103,9 @@ class SubscriptionApiV1IntegrationTest {
         this.username = UUID.randomUUID().toString();
 
         var organizationModification = new OrganizationModification(null, organizationName, "email@example.com", "org", null, null);
-        userManager.createOrganization(organizationModification);
+        userManager.createOrganization(organizationModification, null);
         var organization = organizationRepository.findByName(organizationName).orElseThrow();
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL);
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL, null);
 
         this.principal = Mockito.mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(username);
