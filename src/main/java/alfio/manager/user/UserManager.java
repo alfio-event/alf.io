@@ -416,6 +416,7 @@ public class UserManager {
         }
         var targetUser = findUser(userId);
         var targetUserOrgs = findUserOrganizations(targetUser.getUsername());
+        Assert.isTrue(targetUserOrgs.size() == 1, "Targeted user can only be in one organization");
         for (var org : targetUserOrgs) {
             if (isOwnerOfOrganization(currentUser, org.getId())) {
                 return;
