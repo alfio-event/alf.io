@@ -115,7 +115,7 @@ class ReservationApiV1ControllerTest {
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         event = eventAndUser.getLeft();
         username = UUID.randomUUID().toString();
-        userManager.insertUser(event.getOrganizationId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL);
+        userManager.insertUser(event.getOrganizationId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL, null);
     }
 
     @Test

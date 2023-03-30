@@ -100,7 +100,7 @@ class DataMigratorIntegrationTest extends BaseIntegrationTest {
 
         organizationRepository.create(organizationName, "org", "email@example.com", null, null);
         Organization organization = organizationRepository.findByName(organizationName).get();
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL);
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL, null);
 
         Map<String, String> desc = new HashMap<>();
         desc.put("en", "muh description");
