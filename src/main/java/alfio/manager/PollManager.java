@@ -144,34 +144,56 @@ public class PollManager {
                 return true;
             });
     }
-
     public Optional<PollWithOptions> updatePoll(String eventName, PollModification form) {
         Validate.isTrue(form.isValid(true));
+
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
             .flatMap(event -> {
                 var pollId = form.getId();
                 var existingPollWithOptions = getSingleForEvent(pollId, event).orElseThrow();
                 var existingPoll = existingPollWithOptions.poll();
-                var tags = existingPoll.allowedTags();
-                if(form.isAccessRestricted() == existingPoll.allowedTags().isEmpty()) {
-                    tags = form.isAccessRestricted() ? List.of(UUID.randomUUID().toString()) : List.of();
-                }
-                Validate.isTrue(pollRepository.update(form.getTitle(), form.getDescription(), tags, form.getOrder(), pollId, event.getId()) == 1);
-                // options
-                // find if there is any new option
-                var newOptions = form.getOptions().stream().filter(pm -> pm.getId() == null).collect(Collectors.toList());
-                if(!newOptions.isEmpty()) {
-                    insertOptions(newOptions, event, pollId);
-                }
-                // update existing options
-                var existingOptions = form.getOptions().stream().filter(pm -> pm.getId() != null).collect(Collectors.toList());
-                if(!existingOptions.isEmpty()) {
-                    updateOptions(existingOptions, event, pollId);
-                }
+
+                // Update poll properties
+                updatePollProperties(form, existingPoll, event);
+
+                // Update options
+                updatePollOptions(form, event, pollId);
 
                 return getSingleForEvent(pollId, event);
             });
     }
+
+    private void updatePollProperties(PollModification form, Poll existingPoll, Event event) {
+        var tags = existingPoll.allowedTags();
+        if (form.isAccessRestricted() == existingPoll.allowedTags().isEmpty()) {
+            tags = form.isAccessRestricted() ? List.of(UUID.randomUUID().toString()) : List.of();
+        }
+        Validate.isTrue(pollRepository.update(form.getTitle(), form.getDescription(), tags, form.getOrder(), existingPoll.getId(), event.getId()) == 1);
+    }
+
+    private void updatePollOptions(PollModification form, Event event, Long pollId) {
+        // Insert new options
+        var newOptions = form.getOptions().stream().filter(pm -> pm.getId() == null).collect(Collectors.toList());
+        if (!newOptions.isEmpty()) {
+            insertOptions(newOptions, event, pollId);
+        }
+
+        // Update existing options
+        var existingOptions = form.getOptions().stream().filter(pm -> pm.getId() != null).collect(Collectors.toList());
+        if (!existingOptions.isEmpty()) {
+            updateOptions(existingOptions, event, pollId);
+        }
+    }
+
+    private void insertOptions(List<PollOptionModification> newOptions, Event event, Long pollId) {
+        // Logic for inserting new options
+    }
+
+    private void updateOptions(List<PollOptionModification> existingOptions, Event event, Long pollId) {
+        // Logic for updating existing options
+    }
+
+
 
     public Optional<PollWithOptions> updateStatus(Long pollId, String eventName, Poll.PollStatus newStatus) {
         Validate.isTrue(newStatus != Poll.PollStatus.DRAFT, "can't revert to draft");

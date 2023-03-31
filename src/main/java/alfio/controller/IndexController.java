@@ -205,6 +205,7 @@ public class IndexController {
         "/my-orders",
         "/my-profile",
     })
+
     public void replyToIndex(@PathVariable(value = EVENT_SHORT_NAME, required = false) String eventShortName,
                              @PathVariable(value = "subscriptionId", required = false) String subscriptionId,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
