@@ -12,7 +12,8 @@ export class AppComponent implements OnDestroy {
   private readonly langChangeSub: Subscription;
 
   constructor(translate: TranslateService, i18nService: I18nService) {
-    translate.setDefaultLang('en');
+    const defaultLang = document.getElementsByTagName('html')[0].getAttribute('lang');
+    translate.setDefaultLang(defaultLang);
 
     this.langChangeSub = translate.onLangChange.subscribe(langChange => {
       document.getElementsByTagName('html')[0].setAttribute('lang', langChange.lang);

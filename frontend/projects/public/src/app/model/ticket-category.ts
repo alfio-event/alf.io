@@ -25,5 +25,7 @@ export class TicketCategory {
     soldOutOrLimitReached: boolean;
 
     availableTickets: number | null;
+
+    displayTaxInformation: boolean;
 }
 

@@ -8,40 +8,43 @@
 
   <form [formGroup]="contactAndTicketsForm" (submit)="submitForm()">
 
-    <div class="page-header">
-      <h2 translate="reservation-page.your-details"></h2>
-      <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="displayLoginSuggestion">
-        <div class="h6"><fa-icon [icon]="['fas', 'info-circle']" class="text-info" a11yRole="presentation"></fa-icon> {{ 'reservation-page.login.message' | translate }}</div>
-        <button type="button" (click)="login()" class="btn btn-default"><fa-icon [icon]="['fas', 'sign-in-alt']" a11yRole="presentation"></fa-icon> {{ 'user.menu.login' | translate }}</button>
-      </div>
-    </div>
+    <ng-container *ngIf="showContactData">
 
-    <div class="alert alert-danger" role="alert" *ngIf="globalErrors && globalErrors.length > 0">
-      <div *ngFor="let err of globalErrors"><strong>{{err.code | translate: err.arguments}}</strong></div>
-    </div>
+      <div class="page-header">
+        <h2 translate="reservation-page.your-details"></h2>
+        <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="displayLoginSuggestion">
+          <div class="h6"><fa-icon [icon]="['fas', 'info-circle']" class="text-info" a11yRole="presentation"></fa-icon> {{ 'reservation-page.login.message' | translate }}</div>
+          <button type="button" (click)="login()" class="btn btn-default"><fa-icon [icon]="['fas', 'sign-in-alt']" a11yRole="presentation"></fa-icon> {{ 'user.menu.login' | translate }}</button>
+        </div>
+      </div>
 
-    <div class="row g-2 mb-3">
-      <div class="col-12 col-sm-6">
-        <div class="form-group">
-          <label class="form-label" for="first-name">{{'common.first-name'|translate}}{{' '}}*</label>
-          <input id="first-name" class="form-control" formControlName="firstName" aria-required="true" type="text" #contactFirstName autocomplete="fname" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('firstName', contactFirstName.value)">
+      <div class="alert alert-danger" role="alert" *ngIf="globalErrors && globalErrors.length > 0">
+        <div *ngFor="let err of globalErrors"><strong>{{err.code | translate: err.arguments}}</strong></div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-12 col-sm-6">
+          <div class="form-group">
+            <label class="form-label" for="first-name">{{'common.first-name'|translate}}{{' '}}*</label>
+            <input id="first-name" class="form-control" formControlName="firstName" aria-required="true" type="text" #contactFirstName autocomplete="fname" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('firstName', contactFirstName.value)">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="form-group">
+            <label class="form-label" for="last-name">{{'common.last-name'|translate}}{{' '}}*</label>
+            <input id="last-name" class="form-control" formControlName="lastName" aria-required="true" type="text" #contactLastName autocomplete="lname" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('lastName', contactLastName.value)">
+          </div>
         </div>
       </div>
-      <div class="col-12 col-sm-6">
-        <div class="form-group">
-          <label class="form-label" for="last-name">{{'common.last-name'|translate}}{{' '}}*</label>
-          <input id="last-name" class="form-control" formControlName="lastName" aria-required="true" type="text" #contactLastName autocomplete="lname" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('lastName', contactLastName.value)">
+      <div class="row g-2 mb-3">
+        <div class="col-12">
+          <div class="form-group">
+              <label class="form-label" for="email">{{'common.email'|translate}}{{' '}}*</label>
+              <input id="email" class="form-control" formControlName="email" aria-required="true" type="email" #contactLastEmail autocomplete="email" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('email', contactLastEmail.value)">
+          </div>
         </div>
       </div>
-    </div>
-    <div class="row g-2 mb-3">
-      <div class="col-12">
-        <div class="form-group">
-            <label class="form-label" for="email">{{'common.email'|translate}}{{' '}}*</label>
-            <input id="email" class="form-control" formControlName="email" aria-required="true" type="email" #contactLastEmail autocomplete="email" [attr.maxlength]="255" appInvalidFeedback (change)="handleAutocomplete('email', contactLastEmail.value)">
-        </div>
-      </div>
-    </div>
+    </ng-container>
 
     <!-- invoicing section -->
     <a id="invoiceSection" #invoiceAnchor></a>

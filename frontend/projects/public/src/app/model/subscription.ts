@@ -2,6 +2,7 @@ import {AnalyticsConfiguration} from './analytics-configuration';
 import {AssignmentConfiguration, CaptchaConfiguration, CurrencyDescriptor, InvoicingConfiguration, Language} from './event';
 import {Localized, OfflinePaymentConfiguration, PurchaseContext, PurchaseContextPriceDescriptor} from './purchase-context';
 import {DatesWithOffset} from './date-validity';
+import {EmbeddingConfiguration} from './embedding-configuration';
 
 export interface SubscriptionSummaryData extends PurchaseContextPriceDescriptor, Localized {
   salePeriod: DatesWithOffset;
@@ -60,6 +61,7 @@ export class SubscriptionInfo implements PurchaseContext, SubscriptionSummaryDat
   assignmentConfiguration: AssignmentConfiguration;
   analyticsConfiguration: AnalyticsConfiguration;
   captchaConfiguration: CaptchaConfiguration;
+  embeddingConfiguration: EmbeddingConfiguration;
   contentLanguages: Language[] = [];
   termsAndConditionsUrl: string;
   privacyPolicyUrl: string;

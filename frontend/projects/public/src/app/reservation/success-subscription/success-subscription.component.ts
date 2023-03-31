@@ -13,6 +13,8 @@ import {FeedbackService} from '../../shared/feedback/feedback.service';
 import {EventService} from '../../shared/event.service';
 import {BasicEventInfo} from '../../model/basic-event-info';
 import {SearchParams} from '../../model/search-params';
+import {ReservationStatusChanged} from '../../model/embedding-configuration';
+import {embedded, pollReservationStatus} from '../../shared/util';
 
 @Component({
   selector: 'app-success-subscription',
@@ -27,6 +29,9 @@ export class SuccessSubscriptionComponent implements OnInit {
   purchaseContext: PurchaseContext;
   reservationInfo: ReservationInfo;
   compatibleEvents: Array<BasicEventInfo> = [];
+
+  reservationFinalized = true;
+  invoiceReceiptReady = true;
 
   constructor(
     private route: ActivatedRoute,
@@ -56,9 +61,27 @@ export class SuccessSubscriptionComponent implements OnInit {
 
   private loadReservation() {
     this.reservationService.getReservationInfo(this.reservationId).subscribe(resInfo => {
-      this.reservationInfo = resInfo;
-      this.loadCompatibleEvents(this.subscriptionInfo.id);
+      this.processReservationInfo(resInfo);
+      if (!this.reservationFinalized) {
+        pollReservationStatus(this.reservationId, this.reservationService, this.processReservationInfo);
+      }
     });
+  }
+
+  private processReservationInfo(resInfo: ReservationInfo) {
+    const embeddingEnabled = this.purchaseContext.embeddingConfiguration.enabled;
+    if (embedded && embeddingEnabled) {
+      window.parent.postMessage(
+        new ReservationStatusChanged(resInfo.status, this.reservationId),
+        this.purchaseContext.embeddingConfiguration.notificationOrigin
+      );
+    }
+    this.reservationInfo = resInfo;
+    this.reservationFinalized = resInfo.status !== 'FINALIZING';
+    this.invoiceReceiptReady = resInfo.metadata.readyForConfirmation;
+    if (this.reservationFinalized && (!embedded || !embeddingEnabled)) {
+      this.loadCompatibleEvents(this.subscriptionInfo.id);
+    }
   }
 
   private loadCompatibleEvents(subscriptionId: string): void {
@@ -81,8 +104,15 @@ export class SuccessSubscriptionComponent implements OnInit {
     return this.reservationInfo.subscriptionInfos[0];
   }
 
+  get displayPin(): boolean {
+    if (this.subscriptionInfo.configuration != null) {
+      return this.subscriptionInfo.configuration.displayPin;
+    }
+    return true; // by default, we display PIN
+  }
+
   public reSendReservationEmail(): void {
-    this.reservationService.reSendReservationEmail('subscription', this.publicIdentifier, this.reservationId, this.i18nService.getCurrentLang()).subscribe(res => {
+    this.reservationService.reSendReservationEmail('subscription', this.publicIdentifier, this.reservationId, this.i18nService.getCurrentLang()).subscribe(() => {
       this.feedbackService.showSuccess('email.confirmation-email-sent');
     });
   }
@@ -93,6 +123,11 @@ export class SuccessSubscriptionComponent implements OnInit {
 
   public copied(payload: string): void {
     this.feedbackService.showSuccess('reservation-page-complete.subscription.copy.success');
+  }
+
+  get showReservationButtons(): boolean {
+    return this.reservationFinalized
+      && (!embedded || !this.purchaseContext.embeddingConfiguration.enabled);
   }
 
 }

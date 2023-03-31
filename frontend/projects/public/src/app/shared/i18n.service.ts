@@ -1,14 +1,14 @@
-import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {Observable, of, zip} from 'rxjs';
-import {Language} from '../model/event';
-import {LocalizedCountry} from '../model/localized-country';
-import {Title} from '@angular/platform-browser';
-import {LangChangeEvent, TranslateLoader, TranslateService} from '@ngx-translate/core';
-import {NavigationStart, Router} from '@angular/router';
-import {catchError, map, mergeMap, shareReplay} from 'rxjs/operators';
-import {EventService} from './event.service';
-import {PurchaseContextType} from './purchase-context.service';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, zip } from 'rxjs';
+import { Language } from '../model/event';
+import { LocalizedCountry } from '../model/localized-country';
+import { Title } from '@angular/platform-browser';
+import {TranslateService, TranslateLoader, LangChangeEvent} from '@ngx-translate/core';
+import { Router, NavigationStart } from '@angular/router';
+import { map, mergeMap, shareReplay, catchError } from 'rxjs/operators';
+import { EventService } from './event.service';
+import { PurchaseContextType } from './purchase-context.service';
 import {PurchaseContext} from '../model/purchase-context';
 import {getFromSessionStorage, writeToSessionStorage} from './util';
 

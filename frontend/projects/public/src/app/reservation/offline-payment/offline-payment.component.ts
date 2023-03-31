@@ -8,6 +8,7 @@ import {I18nService} from '../../shared/i18n.service';
 import {AnalyticsService} from '../../shared/analytics.service';
 import {PurchaseContext} from '../../model/purchase-context';
 import {PurchaseContextService, PurchaseContextType} from '../../shared/purchase-context.service';
+import {pollReservationStatus} from '../../shared/util';
 
 @Component({
   selector: 'app-offline-payment',
@@ -23,6 +24,8 @@ export class OfflinePaymentComponent implements OnInit {
   paymentReason: string;
 
   purchaseContext: PurchaseContext;
+
+  reservationFinalized: boolean;
 
   constructor(
     private route: ActivatedRoute,
@@ -45,12 +48,30 @@ export class OfflinePaymentComponent implements OnInit {
         this.purchaseContext = ev;
         this.reservationInfo = reservationInfo;
 
-        this.paymentReason = `<mark>${this.purchaseContext.shortName} ${this.reservationInfo.shortId}</mark>`;
+        this.paymentReason = `<mark>${this.reservationInfo.shortId}</mark>`;
 
         this.i18nService.setPageTitle('reservation-page-waiting.header.title', ev);
         this.analytics.pageView(ev.analyticsConfiguration);
+        if (this.reservationInfo.status === 'OFFLINE_FINALIZING') {
+          this.reservationFinalized = false;
+          pollReservationStatus(this.reservationId, this.reservationService, res => {
+            if (res.status === 'DEFERRED_OFFLINE_PAYMENT') {
+              // redirect to deferred payment. Reload the page
+              location.reload();
+            }
+            this.reservationInfo = res;
+            this.reservationFinalized = true;
+          });
+        }
+
       });
     });
+  }
+
+  get invoiceAvailable(): boolean {
+    return this.reservationFinalized
+      && this.purchaseContext.invoicingConfiguration.userCanDownloadReceiptOrInvoice
+      && this.reservationInfo.invoiceNumber !== null;
   }
 
 }

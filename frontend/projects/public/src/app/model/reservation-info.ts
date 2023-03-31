@@ -42,6 +42,13 @@ export class ReservationInfo {
 
     activePaymentMethods: {[key in PaymentMethod]?: PaymentProxyWithParameters};
     subscriptionInfos?: Array<ReservationSubscriptionInfo>;
+    metadata: ReservationMetadata;
+}
+
+export interface ReservationMetadata {
+  hideContactData: boolean;
+  readyForConfirmation: boolean;
+  finalized: boolean;
 }
 
 export class ReservationSubscriptionInfo {
@@ -49,12 +56,17 @@ export class ReservationSubscriptionInfo {
   pin?: string;
   usageDetails?: SubscriptionUsageDetails;
   owner?: SubscriptionOwner;
+  configuration?: SubscriptionConfiguration;
 }
 
 export class SubscriptionOwner {
   firstName: string;
   lastName: string;
   email: string;
+}
+
+export interface SubscriptionConfiguration {
+  displayPin: boolean;
 }
 
 export interface SubscriptionUsageDetails {
@@ -98,7 +110,8 @@ export class SummaryRow {
 
 export type ReservationStatus = 'PENDING' | 'IN_PAYMENT' | 'EXTERNAL_PROCESSING_PAYMENT' |
                                 'WAITING_EXTERNAL_CONFIRMATION' | 'OFFLINE_PAYMENT' | 'DEFERRED_OFFLINE_PAYMENT' |
-                                'COMPLETE' | 'STUCK' | 'CANCELLED' | 'CREDIT_NOTE_ISSUED' | 'NOT_FOUND';
+                                'OFFLINE_FINALIZING' | 'FINALIZING' | 'COMPLETE' | 'STUCK' | 'CANCELLED' |
+                                'CREDIT_NOTE_ISSUED' | 'NOT_FOUND';
 
 export type ItalianEInvoicingReferenceType = 'ADDRESSEE_CODE' | 'PEC' | 'NONE';
 

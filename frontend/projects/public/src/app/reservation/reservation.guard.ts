@@ -64,8 +64,12 @@ function getRouteFromComponent(component: any, type: PurchaseContextType, public
 function getCorrespondingController(type: PurchaseContextType, status: ReservationStatus, validatedBookingInformations: boolean) {
     switch (status) {
         case 'PENDING': return validatedBookingInformations ? OverviewComponent : BookingComponent;
-        case 'COMPLETE': return type == 'subscription' ? SuccessSubscriptionComponent : SuccessComponent;
-        case 'OFFLINE_PAYMENT': return OfflinePaymentComponent;
+        case 'COMPLETE':
+        case 'FINALIZING':
+          return type === 'subscription' ? SuccessSubscriptionComponent : SuccessComponent;
+        case 'OFFLINE_PAYMENT':
+        case 'OFFLINE_FINALIZING':
+          return OfflinePaymentComponent;
         case 'DEFERRED_OFFLINE_PAYMENT': return DeferredOfflinePaymentComponent;
         case 'EXTERNAL_PROCESSING_PAYMENT':
         case 'WAITING_EXTERNAL_CONFIRMATION': return ProcessingPaymentComponent;

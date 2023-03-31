@@ -3,7 +3,8 @@
 <div class="mb-2 mt-2 center-block" *ngIf="purchaseContext && reservationInfo">
 
   <div class="alert alert-warning mt-2 mb-2 text-center">
-    <h2><fa-icon [icon]="['fas', 'exclamation-triangle']" a11yRole="presentation"></fa-icon>{{' '}}<span [innerHTML]="'reservation-page-waiting.title' | translate: {'0': reservationInfo.formattedExpirationDate[translate.currentLang]}"></span></h2>
+    <h2 *ngIf="reservationFinalized"><fa-icon [icon]="['fas', 'exclamation-triangle']" a11yRole="presentation"></fa-icon>{{' '}}<span [innerHTML]="'reservation-page-waiting.title' | translate: {'0': reservationInfo.formattedExpirationDate[translate.currentLang]}"></span></h2>
+
   </div>
 
   <div class="page-header">
@@ -11,30 +12,32 @@
   </div>
   <app-summary-table [purchaseContext]="purchaseContext" [reservationInfo]="reservationInfo"></app-summary-table>
 
+  <ng-container *ngIf="reservationFinalized">
 
-  <h4 [innerHTML]="'reservation-page-waiting.required-steps'|translate" class="mt-5"></h4>
+    <h4 [innerHTML]="'reservation-page-waiting.required-steps'|translate" class="mt-5"></h4>
 
-  <ng-template #basicInstruction>
-    <li *ngIf="purchaseContext.bankAccountOwner.length > 0">
-      <p class="no-margin-bottom" [innerHTML]="'reservation-page-waiting.required-steps.1.with-bank-account-owner' | translate: {'0': purchaseContext.currency+' '+reservationInfo.orderSummary.totalPrice, '1': purchaseContext.bankAccount}"></p>
-      <p class="bank-account-owner-info" *ngFor="let ownerLine of purchaseContext.bankAccountOwner">{{ownerLine}}</p>
-      <p class="no-margin-bottom" [innerHTML]="'reservation-page-waiting.required-steps.1.with-bank-account-owner.2' | translate: {'0': paymentReason}"></p>
-    </li>
-    <li *ngIf="purchaseContext.bankAccountOwner.length === 0"
-        [innerHTML]="'reservation-page-waiting.required-steps.1' | translate: {'0': purchaseContext.currency+' '+reservationInfo.orderSummary.totalPrice, '1': purchaseContext.bankAccount, '2': paymentReason}">
-    </li>
-  </ng-template>
-  <ng-container *ngIf="purchaseContext.offlinePaymentConfiguration?.showOnlyBasicInstructions">
-    <ul class="mt-3 list-unstyled">
-      <ng-container *ngTemplateOutlet="basicInstruction"></ng-container>
-    </ul>
-  </ng-container>
-  <ng-container *ngIf="!purchaseContext.offlinePaymentConfiguration?.showOnlyBasicInstructions">
-    <ol class="mt-3">
-      <ng-container *ngTemplateOutlet="basicInstruction"></ng-container>
-      <li [innerHTML]="'reservation-page-waiting.required-steps.2' | translate: {'0': purchaseContext.organizationEmail, '1': reservationInfo.id}"></li>
-      <li [innerHTML]="'reservation-page-waiting.required-steps.3' | translate"></li>
-    </ol>
+    <ng-template #basicInstruction>
+      <li *ngIf="purchaseContext.bankAccountOwner.length > 0">
+        <p class="no-margin-bottom" [innerHTML]="'reservation-page-waiting.required-steps.1.with-bank-account-owner' | translate: {'0': purchaseContext.currency+' '+reservationInfo.orderSummary.totalPrice, '1': purchaseContext.bankAccount}"></p>
+        <p class="bank-account-owner-info" *ngFor="let ownerLine of purchaseContext.bankAccountOwner">{{ownerLine}}</p>
+        <p class="no-margin-bottom" [innerHTML]="'reservation-page-waiting.required-steps.1.with-bank-account-owner.2' | translate: {'0': paymentReason}"></p>
+      </li>
+      <li *ngIf="purchaseContext.bankAccountOwner.length === 0"
+          [innerHTML]="'reservation-page-waiting.required-steps.1' | translate: {'0': purchaseContext.currency+' '+reservationInfo.orderSummary.totalPrice, '1': purchaseContext.bankAccount, '2': paymentReason}">
+      </li>
+    </ng-template>
+    <ng-container *ngIf="purchaseContext.offlinePaymentConfiguration?.showOnlyBasicInstructions">
+      <ul class="mt-3 list-unstyled">
+        <ng-container *ngTemplateOutlet="basicInstruction"></ng-container>
+      </ul>
+    </ng-container>
+    <ng-container *ngIf="!purchaseContext.offlinePaymentConfiguration?.showOnlyBasicInstructions">
+      <ol class="mt-3">
+        <ng-container *ngTemplateOutlet="basicInstruction"></ng-container>
+        <li [innerHTML]="'reservation-page-waiting.required-steps.2' | translate: {'0': purchaseContext.organizationEmail, '1': reservationInfo.id}"></li>
+        <li [innerHTML]="'reservation-page-waiting.required-steps.3' | translate"></li>
+      </ol>
+    </ng-container>
   </ng-container>
 
 
@@ -45,7 +48,7 @@
   <div class="text-center text-muted mt-5">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
   <hr>
   <div class="row d-flex justify-content-between mobile-add-margin-bottom">
-      <div class="col-md-5 col-12 order-md-1" *ngIf="purchaseContext.invoicingConfiguration.userCanDownloadReceiptOrInvoice && reservationInfo.invoiceNumber !== null">
+      <div class="col-md-5 col-12 order-md-1" *ngIf="invoiceAvailable">
           <a [href]="'/api/v2/public/' + purchaseContextType + '/' + publicIdentifier + '/reservation/' + reservationInfo.id + '/invoice'" class="btn btn-success block-button" target="_blank" translate="reservation-page-complete.download-your-invoice"></a>
       </div>
       <div class="col-md-5 col-12 order-md-1 text-center" *ngIf="!purchaseContext.invoicingConfiguration.userCanDownloadReceiptOrInvoice"><p translate="reservation-page-waiting.invoice-will-be-sent"></p></div>

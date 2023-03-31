@@ -22,6 +22,8 @@ import {UserService} from '../../shared/user.service';
 import {ANONYMOUS, User} from '../../model/user';
 import {first} from 'rxjs/operators';
 import {FeedbackService} from '../../shared/feedback/feedback.service';
+import {ReservationStatusChanged} from '../../model/embedding-configuration';
+import {embedded} from '../../shared/util';
 
 @Component({
   selector: 'app-booking',
@@ -235,20 +237,31 @@ export class BookingComponent implements OnInit, AfterViewInit {
     this.modalService.open(CancelReservationComponent, {centered: true}).result.then(res => {
       if (res === 'yes') {
         this.reservationService.cancelPendingReservation(this.reservationId).subscribe(() => {
-          this.router.navigate([this.purchaseContextType, this.publicIdentifier], {replaceUrl: true});
+          this.handleCancelOrExpired();
         });
       }
     }, () => {});
   }
 
-  handleExpired(expired: boolean) {
+  handleExpired(expired: boolean): void {
     setTimeout(() => {
       if (!this.expired) {
         this.expired = expired;
         this.modalService.open(ReservationExpiredComponent, {centered: true, backdrop: 'static'})
-            .result.then(() => this.router.navigate([this.purchaseContextType, this.publicIdentifier], {replaceUrl: true}));
+            .result.then(() => this.handleCancelOrExpired());
       }
     });
+  }
+
+  private handleCancelOrExpired(): void {
+    if (embedded && this.purchaseContext.embeddingConfiguration.enabled) {
+      window.parent.postMessage(
+        new ReservationStatusChanged('CANCELLED', this.reservationId),
+        this.purchaseContext.embeddingConfiguration.notificationOrigin
+      );
+    } else {
+      this.router.navigate([this.purchaseContextType, this.publicIdentifier], {replaceUrl: true});
+    }
   }
 
   handleInvoiceRequestedChange() {
@@ -301,5 +314,9 @@ export class BookingComponent implements OnInit, AfterViewInit {
           this.feedbackService.showError(this.translate.instant('reservation-page.cannot-login.error'));
         }
       });
+  }
+
+  get showContactData(): boolean {
+    return !embedded || !this.reservationInfo.metadata.hideContactData;
   }
 }

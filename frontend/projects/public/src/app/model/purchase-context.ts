@@ -1,5 +1,6 @@
 import {AnalyticsConfiguration} from './analytics-configuration';
 import {AssignmentConfiguration, CaptchaConfiguration, CurrencyDescriptor, InvoicingConfiguration, Language, TermsPrivacyLinksContainer} from './event';
+import {EmbeddingConfiguration} from './embedding-configuration';
 
 export interface Localized {
   contentLanguages: Language[];
@@ -30,6 +31,8 @@ export interface PurchaseContext extends PurchaseContextPriceDescriptor, Localiz
     analyticsConfiguration: AnalyticsConfiguration;
     captchaConfiguration: CaptchaConfiguration;
     offlinePaymentConfiguration: OfflinePaymentConfiguration;
+
+    embeddingConfiguration: EmbeddingConfiguration;
 
     fileBlobId: string;
 

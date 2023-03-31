@@ -110,7 +110,7 @@
           <div class="item-price">
             <span *ngIf="category.free" translate="common.free"></span>
             <span *ngIf="!category.free">
-              <app-price-tag [purchaseContext]="event" [formattedPrice]="category.formattedFinalPrice" [showTaxDetails]="true" [discountedPrice]="category.formattedDiscountedPrice" [showDiscount]="category.hasDiscount"></app-price-tag>
+              <app-price-tag [purchaseContext]="event" [formattedPrice]="category.formattedFinalPrice" [showTaxDetails]="category.displayTaxInformation" [discountedPrice]="category.formattedDiscountedPrice" [showDiscount]="category.hasDiscount"></app-price-tag>
             </span>
           </div>
           <div class="item-qty-selector">

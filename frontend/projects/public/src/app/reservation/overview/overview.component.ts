@@ -18,6 +18,7 @@ import {PurchaseContextService, PurchaseContextType} from '../../shared/purchase
 import {ModalRemoveSubscriptionComponent} from '../modal-remove-subscription/modal-remove-subscription.component';
 import {FeedbackService} from '../../shared/feedback/feedback.service';
 import {SearchParams} from '../../model/search-params';
+import {notifyPaymentErrorToParent} from '../../shared/util';
 
 @Component({
   selector: 'app-overview',
@@ -200,6 +201,7 @@ export class OverviewComponent implements OnInit {
         }, (err) => {
           this.submitting = false;
           this.unregisterHook();
+          notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
           this.globalErrors = handleServerSideValidationError(err, this.overviewForm);
         });
       } else {
@@ -217,6 +219,7 @@ export class OverviewComponent implements OnInit {
       this.submitting = false;
       this.unregisterHook();
       this.notifyPaymentError(err);
+      notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
     });
   }
 
@@ -225,9 +228,12 @@ export class OverviewComponent implements OnInit {
     this.forceCheckInProgress = true;
     this.reservationService.forcePaymentStatusCheck(this.reservationId).subscribe(res => {
       if (res.success) {
-        console.log('reservation has been confirmed. Waiting for the PaymentProvider to aknowledge it...');
+        console.log('reservation has been confirmed. Waiting for the PaymentProvider to acknowledge it...');
       }
-    }, err => console.log('error while force-checking', err));
+    }, err => {
+      console.log('error while force-checking', err);
+      notifyPaymentErrorToParent(this.purchaseContext, this.reservationInfo, this.reservationId, err);
+    });
   }
 
   private registerUnloadHook(): void {
