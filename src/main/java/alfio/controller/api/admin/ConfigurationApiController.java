@@ -216,45 +216,6 @@ public class ConfigurationApiController {
         return EnumSet.allOf(ConfigurationKeys.SettingCategory.class);
     }
 
-    @GetMapping(value = "/event/{eventId}/invoice-first-date")
-    public ResponseEntity<ZonedDateTime> getFirstInvoiceDate(@PathVariable("eventId") Integer eventId, Principal principal) {
-        return ResponseEntity.of(optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()))
-            .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(clockProvider.getClock().withZone(event.getZoneId())))));
-    }
-
-    @GetMapping(value = "/event/{eventId}/matching-invoices")
-    public ResponseEntity<List<Integer>> getMatchingInvoicesForEvent(@PathVariable("eventId") Integer eventId,
-                                                                     @RequestParam("from") long fromInstant,
-                                                                     @RequestParam("to") long toInstant,
-                                                                     Principal principal) {
-        var eventOptional = optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()));
-        if(eventOptional.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        var zoneId = eventOptional.get().getZoneId();
-        var from = ZonedDateTime.ofInstant(Instant.ofEpochMilli(fromInstant), zoneId);
-        var to = ZonedDateTime.ofInstant(Instant.ofEpochMilli(toInstant), zoneId);
-        if(from.isAfter(to)) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(billingDocumentManager.findMatchingInvoiceIds(eventId, from, to));
-    }
-
-    @PostMapping(value = "/event/{eventId}/regenerate-invoices")
-    public ResponseEntity<Boolean> regenerateInvoices(@PathVariable("eventId") Integer eventId,
-                                                      @RequestBody List<Long> documentIds,
-                                                      Principal principal) {
-        if(!eventManager.eventExistsById(eventId) || documentIds.isEmpty()) {
-            // implicit check done by the Row Level Security
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(adminJobManager.scheduleExecution(AdminJobExecutor.JobName.REGENERATE_INVOICES, Map.of(
-            "username", principal.getName(),
-            "eventId", eventId,
-            "ids", documentIds.stream().map(String::valueOf).collect(Collectors.joining(","))
-        )));
-    }
-
     @PutMapping("/generate-tickets-for-subscriptions")
     public ResponseEntity<Boolean> generateTicketsForSubscriptions(@RequestParam(value = "eventId", required = false) Integer eventId,
                                                                    @RequestParam(value = "organizationId", required = false) Integer organizationId,
