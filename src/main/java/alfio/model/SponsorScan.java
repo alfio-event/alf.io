@@ -34,6 +34,7 @@ public class SponsorScan {
     private final int ticketId;
     private final String notes;
     private final LeadStatus leadStatus;
+    private final String operator;
 
 
     public SponsorScan(@Column("user_id") int userId,
@@ -41,12 +42,14 @@ public class SponsorScan {
                        @Column("event_id") int eventId,
                        @Column("ticket_id") int ticketId,
                        @Column("notes") String notes,
-                       @Column("lead_status") LeadStatus leadStatus) {
+                       @Column("lead_status") LeadStatus leadStatus,
+                       @Column("operator") String operator) {
         this.userId = userId;
         this.timestamp = timestamp;
         this.eventId = eventId;
         this.ticketId = ticketId;
         this.notes = notes;
         this.leadStatus = leadStatus;
+        this.operator = operator;
     }
 }

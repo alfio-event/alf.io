@@ -29,10 +29,7 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -61,6 +58,14 @@ public final class RequestUtils {
     }
 
 
+    public static Locale getMatchingLocale(ServletWebRequest request, List<String> allowedLanguages) {
+        var l = requireNonNull(request.getNativeRequest(HttpServletRequest.class)).getLocales();
+        List<Locale> locales = l != null ? IteratorUtils.toList(l.asIterator()) : Collections.emptyList();
+        var selectedLocale = locales.stream().map(Locale::getLanguage).filter(allowedLanguages::contains).findFirst()
+            .orElseGet(() -> allowedLanguages.stream().findFirst().orElseThrow());
+        return LocaleUtil.forLanguageTag(selectedLocale);
+    }
+
     /**
      * From a given request, return the best locale for the user
      *
@@ -69,12 +74,8 @@ public final class RequestUtils {
      * @return
      */
     public static Locale getMatchingLocale(ServletWebRequest request, Event event) {
-        var allowedLanguages = event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toSet());
-        var l = requireNonNull(request.getNativeRequest(HttpServletRequest.class)).getLocales();
-        List<Locale> locales = l != null ? IteratorUtils.toList(l.asIterator()) : Collections.emptyList();
-        var selectedLocale = locales.stream().map(Locale::getLanguage).filter(allowedLanguages::contains).findFirst()
-            .orElseGet(() -> event.getContentLanguages().stream().findFirst().orElseThrow().getLanguage());
-        return LocaleUtil.forLanguageTag(selectedLocale);
+        var allowedLanguages = event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toList());
+        return getMatchingLocale(request, allowedLanguages);
     }
 
     public static boolean isAdmin(Principal principal) {

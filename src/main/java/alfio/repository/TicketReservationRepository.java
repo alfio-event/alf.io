@@ -237,6 +237,9 @@ public interface TicketReservationRepository {
     @JSONData
     ReservationMetadata getMetadata(@Bind("id") String reservationId);
 
+    @Query("select metadata->'finalized' = 'true' as finalized from tickets_reservation where id = :id")
+    Boolean checkIfFinalized(@Bind("id") String reservationId);
+
     @Query("update tickets_reservation set metadata = :metadata::jsonb where id = :id")
     int setMetadata(@Bind("id") String reservationId, @Bind("metadata") @JSONData ReservationMetadata metadata);
 

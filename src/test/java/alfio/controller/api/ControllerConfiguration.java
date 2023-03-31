@@ -24,6 +24,7 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.Json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -77,7 +78,8 @@ public class ControllerConfiguration implements WebMvcConfigurer {
                                            EventLoader eventLoader,
                                            PurchaseContextManager purchaseContextManager,
                                            CsrfTokenRepository csrfTokenRepository,
-                                           CSPConfigurer cspConfigurer) {
+                                           CSPConfigurer cspConfigurer,
+                                           Json json) {
         return new IndexController(configurationManager,
             eventRepository,
             fileUploadRepository,
@@ -89,6 +91,7 @@ public class ControllerConfiguration implements WebMvcConfigurer {
             eventLoader,
             purchaseContextManager,
             csrfTokenRepository,
-            cspConfigurer);
+            cspConfigurer,
+            json);
     }
 }

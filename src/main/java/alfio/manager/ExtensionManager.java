@@ -213,7 +213,7 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.STUCK_RESERVATIONS, event, payload);
     }
 
-    Optional<CustomEmailText> handleReservationEmailCustomText(PurchaseContext purchaseContext, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
+    public Optional<CustomEmailText> handleReservationEmailCustomText(PurchaseContext purchaseContext, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
         Map<String, Object> payload = Map.of(
             RESERVATION, reservation,
             "purchaseContext", purchaseContext,
@@ -275,7 +275,7 @@ public class ExtensionManager {
         payload.put("vatNr", billingDetails.getTaxId());
         payload.put("vatStatus", spec.getVatStatus());
 
-        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchaseContext(), payload, InvoiceGeneration.class));
+        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getPurchaseContext(), payload, InvoiceGeneration.class, false));
     }
 
     public Optional<CreditNoteGeneration> handleCreditNoteGeneration(PurchaseContext purchaseContext,

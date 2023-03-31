@@ -220,6 +220,7 @@ public class EventApiV2Controller {
 
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).toList();
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
+            var categoriesNoTax = configurationManager.getCategoriesWithNoTaxes(ticketCategoryIds);
 
             boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault();
             var categoriesByExpiredFlag = saleableTicketCategories.stream()
@@ -227,7 +228,7 @@ public class EventApiV2Controller {
                     var description = Formatters.applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()), messageSource);
                     var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), TICKET_CATEGORY_DATE_FORMAT, messageSource);
                     var inception = Formatters.getFormattedDate(event, stc.getZonedInception(), TICKET_CATEGORY_DATE_FORMAT, messageSource);
-                    return new TicketCategory(stc, description, inception, expiration, displayTicketsLeft && !stc.isAccessRestricted());
+                    return new TicketCategory(stc, description, inception, expiration, displayTicketsLeft && !stc.isAccessRestricted(), !categoriesNoTax.contains(stc.getId()));
                 })
                 .sorted(Comparator.comparingInt(TicketCategory::getOrdinal))
                 .collect(partitioningBy(TicketCategory::isExpired));

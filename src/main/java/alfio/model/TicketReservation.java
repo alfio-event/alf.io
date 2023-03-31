@@ -38,6 +38,14 @@ public class TicketReservation implements PriceContainer {
         WAITING_EXTERNAL_CONFIRMATION,
         OFFLINE_PAYMENT,
         DEFERRED_OFFLINE_PAYMENT,
+        /**
+         * Reservation is in the process of being finalized
+         */
+        FINALIZING,
+        /**
+         * Special finalization status for OFFLINE payment
+         */
+        OFFLINE_FINALIZING,
         COMPLETE,
         STUCK,
         CANCELLED,

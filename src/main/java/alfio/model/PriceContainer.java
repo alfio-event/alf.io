@@ -72,6 +72,13 @@ public interface PriceContainer {
         public static boolean isVatIncluded(VatStatus vatStatus) {
             return vatStatus == INCLUDED || vatStatus == INCLUDED_EXEMPT || vatStatus == CUSTOM_INCLUDED_EXEMPT;
         }
+
+        public static VatStatus forceExempt(VatStatus original) {
+            if (isVatIncluded(original)) {
+                return INCLUDED_EXEMPT;
+            }
+            return NOT_INCLUDED_EXEMPT;
+        }
     }
 
     /**
@@ -157,8 +164,8 @@ public interface PriceContainer {
     @JsonIgnore
     default BigDecimal getAppliedDiscount() {
         return getDiscount()
-            // do not take into account reservation-level discount
-            .filter(discount -> discount.getDiscountType() != PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION)
+            // do not take into account reservation-level discount or access codes
+            .filter(discount -> discount.getDiscountType() != PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION && discount.getCodeType() != PromoCodeDiscount.CodeType.ACCESS)
             .map(discount -> {
                 String currencyCode = getCurrencyCode();
                 final BigDecimal price = centsToUnit(getSrcPriceCts(), currencyCode);
