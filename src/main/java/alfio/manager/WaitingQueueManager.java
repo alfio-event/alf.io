@@ -173,7 +173,7 @@ public class WaitingQueueManager {
         if (waitingPeople == 0 && waitingTickets > 0) {
             ticketRepository.revertToFree(eventId);
         } else if (waitingPeople > 0 && waitingTickets > 0) {
-            return distributeAvailableSeats(event, waitingPeople, waitingTickets);
+            return distributeAvailableSeatsPeople(event, waitingPeople, waitingTickets);
         } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getFor(ENABLE_PRE_REGISTRATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault()) {
             return handlePreReservation(event, waitingPeople);
         }
@@ -191,7 +191,7 @@ public class WaitingQueueManager {
         if(ticketsNeeded > 0) {
             preReserveIfNeeded(event, ticketsNeeded);
             if(categoryWithInceptionInFuture.isEmpty()) {
-                return distributeAvailableSeats(event, Ticket.TicketStatus.PRE_RESERVED, () -> ticketsNeeded);
+                return distributeAvailableSeatsStatus(event, Ticket.TicketStatus.PRE_RESERVED, () -> ticketsNeeded);
             }
         }
         return Stream.empty();
@@ -231,11 +231,11 @@ public class WaitingQueueManager {
     }
 
 
-    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, int waitingPeople, int waitingTickets) {
-        return distributeAvailableSeats(event, Ticket.TicketStatus.RELEASED, () -> Math.min(waitingPeople, waitingTickets));
+    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeatsPeople(Event event, int waitingPeople, int waitingTickets) {
+        return distributeAvailableSeatsPeople(event, Ticket.TicketStatus.RELEASED, () -> Math.min(waitingPeople, waitingTickets));
     }
 
-    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, Ticket.TicketStatus status, IntSupplier availableSeatSupplier) {
+    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeatsStatus(Event event, Ticket.TicketStatus status, IntSupplier availableSeatSupplier) {
         int availableSeats = availableSeatSupplier.getAsInt();
         int eventId = event.getId();
         log.debug("processing {} subscribers from waiting list", availableSeats);
