@@ -230,7 +230,7 @@ public class GroupManager {
     }
 
     @Transactional
-    public Optional<GroupModification> update(int listId, GroupModification modification) {
+    public Optional<GroupModification> updateGroup(int listId, GroupModification modification) {
 
         if(groupRepository.getOptionalById(listId).isEmpty() || CollectionUtils.isEmpty(modification.getItems())) {
             return Optional.empty();
@@ -249,7 +249,7 @@ public class GroupManager {
                 throw new DuplicateGroupItemException(error.getDescription());
             }
         }
-        groupRepository.update(listId, escapeHtml4(modification.getName()), escapeHtml4(modification.getDescription()));
+        groupRepository.updateGroup(listId, escapeHtml4(modification.getName()), escapeHtml4(modification.getDescription()));
         return loadComplete(listId);
     }
 
