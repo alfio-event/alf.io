@@ -16,4 +16,4 @@
 --
 
 create role alfio_user with NOSUPERUSER NOINHERIT LOGIN ENCRYPTED PASSWORD 'password';
-alter database alfio owner to alfio_user;
+GRANT USAGE, CREATE ON SCHEMA public TO alfio_user;

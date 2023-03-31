@@ -63,7 +63,7 @@ jobs:
                     username: ${{ secrets.CR_USER }}
                     password: ${{ secrets.CR_PAT }}
             -   name: Inject slug/short variables
-                uses: rlespinasse/github-slug-action@v4
+                uses: rlespinasse/github-slug-action@4.4.1
             -   name: Push Docker image
                 uses: docker/build-push-action@v4
                 with:
