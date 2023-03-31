@@ -48,7 +48,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.EventUtil.determineAvailableSeats;
 
 @Component
-public class WaitingQueueManager {
+public class WaitingQueueManagerSubscription {
 
     private static final Logger log = LoggerFactory.getLogger(WaitingQueueManager.class);
 
@@ -63,7 +63,7 @@ public class WaitingQueueManager {
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
 
-    public WaitingQueueManager(WaitingQueueRepository waitingQueueRepository,
+    public WaitingQueueManagerSubscription(WaitingQueueRepository waitingQueueRepository,
                                TicketCategoryRepository ticketCategoryRepository,
                                ConfigurationManager configurationManager,
                                EventStatisticsManager eventStatisticsManager,
