@@ -53,9 +53,9 @@ import static java.util.Objects.requireNonNullElse;
 
 @RestController
 @RequestMapping("/admin/api")
-public class AdditionalServiceApiController {
+public class AdditionalServiceApiControllerPutMapping {
 
-    private static final Logger log = LoggerFactory.getLogger(AdditionalServiceApiController.class);
+    private static final Logger log = LoggerFactory.getLogger(AdditionalServiceApiControllerPutMapping.class);
 
     private final EventManager eventManager;
     private final EventRepository eventRepository;
@@ -82,27 +82,28 @@ public class AdditionalServiceApiController {
         return new ResponseEntity<>("internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    private static PriceContainer buildPriceContainer(final Event event, final AdditionalService as) {
-        return new PriceContainer() {
-            @Override
-            public int getSrcPriceCts() {
-                return as.isFixPrice() ? as.getSrcPriceCts() : 0;
-            }
-
-            @Override
-            public String getCurrencyCode() {
-                return event.getCurrency();
-            }
-
-            @Override
-            public Optional<BigDecimal> getOptionalVatPercentage() {
-                return getVatStatus() == VatStatus.NONE ? Optional.empty() : Optional.of(event.getVat());
-            }
-
-            @Override
-            public VatStatus getVatStatus() {
-                return AdditionalService.getVatStatus(as.getVatType(), event.getVatStatus());
-            }
-        };
+    @PutMapping("/event/{eventId}/additional-services/{additionalServiceId}")
+    @Transactional
+    public ResponseEntity<EventModification.AdditionalService> update(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
+        ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
+        Validate.isTrue(validationResult.isSuccess(), "validation failed");
+        Validate.isTrue(additionalServiceId == additionalService.getId(), "wrong input");
+        return eventRepository.findOptionalById(eventId)
+            .map(event -> {
+                int result = additionalServiceManager.update(additionalServiceId, additionalService.isFixPrice(),
+                    additionalService.getOrdinal(), additionalService.getAvailableQuantity(), additionalService.getMaxQtyPerOrder(), additionalService.getInception().toZonedDateTime(event.getZoneId()),
+                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0));
+                Validate.isTrue(result <= 1, "too many records updated");
+                Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
+                    forEach(t -> {
+                        if(t.getId() != null) {
+                            additionalServiceManager.updateText(t.getId(), t.getLocale(), t.getType(), t.getValue());
+                        } else {
+                            additionalServiceManager.insertText(additionalService.getId(), t.getLocale(), t.getType(), t.getValue());
+                        }
+                    });
+                return ResponseEntity.ok(additionalService);
+            }).orElseThrow(IllegalArgumentException::new);
     }
+
 }

@@ -53,9 +53,9 @@ import static java.util.Objects.requireNonNullElse;
 
 @RestController
 @RequestMapping("/admin/api")
-public class AdditionalServiceApiController {
+public class AdditionalServiceApiControllerPostMapping {
 
-    private static final Logger log = LoggerFactory.getLogger(AdditionalServiceApiController.class);
+    private static final Logger log = LoggerFactory.getLogger(AdditionalServiceApiControllerPostMapping.class);
 
     private final EventManager eventManager;
     private final EventRepository eventRepository;
@@ -82,27 +82,14 @@ public class AdditionalServiceApiController {
         return new ResponseEntity<>("internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    private static PriceContainer buildPriceContainer(final Event event, final AdditionalService as) {
-        return new PriceContainer() {
-            @Override
-            public int getSrcPriceCts() {
-                return as.isFixPrice() ? as.getSrcPriceCts() : 0;
-            }
-
-            @Override
-            public String getCurrencyCode() {
-                return event.getCurrency();
-            }
-
-            @Override
-            public Optional<BigDecimal> getOptionalVatPercentage() {
-                return getVatStatus() == VatStatus.NONE ? Optional.empty() : Optional.of(event.getVat());
-            }
-
-            @Override
-            public VatStatus getVatStatus() {
-                return AdditionalService.getVatStatus(as.getVatType(), event.getVatStatus());
-            }
-        };
+    @PostMapping(value = "/event/{eventId}/additional-services")
+    @Transactional
+    public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
+        ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
+        Validate.isTrue(validationResult.isSuccess(), "validation failed");
+        return eventRepository.findOptionalById(eventId)
+            .map(event -> ResponseEntity.ok(eventManager.insertAdditionalService(event, additionalService)))
+            .orElseThrow(IllegalArgumentException::new);
     }
+
 }

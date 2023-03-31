@@ -53,9 +53,9 @@ import static java.util.Objects.requireNonNullElse;
 
 @RestController
 @RequestMapping("/admin/api")
-public class AdditionalServiceApiController {
+public class AdditionalServiceApiControllerDeleteMapping {
 
-    private static final Logger log = LoggerFactory.getLogger(AdditionalServiceApiController.class);
+    private static final Logger log = LoggerFactory.getLogger(AdditionalServiceApiControllerDeleteMapping.class);
 
     private final EventManager eventManager;
     private final EventRepository eventRepository;
@@ -82,27 +82,21 @@ public class AdditionalServiceApiController {
         return new ResponseEntity<>("internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    private static PriceContainer buildPriceContainer(final Event event, final AdditionalService as) {
-        return new PriceContainer() {
-            @Override
-            public int getSrcPriceCts() {
-                return as.isFixPrice() ? as.getSrcPriceCts() : 0;
-            }
-
-            @Override
-            public String getCurrencyCode() {
-                return event.getCurrency();
-            }
-
-            @Override
-            public Optional<BigDecimal> getOptionalVatPercentage() {
-                return getVatStatus() == VatStatus.NONE ? Optional.empty() : Optional.of(event.getVat());
-            }
-
-            @Override
-            public VatStatus getVatStatus() {
-                return AdditionalService.getVatStatus(as.getVatType(), event.getVatStatus());
-            }
-        };
+    @DeleteMapping("/event/{eventId}/additional-services/{additionalServiceId}")
+    @Transactional
+    public ResponseEntity<String> remove(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, Principal principal) {
+        return eventRepository.findOptionalById(eventId)
+            .map(event -> additionalServiceManager.getOptionalById(additionalServiceId, eventId)
+                .map(as -> {
+                    log.debug("{} is deleting additional service #{}", principal.getName(), additionalServiceId);
+                    int deletedTexts = additionalServiceManager.deleteAdditionalServiceTexts(additionalServiceId);
+                    log.debug("deleted {} texts", deletedTexts);
+                    //TODO add configuration fields and values
+                    additionalServiceManager.delete(additionalServiceId, eventId);
+                    log.debug("additional service #{} successfully deleted", additionalServiceId);
+                    return ResponseEntity.ok("OK");
+                })
+                .orElseGet(() -> new ResponseEntity<>("additional service not found", HttpStatus.NOT_FOUND)))
+            .orElseGet(() -> new ResponseEntity<>("event not found", HttpStatus.NOT_FOUND));
     }
 }
