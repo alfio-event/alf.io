@@ -21,6 +21,8 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.support.reservation.NotEnoughTicketsException;
+import alfio.manager.support.reservation.TooManyTicketsForDiscountCodeException;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
@@ -30,6 +32,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
@@ -61,10 +64,9 @@ import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
     static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
@@ -367,7 +369,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         trTooMuch.setQuantity(4);
         trTooMuch.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
-        assertThrows(TicketReservationManager.TooManyTicketsForDiscountCodeException.class,
+        assertThrows(TooManyTicketsForDiscountCodeException.class,
             () -> ticketReservationManager.createTicketReservation(event, Collections.singletonList(modTooMuch ), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false, null));
     }
 
@@ -472,7 +474,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         trTooMuch.setQuantity(1);
         trTooMuch.setTicketCategoryId(triple.getMiddle().getId());
         TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
-        assertThrows(TicketReservationManager.TooManyTicketsForDiscountCodeException.class,
+        assertThrows(TooManyTicketsForDiscountCodeException.class,
             () -> ticketReservationManager.createTicketReservation(triple.getLeft(), List.of(modTooMuch), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.of(ACCESS_CODE), Locale.ENGLISH, false, null));
     }
 
@@ -555,7 +557,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
-        assertThrows(TicketReservationManager.NotEnoughTicketsException.class, () -> ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null));
+        assertThrows(NotEnoughTicketsException.class, () -> ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null));
     }
 
     @Test

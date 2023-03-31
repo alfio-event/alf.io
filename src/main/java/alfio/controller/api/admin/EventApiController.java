@@ -476,6 +476,7 @@ public class EventApiController {
         header.addAll(fields.stream().map(TicketFieldConfiguration::getName).toList());
         header.add("Sponsor notes");
         header.add("Lead Status");
+        header.add("Operator");
 
         Stream<String[]> sponsorScans = userManager.findAllEnabledUsers(principal.getName()).stream()
             .map(u -> Pair.of(u, userManager.getUserRole(u)))
@@ -502,6 +503,7 @@ public class EventApiController {
 
             line.add(sponsorScan.getNotes());
             line.add(sponsorScan.getLeadStatus().name());
+            line.add(sponsorScan.getOperator());
             return line.toArray(new String[0]);
         });
 

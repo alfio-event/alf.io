@@ -35,6 +35,7 @@ import alfio.model.user.User;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
@@ -60,10 +61,9 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
     @BeforeAll
@@ -105,9 +105,9 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         this.username = UUID.randomUUID().toString();
 
         var organizationModification = new OrganizationModification(null, organizationName, "email@example.com", "org", null, null);
-        userManager.createOrganization(organizationModification);
+        userManager.createOrganization(organizationModification, null);
         this.organization = organizationRepository.findByName(organizationName).orElseThrow();
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL);
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL, null);
 
         this.mockPrincipal = Mockito.mock(Principal.class);
         Mockito.when(mockPrincipal.getName()).thenReturn(username);

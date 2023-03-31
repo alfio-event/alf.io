@@ -17,6 +17,7 @@
 package alfio.e2e;
 
 import alfio.config.Initializer;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.TestUtil;
 import alfio.util.ActiveTravisProfileResolver;
 import alfio.util.ClockProvider;

@@ -41,6 +41,7 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
@@ -70,10 +71,9 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
 
     private final ClockProvider clockProvider;
@@ -142,6 +142,30 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
     void applyReverseChargeForOnlineTicket() {
         // disable Reverse Charge for in-person tickets
         configurationManager.saveConfig(Configuration.from(event, ENABLE_REVERSE_CHARGE_IN_PERSON), "false");
+
+        var reservation = createReservation();
+        var summary = reservation.getOrderSummary();
+        // 20 + 1.98 = 21.98
+        assertEquals("0.20", summary.getTotalVAT());
+        assertEquals(2198, summary.getPriceInCents());
+
+        // we expect to find two rows for VAT: the first one for in-person (1%), the second one for online (0%)
+        var rows = summary.getSummary();
+        assertEquals(3, rows.size());
+        assertEquals(SummaryRow.SummaryType.TAX_DETAIL, rows.get(1).type());
+        assertEquals("0", rows.get(1).taxPercentage());
+        assertEquals("", rows.get(1).price());
+        assertEquals("0.00", rows.get(1).subTotal());
+    }
+
+    @Test
+    void disableTaxForOneTicketCategory() {
+        configurationManager.saveConfig(Configuration.from(event, ENABLE_EU_VAT_DIRECTIVE), "false");
+        var inPersonCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
+            .filter(tc -> tc.getTicketAccessType() == TicketCategory.TicketAccessType.ONLINE)
+            .findFirst()
+            .orElseThrow();
+        configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), event.getId(), inPersonCategory.getId(), APPLY_TAX_TO_CATEGORY.name(), "false", "");
 
         var reservation = createReservation();
         var summary = reservation.getOrderSummary();

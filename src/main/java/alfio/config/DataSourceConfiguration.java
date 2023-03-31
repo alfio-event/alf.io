@@ -22,10 +22,7 @@ import alfio.config.support.JSONColumnMapper;
 import alfio.config.support.PlatformProvider;
 import alfio.extension.ExtensionService;
 import alfio.job.Jobs;
-import alfio.job.executor.AssignTicketToSubscriberJobExecutor;
-import alfio.job.executor.BillingDocumentJobExecutor;
-import alfio.job.executor.ReservationJobExecutor;
-import alfio.job.executor.RetryFailedExtensionJobExecutor;
+import alfio.job.executor.*;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.AdminJobManager;
@@ -254,9 +251,10 @@ public class DataSourceConfiguration {
                                     ReservationJobExecutor reservationJobExecutor,
                                     BillingDocumentJobExecutor billingDocumentJobExecutor,
                                     AssignTicketToSubscriberJobExecutor assignTicketToSubscriberJobExecutor,
-                                    RetryFailedExtensionJobExecutor retryFailedExtensionJobExecutor) {
+                                    RetryFailedExtensionJobExecutor retryFailedExtensionJobExecutor,
+                                    RetryFailedReservationConfirmationExecutor retryFailedReservationConfirmationExecutor) {
         return new AdminJobManager(
-            List.of(reservationJobExecutor, billingDocumentJobExecutor, assignTicketToSubscriberJobExecutor, retryFailedExtensionJobExecutor),
+            List.of(reservationJobExecutor, billingDocumentJobExecutor, assignTicketToSubscriberJobExecutor, retryFailedExtensionJobExecutor, retryFailedReservationConfirmationExecutor),
             adminJobQueueRepository,
             transactionManager,
             clockProvider);
@@ -294,6 +292,11 @@ public class DataSourceConfiguration {
     @Bean
     RetryFailedExtensionJobExecutor retryFailedExtensionJobExecutor(ExtensionService extensionService) {
         return new RetryFailedExtensionJobExecutor(extensionService);
+    }
+
+    @Bean
+    RetryFailedReservationConfirmationExecutor retryFailedReservationConfirmationExecutor(ReservationFinalizer reservationFinalizer, Json json) {
+        return new RetryFailedReservationConfirmationExecutor(reservationFinalizer, json);
     }
 
     @Bean

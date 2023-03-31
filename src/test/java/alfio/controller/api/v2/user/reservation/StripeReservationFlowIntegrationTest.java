@@ -51,6 +51,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.ClockProvider;
 import com.stripe.net.Webhook;
 import org.apache.commons.lang3.tuple.Pair;
@@ -58,13 +59,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.validation.BeanPropertyBindingResult;
 
@@ -85,13 +84,12 @@ import static alfio.util.HttpUtils.APPLICATION_JSON;
 import static alfio.util.HttpUtils.APPLICATION_JSON_UTF8;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
 class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
-    private static final String WEBHOOK_SECRET = "WEBHOOK_SECRET";
+    public static final String WEBHOOK_SECRET = "WEBHOOK_SECRET";
     private static final String PAYLOAD_FILENAME = "payloadFilename";
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;
@@ -232,6 +230,9 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
         tStatus = reservationApiV2Controller.getTransactionStatus(reservationId, PaymentMethod.CREDIT_CARD.name());
         assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+
+        var resInfoResponse = reservationApiV2Controller.getReservationInfo(reservationId, null);
+        assertEquals(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT, Objects.requireNonNull(resInfoResponse.getBody()).getStatus());
 
         //
         var promoCodeUsage = promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, context.event.getId());

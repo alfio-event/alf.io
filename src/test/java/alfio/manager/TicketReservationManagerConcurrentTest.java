@@ -31,6 +31,7 @@ import alfio.repository.PromoCodeDiscountRepository;
 import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
@@ -60,7 +61,7 @@ import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static alfio.test.util.TestUtil.clockProvider;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest()
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 class TicketReservationManagerConcurrentTest {

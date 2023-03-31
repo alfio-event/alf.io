@@ -30,6 +30,7 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
@@ -53,11 +54,10 @@ import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
+@AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
-public class MessageSourceManagerIntegrationTest extends BaseIntegrationTest {
+class MessageSourceManagerIntegrationTest extends BaseIntegrationTest {
 
 
     @Autowired

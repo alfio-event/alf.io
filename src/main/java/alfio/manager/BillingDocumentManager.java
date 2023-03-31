@@ -48,6 +48,7 @@ import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.TicketReservation.TicketReservationStatus.CANCELLED;
 import static alfio.model.TicketReservation.TicketReservationStatus.PENDING;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.ReservationUtil.collectTicketsWithCategory;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.groupingBy;
@@ -113,7 +114,7 @@ public class BillingDocumentManager {
         return !summary.getFree() && (!summary.getNotYetPaid() || (summary.getWaitingForPayment() && ticketReservation.isInvoiceRequested()));
     }
 
-    List<Mailer.Attachment> generateBillingDocumentAttachment(PurchaseContext purchaseContext,
+    public List<Mailer.Attachment> generateBillingDocumentAttachment(PurchaseContext purchaseContext,
                                                               TicketReservation ticketReservation,
                                                               Locale language,
                                                               BillingDocument.Type documentType,
@@ -123,7 +124,7 @@ public class BillingDocumentManager {
         model.put("reservationId", ticketReservation.getId());
         model.put("eventId", purchaseContext.event().map(ev -> Integer.toString(ev.getId())).orElse(null));
         model.put("language", json.asJsonString(language));
-        model.put("reservationEmailModel", json.asJsonString(getOrCreateBillingDocument(purchaseContext, ticketReservation, username, orderSummary).getModel()));
+        model.put("reservationEmailModel", json.asJsonString(internalGetOrCreate(purchaseContext, ticketReservation, username, orderSummary).getModel()));
         return switch (documentType) {
             case INVOICE ->
                 Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF_VALUE, model, Mailer.AttachmentIdentifier.INVOICE_PDF));
@@ -169,6 +170,10 @@ public class BillingDocumentManager {
 
     @Transactional
     public BillingDocument getOrCreateBillingDocument(PurchaseContext purchaseContext, TicketReservation reservation, String username, OrderSummary orderSummary) {
+        return internalGetOrCreate(purchaseContext, reservation, username, orderSummary);
+    }
+
+    private BillingDocument internalGetOrCreate(PurchaseContext purchaseContext, TicketReservation reservation, String username, OrderSummary orderSummary) {
         Optional<BillingDocument> existing = billingDocumentRepository.findLatestByReservationId(reservation.getId());
         return existing.orElseGet(() -> createBillingDocument(purchaseContext, reservation, username, orderSummary));
     }
@@ -245,15 +250,7 @@ public class BillingDocumentManager {
         Map<Integer, List<Ticket>> ticketsByCategory = ticketRepository.findTicketsInReservation(reservation.getId())
             .stream()
             .collect(groupingBy(Ticket::getCategoryId));
-        final List<TicketWithCategory> ticketsWithCategory;
-        if(!ticketsByCategory.isEmpty()) {
-            ticketsWithCategory = ticketCategoryRepository.findByIds(ticketsByCategory.keySet())
-                .stream()
-                .flatMap(tc -> ticketsByCategory.get(tc.getId()).stream().map(t -> new TicketWithCategory(t, tc)))
-                .toList();
-        } else {
-            ticketsWithCategory = Collections.emptyList();
-        }
+        List<TicketWithCategory> ticketsWithCategory = collectTicketsWithCategory(ticketsByCategory, ticketCategoryRepository);
         var reservationShortId = configurationManager.getShortReservationID(purchaseContext, reservation);
         Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, purchaseContext, reservation, vat, ticketsWithCategory, summary, "", "", reservationShortId, invoiceAddress, bankAccountNr, bankAccountOwner, Map.of());
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())

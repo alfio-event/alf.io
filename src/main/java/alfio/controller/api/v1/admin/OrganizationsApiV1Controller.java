@@ -43,11 +43,11 @@ public class OrganizationsApiV1Controller {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Organization> createOrganization(@RequestBody OrganizationModification om) {
+    public ResponseEntity<Organization> createOrganization(@RequestBody OrganizationModification om, Principal principal) {
         if (om == null || !om.isValid(true)) {
             return ResponseEntity.badRequest().build();
         }
-        int orgId = userManager.createOrganization(om);
+        int orgId = userManager.createOrganization(om, principal);
         return ResponseEntity.ok(userManager.findOrganizationById(orgId, UserManager.ADMIN_USERNAME));
     }
 
@@ -62,8 +62,8 @@ public class OrganizationsApiV1Controller {
     }
 
     @PutMapping("/{id}/api-key")
-    public OrganizationApiKey createApiKeyForOrganization(@PathVariable("id") int organizationId) {
-        var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName("ROLE_API_CLIENT"), User.Type.API_KEY, null, "Auto-generated API Key");
+    public OrganizationApiKey createApiKeyForOrganization(@PathVariable("id") int organizationId, Principal principal) {
+        var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName("ROLE_API_CLIENT"), User.Type.API_KEY, null, "Auto-generated API Key", principal);
         return new OrganizationApiKey(organizationId, user.getUsername());
     }
 

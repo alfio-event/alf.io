@@ -29,10 +29,7 @@ import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
-import alfio.util.EventUtil;
-import alfio.util.Json;
-import alfio.util.RenderedTemplate;
-import alfio.util.TemplateManager;
+import alfio.util.*;
 import alfio.util.checkin.TicketCheckInUtil;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.MediaType;
@@ -116,7 +113,7 @@ public class CustomMessageManager {
                     model.addAttribute("organizationEmail", organization.getEmail());
                     model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), event));
                     model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
-                    model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl(event, t.getUuid()));
+                    model.addAttribute("ticketURL", ReservationUtil.ticketUpdateUrl(event, t, configurationManager));
                     model.addAttribute("ticketID", t.getUuid());
                     return Triple.of(t, t.getEmail(), model);
                 })

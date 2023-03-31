@@ -17,7 +17,7 @@
 package alfio.manager.support;
 
 import alfio.util.RenderedTemplate;
-
+@FunctionalInterface
 public interface TemplateGenerator {
     RenderedTemplate generate();
 }

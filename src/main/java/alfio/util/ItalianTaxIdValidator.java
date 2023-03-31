@@ -149,6 +149,9 @@ public final class ItalianTaxIdValidator {
         int sumEven = 0;
         int sumOdd = 0;
         var chars = nr.toCharArray();
+        if (chars.length != COMPANY_TAX_ID_LENGTH) {
+            return false;
+        }
         for (int i=0; i < 10; i++) {
             int val = Character.getNumericValue(chars[i]);
             if((i + 1) % 2 == 0) {

@@ -22,8 +22,13 @@ import alfio.manager.EventManager;
 import alfio.manager.PromoCodeRequestManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.response.ValidatedResponse;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.modification.*;
+import alfio.model.modification.ASReservationWithOptionalCodeModification;
+import alfio.model.modification.AdditionalServiceReservationModification;
+import alfio.model.modification.ReservationRequest;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.repository.TicketCategoryRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
@@ -31,9 +36,7 @@ import org.springframework.validation.Errors;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
@@ -156,5 +159,50 @@ public class ReservationUtil {
             .stream()
             .filter(e -> e != null && e.getQuantity() != null && e.getAdditionalServiceId() != null && e.getQuantity() > 0)
             .toList();
+    }
+
+    public static boolean hasPrivacyPolicy(PurchaseContext event) {
+        return StringUtils.isNotBlank(event.getPrivacyPolicyLinkOrNull());
+    }
+
+    public static String ticketUpdateUrl(Event event, Ticket ticket, ConfigurationManager configurationManager) {
+        return configurationManager.baseUrl(event) + "/event/" + event.getShortName() + "/ticket/" + ticket.getUuid() + "/update?lang=" + ticket.getUserLanguage();
+    }
+
+    public static String reservationUrl(String baseUrl, String reservationId,
+                                        PurchaseContext purchaseContext,
+                                        String userLanguage,
+                                        String additionalParams) {
+        var cleanParams = StringUtils.trimToNull(additionalParams);
+        return StringUtils.removeEnd(baseUrl, "/")
+            + "/" + purchaseContext.getType()
+            + "/" + purchaseContext.getPublicIdentifier()
+            + "/reservation/" + reservationId
+            + "?lang="+userLanguage
+            + (cleanParams != null ? "&" + cleanParams : "");
+    }
+    public static String reservationUrl(String baseUrl, String reservationId, PurchaseContext purchaseContext, String userLanguage) {
+        return reservationUrl(baseUrl, reservationId, purchaseContext, userLanguage, null);
+    }
+
+    public static String reservationUrl(TicketReservation reservation, PurchaseContext purchaseContext, ConfigurationManager configurationManager) {
+        return reservationUrl(configurationManager.baseUrl(purchaseContext), reservation.getId(), purchaseContext, reservation.getUserLanguage());
+    }
+
+    public static List<TicketWithCategory> collectTicketsWithCategory(Map<Integer, List<Ticket>> ticketsByCategory, TicketCategoryRepository ticketCategoryRepository) {
+        final List<TicketWithCategory> ticketsWithCategory;
+        if(!ticketsByCategory.isEmpty()) {
+            ticketsWithCategory = ticketCategoryRepository.findByIds(ticketsByCategory.keySet())
+                .stream()
+                .flatMap(tc -> ticketsByCategory.get(tc.getId()).stream().map(t -> new TicketWithCategory(t, tc)))
+                .toList();
+        } else {
+            ticketsWithCategory = Collections.emptyList();
+        }
+        return ticketsWithCategory;
+    }
+
+    public static Locale getReservationLocale(TicketReservation reservation) {
+        return StringUtils.isEmpty(reservation.getUserLanguage()) ? Locale.ENGLISH : LocaleUtil.forLanguageTag(reservation.getUserLanguage());
     }
 }

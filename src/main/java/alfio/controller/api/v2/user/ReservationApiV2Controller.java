@@ -103,6 +103,7 @@ public class ReservationApiV2Controller {
     private final TicketRepository ticketRepository;
     private final PublicUserManager publicUserManager;
     private final ReverseChargeManager reverseChargeManager;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
     public ReservationApiV2Controller(EventManager eventManager,
                                       EventRepository eventRepository,
@@ -124,7 +125,8 @@ public class ReservationApiV2Controller {
                                       SubscriptionRepository subscriptionRepository,
                                       TicketRepository ticketRepository,
                                       PublicUserManager publicUserManager,
-                                      ReverseChargeManager reverseChargeManager) {
+                                      ReverseChargeManager reverseChargeManager,
+                                      TicketCategoryRepository ticketCategoryRepository) {
         this.eventManager = eventManager;
         this.eventRepository = eventRepository;
         this.ticketReservationManager = ticketReservationManager;
@@ -146,6 +148,7 @@ public class ReservationApiV2Controller {
         this.ticketRepository = ticketRepository;
         this.publicUserManager = publicUserManager;
         this.reverseChargeManager = reverseChargeManager;
+        this.ticketCategoryRepository = ticketCategoryRepository;
     }
 
     /**
@@ -205,7 +208,7 @@ public class ReservationApiV2Controller {
 
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
 
-            var shortReservationId =  ticketReservationManager.getShortReservationID(purchaseContext, reservation);
+            var shortReservationId =  configurationManager.getShortReservationID(purchaseContext, reservation);
             //
 
 
@@ -448,7 +451,7 @@ public class ReservationApiV2Controller {
                     reservationId,
                     contactAndTicketsForm,
                     bindingResult);
-            } else if(contactAndTicketsForm.isBusiness()) {
+            } else if(reservationCost.priceWithVAT() > 0 && (contactAndTicketsForm.isBusiness() || configurationManager.noTaxesFlagDefinedFor(ticketCategoryRepository.findCategoriesInReservation(reservationId)))) {
                 reverseChargeManager.checkAndApplyVATRules(purchaseContext, reservationId, contactAndTicketsForm, bindingResult);
             } else if(reservationCost.priceWithVAT() > 0) {
                 reverseChargeManager.resetVat(purchaseContext, reservationId);

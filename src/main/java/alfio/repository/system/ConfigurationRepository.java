@@ -24,6 +24,7 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import ch.digitalfondue.npjt.QueryType;
 
 import java.util.Collection;
 import java.util.List;
@@ -56,6 +57,26 @@ public interface ConfigurationRepository {
     @Query("SELECT ticket_category_id_fk, c_value FROM configuration_ticket_category where organization_id_fk = :organizationId and event_id_fk = :eventId and c_key = :key")
     List<CategoryAndValue> findAllCategoriesAndValueWith(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("key") String key);
 
+    @Query("select ticket_category_id_fk from configuration_ticket_category where ticket_category_id_fk in (:categories) and c_key = :flagName and c_value = :flagValue")
+    List<Integer> getCategoriesWithFlag(@Bind("categories") List<Integer> categoriesIds,
+                                        @Bind("flagName") String flagName,
+                                        @Bind("flagValue") String flagValue);
+
+    @Query("insert into configuration_event (c_key, c_value, description, event_id_fk, organization_id_fk)" +
+        " select c_key, c_value, description, :targetEventId, :targetOrgId from configuration_event where event_id_fk = :srcEventId and organization_id_fk = :srcOrgId")
+    int copyEventConfiguration(@Bind("targetEventId") int targetEventId,
+                               @Bind("targetOrgId") int targetOrgId,
+                               @Bind("srcEventId") int srcEventId,
+                               @Bind("srcOrgId") int srcOrgId);
+
+    @Query("insert into configuration_ticket_category (c_key, c_value, description, event_id_fk, organization_id_fk, ticket_category_id_fk)" +
+            " select c_key, c_value, description, :targetEventId, :targetOrgId, :targetCategoryId from configuration_ticket_category where event_id_fk = :srcEventId and organization_id_fk = :srcOrgId and ticket_category_id_fk = :srcCategoryId")
+    int copyCategoryConfiguration(@Bind("targetEventId") int targetEventId,
+                                  @Bind("targetOrgId") int targetOrgId,
+                                  @Bind("targetCategoryId") int targetCategoryId,
+                                  @Bind("srcEventId") int srcEventId,
+                                  @Bind("srcOrgId") int srcOrgId,
+                                  @Bind("srcCategoryId") int srcCategoryId);
 
     class CategoryAndValue {
 

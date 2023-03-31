@@ -19,6 +19,8 @@ package alfio.controller.api.admin;
 import alfio.manager.ExportManager;
 import alfio.model.ReservationsByEvent;
 import alfio.model.support.ReservationInfo;
+import alfio.model.support.TicketInfo;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.basicxlsx.StreamingWorkbook;
 import ch.digitalfondue.basicxlsx.Style;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -36,7 +39,7 @@ import java.util.stream.Stream;
 
 import static alfio.util.ExportUtils.addSheetToWorkbook;
 import static alfio.util.ExportUtils.exportExcel;
-import static java.util.Objects.requireNonNull;
+import static java.util.Objects.*;
 
 @RestController
 @RequestMapping("/admin/api/export")
@@ -51,8 +54,10 @@ public class ExportApiController {
     @GetMapping("/reservations")
     public void downloadAllEvents(@RequestParam(name = "from") String from,
                                   @RequestParam(name = "to") String to,
-                                  HttpServletResponse response) throws IOException {
-        var allEvents = exportManager.reservationsForInterval(LocalDate.parse(requireNonNull(from)), LocalDate.parse(requireNonNull(to)));
+                                  HttpServletResponse response,
+                                  Principal principal) throws IOException {
+        var allEvents = exportManager.reservationsForInterval(LocalDate.parse(requireNonNull(from)),
+            LocalDate.parse(requireNonNull(to)), requireNonNull(principal));
         if (allEvents.isEmpty()) {
             response.setContentType("text/plain");
             response.setStatus(HttpStatus.PRECONDITION_REQUIRED.value());
@@ -66,16 +71,20 @@ public class ExportApiController {
         var header = new String[] {
             "Event Name",
             "Reservation ID",
-            "Date",
+            "Confirmation Date",
+            "Billed to",
+            "Tax ID",
+            "Tax Code",
             "Invoice #",
-            "Contact First Name",
-            "Contact Last Name",
-            "Payment Type",
             "Amount",
+            "Tax",
             "Currency",
+            "Payment Type",
+            "Ticket ID",
             "Ticket Type",
-            "Attendee First Name",
-            "Attendee Last Name",
+            "Ticket Amount",
+            "Ticket Tax",
+            "Attendee",
             "Status"
         };
         var headerStyle = workbook.defineStyle().font().bold(true).build();
@@ -92,20 +101,41 @@ public class ExportApiController {
 
     private static Stream<String[]> ticketRows(ReservationsByEvent eventWithReservations, ReservationInfo r) {
         return r.getTickets().stream()
-            .map(t -> new String[] {
-                eventWithReservations.getDisplayName(),
-                r.getId(),
-                r.getConfirmationTimestamp(),
-                r.getInvoiceNumber(),
-                r.getFirstName(),
-                r.getLastName(),
-                r.getPaymentType().name(),
-                r.getFormattedAmount(),
-                r.getCurrency(),
-                t.getType(),
-                t.getFirstName(),
-                t.getLastName(),
-                t.getStatus()
-            });
+            .map(t -> buildTicketRow(eventWithReservations, r, t));
+    }
+
+    private static String[] buildTicketRow(ReservationsByEvent eventWithReservations,
+                                           ReservationInfo r,
+                                           TicketInfo t) {
+        return new String[]{
+            eventWithReservations.getDisplayName(),
+            r.getId(),
+            r.getConfirmationTimestamp(),
+            billingCompanyOrFullName(r),
+            r.getTaxId(),
+            r.getTaxCode(),
+            r.getInvoiceNumber(),
+            formatAmount(r.getSrcPriceCts(), r.getCurrency()),
+            formatAmount(r.getTaxCts(), r.getCurrency()),
+            r.getCurrency(),
+            r.getPaymentType().name(),
+            t.getId(),
+            t.getType(),
+            formatAmount(t.getSrcPriceCts(), r.getCurrency()),
+            formatAmount(t.getTaxCts(), r.getCurrency()),
+            (requireNonNullElse(t.getFirstName(), "") + " " + requireNonNullElse(t.getLastName(), "")).trim(),
+            t.getStatus()
+        };
+    }
+
+    private static String billingCompanyOrFullName(ReservationInfo r) {
+        return requireNonNullElseGet(r.getCompanyName(), () -> r.getFirstName() + " " + r.getLastName());
+    }
+
+    private static String formatAmount(Integer originalCts, String currency) {
+        if (originalCts == null) {
+            return "";
+        }
+        return MonetaryUtil.formatCents(originalCts, currency);
     }
 }

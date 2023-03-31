@@ -22,6 +22,7 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
+import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.Test;
@@ -38,11 +39,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-@SpringBootTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@Transactional
-public class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
+@AlfioIntegrationTest
+class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     FileUploadManager fileUploadManager;
