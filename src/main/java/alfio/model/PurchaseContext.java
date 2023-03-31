@@ -38,8 +38,8 @@ public interface PurchaseContext extends Configurable, TimeZoneInfo, LocalizedCo
     String getTermsAndConditionsUrl();
 
     //
-    int getOrganizationId();
 
+    int getOrganizationId();
     //
     PurchaseContextType getType();
     String getPublicIdentifier();
