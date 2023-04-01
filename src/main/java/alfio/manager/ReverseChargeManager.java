@@ -98,67 +98,108 @@ public class ReverseChargeManager {
                 .map(res -> ticketCategoryRepository.findCategoriesInReservation(res.getId()))
                 .orElse(List.of());
 
-            Optional<VatDetail> vatDetail = optionalReservation
-                .filter(e -> {
-                    if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) && (!reverseChargeInPerson || !reverseChargeOnline)) {
-                        var eventFormat = purchaseContext.event().orElseThrow().getFormat();
-                        // if we find at least one category matching the criteria, then we can proceed
-                        return categoriesList.stream().anyMatch(findReverseChargeCategory(reverseChargeInPerson, reverseChargeOnline, eventFormat));
-                    }
-                    var vatStatus = purchaseContext.getVatStatus();
-                    return vatStatus == INCLUDED || vatStatus == NOT_INCLUDED;
-                })
-                .filter(e -> vatChecker.isReverseChargeEnabledFor(purchaseContext))
-                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, purchaseContext));
+            List<Integer> noTaxCategories = new ArrayList<>();
+            if (!categoriesList.isEmpty()) {
+                noTaxCategories.addAll(configurationManager.getCategoriesWithNoTaxes(categoriesList.stream().map(TicketCategory::getId).collect(Collectors.toList())));
+            }
 
+            Optional<VatDetail> vatDetail = performReverseChargeCheck(purchaseContext, contactAndTicketsForm, country, reverseChargeInPerson, reverseChargeOnline, optionalReservation, categoriesList);
 
             if(vatDetail.isPresent()) {
-                var vatValidation = vatDetail.get();
-                if (!vatValidation.isValid()) {
-                    bindingResult.rejectValue("vatNr", "error.STEP_2_INVALID_VAT");
-                } else {
-                    var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
-                    var currencyCode = reservation.getCurrencyCode();
-                    PriceContainer.VatStatus vatStatus = determineVatStatus(purchaseContext.getVatStatus(), vatValidation.isVatExempt());
-                    // standard case: Reverse Charge is applied to the entire reservation
-                    var discount = getDiscountOrNull(reservation);
-                    if(!isEvent || (reverseChargeOnline && reverseChargeInPerson)) {
-                        if(isEvent) {
-                            var event = purchaseContext.event().orElseThrow();
-                            var priceContainers = mapPriceContainersByCategoryId(categoriesList,
-                                (a) -> true,
-                                currencyCode,
-                                vatStatus,
-                                discount,
-                                event);
-                            // update all tickets in reservation to match the VAT_STATUS
-                            ticketRepository.updateVatStatusForReservation(reservationId, vatStatus);
-                            updateTicketPricesByCategory(reservationId, currencyCode, vatStatus, event, priceContainers);
-                        }
-                        updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, country, trimToNull(vatValidation.getVatNr()), reservation, vatStatus);
-                    } else {
-                        var event = purchaseContext.event().orElseThrow();
-                        var eventFormat = event.getFormat();
-                        var matchingCategories = mapPriceContainersByCategoryId(categoriesList,
-                            findReverseChargeCategory(reverseChargeInPerson, reverseChargeOnline, eventFormat),
-                            currencyCode,
-                            vatStatus,
-                            discount,
-                            event);
-
-                        updateTicketPricesByCategory(reservationId, currencyCode, vatStatus, event, matchingCategories);
-                        // update billing data for the reservation, using the original VatStatus from reservation
-                        updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, country, trimToNull(vatValidation.getVatNr()), reservation, reservation.getVatStatus());
-                    }
-                    vatChecker.logSuccessfulValidation(vatValidation, reservationId, purchaseContext);
-                }
-            } else if(optionalReservation.isPresent() && contactAndTicketsForm.isItalyEInvoicingSplitPayment()) {
+                handleValidationResult(purchaseContext, reservationId, contactAndTicketsForm, bindingResult, country, isEvent, reverseChargeInPerson, reverseChargeOnline, categoriesList, noTaxCategories, vatDetail.get());
+            } else if (optionalReservation.isPresent() && contactAndTicketsForm.isItalyEInvoicingSplitPayment()) {
+                handleSplitPayment(purchaseContext, reservationId, contactAndTicketsForm, country, optionalReservation.get(), categoriesList, noTaxCategories);
+            } else if (optionalReservation.isPresent() && !noTaxCategories.isEmpty()) {
+                // if there is at least one category with custom tax policy, we need to update its tickets
                 var reservation = optionalReservation.get();
-                var vatStatus = purchaseContext.getVatStatus() == INCLUDED ? INCLUDED_NOT_CHARGED : NOT_INCLUDED_NOT_CHARGED;
-                updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, vatStatus);
+                updateTicketsWithNoTaxSetting(purchaseContext, reservationId, reservation, categoriesList, noTaxCategories);
+                updateBillingData(contactAndTicketsForm, purchaseContext, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, reservation.getVatStatus());
             }
         } catch (IllegalStateException ise) {//vat checker failure
             bindingResult.rejectValue("vatNr", "error.vatVIESDown");
+        }
+    }
+
+    private Optional<VatDetail> performReverseChargeCheck(PurchaseContext purchaseContext, ContactAndTicketsForm contactAndTicketsForm, String country, boolean reverseChargeInPerson, boolean reverseChargeOnline, Optional<TicketReservation> optionalReservation, List<TicketCategory> categoriesList) {
+        return optionalReservation
+            .filter(e -> {
+                if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) && (!reverseChargeInPerson || !reverseChargeOnline)) {
+                    var eventFormat = purchaseContext.event().orElseThrow().getFormat();
+                    // if we find at least one category matching the criteria, then we can proceed
+                    return categoriesList.stream().anyMatch(findReverseChargeCategory(reverseChargeInPerson, reverseChargeOnline, eventFormat));
+                }
+                var vatStatus = purchaseContext.getVatStatus();
+                return vatStatus == INCLUDED || vatStatus == NOT_INCLUDED;
+            })
+            .filter(e -> vatChecker.isReverseChargeEnabledFor(purchaseContext))
+            .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, purchaseContext));
+    }
+
+    private void updateTicketsWithNoTaxSetting(PurchaseContext purchaseContext,
+                                               String reservationId,
+                                               TicketReservation reservation,
+                                               List<TicketCategory> categoriesList,
+                                               List<Integer> noTaxCategories) {
+        if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+            var currencyCode = reservation.getCurrencyCode();
+            var event = purchaseContext.event().orElseThrow();
+            var priceContainers = mapPriceContainersByCategoryId(categoriesList,
+                c -> noTaxCategories.contains(c.getId()),
+                currencyCode,
+                reservation.getVatStatus(),
+                reservation.getDiscount().orElse(null),
+                event,
+                noTaxCategories);
+            updateTicketPricesByCategory(reservationId, currencyCode, event, priceContainers);
+        }
+    }
+
+    private void handleSplitPayment(PurchaseContext purchaseContext, String reservationId, ContactAndTicketsForm contactAndTicketsForm, String country, TicketReservation reservation, List<TicketCategory> categoriesList, List<Integer> noTaxCategories) {
+        updateTicketsWithNoTaxSetting(purchaseContext, reservationId, reservation, categoriesList, noTaxCategories);
+        var vatStatus = purchaseContext.getVatStatus() == INCLUDED ? INCLUDED_NOT_CHARGED : NOT_INCLUDED_NOT_CHARGED;
+        updateBillingData(contactAndTicketsForm, purchaseContext, country, trimToNull(contactAndTicketsForm.getVatNr()), reservation, vatStatus);
+    }
+
+    private void handleValidationResult(PurchaseContext purchaseContext, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, String country, boolean isEvent, boolean reverseChargeInPerson, boolean reverseChargeOnline, List<TicketCategory> categoriesList, List<Integer> noTaxCategories, VatDetail vatValidation) {
+        if (!vatValidation.isValid()) {
+            bindingResult.rejectValue("vatNr", "error.STEP_2_INVALID_VAT");
+        } else {
+            var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+            var currencyCode = reservation.getCurrencyCode();
+            PriceContainer.VatStatus vatStatus = determineVatStatus(purchaseContext.getVatStatus(), vatValidation.isVatExempt());
+            // standard case: Reverse Charge is applied to the entire reservation
+            var discount = getDiscountOrNull(reservation);
+            if(!isEvent || (reverseChargeOnline && reverseChargeInPerson)) {
+                if(isEvent) {
+                    var event = purchaseContext.event().orElseThrow();
+                    var priceContainers = mapPriceContainersByCategoryId(categoriesList,
+                        a -> true,
+                        currencyCode,
+                        vatStatus,
+                        discount,
+                        event,
+                        noTaxCategories);
+                    // update all tickets in reservation to match the VAT_STATUS
+                    ticketRepository.updateVatStatusForReservation(reservationId, vatStatus);
+                    updateTicketPricesByCategory(reservationId, currencyCode, event, priceContainers);
+                }
+                updateBillingData(contactAndTicketsForm, purchaseContext, country, trimToNull(vatValidation.getVatNr()), reservation, vatStatus);
+            } else {
+                var event = purchaseContext.event().orElseThrow();
+                var eventFormat = event.getFormat();
+                var matchingCategories = mapPriceContainersByCategoryId(categoriesList,
+                    findReverseChargeCategory(reverseChargeInPerson, reverseChargeOnline, eventFormat),
+                    currencyCode,
+                    vatStatus,
+                    discount,
+                    event,
+                    noTaxCategories);
+
+                updateTicketPricesByCategory(reservationId, currencyCode, event, matchingCategories);
+                // update billing data for the reservation, using the original VatStatus from reservation
+                updateBillingData(contactAndTicketsForm, purchaseContext, country, trimToNull(vatValidation.getVatNr()), reservation, reservation.getVatStatus());
+            }
+            vatChecker.logSuccessfulValidation(vatValidation, reservationId, purchaseContext);
         }
     }
 
@@ -197,7 +238,7 @@ public class ReverseChargeManager {
                 .collect(Collectors.toList());
             updateTicketPrices(priceMapping, currencyCode, event);
             // update billing data for the reservation, using the original VatStatus from reservation
-            updateBillingData(reservationId, contactAndTicketsForm, purchaseContext, reservation.getVatCountryCode(), trimToNull(reservation.getVatNr()), reservation, reservation.getVatStatus());
+            updateBillingData(contactAndTicketsForm, purchaseContext, reservation.getVatCountryCode(), trimToNull(reservation.getVatNr()), reservation, reservation.getVatStatus());
         }
     }
 
@@ -225,10 +266,11 @@ public class ReverseChargeManager {
                 reservation.getCurrencyCode(),
                 reservation.getVatStatus(),
                 discount,
-                event);
+                event,
+                List.of());
             // update all tickets in reservation to match the VAT_STATUS
             ticketRepository.updateVatStatusForReservation(reservationId, reservation.getVatStatus());
-            updateTicketPricesByCategory(reservationId, reservation.getCurrencyCode(), reservation.getVatStatus(), event, priceContainers);
+            updateTicketPricesByCategory(reservationId, reservation.getCurrencyCode(), event, priceContainers);
         }
     }
 
@@ -237,20 +279,26 @@ public class ReverseChargeManager {
                                                                                       String currencyCode,
                                                                                       PriceContainer.VatStatus vatStatus,
                                                                                       PromoCodeDiscount discount,
-                                                                                      Event event) {
+                                                                                      Event event,
+                                                                                      List<Integer> noTaxCategories) {
         return categoriesList.stream()
             .filter(filter)
-            .map(c -> new TicketCategoryPriceContainer(c.getId(), c.getSrcPriceCts(), currencyCode, event.getVat(), vatStatus, discount))
+            .map(c -> {
+                var categoryVatStatus = vatStatus;
+                if (noTaxCategories.contains(c.getId())) {
+                    categoryVatStatus = PriceContainer.VatStatus.forceExempt(vatStatus);
+                }
+                return new TicketCategoryPriceContainer(c.getId(), c.getSrcPriceCts(), currencyCode, event.getVat(), categoryVatStatus, discount);
+            })
             .collect(toMap(o -> o.categoryId, Function.identity()));
     }
 
     private void updateTicketPricesByCategory(String reservationId,
                                               String currencyCode,
-                                              PriceContainer.VatStatus vatStatus,
                                               Event event,
                                               Map<Integer, TicketCategoryPriceContainer> matchingCategories) {
         MapSqlParameterSource[] parameterSources = matchingCategories.entrySet().stream()
-            .map(entry -> buildParameterSourceForPriceUpdate(entry.getValue(), event.getId(), entry.getKey(), currencyCode, vatStatus,
+            .map(entry -> buildParameterSourceForPriceUpdate(entry.getValue(), event.getId(), entry.getKey(), currencyCode,
                 m -> m.addValue("reservationId", reservationId)))
             .toArray(MapSqlParameterSource[]::new);
         jdbcTemplate.batchUpdate(ticketRepository.updateTicketPriceForCategoryInReservation(), parameterSources);
@@ -258,7 +306,7 @@ public class ReverseChargeManager {
 
     private void updateTicketPrices(List<TicketPriceContainer> ticketPrices, String currencyCode, Event event) {
         MapSqlParameterSource[] parameterSources = ticketPrices.stream()
-            .map(entry -> buildParameterSourceForPriceUpdate(entry, event.getId(), entry.getCategoryId(), currencyCode, entry.getVatStatus(),
+            .map(entry -> buildParameterSourceForPriceUpdate(entry, event.getId(), entry.getCategoryId(), currencyCode,
                 m -> m.addValue("uuid", entry.getUuid())))
             .toArray(MapSqlParameterSource[]::new);
         var updateResult = jdbcTemplate.batchUpdate(ticketRepository.bulkUpdateTicketPrice(), parameterSources);
@@ -269,7 +317,6 @@ public class ReverseChargeManager {
                                                                             int eventId,
                                                                             int categoryId,
                                                                             String currencyCode,
-                                                                            PriceContainer.VatStatus vatStatus,
                                                                             UnaryOperator<MapSqlParameterSource> modifier) {
         return modifier.apply(new MapSqlParameterSource()
             .addValue("categoryId", categoryId)
@@ -279,7 +326,7 @@ public class ReverseChargeManager {
             .addValue("vatCts", MonetaryUtil.unitToCents(value.getVAT(), currencyCode))
             .addValue("discountCts", MonetaryUtil.unitToCents(value.getAppliedDiscount(), currencyCode))
             .addValue("currencyCode", currencyCode)
-            .addValue("vatStatus", vatStatus.name()));
+            .addValue("vatStatus", value.getVatStatus().name()));
     }
 
     private Predicate<TicketCategory> findReverseChargeCategory(boolean reverseChargeInPerson, boolean reverseChargeOnline, Event.EventFormat eventFormat) {
@@ -292,7 +339,8 @@ public class ReverseChargeManager {
         };
     }
 
-    private void updateBillingData(String reservationId, ContactAndTicketsForm contactAndTicketsForm, PurchaseContext purchaseContext, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
+    private void updateBillingData(ContactAndTicketsForm contactAndTicketsForm, PurchaseContext purchaseContext, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
+        var reservationId = reservation.getId();
         var discount = getDiscountOrNull(reservation);
         var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservation.getId());
         var tickets = ticketReservationManager.findTicketsInReservation(reservation.getId());

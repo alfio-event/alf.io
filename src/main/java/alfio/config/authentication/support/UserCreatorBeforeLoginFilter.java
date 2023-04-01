@@ -53,8 +53,8 @@ public class UserCreatorBeforeLoginFilter extends GenericFilterBean {
             String username = req.getParameter("username");
             if (!userManager.usernameExists(username)) {
                 var organizationModification = new OrganizationModification(null, UUID.randomUUID().toString(), username, username, null, null);
-                int orgId = userManager.createOrganization(organizationModification);
-                userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null, null);
+                int orgId = userManager.createOrganization(organizationModification, null);
+                userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null, null, null);
             }
         }
 

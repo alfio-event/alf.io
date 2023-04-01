@@ -49,13 +49,15 @@ public class TicketCategory {
     private final boolean accessRestricted;
     private final boolean soldOutOrLimitReached;
     private final Integer availableTickets;
+    private final boolean displayTaxInformation;
     //
 
     public TicketCategory(SaleableTicketCategory saleableTicketCategory,
                           Map<String, String> description,
                           Map<String, String> formattedInception,
                           Map<String, String> formattedExpiration,
-                          boolean displayTicketsLeft) {
+                          boolean displayTicketsLeft,
+                          boolean displayTaxInformation) {
 
         this.description = description;
         this.id = saleableTicketCategory.getId();
@@ -82,5 +84,7 @@ public class TicketCategory {
         //
         this.availableTickets = displayTicketsLeft && saleableTicketCategory.isBounded() ? saleableTicketCategory.getAvailableTickets() : null;
         this.ordinal = saleableTicketCategory.isAccessRestricted() ? -1 : saleableTicketCategory.getOrdinal();
+
+        this.displayTaxInformation = displayTaxInformation;
     }
 }

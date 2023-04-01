@@ -25,21 +25,39 @@ import java.util.Map;
 
 @Getter
 public class AlfioMetadata {
+    private static final AlfioMetadata EMPTY = new AlfioMetadata(null, Map.of(), List.of(), null);
     private final OnlineConfiguration onlineConfiguration;
     // list of requirements for participants, e.g. software
     private final Map<String, String> requirementsDescriptions;
     private final List<ConditionsLink> conditionsToBeAccepted;
+    private final String copiedFrom;
 
     @JsonCreator
     public AlfioMetadata(@JsonProperty("onlineConfiguration") OnlineConfiguration onlineConfiguration,
                          @JsonProperty("requirementsDescriptions") Map<String, String> requirementsDescriptions,
-                         @JsonProperty("conditionsToBeAccepted") List<ConditionsLink> conditionsToBeAccepted) {
+                         @JsonProperty("conditionsToBeAccepted") List<ConditionsLink> conditionsToBeAccepted,
+                         @JsonProperty("copiedFrom") String copiedFrom) {
         this.onlineConfiguration = onlineConfiguration;
         this.requirementsDescriptions = requirementsDescriptions;
         this.conditionsToBeAccepted = conditionsToBeAccepted;
+        this.copiedFrom = copiedFrom;
     }
 
     public static AlfioMetadata empty() {
-        return new AlfioMetadata(null, Map.of(), List.of());
+        return EMPTY;
+    }
+
+    /**
+     * Returns a merged version of the metadata.
+     * The "copiedFrom" attribute will not be overridden by {@code other}
+     * @param other metadata to merge
+     * @return merged metadata
+     */
+    public AlfioMetadata merge(AlfioMetadata other) {
+        return new AlfioMetadata(
+            other.onlineConfiguration,
+            other.requirementsDescriptions,
+            other.conditionsToBeAccepted,
+            copiedFrom);
     }
 }

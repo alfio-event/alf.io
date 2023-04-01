@@ -67,6 +67,11 @@ public interface OrganizationDeleterRepository {
         " and id not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
     int deleteOrganizationsIfEmpty(@Bind("organizationIds") List<Integer> organizationIds);
 
+    @Query("delete from tickets_reservation where organization_id_fk in (:organizationIds)")
+    int deleteReservations(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from admin_reservation_request where organization_id_fk in (:organizationIds)")
+    int deleteAdminReservationRequests(@Bind("organizationIds") List<Integer> organizationIds);
 
     default void deleteEmptyOrganizations(List<Integer> organizationIds) {
         // delete invoice sequences
@@ -92,6 +97,14 @@ public interface OrganizationDeleterRepository {
         int deletedSubscriptions = deleteSubscriptions(organizationIds);
         int deletedDescriptors = deleteSubscriptionDescriptors(organizationIds);
         LOGGER.info("deleted {} subscription descriptors and {} subscriptions", deletedDescriptors, deletedSubscriptions);
+
+        // delete all reservations
+        int deletedReservations = deleteReservations(organizationIds);
+        LOGGER.info("deleted {} reservations", deletedReservations);
+
+        // delete admin reservation request
+        int deletedAdminReservationRequests = deleteAdminReservationRequests(organizationIds);
+        LOGGER.info("deleted {} adminReservationRequests", deletedAdminReservationRequests);
 
         // delete promo codes
         int deletedPromoCodes = deletePromoCodes(organizationIds);

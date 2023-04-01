@@ -16,9 +16,7 @@
  */
 package alfio.manager;
 
-import alfio.repository.EventDeleterRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.OrganizationDeleterRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.RequestUtils;

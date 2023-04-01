@@ -28,6 +28,7 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
@@ -77,6 +78,7 @@ public class TicketApiV2Controller {
     private final BookingInfoTicketLoader bookingInfoTicketLoader;
     private final TicketRepository ticketRepository;
     private final SubscriptionManager subscriptionManager;
+    private final ConfigurationManager configurationManager;
 
 
     @GetMapping(value = {
@@ -119,7 +121,7 @@ public class TicketApiV2Controller {
             try (OutputStream os = response.getOutputStream()) {
                 TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
-                String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
+                String reservationID = configurationManager.getShortReservationID(event, ticketReservation);
                 var ticketWithMetadata = TicketWithMetadataAttributes.build(ticket, ticketRepository.getTicketMetadata(ticket.getId()));
                 var locale = LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(ticketReservation.getUserLanguage(), event));
                 TemplateProcessor.renderPDFTicket(
@@ -232,7 +234,7 @@ public class TicketApiV2Controller {
             ticket.getUuid(),
             ticketCategory.getName(),
             ticketReservation.getFullName(),
-            ticketReservationManager.getShortReservationID(event, ticketReservation),
+            configurationManager.getShortReservationID(event, ticketReservation),
             deskPaymentRequired,
             event.getTimeZone(),
             DatesWithTimeZoneOffset.fromEvent(event),

@@ -19,6 +19,7 @@ package alfio.controller;
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
+import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.i18n.MessageSourceManager;
@@ -26,7 +27,9 @@ import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
@@ -115,6 +118,7 @@ public class IndexController {
     private final SubscriptionRepository subscriptionRepository;
     private final EventLoader eventLoader;
     private final PurchaseContextManager purchaseContextManager;
+    private final Json json;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -228,18 +232,14 @@ public class IndexController {
                 }
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute(NONCE, nonce));
                 var head = idx.getElementsByTagName("head").get(0);
-                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), APPLICATION_JSON, "preload-info", null));
-                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
+                head.appendChild(buildScripTag(json.asJsonString(configurationManager.getInfo(session)), APPLICATION_JSON, "preload-info", null));
                 if (baseCustomCss != null) {
                     var style = new Element("style");
                     style.setAttribute("type", "text/css");
                     style.appendChild(new Text(baseCustomCss));
                     head.appendChild(style);
                 }
-                if (eventShortName != null) {
-                    eventLoader.loadEventInfo(eventShortName, session)
-                        .ifPresent(ev -> head.appendChild(buildScripTag(Json.toJson(ev), APPLICATION_JSON, "preload-event", eventShortName)));
-                }
+                preloadTranslations(eventShortName, request, session, eventLoader, head, messageSourceManager, idx, json, lang);
                 JFiveParse.serialize(idx, osw);
             }
         }
@@ -276,6 +276,33 @@ public class IndexController {
         }
     }
 
+    static void preloadTranslations(String eventShortName,
+                                    ServletWebRequest request,
+                                    HttpSession session,
+                                    EventLoader eventLoader,
+                                    Element head,
+                                    MessageSourceManager messageSourceManager,
+                                    Node idx,
+                                    Json json,
+                                    String lang) {
+        String preloadLang = Objects.requireNonNullElse(lang, "en");
+        if (eventShortName != null) {
+            var eventInfoOptional = eventLoader.loadEventInfo(eventShortName, session);
+            if (eventInfoOptional.isPresent()) {
+                var ev = eventInfoOptional.get();
+                head.appendChild(buildScripTag(json.asJsonString(ev), APPLICATION_JSON, "preload-event", eventShortName));
+                preloadLang = getMatchingLocale(request, ev.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toList()), lang).getLanguage();
+            }
+        }
+        head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, preloadLang)), "application/json", "preload-bundle", preloadLang));
+        // add fallback in english
+        if (!"en".equals(preloadLang)) {
+            head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
+        }
+        var htmlElement = IterableUtils.get(idx.getElementsByTagName("html"), 0);
+        htmlElement.setAttribute("lang", preloadLang);
+    }
+
     private static Element buildScripTag(String content, String type, String id, String param) {
         var e = new Element("script");
         e.appendChild(new Text(content));
@@ -290,8 +317,12 @@ public class IndexController {
     private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
         switch (status.getStatus()) {
             case PENDING: return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
-            case COMPLETE: return "success";
-            case OFFLINE_PAYMENT: return "waiting-payment";
+            case COMPLETE:
+            case FINALIZING:
+                return "success";
+            case OFFLINE_PAYMENT:
+            case OFFLINE_FINALIZING:
+                return "waiting-payment";
             case DEFERRED_OFFLINE_PAYMENT: return "deferred-payment";
             case EXTERNAL_PROCESSING_PAYMENT:
             case WAITING_EXTERNAL_CONFIRMATION: return "processing-payment";
@@ -301,14 +332,28 @@ public class IndexController {
         }
     }
 
+
+    /**
+     * Return the best matching locale.
+     *
+     * @param request
+     * @param contextLanguages list of languages configured for the event (o other contexts)
+     * @param lang override passed as parameter
+     * @return
+     */
+    private static Locale getMatchingLocale(ServletWebRequest request, List<String> contextLanguages, String lang) {
+        var locale = RequestUtils.getMatchingLocale(request, contextLanguages);
+        if (lang != null && contextLanguages.stream().anyMatch(lang::equalsIgnoreCase)) {
+            locale = Locale.forLanguageTag(lang);
+        }
+        return locale;
+    }
+
     // see https://github.com/alfio-event/alf.io/issues/708
     // use ngrok to test the preview
     private Document getOpenGraphPage(Document eventOpenGraph, String eventShortName, ServletWebRequest request, String lang) {
         var event = eventRepository.findByShortName(eventShortName);
-        var locale = RequestUtils.getMatchingLocale(request, event);
-        if (lang != null && event.getContentLanguages().stream().map(ContentLanguage::getLanguage).anyMatch(lang::equalsIgnoreCase)) {
-            locale = Locale.forLanguageTag(lang);
-        }
+        var locale = getMatchingLocale(request, event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toList()), lang);
 
         var baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
 

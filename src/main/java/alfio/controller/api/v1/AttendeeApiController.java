@@ -51,6 +51,7 @@ import static alfio.util.Wrappers.optionally;
 @Log4j2
 public class AttendeeApiController {
 
+    public static final String ALFIO_OPERATOR_HEADER = "Alfio-Operator";
     private final AttendeeManager attendeeManager;
 
     @Autowired
@@ -72,15 +73,19 @@ public class AttendeeApiController {
 
 
     @PostMapping("/sponsor-scan")
-    public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request, Principal principal) {
-        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName()));
+    public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request,
+                                                            Principal principal,
+                                                            @RequestHeader(name = ALFIO_OPERATOR_HEADER, required = false) String operator) {
+        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName(), operator));
     }
 
     @PostMapping("/sponsor-scan/bulk")
-    public ResponseEntity<List<TicketAndCheckInResult>> scanBadges(@RequestBody List<SponsorScanRequest> requests, Principal principal) {
+    public ResponseEntity<List<TicketAndCheckInResult>> scanBadges(@RequestBody List<SponsorScanRequest> requests,
+                                                                   Principal principal,
+                                                                   @RequestHeader(name = ALFIO_OPERATOR_HEADER, required = false) String operator) {
         String username = principal.getName();
         return ResponseEntity.ok(requests.stream()
-            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, username))
+            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, username, operator))
             .collect(Collectors.toList()));
     }
 

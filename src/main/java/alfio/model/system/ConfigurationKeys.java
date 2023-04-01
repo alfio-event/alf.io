@@ -228,6 +228,7 @@ public enum ConfigurationKeys {
     EU_COUNTRIES_LIST("EU Countries", true, SettingCategory.INVOICE_EU, ComponentType.LIST, false, EnumSet.of(SYSTEM)),
     @Deprecated
     EU_VAT_API_ADDRESS("EU VAT API address", true, SettingCategory.INVOICE_EU, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    APPLY_TAX_TO_CATEGORY("Apply taxes to this Category (default: true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(TICKET_CATEGORY), BooleanUtils.TRUE),
 
     //
 

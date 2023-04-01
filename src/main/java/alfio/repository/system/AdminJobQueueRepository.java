@@ -17,7 +17,6 @@
 package alfio.repository.system;
 
 import alfio.manager.system.AdminJobExecutor.JobName;
-import alfio.model.support.EnumTypeAsString;
 import alfio.model.support.JSONData;
 import alfio.model.system.AdminJobSchedule;
 import ch.digitalfondue.npjt.Bind;
@@ -49,12 +48,13 @@ public interface AdminJobQueueRepository {
     int scheduleRetry(@Bind("id") long id,
                       @Bind("requestTs") ZonedDateTime requestTs);
 
-    @Query("insert into admin_job_queue(job_name, request_ts, metadata, status, attempts)" +
-        " values(:jobName, :requestTs, to_json(:metadata::json), 'SCHEDULED', 1)" +
+    @Query("insert into admin_job_queue(job_name, request_ts, metadata, status, attempts, allow_duplicates)" +
+        " values(:jobName, :requestTs, to_json(:metadata::json), 'SCHEDULED', 1, :allowDuplicates)" +
         " on conflict do nothing")
     int schedule(@Bind("jobName") JobName jobName,
                  @Bind("requestTs") ZonedDateTime requestTimestamp,
-                 @Bind("metadata") @JSONData Map<String, Object> metadata);
+                 @Bind("metadata") @JSONData Map<String, Object> metadata,
+                 @Bind("allowDuplicates") String allowDuplicates);
 
     @Query("delete from admin_job_queue where status in (:status) and request_ts <= :requestTs")
     int removePastSchedules(@Bind("requestTs") ZonedDateTime requestTs, @Bind("status") Set<String> statuses);
