@@ -56,7 +56,7 @@ public class FileDownloadManager {
         if(callSuccessful(response)) {
             String[] parts = Pattern.compile("/").split(url);
             String name = parts[parts.length - 1];
-            if(Objects.nonNull(response.body()) && response.body().length <= FileUploadManager.MAXIMUM_ALLOWED_SIZE) {
+            if(Objects.nonNull(response.body())) {
                 return new DownloadedFile(
                         response.body(),
                         name,
