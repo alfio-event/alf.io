@@ -39,9 +39,6 @@ import java.io.IOException;
 @Log4j2
 public class FileUploadApiController {
 
-    private static final int IMAGE_THUMB_MAX_WIDTH_PX = 500;
-    private static final int IMAGE_THUMB_MAX_HEIGHT_PX = 500;
-
     private final FileUploadManager fileUploadManager;
 
     @Autowired
@@ -50,36 +47,12 @@ public class FileUploadApiController {
     }
 
     @PostMapping("/file/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam(required = false, value = "resizeImage", defaultValue = "false") Boolean resizeImage,
-                                             @RequestBody UploadBase64FileModification upload) {
-
+    public ResponseEntity<String> uploadFile(@RequestBody UploadBase64FileModification upload) {
         try {
-            final var mimeType = MimeTypeUtils.parseMimeType(upload.getType());
-            if (Boolean.TRUE.equals(resizeImage)) {
-                upload = resize(upload, mimeType);
-            }
             return ResponseEntity.ok(fileUploadManager.insertFile(upload));
         } catch (Exception e) {
             log.error("error while uploading image", e);
             return ResponseEntity.badRequest().build();
         }
-    }
-
-    private UploadBase64FileModification resize(UploadBase64FileModification upload, MimeType mimeType) throws IOException {
-        BufferedImage image = ImageIO.read(new ByteArrayInputStream(upload.getFile()));
-        //resize only if the image is bigger than 500px on one of the side
-        if (image.getWidth() > IMAGE_THUMB_MAX_WIDTH_PX || image.getHeight() > IMAGE_THUMB_MAX_HEIGHT_PX) {
-            UploadBase64FileModification resized = new UploadBase64FileModification();
-            BufferedImage thumbImg = Scalr.resize(image, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, IMAGE_THUMB_MAX_WIDTH_PX, IMAGE_THUMB_MAX_HEIGHT_PX, Scalr.OP_ANTIALIAS);
-            try (final var baos = new ByteArrayOutputStream()) {
-                ImageIO.write(thumbImg, mimeType.getSubtype(), baos);
-                resized.setFile(baos.toByteArray());
-            }
-            resized.setAttributes(upload.getAttributes());
-            resized.setName(upload.getName());
-            resized.setType(upload.getType());
-            return resized;
-        }
-        return upload;
     }
 }

@@ -27,13 +27,14 @@ import alfio.util.BaseIntegrationTest;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,7 +51,7 @@ class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
     private static final byte[] FILE = {1,2,3,4};
 
     @Test
-    public void testInsert() {
+    void testInsert() {
         UploadBase64FileModification toInsert = new UploadBase64FileModification();
         toInsert.setFile(FILE);
         toInsert.setName("myfile.txt");
@@ -76,7 +77,7 @@ class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
 
 
     @Test
-    public void testInsertImage() {
+    void testInsertImage() {
         UploadBase64FileModification toInsert = new UploadBase64FileModification();
         toInsert.setFile(ONE_PIXEL_BLACK_GIF);
         toInsert.setName("image.gif");
@@ -95,7 +96,29 @@ class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    public void testFindMetadataNotPresent() {
+    void testFindMetadataNotPresent() {
         assertFalse(fileUploadManager.findMetadata("unknownid").isPresent());
+    }
+
+    @Test
+    void testInsertResizedImage() throws IOException {
+        // Image credit: NASA, ESA, CSA, and STScI
+        try (var in = getClass().getResourceAsStream("/images/main_image_star-forming_region_carina_reduced.jpg")) {
+            UploadBase64FileModification toInsert = new UploadBase64FileModification();
+            toInsert.setFile(Objects.requireNonNull(in).readAllBytes());
+            toInsert.setName("image.jpg");
+            toInsert.setType("image/jpeg");
+            String id = fileUploadManager.insertFile(toInsert);
+
+            Optional<FileBlobMetadata> metadata = fileUploadManager.findMetadata(id);
+
+            assertTrue(metadata.isPresent());
+
+            assertEquals(String.valueOf(FileUploadManager.IMAGE_THUMB_MAX_WIDTH_PX), metadata.get().getAttributes().get("width"));
+            assertEquals("174", metadata.get().getAttributes().get("height"));
+
+            fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), 1));
+            assertFalse(fileUploadManager.findMetadata(id).isPresent());
+        }
     }
 }
