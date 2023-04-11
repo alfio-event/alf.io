@@ -18,6 +18,7 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeys;
@@ -162,12 +163,22 @@ public class BankTransferManager implements PaymentProvider {
 
     private static OptionalInt getOfflinePaymentWaitingPeriod(PurchaseContext purchaseContext, int configuredValue) {
         ZonedDateTime now = purchaseContext.now(ClockProvider.clock());
-        ZonedDateTime eventBegin = purchaseContext.getBegin();
-        int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
+        ZonedDateTime maxDate = purchaseContext.event()
+            .map(BankTransferManager::getMaxPaymentDate)
+            .orElse(purchaseContext.getBegin());
+        int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), maxDate.toLocalDate());
         if (daysToBegin < 0) {
             return OptionalInt.empty();
         }
         return OptionalInt.of( Math.min(daysToBegin, configuredValue) );
+    }
+
+    private static ZonedDateTime getMaxPaymentDate(Event event) {
+        if (event.getSameDay()) {
+            return event.getBegin();
+        } else {
+            return event.getEnd();
+        }
     }
 
     @Override
