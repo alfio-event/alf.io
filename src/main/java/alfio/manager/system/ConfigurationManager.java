@@ -493,6 +493,13 @@ public class ConfigurationManager {
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
+
+    public boolean canAttachBillingDocumentToConfirmationEmail(Configurable configurable) {
+        var config = getFor(List.of(ENABLE_ITALY_E_INVOICING, ITALY_E_INVOICING_SEND_PROFORMA), configurable.getConfigurationLevel());
+        return !isItalianEInvoicingEnabled(config)
+            || config.get(ITALY_E_INVOICING_SEND_PROFORMA).getValueAsBooleanOrDefault();
+    }
+
     public boolean canGenerateReceiptOrInvoiceToCustomer(Configurable configurable) {
         return !isItalianEInvoicingEnabled(configurable);
     }

@@ -261,6 +261,7 @@ public class BillingDocumentManager {
         model.put("publicId", configurationManager.getPublicReservationID(purchaseContext, reservation));
         var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservation.getId());
         model.put("invoicingAdditionalInfo", additionalInfo.getInvoicingAdditionalInfo());
+        model.put("proforma", !additionalInfo.getInvoicingAdditionalInfo().isEmpty());
         model.put("billingDetails", additionalInfo.getBillingDetails());
         if(type == CREDIT_NOTE) {
             model.put(CREDIT_NOTE_NUMBER, creditNoteNumber);
