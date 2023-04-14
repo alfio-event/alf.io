@@ -108,7 +108,7 @@ public class ReservationEmailContentHelper {
         OrderSummary summary = orderSummaryGenerator.orderSummaryForReservationId(reservationId, purchaseContext);
 
         List<Mailer.Attachment> attachments;
-        if (configurationManager.canGenerateReceiptOrInvoiceToCustomer(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
+        if (configurationManager.canAttachBillingDocumentToConfirmationEmail(purchaseContext)) { // https://github.com/alfio-event/alf.io/issues/573
             attachments = generateAttachmentForConfirmationEmail(purchaseContext, ticketReservation, language, summary, username);
         } else{
             attachments = List.of();

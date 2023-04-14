@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <html lang="{{#i18n}}locale{{/i18n}}">
 	<head>
-	    <title>{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}</title>
+	    <title>
+	        {{#proforma}}{{#i18n}}invoice.proforma [{{vatTranslation}}]{{/i18n}}{{/proforma}}
+	        {{^proforma}}{{#i18n}}invoice.proforma [{{vatTranslation}}]{{/i18n}}{{/proforma}}
+        </title>
         <meta name="subject" content="{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}" />
         <meta name="author" content="{{organization.name}}" />
         <meta name="description" content="{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}" />
@@ -10,6 +13,18 @@
 		    @font-face {
 		        font-family: 'DejaVu Sans';
 		        src: url('alfio-internal:/DejaVuSans.ttf');
+            }
+
+            @page {
+                page: A4;
+                margin-bottom: 200px;
+                @bottom-center{content:element(pf);}
+            }
+
+            .pageFooter {
+                border-top: 1px solid black;
+                padding-top: 10px;
+                position:running(pf);
             }
 
 			body {
@@ -46,7 +61,7 @@
                 margin-bottom:1em;
             }
 
-            table.summary {
+            table.summary, table.border {
                 border-collapse:collapse;
                 margin-bottom: 20px;
                 border-spacing: 0;
@@ -61,7 +76,8 @@
                 border-bottom: 1px solid #aaa;
             }
 
-            table.summary, table.summary th, table.summary td {
+            table.summary, table.summary th, table.summary td,
+            table.border th, table.border td {
                 border: 1px solid #aaa;
                 padding:5px;
                 margin:0;
@@ -110,7 +126,12 @@
             <tr>
                 {{#eventImage}}<td style="width:{{imageWidth}}px; height:{{imageHeight}}px"><img style="margin:auto; width:{{imageWidth}}px; height:{{imageHeight}}px" src="{{eventImage}}" alt="{{purchaseContext.displayName}}"/></td>{{/eventImage}}
                 {{^eventImage}}<td style="text-align: center; vertical-align: middle;"><h1>{{purchaseContext.displayName}}</h1></td>{{/eventImage}}
-                <td style="text-align: center; vertical-align: middle;"><h1>{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}</h1></td>
+                <td style="text-align: center; vertical-align: middle;">
+                    <h1>
+                        {{#proforma}}{{#i18n}}invoice.proforma [{{vatTranslation}}]{{/i18n}}{{/proforma}}
+                        {{^proforma}}{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}{{/proforma}}
+                    </h1>
+                </td>
             </tr>
         </table>
 
@@ -199,27 +220,8 @@
             </tfoot>
         </table>
 
-        <div class="small {{^isOfflinePayment}}mb{{/isOfflinePayment}}" style="margin-top:1em">
-            <p class="strong">{{#i18n}}invoice.order-information{{/i18n}}</p>
-            <p>{{ticketReservation.id}}</p>
-            <p>{{#i18n}}invoice.buyer{{/i18n}} {{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</p>
-            {{#hasRefund}}
-            <p class="strong">{{#i18n}}invoice.refund [{{purchaseContext.currency}} {{orderSummary.refundedAmount}}]{{/i18n}}</p>
-            {{/hasRefund}}
-        </div>
-
-        {{#invoicingAdditionalInfo}}
-        <pre>{{#italianEInvoicing}}
-{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}}: {{ticketReservation.vatNr}}
-{{#i18n}}invoice-fields.fiscalCode{{/i18n}}: {{fiscalCode}}
-{{#i18n}}invoice-fields.addresseeItalyEInvoice{{/i18n}}: {{referenceType}}
-{{#i18n}}invoice-fields.addressee-code{{/i18n}}: {{addresseeCode}}
-PEC: {{pec}}{{/italianEInvoicing}}
-        </pre>
-        {{/invoicingAdditionalInfo}}
-
         {{#isOfflinePayment}}
-            <div class="mb" style="margin-top: 1em">
+            <div style="margin-top: 1em">
                 <p>{{#i18n}}invoice.payment-instruction-no-later-than [{{#format-date}}{{expirationDate}} {{#i18n}}datetime.pattern{{/i18n}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</p>
                 <br/>
                 <p class="strong">{{#i18n}}invoice.payment-instruction{{/i18n}}</p>
@@ -236,9 +238,46 @@ PEC: {{pec}}{{/italianEInvoicing}}
                 <p style="margin-top:0.5em">{{#i18n}}invoice.payment-contact [{{organization.email}}]{{/i18n}}</p>
             </div>
         {{/isOfflinePayment}}
+        <div style="margin-top: 1em">
+            <p>{{#i18n}}invoice.regards{{/i18n}}</p>
+            <p>{{organization.name}}</p>
+        </div>
 
-        <p>{{#i18n}}invoice.regards{{/i18n}}</p>
-        <p>{{organization.name}}</p>
-
+    <div class="pageFooter">
+        <div class="small">
+            <p><strong>{{#i18n}}invoice.order-information{{/i18n}}</strong>: {{ticketReservation.id}}, {{#i18n}}invoice.buyer{{/i18n}} {{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</p>
+            {{#hasRefund}}
+            <p class="strong">{{#i18n}}invoice.refund [{{purchaseContext.currency}} {{orderSummary.refundedAmount}}]{{/i18n}}</p>
+            {{/hasRefund}}
+        </div>
+        {{#invoicingAdditionalInfo}}
+          <table style="width:100%;margin-top: 1em" class="border">
+            {{#italianEInvoicing}}
+                <thead>
+                    <tr>
+                        <th class="small">{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}}</th>
+                        <th class="small">{{#i18n}}invoice-fields.fiscalCode{{/i18n}}</th>
+                        <th class="small">{{#i18n}}invoice-fields.addresseeItalyEInvoice{{/i18n}}</th>
+                        <th class="small">{{#i18n}}invoice-fields.addressee-code{{/i18n}}</th>
+                        <th class="small">{{#i18n}}invoice-fields.pec{{/i18n}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="small">{{ticketReservation.vatNr}} 12345678901</td>
+                        <td class="small">{{fiscalCode}}</td>
+                        <td class="small">{{referenceType}}</td>
+                        <td class="small">{{addresseeCode}}ABCDEFG</td>
+                        <td class="small">{{pec}}celestino.bellone@claranet.com</td>
+                    </tr>
+                </tbody>
+            {{/italianEInvoicing}}
+          </table>
+          {{#italianEInvoicing}}
+              <!-- the following text is in Italian and is required by law. It will only appear if the italian "e-invoice" data collection is active -->
+              <p class="small">Il presente documento non costituisce fattura valida ai fini del DpR 633 26/10/1972 e successive modifiche. La fattura definitiva verrà emessa all’atto del pagamento del corrispettivo (articolo 6, comma 3, DpR 633/72).</p>
+          {{/italianEInvoicing}}
+        {{/invoicingAdditionalInfo}}
+    </div>
     </body>
 </html>
