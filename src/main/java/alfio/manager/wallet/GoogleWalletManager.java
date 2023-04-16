@@ -18,13 +18,12 @@ package alfio.manager.wallet;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.metadata.TicketMetadata;
+import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.Organization;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
-import alfio.repository.user.OrganizationRepository;
+import alfio.model.system.command.InvalidateAccess;
+import alfio.repository.*;
+import alfio.util.HttpUtils;
 import alfio.util.MustacheCustomTag;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -32,11 +31,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -55,9 +57,11 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @AllArgsConstructor
-@Log4j2
+@Transactional
 public class GoogleWalletManager {
 
+    private static final Logger log = LoggerFactory.getLogger(GoogleWalletManager.class);
+    private static final String WALLET_OBJECT_ID = "gWalletObjectId";
     private final EventRepository eventRepository;
     private final ConfigurationManager configurationManager;
     private final EventDescriptionRepository eventDescriptionRepository;
@@ -66,6 +70,7 @@ public class GoogleWalletManager {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final Environment environment;
+    private final AuditingRepository auditingRepository;
 
     public Optional<Pair<EventAndOrganizationId, Ticket>> validateTicket(String eventName, String ticketUuid) {
         var eventOptional = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName);
@@ -86,6 +91,41 @@ public class GoogleWalletManager {
             return buildWalletPassUrl(ticket, eventRepository.findById(event.getId()), passConf);
         } else {
             throw new GoogleWalletException("Google Wallet integration is not enabled.");
+        }
+    }
+
+    @EventListener
+    public void invalidateAccessForTicket(InvalidateAccess invalidateAccess) {
+        try {
+            Map<ConfigurationKeys, String> passConf = getConfigurationKeys(invalidateAccess.getEvent());
+            if (!passConf.isEmpty()) {
+                var objectIdOptional = invalidateAccess.getTicketMetadataContainer()
+                    .getMetadataForKey(TicketMetadataContainer.GENERAL)
+                    .map(m -> m.getAttributes().get(WALLET_OBJECT_ID));
+                if (objectIdOptional.isPresent()) {
+                    invalidateObject(invalidateAccess.getTicket().getUuid(), objectIdOptional.get(), passConf);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error while invalidating access for ticket " + invalidateAccess.getTicket().getUuid(), e);
+        }
+    }
+
+    private void invalidateObject(String ticketId, String objectId, Map<ConfigurationKeys, String> passConf) throws IOException, InterruptedException {
+        log.trace("Invalidating access to object ID: {}", objectId);
+        var credentials = retrieveCredentials(passConf.get(WALLET_SERVICE_ACCOUNT_KEY));
+        URI uriWithId = URI.create(String.format("%s/%s", EventTicketObject.WALLET_URL, objectId));
+        HttpRequest expireRequest = HttpRequest.newBuilder()
+            .uri(uriWithId)
+            .header("Authorization", String.format("Bearer %s", credentials.refreshAccessToken().getTokenValue()))
+            .method("PATCH", HttpRequest.BodyPublishers.ofString("{\"state\":\"INACTIVE\"}"))
+            //.DELETE()
+            .build();
+        var response = httpClient.send(expireRequest, HttpResponse.BodyHandlers.ofString());
+        if (HttpUtils.callSuccessful(response)) {
+            log.debug("Access invalidated for ticket {}", ticketId);
+        } else {
+            log.warn("Cannot invalidate access for ticket {}, response: {}", ticketId, response.body());
         }
     }
 
@@ -150,31 +190,53 @@ public class GoogleWalletManager {
             .end(ticketValidityEnd)
             .build();
 
+        String walletTicketId = formatEventTicketObjectId(ticket, event, issuerId, host);
         var eventTicketObject = EventTicketObject.builder()
-            .id(formatEventTicketObjectId(ticket, event, issuerId, host))
+            .id(walletTicketId)
             .classId(eventTicketClass.getId())
             .ticketHolderName(ticket.getFullName())
             .ticketNumber(ticket.getUuid())
             .barcode(ticket.ticketCode(event.getPrivateKey()))
             .build();
 
-        GoogleCredentials credentials = null;
+        GoogleCredentials credentials = retrieveCredentials(serviceAccountKey);
+
+        createEventClass(credentials, eventTicketClass, overwritePreviousClassesAndEvents);
+        String eventObjectId = createEventObject(credentials, eventTicketObject, overwritePreviousClassesAndEvents);
+        String walletPassUrl = generateWalletPassUrl(credentials, eventObjectId, baseUrl);
+        persistPassId(ticket, eventObjectId);
+        return walletPassUrl;
+    }
+
+    private static GoogleCredentials retrieveCredentials(String serviceAccountKey) {
         try {
-            credentials = GoogleCredentials
+            return GoogleCredentials
                 .fromStream(new ByteArrayInputStream(serviceAccountKey.getBytes(StandardCharsets.UTF_8)))
                 .createScoped(Collections.singleton("https://www.googleapis.com/auth/wallet_object.issuer"));
         } catch (IOException e) {
             throw new GoogleWalletException("Unable to retrieve Service Account Credentials from configuration", e);
         }
+    }
 
-        createEventClass(credentials, eventTicketClass, overwritePreviousClassesAndEvents);
-        String eventObjectId = createEventObject(credentials, eventTicketObject, overwritePreviousClassesAndEvents);
-
-        return generateWalletPassUrl(credentials, eventObjectId, baseUrl);
+    private void persistPassId(Ticket ticket, String eventObjectId) {
+        var metadataContainer = ticketRepository.getTicketMetadata(ticket.getId());
+        var existingMetadata = metadataContainer.getMetadataForKey(TicketMetadataContainer.GENERAL);
+        var attributesMap = existingMetadata.map(ticketMetadata -> new HashMap<>(ticketMetadata.getAttributes()))
+            .orElseGet(HashMap::new);
+        attributesMap.put(WALLET_OBJECT_ID, eventObjectId);
+        metadataContainer.putMetadata(TicketMetadataContainer.GENERAL, existingMetadata.map(tm -> tm.withAttributes(attributesMap)).orElseGet(() -> new TicketMetadata(null, null, attributesMap)));
+        ticketRepository.updateTicketMetadata(ticket.getId(), metadataContainer);
     }
 
     private String formatEventTicketObjectId(Ticket ticket, Event event, String issuerId, String host) {
-        return String.format("%s.%s-%s-object.%s-%s", issuerId, walletIdPrefix(), host, event.getShortName().replaceAll("[^\\w.-]", "_"), ticket.getUuid());
+        return String.format("%s.%s-%s-object.%s-%s",
+            issuerId,
+            walletIdPrefix(),
+            host,
+            event.getShortName().replaceAll("[^\\w.-]", "_"),
+            // if the attendee gives their ticket to somebody else, the new ticket holder must be able to add their ticket to the wallet
+            // therefore we add count(audit(UPDATE_TICKET)) as suffix for the ticket UUID
+            ticket.getUuid()+ "_" + auditingRepository.countAuditsOfTypeForTicket(ticket.getTicketsReservationId(), ticket.getId(), Audit.EventType.UPDATE_TICKET));
     }
 
     private String formatEventTicketClassId(Event event, String issuerId, TicketCategory category, String host) {
