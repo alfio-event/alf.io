@@ -660,7 +660,8 @@
             scope: {
                 event: '=',
                 category: '=',
-                closeModal: '&'
+                closeModal: '&',
+                onSave: '&'
             },
             bindToController: true,
             controller: ['ConfigurationService', '$rootScope', 'GroupService', '$q', CategoryConfigurationController],
@@ -700,14 +701,15 @@
                 return;
             }
             categoryConf.loading = true;
+            var onSaveComplete = categoryConf.onSave ? categoryConf.onSave : load;
 
             ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
                 if(categoryConf.group) {
                     GroupService.linkTo(categoryConf.group).then(function() {
-                        load();
+                        onSaveComplete();
                     });
                 } else {
-                    load();
+                    onSaveComplete();
                 }
             }, function(e) {
                 alert(e.data);
