@@ -25,6 +25,12 @@
 
         ctrl.baseUrl = window.location.origin;
 
+        var applyTaxes = ctrl.ticketCategory.price > 0 && (ctrl.ticketCategory.configuration || []).findIndex(function(c) {
+            return c.key === 'APPLY_TAX_TO_CATEGORY' && c.value === 'false'
+        }) === -1;
+
+        ctrl.plusVat = applyTaxes && !ctrl.event.vatIncluded;
+
         ctrl.categoryHasDescriptions = function(category) {
             return category && category.description ? Object.keys(category.description).length > 0 : false;
         };

@@ -18,6 +18,8 @@ package alfio.model.system;
 
 import alfio.model.EventAndOrganizationId;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -39,10 +41,11 @@ public class Configuration implements Comparable<Configuration> {
     private final boolean internal;
 
 
-    public Configuration(@Column("id") int id,
-                         @Column("c_key") String key,
-                         @Column("c_value") String value,
-                         @Column("configuration_path_level") ConfigurationPathLevel configurationPathLevel) {
+    @JsonCreator
+    public Configuration(@JsonProperty("id") @Column("id") int id,
+                         @JsonProperty("key") @Column("c_key") String key,
+                         @JsonProperty("value") @Column("c_value") String value,
+                         @JsonProperty("configurationPathLevel") @Column("configuration_path_level") ConfigurationPathLevel configurationPathLevel) {
         this.id = id;
         this.key = key;
         this.value = value;
@@ -86,7 +89,7 @@ public class Configuration implements Comparable<Configuration> {
         ConfigurationPathLevel pathLevel();
     }
 
-    public static class SystemConfigurationPath implements ConfigurationPath {
+    public static class SystemConfigurationPath implements  ConfigurationPath {
         @Override
         public ConfigurationPathLevel pathLevel() {
             return ConfigurationPathLevel.SYSTEM;
