@@ -124,6 +124,8 @@ public class EventStatisticsManager {
             supportedCapabilities = Set.of();
         }
 
+        // TODO category and event settings
+
         return new EventWithAdditionalInfo(event,
             tWithInfo,
             eventStatistic,

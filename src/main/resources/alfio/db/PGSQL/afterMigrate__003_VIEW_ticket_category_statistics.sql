@@ -33,7 +33,8 @@ from
   coalesce(sold_tickets_count,0) as sold_tickets_count,
   coalesce(released_count, 0) as released_count,
   case(bounded) when false then 0 else max_tickets - coalesce(sold_tickets_count,0 )  - coalesce(checked_in_count, 0) -  coalesce(pending_count, 0) end as not_sold_tickets,
-  coalesce(stuck_count, 0) as stuck_count
+  coalesce(stuck_count, 0) as stuck_count,
+  category_configuration
 from
 
 (select max_tickets, bounded, id, event_id, expiration < now() as is_expired, access_restricted from ticket_category where tc_status = 'ACTIVE' ) ticket_cat
@@ -60,5 +61,8 @@ left join
   where tickets_reservation.status = 'STUCK'
   group by category_id) stuck_count on ticket_cat.id = stuck_count.category_id
 
+left join
+(select ticket_category_id_fk, jsonb_agg(json_build_object('id', id, 'key', c_key, 'value', c_value, 'configurationPathLevel', 'TICKET_CATEGORY')) category_configuration
+  from configuration_ticket_category group by 1) tc_settings on ticket_cat.id = tc_settings.ticket_category_id_fk
 
 ) as res);
