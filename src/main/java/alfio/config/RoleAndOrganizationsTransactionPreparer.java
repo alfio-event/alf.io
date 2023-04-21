@@ -35,9 +35,14 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static alfio.config.authentication.support.AuthenticationConstants.ADMIN;
+import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
+
 class RoleAndOrganizationsTransactionPreparer {
 
     private static final Logger log = LoggerFactory.getLogger(RoleAndOrganizationsTransactionPreparer.class);
+
+    private RoleAndOrganizationsTransactionPreparer() {}
 
     private static final OrRequestMatcher IS_PUBLIC_URLS = new OrRequestMatcher(
         new AntPathRequestMatcher("/resources/**"),
@@ -84,7 +89,7 @@ class RoleAndOrganizationsTransactionPreparer {
             return SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch("ROLE_ADMIN"::equals);
+                .anyMatch(authority -> authority.equals("ROLE_" + SYSTEM_API_CLIENT) || authority.equals("ROLE_" + ADMIN));
         }
         return false;
     }
