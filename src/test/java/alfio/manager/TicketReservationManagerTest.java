@@ -1057,9 +1057,9 @@ class TicketReservationManagerTest {
         when(json.asJsonString(any())).thenReturn("{}");
         when(configurationManager.getFor(eq(EnumSet.of(DEFERRED_BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL)), any())).thenReturn(Map.of(DEFERRED_BANK_TRANSFER_ENABLED, new MaybeConfiguration(DEFERRED_BANK_TRANSFER_ENABLED)));
         when(reservationCostCalculator.totalReservationCostWithVAT(RESERVATION_ID)).thenReturn(Pair.of(new TotalPrice(0, 0, 0, 0, "CHF"), Optional.empty()));
-        assertThrows(IncompatibleStateException.class, () -> trm.confirmOfflinePayment(event, RESERVATION_ID, "username"));
+        assertThrows(IncompatibleStateException.class, () -> trm.confirmOfflinePayment(event, RESERVATION_ID, null, "username"));
         when(metadata.isReadyForConfirmation()).thenReturn(true);
-        trm.confirmOfflinePayment(event, RESERVATION_ID, "username");
+        trm.confirmOfflinePayment(event, RESERVATION_ID, null, "username");
         verify(ticketReservationRepository, atLeastOnce()).findOptionalReservationById(RESERVATION_ID);
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(ticketReservationRepository, times(2)).lockReservationForUpdate(eq(RESERVATION_ID));

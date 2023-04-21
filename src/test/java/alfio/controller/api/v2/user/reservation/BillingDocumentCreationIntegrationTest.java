@@ -310,7 +310,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
     }
 
     private void confirmPaymentForReservation(String reservationId) {
-        ticketReservationManager.confirmOfflinePayment(event, reservationId, username);
+        ticketReservationManager.confirmOfflinePayment(event, reservationId, null, username);
     }
 
     private void expectInvoiceToBeGenerated(String reservationId) {

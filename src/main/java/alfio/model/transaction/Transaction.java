@@ -28,6 +28,7 @@ import java.util.Optional;
 @Getter
 public class Transaction {
 
+    public static final String NOTES_KEY = "transactionNotes";
     public enum Status {
         PENDING,
         OFFLINE_MATCHING_PAYMENT_FOUND,

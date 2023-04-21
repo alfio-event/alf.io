@@ -2054,11 +2054,14 @@
 
         $scope.registerPayment = function(eventName, id) {
             $scope.loading = true;
-            EventService.registerPayment(eventName, id).success(function() {
-                getPendingPayments(true);
-            }).error(function() {
-                $scope.loading = false;
-            });
+            EventService.registerPayment(eventName, id).then(
+                function() {
+                    getPendingPayments(true);
+                },
+                function() {
+                    $scope.loading = false;
+                }
+            );
         };
 
         $scope.showTransactionDialog = function(pendingPaymentDescriptor) {

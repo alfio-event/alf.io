@@ -174,7 +174,36 @@
                 return $http.get('/admin/api/events/'+eventName+'/pending-payments-count').error(HttpErrorHandler.handle).then(function(res) {var v = parseInt(res.data); return isNaN(v) ? 0 : v; });
             },
             registerPayment: function(eventName, reservationId) {
-                return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm').error(HttpErrorHandler.handle);
+                var modal = $uibModal.open({
+                    size:'md',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/pending-payments/confirm-payment-modal.html',
+                    backdrop: 'static',
+                    controllerAs: '$ctrl',
+                    controller: function() {
+                        var ctrl = this;
+                        ctrl.minDate = moment().subtract(1, 'years').format('YYYY-MM-DD');
+                        ctrl.transaction = {
+                            timestamp: {
+                                date: moment().format('YYYY-MM-DD'),
+                                time: moment().format('HH:mm')
+                            },
+                            notes: ''
+                        };
+                        ctrl.cancel = function() {
+                            modal.dismiss('cancelled');
+                        };
+                        ctrl.confirm = function() {
+                            modal.close({
+                                timestamp: ctrl.transaction.timestamp,
+                                notes: ctrl.transaction.notes
+                            });
+                        }
+                    }
+                });
+                return modal.result.then(function(metadata) {
+                    return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm', metadata)
+                         .error(HttpErrorHandler.handle);
+                });
             },
             cancelPayment: function(eventName, reservationId, credit, notify) {
                 return $http['delete']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId, {
