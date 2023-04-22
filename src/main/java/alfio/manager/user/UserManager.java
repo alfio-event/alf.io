@@ -16,6 +16,7 @@
  */
 package alfio.manager.user;
 
+import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
@@ -46,6 +47,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -200,7 +202,7 @@ public class UserManager {
 
     public void updateOrganization(OrganizationModification om, Principal principal) {
         //
-        var orgId = requireNonNull(om.getId());
+        int orgId = requireNonNull(om.getId());
         checkAccessToOrganizationId(principal, orgId);
         //
         boolean isAdmin = RequestUtils.isAdmin(principal) || RequestUtils.isSystemApiKey(principal);
@@ -399,6 +401,10 @@ public class UserManager {
         if (principal == null) {
             return;
         }
+        if (isSystemApiUser(principal)) {
+            log.trace("Allowing call for System API Key");
+            return;
+        }
         if (isAdmin(findUserByUsername(principal.getName()))) {
             return;
         }
@@ -435,10 +441,20 @@ public class UserManager {
         if (principal == null) {
             return;
         }
+        if (isSystemApiUser(principal)) {
+            log.trace("Allowing access to Organization " + organizationId + " to System API Key");
+            return;
+        }
         if (isOwnerOfOrganization(principal.getName(), organizationId)) {
             return;
         }
         log.warn("User {} don't have access to organizationId {}", principal.getName(), organizationId);
         throw new IllegalArgumentException("User " + principal.getName() + " don't have access to organizationId " + organizationId);
+    }
+
+    private boolean isSystemApiUser(Principal principal) {
+        return principal instanceof APITokenAuthentication
+            && ((APITokenAuthentication)principal).getAuthorities().stream()
+            .allMatch(authority -> authority.getAuthority().equals("ROLE_" + SYSTEM_API_CLIENT));
     }
 }
