@@ -222,6 +222,16 @@
                 },
                 controllerAs: 'ctrl'
             })
+            .state('events.single.transactionsList', {
+                url: '/transactions/?search',
+                // TODO modify component
+                template: '<reservations-list purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                    this.purchaseContextType = 'event';
+                },
+                controllerAs: 'ctrl'
+            })
             .state('events.single.ticketsList', {
                 url: '/category/:categoryId/tickets',
                 template: '<tickets-list event="$ctrl.event" category-id="$ctrl.categoryId"></tickets-list>',

@@ -93,6 +93,13 @@ public interface TicketSearchRepository {
                                                      @Bind("search") String search,
                                                      @Bind("status") List<String> toFilter);
 
+    @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + ") as d_tblorder by tr_confirmation_ts desc nulls last, tr_validity limit :pageSize offset :page")
+    List<TicketReservation> findReservationsForTransactionsList(@Bind("eventId") int eventId,
+                                                                @Bind("page") int page,
+                                                                @Bind("pageSize") int pageSize,
+                                                                @Bind("search") String search,
+                                                                @Bind("status") List<String> toFilter);
+
     @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_SUBSCRIPTION_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity limit :pageSize offset :page")
     List<TicketReservation> findReservationsForSubscription(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                                                             @Bind("page") int page,
