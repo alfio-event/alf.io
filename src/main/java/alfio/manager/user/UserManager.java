@@ -125,7 +125,12 @@ public class UserManager {
     }
 
     @Transactional(readOnly = true)
-    public User findUser(int id) {
+    public User findUser(int id, Principal principal) {
+        checkAccessToUserId(principal, id);
+        return internalFindUser(id);
+    }
+
+    private User internalFindUser(int id) {
         return userRepository.findById(id);
     }
 
@@ -311,7 +316,7 @@ public class UserManager {
         //
         checkAccessToUserId(principal, userId);
         //
-        User user = findUser(userId);
+        User user = internalFindUser(userId);
         String password = PasswordGenerator.generateRandomPassword();
         Validate.isTrue(userRepository.resetPassword(userId, passwordEncoder.encode(password)) == 1, "error during password reset");
         return new UserWithPassword(user, password, UUID.randomUUID().toString());
@@ -420,8 +425,9 @@ public class UserManager {
         if (isAdmin(currentUser)) {
             return;
         }
-        var targetUser = findUser(userId);
+        var targetUser = internalFindUser(userId);
         var targetUserOrgs = findUserOrganizations(targetUser.getUsername());
+        Assert.state(!targetUser.getUsername().equals(ADMIN_USERNAME) && !isAdmin(targetUser), "Targeted user cannot be admin");
         Assert.isTrue(targetUserOrgs.size() == 1, "Targeted user can only be in one organization");
         for (var org : targetUserOrgs) {
             if (isOwnerOfOrganization(currentUser, org.getId())) {
