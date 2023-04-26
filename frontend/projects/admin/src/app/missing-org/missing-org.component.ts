@@ -22,5 +22,4 @@ export class MissingOrgComponent implements OnInit {
       }
     });
   }
-
 }

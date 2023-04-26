@@ -44,7 +44,7 @@ export class AppComponent implements OnInit {
   }
 
   public openOrgSelector(): void {
-    const modalRef = this.modalService.open(OrgSelectorComponent);
+    const modalRef = this.modalService.open(OrgSelectorComponent, { size: 'lg' });
     const selector: OrgSelectorComponent = modalRef.componentInstance
 		selector.organizations$ = this.organizations$;
     selector.organizationId$ = this.organizationId$;

@@ -20,6 +20,7 @@ import {SharedModule} from "./shared/shared.module";
 import {HttpLoginInterceptor, redirectToLogin} from "./shared/http-login.interceptor";
 import {AlfioCommonModule} from "common";
 
+
 export function RedirectToLoginIfNeeded(userService: UserService, router: Router): () => Promise<boolean> {
   return async () => {
     const loggedIn = await firstValueFrom(userService.checkUserLoggedIn())
