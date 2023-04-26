@@ -476,7 +476,7 @@ public class EventApiController {
             List<String> line = new ArrayList<>();
             Ticket ticket = p.getLeft().getTicket();
             SponsorScan sponsorScan = p.getLeft().getSponsorScan();
-            User user = userManager.findUser(sponsorScan.getUserId());
+            User user = userManager.findUser(sponsorScan.getUserId(), principal);
             line.add(user.getUsername());
             line.add(user.getDescription());
             line.add(sponsorScan.getTimestamp().toString());
