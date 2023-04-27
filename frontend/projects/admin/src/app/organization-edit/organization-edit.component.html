@@ -5,7 +5,7 @@
   >
 </h1>
 
-<form [formGroup]="organizationForm">
+<form [formGroup]="organizationForm" (ngSubmit)="save()">
   <h2>Organizer Data</h2>
   <div class="form-group">
     <label for="organizationName">Name</label>
@@ -36,10 +36,9 @@
       <input id="organizationExternalId" type="text" class="form-control" formControlName="externalId" />
     </div>
   </div>
+  <button type="submit" class="btn btn-primary" [disabled]="organizationForm.invalid">Save</button>
 </form>
 
 <a [routerLink]="['/organizations']">back</a>
 
-<!-- {{organization$ | async | json}} -->
-<!-- {{instanceSetting$ | async | json}} -->
-{{organizationForm.value | json}}
+

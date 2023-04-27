@@ -6,6 +6,7 @@ import { Organization } from '../model/organization';
 import { ConfigurationService } from '../shared/configuration.service';
 import { InstanceSetting } from '../model/instance-settings';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-organization-edit',
@@ -33,9 +34,9 @@ export class OrganizationEditComponent implements OnInit {
     "externalId": "abcd" */
 
     this.organizationForm = formBuilder.group({
-      name: [],
-      email: [],
-      description: [],
+      name: [null,  Validators.required],
+      email: [null,  Validators.required],
+      description: [null,  Validators.required],
       slug: [],
       externalId: [],
     });
@@ -53,5 +54,8 @@ export class OrganizationEditComponent implements OnInit {
     } else {
       this.editMode = false;
     }
+  }
+  save(): void {
+    console.log(this.organizationForm);
   }
 }
