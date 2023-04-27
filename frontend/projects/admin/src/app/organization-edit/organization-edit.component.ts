@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { OrganizationService } from '../shared/organization.service';
-import { Observable, map, of, switchMap } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Organization } from '../model/organization';
 import { ConfigurationService } from '../shared/configuration.service';
 import { InstanceSetting } from '../model/instance-settings';
@@ -22,9 +22,11 @@ export class OrganizationEditComponent implements OnInit {
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly oganizationService: OrganizationService,
+    private readonly organizationService: OrganizationService,
     private readonly configurationService: ConfigurationService,
-    formBuilder: FormBuilder
+    formBuilder: FormBuilder,
+    private readonly router: Router,
+
   ) {
     /*
     "name": "four org",
@@ -34,9 +36,9 @@ export class OrganizationEditComponent implements OnInit {
     "externalId": "abcd" */
 
     this.organizationForm = formBuilder.group({
-      name: [null,  Validators.required],
-      email: [null,  Validators.required],
-      description: [null,  Validators.required],
+      name: [null, Validators.required],
+      email: [null, Validators.required],
+      description: [null, Validators.required],
       slug: [],
       externalId: [],
     });
@@ -48,7 +50,7 @@ export class OrganizationEditComponent implements OnInit {
 
     if (this.organizationId !== null) {
       this.editMode = true;
-      this.organization$ = this.oganizationService.getOrganization(
+      this.organization$ = this.organizationService.getOrganization(
         this.organizationId
       );
     } else {
@@ -56,6 +58,13 @@ export class OrganizationEditComponent implements OnInit {
     }
   }
   save(): void {
-    console.log(this.organizationForm);
+
+    this.organizationService
+      .create(this.organizationForm.value)
+      .subscribe((result) => {
+        if(result === 'OK'){
+          this.router.navigate(['/organizations'])
+        };
+      });
   }
 }
