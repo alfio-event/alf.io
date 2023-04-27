@@ -1,7 +1,9 @@
 <!-- {{organizations$ | async | json}} -->
 
-<table class="table table-striped"  >
-  <thead >
+<a [routerLink]="['/organizations/new']">add new</a>
+
+<table class="table table-striped">
+  <thead>
     <tr>
       <th scope="col">Name</th>
       <th scope="col">Description</th>
@@ -12,14 +14,14 @@
   <tbody>
     <tr *ngFor="let org of organizations$ | async">
       <td scope="row">
-       {{org.name}}
+        {{ org.name }}
       </td>
-      <td>{{org.description}}</td>
-      <td>{{org.email}}</td>
+      <td>{{ org.description }}</td>
+      <td>{{ org.email }}</td>
       <td>
-        <button type="button" class="btn" id="">
-          <svg-icon key="edit" size="lg"></svg-icon>
-        </button>
+        <a [routerLink]="['/organizations', org.id, 'edit']" class="btn"
+          ><svg-icon key="edit" size="lg"></svg-icon
+        ></a>
       </td>
     </tr>
   </tbody>
