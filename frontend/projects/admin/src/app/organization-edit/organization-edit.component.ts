@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { OrganizationService } from '../shared/organization.service';
 import { Observable, map, of, switchMap } from 'rxjs';
 import { Organization } from '../model/organization';
@@ -10,8 +10,9 @@ import { Organization } from '../model/organization';
   styleUrls: ['./organization-edit.component.scss'],
 })
 export class OrganizationEditComponent implements OnInit {
-  public organizationId$: Observable<string | null> = of();
+  public organizationId: string | null = null;
   public organization$: Observable<Organization | null> = of();
+  public editMode: boolean | undefined;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -19,11 +20,14 @@ export class OrganizationEditComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.organizationId$ = this.route.paramMap.pipe(
-      map((pm) => pm.get('organizationId'))
-    );
-    this.organization$ = this.organizationId$.pipe(
-      switchMap((v) => (v != null ? this.oganizationService.getOrganization(v) : of()))
-    );
+    this.organizationId = this.route.snapshot.paramMap.get('organizationId');
+    if (this.organizationId !== null) {
+      this.editMode = true;
+      this.organization$ = this.oganizationService.getOrganization(
+        this.organizationId
+      );
+    } else{
+      this.editMode = false;
+    }
   }
 }

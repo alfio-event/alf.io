@@ -1,5 +1,14 @@
+
+<h1>
+  <span *ngIf="!editMode">add new organization</span>
+  <span *ngIf="editMode">edit organization {{(organization$ | async)?.name}}</span>
+</h1>
+
 <p>organization-edit works!</p>
 
 <a [routerLink]="['/organizations']">back</a>
 
-{{organization$ | async | json}}
+<!-- {{organization$ | async | json}} -->
+
+
+
