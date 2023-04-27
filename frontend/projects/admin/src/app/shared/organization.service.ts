@@ -21,4 +21,8 @@ export class OrganizationService {
       organization
     );
   }
+
+  update(organization : Organization) : Observable<any> {
+    return this.httpClient.post<any>('/admin/api/organizations/update', organization);
+  }
 }

@@ -25,17 +25,10 @@ export class OrganizationEditComponent implements OnInit {
     private readonly organizationService: OrganizationService,
     private readonly configurationService: ConfigurationService,
     formBuilder: FormBuilder,
-    private readonly router: Router,
-
+    private readonly router: Router
   ) {
-    /*
-    "name": "four org",
-    "email": "forg@html.com",
-    "description": "hgfhwgefjhgew",
-    "slug": "abcd",
-    "externalId": "abcd" */
-
     this.organizationForm = formBuilder.group({
+      id: [null],
       name: [null, Validators.required],
       email: [null, Validators.required],
       description: [null, Validators.required],
@@ -53,18 +46,23 @@ export class OrganizationEditComponent implements OnInit {
       this.organization$ = this.organizationService.getOrganization(
         this.organizationId
       );
+      this.organization$.subscribe((org) => {
+        if (org) this.organizationForm.patchValue(org);
+      });
     } else {
       this.editMode = false;
     }
   }
-  save(): void {
 
-    this.organizationService
-      .create(this.organizationForm.value)
-      .subscribe((result) => {
-        if(result === 'OK'){
-          this.router.navigate(['/organizations'])
-        };
-      });
+  save(): void {
+    const action = this.editMode
+      ? this.organizationService.update
+      : this.organizationService.create;
+
+    action(this.organizationForm.value).subscribe((result) => {
+      if (result === 'OK') {
+        this.router.navigate(['/organizations']);
+      }
+    });
   }
 }
