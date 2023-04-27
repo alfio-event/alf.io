@@ -1,14 +1,43 @@
-
 <h1>
   <span *ngIf="!editMode">add new organization</span>
-  <span *ngIf="editMode">edit organization {{(organization$ | async)?.name}}</span>
+  <span *ngIf="editMode"
+    >edit organization {{ (organization$ | async)?.name }}</span
+  >
 </h1>
 
-<p>organization-edit works!</p>
+<form>
+  <h2>Organizer Data</h2>
+  <div class="form-group">
+    <label for="organizationName">Name</label>
+    <input id="organizationName" type="text" class="form-control" />
+  </div>
+  <div class="form-group">
+    <label for="organizationEmail">Email address</label>
+    <input id="organizationEmail" type="email" class="form-control" />
+  </div>
+  <div class="form-group">
+    <label for="organizationDescription"> Description</label>
+    <textarea id="organizationDescription" class="form-control"> </textarea>
+  </div>
+  <h2>Advanced Configuration</h2>
+  <div class="form-group">
+    <label for="organizationSlug">Slug</label>
+    <div class="input-group ">
+      <div class="input-group-prepend">
+        <span class="input-group-text">http://localhost:8080/o/</span>
+      </div>
+      <input type="text" class="form-control" id="organizationSlug" >
+      <div class="input-group-append">
+        <span class="input-group-text">/</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="organizationExternalId">External ID (OpenID organization ID) </label>
+      <input id="organizationExternalId" type="text" class="form-control" />
+    </div>
+  </div>
+</form>
 
 <a [routerLink]="['/organizations']">back</a>
 
 <!-- {{organization$ | async | json}} -->
-
-
-
