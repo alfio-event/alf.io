@@ -1,6 +1,7 @@
 import {NgModule} from '@angular/core';
 import {PreloadAllModules, RouterModule, Routes} from '@angular/router';
 import {MissingOrgComponent} from './missing-org/missing-org.component';
+import { OrganizationsComponent } from './organizations/organizations.component';
 
 const routes: Routes = [
   {
@@ -14,6 +15,10 @@ const routes: Routes = [
   {
     path: 'authentication',
     loadChildren: () => import('./authentication/authentication.module').then(m => m.AuthenticationModule)
+  },
+  {
+    path: 'organizations',
+    component: OrganizationsComponent,
   },
   {
     path: '',

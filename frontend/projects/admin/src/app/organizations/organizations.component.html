@@ -1,0 +1,26 @@
+<!-- {{organizations$ | async | json}} -->
+
+<table class="table table-striped"  >
+  <thead >
+    <tr>
+      <th scope="col">Name</th>
+      <th scope="col">Description</th>
+      <th scope="col">Email</th>
+      <th scope="col" class="col-edit">Edit</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let org of organizations$ | async">
+      <td scope="row">
+       {{org.name}}
+      </td>
+      <td>{{org.description}}</td>
+      <td>{{org.email}}</td>
+      <td>
+        <button type="button" class="btn" id="">
+          <svg-icon key="edit" size="lg"></svg-icon>
+        </button>
+      </td>
+    </tr>
+  </tbody>
+</table>

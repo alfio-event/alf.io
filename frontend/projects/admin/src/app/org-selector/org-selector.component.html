@@ -9,7 +9,7 @@
       <th scope="col">Name</th>
       <th scope="col">Description</th>
       <th scope="col">Email</th>
-      <th scope="col">Edit</th>
+
     </tr>
   </thead>
   <tbody>
@@ -19,11 +19,7 @@
       </td>
       <td>{{org.description}}</td>
       <td>{{org.email}}</td>
-      <td>
-        <button type="button" class="btn" id="">
-          <svg-icon key="edit" size="lg"></svg-icon>
-        </button>
-      </td>
+
     </tr>
   </tbody>
 </table>
@@ -36,11 +32,11 @@
   </ul> -->
 </div>
 <div class="modal-footer">
-  <!-- <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')" translate="common.close"></button> -->
+  <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')" translate="common.close"></button>
 
 
-  <button type="button" class="btn" id="">
+  <!-- <button type="button" class="btn" id="">
     <svg-icon key="add-circle-new" size="lg"></svg-icon>
     Add New
-  </button>
+  </button> -->
 </div>
