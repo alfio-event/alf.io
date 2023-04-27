@@ -1,7 +1,7 @@
 <h1>
-  <span *ngIf="!editMode">add new organization</span>
+  <span *ngIf="!editMode">Add new organization</span>
   <span *ngIf="editMode"
-    >edit organization {{ (organization$ | async)?.name }}</span
+    >Edit organization {{ (organization$ | async)?.name }}</span
   >
 </h1>
 
@@ -24,7 +24,7 @@
     <label for="organizationSlug">Slug</label>
     <div class="input-group ">
       <div class="input-group-prepend">
-        <span class="input-group-text">http://localhost:8080/o/</span>
+        <span class="input-group-text">{{(instanceSetting$ | async)?.baseUrl}}/o/</span>
       </div>
       <input type="text" class="form-control" id="organizationSlug" >
       <div class="input-group-append">
@@ -41,3 +41,4 @@
 <a [routerLink]="['/organizations']">back</a>
 
 <!-- {{organization$ | async | json}} -->
+{{instanceSetting$ | async | json}}
