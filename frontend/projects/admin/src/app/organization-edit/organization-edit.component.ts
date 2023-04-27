@@ -5,6 +5,7 @@ import { Observable, map, of, switchMap } from 'rxjs';
 import { Organization } from '../model/organization';
 import { ConfigurationService } from '../shared/configuration.service';
 import { InstanceSetting } from '../model/instance-settings';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-organization-edit',
@@ -16,13 +17,29 @@ export class OrganizationEditComponent implements OnInit {
   public organization$: Observable<Organization | null> = of();
   public editMode: boolean | undefined;
   public instanceSetting$: Observable<InstanceSetting> = of();
+  public organizationForm: FormGroup;
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly oganizationService: OrganizationService,
-    private readonly configurationService : ConfigurationService,
+    private readonly configurationService: ConfigurationService,
+    formBuilder: FormBuilder
+  ) {
+    /*
+    "name": "four org",
+    "email": "forg@html.com",
+    "description": "hgfhwgefjhgew",
+    "slug": "abcd",
+    "externalId": "abcd" */
 
-  ) {}
+    this.organizationForm = formBuilder.group({
+      name: [],
+      email: [],
+      description: [],
+      slug: [],
+      externalId: [],
+    });
+  }
 
   ngOnInit(): void {
     this.organizationId = this.route.snapshot.paramMap.get('organizationId');
@@ -33,7 +50,7 @@ export class OrganizationEditComponent implements OnInit {
       this.organization$ = this.oganizationService.getOrganization(
         this.organizationId
       );
-    } else{
+    } else {
       this.editMode = false;
     }
   }

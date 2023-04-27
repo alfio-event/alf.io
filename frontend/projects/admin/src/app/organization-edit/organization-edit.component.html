@@ -5,19 +5,19 @@
   >
 </h1>
 
-<form>
+<form [formGroup]="organizationForm">
   <h2>Organizer Data</h2>
   <div class="form-group">
     <label for="organizationName">Name</label>
-    <input id="organizationName" type="text" class="form-control" />
+    <input id="organizationName" type="text" class="form-control" formControlName="name">
   </div>
   <div class="form-group">
     <label for="organizationEmail">Email address</label>
-    <input id="organizationEmail" type="email" class="form-control" />
+    <input id="organizationEmail" type="email" class="form-control" formControlName="email">
   </div>
   <div class="form-group">
     <label for="organizationDescription"> Description</label>
-    <textarea id="organizationDescription" class="form-control"> </textarea>
+    <textarea id="organizationDescription" class="form-control" formControlName="description"> </textarea>
   </div>
   <h2>Advanced Configuration</h2>
   <div class="form-group">
@@ -26,14 +26,14 @@
       <div class="input-group-prepend">
         <span class="input-group-text">{{(instanceSetting$ | async)?.baseUrl}}/o/</span>
       </div>
-      <input type="text" class="form-control" id="organizationSlug" >
+      <input type="text" class="form-control" id="organizationSlug" formControlName="slug">
       <div class="input-group-append">
         <span class="input-group-text">/</span>
       </div>
     </div>
     <div class="form-group">
       <label for="organizationExternalId">External ID (OpenID organization ID) </label>
-      <input id="organizationExternalId" type="text" class="form-control" />
+      <input id="organizationExternalId" type="text" class="form-control" formControlName="externalId" />
     </div>
   </div>
 </form>
@@ -41,4 +41,5 @@
 <a [routerLink]="['/organizations']">back</a>
 
 <!-- {{organization$ | async | json}} -->
-{{instanceSetting$ | async | json}}
+<!-- {{instanceSetting$ | async | json}} -->
+{{organizationForm.value | json}}

@@ -21,6 +21,7 @@ import {HttpLoginInterceptor, redirectToLogin} from "./shared/http-login.interce
 import {AlfioCommonModule} from "common";
 import { OrganizationsComponent } from './organizations/organizations.component';
 import { OrganizationEditComponent } from './organization-edit/organization-edit.component';
+import { ReactiveFormsModule } from '@angular/forms';
 
 
 export function RedirectToLoginIfNeeded(userService: UserService, router: Router): () => Promise<boolean> {
@@ -51,6 +52,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     AppRoutingModule,
     AuthenticationModule,
     HttpClientModule,
+    ReactiveFormsModule,
     HttpClientXsrfModule.withOptions({
       cookieName: 'XSRF-TOKEN',
       headerName: 'X-CSRF-TOKEN',

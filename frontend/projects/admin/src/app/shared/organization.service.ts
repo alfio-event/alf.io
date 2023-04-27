@@ -14,4 +14,11 @@ export class OrganizationService {
   getOrganization(id: number | string): Observable<Organization> {
     return this.httpClient.get<Organization>(`/admin/api/organizations/${id}`);
   }
+
+  create(organization: Organization): Observable<any> {
+    return this.httpClient.post<any>(
+      '/admin/api/organizations/new',
+      organization
+    );
+  }
 }
