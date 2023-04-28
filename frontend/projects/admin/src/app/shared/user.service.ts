@@ -26,4 +26,8 @@ export class UserService {
   getCurrent(): Observable<UserInfo> {
     return this.httpClient.get<UserInfo>('/admin/api/users/current');
   }
+
+  getAllUsers(): Observable<any> {
+    return this.httpClient.get<any>('/admin/api/users');
+  }
 }
