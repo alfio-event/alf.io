@@ -23,3 +23,19 @@ export enum Role {
     SPONSOR = 'SPONSOR',
     API_CONSUMER = 'API_CONSUMER'
 }
+
+export interface User {
+  id: number;
+  type: UserType;
+  enabled: boolean;
+  validTo: string | null;
+  username: string;
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  validToEpochSecond: number | null;
+  description: string | null;
+  roles: Role[];
+  memberOf: any;
+
+}
