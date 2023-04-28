@@ -1,7 +1,7 @@
 import {Injectable} from "@angular/core";
 import {HttpClient} from "@angular/common/http";
 import {catchError, map, Observable, of} from "rxjs";
-import {UserInfo} from "../model/user";
+import {User, UserInfo} from "../model/user";
 
 @Injectable()
 export class UserService {
@@ -27,7 +27,7 @@ export class UserService {
     return this.httpClient.get<UserInfo>('/admin/api/users/current');
   }
 
-  getAllUsers(): Observable<any> {
-    return this.httpClient.get<any>('/admin/api/users');
+  getAllUsers(): Observable<User[]> {
+    return this.httpClient.get<User[]>('/admin/api/users');
   }
 }

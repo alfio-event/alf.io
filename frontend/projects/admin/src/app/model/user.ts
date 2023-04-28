@@ -1,3 +1,5 @@
+import { Organization } from "./organization";
+
 export interface UserInfo {
     id: number;
     type: UserType;
@@ -36,6 +38,6 @@ export interface User {
   validToEpochSecond: number | null;
   description: string | null;
   roles: Role[];
-  memberOf: any;
+  memberOf: Organization[];
 
 }
