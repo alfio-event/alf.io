@@ -8,6 +8,8 @@ import {Organization} from '../model/organization';
   templateUrl: './org-selector.component.html',
   styleUrls: ['./org-selector.component.scss']
 })
+
+
 export class OrgSelectorComponent implements OnInit {
 
   public organizations$?: Observable<Organization[]>;

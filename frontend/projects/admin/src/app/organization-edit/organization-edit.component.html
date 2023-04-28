@@ -1,0 +1,106 @@
+<div class="container">
+  <h1 class="my-4">
+    <span *ngIf="!editMode">Add a new organization</span>
+    <span *ngIf="editMode"
+      >Edit organization {{ (organization$ | async)?.name }}</span
+    >
+  </h1>
+</div>
+
+<div class="container-sm">
+  <form [formGroup]="organizationForm" (ngSubmit)="save()">
+    <h2 class="my-3">Organizer Data</h2>
+    <hr />
+    <div class="form-group my-3">
+      <label for="organizationName">Name</label>
+      <input
+        id="organizationName"
+        type="text"
+        class="form-control"
+        [class.is-invalid]="
+          organizationName?.invalid &&
+          (organizationName?.dirty || organizationName?.touched)
+        "
+        formControlName="name"
+      />
+    </div>
+    <div class="form-group my-3">
+      <label for="organizationEmail">Email address</label>
+      <input
+        id="organizationEmail"
+        type="email"
+        class="form-control"
+        [class.is-invalid]="
+          organizationEmail?.invalid &&
+          (organizationEmail?.dirty || organizationEmail?.touched)
+        "
+        formControlName="email"
+      />
+    </div>
+    <div class="form-group my-3">
+      <label for="organizationDescription"> Description</label>
+      <textarea
+        id="organizationDescription"
+        class="form-control"
+        [class.is-invalid]="
+          organizationDescription?.invalid &&
+          (organizationDescription?.dirty || organizationDescription?.touched)
+        "
+        formControlName="description"
+      >
+      </textarea>
+    </div>
+    <h2 class="my-4">Advanced Configuration</h2>
+    <hr />
+    <div class="form-group my-3">
+      <label for="organizationSlug">Slug</label>
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text"
+            >{{ (instanceSetting$ | async)?.baseUrl }}/o/</span
+          >
+        </div>
+        <input
+          type="text"
+          class="form-control"
+          id="organizationSlug"
+          formControlName="slug"
+        />
+        <div class="input-group-append">
+          <span class="input-group-text">/</span>
+        </div>
+      </div>
+      <div class="form-group my-3">
+        <label for="organizationExternalId"
+          >External ID (OpenID organization ID)
+        </label>
+        <input
+          id="organizationExternalId"
+          type="text"
+          class="form-control"
+          formControlName="externalId"
+        />
+      </div>
+    </div>
+  </form>
+  <hr />
+  <div class="d-flex justify-content-between">
+    <div>
+      <button
+        class="btn btn-lg btn-outline-secondary"
+        [routerLink]="['/organizations']"
+      >
+        Cancel
+      </button>
+    </div>
+    <div>
+      <button
+        type="submit"
+        class="btn btn-lg btn-primary"
+        [disabled]="organizationForm.invalid"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+</div>

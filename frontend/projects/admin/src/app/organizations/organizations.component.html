@@ -1,0 +1,40 @@
+<div class="container">
+  <h1 class="my-3">Organizations</h1>
+  <hr />
+  <div class="d-flex flex-row-reverse py-3">
+    <button
+      type="button"
+      class="btn btn-success d-flex align-items-center"
+      [routerLink]="['/organizations/new']"
+    >
+      <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+      add new
+    </button>
+  </div>
+</div>
+<div class="container">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Description</th>
+        <th scope="col">Email</th>
+        <th scope="col" class="col-edit">Edit</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let org of organizations$ | async">
+        <td scope="row">
+          {{ org.name }}
+        </td>
+        <td>{{ org.description }}</td>
+        <td>{{ org.email }}</td>
+        <td>
+          <a [routerLink]="['/organizations', org.id, 'edit']" class="btn"
+            ><svg-icon key="edit" size="lg"></svg-icon
+          ></a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

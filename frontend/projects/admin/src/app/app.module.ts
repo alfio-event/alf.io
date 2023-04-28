@@ -19,6 +19,11 @@ import {SectionDashboardComponent} from "./shared/section-dashboard/section-dash
 import {SharedModule} from "./shared/shared.module";
 import {HttpLoginInterceptor, redirectToLogin} from "./shared/http-login.interceptor";
 import {AlfioCommonModule} from "common";
+import { OrganizationsComponent } from './organizations/organizations.component';
+import { OrganizationEditComponent } from './organization-edit/organization-edit.component';
+import { ReactiveFormsModule } from '@angular/forms';
+import { AccessControlComponent } from './access-control/access-control.component';
+
 
 export function RedirectToLoginIfNeeded(userService: UserService, router: Router): () => Promise<boolean> {
   return async () => {
@@ -40,12 +45,16 @@ export function HttpLoaderFactory(http: HttpClient) {
     AppComponent,
     MissingOrgComponent,
     OrgSelectorComponent,
+    OrganizationsComponent,
+    OrganizationEditComponent,
+    AccessControlComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     AuthenticationModule,
     HttpClientModule,
+    ReactiveFormsModule,
     HttpClientXsrfModule.withOptions({
       cookieName: 'XSRF-TOKEN',
       headerName: 'X-CSRF-TOKEN',

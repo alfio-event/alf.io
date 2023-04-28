@@ -10,3 +10,6 @@ export class SectionDashboardComponent {
   hasMenu = false;
 
 }
+
+
+
