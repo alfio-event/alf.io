@@ -30,4 +30,8 @@ export class UserService {
   getAllUsers(): Observable<User[]> {
     return this.httpClient.get<User[]>('/admin/api/users');
   }
+
+  enable(user : User, enabled : boolean) : Observable<string>{
+    return this.httpClient.post<string>(`/admin/api/users/${user.id}/enable/${enabled}`, {});
+  }
 }

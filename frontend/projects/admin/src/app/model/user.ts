@@ -39,5 +39,4 @@ export interface User {
   description: string | null;
   roles: Role[];
   memberOf: Organization[];
-
 }

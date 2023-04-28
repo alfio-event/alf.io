@@ -10,9 +10,17 @@ import { User } from '../model/user';
 })
 export class UserSystemComponent implements OnInit {
   public users$?: Observable<User[]>;
+
   constructor(private readonly userService: UserService) {}
 
   ngOnInit(): void {
     this.users$ = this.userService.getAllUsers();
   }
+
+  enable(user : User){
+    this.userService.enable(user, !user.enabled).subscribe((result) => {
+      this.users$ = this.userService.getAllUsers();
+    });
+  }
+
 }
