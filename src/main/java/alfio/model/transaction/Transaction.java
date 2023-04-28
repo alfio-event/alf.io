@@ -95,4 +95,12 @@ public class Transaction {
     public String getFormattedAmount() {
         return MonetaryUtil.formatCents(priceInCents, currency);
     }
+
+    public String getNotes() {
+        return metadata == null ? null : metadata.get(NOTES_KEY);
+    }
+
+    public boolean isTimestampEditable() {
+        return paymentProxy == PaymentProxy.OFFLINE || paymentProxy == PaymentProxy.ON_SITE;
+    }
 }

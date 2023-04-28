@@ -122,4 +122,9 @@ public interface TransactionRepository {
 
     @Query("update b_transaction set status = 'INVALID' where id = :id")
     int invalidateById(@Bind("id") int id);
+
+    @Query("update b_transaction set metadata = :metadata::jsonb, t_timestamp = :timestamp where id = :id")
+    int updateDetailsById(@Bind("id") int id,
+                          @Bind("metadata") @JSONData Map<String, String> metadata,
+                          @Bind("timestamp") ZonedDateTime timestamp);
 }

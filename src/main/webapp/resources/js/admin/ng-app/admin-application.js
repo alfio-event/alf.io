@@ -222,10 +222,9 @@
                 },
                 controllerAs: 'ctrl'
             })
-            .state('events.single.transactionsList', {
+            .state('events.single.paymentsList', {
                 url: '/transactions/?search',
-                // TODO modify component
-                template: '<reservations-list purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType"></reservations-list>',
+                template: '<payments-list purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType"></payments-list>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
                     this.purchaseContextType = 'event';
