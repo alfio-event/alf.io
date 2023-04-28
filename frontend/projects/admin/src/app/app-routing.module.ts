@@ -3,6 +3,7 @@ import {PreloadAllModules, RouterModule, Routes} from '@angular/router';
 import {MissingOrgComponent} from './missing-org/missing-org.component';
 import { OrganizationsComponent } from './organizations/organizations.component';
 import { OrganizationEditComponent } from './organization-edit/organization-edit.component';
+import { AccessControlComponent } from './access-control/access-control.component';
 
 const routes: Routes = [
   {
@@ -28,6 +29,10 @@ const routes: Routes = [
   {
     path: 'organizations/:organizationId/edit',
     component: OrganizationEditComponent,
+  },
+  {
+    path: 'access-control',
+    component: AccessControlComponent,
   },
   {
     path: '',

@@ -37,6 +37,16 @@ export class OrganizationEditComponent implements OnInit {
     });
   }
 
+  get organizationName() {
+    return this.organizationForm.get('name');
+  }
+  get organizationEmail() {
+    return this.organizationForm.get('email');
+  }
+  get organizationDescription() {
+    return this.organizationForm.get('description');
+  }
+
   ngOnInit(): void {
     this.organizationId = this.route.snapshot.paramMap.get('organizationId');
     this.instanceSetting$ = this.configurationService.loadInstanceSetting();

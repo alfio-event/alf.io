@@ -22,6 +22,7 @@ import {AlfioCommonModule} from "common";
 import { OrganizationsComponent } from './organizations/organizations.component';
 import { OrganizationEditComponent } from './organization-edit/organization-edit.component';
 import { ReactiveFormsModule } from '@angular/forms';
+import { AccessControlComponent } from './access-control/access-control.component';
 
 
 export function RedirectToLoginIfNeeded(userService: UserService, router: Router): () => Promise<boolean> {
@@ -46,6 +47,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     OrgSelectorComponent,
     OrganizationsComponent,
     OrganizationEditComponent,
+    AccessControlComponent,
   ],
   imports: [
     BrowserModule,

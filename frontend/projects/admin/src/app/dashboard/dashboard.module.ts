@@ -25,6 +25,7 @@ import {FilterButtonComponent} from '../shared/filter-button/filter-button.compo
       { path: 'subscriptions', component: SubscriptionsComponent },
       { path: 'organization-info', component: OrganizationInfoComponent },
       { path: 'groups', component: GroupsComponent },
+
     ]),
     SvgIconComponent,
     FilterButtonComponent,
