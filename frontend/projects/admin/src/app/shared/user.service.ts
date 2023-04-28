@@ -34,4 +34,8 @@ export class UserService {
   enable(user : User, enabled : boolean) : Observable<string>{
     return this.httpClient.post<string>(`/admin/api/users/${user.id}/enable/${enabled}`, {});
   }
+
+  deleteUser(user : User) : Observable<string>{
+    return this.httpClient.delete<string>(`/admin/api/users/${user.id}`);
+  }
 }

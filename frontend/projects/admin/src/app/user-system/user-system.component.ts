@@ -23,4 +23,11 @@ export class UserSystemComponent implements OnInit {
     });
   }
 
+  deleteUser(user : User) {
+    if (window.confirm(`The user ${user.username} will be deleted. Are you sure?`)){
+      this.userService.deleteUser(user).subscribe((result) => {
+        this.users$ = this.userService.getAllUsers();
+      })
+    }
+  }
 }
