@@ -1,42 +1,39 @@
-<div class=" modal-header modal-dialog-centered ">
+<div class="modal-header modal-dialog-centered">
   <h4 class="modal-title" translate="admin.organization.select"></h4>
-  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss('Cross click')"></button>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="activeModal.dismiss('Cross click')"
+  ></button>
 </div>
-<div class="modal-body modal-dialog modal-lg ">
-<table class="table table-striped"  >
-  <thead >
-    <tr>
-      <th scope="col">Name</th>
-      <th scope="col">Description</th>
-      <th scope="col">Email</th>
-
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let org of organizations$ | async">
-      <td scope="row">
-        <button class="btn btn-link" (click)="selectOrganization(org)">{{org.name}}</button>
-      </td>
-      <td>{{org.description}}</td>
-      <td>{{org.email}}</td>
-
-    </tr>
-  </tbody>
-</table>
-
-  <!-- <ul>
-      <li *ngFor="let org of organizations$ | async">
-          <button class="btn btn-link" (click)="selectOrganization(org)">{{org.email}}</button>
-
-      </li>
-  </ul> -->
+<div class="modal-body modal-dialog modal-lg">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Description</th>
+        <th scope="col">Email</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let org of organizations$ | async">
+        <td scope="row">
+          <button class="btn btn-link" (click)="selectOrganization(org)">
+            {{ org.name }}
+          </button>
+        </td>
+        <td>{{ org.description }}</td>
+        <td>{{ org.email }}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 <div class="modal-footer">
-  <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')" translate="common.close"></button>
-
-
-  <!-- <button type="button" class="btn" id="">
-    <svg-icon key="add-circle-new" size="lg"></svg-icon>
-    Add New
-  </button> -->
+  <button
+    type="button"
+    class="btn btn-outline-dark"
+    (click)="activeModal.close('Close click')"
+    translate="common.close"
+  ></button>
 </div>

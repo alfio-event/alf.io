@@ -1,15 +1,16 @@
-<!-- {{organizations$ | async | json}} -->
 <div class="container">
   <h1 class="my-3">Organizations</h1>
   <hr />
-  <div class="d-flex flex-row-reverse py-3"><button
-    type="button"
-    class="btn btn-success d-flex align-items-center"
-    [routerLink]="['/organizations/new']"
-  > <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
-    add new
-  </button></div>
-
+  <div class="d-flex flex-row-reverse py-3">
+    <button
+      type="button"
+      class="btn btn-success d-flex align-items-center"
+      [routerLink]="['/organizations/new']"
+    >
+      <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+      add new
+    </button>
+  </div>
 </div>
 <div class="container">
   <table class="table table-striped">
