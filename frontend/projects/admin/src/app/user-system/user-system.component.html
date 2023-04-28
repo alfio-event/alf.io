@@ -1,2 +1,33 @@
-<p>user-system works!</p>
-{{users$ | async | json}}
+<h1>Users</h1>
+
+<div class="container">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Username</th>
+        <th scope="col">Name</th>
+        <th scope="col">Role</th>
+        <th scope="col">Member of</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let user of users$ | async">
+        <td scope="row">
+          {{ user.username }}
+        </td>
+        <td>{{user.firstName}} {{user.lastName}}</td>
+        <td>{{user.roles}}</td>
+        <td>{{user.memberOf}}</td>
+        <td>
+          <a [routerLink]="['/system/user', user.id, 'edit']" class="btn"
+            ><svg-icon key="edit" size="lg"></svg-icon
+          ></a>
+          <button class="btn">Reset password</button>
+          <button class="btn btn-warning">Disable</button>
+          <button class="btn btn-danger">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
