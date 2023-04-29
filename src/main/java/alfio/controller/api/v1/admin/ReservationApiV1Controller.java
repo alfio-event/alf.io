@@ -127,8 +127,14 @@ public class ReservationApiV1Controller {
         if(user != null) {
             ticketReservationManager.setReservationOwner(id, user.getUsername(), user.getEmail(), user.getFirstName(), user.getLastName(), locale.getLanguage());
         }
-        if(creationRequest.getReservationConfiguration() != null) {
-            ticketReservationManager.setReservationMetadata(id, new ReservationMetadata(creationRequest.getReservationConfiguration().isHideContactData(), false, false));
+        var reservationConfiguration = creationRequest.getReservationConfiguration();
+        if(reservationConfiguration != null) {
+            var reservationMetadata = new ReservationMetadata(reservationConfiguration.isHideContactData(),
+                false,
+                false,
+                reservationConfiguration.isHideConfirmationButtons(),
+                reservationConfiguration.isLockEmailEdit());
+            ticketReservationManager.setReservationMetadata(id, reservationMetadata);
         }
         var subscriptionId = creationRequest instanceof TicketReservationCreationRequest ? ((TicketReservationCreationRequest) creationRequest).getSubscriptionId() : null;
         return CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, purchaseContext, locale.getLanguage(), user != null, subscriptionId));

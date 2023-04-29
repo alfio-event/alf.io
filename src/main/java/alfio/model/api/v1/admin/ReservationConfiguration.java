@@ -21,13 +21,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ReservationConfiguration {
     private final boolean hideContactData;
+    private final boolean hideConfirmationButtons;
+    private final boolean lockEmailEdit;
 
     @JsonCreator
-    public ReservationConfiguration(@JsonProperty("hideContactData") boolean hideContactData) {
-        this.hideContactData = hideContactData;
+    public ReservationConfiguration(@JsonProperty("hideContactData") Boolean hideContactData,
+                                    @JsonProperty("hideConfirmationButtons") Boolean hideConfirmationButtons,
+                                    @JsonProperty("lockEmailEdit") Boolean lockEmailEdit) {
+        this.hideContactData = Boolean.TRUE.equals(hideContactData);
+        this.hideConfirmationButtons = Boolean.TRUE.equals(hideConfirmationButtons);
+        this.lockEmailEdit = Boolean.TRUE.equals(lockEmailEdit);
     }
 
     public boolean isHideContactData() {
         return hideContactData;
+    }
+
+    public boolean isHideConfirmationButtons() {
+        return hideConfirmationButtons;
+    }
+
+    public boolean isLockEmailEdit() {
+        return lockEmailEdit;
     }
 }
