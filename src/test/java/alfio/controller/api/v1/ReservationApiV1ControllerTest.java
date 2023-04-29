@@ -48,10 +48,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -126,7 +124,7 @@ class ReservationApiV1ControllerTest {
         var creationRequest = new TicketReservationCreationRequest(
             List.of(ticket),
             List.of(),
-            new ReservationConfiguration(true),
+            new ReservationConfiguration(true, false, true),
             null,
             null,
             "en",
@@ -155,6 +153,8 @@ class ReservationApiV1ControllerTest {
         var reservationMetadata = ticketReservationRepository.getMetadata(reservationId);
         assertNotNull(reservationMetadata);
         assertTrue(reservationMetadata.isHideContactData());
+        assertFalse(reservationMetadata.isHideConfirmationButtons());
+        assertTrue(reservationMetadata.isLockEmailEdit());
     }
 
     @Test
@@ -420,7 +420,7 @@ class ReservationApiV1ControllerTest {
         var reservationRequest = new SubscriptionReservationCreationRequest(Map.of("key", "value"),
             new ReservationUser("test@test.org", "Test", "Test1", "test@test.org", null),
             "en",
-            new ReservationConfiguration(true),
+            new ReservationConfiguration(true, false, false),
             null);
         var reservationResponse = controller.createSubscriptionReservation(descriptorId, reservationRequest, principal);
         assertTrue(reservationResponse.getStatusCode().is2xxSuccessful());

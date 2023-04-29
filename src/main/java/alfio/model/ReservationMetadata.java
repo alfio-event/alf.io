@@ -24,14 +24,20 @@ public class ReservationMetadata {
     private final boolean hideContactData;
     private final boolean readyForConfirmation;
     private final boolean finalized;
+    private final boolean hideConfirmationButtons;
+    private final boolean lockEmailEdit;
 
     @JsonCreator
     public ReservationMetadata(@JsonProperty("hideContactData") Boolean hideContactData,
                                @JsonProperty("readyForConfirmation") Boolean readyForConfirmation,
-                               @JsonProperty("finalized") Boolean finalized) {
+                               @JsonProperty("finalized") Boolean finalized,
+                               @JsonProperty("hideConfirmationButtons") Boolean hideConfirmationButtons,
+                               @JsonProperty("lockEmailEdit") Boolean lockEmailEdit) {
         this.hideContactData = Boolean.TRUE.equals(hideContactData);
         this.readyForConfirmation = Boolean.TRUE.equals(readyForConfirmation);
         this.finalized = Boolean.TRUE.equals(finalized);
+        this.hideConfirmationButtons = Boolean.TRUE.equals(hideConfirmationButtons);
+        this.lockEmailEdit = Boolean.TRUE.equals(lockEmailEdit);
     }
 
     public boolean isHideContactData() {
@@ -46,11 +52,19 @@ public class ReservationMetadata {
         return readyForConfirmation;
     }
 
+    public boolean isHideConfirmationButtons() {
+        return hideConfirmationButtons;
+    }
+
+    public boolean isLockEmailEdit() {
+        return lockEmailEdit;
+    }
+
     public ReservationMetadata withFinalized(boolean newValue) {
-        return new ReservationMetadata(hideContactData, readyForConfirmation, newValue);
+        return new ReservationMetadata(hideContactData, readyForConfirmation, newValue, hideConfirmationButtons, lockEmailEdit);
     }
 
     public ReservationMetadata withReadyForConfirmation(boolean newValue) {
-        return new ReservationMetadata(hideContactData, newValue, finalized);
+        return new ReservationMetadata(hideContactData, newValue, finalized, hideConfirmationButtons, lockEmailEdit);
     }
 }
