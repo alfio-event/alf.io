@@ -106,6 +106,13 @@ public interface TicketSearchRepository {
                                                            @Bind("reservationStatus") List<String> toFilter,
                                                            @Bind("paymentMethods") List<String> paymentMethods);
 
+    @Query("select distinct tr_id, tr_first_name, tr_last_name, tr_email_address, tr_payment_method, bt_price_cts, bt_currency, bt_t_timestamp, bt_metadata ->> '"+ Transaction.NOTES_KEY + "'" +
+        " as bt_notes, tr_invoice_number from (" + FIND_ALL_PAYMENTS_FOR_EVENT + ") as d_tbl order by bt_t_timestamp desc nulls last")
+    List<ReservationPaymentDetail> findAllEventPaymentsForExport(@Bind("eventId") int eventId,
+                                                                 @Bind("search") String search,
+                                                                 @Bind("reservationStatus") List<String> toFilter,
+                                                                 @Bind("paymentMethods") List<String> paymentMethods);
+
     @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_SUBSCRIPTION_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity limit :pageSize offset :page")
     List<TicketReservation> findReservationsForSubscription(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                                                             @Bind("page") int page,

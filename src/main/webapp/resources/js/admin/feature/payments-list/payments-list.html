@@ -4,7 +4,7 @@
     </div>
 
     <div class="row">
-        <div class="col-xs-12">
+        <div class="col-xs-10">
             <div class="form-group">
                 <label class="sr-only" for="filter-reservations">Filter Payments</label>
                 <div class="input-group">
@@ -18,10 +18,13 @@
                 </div>
             </div>
         </div>
+        <div class="col-xs-2" ng-if="$ctrl.foundReservations > 0">
+            <a class="btn btn-block btn-default" ng-href="/admin/api/payments/{{$ctrl.purchaseContext.type}}/{{$ctrl.purchaseContext.publicIdentifier}}/download?search={{$ctrl.toSearch}}" target="_blank" rel="noopener"><i class="fa fa-download"></i> Export</a>
+        </div>
     </div>
 
+    <div class="alert alert-info text-center wMarginTop10px" ng-if="$ctrl.foundReservations == 0"><i class="fa fa-info-circle"></i> No payments found</div>
     <div class="table-responsive" ng-if="$ctrl.foundReservations > 0">
-        <div class="alert alert-info text-center wMarginTop10px" ng-if="$ctrl.foundReservations == 0"><i class="fa fa-info-circle"></i> No reservations found</div>
         <table class="table table-striped">
             <thead>
             <tr>
@@ -37,7 +40,7 @@
             </thead>
             <tbody>
             <tr ng-repeat="r in $ctrl.reservations">
-                <td data-ng-if="$ctrl.targetContextType === 'event'"><a ui-sref="events.single.view-reservation({ eventName : (r.eventPublicIdentifier || $ctrl.purchaseContext.publicIdentifier), reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                <td data-ng-if="$ctrl.targetContextType === 'event'"><a ui-sref="events.single.view-reservation({ eventName : (r.eventPublicIdentifier || $ctrl.purchaseContext.publicIdentifier), reservationId: r.id})" target="_blank"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
                 <td data-ng-if="$ctrl.targetContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
                 <td ng-bind="$ctrl.formatFullName(r)"></td>
                 <td ng-bind="r.email"></td>

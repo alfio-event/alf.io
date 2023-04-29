@@ -75,6 +75,20 @@ public class PurchaseContextSearchManager {
             List<ReservationPaymentDetail> reservationsForEvent = ticketSearchRepository.findAllPaymentsForEvent(event.getId(), offset, PAGE_SIZE, toSearch, toFilter, SUPPORTED_PAYMENT_METHODS);
             return Pair.of(reservationsForEvent, ticketSearchRepository.countConfirmedPaymentsForEvent(event.getId(), toSearch, toFilter, SUPPORTED_PAYMENT_METHODS));
         } else {
+            // functionality is not yet available for subscriptions
+            throw new UnsupportedOperationException("not implemented");
+        }
+    }
+
+    public List<ReservationPaymentDetail> findAllPaymentsForExport(PurchaseContext purchaseContext,  String search) {
+        String toSearch = StringUtils.trimToNull(search);
+        toSearch = toSearch == null ? null : ("%" + toSearch + "%");
+        var toFilter = List.of(TicketReservation.TicketReservationStatus.COMPLETE.name());
+        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+            var event = (Event)purchaseContext;
+            return ticketSearchRepository.findAllEventPaymentsForExport(event.getId(), toSearch, toFilter, SUPPORTED_PAYMENT_METHODS);
+        } else {
+            // functionality is not yet available for subscriptions
             throw new UnsupportedOperationException("not implemented");
         }
     }

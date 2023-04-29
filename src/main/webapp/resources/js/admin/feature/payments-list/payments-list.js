@@ -44,6 +44,9 @@
                 .then(function (res) {
                     ctrl.reservations = res.data.left;
                     ctrl.foundReservations = res.data.right;
+                    setTimeout(function() {
+                        document.getElementById('filter-reservations').focus();
+                    });
                 });
 
             var keys = Object.keys(ctrl.purchaseContext.title);
