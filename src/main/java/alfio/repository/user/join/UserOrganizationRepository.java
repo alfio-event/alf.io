@@ -28,6 +28,9 @@ import java.util.List;
 @QueryRepository
 public interface UserOrganizationRepository {
 
+    @Query("select exists(select 1 from j_user_organization where user_id = :userId and org_id = :organizationId)")
+    boolean userIsInOrganization(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
+
     @Query("select * from j_user_organization where user_id = :userId")
     List<UserOrganization> findByUserId(@Bind("userId") int userId);
 
