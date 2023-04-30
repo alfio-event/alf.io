@@ -28,7 +28,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -44,7 +46,7 @@ import java.util.List;
 @Configuration(proxyBeanMethods = false)
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
 @EnableWebMvc
-@EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60) //4h
+@EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60, tableName = "ALFIO_SPRING_SESSION") //4h
 public class MvcConfiguration implements WebMvcConfigurer {
 
     private final Environment environment;
@@ -127,5 +129,10 @@ public class MvcConfiguration implements WebMvcConfigurer {
         var resolver = new UrlBasedViewResolver();
         resolver.setViewClass(AbstractUrlBasedView.class);
         return resolver;
+    }
+
+    @Bean
+    public SpringSessionBackedSessionRegistry<?> sessionRegistry(FindByIndexNameSessionRepository<?> sessionRepository) {
+        return new SpringSessionBackedSessionRegistry<>(sessionRepository);
     }
 }

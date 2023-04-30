@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -65,6 +66,7 @@ public class UserManager {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
+    private final FindByIndexNameSessionRepository<?> sessionsByPrincipalFinder;
 
 
     private List<Authority> getUserAuthorities(User user) {
@@ -317,6 +319,11 @@ public class UserManager {
         checkAccessToUserId(principal, userId);
         //
         User user = internalFindUser(userId);
+
+        if (!principal.getName().equals(user.getUsername())) {
+            invalidateSessionsForUser(user.getUsername());
+        }
+
         String password = PasswordGenerator.generateRandomPassword();
         Validate.isTrue(userRepository.resetPassword(userId, passwordEncoder.encode(password)) == 1, "error during password reset");
         return new UserWithPassword(user, password, UUID.randomUUID().toString());
@@ -338,7 +345,14 @@ public class UserManager {
         var currentUsername = principal.getName();
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot delete your own account.");
+        var userToDelete = userRepository.findById(userId);
         userRepository.deleteUserAndReferences(userId);
+        invalidateSessionsForUser(userToDelete.getUsername());
+    }
+
+    private void invalidateSessionsForUser(String username) {
+        var sessionsToInvalidate = sessionsByPrincipalFinder.findByPrincipalName(username).keySet();
+        sessionsToInvalidate.forEach(sessionsByPrincipalFinder::deleteById);
     }
 
     public void enable(int userId, boolean status, Principal principal) {
@@ -350,6 +364,11 @@ public class UserManager {
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
 
         userRepository.toggleEnabled(userId, status);
+
+        if (!status) { // disable user
+            var userToDisable = userRepository.findById(userId);
+            invalidateSessionsForUser(userToDisable.getUsername());
+        }
     }
 
     @Transactional(readOnly = true)
