@@ -33,6 +33,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import javax.sql.DataSource;
 
@@ -52,7 +53,8 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
                                   DataSource dataSource,
                                   PasswordEncoder passwordEncoder,
                                   AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager,
-                                  PublicOpenIdAuthenticationManager openIdAuthenticationManager) {
+                                  PublicOpenIdAuthenticationManager openIdAuthenticationManager,
+                                  SpringSessionBackedSessionRegistry<?> sessionRegistry) {
         super(environment,
             userManager,
             recaptchaService,
@@ -60,7 +62,8 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
             csrfTokenRepository,
             dataSource,
             passwordEncoder,
-            openIdAuthenticationManager);
+            openIdAuthenticationManager,
+            sessionRegistry);
         this.adminOpenIdAuthenticationManager = adminOpenIdAuthenticationManager;
     }
 
