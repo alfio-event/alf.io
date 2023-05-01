@@ -62,6 +62,8 @@ public class GoogleWalletManager {
 
     private static final Logger log = LoggerFactory.getLogger(GoogleWalletManager.class);
     private static final String WALLET_OBJECT_ID = "gWalletObjectId";
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String BEARER_PLACEHOLDER = "Bearer %s";
     private final EventRepository eventRepository;
     private final ConfigurationManager configurationManager;
     private final EventDescriptionRepository eventDescriptionRepository;
@@ -99,33 +101,37 @@ public class GoogleWalletManager {
         try {
             Map<ConfigurationKeys, String> passConf = getConfigurationKeys(invalidateAccess.getEvent());
             if (!passConf.isEmpty()) {
-                var objectIdOptional = invalidateAccess.getTicketMetadataContainer()
+                invalidateAccess.getTicketMetadataContainer()
                     .getMetadataForKey(TicketMetadataContainer.GENERAL)
-                    .map(m -> m.getAttributes().get(WALLET_OBJECT_ID));
-                if (objectIdOptional.isPresent()) {
-                    invalidateObject(invalidateAccess.getTicket().getUuid(), objectIdOptional.get(), passConf);
-                }
+                    .map(m -> m.getAttributes().get(WALLET_OBJECT_ID))
+                    .ifPresent(s -> invalidateObject(invalidateAccess.getTicket().getUuid(), s, passConf));
             }
         } catch (Exception e) {
             log.warn("Error while invalidating access for ticket " + invalidateAccess.getTicket().getUuid(), e);
         }
     }
 
-    private void invalidateObject(String ticketId, String objectId, Map<ConfigurationKeys, String> passConf) throws IOException, InterruptedException {
-        log.trace("Invalidating access to object ID: {}", objectId);
-        var credentials = retrieveCredentials(passConf.get(WALLET_SERVICE_ACCOUNT_KEY));
-        URI uriWithId = URI.create(String.format("%s/%s", EventTicketObject.WALLET_URL, objectId));
-        HttpRequest expireRequest = HttpRequest.newBuilder()
-            .uri(uriWithId)
-            .header("Authorization", String.format("Bearer %s", credentials.refreshAccessToken().getTokenValue()))
-            .method("PATCH", HttpRequest.BodyPublishers.ofString("{\"state\":\"INACTIVE\"}"))
-            //.DELETE()
-            .build();
-        var response = httpClient.send(expireRequest, HttpResponse.BodyHandlers.ofString());
-        if (HttpUtils.callSuccessful(response)) {
-            log.debug("Access invalidated for ticket {}", ticketId);
-        } else {
-            log.warn("Cannot invalidate access for ticket {}, response: {}", ticketId, response.body());
+    private void invalidateObject(String ticketId, String objectId, Map<ConfigurationKeys, String> passConf) {
+        try {
+            log.trace("Invalidating access to object ID: {}", objectId);
+            var credentials = retrieveCredentials(passConf.get(WALLET_SERVICE_ACCOUNT_KEY));
+            URI uriWithId = URI.create(String.format("%s/%s", EventTicketObject.WALLET_URL, objectId));
+            HttpRequest expireRequest = HttpRequest.newBuilder()
+                .uri(uriWithId)
+                .header(AUTHORIZATION, String.format(BEARER_PLACEHOLDER, credentials.refreshAccessToken().getTokenValue()))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString("{\"state\":\"INACTIVE\"}"))
+                .build();
+            var response = httpClient.send(expireRequest, HttpResponse.BodyHandlers.ofString());
+            if (HttpUtils.callSuccessful(response)) {
+                log.debug("Access invalidated for ticket {}", ticketId);
+            } else {
+                logIfWarnEnabled(() -> log.warn("Cannot invalidate access for ticket {}, response: {}", ticketId, response.body()));
+            }
+        } catch (IOException e) {
+            throw new GoogleWalletException(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new GoogleWalletException(e.getMessage(), e);
         }
     }
 
@@ -276,7 +282,7 @@ public class GoogleWalletManager {
             URI uriWithId = URI.create(String.format("%s/%s", uri, entity.getId()));
             HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(uriWithId)
-                .header("Authorization", String.format("Bearer %s", credentials.refreshAccessToken().getTokenValue()))
+                .header(AUTHORIZATION, String.format(BEARER_PLACEHOLDER, credentials.refreshAccessToken().getTokenValue()))
                 .GET()
                 .build();
             log.debug("GET Request: {}", getRequest);
@@ -284,13 +290,13 @@ public class GoogleWalletManager {
             HttpResponse<String> getResponse = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
             log.debug("GET Response: {}", getResponse);
             if (getResponse.statusCode() != 200 && getResponse.statusCode() != 404) {
-                log.warn("Received {} status code when creating entity but 200 or 404 were expected: {}", getResponse.statusCode(), getResponse.body());
+                logIfWarnEnabled(() -> log.warn("Received {} status code when creating entity but 200 or 404 were expected: {}", getResponse.statusCode(), getResponse.body()));
                 throw new GoogleWalletException("Cannot create Wallet class. Response status: " + getResponse.statusCode());
             }
 
             if (getResponse.statusCode() == 404 || overwritePreviousClassesAndEvents) {
                 HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .header("Authorization", String.format("Bearer %s", credentials.refreshAccessToken().getTokenValue()));
+                    .header(AUTHORIZATION, String.format(BEARER_PLACEHOLDER, credentials.refreshAccessToken().getTokenValue()));
                 if (getResponse.statusCode() == 404) {
                     builder = builder
                         .uri(URI.create(uri))
@@ -305,7 +311,7 @@ public class GoogleWalletManager {
                 HttpResponse<String> postOrPutResponse = httpClient.send(postOrPutRequest, HttpResponse.BodyHandlers.ofString());
                 log.debug("POST or PUT Response: {}", postOrPutResponse);
                 if (postOrPutResponse.statusCode() != 200) {
-                    log.warn("Received {} status code when creating entity: {}", postOrPutResponse.statusCode(), postOrPutResponse.body());
+                    logIfWarnEnabled(() -> log.warn("Received {} status code when creating entity: {}", postOrPutResponse.statusCode(), postOrPutResponse.body()));
                     throw new GoogleWalletException("Cannot create wallet. Response status: " + postOrPutResponse.statusCode());
                 }
             }
@@ -327,6 +333,17 @@ public class GoogleWalletManager {
             return "live";
         }
         return profile;
+    }
+
+    private void logIfWarnEnabled(ConditionalLogger logger) {
+        if (log.isWarnEnabled()) {
+            logger.log();
+        }
+    }
+
+    @FunctionalInterface
+    private interface ConditionalLogger {
+        void log();
     }
 
 }
