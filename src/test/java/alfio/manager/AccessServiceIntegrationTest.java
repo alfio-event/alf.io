@@ -44,7 +44,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import javax.sql.DataSource;
 import java.security.Principal;
@@ -57,8 +56,7 @@ import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 class AccessServiceIntegrationTest {
 
-    @EnableWebMvc
-    @Configuration
+
     static class CustomContextConfiguration extends FormBasedWebSecurity {
         public CustomContextConfiguration(Environment environment,
                                           UserManager userManager,
