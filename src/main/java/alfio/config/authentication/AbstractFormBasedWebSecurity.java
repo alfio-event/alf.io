@@ -41,6 +41,7 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.Cookie;
@@ -64,6 +65,7 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
     private final PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager;
+    private final SpringSessionBackedSessionRegistry<?> sessionRegistry;
 
     @Override
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -156,7 +158,10 @@ abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter
             .loginPage("/authentication")
             .loginProcessingUrl(AUTHENTICATE)
             .failureUrl("/authentication?failed")
-            .and().logout().permitAll();
+            .and().logout().permitAll()
+            .and()
+            // this allows us to sync between spring session and spring security, thus saving the principal name in the session table
+            .sessionManagement().maximumSessions(-1).sessionRegistry(sessionRegistry);
 
         http.addFilterBefore(openIdPublicCallbackLoginFilter(publicOpenIdAuthenticationManager), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(openIdPublicAuthenticationFilter(publicOpenIdAuthenticationManager), AnonymousAuthenticationFilter.class);

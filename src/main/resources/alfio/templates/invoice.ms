@@ -275,7 +275,7 @@
           </table>
           {{#italianEInvoicing}}
               <!-- the following text is in Italian and is required by law. It will only appear if the italian "e-invoice" data collection is active -->
-              <p class="small">Il presente documento non costituisce fattura valida ai fini del DpR 633 26/10/1972 e successive modifiche. La fattura definitiva verrà emessa all’atto del pagamento del corrispettivo (articolo 6, comma 3, DpR 633/72).</p>
+              <p class="small">Documento privo di valenza fiscale ai sensi dell’art. 21 Dpr 633/72. L’originale è disponibile all’indirizzo telematico da Lei fornito oppure nella Sua area riservata dell’Agenzia delle Entrate.</p>
           {{/italianEInvoicing}}
         {{/invoicingAdditionalInfo}}
     </div>

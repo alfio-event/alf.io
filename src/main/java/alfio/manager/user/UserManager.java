@@ -16,6 +16,7 @@
  */
 package alfio.manager.user;
 
+import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
@@ -34,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -46,6 +48,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -63,6 +66,7 @@ public class UserManager {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
+    private final FindByIndexNameSessionRepository<?> sessionsByPrincipalFinder;
 
 
     private List<Authority> getUserAuthorities(User user) {
@@ -123,7 +127,12 @@ public class UserManager {
     }
 
     @Transactional(readOnly = true)
-    public User findUser(int id) {
+    public User findUser(int id, Principal principal) {
+        checkAccessToUserId(principal, id);
+        return internalFindUser(id);
+    }
+
+    private User internalFindUser(int id) {
         return userRepository.findById(id);
     }
 
@@ -200,7 +209,7 @@ public class UserManager {
 
     public void updateOrganization(OrganizationModification om, Principal principal) {
         //
-        var orgId = requireNonNull(om.getId());
+        int orgId = requireNonNull(om.getId());
         checkAccessToOrganizationId(principal, orgId);
         //
         boolean isAdmin = RequestUtils.isAdmin(principal) || RequestUtils.isSystemApiKey(principal);
@@ -309,7 +318,12 @@ public class UserManager {
         //
         checkAccessToUserId(principal, userId);
         //
-        User user = findUser(userId);
+        User user = internalFindUser(userId);
+
+        if (!principal.getName().equals(user.getUsername())) {
+            invalidateSessionsForUser(user.getUsername());
+        }
+
         String password = PasswordGenerator.generateRandomPassword();
         Validate.isTrue(userRepository.resetPassword(userId, passwordEncoder.encode(password)) == 1, "error during password reset");
         return new UserWithPassword(user, password, UUID.randomUUID().toString());
@@ -331,7 +345,14 @@ public class UserManager {
         var currentUsername = principal.getName();
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot delete your own account.");
+        var userToDelete = userRepository.findById(userId);
         userRepository.deleteUserAndReferences(userId);
+        invalidateSessionsForUser(userToDelete.getUsername());
+    }
+
+    private void invalidateSessionsForUser(String username) {
+        var sessionsToInvalidate = sessionsByPrincipalFinder.findByPrincipalName(username).keySet();
+        sessionsToInvalidate.forEach(sessionsByPrincipalFinder::deleteById);
     }
 
     public void enable(int userId, boolean status, Principal principal) {
@@ -343,6 +364,11 @@ public class UserManager {
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
 
         userRepository.toggleEnabled(userId, status);
+
+        if (!status) { // disable user
+            var userToDisable = userRepository.findById(userId);
+            invalidateSessionsForUser(userToDisable.getUsername());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -399,6 +425,10 @@ public class UserManager {
         if (principal == null) {
             return;
         }
+        if (isSystemApiUser(principal)) {
+            log.trace("Allowing call for System API Key");
+            return;
+        }
         if (isAdmin(findUserByUsername(principal.getName()))) {
             return;
         }
@@ -414,8 +444,9 @@ public class UserManager {
         if (isAdmin(currentUser)) {
             return;
         }
-        var targetUser = findUser(userId);
+        var targetUser = internalFindUser(userId);
         var targetUserOrgs = findUserOrganizations(targetUser.getUsername());
+        Assert.state(!targetUser.getUsername().equals(ADMIN_USERNAME) && !isAdmin(targetUser), "Targeted user cannot be admin");
         Assert.isTrue(targetUserOrgs.size() == 1, "Targeted user can only be in one organization");
         for (var org : targetUserOrgs) {
             if (isOwnerOfOrganization(currentUser, org.getId())) {
@@ -435,10 +466,20 @@ public class UserManager {
         if (principal == null) {
             return;
         }
+        if (isSystemApiUser(principal)) {
+            log.trace("Allowing access to Organization " + organizationId + " to System API Key");
+            return;
+        }
         if (isOwnerOfOrganization(principal.getName(), organizationId)) {
             return;
         }
         log.warn("User {} don't have access to organizationId {}", principal.getName(), organizationId);
         throw new IllegalArgumentException("User " + principal.getName() + " don't have access to organizationId " + organizationId);
+    }
+
+    private boolean isSystemApiUser(Principal principal) {
+        return principal instanceof APITokenAuthentication
+            && ((APITokenAuthentication)principal).getAuthorities().stream()
+            .allMatch(authority -> authority.getAuthority().equals("ROLE_" + SYSTEM_API_CLIENT));
     }
 }

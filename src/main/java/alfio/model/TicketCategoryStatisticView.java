@@ -16,8 +16,15 @@
  */
 package alfio.model;
 
+import alfio.model.system.Configuration;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Getter;
+
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Objects;
 
 @Getter
 public class TicketCategoryStatisticView {
@@ -36,6 +43,7 @@ public class TicketCategoryStatisticView {
     private final int stuckCount;
     private final boolean containsOrphanTickets;
     private final boolean containsStuckTickets;
+    private final List<Configuration> configuration;
 
     public TicketCategoryStatisticView(@Column("ticket_category_id") int id,
                                        @Column("max_tickets") int maxTickets,
@@ -49,7 +57,8 @@ public class TicketCategoryStatisticView {
                                        @Column("released_count") int releasedCount,
                                        @Column("stuck_count") int stuckCount,
                                        @Column("is_containing_orphan_tickets") boolean containsOrphanTickets,
-                                       @Column("is_containing_stuck_tickets") boolean containsStuckTickets) {
+                                       @Column("is_containing_stuck_tickets") boolean containsStuckTickets,
+                                       @Column("category_configuration") String configurationJson) {
         this.id = id;
         this.maxTickets = maxTickets;
         this.bounded = bounded;
@@ -63,9 +72,10 @@ public class TicketCategoryStatisticView {
         this.containsOrphanTickets = containsOrphanTickets;
         this.containsStuckTickets = containsStuckTickets;
         this.releasedTicketsCount = releasedCount;
+        this.configuration = Json.fromJson(Objects.requireNonNullElse(configurationJson, "[]"), new TypeReference<>() {});
     }
 
     public static TicketCategoryStatisticView empty(int ticketCategoryId, int eventId) {
-        return new TicketCategoryStatisticView(ticketCategoryId, 0, false, false, eventId, 0, 0, 0, 0, 0, 0, false, false);
+        return new TicketCategoryStatisticView(ticketCategoryId, 0, false, false, eventId, 0, 0, 0, 0, 0, 0, false, false, null);
     }
 }

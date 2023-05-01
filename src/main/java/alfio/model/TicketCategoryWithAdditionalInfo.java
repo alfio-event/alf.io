@@ -19,6 +19,7 @@ package alfio.model;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.StatisticsContainer;
 import alfio.model.modification.TicketWithStatistic;
+import alfio.model.system.Configuration;
 import alfio.util.ClockProvider;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -169,5 +170,9 @@ public class TicketCategoryWithAdditionalInfo implements StatisticsContainer, Pr
     @Override
     public VatStatus getVatStatus() {
         return event.getVatStatus();
+    }
+
+    public List<Configuration> getConfiguration() {
+        return ticketCategoryStatisticView.getConfiguration();
     }
 }
