@@ -25,6 +25,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.modification.MessageModification;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -97,6 +98,11 @@ public class CustomMessageManager {
         Organization organization = eventManager.loadOrganizer(event, username);
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
         var categoriesById = ticketCategoryRepository.findByEventIdAsMap(event.getId());
+        var configuration = configurationManager.getFor(EnumSet.of(ConfigurationKeys.BASE_URL,
+            ConfigurationKeys.ENABLE_WALLET, ConfigurationKeys.ENABLE_PASS, ConfigurationKeys.ENABLE_HTML_EMAILS), event.getConfigurationLevel());
+        var baseUrl = configuration.get(ConfigurationKeys.BASE_URL).getRequiredValue();
+        boolean googleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_WALLET).getValueAsBooleanOrDefault();
+        boolean appleWalletEnabled = configuration.get(ConfigurationKeys.ENABLE_PASS).getValueAsBooleanOrDefault();
 
         sendMessagesExecutor.execute(() -> {
             var messageSource = messageSourceManager.getMessageSourceFor(event);
@@ -115,6 +121,7 @@ public class CustomMessageManager {
                     model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
                     model.addAttribute("ticketURL", ReservationUtil.ticketUpdateUrl(event, t, configurationManager));
                     model.addAttribute("ticketID", t.getUuid());
+                    model.addAttribute("ticket", t);
                     return Triple.of(t, t.getEmail(), model);
                 })
                 .forEach(triple -> {
@@ -128,8 +135,9 @@ public class CustomMessageManager {
                     if(m.isAttachTicket()) {
                         var optionalReservation = ticketReservationManager.findById(ticket.getTicketsReservationId());
                         var optionalTicketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId());
+                        boolean onlineTicket = optionalTicketCategory.isPresent() && EventUtil.isAccessOnline(optionalTicketCategory.get(), event);
 
-                        if(optionalReservation.isPresent() && optionalTicketCategory.isPresent() && EventUtil.isAccessOnline(optionalTicketCategory.get(), event)) {
+                        if(optionalReservation.isPresent() && onlineTicket) {
                             var onlineCheckInModel = new HashMap<>(TicketCheckInUtil.getOnlineCheckInInfo(
                                 extensionManager,
                                 eventRepository,
@@ -149,10 +157,23 @@ public class CustomMessageManager {
                             text.append(notificationManager.buildOnlineCheckInText(onlineCheckInModel, Locale.forLanguageTag(ticket.getUserLanguage()), messageSource));
                             templateModel.putAll(onlineCheckInModel);
                         } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
-                            attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
+                            boolean htmlEmailsEnabled = configuration.get(ConfigurationKeys.ENABLE_HTML_EMAILS).getValueAsBooleanOrDefault();
+                            attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization, htmlEmailsEnabled));
                         }
+                        templateModel.put("googleWalletEnabled", googleWalletEnabled && !onlineTicket);
+                        templateModel.put("appleWalletEnabled", appleWalletEnabled && !onlineTicket);
+                        templateModel.put("walletEnabled", (googleWalletEnabled || appleWalletEnabled) && !onlineTicket);
+                    } else {
+                        // ticket attachment was not requested. Do not display wallet
+                        templateModel.put("googleWalletEnabled", false);
+                        templateModel.put("appleWalletEnabled", false);
+                        templateModel.put("walletEnabled", false);
                     }
-                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, () -> RenderedTemplate.plaintext(text.toString(), templateModel), attachments);
+                    templateModel.put("message", text);
+                    templateModel.put("event", event);
+                    templateModel.put("baseUrl", baseUrl);
+                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject,
+                        () -> templateManager.renderTemplate(event, TemplateResource.CUSTOM_MESSAGE, templateModel, Locale.forLanguageTag(ticket.getUserLanguage())), attachments);
                 });
         });
 
@@ -175,8 +196,15 @@ public class CustomMessageManager {
                 .collect(Collectors.toList());
     }
 
-    public static Mailer.Attachment generateTicketAttachment(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {
+    public static Mailer.Attachment generateTicketAttachment(Ticket ticket,
+                                                             TicketReservation reservation,
+                                                             TicketCategory ticketCategory,
+                                                             Organization organization,
+                                                             boolean htmlEmailEnabled) {
         Map<String, String> model = getModelForTicket(ticket, reservation, ticketCategory, organization);
+        if (htmlEmailEnabled) {
+            model.put(Mailer.SKIP_PASSBOOK, "true");
+        }
         return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, MediaType.APPLICATION_PDF_VALUE, model, Mailer.AttachmentIdentifier.TICKET_PDF);
     }
 

@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -24,6 +25,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.LocaleUtil;
+import alfio.util.MustacheCustomTag;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ryantenney.passkit4j.Pass;
@@ -33,6 +35,8 @@ import com.ryantenney.passkit4j.model.*;
 import com.ryantenney.passkit4j.sign.PassSigner;
 import com.ryantenney.passkit4j.sign.PassSignerImpl;
 import com.ryantenney.passkit4j.sign.PassSigningException;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.imgscalr.Scalr;
 import org.slf4j.Logger;
@@ -100,6 +104,10 @@ public class PassKitManager {
 
     byte[] getPass(Map<String, String> model) {
         try {
+            if (BooleanUtils.TRUE.equals(model.get(Mailer.SKIP_PASSBOOK))) {
+                log.trace("HTML email enabled. Skipping passbook generation");
+                return null;
+            }
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
             int eventId = ticket.getEventId();
             Event event = eventRepository.findById(eventId);
@@ -165,7 +173,8 @@ public class PassKitManager {
         String privateKeyAlias = config.get(PASSBOOK_PRIVATE_KEY_ALIAS);
 
 
-        String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse("");
+        String eventDescription = MustacheCustomTag.renderToTextCommonmark(
+            eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse(""));
         TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
         var ticketValidityStart = Optional.ofNullable(category.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
         Pass pass = new Pass()
@@ -241,6 +250,14 @@ public class PassKitManager {
     private String buildAuthenticationToken(Ticket ticket, EventAndOrganizationId event, String privateKey) {
         var code = event.getId() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
         return Ticket.hmacSHA256Base64(privateKey, code);
+    }
+
+    public Optional<Pair<EventAndOrganizationId, Ticket>> retrieveTicketDetails(String eventName, String ticketUuid) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .flatMap(e -> ticketRepository.findOptionalByUUID(ticketUuid)
+                .filter(t -> e.getId() == t.getEventId())
+                .map(t -> Pair.of(e, t))
+            );
     }
 
     public Optional<Pair<EventAndOrganizationId, Ticket>> validateToken(String eventName, String typeIdentifier, String ticketUuid, String authorizationHeader) {

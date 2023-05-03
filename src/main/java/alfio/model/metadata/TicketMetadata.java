@@ -80,6 +80,9 @@ public class TicketMetadata {
     public static TicketMetadata empty() {
         return new TicketMetadata(null, null, Map.of());
     }
+    public TicketMetadata withAttributes(Map<String, String> attributes) {
+        return new TicketMetadata(joinLink, Map.copyOf(linkDescription), Map.copyOf(attributes));
+    }
 
     public static TicketMetadata copyOf(TicketMetadata src) {
         if (src != null) {

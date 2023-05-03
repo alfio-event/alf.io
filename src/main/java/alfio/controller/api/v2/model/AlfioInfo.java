@@ -30,6 +30,7 @@ public class AlfioInfo {
     private final String globalTermsUrl;
     private final InvoicingConfiguration invoicingConfiguration;
     private final String announcementBannerContentHTML;
+    private final WalletConfiguration walletConfiguration;
 
     public AlfioInfo(boolean demoModeEnabled,
                      boolean devModeEnabled,
@@ -38,7 +39,8 @@ public class AlfioInfo {
                      String globalPrivacyPolicyUrl,
                      String globalTermsUrl,
                      InvoicingConfiguration invoicingConfiguration,
-                     String announcementBannerContentHTML) {
+                     String announcementBannerContentHTML,
+                     WalletConfiguration walletConfiguration) {
         this.demoModeEnabled = demoModeEnabled;
         this.devModeEnabled = devModeEnabled;
         this.prodModeEnabled = prodModeEnabled;
@@ -47,5 +49,6 @@ public class AlfioInfo {
         this.globalTermsUrl = globalTermsUrl;
         this.invoicingConfiguration = invoicingConfiguration;
         this.announcementBannerContentHTML = announcementBannerContentHTML;
+        this.walletConfiguration = walletConfiguration;
     }
 }

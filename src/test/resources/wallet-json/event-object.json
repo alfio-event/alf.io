@@ -1,0 +1,11 @@
+{
+    "id": "ISSUER_ID.MEMBER_ID",
+    "classId": "ISSUER_ID.EVENT_CLASS_ID",
+    "state": "ACTIVE",
+    "ticketHolderName": "Alf",
+    "ticketNumber": "123-321-000",
+    "barcode": {
+        "type": "QR_CODE",
+        "value": "123456789"
+    }
+}

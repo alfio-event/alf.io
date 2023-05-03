@@ -1,0 +1,84 @@
+{
+    "id": "ISSUER_ID.EVENT_CLASS_ID",
+    "eventId": "1",
+    "multipleDevicesAndHoldersAllowedStatus": "ONE_USER_ALL_DEVICES",
+    "issuerName": "Devoxx Belgium 2022",
+    "eventName": {
+        "defaultValue": {
+            "language": "en-US",
+            "value": "Speaker"
+        }
+    },
+    "venue": {
+        "address": {
+            "defaultValue": {
+                "language": "en-US",
+                "value": "Antwerp Kinepolis Belgium"
+            }
+        },
+        "name": {
+            "defaultValue": {
+                "language": "en-US",
+                "value": "Antwerp Kinepolis Belgium"
+            }
+        }
+    },
+    "dateTime": {
+        "start": "2022-10-10T08:00:00.00Z",
+        "end": "2022-10-14T14:00:00.00Z"
+    },
+    "reviewStatus": "UNDER_REVIEW",
+    "hexBackgroundColor": "#FFFFFF",
+    "logo": {
+        "sourceUri": {
+            "uri": "https://reg.devoxx.be/file/c73315d4890c5fade112165c40338b72271e43939eed4e1e57a4e4891ee19cc8"
+        }
+    },
+    "classTemplateInfo": {
+        "cardTemplateOverride": {
+            "cardRowTemplateInfos": [
+                {
+                    "oneItem": {
+                        "item": {
+                            "firstValue": {
+                                "fields": [
+                                    {
+                                        "fieldPath": "class.dateTime.start"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "oneItem": {
+                        "item": {
+                            "firstValue": {
+                                "fields": [
+                                    {
+                                        "fieldPath": "class.dateTime.end"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "linksModuleData": {
+        "uris": [
+            {
+                "uri": "https://alf.io",
+                "description": "Powered by Alf.io, the Open Source ticket reservation system.",
+                "id": "alfio"
+            }
+        ]
+    },
+    "messages": [
+        {
+            "header": "Event Description",
+            "body": null
+        }
+    ]
+}

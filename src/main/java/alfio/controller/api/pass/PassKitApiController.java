@@ -56,13 +56,36 @@ public class PassKitApiController {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         } else {
             Pair<EventAndOrganizationId, Ticket> pair = validationResult.get();
-            try (var os = response.getOutputStream()) {
-                response.setContentType("application/vnd.apple.pkpass");
-                passKitManager.writePass(pair.getRight(), pair.getLeft(), os);
-            } catch (Exception e) {
-                log.warn("Error during pass generation", e);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            writePassResponse(response, pair.getLeft(), pair.getRight(), false);
+        }
+    }
+
+    @GetMapping("/version/passes/{ticketUuid}")
+    public void downloadPassForTicket(@PathVariable("eventName") String eventName,
+                                      @PathVariable("ticketUuid") String ticketUuid,
+                                      HttpServletResponse response) throws IOException {
+        var ticketAndEventData = passKitManager.retrieveTicketDetails(eventName, ticketUuid);
+        if (ticketAndEventData.isPresent()) {
+            var pair = ticketAndEventData.get();
+            writePassResponse(response, pair.getKey(), pair.getValue(), true);
+        } else {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+        }
+    }
+
+    private void writePassResponse(HttpServletResponse response,
+                                   EventAndOrganizationId eventAndOrganizationId,
+                                   Ticket ticket,
+                                   boolean addFilename) throws IOException {
+        try (var os = response.getOutputStream()) {
+            response.setContentType("application/vnd.apple.pkpass");
+            if (addFilename) {
+                response.setHeader("Content-Disposition", "attachment; filename=Passbook-"+ticket.getUuid().substring(0, 8)+".pkpass");
             }
+            passKitManager.writePass(ticket, eventAndOrganizationId, os);
+        } catch (Exception e) {
+            log.warn("Error during pass generation", e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 

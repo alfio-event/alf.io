@@ -25,6 +25,7 @@ import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import alfio.util.RefreshableDataSource;
 import com.stripe.Stripe;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,5 +138,10 @@ public class BaseTestConfiguration {
         Stripe.overrideApiBase("http://localhost:" + httpPort);
         Stripe.overrideUploadBase("http://localhost:" + httpPort);
         Stripe.enableTelemetry = false;
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }
