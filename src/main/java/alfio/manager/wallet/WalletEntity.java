@@ -14,23 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.model;
+package alfio.manager.wallet;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+public interface WalletEntity {
 
-@Getter
-@AllArgsConstructor
-public class AlfioInfo {
+    public String getId();
 
-    private final boolean demoModeEnabled;
-    private final boolean devModeEnabled;
-    private final boolean prodModeEnabled;
-    private final AnalyticsConfiguration analyticsConfiguration;
-    private final String globalPrivacyPolicyUrl;
-    private final String globalTermsUrl;
-    private final InvoicingConfiguration invoicingConfiguration;
-    private final String announcementBannerContentHTML;
-    private final WalletConfiguration walletConfiguration;
+    public String build(ObjectMapper mapper);
+
 }

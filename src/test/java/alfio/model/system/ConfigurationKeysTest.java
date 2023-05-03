@@ -27,7 +27,7 @@ class ConfigurationKeysTest {
 
     @Test
     void validateAllBooleansHaveDefaultValue() {
-        var pattern = Pattern.compile(".*?\\(.*?default.*? (true|false).*?\\).*?");
+        var pattern = Pattern.compile(".*?\\(.*?default.*?(true|false).*?\\).*?");
         Arrays.stream(ConfigurationKeys.values())
             .filter(ConfigurationKeys::isBooleanComponentType)
             .forEach(confKey -> {

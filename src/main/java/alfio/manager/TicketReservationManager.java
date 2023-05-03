@@ -52,6 +52,7 @@ import alfio.model.result.Result;
 import alfio.model.result.WarningMessage;
 import alfio.model.subscription.*;
 import alfio.model.system.command.FinalizeReservation;
+import alfio.model.system.command.InvalidateAccess;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
 import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
@@ -1375,7 +1376,9 @@ public class TicketReservationManager {
         }
         extensionManager.handleTicketAssignment(newTicket, ticketCategoryRepository.getById(ticket.getCategoryId()), updateTicketOwner.getAdditional());
 
-
+        if (isTicketBeingReassigned(ticket, updateTicketOwner, event)) {
+            invalidateAccess(event, ticket);
+        }
 
         Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
         Map<String, String> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
@@ -1585,6 +1588,7 @@ public class TicketReservationManager {
             throw new IllegalStateException("Cannot release reserved tickets");
         }
         //
+        invalidateAccess(event, ticket);
 
         String reservationId = ticketReservation.getId();
         //#365 - reset UUID when releasing a ticket
@@ -1619,6 +1623,10 @@ public class TicketReservationManager {
         }
         // always trigger "ticket cancelled for event"
         extensionManager.handleTicketCancelledForEvent(event, Collections.singletonList(ticket.getUuid()));
+    }
+
+    private void invalidateAccess(Event event, Ticket ticket) {
+        applicationEventPublisher.publishEvent(new InvalidateAccess(ticket, ticketRepository.getTicketMetadata(ticket.getId()), event));
     }
 
     int getReservationTimeout(Configurable configurable) {

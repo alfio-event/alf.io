@@ -93,7 +93,8 @@ public class MustacheCustomTag {
     static final Mustache.Lambda RENDER_MARKDOWN = (frag, out) -> {
         String execution = frag.execute().strip();
         if(execution.endsWith(".html")) {
-            out.write(renderToHtmlCommonmarkEscaped(StringUtils.removeEnd(execution, ".html")));
+            // Markdown renderer will take care of escaping all dangerous content
+            out.write(renderToHtmlCommonmark(StringUtils.removeEnd(execution, ".html"), null));
         } else if(execution.endsWith(".text")) {
             out.write(renderToTextCommonmark(StringUtils.removeEnd(execution, ".text")));
         } else {
@@ -240,9 +241,13 @@ public class MustacheCustomTag {
     }
 
     public static String renderToHtmlCommonmarkEscaped(String input, String localizedNewWindowLabel) {
+        return renderToHtmlCommonmark(StringEscapeUtils.escapeHtml4(input), localizedNewWindowLabel);
+    }
+
+    private static String renderToHtmlCommonmark(String input, String localizedNewWindowLabel) {
         try {
             A11Y_NEW_TAB_LABEL.set(localizedNewWindowLabel);
-            Node document = COMMONMARK_PARSER.parse(StringEscapeUtils.escapeHtml4(input));
+            Node document = COMMONMARK_PARSER.parse(input);
             return COMMONMARK_RENDERER.render(document);
         } finally {
             A11Y_NEW_TAB_LABEL.remove();

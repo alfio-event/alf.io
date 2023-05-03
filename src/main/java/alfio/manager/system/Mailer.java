@@ -26,6 +26,8 @@ import java.util.*;
 
 public interface Mailer {
 
+    String SKIP_PASSBOOK = "skipPassbook";
+
     void send(Configurable configurable, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment);
 
     @Data

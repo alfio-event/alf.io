@@ -1,0 +1,50 @@
+{
+    "id": "ISSUER_ID.OBJECT_ID",
+    "classId": "ISSUER_ID.GENERIC_CLASS_ID",
+    "cardTitle": {
+        "defaultValue": {
+            "language": "en-US",
+            "value": "Test Event"
+        }
+    },
+    "header": {
+        "defaultValue": {
+            "language": "en-US",
+            "value": "General admission"
+        }
+    },
+    "subheader": {
+        "defaultValue": {
+            "language": "en-US",
+            "value": ""
+        }
+    },
+    "logo": {
+        "sourceUri": {
+            "uri": "https://devoxx.be/wp-content/uploads/2019/05/DEVOXX-Name-Only-TransparentBackground.png",
+            "description": ""
+        }
+    },
+    "hexBackgroundColor": "#ffffff",
+    "textModulesData": [
+        {
+            "header": "Venue",
+            "body": "Palazzo dei congressi Lugano, Switzerland",
+            "id": "Row1Left"
+        },
+        {
+            "header": "Valid From",
+            "body": "Mon, Oct 10",
+            "id": "Row2Left"
+        },
+        {
+            "header": "Valid Until",
+            "body": "Tue, Oct 11",
+            "id": "Row3Left"
+        }
+    ],
+    "barcode": {
+        "type": "QR_CODE",
+        "value": "123456789"
+    }
+}

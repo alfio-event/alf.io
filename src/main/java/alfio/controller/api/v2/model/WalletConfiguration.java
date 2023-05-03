@@ -16,21 +16,20 @@
  */
 package alfio.controller.api.v2.model;
 
+public class WalletConfiguration {
+    private final boolean gWalletEnabled;
+    private final boolean passEnabled;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+    public WalletConfiguration(boolean gWalletEnabled, boolean passEnabled) {
+        this.gWalletEnabled = gWalletEnabled;
+        this.passEnabled = passEnabled;
+    }
 
-@Getter
-@AllArgsConstructor
-public class AlfioInfo {
+    public boolean isgWalletEnabled() {
+        return gWalletEnabled;
+    }
 
-    private final boolean demoModeEnabled;
-    private final boolean devModeEnabled;
-    private final boolean prodModeEnabled;
-    private final AnalyticsConfiguration analyticsConfiguration;
-    private final String globalPrivacyPolicyUrl;
-    private final String globalTermsUrl;
-    private final InvoicingConfiguration invoicingConfiguration;
-    private final String announcementBannerContentHTML;
-    private final WalletConfiguration walletConfiguration;
+    public boolean isPassEnabled() {
+        return passEnabled;
+    }
 }
