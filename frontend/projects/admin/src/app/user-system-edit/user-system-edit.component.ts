@@ -1,5 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { OrganizationService } from '../shared/organization.service';
+import { UserService } from '../shared/user.service';
+import { Observable } from 'rxjs';
+import { Organization } from '../model/organization';
+import { Role } from '../model/role';
 
 @Component({
   selector: 'app-user-system-edit',
@@ -8,7 +13,13 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 })
 export class UserSystemEditComponent implements OnInit {
   public userForm: FormGroup;
-  constructor(formBuilder: FormBuilder) {
+  public organizations$?: Observable<Organization[]>;
+  public roles$? : Observable<Role[]>;
+  constructor(
+    formBuilder: FormBuilder,
+    private readonly organizationService: OrganizationService,
+    private readonly userService: UserService
+  ) {
     this.userForm = formBuilder.group({
       target: null,
       organizationId: [null, Validators.required],
@@ -34,9 +45,12 @@ export class UserSystemEditComponent implements OnInit {
     return this.userForm.get('emailAddress');
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.organizations$ = this.organizationService.getOrganizations();
+    this.roles$ = this.userService.getAllRoles();
+  }
 
-  save() : void {
+  save(): void {
     console.log(this.userForm.value);
   }
 }
