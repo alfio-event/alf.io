@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, filter, map, Observable, of } from 'rxjs';
 import { User, UserInfo } from '../model/user';
+import { Role } from '../model/role';
 
 @Injectable()
 export class UserService {
@@ -52,5 +53,9 @@ export class UserService {
 
   deleteUser(user: User): Observable<string> {
     return this.httpClient.delete<string>(`/admin/api/users/${user.id}`);
+  }
+
+  getAllRoles() : Observable<Role[]>{
+    return this.httpClient.get<Role[]>('/admin/api/roles');
   }
 }

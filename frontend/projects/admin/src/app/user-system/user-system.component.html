@@ -20,8 +20,8 @@
           {{ user.username }}
         </td>
         <td>{{user.firstName}} {{user.lastName}}</td>
-        <td>{{user.roles}}</td>
-        <td>{{user.memberOf}}</td>
+        <td><span *ngFor="let role of user.roles">{{role}}</span></td>
+        <td><span *ngFor="let org of user.memberOf">{{org.name}}</span></td>
         <td>
           <a [routerLink]="['/system/user', user.id, 'edit']" class="btn"
             ><svg-icon key="edit" size="lg"></svg-icon
@@ -35,3 +35,5 @@
     </tbody>
   </table>
 </div>
+
+

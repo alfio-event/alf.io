@@ -8,7 +8,7 @@ export interface UserInfo {
     firstName: string;
     lastName: string;
     emailAddress: string;
-    role: Role;
+    role: RoleType;
 }
 
 export enum UserType {
@@ -17,7 +17,7 @@ export enum UserType {
     API_KEY = 'API_KEY'
 }
 
-export enum Role {
+export enum RoleType {
     ADMIN = 'ADMIN',
     OWNER = 'OWNER',
     SUPERVISOR = 'SUPERVISOR',
@@ -37,6 +37,7 @@ export interface User {
   emailAddress: string;
   validToEpochSecond: number | null;
   description: string | null;
-  roles: Role[];
+  roles: RoleType[];
   memberOf: Organization[];
 }
+
