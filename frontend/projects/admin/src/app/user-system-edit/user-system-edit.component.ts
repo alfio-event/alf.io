@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { OrganizationService } from '../shared/organization.service';
 import { UserService } from '../shared/user.service';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { Organization } from '../model/organization';
 import { Role } from '../model/role';
 
@@ -47,7 +47,9 @@ export class UserSystemEditComponent implements OnInit {
 
   ngOnInit(): void {
     this.organizations$ = this.organizationService.getOrganizations();
-    this.roles$ = this.userService.getAllRoles();
+    this.roles$ = this.userService.getAllRoles().pipe(map(roles => {
+      return roles.filter(role => role.target.includes('USER'));
+    }));
   }
 
   save(): void {

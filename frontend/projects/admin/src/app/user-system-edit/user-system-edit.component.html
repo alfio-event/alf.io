@@ -17,8 +17,9 @@
     <div class="form-group my-3">
       <label for="userRole">Role</label>
       <select id="userRole" class="form-select" formControlName="role">
-        <option selected>role 1</option>
-        <option value="1">role 2</option>
+        <option *ngFor="let role of roles$ | async" [ngValue]="role.role">
+          {{ role.description }}
+        </option>
       </select>
     </div>
     <div class="form-group my-3">
@@ -88,4 +89,3 @@
   </form>
 </div>
 
-{{ roles$ | async | json }}
