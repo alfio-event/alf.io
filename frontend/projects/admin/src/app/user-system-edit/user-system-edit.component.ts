@@ -5,6 +5,7 @@ import { UserService } from '../shared/user.service';
 import { Observable, map } from 'rxjs';
 import { Organization } from '../model/organization';
 import { Role } from '../model/role';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-user-system-edit',
@@ -16,9 +17,11 @@ export class UserSystemEditComponent implements OnInit {
   public organizations$?: Observable<Organization[]>;
   public roles$? : Observable<Role[]>;
   constructor(
+    private readonly route: ActivatedRoute,
     formBuilder: FormBuilder,
     private readonly organizationService: OrganizationService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly router: Router
   ) {
     this.userForm = formBuilder.group({
       target: null,
@@ -53,6 +56,8 @@ export class UserSystemEditComponent implements OnInit {
   }
 
   save(): void {
-    console.log(this.userForm.value);
+    this.userService.create(this.userForm.value).subscribe(result => {
+      this.router.navigate(['/access-control/users']);
+    })
   }
 }

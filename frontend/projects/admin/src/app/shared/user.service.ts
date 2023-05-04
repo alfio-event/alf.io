@@ -55,7 +55,13 @@ export class UserService {
     return this.httpClient.delete<string>(`/admin/api/users/${user.id}`);
   }
 
-  getAllRoles() : Observable<Role[]>{
+  getAllRoles(): Observable<Role[]> {
     return this.httpClient.get<Role[]>('/admin/api/roles');
+  }
+
+  create(user: User): Observable<any> {
+    return this.httpClient.post<any>('/admin/api/users/new', user, {
+      params: { baseUrl: window.location.origin },
+    });
   }
 }

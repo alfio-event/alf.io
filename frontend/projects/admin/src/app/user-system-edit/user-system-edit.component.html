@@ -83,9 +83,14 @@
         </button>
       </div>
       <div>
-        <button type="submit" class="btn btn-lg btn-primary">Save</button>
+        <button
+          type="submit"
+          class="btn btn-lg btn-primary"
+          [disabled]="userForm.invalid"
+        >
+          Save
+        </button>
       </div>
     </div>
   </form>
 </div>
-
