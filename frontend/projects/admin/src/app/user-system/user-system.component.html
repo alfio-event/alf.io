@@ -1,6 +1,12 @@
-
 <h1>Users</h1>
-
+<button
+  type="button"
+  class="btn btn-success d-flex align-items-center"
+  [routerLink]="['/access-control/users/new']"
+>
+  <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+  add new
+</button>
 <div class="container">
   <table class="table table-striped">
     <thead>
@@ -15,25 +21,41 @@
     </thead>
     <tbody>
       <tr *ngFor="let user of users$ | async">
-        <td>{{user.enabled}}</td>
+        <td>{{ user.enabled }}</td>
         <td scope="row">
           {{ user.username }}
         </td>
-        <td>{{user.firstName}} {{user.lastName}}</td>
-        <td><span *ngFor="let role of user.roles">{{role}}</span></td>
-        <td><span *ngFor="let org of user.memberOf">{{org.name}}</span></td>
+        <td>{{ user.firstName }} {{ user.lastName }}</td>
+        <td>
+          <span *ngFor="let role of user.roles">{{ role }}</span>
+        </td>
+        <td>
+          <span *ngFor="let org of user.memberOf">{{ org.name }}</span>
+        </td>
         <td>
           <a [routerLink]="['/system/user', user.id, 'edit']" class="btn"
             ><svg-icon key="edit" size="lg"></svg-icon
           ></a>
           <button class="btn">Reset password</button>
-          <button *ngIf="!user.enabled" class="btn btn-success" (click)="enable(user)">Enable</button>
-          <button *ngIf="user.enabled" class="btn btn-warning" (click)="enable(user)">Disable</button>
-          <button class="btn btn-danger" (click)="deleteUser(user)">Delete</button>
+          <button
+            *ngIf="!user.enabled"
+            class="btn btn-success"
+            (click)="enable(user)"
+          >
+            Enable
+          </button>
+          <button
+            *ngIf="user.enabled"
+            class="btn btn-warning"
+            (click)="enable(user)"
+          >
+            Disable
+          </button>
+          <button class="btn btn-danger" (click)="deleteUser(user)">
+            Delete
+          </button>
         </td>
       </tr>
     </tbody>
   </table>
 </div>
-
-

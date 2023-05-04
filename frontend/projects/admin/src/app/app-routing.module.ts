@@ -5,6 +5,7 @@ import { OrganizationsComponent } from './organizations/organizations.component'
 import { OrganizationEditComponent } from './organization-edit/organization-edit.component';
 import { AccessControlComponent } from './access-control/access-control.component';
 import { UserSystemComponent } from './user-system/user-system.component';
+import { UserSystemEditComponent } from './user-system-edit/user-system-edit.component';
 
 const routes: Routes = [
   {
@@ -37,7 +38,11 @@ const routes: Routes = [
   },
   {
     path: 'access-control/users',
-    component : UserSystemComponent
+    component : UserSystemComponent,
+  },
+  {
+    path: 'access-control/users/new',
+    component : UserSystemEditComponent,
   },
   {
     path: '',
