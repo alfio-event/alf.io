@@ -24,7 +24,8 @@ export class UserSystemComponent implements OnInit {
           map.set(role.role, role);
         });
         return map;
-      }), shareReplay(1)
+      }),
+      shareReplay(1)
     );
   }
 
@@ -44,7 +45,7 @@ export class UserSystemComponent implements OnInit {
     }
   }
 
-  roleDescription(role: RoleType) : Observable<string | undefined> {
+  roleDescription(role: RoleType): Observable<string | undefined> {
     return this.roles$.pipe(map((roles) => roles.get(role)?.description));
   }
 }
