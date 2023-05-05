@@ -16,6 +16,7 @@ export class UserSystemEditComponent implements OnInit {
   public userForm: FormGroup;
   public organizations$?: Observable<Organization[]>;
   public roles$? : Observable<Role[]>;
+  public editMode: boolean | undefined;
   constructor(
     private readonly route: ActivatedRoute,
     formBuilder: FormBuilder,

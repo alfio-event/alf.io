@@ -14,6 +14,7 @@ import { editIcon } from '../svg/edit';
 import { resetIcon } from '../svg/reset';
 import { deleteIcon } from '../svg/delete';
 import { visibilityoffIcon } from '../svg/visibilityoff';
+import { visibilityOnIcon } from '../svg/visibility-on';
 
 const ICONS = [
   checkIcon,
@@ -33,6 +34,7 @@ const ICONS = [
   resetIcon,
   deleteIcon,
   visibilityoffIcon,
+  visibilityOnIcon,
 
 
 

@@ -22,7 +22,10 @@
         <th scope="col">Name</th>
         <th scope="col">Role</th>
         <th scope="col">Member of</th>
-        <th scope="col"></th>
+        <th scope="col">Edit</th>
+        <th scope="col">Reset password</th>
+        <th scope="col">Enable / Disable</th>
+        <th scope="col">Delete</th>
       </tr>
     </thead>
     <tbody>
@@ -41,29 +44,37 @@
           }}</span>
         </td>
         <td>
-          <a [routerLink]="['/system/user', user.id, 'edit']" class="btn"
+          <!-- E D I T -->
+          <a [routerLink]="['/access-control/users', user.id, 'edit']" class="btn"
             ><svg-icon key="edit" size="lg"></svg-icon
           ></a>
+        </td>
+        <td>
           <button class="btn">
-            <svg-icon key="reset"></svg-icon> Reset password
+            <svg-icon key="reset"></svg-icon>
           </button>
-          <button
-            *ngIf="!user.enabled"
-            class="btn btn-succes mx-5"
-            (click)="enable(user)"
-          >
-
-            Enable
-          </button>
+        </td>
+        <td>
           <button
             *ngIf="user.enabled"
-            class="btn btn-warning mx-5"
+            class="btn btn-warning"
             (click)="enable(user)"
           >
-          <svg-icon key="visibilityoff"></svg-icon>
+            <svg-icon key="visibilityoff"></svg-icon>
 
             Disable
           </button>
+          <button
+            *ngIf="!user.enabled"
+            class="btn btn-success"
+            (click)="enable(user)"
+          >
+          <svg-icon key="visibility-on"></svg-icon>
+
+            Enable
+          </button>
+        </td>
+        <td>
           <button class="btn btn-danger" (click)="deleteUser(user)">
             <svg-icon key="delete"></svg-icon>
             Delete

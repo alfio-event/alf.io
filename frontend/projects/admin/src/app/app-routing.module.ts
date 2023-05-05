@@ -45,6 +45,10 @@ const routes: Routes = [
     component : UserSystemEditComponent,
   },
   {
+    path: 'access-control/users/:userId/edit',
+    component : UserSystemEditComponent,
+  },
+  {
     path: '',
     component: MissingOrgComponent,
     pathMatch: 'full'
