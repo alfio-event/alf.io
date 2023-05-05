@@ -264,11 +264,11 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="small">{{ticketReservation.vatNr}} 12345678901</td>
+                        <td class="small">{{ticketReservation.vatNr}}</td>
                         <td class="small">{{fiscalCode}}</td>
                         <td class="small">{{referenceType}}</td>
-                        <td class="small">{{addresseeCode}}ABCDEFG</td>
-                        <td class="small">{{pec}}celestino.bellone@claranet.com</td>
+                        <td class="small">{{addresseeCode}}</td>
+                        <td class="small">{{pec}}</td>
                     </tr>
                 </tbody>
             {{/italianEInvoicing}}
