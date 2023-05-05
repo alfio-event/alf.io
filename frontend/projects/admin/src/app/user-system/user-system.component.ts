@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of, share, shareReplay } from 'rxjs';
 import { UserService } from '../shared/user.service';
 import { RoleType, User, UserType } from '../model/user';
 import { Role } from '../model/role';
@@ -11,7 +11,7 @@ import { Role } from '../model/role';
 })
 export class UserSystemComponent implements OnInit {
   public users$?: Observable<User[]>;
-  public roles$?: Observable<Map<RoleType, Role>>;
+  public roles$: Observable<Map<RoleType, Role>> = of();
 
   constructor(private readonly userService: UserService) {}
 
@@ -24,7 +24,7 @@ export class UserSystemComponent implements OnInit {
           map.set(role.role, role);
         });
         return map;
-      })
+      }), shareReplay(1)
     );
   }
 
@@ -44,5 +44,7 @@ export class UserSystemComponent implements OnInit {
     }
   }
 
-
+  roleDescription(role: RoleType) : Observable<string | undefined> {
+    return this.roles$.pipe(map((roles) => roles.get(role)?.description));
+  }
 }

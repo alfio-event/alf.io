@@ -36,7 +36,7 @@
         </td>
         <td>{{ user.firstName }} {{ user.lastName }}</td>
         <td>
-          <span *ngFor="let role of user.roles">{{ role }}</span>
+          <span *ngFor="let role of user.roles">{{roleDescription(role) | async }}</span>
         </td>
         <td>
           <span *ngFor="let org of user.memberOf" class="badge bg-primary">{{
@@ -45,7 +45,7 @@
         </td>
         <td>
           <!-- E D I T -->
-          <a [routerLink]="['/access-control/users', user.id, 'edit']" class="btn"
+          <a [routerLink]="['/access-control/users', user.id, 'edit']" class="btn" *ngIf="user.enabled"
             ><svg-icon key="edit" size="lg"></svg-icon
           ></a>
         </td>

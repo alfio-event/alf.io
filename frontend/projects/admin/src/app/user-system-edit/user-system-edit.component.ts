@@ -6,7 +6,7 @@ import { Observable, map, of } from 'rxjs';
 import { Organization } from '../model/organization';
 import { Role } from '../model/role';
 import { ActivatedRoute, Router } from '@angular/router';
-import { User } from '../model/user';
+import { RoleType, User } from '../model/user';
 
 @Component({
   selector: 'app-user-system-edit',
@@ -87,4 +87,6 @@ export class UserSystemEditComponent implements OnInit {
       }
     });
   }
+
+
 }
