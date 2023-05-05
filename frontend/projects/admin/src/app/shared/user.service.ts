@@ -64,4 +64,12 @@ export class UserService {
       params: { baseUrl: window.location.origin },
     });
   }
+
+  getUser(id: number | string) : Observable<User>{
+    return this.httpClient.get<User>(`/admin/api/users/${id}`);
+  }
+
+  update(user: User) : Observable<any>{
+    return this.httpClient.post<any>('/admin/api/users/edit', user);
+  }
 }
