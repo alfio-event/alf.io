@@ -1,12 +1,18 @@
-<h1>Users</h1>
-<button
-  type="button"
-  class="btn btn-success d-flex align-items-center"
-  [routerLink]="['/access-control/users/new']"
->
-  <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
-  add new
-</button>
+<div class="container">
+  <h1 class="my-3">Users</h1>
+  <hr />
+  <div class="d-flex flex-row-reverse py-3">
+    <button
+      type="button"
+      class="btn btn-success d-flex align-items-center"
+      [routerLink]="['/access-control/users/new']"
+    >
+      <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+      add new
+    </button>
+  </div>
+</div>
+
 <div class="container">
   <table class="table table-striped">
     <thead>
@@ -30,28 +36,36 @@
           <span *ngFor="let role of user.roles">{{ role }}</span>
         </td>
         <td>
-          <span *ngFor="let org of user.memberOf">{{ org.name }}</span>
+          <span *ngFor="let org of user.memberOf" class="badge bg-primary">{{
+            org.name
+          }}</span>
         </td>
         <td>
           <a [routerLink]="['/system/user', user.id, 'edit']" class="btn"
             ><svg-icon key="edit" size="lg"></svg-icon
           ></a>
-          <button class="btn">Reset password</button>
+          <button class="btn">
+            <svg-icon key="reset"></svg-icon> Reset password
+          </button>
           <button
             *ngIf="!user.enabled"
-            class="btn btn-success"
+            class="btn btn-succes mx-5"
             (click)="enable(user)"
           >
+
             Enable
           </button>
           <button
             *ngIf="user.enabled"
-            class="btn btn-warning"
+            class="btn btn-warning mx-5"
             (click)="enable(user)"
           >
+          <svg-icon key="visibilityoff"></svg-icon>
+
             Disable
           </button>
           <button class="btn btn-danger" (click)="deleteUser(user)">
+            <svg-icon key="delete"></svg-icon>
             Delete
           </button>
         </td>
