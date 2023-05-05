@@ -32,4 +32,15 @@ class TicketTest {
         var modifiedCase = Ticket.generateHmacTicketInfo("eventKey", caseInsensitive, fullName.toUpperCase(), email.toUpperCase(), "id", "uuid");
         assertEquals(caseInsensitive, regularCase.equals(modifiedCase));
     }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void ticketCodeUTF8Chars(boolean caseInsensitive) {
+        var fullName = "çÇĞğIıİiÖöŞşÜü";
+        var fullNameSwappedCase = "ÇçğĞıIiİöÖşŞüÜ";
+        var email = "email@example.org";
+        var regularCase = Ticket.generateHmacTicketInfo("eventKey", caseInsensitive, fullName, email, "id", "uuid");
+        var modifiedCase = Ticket.generateHmacTicketInfo("eventKey", caseInsensitive, fullNameSwappedCase, email.toUpperCase(), "id", "uuid");
+        assertEquals(caseInsensitive, regularCase.equals(modifiedCase));
+    }
 }
