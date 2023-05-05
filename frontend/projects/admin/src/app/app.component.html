@@ -44,9 +44,12 @@
           <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'organization-info']" routerLinkActive="active">
             <svg-icon key="organization"></svg-icon> <span translate="admin.menu.organization"></span>
           </a>
+
+
           <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'access-control']" routerLinkActive="active">
             <svg-icon key="access"></svg-icon> <span translate="admin.menu.security"></span>
           </a>
+
 
           <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/organization/', organizationId, 'groups']" routerLinkActive="active">
             <svg-icon key="groups"></svg-icon> <span translate="admin.menu.groups"></span>
@@ -63,6 +66,10 @@
             <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/access-control']" routerLinkActive="active">
               <svg-icon key="access"></svg-icon> <span translate="admin.menu.system.security"></span>
             </a>
+            <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/access-control/users']" routerLinkActive="active">
+              <svg-icon key="groups"></svg-icon> <span>Users</span>
+            </a>
+
             <a class="d-flex flex-column gap-1 justify-content-center" [routerLink]="['/configuration']" routerLinkActive="active">
               <svg-icon key="settings"></svg-icon> <span translate="admin.menu.system.settings"></span>
             </a>

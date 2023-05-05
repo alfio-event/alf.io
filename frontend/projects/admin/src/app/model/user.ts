@@ -1,3 +1,5 @@
+import { Organization } from "./organization";
+
 export interface UserInfo {
     id: number;
     type: UserType;
@@ -6,7 +8,7 @@ export interface UserInfo {
     firstName: string;
     lastName: string;
     emailAddress: string;
-    role: Role;
+    role: RoleType;
 }
 
 export enum UserType {
@@ -15,7 +17,7 @@ export enum UserType {
     API_KEY = 'API_KEY'
 }
 
-export enum Role {
+export enum RoleType {
     ADMIN = 'ADMIN',
     OWNER = 'OWNER',
     SUPERVISOR = 'SUPERVISOR',
@@ -23,3 +25,19 @@ export enum Role {
     SPONSOR = 'SPONSOR',
     API_CONSUMER = 'API_CONSUMER'
 }
+
+export interface User {
+  id: number;
+  type: UserType;
+  enabled: boolean;
+  validTo: string | null;
+  username: string;
+  firstName: string;
+  lastName: string;
+  emailAddress: string;
+  validToEpochSecond: number | null;
+  description: string | null;
+  roles: RoleType[];
+  memberOf: Organization[];
+}
+

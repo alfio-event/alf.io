@@ -1,0 +1,95 @@
+<div class="container-sm">
+  <h1>User</h1>
+  <form [formGroup]="userForm" (ngSubmit)="save()">
+    <div class="form-group my-3">
+      <label for="UserOrganizationId">Organization</label>
+      <select
+        id="UserOrganizationId"
+        class="form-select form-control"
+        formControlName="organizationId"
+      >
+        <option *ngFor="let org of organizations$ | async" [ngValue]="org.id">
+          {{ org.name }}
+        </option>
+      </select>
+    </div>
+    <div class="form-group my-3">
+      <label for="userRole">Role</label>
+      <select id="userRole" class="form-select" formControlName="role">
+        <option *ngFor="let role of roles$ | async" [ngValue]="role.role">
+          {{ role.description }}
+        </option>
+      </select>
+    </div>
+    <div class="form-group my-3">
+      <label for="userName">Username</label>
+      <input
+        id="userName"
+        type="text"
+        class="form-control"
+        formControlName="username"
+        [class.is-invalid]="
+          userName?.invalid && (userName?.dirty || userName?.touched)
+        "
+      />
+    </div>
+    <div class="form-group my-3">
+      <label for="userFirstName">First name</label>
+      <input
+        id="userFirstName"
+        type="text"
+        class="form-control"
+        formControlName="firstName"
+        [class.is-invalid]="
+          userFirstName?.invalid &&
+          (userFirstName?.dirty || userFirstName?.touched)
+        "
+      />
+    </div>
+    <div class="form-group my-3">
+      <label for="userLastName">Last name</label>
+      <input
+        id="userLastName"
+        type="text"
+        class="form-control"
+        formControlName="lastName"
+        [class.is-invalid]="
+          userLastName?.invalid &&
+          (userLastName?.dirty || userLastName?.touched)
+        "
+      />
+    </div>
+
+    <div class="form-group my-3">
+      <label for="userMail">Email</label>
+      <input
+        id="userMail"
+        type="email"
+        class="form-control"
+        formControlName="emailAddress"
+        [class.is-invalid]="
+          userMail?.invalid && (userMail?.dirty || userMail?.touched)
+        "
+      />
+    </div>
+    <div class="d-flex justify-content-between">
+      <div>
+        <button
+          class="btn btn-lg btn-outline-secondary"
+          [routerLink]="['/access-control/users']"
+        >
+          Cancel
+        </button>
+      </div>
+      <div>
+        <button
+          type="submit"
+          class="btn btn-lg btn-primary"
+          [disabled]="userForm.invalid"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

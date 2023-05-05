@@ -82,25 +82,26 @@
         />
       </div>
     </div>
+    <div class="d-flex justify-content-between">
+      <div>
+        <button
+          class="btn btn-lg btn-outline-secondary"
+          [routerLink]="['/organizations']"
+        >
+          Cancel
+        </button>
+      </div>
+      <div>
+        <button
+          type="submit"
+          class="btn btn-lg btn-primary"
+          [disabled]="organizationForm.invalid"
+        >
+          Save
+        </button>
+      </div>
+    </div>
   </form>
-  <hr />
-  <div class="d-flex justify-content-between">
-    <div>
-      <button
-        class="btn btn-lg btn-outline-secondary"
-        [routerLink]="['/organizations']"
-      >
-        Cancel
-      </button>
-    </div>
-    <div>
-      <button
-        type="submit"
-        class="btn btn-lg btn-primary"
-        [disabled]="organizationForm.invalid"
-      >
-        Save
-      </button>
-    </div>
-  </div>
+
+
 </div>

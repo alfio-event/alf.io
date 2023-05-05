@@ -1,0 +1,91 @@
+<div class="container">
+  <h1 class="my-3">Users</h1>
+  <hr />
+  <div class="d-flex flex-row-reverse py-3">
+    <button
+      type="button"
+      class="btn btn-success d-flex align-items-center"
+      [routerLink]="['/access-control/users/new']"
+    >
+      <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+      add new
+    </button>
+  </div>
+</div>
+
+<div class="container">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Enabled</th>
+        <th scope="col">Username</th>
+        <th scope="col">Name</th>
+        <th scope="col">Role</th>
+        <th scope="col">Member of</th>
+        <th scope="col">Edit</th>
+        <th scope="col">Reset password</th>
+        <th scope="col">Enable / Disable</th>
+        <th scope="col">Delete</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let user of users$ | async">
+        <td>{{ user.enabled }}</td>
+        <td scope="row">
+          {{ user.username }}
+        </td>
+        <td>{{ user.firstName }} {{ user.lastName }}</td>
+        <td>
+          <span *ngFor="let role of user.roles">{{
+            roleDescription(role) | async
+          }}</span>
+        </td>
+        <td>
+          <span *ngFor="let org of user.memberOf" class="badge bg-primary">{{
+            org.name
+          }}</span>
+        </td>
+        <td>
+          <!-- E D I T -->
+          <a
+            [routerLink]="['/access-control/users', user.id, 'edit']"
+            class="btn"
+            *ngIf="user.enabled"
+            ><svg-icon key="edit" size="lg"></svg-icon
+          ></a>
+        </td>
+        <td>
+          <button class="btn">
+            <svg-icon key="reset"></svg-icon>
+          </button>
+        </td>
+        <td>
+          <button
+            *ngIf="user.enabled"
+            class="btn btn-warning"
+            (click)="enable(user)"
+          >
+            <svg-icon key="visibilityoff"></svg-icon>
+
+            Disable
+          </button>
+          <button
+            *ngIf="!user.enabled"
+            class="btn btn-success"
+            (click)="enable(user)"
+          >
+            <svg-icon key="visibility-on"></svg-icon>
+
+            Enable
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-danger" (click)="deleteUser(user)">
+            <svg-icon key="delete"></svg-icon>
+            Delete
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

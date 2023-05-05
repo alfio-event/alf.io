@@ -65,12 +65,15 @@ export class OrganizationEditComponent implements OnInit {
   }
 
   save(): void {
-    const action = this.editMode
-      ? this.organizationService.update
-      : this.organizationService.create;
+    let result: Observable<any>;
+    if (this.editMode) {
+      result = this.organizationService.update(this.organizationForm.value);
+    } else {
+      result = this.organizationService.create(this.organizationForm.value);
+    }
 
-    action(this.organizationForm.value).subscribe((result) => {
-      if (result === 'OK') {
+    result.subscribe((res) => {
+      if (res === 'OK') {
         this.router.navigate(['/organizations']);
       }
     });
