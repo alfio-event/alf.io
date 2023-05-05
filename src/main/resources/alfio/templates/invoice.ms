@@ -3,7 +3,7 @@
 	<head>
 	    <title>
 	        {{#proforma}}{{#i18n}}invoice.proforma [{{vatTranslation}}]{{/i18n}}{{/proforma}}
-	        {{^proforma}}{{#i18n}}invoice.proforma [{{vatTranslation}}]{{/i18n}}{{/proforma}}
+	        {{^proforma}}{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}{{/proforma}}
         </title>
         <meta name="subject" content="{{#i18n}}invoice.vat-invoice [{{vatTranslation}}]{{/i18n}}" />
         <meta name="author" content="{{organization.name}}" />
