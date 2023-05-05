@@ -18,6 +18,7 @@ package alfio.model;
 
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ClockProvider;
+import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -252,6 +253,10 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
 
     public boolean mustUseFirstAndLastName() {
         return mustUseFirstAndLastName(this);
+    }
+
+    public boolean supportsQRCodeCaseInsensitive() {
+        return EventUtil.supportsCaseInsensitiveQRCode(version);
     }
 
 

@@ -30,8 +30,7 @@ import java.util.Optional;
 
 import static alfio.test.util.TestUtil.clockProvider;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -65,7 +64,7 @@ class TemplateResourceTest {
     @Test
     void buildModelForTicketPDF() {
         Pair<ZonedDateTime, ZonedDateTime> dates = getDates();
-        when(ticket.ticketCode(anyString())).thenReturn("abcd");
+        when(ticket.ticketCode(anyString(), anyBoolean())).thenReturn("abcd");
         when(event.getPrivateKey()).thenReturn("key");
         Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticketWithMetadata, Optional.empty(), "abcd", Collections.emptyMap());
         assertEquals(dates.getLeft(), model.get("validityStart"));
@@ -81,7 +80,7 @@ class TemplateResourceTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(event.getEnd()).thenReturn(eventEnd);
         when(ticketCategory.getTicketValidityStart(eq(ZoneId.systemDefault()))).thenReturn(validityStart);
-        when(ticket.ticketCode(anyString())).thenReturn("abcd");
+        when(ticket.ticketCode(anyString(), anyBoolean())).thenReturn("abcd");
         return Pair.of(validityStart, eventEnd);
     }
 

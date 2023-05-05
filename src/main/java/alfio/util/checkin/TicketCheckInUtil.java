@@ -39,7 +39,7 @@ public class TicketCheckInUtil {
     public static final String CUSTOM_CHECK_IN_URL_DESCRIPTION = "customCheckInUrlDescription";
 
     public static String ticketOnlineCheckInUrl(Event event, Ticket ticket, String baseUrl) {
-        var ticketCode = DigestUtils.sha256Hex(ticket.ticketCode(event.getPrivateKey()));
+        var ticketCode = DigestUtils.sha256Hex(ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive()));
         return StringUtils.removeEnd(baseUrl, "/")
             + "/event/" + event.getShortName() + "/ticket/" + ticket.getUuid() + "/check-in/"+ticketCode;
     }

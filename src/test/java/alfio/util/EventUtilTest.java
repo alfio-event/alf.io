@@ -44,7 +44,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class EventUtilTest {
+class EventUtilTest {
 
     private Event event;
     private SaleableTicketCategory first;

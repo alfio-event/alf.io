@@ -126,12 +126,12 @@ public class Ticket implements TicketInfoContainer {
      * @param eventKey
      * @return
      */
-    public String ticketCode(String eventKey) {
-        return uuid + '/' + hmacTicketInfo(eventKey);
+    public String ticketCode(String eventKey, boolean caseInsensitive) {
+        return uuid + '/' + hmacTicketInfo(eventKey, caseInsensitive);
     }
 
-    public String hmacTicketInfo(String eventKey) {
-        return hmacSHA256Base64(eventKey, StringUtils.join(new String[]{ticketsReservationId , uuid, getFullName(), email}, '/'));
+    public String hmacTicketInfo(String eventKey, boolean caseInsensitive) {
+        return generateHmacTicketInfo(eventKey, caseInsensitive, getFullName(), email, ticketsReservationId, uuid);
     }
 
     public boolean hasBeenSold() {
@@ -141,6 +141,16 @@ public class Ticket implements TicketInfoContainer {
     @Override
     public boolean isCheckedIn() {
         return status == TicketStatus.CHECKED_IN;
+    }
+
+    static String generateHmacTicketInfo(String eventKey, boolean caseInsensitive, String fullName, String email, String ticketsReservationId, String uuid) {
+        var attendeeName = fullName;
+        var attendeeEmail = email;
+        if (caseInsensitive) {
+            attendeeName = StringUtils.stripAccents(attendeeName).toLowerCase(Locale.ROOT);
+            attendeeEmail = email.toLowerCase(Locale.ROOT);
+        }
+        return hmacSHA256Base64(eventKey, StringUtils.join(new String[]{ticketsReservationId , uuid, attendeeName, attendeeEmail}, '/'));
     }
 
     public static String hmacSHA256Base64(String key, String code) {
