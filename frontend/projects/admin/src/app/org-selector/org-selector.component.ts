@@ -22,6 +22,7 @@ export class OrgSelectorComponent implements OnInit {
 
   public selectOrganization(org: Organization): void {
     this.activeModal.close(org);
+    console.log('selectOrg', org);
   }
 
 }
