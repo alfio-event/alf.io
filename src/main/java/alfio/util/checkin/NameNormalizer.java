@@ -19,21 +19,24 @@ package alfio.util.checkin;
 // heavily inspired by https://stackoverflow.com/a/5470803
 public class NameNormalizer {
 
-    private static final String[] REPLACEMENT = new String[Character.MAX_VALUE+1];
-    static {
-        for(int i=Character.MIN_VALUE; i<=Character.MAX_VALUE; i++) {
-            REPLACEMENT[i] = Character.toString(Character.toLowerCase((char) i));
-        }
-        REPLACEMENT['ı'] = "i"; // special case: we render the turkish ı as i since its uppercase is represented as Latin I
-        REPLACEMENT['Σ'] = "σς";
-    }
     private NameNormalizer() {}
 
     public static String normalize(String input) {
         StringBuilder sb = new StringBuilder(input.length());
-        for(int i=0;i<input.length();i++) {
-            sb.append(REPLACEMENT[input.charAt(i)]);
+        for (int i=0; i < input.length(); i++) {
+            sb.append(replaceCharIfNotSupported(input.charAt(i)));
         }
         return sb.toString();
+    }
+
+    private static String replaceCharIfNotSupported(char in) {
+        if (in == 'Σ') {
+            return "σς";
+        }
+        char lowercase = Character.toLowerCase(in);
+        if (lowercase == 'ı') {
+            return "i"; // special case: we render the turkish ı as i since its uppercase is represented as Latin I
+        }
+        return Character.toString(lowercase);
     }
 }
