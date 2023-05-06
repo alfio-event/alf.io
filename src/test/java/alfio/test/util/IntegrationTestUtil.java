@@ -139,6 +139,8 @@ public class IntegrationTestUtil {
         eventManager.createEvent(em, username);
         Event event = eventManager.getSingleEvent(eventName, username);
         Assertions.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
+        Assertions.assertTrue(event.mustUseFirstAndLastName());
+        Assertions.assertTrue(event.supportsQRCodeCaseInsensitive());
         return Pair.of(event, username);
     }
 
