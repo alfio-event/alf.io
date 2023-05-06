@@ -18,6 +18,7 @@ package alfio.model;
 
 import alfio.model.support.Array;
 import alfio.util.MonetaryUtil;
+import alfio.util.checkin.NameNormalizer;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -147,7 +148,7 @@ public class Ticket implements TicketInfoContainer {
         var attendeeName = fullName;
         var attendeeEmail = email;
         if (caseInsensitive) {
-            attendeeName = StringUtils.stripAccents(attendeeName).toLowerCase(Locale.ROOT);
+            attendeeName = NameNormalizer.normalize(attendeeName);
             attendeeEmail = email.toLowerCase(Locale.ROOT);
         }
         return hmacSHA256Base64(eventKey, StringUtils.join(new String[]{ticketsReservationId , uuid, attendeeName, attendeeEmail}, '/'));
