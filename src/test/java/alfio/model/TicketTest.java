@@ -48,7 +48,9 @@ class TicketTest {
         "Ä/ä,Ö/ö,Ü/ü,ẞ/ß", // German https://en.wikipedia.org/wiki/German_orthography
         "Æ/æ,Ø/ø,Å/å", //Danish / Norwegian https://en.wikipedia.org/wiki/Danish_and_Norwegian_alphabet
         "Ą/ą,Ć/ć,Ę/ę,Ł/ł,Ń/ń,Ó/ó,Ś/ś,Ź/ź,Ż/ż", // Polish https://en.wikipedia.org/wiki/Polish_alphabet
-        "À/à,È/è,É/é,Ì/ì,Ò/ò,Ù/ù" // Italian / French vowels
+        "À/à,È/è,É/é,Ì/ì,Ò/ò,Ù/ù", // Italian / French vowels
+        "万/万,丈/丈,三/三,上/上", // some random characters with no support for lowerCase
+        "❤/❤,✅/✅" // emojis
     })
     void validateCase(String letters) {
         var uppercase = new StringBuilder();
