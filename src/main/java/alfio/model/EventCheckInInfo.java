@@ -16,14 +16,21 @@
  */
 package alfio.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.ZonedDateTime;
 
 public interface EventCheckInInfo extends TimeZoneInfo {
+
+    String VERSION_FOR_CODE_CASE_INSENSITIVE = "205.2.0.0.50";
 
     int getId();
     String getPrivateKey();
     ZonedDateTime getBegin();
     ZonedDateTime getEnd();
     Event.EventFormat getFormat();
+
+    @JsonIgnore
+    boolean supportsQRCodeCaseInsensitive();
 
 }

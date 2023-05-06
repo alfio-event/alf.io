@@ -594,7 +594,7 @@ public enum TemplateResource {
                                                              Optional<ImageData> imageData,
                                                              String reservationId,
                                                              Map<String,String> additionalFields) {
-        String qrCodeText = ticketWithMetadata.getTicket().ticketCode(event.getPrivateKey());
+        String qrCodeText = ticketWithMetadata.getTicket().ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive());
         //
         Map<String, Object> model = new HashMap<>();
         model.put(TICKET_KEY, ticketWithMetadata.getTicket());

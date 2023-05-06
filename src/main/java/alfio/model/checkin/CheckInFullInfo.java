@@ -138,6 +138,7 @@ public class CheckInFullInfo {
                            @Column("e_org_id") int eventOrgId,
                            @Column("e_metadata") @JSONData AlfioMetadata eventMetadata,
                            @Column("e_locales") int locales,
+                           @Column("e_version") String eventVersion,
 
                            @Column("tai_additional_info") @JSONData Map<String, List<String>> ticketAdditionalInfo
                                  ) {
@@ -155,7 +156,7 @@ public class CheckInFullInfo {
 
         this.categoryMetadata = categoryMetadata;
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, billingAddressState, vatCountry, vatNr, invoicingAdditionalInfo);
-        this.eventWithCheckInInfo = new EventWithCheckInInfo(eventId, eventFormat, eventShortName, eventDisplayName, eventStartTs, eventEndTs, timezone, eventPrivateKey, eventOrgId, eventMetadata, locales);
+        this.eventWithCheckInInfo = new EventWithCheckInInfo(eventId, eventFormat, eventShortName, eventDisplayName, eventStartTs, eventEndTs, timezone, eventPrivateKey, eventOrgId, eventMetadata, locales, eventVersion);
         this.ticketAdditionalInfo = ticketAdditionalInfo;
     }
 }

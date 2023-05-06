@@ -121,7 +121,7 @@ public class TicketApiV2Controller {
         var event = oData.get().getLeft();
         var ticket = oData.get().getRight();
 
-        String qrCodeText = ticket.ticketCode(event.getPrivateKey());
+        String qrCodeText = ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive());
 
         response.setContentType("image/png");
 
@@ -314,7 +314,7 @@ public class TicketApiV2Controller {
                 var ticket = info.getTicket();
                 var event = info.getEventWithCheckInInfo();
                 var messageSource = messageSourceManager.getMessageSourceFor(event.getOrganizationId(), event.getId());
-                String ticketCode = ticket.ticketCode(event.getPrivateKey());
+                String ticketCode = ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive());
                 if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), checkInCode.getBytes(StandardCharsets.UTF_8))) {
                     var categoryConfiguration = info.getCategoryMetadata().getOnlineConfiguration();
                     var eventConfiguration = event.getMetadata().getOnlineConfiguration();
