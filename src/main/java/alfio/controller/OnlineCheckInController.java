@@ -52,7 +52,7 @@ public class OnlineCheckInController {
             .flatMap(data -> {
                 var ticket = data.getTicket();
                 var event = data.getEventWithCheckInInfo();
-                String ticketCode = ticket.ticketCode(event.getPrivateKey());
+                String ticketCode = ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive());
                 if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), ticketCodeHash.getBytes(StandardCharsets.UTF_8))) {
                     log.debug("code successfully validated for ticket {}", ticketUUID);
                     // check-in can be done. Let's check if there is a redirection URL

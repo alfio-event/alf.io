@@ -303,7 +303,7 @@ public class CheckInManager {
                     tc.getName(), from, to, formattedNow)));
         }
 
-        if (!code.equals(ticket.ticketCode(event.getPrivateKey()))) {
+        if (!code.equals(ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive()))) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(INVALID_TICKET_CODE, "Ticket qr code does not match"));
         }
 
@@ -396,12 +396,12 @@ public class CheckInManager {
 
     public Map<String,String> getEncryptedAttendeesInformation(Event ev, Set<String> additionalFields, List<Integer> ids) {
 
-
         return Optional.ofNullable(ev).filter(isOfflineCheckInEnabled()).map(event -> {
+            boolean caseInsensitiveQRCode = ev.supportsQRCodeCaseInsensitive();
             Map<Integer, TicketCategory> categories = ticketCategoryRepository.findByEventIdAsMap(event.getId());
             String eventKey = event.getPrivateKey();
 
-            Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
+            Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey, caseInsensitiveQRCode));
             var outputColorConfiguration = getOutputColorConfiguration(event, configurationManager);
 
             // fetch polls for event, in order to determine if we have to print PIN or not
@@ -471,7 +471,7 @@ public class CheckInManager {
                 if(!additionalServicesInfo.isEmpty()) {
                     info.put("additionalServicesInfoJson", Json.toJson(additionalServicesInfo));
                 }
-                String key = ticket.ticketCode(eventKey);
+                String key = ticket.ticketCode(eventKey, caseInsensitiveQRCode);
                 return encrypt(key, Json.toJson(info));
             };
             return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), ids)

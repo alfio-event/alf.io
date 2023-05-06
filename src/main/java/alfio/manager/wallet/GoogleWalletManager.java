@@ -202,7 +202,7 @@ public class GoogleWalletManager {
             .classId(eventTicketClass.getId())
             .ticketHolderName(ticket.getFullName())
             .ticketNumber(ticket.getUuid())
-            .barcode(ticket.ticketCode(event.getPrivateKey()))
+            .barcode(ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive()))
             .build();
 
         GoogleCredentials credentials = retrieveCredentials(serviceAccountKey);

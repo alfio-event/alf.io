@@ -173,7 +173,7 @@ public class PassKitManager {
             .relevantDate(Date.from(ticketValidityStart.toInstant()))
             .expirationDate(Date.from(Optional.ofNullable(category.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd()).toInstant()))
 
-            .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey())))
+            .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive())))
             .labelColor(Color.BLACK)
             .foregroundColor(Color.BLACK)
             .backgroundColor(Color.WHITE)

@@ -36,6 +36,7 @@ import biweekly.property.Status;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
+import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -53,6 +54,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.EventCheckInInfo.VERSION_FOR_CODE_CASE_INSENSITIVE;
 import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
@@ -285,5 +287,10 @@ public final class EventUtil {
         }
 
         return messagesByLang.values().stream().findFirst().orElseThrow();
+    }
+
+    public static boolean supportsCaseInsensitiveQRCode(String version) {
+        return version != null
+            && MigrationVersion.fromVersion(version).compareTo(MigrationVersion.fromVersion(VERSION_FOR_CODE_CASE_INSENSITIVE)) >= 0;
     }
 }

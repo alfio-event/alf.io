@@ -39,7 +39,6 @@ import alfio.extension.ExtensionService;
 import alfio.manager.*;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.IncompatibleStateException;
-import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.support.extension.ExtensionEvent;
 import alfio.model.*;
@@ -948,7 +947,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var fullTicketInfo = ticketRepository.findByUUID(ticket.getUuid());
             var qrCodeReader = new QRCodeReader();
             var qrCodeRead = qrCodeReader.decode(new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(ImageIO.read(new ByteArrayInputStream(ticketQRCodeResp.getContentAsByteArray()))))), Map.of(DecodeHintType.PURE_BARCODE, Boolean.TRUE));
-            assertEquals(fullTicketInfo.ticketCode(context.event.getPrivateKey()), qrCodeRead.getText());
+            assertEquals(fullTicketInfo.ticketCode(context.event.getPrivateKey(), context.event.supportsQRCodeCaseInsensitive()), qrCodeRead.getText());
 
             //can only be done for free tickets
             var releaseTicketFailure = ticketApiV2Controller.releaseTicket(context.event.getShortName(), ticket.getUuid());
@@ -997,7 +996,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                         break;
                 }
 
-                String ticketCode = fullTicketInfo.ticketCode(context.event.getPrivateKey());
+                String ticketCode = fullTicketInfo.ticketCode(context.event.getPrivateKey(), context.event.supportsQRCodeCaseInsensitive());
                 TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode);
                 assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
                 CheckInApiController.TicketCode tc = new CheckInApiController.TicketCode();
@@ -1367,7 +1366,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         Map<String, String> payload = checkInApiController.getOfflineEncryptedInfo(context.event.getShortName(), Collections.emptyList(), offlineIdentifiers, principal);
         assertEquals(1, payload.size());
         TicketWithCategory ticketwc = ticketAndcheckInResult.getTicket();
-        String ticketKey = ticketwc.hmacTicketInfo(context.event.getPrivateKey());
+        String ticketKey = ticketwc.hmacTicketInfo(context.event.getPrivateKey(), true);
+        assertNotEquals(ticketKey, ticketwc.hmacTicketInfo(context.event.getPrivateKey(), false));
         String hashedTicketKey = DigestUtils.sha256Hex(ticketKey);
         String encJson = payload.get(hashedTicketKey);
         assertNotNull(encJson);
