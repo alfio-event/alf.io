@@ -62,11 +62,6 @@ public class TestConfiguration {
     }
 
     @Bean
-    ObjectMapper objectMapper() {
-        return BaseConfiguration.buildObjectMapper();
-    }
-
-    @Bean
     CsrfTokenRepository csrfTokenRepository() {
         return new CookieCsrfTokenRepository();
     }
