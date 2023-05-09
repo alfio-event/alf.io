@@ -47,6 +47,8 @@ export class ReservationInfo {
 
 export interface ReservationMetadata {
   hideContactData: boolean;
+  lockEmailEdit: boolean;
+  hideConfirmationButtons: boolean;
   readyForConfirmation: boolean;
   finalized: boolean;
 }

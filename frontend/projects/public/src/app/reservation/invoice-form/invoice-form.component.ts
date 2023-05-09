@@ -6,6 +6,7 @@ import {Subscription} from 'rxjs';
 import {LocalizedCountry} from '../../model/localized-country';
 import {PurchaseContext} from '../../model/purchase-context';
 import {InvoicingConfiguration} from '../../model/event';
+import {mobile} from '../../shared/util';
 
 @Component({
   selector: 'app-invoice-form',
@@ -27,6 +28,8 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
   countries: LocalizedCountry[];
 
   taxIdIsRequired = true;
+
+  isMobile = mobile;
 
   constructor(private translate: TranslateService, private i18nService: I18nService) { }
 
@@ -119,4 +122,5 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
     return true;
   }
 
+    protected readonly mobile = mobile;
 }

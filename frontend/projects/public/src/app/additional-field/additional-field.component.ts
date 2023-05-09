@@ -5,6 +5,7 @@ import {TranslateService} from '@ngx-translate/core';
 import {I18nService} from '../shared/i18n.service';
 import {LocalizedCountry} from '../model/localized-country';
 import {Subscription} from 'rxjs';
+import {mobile} from '../shared/util';
 
 @Component({
   selector: 'app-additional-field',
@@ -26,6 +27,8 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
 
 
   countries: LocalizedCountry[];
+
+  isMobile = mobile;
 
   private langChangeSub: Subscription;
 

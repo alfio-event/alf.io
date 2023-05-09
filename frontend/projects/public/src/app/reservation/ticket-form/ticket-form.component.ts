@@ -2,6 +2,7 @@ import {Component, Input, OnInit} from '@angular/core';
 import {UntypedFormGroup} from '@angular/forms';
 import {Ticket} from '../../model/ticket';
 import {PurchaseContext} from '../../model/purchase-context';
+import {ReservationMetadata} from '../../model/reservation-info';
 
 @Component({
   selector: 'app-ticket-form',
@@ -18,6 +19,9 @@ export class TicketFormComponent implements OnInit {
   @Input()
   purchaseContext: PurchaseContext;
 
+  @Input()
+  reservationMetadata: ReservationMetadata;
+
   constructor() { }
 
   public ngOnInit(): void {
@@ -28,5 +32,9 @@ export class TicketFormComponent implements OnInit {
 
   getAdditional(form: UntypedFormGroup) {
     return form.get('additional') as UntypedFormGroup;
+  }
+
+  get emailEditForbidden(): boolean {
+    return this.ticket.locked || (this.reservationMetadata?.lockEmailEdit && this.ticket.email != null);
   }
 }

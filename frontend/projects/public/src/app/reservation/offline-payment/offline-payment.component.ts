@@ -62,8 +62,9 @@ export class OfflinePaymentComponent implements OnInit {
             this.reservationInfo = res;
             this.reservationFinalized = true;
           });
+        } else {
+          this.reservationFinalized = true;
         }
-
       });
     });
   }

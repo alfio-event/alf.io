@@ -39,13 +39,25 @@
           <h3 translate="ticket.payment-required"></h3>
         </div>
 
-        <div class="row" *ngIf="event.format !== 'ONLINE'">
-          <div class="col-md-4 offset-md-8 col-12">
-            <a
-              [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticketInfo.uuid + '/download-ticket'"
-              class="btn btn-success block-button">
-              <fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon>
-              {{'reservation-page-complete.download-ticket'|translate}}
+        <hr  *ngIf="event.format !== 'ONLINE'" />
+
+        <div class="row mt-5 mb-5" *ngIf="event.format !== 'ONLINE'">
+          <div class="col-12 col-md-4 align-self-center mb-5 mb-md-0" *ngIf="gWalletEnabled">
+            <a target="_blank" rel="noopener" [attr.href]="'/api/wallet/event/' + event.shortName + '/v1/version/passes/' + ticketInfo.uuid">
+              <img src="/resources/images/email/enUS_add_to_google_wallet_add-wallet-badge.svg" class="img-responsive mx-auto wallet-link" alt="Add to Google Wallet">
+            </a>
+          </div>
+
+          <div class="col-12 col-md-4 align-self-center mb-5 mb-md-0" *ngIf="passEnabled">
+            <a target="_blank" rel="noopener" [attr.href]="'/api/pass/event/' + event.shortName + '/v1/version/passes/' + ticketInfo.uuid">
+              <img src="/resources/images/email/add-to-apple-wallet-button.png" class="img-responsive mx-auto wallet-link" alt="Add to Apple Wallet">
+            </a>
+          </div>
+
+          <div [ngClass]="{'offset-md-8': !walletIntegrationEnabled}" class="col-md-4 col-12">
+            <a target="_blank" rel="noopener" [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticketInfo.uuid + '/download-ticket'" class="btn btn-link block-button d-flex justify-content-center align-items-center h-100">
+              <div class="mr-3"><fa-icon size="2x" [icon]="['fas', 'file-pdf']" a11yRole="presentation"></fa-icon></div>
+              <div>{{'reservation-page-complete.download-ticket'|translate}} PDF</div>
             </a>
           </div>
         </div>

@@ -10,6 +10,12 @@ export interface Info {
   globalTermsUrl?: string;
   invoicingConfiguration?: InvoicingConfiguration;
   announcementBannerContentHTML?: string;
+  walletConfiguration: WalletConfiguration;
+}
+
+export interface WalletConfiguration {
+  gWalletEnabled: boolean;
+  passEnabled: boolean;
 }
 
 export function globalTermsPrivacyLinks(info: Info): TermsPrivacyLinksContainer {

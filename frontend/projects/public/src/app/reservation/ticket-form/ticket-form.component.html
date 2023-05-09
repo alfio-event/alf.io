@@ -24,7 +24,7 @@
       <div class="col-12">
         <div class="form-group">
           <label class="form-label" [attr.for]="ticket.uuid + '-email'">{{'common.email' | translate}} *</label>
-          <input [attr.id]="ticket.uuid + '-email'" formControlName="email" type="email" [ngClass]="{'form-control': ticket.locked !== true, 'form-control-plaintext': ticket.locked}" appInvalidFeedback [readonly]="ticket.locked === true">
+          <input [attr.id]="ticket.uuid + '-email'" formControlName="email" type="email" [ngClass]="{'form-control': !emailEditForbidden, 'form-control-plaintext': emailEditForbidden}" appInvalidFeedback [readonly]="emailEditForbidden">
         </div>
       </div>
     </div>

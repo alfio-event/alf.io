@@ -8,9 +8,11 @@ import {ValidatedResponse} from '../model/validated-response';
 import {TicketsByTicketCategory} from '../model/reservation-info';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {ReleaseTicketComponent} from '../reservation/release-ticket/release-ticket.component';
-import {mergeMap} from 'rxjs/operators';
+import {map, mergeMap} from 'rxjs/operators';
 import {User, UserAdditionalData} from '../model/user';
 import {DateValidity} from '../model/date-validity';
+import {DownloadTicketComponent} from '../reservation/download-ticket/download-ticket.component';
+import {WalletConfiguration} from '../model/info';
 
 @Injectable({
     providedIn: 'root'
@@ -68,6 +70,16 @@ export class TicketService {
             return of(false);
           }
         }));
+    }
+
+    openDownloadTicket(ticket: Ticket, eventName: string, walletConfiguration: WalletConfiguration): Observable<boolean> {
+      const modal = this.modalService.open(DownloadTicketComponent, {centered: true});
+      const instance: DownloadTicketComponent = modal.componentInstance;
+      instance.ticket = ticket;
+      instance.eventName = eventName;
+      instance.walletConfiguration = walletConfiguration;
+      return from(modal.result)
+        .pipe(map(_ => true));
     }
 
     releaseTicket(eventName: string, ticketIdentifier: string): Observable<boolean> {

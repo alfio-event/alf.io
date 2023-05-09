@@ -41,7 +41,8 @@ import {
   faTimes,
   faTrash,
   faUserAstronaut,
-  faWifi
+  faWifi,
+  faFilePdf
 } from '@fortawesome/free-solid-svg-icons';
 import {faBuilding, faCalendarAlt, faCalendarPlus, faCheckCircle, faClock, faClone, faCompass, faCopy, faEdit, faEnvelope, faHandshake} from '@fortawesome/free-regular-svg-icons';
 import {faApplePay, faIdeal, faPaypal, faStripe} from '@fortawesome/free-brands-svg-icons';
@@ -107,6 +108,8 @@ import {MyProfileDeleteWarningComponent} from './my-profile/my-profile-delete-wa
 import {TranslateDescriptionPipe} from './shared/translate-description.pipe';
 // import { AuthTokenInterceptor, DOMGidExtractor, DOMXsrfTokenExtractor } from 'common'; // FIXME: check why importing from common fail
 import { AuthTokenInterceptor, DOMGidExtractor, DOMXsrfTokenExtractor } from './xsrf';
+import {DownloadTicketComponent} from './reservation/download-ticket/download-ticket.component';
+
 
 
 // AoT requires an exported function for factories
@@ -133,6 +136,7 @@ export function InitUserService(userService: UserService): () => Promise<boolean
         UpdateTicketComponent,
         EventSummaryComponent,
         TicketFormComponent,
+        DownloadTicketComponent,
         CountdownComponent,
         BannerCheckComponent,
         OfflinePaymentComponent,
@@ -219,6 +223,6 @@ export class AppModule {
       faAngleDown, faAngleUp, faCircle, faCheckCircle, faMoneyCheckAlt, faWifi, faTrash, faCopy, faExclamationCircle, faUserAstronaut,
       faSignInAlt, faSignOutAlt, faExternalLinkAlt, faMapMarkerAlt, faRedoAlt);
     library.addIcons(faCalendarAlt, faCalendarPlus, faCompass, faClock, faEnvelope, faEdit, faClone, faHandshake, faBuilding);
-    library.addIcons(faPaypal, faStripe, faIdeal, faApplePay);
+    library.addIcons(faPaypal, faStripe, faIdeal, faApplePay, faFilePdf);
   }
 }

@@ -1,0 +1,29 @@
+<div class="modal-header">
+  <h2 class="modal-title">{{ticket.fullName}}</h2>
+</div>
+<div class="modal-body">
+  <div class="row mt-5 mb-5">
+    <div class="col-8 offset-2 col-md-6 offset-md-3 align-self-center mb-5" *ngIf="gWalletEnabled">
+      <a target="_blank" rel="noopener" (click)="close()" [attr.href]="'/api/wallet/event/' + eventName + '/v1/version/passes/'+ticket.uuid">
+        <img src="/resources/images/email/enUS_add_to_google_wallet_add-wallet-badge.svg" class="img-responsive mx-auto" alt="Add to Google Wallet">
+      </a>
+    </div>
+
+    <div class="col-8 offset-2 col-md-6 offset-md-3 align-self-center mb-5" *ngIf="passEnabled">
+      <a target="_blank" rel="noopener" (click)="close()" [attr.href]="'/api/pass/event/' + eventName + '/v1/version/passes/'+ticket.uuid">
+        <img src="/resources/images/email/add-to-apple-wallet-button.png" class="img-responsive mx-auto" alt="Add to Apple Wallet">
+      </a>
+    </div>
+
+    <div class="col-8 offset-2 col-md-6 offset-md-3 align-self-center">
+      <a target="_blank" (click)="close()" rel="noopener" [attr.href]="'/api/v2/public/event/' + eventName + '/ticket/' + ticket.uuid + '/download-ticket'" class="btn btn-link btn-block d-flex justify-content-center align-items-center">
+        <div class="mr-3"><fa-icon size="2x" [icon]="['fas', 'file-pdf']" a11yRole="presentation"></fa-icon></div>
+        <div>{{'reservation-page-complete.download-ticket'|translate}} PDF</div>
+      </a>
+    </div>
+
+  </div>
+</div>
+<div class="modal-footer">
+  <button type="button" (click)="close()" class="btn btn-light btn-block" translate="common.close"></button>
+</div>

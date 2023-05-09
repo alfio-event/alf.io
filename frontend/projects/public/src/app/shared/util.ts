@@ -32,6 +32,7 @@ export function removeFromSessionStorage(key: string): void {
   }
 }
 
+export const mobile = window.matchMedia('(max-width: 767px)').matches;
 export const embedded = window.parent !== window;
 
 export function notifyPaymentErrorToParent(purchaseContext: PurchaseContext,

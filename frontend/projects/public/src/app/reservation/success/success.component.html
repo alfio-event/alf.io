@@ -53,13 +53,13 @@
         </div>
         <ng-container *ngIf="reservationFinalized">
           <hr *ngIf="!ticketFormVisible">
-
-          <div class="row justify-content-end" *ngIf="!ticketFormVisible">
+          <div class="row justify-content-end">
             <div class="col-lg-3 col-sm-6 col-12 mb-2" *ngIf="!isOnlineTicket(tc) && ticket.assigned && !ticket.cancellationEnabled && ticket.downloadEnabled" >
               <a [routerLink]="['/event', event.shortName, 'ticket', ticket.uuid, 'view']" target="_blank" class="btn btn-default block-button"><fa-icon [icon]="['fas', 'search-plus']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.show-ticket'|translate}}</a>
             </div>
             <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" *ngIf="!isOnlineTicket(tc) && ticket.assigned && ticket.downloadEnabled">
-              <a [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticket.uuid + '/download-ticket'" class="btn btn-default block-button"><fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-ticket'|translate}}</a>
+              <button *ngIf="walletIntegrationEnabled" type="button" class="btn btn-default btn-block" (click)="downloadTicket(ticket)"><fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-ticket'|translate}}</button>
+              <a *ngIf="!walletIntegrationEnabled" [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticket.uuid + '/download-ticket'" class="btn btn-default block-button"><fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-ticket'|translate}}</a>
             </div>
             <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" *ngIf="ticket.assigned && ticket.sendMailEnabled">
               <button type="button" class="btn btn-default block-button send-ticket-by-email" (click)="sendEmailForTicket(ticket.uuid)"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.send-ticket-by-email-to'|translate}}</button>
@@ -71,11 +71,12 @@
               <button type="button" class="btn btn-danger block-button" (click)="releaseTicket(ticket)"><fa-icon [icon]="['fas', 'eraser']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.release-button.text'|translate}}</button>
             </div>
           </div>
+        </ng-container>
 
           <div *ngIf="ticketsFormShow[ticket.uuid]" class="mt-4">
             <div class="alert alert-info" translate="reservation-page-complete.info-update" *ngIf="event.assignmentConfiguration.enableTicketTransfer && ticket.assigned && !ticket.locked"></div>
             <form [formGroup]="ticketsFormControl[ticket.uuid]" (submit)="updateTicket(ticket.uuid)">
-              <app-ticket-form [ticket]="ticket" [purchaseContext]="event" [form]="ticketsFormControl[ticket.uuid]"></app-ticket-form>
+              <app-ticket-form [ticket]="ticket" [purchaseContext]="event" [form]="ticketsFormControl[ticket.uuid]" [reservationMetadata]="reservationInfo.metadata"></app-ticket-form>
               <div class="bg-white pb-3 pt-3" [class.sticky]="ticket.ticketFieldConfigurationAfterStandard.length > 0">
                 <div class="row d-flex justify-content-between">
                   <div class="col-md-5 order-md-1 col-12">
@@ -93,7 +94,6 @@
             <button type="button" class="btn-close" (click)="sendEmailForTicketStatus[ticket.uuid] = false"><span class="sr-only" translate="reservation-page-complete.cancel"></span></button>
             <strong translate="email.ticket-email-sent"></strong>
           </div>
-        </ng-container>
       </div>
     </div>
   </div>

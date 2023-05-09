@@ -8,16 +8,20 @@ import {zip} from 'rxjs';
 import {I18nService} from '../shared/i18n.service';
 import {AnalyticsService} from '../shared/analytics.service';
 import {HttpErrorResponse} from '@angular/common/http';
+import {InfoService} from '../shared/info.service';
+import {WalletConfiguration} from '../model/info';
 
 @Component({
   selector: 'app-view-ticket',
-  templateUrl: './view-ticket.component.html'
+  templateUrl: './view-ticket.component.html',
+  styleUrls: ['./view-ticket.component.scss']
 })
 export class ViewTicketComponent implements OnInit {
 
   event: Event;
   ticketIdentifier: string;
   ticketInfo: TicketInfo;
+  private walletConfiguration: WalletConfiguration;
 
   constructor(
     private ticketService: TicketService,
@@ -25,7 +29,8 @@ export class ViewTicketComponent implements OnInit {
     private router: Router,
     private eventService: EventService,
     private i18nService: I18nService,
-    private analytics: AnalyticsService) { }
+    private analytics: AnalyticsService,
+    private infoService: InfoService) { }
 
   public ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -33,17 +38,31 @@ export class ViewTicketComponent implements OnInit {
 
       const eventShortName = params['eventShortName'];
 
-      zip(this.eventService.getEvent(eventShortName), this.ticketService.getTicketInfo(eventShortName, this.ticketIdentifier))
-      .subscribe(([event, ticketInfo]) => {
+      zip(this.eventService.getEvent(eventShortName), this.ticketService.getTicketInfo(eventShortName, this.ticketIdentifier), this.infoService.getInfo())
+      .subscribe(([event, ticketInfo, generalInfo]) => {
         this.event = event;
         this.ticketInfo = ticketInfo;
         this.i18nService.setPageTitle('show-ticket.header.title', event);
         this.analytics.pageView(event.analyticsConfiguration);
+        this.walletConfiguration = generalInfo.walletConfiguration;
       }, e => {
         if (e instanceof HttpErrorResponse && e.status === 404) {
           this.router.navigate(['']);
         }
       });
     });
+  }
+
+  get walletIntegrationEnabled(): boolean {
+    return this.walletConfiguration != null &&
+      (this.walletConfiguration.gWalletEnabled || this.walletConfiguration.passEnabled);
+  }
+
+  get gWalletEnabled(): boolean {
+    return this.walletConfiguration != null && this.walletConfiguration.gWalletEnabled;
+  }
+
+  get passEnabled(): boolean {
+    return this.walletConfiguration != null && this.walletConfiguration.passEnabled;
   }
 }
