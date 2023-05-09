@@ -37,6 +37,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -211,7 +212,7 @@ public final class EventUtil {
             .queryParam("ctz", event.getTimeZone())
             .queryParam("text", event.getDisplayName())
             .queryParam("location", event.getLocation())
-            .queryParam("details", description)
+            .queryParam("details", StringUtils.abbreviate(description, 1024))
             .toUriString();
     }
 
