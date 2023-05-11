@@ -27,7 +27,7 @@
 
             $q.all([OrganizationService.getAllOrganizations(), UserService.getAllRoles()]).then(function(results) {
                 ctrl.organizations = results[0].data;
-                ctrl.roles = _.filter(results[1].data, function(r) { return r.target === 'API_KEY'; });
+                ctrl.roles = _.filter(results[1].data, function(r) { return r.target.indexOf('API_KEY') > -1; });
             });
         };
 
