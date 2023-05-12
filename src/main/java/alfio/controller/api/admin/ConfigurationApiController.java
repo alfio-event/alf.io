@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.job.executor.AssignTicketToSubscriberJobExecutor;
+import alfio.manager.AccessService;
 import alfio.manager.BillingDocumentManager;
 import alfio.manager.EventManager;
 import alfio.manager.system.AdminJobExecutor;
@@ -61,6 +62,7 @@ public class ConfigurationApiController {
     private final EventManager eventManager;
     private final ClockProvider clockProvider;
     private final UserManager userManager;
+    private final AccessService accessService;
 
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
@@ -87,6 +89,7 @@ public class ConfigurationApiController {
 
     @GetMapping(value = "/organizations/{organizationId}/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfiguration(@PathVariable("organizationId") int organizationId, Principal principal) {
+        accessService.checkOrganizationAccess(principal, organizationId);
         return configurationManager.loadOrganizationConfig(organizationId, principal.getName());
     }
 
@@ -100,6 +103,7 @@ public class ConfigurationApiController {
     @GetMapping(value = "/events/{eventId}/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfiguration(@PathVariable("eventId") int eventId,
                                                                                               Principal principal) {
+        accessService.checkEventAccess(principal, eventId);
         return configurationManager.loadEventConfig(eventId, principal.getName());
     }
 
@@ -107,6 +111,7 @@ public class ConfigurationApiController {
     public ResponseEntity<String> getSingleConfigForEvent(@PathVariable("eventName") String eventShortName,
                                                          @PathVariable("key") String key,
                                                          Principal principal) {
+        accessService.checkEventAccess(principal, eventShortName);
 
         var optionalEvent = eventManager.getOptionalByName(eventShortName, principal.getName());
 
@@ -126,6 +131,7 @@ public class ConfigurationApiController {
     public ResponseEntity<String> getSingleConfigForOrganization(@PathVariable("organizationId") int organizationId,
                                                                  @PathVariable("key") String key,
                                                                  Principal principal) {
+        accessService.checkOrganizationAccess(principal, organizationId);
 
         String config = configurationManager.getSingleConfigForOrganization(organizationId, key, principal.getName());
         if(config == null) {
@@ -155,12 +161,14 @@ public class ConfigurationApiController {
 
     @DeleteMapping(value = "/organization/{organizationId}/key/{key}")
     public boolean deleteOrganizationLevelKey(@PathVariable("organizationId") int organizationId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+        accessService.checkOrganizationAccess(principal, organizationId);
         configurationManager.deleteOrganizationLevelByKey(key.getValue(), organizationId, principal.getName());
         return true;
     }
 
     @DeleteMapping(value = "/event/{eventId}/key/{key}")
     public boolean deleteEventLevelKey(@PathVariable("eventId") int eventId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+        accessService.checkEventAccess(principal, eventId);
         configurationManager.deleteEventLevelByKey(key.getValue(), eventId, principal.getName());
         return true;
     }
@@ -189,7 +197,8 @@ public class ConfigurationApiController {
     }
 
     @GetMapping(value = "/platform-mode/status/{organizationId}")
-    public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
+    public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId, Principal principal) {
+        accessService.checkOrganizationAccess(principal, organizationId);
         Map<String, Boolean> result = new HashMap<>();
         boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault();
         result.put("enabled", platformModeEnabled);
@@ -208,6 +217,7 @@ public class ConfigurationApiController {
 
     @GetMapping(value = "/event/{eventId}/invoice-first-date")
     public ResponseEntity<ZonedDateTime> getFirstInvoiceDate(@PathVariable("eventId") Integer eventId, Principal principal) {
+        accessService.checkEventAccess(principal, eventId);
         return ResponseEntity.of(optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()))
             .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(clockProvider.getClock().withZone(event.getZoneId())))));
     }
@@ -217,6 +227,7 @@ public class ConfigurationApiController {
                                                                      @RequestParam("from") long fromInstant,
                                                                      @RequestParam("to") long toInstant,
                                                                      Principal principal) {
+        accessService.checkEventAccess(principal, eventId);
         var eventOptional = optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()));
         if(eventOptional.isEmpty()) {
             return ResponseEntity.badRequest().build();

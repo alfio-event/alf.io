@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.support.CheckInStatistics;
@@ -57,6 +58,7 @@ public class CheckInApiController {
     private final CheckInManager checkInManager;
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
+    private final AccessService accessService;
 
     @Data
     public static class TicketCode {
@@ -162,6 +164,7 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/event/{eventName}/statistics")
     public CheckInStatistics getStatistics(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventAccess(principal, eventName);
         return checkInManager.getStatistics(eventName, principal.getName());
     }
     
@@ -177,6 +180,7 @@ public class CheckInApiController {
                                                @RequestParam(value = "changedSince", required = false) Long changedSince,
                                                HttpServletResponse response,
                                                Principal principal) {
+        accessService.checkEventAccess(principal, eventId);
         response.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
         return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
     }
@@ -205,6 +209,7 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/{eventName}/label-layout")
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventAccess(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
             .map(this::parseLabelLayout)
@@ -216,6 +221,7 @@ public class CheckInApiController {
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
+        accessService.checkEventAccess(principal, eventName);
         Date since = changedSince == null ? new Date(0) : DateUtils.addSeconds(new Date(changedSince), -1);
         Optional<List<Integer>> ids = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInEnabled())
