@@ -35,6 +35,9 @@ export class ApiKeySystemBulkComponent implements OnInit {
     return this.bulkForm.value.descriptions;
   }
 
+  get userOrganizationId(){return this.bulkForm.get('organizationId')}
+  get userRole(){return this.bulkForm.get('role')}
+
   ngOnInit(): void {
     this.organizations$ = this.organizationService.getOrganizations();
     this.roles$ = this.userService.getAllRoles();
