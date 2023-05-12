@@ -1,19 +1,89 @@
-<div class="container">
+<div class="container mt-5">
   <h1>Bulk creation</h1>
+  <hr />
 </div>
-<div class="container d-flex">
-  <label for="UserOrganizationId">Organization</label>
-  <!-- <select
-    id="UserOrganizationId"
-    class="form-select form-control"
-    formControlName="organizationId"
-    [class.is-invalid]="
-   organizationName?.invalid &&
-    (organizationName?.dirty || organizationName?.touched)
-  "
-  >
-    <option *ngFor="let org of organizations$ | async" [ngValue]="org.id">
-      {{ org.name }}
-    </option>
-  </select> -->
-</div>
+
+<form [formGroup]="bulkForm" (ngSubmit)="save()">
+  <div class="container d-flex justify-content-between mt-5">
+    <div class="d-flex flex-fill">
+      <label for="UserOrganizationId" class="d-flex me-3">Organization:</label>
+      <select
+        id="UserOrganizationId"
+        class="form-select form-control d-flex"
+        formControlName="organizationId"
+      >
+        <option></option>
+        <option *ngFor="let org of organizations$ | async" [ngValue]="org.id">
+          {{ org.name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group d-flex flex-fill ms-3">
+      <label for="userRole" class="d-flex me-3">Role:</label>
+      <select id="userRole" class="form-select" formControlName="role">
+        <option *ngFor="let role of roles$ | async" [ngValue]="role.role">
+          {{ role.description }}
+        </option>
+      </select>
+    </div>
+  </div>
+  <div class="container mt-5">
+    <h4 class="mt-4 mb-4">File Specifications:</h4>
+    <h5><strong>General</strong></h5>
+    <span
+      >Please create a CSV file without header, using commas (,) as separator,
+      double quotes (") as quote character and backslash (\) as escaping
+      character</span
+    >
+    <h5 class="mt-4 mb-4"><strong>Row specification</strong></h5>
+    <pre>
+    <span class="text-info">name</span>
+    where:
+    <span class="text-info">name</span>
+    is the name of the client, to be displayed in the QR-Code and statistics
+  </pre>
+    <div class="file-upload-wrapper">
+      <input type="file" id="input-file-now" class="file-upload" />
+    </div>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th colspan="2">Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let description of bulkForm.value.descriptions">
+          <td colspan="2">
+            {{ description }}
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th>Total</th>
+          <th>
+            {{ bulkForm.value.descriptions.length }}
+          </th>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="d-flex justify-content-between mt-5">
+      <div>
+        <button
+          class="btn btn-lg btn-outline-secondary"
+          [routerLink]="['/access-control/api-keys']"
+        >
+          Cancel
+        </button>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-lg btn-primary" [disabled]="">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+{{ bulkForm.value.descriptions | json }}
