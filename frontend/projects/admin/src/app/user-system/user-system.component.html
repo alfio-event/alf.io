@@ -1,7 +1,17 @@
 <div class="container">
   <h1 class="my-3">Users</h1>
   <hr />
-  <div class="d-flex flex-row-reverse py-3">
+  <div class="d-flex py-3">
+    <select
+    id="UserOrganizationId"
+    class="form-select form-control d-flex me-3"
+    [(ngModel)]="selectedOrganization"
+  >
+    <option></option>
+    <option *ngFor="let org of organizations$ | async" [ngValue]="org">
+      {{ org.name }}
+    </option>
+  </select>
     <button
       type="button"
       class="btn btn-success d-flex align-items-center"
@@ -29,7 +39,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let user of users$ | async">
+      <tr *ngFor="let user of users$ | async | usersFilterOrg : selectedOrganization">
         <td>{{ user.enabled }}</td>
         <td scope="row">
           {{ user.username }}

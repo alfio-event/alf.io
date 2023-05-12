@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, filter, map, Observable, of } from 'rxjs';
-import { User, UserInfo } from '../model/user';
+import { User, UserInfo} from '../model/user';
 import { Role } from '../model/role';
+import { ApiKeyBulk } from '../model/apikey-bulk';
 
 @Injectable()
 export class UserService {
@@ -71,5 +72,9 @@ export class UserService {
 
   update(user: User) : Observable<any>{
     return this.httpClient.post<any>('/admin/api/users/edit', user);
+  }
+
+  createApiBulk(apiKeyBulk: ApiKeyBulk): Observable<any>{
+    return this.httpClient.post<any>('/admin/api/api-keys/bulk', apiKeyBulk);
   }
 }
