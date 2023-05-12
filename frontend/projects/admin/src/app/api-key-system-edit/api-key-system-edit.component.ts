@@ -66,7 +66,6 @@ export class ApiKeySystemEditComponent implements OnInit {
       this.user$ = this.userService.getUser(this.userId);
       this.user$.subscribe((user) => {
         if (user) this.userForm.patchValue(user);
-        console.log(user);
       });
     } else {
       this.editMode = false;
