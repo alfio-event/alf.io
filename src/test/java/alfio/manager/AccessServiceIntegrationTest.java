@@ -127,26 +127,26 @@ class AccessServiceIntegrationTest {
         var principalUserOrg2 = getFromUsernameAndPassword(userOrg2.getUsername(), userOrg2.getPassword());
 
         // no principal can access, in case of jobs & co
-        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationAccess(null, org1Id));
-        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationAccess(null, org2Id));
+        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(null, org1Id));
+        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(null, org2Id));
 
         // System api key can access both orgs
-        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationAccess(new APITokenAuthentication("TEST", "", List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT))), org1Id));
-        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationAccess(new APITokenAuthentication("TEST", "", List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT))), org2Id));
+        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(new APITokenAuthentication("TEST", "", List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT))), org1Id));
+        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(new APITokenAuthentication("TEST", "", List.of(new SimpleGrantedAuthority("ROLE_" + SYSTEM_API_CLIENT))), org2Id));
 
         // Admin can access both orgs
-        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationAccess(principalAdmin, org1Id));
-        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationAccess(principalAdmin, org2Id));
+        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(principalAdmin, org1Id));
+        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(principalAdmin, org2Id));
 
 
         // user org 1 can access
-        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationAccess(principalUserOrg1, org1Id));
+        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(principalUserOrg1, org1Id));
         // user org 2 cannot access
-        Assertions.assertThrows(IllegalArgumentException.class, () -> accessService.checkOrganizationAccess(principalUserOrg2, org1Id));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> accessService.checkOrganizationOwnership(principalUserOrg2, org1Id));
 
         // vice versa
-        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationAccess(principalUserOrg2, org2Id));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> accessService.checkOrganizationAccess(principalUserOrg1, org2Id));
+        Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(principalUserOrg2, org2Id));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> accessService.checkOrganizationOwnership(principalUserOrg1, org2Id));
 
     }
 }

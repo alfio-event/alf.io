@@ -59,7 +59,7 @@ public class AdminWaitingQueueApiController {
 
     @GetMapping("/status")
     public Map<String, Boolean> getStatusForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventAccess(principal, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(this::loadStatus)
             .orElse(Collections.emptyMap());
@@ -93,7 +93,7 @@ public class AdminWaitingQueueApiController {
 
     @GetMapping("/count")
     public Integer countWaitingPeople(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
-        accessService.checkEventAccess(principal, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         Optional<Integer> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.countSubscribers(e.getId()));
         if(count.isPresent()) {
@@ -105,7 +105,7 @@ public class AdminWaitingQueueApiController {
 
     @GetMapping("/load")
     public List<WaitingQueueSubscription> loadAllSubscriptions(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
-        accessService.checkEventAccess(principal, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         Optional<List<WaitingQueueSubscription>> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.loadAllSubscriptionsForEvent(e.getId()));
         if(count.isPresent()) {
@@ -119,7 +119,7 @@ public class AdminWaitingQueueApiController {
     public void downloadAllSubscriptions(@PathVariable("eventName") String eventName,
                                          @RequestParam(name = "format", defaultValue = "excel") String format,
                                          Principal principal, HttpServletResponse response) throws IOException {
-        accessService.checkEventAccess(principal, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         var found = waitingQueueManager.loadAllSubscriptionsForEvent(event.getId());
 

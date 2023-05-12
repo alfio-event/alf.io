@@ -68,31 +68,31 @@ public class AccessService {
         throw new IllegalStateException("FIXME");
     }
 
-    public void checkOrganizationAccess(Principal principal, int organizationId) {
+    public void checkOrganizationOwnership(Principal principal, int organizationId) {
         if (principal == null) {
             log.trace("No user present, we will allow it");
             return;
         }
         if (isSystemApiUser(principal)) {
-            log.trace("Allowing access to Organization {} to System API Key", organizationId);
+            log.trace("Allowing ownership to Organization {} to System API Key", organizationId);
             return;
         }
         if (isOwnerOfOrganization(principal, organizationId)) {
-            log.trace("Allowing access to Organization {} to user {}", organizationId, principal.getName());
+            log.trace("Allowing ownership to Organization {} to user {}", organizationId, principal.getName());
             return;
         }
-        log.warn("User {} don't have access to organizationId {}", principal.getName(), organizationId);
-        throw new IllegalArgumentException("User " + principal.getName() + " don't have access to organizationId " + organizationId);
+        log.warn("User {} don't have ownership to organizationId {}", principal.getName(), organizationId);
+        throw new IllegalArgumentException("User " + principal.getName() + " don't have ownership to organizationId " + organizationId);
     }
 
-    public void checkEventAccess(Principal principal, int eventId) {
+    public void checkEventOwnership(Principal principal, int eventId) {
         var orgId = eventRepository.findOrganizationIdByEventId(eventId);
-        checkOrganizationAccess(principal, orgId);
+        checkOrganizationOwnership(principal, orgId);
     }
 
-    public void checkEventAccess(Principal principal, String eventShortName) {
+    public void checkEventOwnership(Principal principal, String eventShortName) {
         var orgId = eventRepository.findOrganizationIdByShortName(eventShortName);
-        checkOrganizationAccess(principal, orgId);
+        checkOrganizationOwnership(principal, orgId);
     }
 
     private static boolean isSystemApiUser(Principal principal) {

@@ -89,7 +89,7 @@ public class ConfigurationApiController {
 
     @GetMapping(value = "/organizations/{organizationId}/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfiguration(@PathVariable("organizationId") int organizationId, Principal principal) {
-        accessService.checkOrganizationAccess(principal, organizationId);
+        accessService.checkOrganizationOwnership(principal, organizationId);
         return configurationManager.loadOrganizationConfig(organizationId, principal.getName());
     }
 
@@ -103,7 +103,7 @@ public class ConfigurationApiController {
     @GetMapping(value = "/events/{eventId}/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfiguration(@PathVariable("eventId") int eventId,
                                                                                               Principal principal) {
-        accessService.checkEventAccess(principal, eventId);
+        accessService.checkEventOwnership(principal, eventId);
         return configurationManager.loadEventConfig(eventId, principal.getName());
     }
 
@@ -111,7 +111,7 @@ public class ConfigurationApiController {
     public ResponseEntity<String> getSingleConfigForEvent(@PathVariable("eventName") String eventShortName,
                                                          @PathVariable("key") String key,
                                                          Principal principal) {
-        accessService.checkEventAccess(principal, eventShortName);
+        accessService.checkEventOwnership(principal, eventShortName);
 
         var optionalEvent = eventManager.getOptionalByName(eventShortName, principal.getName());
 
@@ -131,7 +131,7 @@ public class ConfigurationApiController {
     public ResponseEntity<String> getSingleConfigForOrganization(@PathVariable("organizationId") int organizationId,
                                                                  @PathVariable("key") String key,
                                                                  Principal principal) {
-        accessService.checkOrganizationAccess(principal, organizationId);
+        accessService.checkOrganizationOwnership(principal, organizationId);
 
         String config = configurationManager.getSingleConfigForOrganization(organizationId, key, principal.getName());
         if(config == null) {
@@ -161,14 +161,14 @@ public class ConfigurationApiController {
 
     @DeleteMapping(value = "/organization/{organizationId}/key/{key}")
     public boolean deleteOrganizationLevelKey(@PathVariable("organizationId") int organizationId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
-        accessService.checkOrganizationAccess(principal, organizationId);
+        accessService.checkOrganizationOwnership(principal, organizationId);
         configurationManager.deleteOrganizationLevelByKey(key.getValue(), organizationId, principal.getName());
         return true;
     }
 
     @DeleteMapping(value = "/event/{eventId}/key/{key}")
     public boolean deleteEventLevelKey(@PathVariable("eventId") int eventId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
-        accessService.checkEventAccess(principal, eventId);
+        accessService.checkEventOwnership(principal, eventId);
         configurationManager.deleteEventLevelByKey(key.getValue(), eventId, principal.getName());
         return true;
     }
@@ -198,7 +198,7 @@ public class ConfigurationApiController {
 
     @GetMapping(value = "/platform-mode/status/{organizationId}")
     public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId, Principal principal) {
-        accessService.checkOrganizationAccess(principal, organizationId);
+        accessService.checkOrganizationOwnership(principal, organizationId);
         Map<String, Boolean> result = new HashMap<>();
         boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault();
         result.put("enabled", platformModeEnabled);
@@ -217,7 +217,7 @@ public class ConfigurationApiController {
 
     @GetMapping(value = "/event/{eventId}/invoice-first-date")
     public ResponseEntity<ZonedDateTime> getFirstInvoiceDate(@PathVariable("eventId") Integer eventId, Principal principal) {
-        accessService.checkEventAccess(principal, eventId);
+        accessService.checkEventOwnership(principal, eventId);
         return ResponseEntity.of(optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()))
             .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(clockProvider.getClock().withZone(event.getZoneId())))));
     }
@@ -227,7 +227,7 @@ public class ConfigurationApiController {
                                                                      @RequestParam("from") long fromInstant,
                                                                      @RequestParam("to") long toInstant,
                                                                      Principal principal) {
-        accessService.checkEventAccess(principal, eventId);
+        accessService.checkEventOwnership(principal, eventId);
         var eventOptional = optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()));
         if(eventOptional.isEmpty()) {
             return ResponseEntity.badRequest().build();

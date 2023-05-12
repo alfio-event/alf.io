@@ -114,6 +114,7 @@ public class EventApiController {
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
+    private final AccessService accessService;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -133,6 +134,7 @@ public class EventApiController {
     @GetMapping("/paymentProxies/{organizationId}")
     @ResponseStatus(HttpStatus.OK)
     public List<PaymentManager.PaymentMethodDTO> getPaymentProxies( @PathVariable("organizationId") int organizationId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         return userManager.findUserOrganizations(principal.getName())
             .stream()
             .filter(o -> o.getId() == organizationId)
@@ -188,6 +190,7 @@ public class EventApiController {
 
     @GetMapping("/events/{name}")
     public ResponseEntity<EventAndOrganization> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         final String username = principal.getName();
         return optionally(() -> eventStatisticsManager.getEventWithAdditionalInfo(eventName, username))
             .map(event -> {
@@ -198,11 +201,13 @@ public class EventApiController {
     
     @DeleteMapping("/events/{eventId}")
     public void deleteEvent(@PathVariable("eventId") int eventId, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
     	eventManager.deleteEvent(eventId, principal.getName());
     }
 
     @GetMapping("/events/id/{eventId}")
     public Event getSingleEventById(@PathVariable("eventId") int eventId, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
         return eventManager.getSingleEventById(eventId, principal.getName());
     }
 
@@ -253,6 +258,7 @@ public class EventApiController {
 
     @GetMapping("/events/names-in-organization/{orgId}")
     public Map<Integer, String> getEventsNameInOrganization(@PathVariable("orgId") int orgId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, orgId);
         return eventManager.getEventsNameInOrganization(orgId, principal);
     }
 
@@ -264,6 +270,7 @@ public class EventApiController {
 
     @PutMapping("/events/{id}/status")
     public String activateEvent(@PathVariable("id") int id, @RequestParam("active") boolean active, Principal principal) {
+        accessService.checkEventOwnership(principal, id);
         eventManager.toggleActiveFlag(id, principal.getName(), active);
         return OK;
     }

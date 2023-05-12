@@ -164,7 +164,7 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/event/{eventName}/statistics")
     public CheckInStatistics getStatistics(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventAccess(principal, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         return checkInManager.getStatistics(eventName, principal.getName());
     }
     
@@ -180,7 +180,7 @@ public class CheckInApiController {
                                                @RequestParam(value = "changedSince", required = false) Long changedSince,
                                                HttpServletResponse response,
                                                Principal principal) {
-        accessService.checkEventAccess(principal, eventId);
+        accessService.checkEventOwnership(principal, eventId);
         response.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
         return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
     }
@@ -209,7 +209,7 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/{eventName}/label-layout")
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventAccess(principal, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
             .map(this::parseLabelLayout)
@@ -221,7 +221,7 @@ public class CheckInApiController {
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
-        accessService.checkEventAccess(principal, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         Date since = changedSince == null ? new Date(0) : DateUtils.addSeconds(new Date(changedSince), -1);
         Optional<List<Integer>> ids = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInEnabled())

@@ -78,7 +78,7 @@ public class AdditionalServiceApiController {
 
     @GetMapping("/event/{eventId}/additional-services")
     public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId, Principal principal) {
-        accessService.checkEventAccess(principal, eventId);
+        accessService.checkEventOwnership(principal, eventId);
         return eventRepository.findOptionalById(eventId)
             .map(event -> additionalServiceManager.loadAllForEvent(eventId)
                             .stream()
@@ -92,7 +92,7 @@ public class AdditionalServiceApiController {
 
     @GetMapping("/event/{eventId}/additional-services/count")
     public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable("eventId") int eventId, Principal principal) {
-        accessService.checkOrganizationAccess(principal, eventId);
+        accessService.checkOrganizationOwnership(principal, eventId);
         return additionalServiceManager.countUsageForEvent(eventId);
     }
 
@@ -153,7 +153,7 @@ public class AdditionalServiceApiController {
                                          @PathVariable("type") AdditionalService.AdditionalServiceType additionalServiceType,
                                          HttpServletResponse response,
                                          Principal principal) throws IOException {
-        accessService.checkEventAccess(principal, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getOptionalByName(eventName, principal.getName()).orElseThrow();
         var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         var header = List.of(
