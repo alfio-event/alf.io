@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.model.user.Role;
+import alfio.repository.EventRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
@@ -47,15 +48,20 @@ public class AccessService {
     private static final Logger log = LogManager.getLogger(AccessService.class);
 
     private final UserRepository userRepository;
+
+    private final EventRepository eventRepository;
+
     private final AuthorityRepository authorityRepository;
     private final UserOrganizationRepository userOrganizationRepository;
 
     public AccessService(UserRepository userRepository,
                          AuthorityRepository authorityRepository,
-                         UserOrganizationRepository userOrganizationRepository) {
+                         UserOrganizationRepository userOrganizationRepository,
+                         EventRepository eventRepository) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
         this.userOrganizationRepository = userOrganizationRepository;
+        this.eventRepository = eventRepository;
     }
 
     public void checkUserAccess(Principal principal, int userId) {
@@ -77,6 +83,11 @@ public class AccessService {
         }
         log.warn("User {} don't have access to organizationId {}", principal.getName(), organizationId);
         throw new IllegalArgumentException("User " + principal.getName() + " don't have access to organizationId " + organizationId);
+    }
+
+    public void checkEventAccess(Principal principal, int eventId) {
+        var orgId = eventRepository.findOrganizationIdByEventId(eventId);
+        checkOrganizationAccess(principal, eventId);
     }
 
     private static boolean isSystemApiUser(Principal principal) {

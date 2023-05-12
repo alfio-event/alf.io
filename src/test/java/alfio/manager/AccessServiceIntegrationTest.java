@@ -41,6 +41,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -64,8 +65,9 @@ class AccessServiceIntegrationTest {
                                           CsrfTokenRepository csrfTokenRepository,
                                           DataSource dataSource,
                                           PasswordEncoder passwordEncoder,
-                                          PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, publicOpenIdAuthenticationManager);
+                                          PublicOpenIdAuthenticationManager publicOpenIdAuthenticationManager,
+                                          SpringSessionBackedSessionRegistry<?> sessionRegistry) {
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, publicOpenIdAuthenticationManager, sessionRegistry);
         }
 
         @Override
