@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.AdditionalServiceManager;
 import alfio.manager.EventManager;
 import alfio.model.AdditionalService;
@@ -60,6 +61,7 @@ public class AdditionalServiceApiController {
     private final EventManager eventManager;
     private final EventRepository eventRepository;
     private final AdditionalServiceManager additionalServiceManager;
+    private final AccessService accessService;
 
 
     @ExceptionHandler({IllegalArgumentException.class})
@@ -75,7 +77,8 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/event/{eventId}/additional-services")
-    public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId) {
+    public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId, Principal principal) {
+        accessService.checkEventAccess(principal, eventId);
         return eventRepository.findOptionalById(eventId)
             .map(event -> additionalServiceManager.loadAllForEvent(eventId)
                             .stream()
@@ -88,7 +91,8 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/event/{eventId}/additional-services/count")
-    public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable("eventId") int eventId) {
+    public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable("eventId") int eventId, Principal principal) {
+        accessService.checkOrganizationAccess(principal, eventId);
         return additionalServiceManager.countUsageForEvent(eventId);
     }
 
@@ -149,6 +153,7 @@ public class AdditionalServiceApiController {
                                          @PathVariable("type") AdditionalService.AdditionalServiceType additionalServiceType,
                                          HttpServletResponse response,
                                          Principal principal) throws IOException {
+        accessService.checkEventAccess(principal, eventName);
         var event = eventManager.getOptionalByName(eventName, principal.getName()).orElseThrow();
         var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         var header = List.of(
