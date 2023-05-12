@@ -54,6 +54,10 @@ public interface EventRepository {
     @Query("select org_id from event where id = :eventId")
     int findOrganizationIdByEventId(@Bind("eventId") int eventId);
 
+
+    @Query("select org_id from event where short_name = :shortName")
+    int findOrganizationIdByShortName(@Bind("shortName") String eventShortName);
+
     default ZoneId getZoneIdByEventId(int eventId) {
         return TimeZone.getTimeZone(getTimeZoneByEventId(eventId)).toZoneId();
     }

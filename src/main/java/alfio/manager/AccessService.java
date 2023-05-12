@@ -87,7 +87,12 @@ public class AccessService {
 
     public void checkEventAccess(Principal principal, int eventId) {
         var orgId = eventRepository.findOrganizationIdByEventId(eventId);
-        checkOrganizationAccess(principal, eventId);
+        checkOrganizationAccess(principal, orgId);
+    }
+
+    public void checkEventAccess(Principal principal, String eventShortName) {
+        var orgId = eventRepository.findOrganizationIdByShortName(eventShortName);
+        checkOrganizationAccess(principal, orgId);
     }
 
     private static boolean isSystemApiUser(Principal principal) {
