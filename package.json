@@ -2,7 +2,7 @@
   "name": "mjml-to-html",
   "version": "1.0.0",
   "dependencies": {
-    "glob": "^7.1.6",
+    "glob": "^7.2.3",
     "mjml": "^4.10.1"
   }
 }
