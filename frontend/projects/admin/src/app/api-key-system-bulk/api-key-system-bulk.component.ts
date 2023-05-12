@@ -25,10 +25,14 @@ export class ApiKeySystemBulkComponent implements OnInit {
     formBuilder: FormBuilder
   ) {
     this.bulkForm = formBuilder.group({
-      organizationId:[null, Validators.required],
+      organizationId: [null, Validators.required],
       role: [null, Validators.required],
-      descriptions: [["abc","vdg"]],
-    })
+      descriptions: [[]],
+    });
+  }
+
+  get bulkDescriptions(): string[] {
+    return this.bulkForm.value.descriptions;
   }
 
   ngOnInit(): void {
@@ -36,13 +40,25 @@ export class ApiKeySystemBulkComponent implements OnInit {
     this.roles$ = this.userService.getAllRoles();
   }
 
-  save() : void {
-  let result: Observable<any>;
-  result = this.userService.createApiBulk(this.bulkForm.value);
-  result.subscribe((res) => {
-    if (res === 'OK'){
-      this.router.navigate(['/access-control/api-keys']);
+  save(): void {
+    this.userService.createApiBulk(this.bulkForm.value).subscribe((res) => {
+      if (res === 'OK') {
+        this.router.navigate(['/access-control/api-keys']);
+      }
+    });
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input && input.files) {
+      const file: File = input.files[0];
+      file.text().then((res) => {
+        const descriptions = res
+          .split('\n')
+          .map((es) => es.trim())
+          .filter((es) => es !== null && es.length > 0);
+        this.bulkForm.get('descriptions')?.patchValue(descriptions);
+      });
     }
-  })
   }
 }
