@@ -41,6 +41,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -52,9 +53,16 @@ import java.util.List;
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 
 @AlfioIntegrationTest
-@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, WebSecurityConfig.class, AccessServiceIntegrationTest.CustomContextConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, AccessServiceIntegrationTest.AdHocMvcConfiguration.class, WebSecurityConfig.class, AccessServiceIntegrationTest.CustomContextConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 class AccessServiceIntegrationTest {
+
+    static class AdHocMvcConfiguration {
+        @Bean
+        public SpringSessionBackedSessionRegistry<?> sessionRegistry(FindByIndexNameSessionRepository<?> sessionRepository) {
+            return new SpringSessionBackedSessionRegistry<>(sessionRepository);
+        }
+    }
 
 
     static class CustomContextConfiguration extends FormBasedWebSecurity {
@@ -75,7 +83,6 @@ class AccessServiceIntegrationTest {
         public AuthenticationManager authenticationManagerBean () throws Exception {
             return super.authenticationManagerBean();
         }
-
     }
 
     @Autowired
