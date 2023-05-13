@@ -34,7 +34,7 @@
     "@angular/pwa": "^0.5.3",
     "@angular/router": "^14.2.0",
     "@ng-bootstrap/ng-bootstrap": "^13.1.1",
-    "@ngneat/svg-icon": "^6.1.0",
+    "@ngneat/svg-icon": "^6.3.0",
     "@ngx-translate/core": "^14.0.0",
     "@ngx-translate/http-loader": "^7.0.0",
     "@popperjs/core": "^2.10.2",
