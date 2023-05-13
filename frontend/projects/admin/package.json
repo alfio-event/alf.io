@@ -31,7 +31,7 @@
     "@angular/forms": "^14.2.0",
     "@angular/platform-browser": "^14.2.0",
     "@angular/platform-browser-dynamic": "^14.2.0",
-    "@angular/pwa": "^0.5.3",
+    "@angular/pwa": "^0.1102.19",
     "@angular/router": "^14.2.0",
     "@ng-bootstrap/ng-bootstrap": "^13.1.1",
     "@ngneat/svg-icon": "^6.1.0",
