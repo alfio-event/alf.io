@@ -1,6 +1,11 @@
 <div class="row" *ngIf="event">
   <div class="col-2">
-    <img src="/file/{{ event.fileBlobId }}" alt="" class="img-fluid" />
+    <img
+      src="/file/{{ event.fileBlobId }}"
+      alt=""
+      class="img-fluid"
+      *ngIf="showImage"
+    />
   </div>
   <div class="col-5">
     <h4>

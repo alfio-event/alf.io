@@ -9,6 +9,10 @@ import { EventInfo } from '../../model/event';
 export class EventItemComponent implements OnInit {
   @Input()
   public event: EventInfo | undefined;
+
+  @Input()
+  showImage: boolean = true;
+
   constructor() {}
 
   ngOnInit(): void {}

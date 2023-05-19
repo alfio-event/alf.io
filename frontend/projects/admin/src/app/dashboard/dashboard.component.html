@@ -1,29 +1,46 @@
-<h1 translate="admin.dashboard.my-events"></h1>
-<app-filter-button
-  text="Active"
-  [checked]="activeFilter"
-  (toggleFilter)="toggleActiveFilter($event)"
-></app-filter-button>
-<app-filter-button
-  text="Past"
-  [checked]="inactiveFilter"
-  (toggleFilter)="toggleInactiveFilter($event)"
-></app-filter-button>
-<ng-container *ngIf="activeFilter">
-  <h2>Active</h2>
-  <ul>
-    <li *ngFor="let ev of activeEvents$ | async">
-      <app-event-item [event]="ev"></app-event-item>
-    </li>
-  </ul>
-</ng-container>
-<ng-container *ngIf="inactiveFilter">
-  <h2>Past</h2>
-  <ul>
-    <li *ngFor="let ev of expiredEvents$ | async">
-      <a [routerLink]="['./', ev.id]"
-        >{{ ev.displayName }} {{ ev.formattedBegin }} {{ ev.formattedEnd }}</a
-      >
-    </li>
-  </ul>
-</ng-container>
+<div class="container">
+  <div class="my-3 d-flex justify-content-between d-flex align-items-center">
+    <h1 translate="admin.dashboard.my-events"></h1>
+    <div>
+      <app-filter-button
+        text="Active"
+        [checked]="activeFilter"
+        (toggleFilter)="toggleActiveFilter($event)"
+        class="mx-2"
+      ></app-filter-button>
+      <app-filter-button
+        text="Past"
+        [checked]="inactiveFilter"
+        (toggleFilter)="toggleInactiveFilter($event)"
+      ></app-filter-button>
+    </div>
+  </div>
+  <hr />
+
+  <ng-container *ngIf="activeFilter">
+    <div class="card">
+      <h2 class="card-header">Active</h2>
+      <ul class="list-group list-group-flush">
+        <li *ngFor="let ev of activeEvents$ | async" class="list-group-item">
+          <app-event-item
+            [showImage]="((activeEvents$ | async)?.length || 0) <= 10"
+            [event]="ev"
+          ></app-event-item>
+        </li>
+      </ul>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="inactiveFilter">
+    <div class="card my-5">
+      <h2 class="card-header">Past</h2>
+      <ul class="list-group list-group-flush">
+        <li *ngFor="let ev of expiredEvents$ | async" class="list-group-item">
+          <a [routerLink]="['./', ev.id]"
+            >{{ ev.displayName }} {{ ev.formattedBegin }}
+            {{ ev.formattedEnd }}</a
+          >
+        </li>
+      </ul>
+    </div>
+  </ng-container>
+</div>
