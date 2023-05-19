@@ -14,5 +14,35 @@
     {{ event.formattedBegin }} / {{ event.formattedEnd }}
   </div>
 
-  <div class="col-5"></div>
+  <div class="col-5">
+    <div class="d-flex justify-content-end flex-wrap">
+      <a
+        class="btn btn-primary btn-sm mx-1"
+        *ngIf="!event.expired && event.visibleForCurrentUser"
+        [routerLink]="['./', event.id]"
+      >
+        <svg-icon key="ticket" size="md"></svg-icon>
+        {{ event.soldTickets + event.checkedInTickets }} /
+        {{ event.availableSeats }}
+      </a>
+      <a
+        [routerLink]="['./', event.id]"
+        class="btn btn-primary btn-sm hidden-xs hidden-sm mx-1"
+      >
+        <svg-icon key="details" size="md"></svg-icon> Detail
+      </a>
+      <a
+        class="btn btn-primary btn-sm hidden-xs hidden-sm mx-1"
+        *ngIf="event.visibleForCurrentUser"
+      >
+        <svg-icon key="settings" size="md"></svg-icon>Settings
+      </a>
+      <a class="btn btn-primary btn-sm mx-1">
+        <svg-icon key="check" size="md"></svg-icon> Check-In
+      </a>
+      <a class="btn btn-warning btn-sm" *ngIf="event.visibleForCurrentUser">
+        <svg-icon key="payments" size="md"></svg-icon> Pending payments...
+      </a>
+    </div>
+  </div>
 </div>

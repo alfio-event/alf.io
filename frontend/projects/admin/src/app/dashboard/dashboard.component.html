@@ -16,6 +16,16 @@
     </div>
   </div>
   <hr />
+  <div class="d-flex flex-row-reverse my-3">
+    <button type="button" class="btn btn-success d-flex" [routerLink]="">
+      <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+      add new
+    </button>
+    <button type="button" class="btn btn-secondary d-flex mx-2" [routerLink]="">
+      <svg-icon key="download" class="d-flex align-items-center"></svg-icon>
+      Export reservations
+    </button>
+  </div>
 
   <ng-container *ngIf="activeFilter">
     <div class="card">
