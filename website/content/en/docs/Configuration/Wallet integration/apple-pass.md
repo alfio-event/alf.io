@@ -3,7 +3,7 @@ title: "Apple (tm) Pass Integration"
 linkTitle: "Apple (tm) Pass"
 weight: 5
 description: >
-How to generate Apple(tm) passes for your tickets
+    How to generate Apple(tm) passes for your tickets
 ---
 
 ## How to configure Apple (tm) Pass integration
