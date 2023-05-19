@@ -1,0 +1,13 @@
+<div class="row" *ngIf="event">
+  <div class="col-2">
+    <img src="/file/{{ event.fileBlobId }}" alt="" class="img-fluid" />
+  </div>
+  <div class="col-5">
+    <h4>
+      <a [routerLink]="['./', event.id]">{{ event.displayName }}</a>
+    </h4>
+    {{ event.formattedBegin }} / {{ event.formattedEnd }}
+  </div>
+
+  <div class="col-5"></div>
+</div>

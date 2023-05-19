@@ -3,7 +3,6 @@
     <app-event-menu></app-event-menu>
   </div>
   <div *ngIf="event$ | async as event">
-    <h2>{{event.displayName}}</h2>
-    {{event | json}}
+    <h2>{{ event.displayName }}</h2>
   </div>
 </app-section-dashboard>

@@ -10,10 +10,12 @@ import {EventDashboardComponent} from './event-dashboard/event-dashboard.compone
 import {EventMenuComponent} from './event-menu/event-menu.component';
 import {SharedModule} from "../shared/shared.module";
 
+
 @NgModule({
   declarations: [
     EventMenuComponent,
-    EventDashboardComponent
+    EventDashboardComponent,
+
   ],
   imports: [
     TranslateModule.forChild(),
@@ -28,6 +30,7 @@ import {SharedModule} from "../shared/shared.module";
     OrganizationService,
     EventService,
     provideSvgIconsConfig(ICON_CONFIG)
-  ]
+  ],
+
 })
 export class EventModule { }

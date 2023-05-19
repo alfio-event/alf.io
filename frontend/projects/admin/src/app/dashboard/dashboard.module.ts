@@ -13,6 +13,10 @@ import {SubscriptionsComponent} from './subscriptions/subscriptions.component';
 import {OrganizationInfoComponent} from './organization-info/organization-info.component';
 import {GroupsComponent} from './groups/groups.component';
 import {FilterButtonComponent} from '../shared/filter-button/filter-button.component';
+import { EventItemComponent } from './event-item/event-item.component';
+
+
+
 
 @NgModule({
   imports: [
@@ -29,6 +33,8 @@ import {FilterButtonComponent} from '../shared/filter-button/filter-button.compo
     ]),
     SvgIconComponent,
     FilterButtonComponent,
+
+
   ],
   declarations: [
     DashboardComponent,
@@ -36,6 +42,7 @@ import {FilterButtonComponent} from '../shared/filter-button/filter-button.compo
     SubscriptionsComponent,
     OrganizationInfoComponent,
     GroupsComponent,
+    EventItemComponent,
   ],
   providers: [
     OrganizationService,
