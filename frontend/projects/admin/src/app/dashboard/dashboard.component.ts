@@ -3,6 +3,8 @@ import { ActivatedRoute } from '@angular/router';
 import { map, mergeMap, Observable, of } from 'rxjs';
 import { EventInfo } from '../model/event';
 import { EventService } from '../shared/event.service';
+import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { ExportDateSelectorComponent } from './export-date-selector/export-date-selector.component';
 
 @Component({
   templateUrl: './dashboard.component.html',
@@ -16,7 +18,8 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     route: ActivatedRoute,
-    private readonly eventService: EventService
+    private readonly eventService: EventService,
+    private readonly modalService: NgbModal
   ) {
     this.organizationId$ = route.paramMap.pipe(
       map((pm) => pm.get('organizationId'))
@@ -59,5 +62,10 @@ export class DashboardComponent implements OnInit {
     } else {
       this.expiredEvents$ = of();
     }
+  }
+  public openExportDateSelector(): void {
+    const modalRef = this.modalService.open(ExportDateSelectorComponent, {
+      size: 'lg',
+    });
   }
 }

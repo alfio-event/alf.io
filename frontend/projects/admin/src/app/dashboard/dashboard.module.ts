@@ -14,6 +14,7 @@ import {OrganizationInfoComponent} from './organization-info/organization-info.c
 import {GroupsComponent} from './groups/groups.component';
 import {FilterButtonComponent} from '../shared/filter-button/filter-button.component';
 import { EventItemComponent } from './event-item/event-item.component';
+import { ExportDateSelectorComponent } from './export-date-selector/export-date-selector.component';
 
 
 
@@ -43,6 +44,7 @@ import { EventItemComponent } from './event-item/event-item.component';
     OrganizationInfoComponent,
     GroupsComponent,
     EventItemComponent,
+    ExportDateSelectorComponent,
   ],
   providers: [
     OrganizationService,

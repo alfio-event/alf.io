@@ -1,0 +1,37 @@
+<div class="modal-header">
+  <h2>Export Reservations</h2>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="activeModal.dismiss('Close click')"
+  ></button>
+</div>
+<div class="modal-body">
+  <div class="row">
+    <p>Reservations can be exported for a given period of time.</p>
+    <p>The export will produce an "Excel" file with one sheet per Event</p>
+    <hr />
+    <h4>Reservation date</h4>
+    <div class="row">
+      <div class="form-group d-flex justify-content-between">
+        <div class="col-6 mb-3 mx-2">
+          <label for="reservation-date-from" class="form-label">From</label>
+          <input type="date" id="reservation-date-from" class="form-control" />
+        </div>
+        <div class="col-6">
+          <label for="reservation-date-to" class="form-label">To</label>
+          <input type="date" id="reservation-date-to" class="form-control" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button
+      type="button"
+      class="btn btn-outline-dark"
+      (click)="activeModal.close('Close click')"
+      translate="common.close"
+    ></button>
+  </div>
+</div>

@@ -21,7 +21,11 @@
       <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
       add new
     </button>
-    <button type="button" class="btn btn-secondary d-flex mx-2" [routerLink]="">
+    <button
+      type="button"
+      class="btn btn-secondary d-flex mx-2"
+      (click)="openExportDateSelector()"
+    >
       <svg-icon key="download" class="d-flex align-items-center"></svg-icon>
       Export reservations
     </button>
