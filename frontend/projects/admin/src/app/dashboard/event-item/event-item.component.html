@@ -25,12 +25,7 @@
         {{ event.soldTickets + event.checkedInTickets }} /
         {{ event.availableSeats }}
       </a>
-      <a
-        [routerLink]="['./', event.id]"
-        class="btn btn-primary btn-sm hidden-xs hidden-sm mx-1"
-      >
-        <svg-icon key="details" size="md"></svg-icon> Detail
-      </a>
+
       <a
         class="btn btn-primary btn-sm hidden-xs hidden-sm mx-1"
         *ngIf="event.visibleForCurrentUser"
