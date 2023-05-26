@@ -1,0 +1,59 @@
+<div data-ng-class="{'container': $ctrl.purchaseContextType === 'event'}">
+    <div class="page-header">
+        <h2>Confirmed Payments for <i>{{$ctrl.purchaseContextTitle}}</i></h2>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-10">
+            <div class="form-group">
+                <label class="sr-only" for="filter-reservations">Filter Payments</label>
+                <div class="input-group">
+                    <div class="input-group-addon">
+                        <i class="fa fa-search"></i>
+                    </div>
+                    <input type="text" class="form-control" id="filter-reservations" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()" ng-model-options='{ debounce: 1000 }' placeholder="Filter Payments">
+                    <div class="input-group-btn" ng-if="$ctrl.toSearch.length > 0">
+                        <button type="button" class="btn btn-default" ng-click="$ctrl.toSearch = ''; $ctrl.updateFilteredData()">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-2" ng-if="$ctrl.foundReservations > 0">
+            <a class="btn btn-block btn-default" ng-href="/admin/api/payments/{{$ctrl.purchaseContext.type}}/{{$ctrl.purchaseContext.publicIdentifier}}/download?search={{$ctrl.toSearch}}" target="_blank" rel="noopener"><i class="fa fa-download"></i> Export</a>
+        </div>
+    </div>
+
+    <div class="alert alert-info text-center wMarginTop10px" ng-if="$ctrl.foundReservations == 0"><i class="fa fa-info-circle"></i> No payments found</div>
+    <div class="table-responsive" ng-if="$ctrl.foundReservations > 0">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th width="5%">Id</th>
+                <th width="15%">Name</th>
+                <th width="15%">Email</th>
+                <th width="10%">Payment</th>
+                <th width="10%">Amount</th>
+                <th width="15%">Date</th>
+                <th width="25%">Notes</th>
+                <th width="5%">&nbsp;</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="r in $ctrl.reservations">
+                <td data-ng-if="$ctrl.targetContextType === 'event'"><a ui-sref="events.single.view-reservation({ eventName : (r.eventPublicIdentifier || $ctrl.purchaseContext.publicIdentifier), reservationId: r.id})" target="_blank"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                <td data-ng-if="$ctrl.targetContextType === 'subscription'"><a ui-sref="subscriptions.single.view-reservation({ purchaseContextId: $ctrl.purchaseContext.publicIdentifier,reservationId: r.id})"><reservation-identifier purchase-context="$ctrl.purchaseContext" purchase-context-type="$ctrl.purchaseContextType" reservation="r"></reservation-identifier></a></td>
+                <td ng-bind="$ctrl.formatFullName(r)"></td>
+                <td ng-bind="r.email"></td>
+                <td ng-bind="r.paymentMethod"></td>
+                <td ng-bind="r.paidAmount | money:r.currencyCode"></td>
+                <td ng-bind="r.transactionTimestamp | formatDate"></td>
+                <td ng-bind="r.transactionNotes"></td>
+                <td><button class="btn btn-xs btn-default" ng-click="$ctrl.editPaymentDetails(r.id)"><i class="fa fa-edit" title="Edit"></i></button></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="text-center wMarginBottom">
+            <uib-pagination ng-change="$ctrl.updateFilteredData()" total-items="$ctrl.foundReservations" ng-model="$ctrl.currentPage" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
+        </div>
+    </div>
+</div>

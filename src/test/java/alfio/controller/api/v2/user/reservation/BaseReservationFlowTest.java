@@ -1613,7 +1613,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     }
 
     private void confirmPayment(String eventName, String reservationIdentifier, Principal principal) {
-        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal));
+        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, null, principal));
     }
 
     private void checkCalendar(String eventName) {

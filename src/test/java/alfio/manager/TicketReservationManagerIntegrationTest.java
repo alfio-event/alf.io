@@ -276,7 +276,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(TicketReservation.TicketReservationStatus.DEFERRED_OFFLINE_PAYMENT, status);
 
         // confirm deferred payment
-        ticketReservationManager.confirmOfflinePayment(event, reservationId, null);
+        ticketReservationManager.confirmOfflinePayment(event, reservationId, null, null);
 
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDeferred), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false, null);
 

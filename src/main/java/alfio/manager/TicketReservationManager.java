@@ -43,10 +43,7 @@ import alfio.model.group.LinkedGroup;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
-import alfio.model.modification.ASReservationWithOptionalCodeModification;
-import alfio.model.modification.AdditionalServiceReservationModification;
-import alfio.model.modification.AttendeeData;
-import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.modification.*;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.WarningMessage;
@@ -801,12 +798,12 @@ public class TicketReservationManager {
         return true;
     }
 
-    public void confirmOfflinePayment(Event event, String reservationId, String username) {
-        reservationFinalizer.confirmOfflinePayment(event, reservationId, username);
+    public void confirmOfflinePayment(Event event, String reservationId, TransactionMetadataModification transactionMetadataModification, String username) {
+        reservationFinalizer.confirmOfflinePayment(event, reservationId, transactionMetadataModification, username);
     }
 
-    void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
-        reservationFinalizer.registerAlfioTransaction(event, reservationId, paymentProxy);
+    void registerAlfioTransactionForOnsitePayment(Event event, String reservationId) {
+        reservationFinalizer.registerAlfioTransaction(event, reservationId, null, PaymentProxy.ON_SITE);
     }
 
 
@@ -1645,7 +1642,7 @@ public class TicketReservationManager {
         OrderSummary orderSummary = optionalOrderSummary.orElseThrow();
         var currencyCode = orderSummary.getOriginalTotalPrice().currencyCode();
         Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().priceWithVAT(), currencyCode).compareTo(paidAmount) == 0, "paid price differs from due price");
-        confirmOfflinePayment(event, reservation.getId(), username);
+        confirmOfflinePayment(event, reservation.getId(), null, username);
     }
 
     public List<TicketReservationWithTransaction> getPendingPayments(String eventName) {
@@ -2226,7 +2223,7 @@ public class TicketReservationManager {
 
     private boolean automaticConfirmOfflinePayment(Event event, String reservationId) {
         try {
-            confirmOfflinePayment(event, reservationId, null);
+            confirmOfflinePayment(event, reservationId, null, null);
             return true;
         } catch(Exception ex) {
             log.warn("Unable to confirm reservation "+reservationId, ex);

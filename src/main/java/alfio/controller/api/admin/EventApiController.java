@@ -597,9 +597,12 @@ public class EventApiController {
     }
 
     @PostMapping("/events/{eventName}/pending-payments/{reservationId}/confirm")
-    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+    public String confirmPayment(@PathVariable("eventName") String eventName,
+                                 @PathVariable("reservationId") String reservationId,
+                                 @RequestBody TransactionMetadataModification transactionMetadataModification,
+                                 Principal principal) {
         var event = loadEvent(eventName, principal);
-        ticketReservationManager.confirmOfflinePayment(event, reservationId, principal.getName());
+        ticketReservationManager.confirmOfflinePayment(event, reservationId, transactionMetadataModification, principal.getName());
         ticketReservationManager.findById(reservationId)
             .filter(TicketReservation::isDirectAssignmentRequested)
             .ifPresent(reservation -> {

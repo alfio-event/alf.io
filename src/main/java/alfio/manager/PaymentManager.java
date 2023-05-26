@@ -30,14 +30,19 @@ import alfio.repository.AuditingRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.security.Principal;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Objects.requireNonNullElse;
 
 @Component
 public class PaymentManager {
@@ -198,6 +203,19 @@ public class PaymentManager {
             }
         });
         return maybeTransaction.orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
+    }
+
+    public void updateTransactionDetails(String reservationId,
+                                         String notes,
+                                         ZonedDateTime timestamp,
+                                         Principal principal) {
+        // TODO check if user can modify transaction once we have a centralized service.
+        var existingTransaction = transactionRepository.loadByReservationId(reservationId);
+        Validate.isTrue(existingTransaction.isTimestampEditable() || timestamp == null, "Cannot modify timestamp");
+        var existingMetadata = new HashMap<>(existingTransaction.getMetadata());
+        existingMetadata.put(Transaction.NOTES_KEY, notes);
+        int result = transactionRepository.updateDetailsById(existingTransaction.getId(), existingMetadata, requireNonNullElse(timestamp, existingTransaction.getTimestamp()));
+        Validate.isTrue(result == 1, "Expected 1, got " + result);
     }
 
     private boolean feesUpdated(Transaction transaction, PaymentInformation paymentInformation) {

@@ -72,17 +72,20 @@
                     <li role="presentation" data-ui-sref-active="active">
                         <a ui-sref="events.single.promoCodes({eventName: ctrl.event.shortName})"><i class="fa fa-percent"></i> {{ctrl.promoCodeDescription}} Codes</a>
                     </li>
-                    <li role="presentation" data-ui-sref-active="active">
+                    <li role="presentation" data-ui-sref-active="active" data-ng-if="!ctrl.freeOfCharge">
                         <a ui-sref="events.single.additionalServices({eventName: ctrl.event.shortName})"><i class="fa fa-money"></i> Additional options</a>
                     </li>
                     <li role="presentation" data-ui-sref-active="active">
                         <a ui-sref="events.single.polls-list({eventName: ctrl.event.shortName})"><i class="fa fa-bar-chart-o"></i> Polls</a>
                     </li>
-                    <li role="presentation" data-ui-sref-active="active">
+                    <li role="presentation" data-ui-sref-active="active" data-ng-if="!ctrl.freeOfCharge">
                         <a ui-sref="events.single.donations({eventName: ctrl.event.shortName})"><i class="fa fa-gift"></i> Donation options</a>
                     </li>
                     <li role="presentation" data-ui-sref-active="active">
                         <a data-ui-sref="events.single.reservationsList({eventName:ctrl.event.shortName})"><i class="fa fa-ticket"></i> Reservations</a>
+                    </li>
+                    <li role="presentation" data-ui-sref-active="active" data-ng-if="!ctrl.freeOfCharge">
+                        <a data-ui-sref="events.single.paymentsList({eventName:ctrl.event.shortName})"><i class="fa fa-dollar"></i> Confirmed Payments</a>
                     </li>
                     <li role="presentation" data-ui-sref-active="active">
                         <a data-ui-sref="events.single.email-log({eventName:ctrl.event.shortName})"><i class="fa fa-paper-plane-o"></i> E-mail log</a>
@@ -95,7 +98,7 @@
                     <li role="presentation" ng-if="ctrl.event" data-ui-sref-active="active">
                         <waiting-queue-display-counter style-class="emulate-nav-pills-link" event-name="ctrl.event.shortName"></waiting-queue-display-counter>
                     </li>
-                    <li role="presentation" data-ng-if="ctrl.event" data-ui-sref-active="active">
+                    <li role="presentation" data-ng-if="ctrl.event && ctrl.offlineEnabled" data-ui-sref-active="active">
                         <pending-payments-link style-class="emulate-nav-pills-link" data-event="ctrl.event" data-event-name="ctrl.event.shortName"></pending-payments-link>
                     </li>
                 </ul>

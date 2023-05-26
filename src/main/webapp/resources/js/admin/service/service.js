@@ -34,7 +34,7 @@
         };
     });
 
-    baseServices.service('PurchaseContextService', function(EventService, SubscriptionService) {
+    baseServices.service('PurchaseContextService', function(EventService, SubscriptionService, AdminReservationService, $http, HttpErrorHandler) {
         return {
             findAllReservations: function(type, contextName, page, search, status) {
                 if(type === 'event') {
@@ -42,9 +42,19 @@
                 } else {
                     return SubscriptionService.findAllReservations(contextName, page, search, status);
                 }
+            },
+            findAllPayments: function(type, contextName, page, search) {
+                return $http.get('/admin/api/payments/'+ type + '/' + contextName + '/list', {params: {page: page, search: search}});
+            },
+            editPaymentDetails: function(reservationId, purchaseContextType, publicIdentifier) {
+                var infoLoader = AdminReservationService.paymentInfo(purchaseContextType, publicIdentifier, reservationId);
+                return EventService.editTransactionModal(reservationId, 'edit', infoLoader, function(res) {
+                    return $http.put('/admin/api/payments/'+ purchaseContextType + '/' + publicIdentifier + '/reservation/' + reservationId, res)
+                        .error(HttpErrorHandler.handle);
+                });
             }
         };
-    })
+    });
 
     baseServices.service('EventService', function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q, LocationService, $timeout) {
 
@@ -173,8 +183,75 @@
             getPendingPaymentsCount: function(eventName) {
                 return $http.get('/admin/api/events/'+eventName+'/pending-payments-count').error(HttpErrorHandler.handle).then(function(res) {var v = parseInt(res.data); return isNaN(v) ? 0 : v; });
             },
+            editTransactionModal: function(reservationId, type, transactionLoader, callback) {
+                var preloadPromise;
+                if (transactionLoader) {
+                    preloadPromise = transactionLoader.then(function(container) {
+                        var transaction = container.data.data.transaction;
+                        return {
+                            timestamp: {
+                                date: moment(transaction.timestamp).format('YYYY-MM-DD'),
+                                time: moment(transaction.timestamp).format('HH:mm')
+                            },
+                            timestampEditable: transaction.timestampEditable,
+                            notes: transaction.notes
+                        }
+                    });
+                } else {
+                    preloadPromise = $q.resolve({
+                        timestamp: {
+                            date: moment().format('YYYY-MM-DD'),
+                            time: moment().format('HH:mm')
+                        },
+                        timestampEditable: true,
+                        notes: ''
+                    });
+                }
+
+                var modal = $uibModal.open({
+                    size:'md',
+                    templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/angular-templates/admin/partials/payment/edit-transaction-modal.html',
+                    backdrop: 'static',
+                    controllerAs: '$ctrl',
+                    controller: function() {
+                        var ctrl = this;
+                        ctrl.actionText = type === 'pending-payment' ? 'Confirm' : 'Edit';
+                        ctrl.confirmText = type === 'pending-payment' ? 'Confirm' : 'Save';
+                        ctrl.reservationId = reservationId;
+                        ctrl.minDate = moment().subtract(1, 'years').format('YYYY-MM-DD');
+                        ctrl.isLoading = true;
+                        preloadPromise.then(function(res) {
+                            ctrl.isLoading = false;
+                            ctrl.transaction = res;
+                        }, function(err) {
+                            modal.dismiss('error');
+                        });
+
+                        ctrl.cancel = function() {
+                            modal.dismiss('cancelled');
+                        };
+                        ctrl.confirm = function() {
+                            var result = {
+                                timestamp: ctrl.transaction.timestampEditable ? ctrl.transaction.timestamp : null,
+                                notes: ctrl.transaction.notes
+                            };
+                            if (callback) {
+                                callback(result).then(function() {
+                                    modal.close(result);
+                                });
+                            } else {
+                                modal.close(result);
+                            }
+                        }
+                    }
+                });
+                return modal.result;
+            },
             registerPayment: function(eventName, reservationId) {
-                return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm').error(HttpErrorHandler.handle);
+                return service.editTransactionModal(reservationId, 'pending-payment').then(function(metadata) {
+                    return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm', metadata)
+                         .error(HttpErrorHandler.handle);
+                });
             },
             cancelPayment: function(eventName, reservationId, credit, notify) {
                 return $http['delete']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId, {

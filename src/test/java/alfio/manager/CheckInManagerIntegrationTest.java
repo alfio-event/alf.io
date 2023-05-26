@@ -131,7 +131,7 @@ class CheckInManagerIntegrationTest {
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER, null);
         assertTrue(result.isSuccessful());
-        ticketReservationManager.confirmOfflinePayment(event, reservationId, eventAndUser.getRight());
+        ticketReservationManager.confirmOfflinePayment(event, reservationId, null, eventAndUser.getRight());
 
         var returnedAdditionalServices = ticketReservationManager.findTicketsInReservation(reservationId).stream()
             .filter(ticket -> !checkInManager.getAdditionalServicesForTicket(ticket).isEmpty()).toList();

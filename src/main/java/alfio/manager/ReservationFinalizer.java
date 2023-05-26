@@ -30,6 +30,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
+import alfio.model.modification.TransactionMetadataModification;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.support.UserIdAndOrganizationId;
 import alfio.model.system.command.FinalizeReservation;
@@ -397,7 +398,10 @@ public class ReservationFinalizer {
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
     }
 
-    public void confirmOfflinePayment(Event event, String reservationId, String username) {
+    public void confirmOfflinePayment(Event event,
+                                      String reservationId,
+                                      TransactionMetadataModification transactionMetadataModification,
+                                      String username) {
         TicketReservation ticketReservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
         ticketReservationRepository.lockReservationForUpdate(reservationId);
         var metadata = ticketReservationRepository.getMetadata(reservationId);
@@ -410,7 +414,7 @@ public class ReservationFinalizer {
 
         ticketReservationRepository.confirmOfflinePayment(reservationId, COMPLETE.name(), event.now(clockProvider));
 
-        registerAlfioTransaction(event, reservationId, PaymentProxy.OFFLINE);
+        registerAlfioTransaction(event, reservationId, transactionMetadataModification, PaymentProxy.OFFLINE);
 
         auditingRepository.insert(reservationId, userRepository.findIdByUserName(username).orElse(null), event.getId(), Audit.EventType.RESERVATION_OFFLINE_PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
 
@@ -430,7 +434,10 @@ public class ReservationFinalizer {
         extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event);
     }
 
-    public void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
+    public void registerAlfioTransaction(Event event,
+                                         String reservationId,
+                                         TransactionMetadataModification transactionMetadataModification,
+                                         PaymentProxy paymentProxy) {
         var totalPrice = reservationCostCalculator.totalReservationCostWithVAT(reservationId).getLeft();
         int priceWithVAT = totalPrice.priceWithVAT();
         long platformFee = FeeCalculator.getCalculator(event, configurationManager, requireNonNullElse(totalPrice.currencyCode(), event.getCurrency()))
@@ -441,17 +448,32 @@ public class ReservationFinalizer {
 
         var transactionOptional = transactionRepository.loadOptionalByReservationId(reservationId);
         String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
+        var transactionTimestamp = getTransactionTimestamp(event, transactionMetadataModification);
         if(transactionOptional.isEmpty()) {
-            transactionRepository.insert(transactionId, null, reservationId, event.now(clockProvider),
+            transactionRepository.insert(transactionId, null, reservationId, transactionTimestamp,
                 priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
-                platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
+                platformFee, 0L, Transaction.Status.COMPLETE, buildTransactionMetadata(transactionMetadataModification));
         } else if(paymentProxy == PaymentProxy.OFFLINE) {
             var transaction = transactionOptional.get();
-            transactionRepository.update(transaction.getId(), transactionId, null, event.now(clockProvider),
-                platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
+            transactionRepository.update(transaction.getId(), transactionId, null, transactionTimestamp,
+                platformFee, 0L, Transaction.Status.COMPLETE, buildTransactionMetadata(transactionMetadataModification));
         } else {
             log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
         }
+    }
+
+    private ZonedDateTime getTransactionTimestamp(Event event, TransactionMetadataModification transactionMetadataModification) {
+        if (transactionMetadataModification != null && transactionMetadataModification.getTimestamp() != null) {
+            return transactionMetadataModification.getTimestamp().toLocalDateTime().atZone(event.getZoneId());
+        }
+        return event.now(clockProvider);
+    }
+
+    private Map<String, String> buildTransactionMetadata(TransactionMetadataModification transactionMetadataModification) {
+        if (transactionMetadataModification != null && StringUtils.isNotBlank(transactionMetadataModification.getNotes())) {
+            return Map.of(Transaction.NOTES_KEY, transactionMetadataModification.getNotes());
+        }
+        return Map.of();
     }
 
     private Optional<TicketReservation> findById(String reservationId) {

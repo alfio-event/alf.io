@@ -135,7 +135,7 @@ public class CheckInManager {
         Ticket ticket = ticketRepository.findByUUID(uuid);
         Validate.isTrue(ticket.getStatus() == TicketStatus.TO_BE_PAID);
         ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.ACQUIRED.toString());
-        ticketReservationManager.registerAlfioTransaction(eventRepository.findById(ticket.getEventId()), ticket.getTicketsReservationId(), PaymentProxy.ON_SITE);
+        ticketReservationManager.registerAlfioTransactionForOnsitePayment(eventRepository.findById(ticket.getEventId()), ticket.getTicketsReservationId());
     }
 
     public AttendeeSearchResults searchAttendees(Event event, String query, int page) {

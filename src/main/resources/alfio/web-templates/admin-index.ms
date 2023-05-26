@@ -89,6 +89,7 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/payments-list/payments-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
 
@@ -187,6 +188,9 @@
                                 </li>
                                 <li role="presentation" data-ui-sref-active="active">
                                     <a data-ui-sref="events.single.reservationsList({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-ticket"></i> Reservations</a>
+                                </li>
+                                <li role="presentation" data-ui-sref-active="active" data-ng-if="!ctrl.event.free">
+                                    <a data-ui-sref="events.single.paymentsList({eventName:ctrl.event.shortName})"><i class="fa fa-dollar"></i> Confirmed Payments</a>
                                 </li>
                                 <li role="presentation" data-ui-sref-active="active">
                                     <a data-ui-sref="events.single.email-log({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-paper-plane-o"></i> E-mail log</a>
