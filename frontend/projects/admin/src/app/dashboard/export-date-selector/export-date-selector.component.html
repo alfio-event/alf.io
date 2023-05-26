@@ -13,25 +13,61 @@
     <p>The export will produce an "Excel" file with one sheet per Event</p>
     <hr />
     <h4>Reservation date</h4>
+
     <div class="row">
-      <div class="form-group d-flex justify-content-between">
+      <form
+        [formGroup]="dateForm"
+        class="form-group d-flex justify-content-between"
+      >
         <div class="col-6 mb-3 mx-2">
-          <label for="reservation-date-from" class="form-label">From</label>
-          <input type="date" id="reservation-date-from" class="form-control" />
+          <label for="fromDate" class="form-label">From</label>
+          <input
+            type="date"
+            id="fromDate"
+            class="form-control"
+            formControlName="fromDate"
+            [class.is-invalid]="
+              fromDate?.invalid && (fromDate?.dirty || fromDate?.touched)
+            "
+          />
         </div>
         <div class="col-6">
-          <label for="reservation-date-to" class="form-label">To</label>
-          <input type="date" id="reservation-date-to" class="form-control" />
+          <label for="toDate" class="form-label">To</label>
+          <input
+            type="date"
+            id="toDate"
+            class="form-control"
+            formControlName="toDate"
+            [class.is-invalid]="
+              toDate?.invalid && (toDate?.dirty || toDate?.touched)
+            "
+          />
         </div>
-      </div>
+      </form>
     </div>
   </div>
-  <div class="modal-footer">
-    <button
-      type="button"
-      class="btn btn-outline-dark"
-      (click)="activeModal.close('Close click')"
-      translate="common.close"
-    ></button>
+  <div class="modal-footer d-flex justify-content-between">
+    <div>
+      <button
+        class="btn btn-lg btn-outline-secondary"
+        [routerLink]="['/access-control/users']"
+      >
+        Cancel
+      </button>
+    </div>
+    <div>
+      <a
+        [href]="
+          '/admin/api/export/reservations?from=' +
+          dateForm.value.fromDate +
+          '&to=' +
+          dateForm.value.toDate
+        "
+        class="btn btn-lg btn-primary"
+        target="_blank"
+        rel="noopener"
+        >Download</a
+      >
+    </div>
   </div>
 </div>
