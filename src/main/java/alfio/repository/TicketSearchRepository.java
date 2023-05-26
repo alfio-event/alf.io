@@ -16,11 +16,13 @@
  */
 package alfio.repository;
 
+import alfio.model.ReservationPaymentDetail;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservationWithTransaction;
 import alfio.model.TicketWithReservationAndTransaction;
 import alfio.model.poll.PollParticipant;
 import alfio.model.support.Array;
+import alfio.model.transaction.Transaction;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -44,6 +46,8 @@ public interface TicketSearchRepository {
     String FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION = "select * from reservation_and_ticket_and_tx where t_id is not null and t_status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and t_category_id = :categoryId and t_event_id = :eventId and " + APPLY_FILTER;
 
     String FIND_ALL_CONFIRMED_TICKETS_FOR_EVENT = "select * from reservation_and_ticket_and_tx where t_id is not null and t_status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t_event_id = :eventId and " + APPLY_FILTER;
+
+    String FIND_ALL_PAYMENTS_FOR_EVENT = "select * from reservation_and_ticket_and_tx where tr_status in (:reservationStatus) and tr_payment_method in (:paymentMethods) and t_id is not null and t_status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t_event_id = :eventId and " + APPLY_FILTER;
 
     String FIND_ALL_TICKETS_INCLUDING_NEW = "select * from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status in (:status) and " + APPLY_FILTER;
 
@@ -93,6 +97,22 @@ public interface TicketSearchRepository {
                                                      @Bind("search") String search,
                                                      @Bind("status") List<String> toFilter);
 
+    @Query("select distinct tr_id, tr_first_name, tr_last_name, tr_email_address, tr_payment_method, bt_price_cts, bt_currency, bt_t_timestamp, bt_metadata ->> '"+ Transaction.NOTES_KEY + "'" +
+        " as bt_notes, tr_invoice_number from (" + FIND_ALL_PAYMENTS_FOR_EVENT + ") as d_tbl order by bt_t_timestamp desc nulls last limit :pageSize offset :page")
+    List<ReservationPaymentDetail> findAllPaymentsForEvent(@Bind("eventId") int eventId,
+                                                           @Bind("page") int page,
+                                                           @Bind("pageSize") int pageSize,
+                                                           @Bind("search") String search,
+                                                           @Bind("reservationStatus") List<String> toFilter,
+                                                           @Bind("paymentMethods") List<String> paymentMethods);
+
+    @Query("select distinct tr_id, tr_first_name, tr_last_name, tr_email_address, tr_payment_method, bt_price_cts, bt_currency, bt_t_timestamp, bt_metadata ->> '"+ Transaction.NOTES_KEY + "'" +
+        " as bt_notes, tr_invoice_number from (" + FIND_ALL_PAYMENTS_FOR_EVENT + ") as d_tbl order by bt_t_timestamp desc nulls last")
+    List<ReservationPaymentDetail> findAllEventPaymentsForExport(@Bind("eventId") int eventId,
+                                                                 @Bind("search") String search,
+                                                                 @Bind("reservationStatus") List<String> toFilter,
+                                                                 @Bind("paymentMethods") List<String> paymentMethods);
+
     @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_SUBSCRIPTION_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity limit :pageSize offset :page")
     List<TicketReservation> findReservationsForSubscription(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                                                             @Bind("page") int page,
@@ -121,6 +141,12 @@ public interface TicketSearchRepository {
     Integer countReservationsForSubscription(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                                              @Bind("search") String search,
                                              @Bind("status") List<String> toFilter);
+
+    @Query("select count(distinct tr_id) from (" + FIND_ALL_PAYMENTS_FOR_EVENT +") as d_tbl")
+    Integer countConfirmedPaymentsForEvent(@Bind("eventId") int eventId,
+                                           @Bind("search") String search,
+                                           @Bind("reservationStatus") List<String> toFilter,
+                                           @Bind("paymentMethods") List<String> paymentMethods);
 
     @Query("select * from reservation_and_ticket_and_tx where tr_event_id = :eventId and tickets_count > 0 and tr_id in (:reservationIds)")
     List<TicketWithReservationAndTransaction> loadAllReservationsWithTickets(@Bind("eventId") int eventId, @Bind("reservationIds") Collection<String> reservationIds);
