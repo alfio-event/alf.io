@@ -3,7 +3,7 @@ title: "Google(tm) Wallet Integration"
 linkTitle: "Google(tm) Wallet"
 weight: 6
 description: >
-How to generate Google(tm) passes for your tickets
+    How to generate Google(tm) passes for your tickets
 ---
 
 ## How to configure Google (tm) Wallet integration
