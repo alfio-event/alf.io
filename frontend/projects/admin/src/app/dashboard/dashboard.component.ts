@@ -1,22 +1,29 @@
-import {Component, OnInit} from "@angular/core";
-import {ActivatedRoute} from "@angular/router";
-import {map, mergeMap, Observable, of} from "rxjs";
-import {EventInfo} from "../model/event";
-import {EventService} from "../shared/event.service";
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { map, mergeMap, Observable, of } from 'rxjs';
+import { EventInfo } from '../model/event';
+import { EventService } from '../shared/event.service';
+import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { ExportDateSelectorComponent } from './export-date-selector/export-date-selector.component';
 
 @Component({
-  templateUrl: './dashboard.component.html'
+  templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
-
   public organizationId$: Observable<string | null> = of();
   public activeEvents$: Observable<EventInfo[]> = of();
   public expiredEvents$: Observable<EventInfo[]> = of();
   public activeFilter: boolean = true;
   public inactiveFilter: boolean = false;
 
-  constructor(route: ActivatedRoute, private readonly eventService: EventService) {
-    this.organizationId$ = route.paramMap.pipe(map((pm) => pm.get('organizationId')))
+  constructor(
+    route: ActivatedRoute,
+    private readonly eventService: EventService,
+    private readonly modalService: NgbModal
+  ) {
+    this.organizationId$ = route.paramMap.pipe(
+      map((pm) => pm.get('organizationId'))
+    );
   }
 
   public ngOnInit(): void {
@@ -24,11 +31,19 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadActiveEvents() {
-    return this.organizationId$.pipe(mergeMap(orgId => orgId != null ? this.eventService.getActiveEvents(orgId) : []));
+    return this.organizationId$.pipe(
+      mergeMap((orgId) =>
+        orgId != null ? this.eventService.getActiveEvents(orgId) : []
+      )
+    );
   }
 
   private loadInactiveEvents() {
-    return this.organizationId$.pipe(mergeMap(orgId => orgId != null ? this.eventService.getExpiredEvents(orgId) : []));
+    return this.organizationId$.pipe(
+      mergeMap((orgId) =>
+        orgId != null ? this.eventService.getExpiredEvents(orgId) : []
+      )
+    );
   }
 
   public toggleActiveFilter(toggle: boolean): void {
@@ -47,5 +62,10 @@ export class DashboardComponent implements OnInit {
     } else {
       this.expiredEvents$ = of();
     }
+  }
+  public openExportDateSelector(): void {
+    const modalRef = this.modalService.open(ExportDateSelectorComponent, {
+      size: 'lg',
+    });
   }
 }

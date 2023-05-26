@@ -1,6 +1,6 @@
-import {NgModule} from '@angular/core';
-import {PreloadAllModules, RouterModule, Routes} from '@angular/router';
-import {MissingOrgComponent} from './missing-org/missing-org.component';
+import { NgModule } from '@angular/core';
+import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
+import { MissingOrgComponent } from './missing-org/missing-org.component';
 import { OrganizationsComponent } from './organizations/organizations.component';
 import { OrganizationEditComponent } from './organization-edit/organization-edit.component';
 import { AccessControlComponent } from './access-control/access-control.component';
@@ -13,15 +13,20 @@ import { ApiKeySystemComponent } from './api-key-system/api-key-system.component
 const routes: Routes = [
   {
     path: 'organization/:organizationId/event/:eventId',
-    loadChildren: () => import('./event/event.module').then(m => m.EventModule)
+    loadChildren: () =>
+      import('./event/event.module').then((m) => m.EventModule),
   },
   {
     path: 'organization/:organizationId',
-    loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule)
+    loadChildren: () =>
+      import('./dashboard/dashboard.module').then((m) => m.DashboardModule),
   },
   {
     path: 'authentication',
-    loadChildren: () => import('./authentication/authentication.module').then(m => m.AuthenticationModule)
+    loadChildren: () =>
+      import('./authentication/authentication.module').then(
+        (m) => m.AuthenticationModule
+      ),
   },
   {
     path: 'organizations',
@@ -37,28 +42,26 @@ const routes: Routes = [
   },
   {
     path: 'access-control',
-    component: AccessControlComponent
+    component: AccessControlComponent,
   },
   {
     path: 'access-control/users',
-    component : UserSystemComponent,
+    component: UserSystemComponent,
   },
   {
     path: 'access-control/users/new',
-    component : UserSystemEditComponent,
+    component: UserSystemEditComponent,
   },
   {
     path: 'access-control/users/:userId/edit',
-    component : UserSystemEditComponent,
+    component: UserSystemEditComponent,
   },
-  {path: 'access-control/api-keys',
-  component: ApiKeySystemComponent,
-},
+  { path: 'access-control/api-keys', component: ApiKeySystemComponent },
   {
     path: 'access-control/api-keys/new',
     component: ApiKeySystemEditComponent,
   },
-    {
+  {
     path: 'access-control/api-keys/:userId/edit',
     component: ApiKeySystemEditComponent,
   },
@@ -69,12 +72,14 @@ const routes: Routes = [
   {
     path: '',
     component: MissingOrgComponent,
-    pathMatch: 'full'
-  }
+    pathMatch: 'full',
+  },
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules })],
-  exports: [RouterModule]
+  imports: [
+    RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules }),
+  ],
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

@@ -1,0 +1,52 @@
+<div class="row" *ngIf="event">
+  <div class="col-2">
+    <img
+      src="/file/{{ event.fileBlobId }}"
+      alt=""
+      class="img-fluid"
+      *ngIf="showImage"
+    />
+  </div>
+  <div class="col-4">
+    <h4 class="text-overflow" [title]="event.displayName">
+      <a [routerLink]="['./', event.id]">{{ event.displayName }}</a>
+    </h4>
+    {{ event.formattedBegin }} / {{ event.formattedEnd }}
+  </div>
+
+  <div class="col-6">
+    <div class="d-flex justify-content-end flex-wrap">
+      <a
+        class="btn btn-primary btn-sm mx-1"
+        *ngIf="!event.expired && event.visibleForCurrentUser"
+        [routerLink]="['./', event.id]"
+      >
+        <svg-icon key="ticket" size="md"></svg-icon>
+        {{ event.soldTickets + event.checkedInTickets }} /
+        {{ event.availableSeats }}
+      </a>
+
+      <a
+        class="btn btn-primary btn-sm hidden-xs hidden-sm mx-1"
+        *ngIf="event.visibleForCurrentUser"
+      >
+        <svg-icon key="settings" size="md"></svg-icon>Settings
+      </a>
+      <a class="btn btn-primary btn-sm mx-1">
+        <svg-icon key="check" size="md"></svg-icon> Check-In
+      </a>
+      <a
+        class="btn btn-warning btn-sm"
+        *ngIf="
+          event.visibleForCurrentUser &&
+          event.allowedPaymentProxies.includes('OFFLINE')
+        "
+      >
+        <svg-icon key="payments" size="md"></svg-icon> Pending payments<span
+          class="badge bg-secondary"
+          >{{ event.shortName }}</span
+        >
+      </a>
+    </div>
+  </div>
+</div>
