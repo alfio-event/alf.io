@@ -66,6 +66,11 @@
         class="btn btn-lg btn-primary"
         target="_blank"
         rel="noopener"
+        *ngIf="
+          dateForm.value.fromDate !== null &&
+          dateForm.value.toDate !== null &&
+          dateForm.value.fromDate <= dateForm.value.toDate
+        "
         >Download</a
       >
     </div>
