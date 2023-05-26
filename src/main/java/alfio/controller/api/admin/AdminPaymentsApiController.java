@@ -78,6 +78,7 @@ public class AdminPaymentsApiController {
                                                                                  @RequestParam(value = "search", required = false) String search,
                                                                                  Principal principal) {
         return purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
+            .filter(purchaseContext -> purchaseContextManager.validateAccess(purchaseContext, principal))
             .map(purchaseContext -> {
                 var res = purchaseContextSearchManager.findAllPaymentsFor(purchaseContext, page, search);
                 return new PageAndContent<>(res.getLeft(), res.getRight());
@@ -92,6 +93,7 @@ public class AdminPaymentsApiController {
                                                  Principal principal) {
         try {
             return ResponseEntity.of(purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
+                .filter(purchaseContext -> purchaseContextManager.validateAccess(purchaseContext, principal))
                 .map(purchaseContext -> {
                     var timestampModification = transactionMetadataModification.getTimestamp();
                     var timestamp = timestampModification != null ? timestampModification.toZonedDateTime(purchaseContext.getZoneId()) : null;
@@ -110,7 +112,7 @@ public class AdminPaymentsApiController {
                         Principal principal,
                         HttpServletResponse response) throws IOException {
         var purchaseContextOptional = purchaseContextManager.findBy(purchaseContextType, publicIdentifier);
-        if (purchaseContextOptional.isPresent()) {
+        if (purchaseContextOptional.isPresent() && purchaseContextManager.validateAccess(purchaseContextOptional.get(), principal)) {
             var purchaseContext = purchaseContextOptional.get();
             boolean useInvoiceNumber = configurationManager.getFor(ConfigurationKeys.USE_INVOICE_NUMBER_AS_ID, purchaseContext.getConfigurationLevel())
                 .getValueAsBooleanOrDefault();
