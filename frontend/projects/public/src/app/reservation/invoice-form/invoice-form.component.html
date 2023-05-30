@@ -86,8 +86,8 @@
       <div [ngClass]="{'col-md-12': vatNumberStrictlyRequired, 'col-md-6': !vatNumberStrictlyRequired}">
           <div class="form-group">
               <label class="form-label" for="vatNr">{{'invoice.vat' |translate: {'0': ('common.vat' | translate)} }}<span *ngIf="taxIdIsRequired"> *</span></label>
-              <div class="input-group">
-                  <div class="input-group-prepend" *ngIf="form.value.vatCountryCode"><span class="input-group-text">{{form.value.vatCountryCode}}</span></div>
+            <div class="input-group">
+                  <span class="input-group-text" *ngIf="form.value.vatCountryCode">{{form.value.vatCountryCode}}</span>
                   <input id="vatNr" type="text" formControlName="vatNr" class="form-control" appInvalidFeedback [attr.aria-required]="taxIdIsRequired">
               </div>
           </div>

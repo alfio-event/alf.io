@@ -16,7 +16,7 @@
     </div>
 
     <div class="col-8 offset-2 col-md-6 offset-md-3 align-self-center">
-      <a target="_blank" (click)="close()" rel="noopener" [attr.href]="'/api/v2/public/event/' + eventName + '/ticket/' + ticket.uuid + '/download-ticket'" class="btn btn-link btn-block d-flex justify-content-center align-items-center">
+      <a target="_blank" (click)="close()" rel="noopener" [attr.href]="'/api/v2/public/event/' + eventName + '/ticket/' + ticket.uuid + '/download-ticket'" class="btn btn-link block-button d-flex justify-content-center align-items-center">
         <div class="mr-3"><fa-icon size="2x" [icon]="['fas', 'file-pdf']" a11yRole="presentation"></fa-icon></div>
         <div>{{'reservation-page-complete.download-ticket'|translate}} PDF</div>
       </a>
@@ -25,5 +25,5 @@
   </div>
 </div>
 <div class="modal-footer">
-  <button type="button" (click)="close()" class="btn btn-light btn-block" translate="common.close"></button>
+  <button type="button" (click)="close()" class="btn btn-light block-button" translate="common.close"></button>
 </div>
