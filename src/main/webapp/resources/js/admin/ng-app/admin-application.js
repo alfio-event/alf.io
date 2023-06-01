@@ -222,6 +222,15 @@
                 },
                 controllerAs: 'ctrl'
             })
+            .state('events.single.paymentsList', {
+                url: '/transactions/?search',
+                template: '<payments-list purchase-context="ctrl.event" purchase-context-type="ctrl.purchaseContextType"></payments-list>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                    this.purchaseContextType = 'event';
+                },
+                controllerAs: 'ctrl'
+            })
             .state('events.single.ticketsList', {
                 url: '/category/:categoryId/tickets',
                 template: '<tickets-list event="$ctrl.event" category-id="$ctrl.categoryId"></tickets-list>',
@@ -2054,11 +2063,14 @@
 
         $scope.registerPayment = function(eventName, id) {
             $scope.loading = true;
-            EventService.registerPayment(eventName, id).success(function() {
-                getPendingPayments(true);
-            }).error(function() {
-                $scope.loading = false;
-            });
+            EventService.registerPayment(eventName, id).then(
+                function() {
+                    getPendingPayments(true);
+                },
+                function() {
+                    $scope.loading = false;
+                }
+            );
         };
 
         $scope.showTransactionDialog = function(pendingPaymentDescriptor) {

@@ -28,6 +28,7 @@ import java.util.Optional;
 @Getter
 public class Transaction {
 
+    public static final String NOTES_KEY = "transactionNotes";
     public enum Status {
         PENDING,
         OFFLINE_MATCHING_PAYMENT_FOUND,
@@ -93,5 +94,13 @@ public class Transaction {
 
     public String getFormattedAmount() {
         return MonetaryUtil.formatCents(priceInCents, currency);
+    }
+
+    public String getNotes() {
+        return metadata == null ? null : metadata.get(NOTES_KEY);
+    }
+
+    public boolean isTimestampEditable() {
+        return paymentProxy == PaymentProxy.OFFLINE || paymentProxy == PaymentProxy.ON_SITE;
     }
 }
