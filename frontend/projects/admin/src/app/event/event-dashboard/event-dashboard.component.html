@@ -3,6 +3,52 @@
     <app-event-menu></app-event-menu>
   </div>
   <div *ngIf="event$ | async as event">
-    <h2>{{ event.displayName }}</h2>
+    <h2 class="my-4">{{ event.displayName }}</h2>
+  </div>
+  <hr />
+
+  <div class="d-flex justify-content-between flex-wrap">
+    <div class="card flex-fill mx-3">
+      <div
+        class="card-header text-primary text-center"
+        style="--bs-text-opacity: 0.8"
+      >
+        Total tickets confirmed
+      </div>
+      <div class="card-body d-flex justify-content-between">
+        <div><svg-icon key="ticket" size=""></svg-icon></div>
+        <div class="fs-1">0</div>
+      </div>
+    </div>
+
+    <div class="card flex-fill">
+      <div
+        class="card-header text-primary text-center"
+        style="--bs-text-opacity: 0.8"
+      >
+        Total tickets pending
+      </div>
+      <div class="card-body d-flex justify-content-between">
+        <div><svg-icon key="ticket"></svg-icon></div>
+        <div>0</div>
+      </div>
+    </div>
+
+    <div class="card flex-fill mx-3">
+      <div
+        class="card-header text-primary card-text text-center"
+        style="--bs-text-opacity: 0.8"
+      >
+        Gross income
+      </div>
+      <div class="card-body d-flex justify-content-between">
+        <div><svg-icon key="ticket"></svg-icon></div>
+        <div>0</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div></div>
+    <div id="chart" class="ct-chart ct-perfect-fourth"></div>
   </div>
 </app-section-dashboard>
