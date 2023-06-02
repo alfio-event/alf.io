@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { map, Observable, of, switchMap } from 'rxjs';
 import { EventService } from '../../shared/event.service';
 import { Event } from '../../model/event';
+import { ChartOptions } from 'chart.js';
 
 @Component({
   selector: 'app-event-dashboard',
@@ -12,6 +13,21 @@ import { Event } from '../../model/event';
 export class EventDashboardComponent implements OnInit {
   public eventId$: Observable<string | null> = of();
   public event$: Observable<Event | null> = of();
+  public pieChartOptions: ChartOptions<'pie'> = {
+    responsive: false,
+  };
+  public pieChartLabels = [
+    ['Download', 'Sales'],
+    ['In', 'Store', 'Sales'],
+    'Mail Sales',
+  ];
+  public pieChartDatasets = [
+    {
+      data: [300, 500, 100],
+    },
+  ];
+  public pieChartLegend = true;
+  public pieChartPlugins = [];
 
   constructor(
     private readonly eventService: EventService,

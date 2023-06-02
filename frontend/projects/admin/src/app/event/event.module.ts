@@ -9,6 +9,7 @@ import { ICON_CONFIG } from '../shared/icons';
 import { EventDashboardComponent } from './event-dashboard/event-dashboard.component';
 import { EventMenuComponent } from './event-menu/event-menu.component';
 import { SharedModule } from '../shared/shared.module';
+import { NgChartsModule } from 'ng2-charts';
 
 @NgModule({
   declarations: [EventMenuComponent, EventDashboardComponent],
@@ -17,6 +18,7 @@ import { SharedModule } from '../shared/shared.module';
     CommonModule,
     SvgIconComponent,
     SharedModule,
+    NgChartsModule,
     RouterModule.forChild([{ path: '', component: EventDashboardComponent }]),
   ],
   providers: [
