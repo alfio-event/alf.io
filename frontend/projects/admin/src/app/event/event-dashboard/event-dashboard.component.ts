@@ -1,16 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { map, Observable, of, switchMap } from 'rxjs';
 import { EventService } from '../../shared/event.service';
 import { Event } from '../../model/event';
-import { BarChart, PieChart } from 'chartist';
 
 @Component({
   selector: 'app-event-dashboard',
   templateUrl: './event-dashboard.component.html',
   styleUrls: ['./event-dashboard.component.scss'],
 })
-export class EventDashboardComponent {
+export class EventDashboardComponent implements OnInit {
   public eventId$: Observable<string | null> = of();
   public event$: Observable<Event | null> = of();
 
@@ -23,4 +22,6 @@ export class EventDashboardComponent {
       switchMap((v) => (v != null ? eventService.getEvent(v) : of()))
     );
   }
+
+  ngOnInit(): void {}
 }
