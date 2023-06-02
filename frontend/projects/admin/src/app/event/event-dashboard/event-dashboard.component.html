@@ -6,57 +6,65 @@
     <h2 class="my-4">{{ event.displayName }}</h2>
   </div>
   <hr />
-
-  <div class="d-flex justify-content-between flex-wrap">
-    <div class="card flex-fill mx-3">
-      <div
-        class="card-header text-primary text-center"
-        style="--bs-text-opacity: 0.8"
-      >
-        Total tickets confirmed
-      </div>
-      <div class="card-body d-flex justify-content-between">
-        <div>
-          <svg-icon key="ticket"></svg-icon>
+  <div class="row">
+    <div class="col-6 col-md-3">
+      <div class="card flex-fill mx-3">
+        <div class="card-header text-center">Total tickets confirmed</div>
+        <div class="card-body d-flex justify-content-between">
+          <div>
+            <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
+          </div>
+          <div class="fs-1">0</div>
         </div>
-        <div class="fs-1">0</div>
       </div>
     </div>
-
-    <div class="card flex-fill">
-      <div
-        class="card-header text-primary text-center"
-        style="--bs-text-opacity: 0.8"
-      >
-        Total tickets pending
-      </div>
-      <div class="card-body d-flex justify-content-between">
-        <div><svg-icon key="ticket"></svg-icon></div>
-        <div>0</div>
+    <div class="col-6 col-md-3">
+      <div class="card flex-fill mx-3">
+        <div class="card-header text-center">Total tickets confirmed</div>
+        <div class="card-body d-flex justify-content-between">
+          <div>
+            <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
+          </div>
+          <div class="fs-1">0</div>
+        </div>
       </div>
     </div>
-
-    <div class="card flex-fill mx-3">
-      <div
-        class="card-header text-primary card-text text-center"
-        style="--bs-text-opacity: 0.8"
-      >
-        Gross income
-      </div>
-      <div class="card-body d-flex justify-content-between">
-        <div><svg-icon key="ticket"></svg-icon></div>
-        <div>0</div>
+    <div class="col-6 col-md-6">
+      <div class="card flex-fill mx-3">
+        <div class="card-header text-center">Total tickets confirmed</div>
+        <div class="card-body d-flex justify-content-between">
+          <div>
+            <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
+          </div>
+          <div class="fs-1">0</div>
+        </div>
       </div>
     </div>
   </div>
-  <canvas
-    baseChart
-    [type]="'pie'"
-    [datasets]="pieChartDatasets"
-    [labels]="pieChartLabels"
-    [options]="pieChartOptions"
-    [plugins]="pieChartPlugins"
-    [legend]="pieChartLegend"
-  >
-  </canvas>
+  <div class="row">
+    <div class="col-6">
+      <canvas
+        baseChart
+        width="400"
+        height="400"
+        [type]="'line'"
+        [data]="lineChartData"
+        [options]="lineChartOptions"
+        [legend]="lineChartLegend"
+      >
+      </canvas>
+    </div>
+    <div class="col-6">
+      <canvas
+        baseChart
+        [type]="'pie'"
+        [datasets]="pieChartDatasets"
+        [labels]="pieChartLabels"
+        [options]="pieChartOptions"
+        [plugins]="pieChartPlugins"
+        [legend]="pieChartLegend"
+      >
+      </canvas>
+    </div>
+  </div>
 </app-section-dashboard>

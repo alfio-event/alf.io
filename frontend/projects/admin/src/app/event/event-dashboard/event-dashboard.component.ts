@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { map, Observable, of, switchMap } from 'rxjs';
 import { EventService } from '../../shared/event.service';
 import { Event } from '../../model/event';
-import { ChartOptions } from 'chart.js';
+import { ChartOptions, ChartConfiguration } from 'chart.js';
 
 @Component({
   selector: 'app-event-dashboard',
@@ -28,14 +28,34 @@ export class EventDashboardComponent implements OnInit {
   ];
   public pieChartLegend = true;
   public pieChartPlugins = [];
+  public lineChartData: ChartConfiguration<'line'>['data'] = {
+    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+    datasets: [
+      {
+        data: [65, 59, 80, 81, 56, 55, 40],
+        label: 'Series A',
+        fill: true,
+        tension: 0.5,
+        borderColor: 'black',
+        backgroundColor: 'rgba(255,0,0,0.3)',
+      },
+    ],
+  };
+  public lineChartOptions: ChartOptions<'line'> = {
+    responsive: false,
+  };
+  public lineChartLegend = true;
 
   constructor(
     private readonly eventService: EventService,
     route: ActivatedRoute
   ) {
     this.eventId$ = route.paramMap.pipe(map((pm) => pm.get('eventId')));
+    route.paramMap.subscribe((result) => console.log(result));
     this.event$ = this.eventId$.pipe(
-      switchMap((v) => (v != null ? eventService.getEvent(v) : of()))
+      switchMap((eventId) =>
+        eventId != null ? eventService.getEvent(eventId) : of()
+      )
     );
   }
 
