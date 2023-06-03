@@ -23,6 +23,7 @@ import alfio.config.WebSecurityConfig;
 import alfio.config.authentication.FormBasedWebSecurity;
 import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
+import alfio.manager.support.AccessDeniedException;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
@@ -142,11 +143,11 @@ class AccessServiceIntegrationTest {
         // user org 1 can access
         Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(principalUserOrg1, org1Id));
         // user org 2 cannot access
-        Assertions.assertThrows(IllegalArgumentException.class, () -> accessService.checkOrganizationOwnership(principalUserOrg2, org1Id));
+        Assertions.assertThrows(AccessDeniedException.class, () -> accessService.checkOrganizationOwnership(principalUserOrg2, org1Id));
 
         // vice versa
         Assertions.assertDoesNotThrow(() -> accessService.checkOrganizationOwnership(principalUserOrg2, org2Id));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> accessService.checkOrganizationOwnership(principalUserOrg1, org2Id));
+        Assertions.assertThrows(AccessDeniedException.class, () -> accessService.checkOrganizationOwnership(principalUserOrg1, org2Id));
 
     }
 }

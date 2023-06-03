@@ -54,13 +54,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
@@ -71,7 +69,6 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.test.util.IntegrationTestUtil.*;
@@ -232,7 +229,7 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         var tickets = ticketRepository.findTicketsInReservation(reservationId);
         var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toList());
         var principal = Mockito.mock(Principal.class);
-        when(principal.getName()).thenReturn(username);
+        when(principal.getName()).thenReturn(owner(username));
         var modification = new AdminReservationApiController.RemoveTicketsModification(
             ticketIds,
             Map.of(),

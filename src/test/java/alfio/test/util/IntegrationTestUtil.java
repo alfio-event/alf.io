@@ -121,7 +121,7 @@ public class IntegrationTestUtil {
         userManager.createOrganization(organizationModification, null);
         Organization organization = organizationRepository.findByName(organizationName).orElseThrow();
         userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL, null);
-        userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL, null);
+        userManager.insertUser(organization.getId(), owner(username), "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL, null);
 
         LocalDateTime expiration = LocalDateTime.now(ClockProvider.clock()).plusDays(5).plusHours(1);
 
@@ -209,5 +209,9 @@ public class IntegrationTestUtil {
         var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
         assertEquals(descriptor.getPrice(), subscription.getSrcPriceCts());
         return Pair.of(subscriptionId, subscription.getPin());
+    }
+
+    public static String owner(String username) {
+        return username + "_owner";
     }
 }
