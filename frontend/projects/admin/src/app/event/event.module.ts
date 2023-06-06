@@ -10,6 +10,7 @@ import { EventDashboardComponent } from './event-dashboard/event-dashboard.compo
 import { EventMenuComponent } from './event-menu/event-menu.component';
 import { SharedModule } from '../shared/shared.module';
 import { NgChartsModule } from 'ng2-charts';
+import { NgbCarouselModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [EventMenuComponent, EventDashboardComponent],
@@ -19,6 +20,7 @@ import { NgChartsModule } from 'ng2-charts';
     SvgIconComponent,
     SharedModule,
     NgChartsModule,
+    NgbCarouselModule,
     RouterModule.forChild([{ path: '', component: EventDashboardComponent }]),
   ],
   providers: [

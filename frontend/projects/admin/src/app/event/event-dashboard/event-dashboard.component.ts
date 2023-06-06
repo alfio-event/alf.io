@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { map, Observable, of, switchMap } from 'rxjs';
+import { ChartConfiguration, ChartOptions } from 'chart.js';
+import { Observable, map, of, switchMap } from 'rxjs';
+import { Event, EventOrganizationInfo } from '../../model/event';
 import { EventService } from '../../shared/event.service';
-import { Event } from '../../model/event';
-import { ChartOptions, ChartConfiguration } from 'chart.js';
 
 @Component({
   selector: 'app-event-dashboard',
@@ -13,11 +13,21 @@ import { ChartOptions, ChartConfiguration } from 'chart.js';
 export class EventDashboardComponent implements OnInit {
   public eventId$: Observable<string | null> = of();
   public event$: Observable<Event | null> = of();
+  public eventOrganizationInfo$: Observable<EventOrganizationInfo | null> =
+    of();
+
+  public statistics: any = [];
   public pieChartOptions: ChartOptions<'pie'> = {
     responsive: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'right',
+      },
+    },
   };
   public pieChartLabels = [
-    ['Download', 'Sales'],
+    ['chekedIn', 'Sales'],
     ['In', 'Store', 'Sales'],
     'Mail Sales',
   ];
@@ -55,6 +65,11 @@ export class EventDashboardComponent implements OnInit {
     this.event$ = this.eventId$.pipe(
       switchMap((eventId) =>
         eventId != null ? eventService.getEvent(eventId) : of()
+      )
+    );
+    this.eventOrganizationInfo$ = this.event$.pipe(
+      switchMap((event) =>
+        event != null ? eventService.getEventByShortName(event.shortName) : of()
       )
     );
   }

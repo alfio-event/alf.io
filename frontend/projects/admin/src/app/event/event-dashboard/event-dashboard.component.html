@@ -6,7 +6,10 @@
     <h2 class="my-4">{{ event.displayName }}</h2>
   </div>
   <hr />
-  <div class="row">
+  <div
+    class="row"
+    *ngIf="eventOrganizationInfo$ | async as eventOrganizationInfo"
+  >
     <div class="col-6 col-md-3">
       <div class="card flex-fill mx-3">
         <div class="card-header text-center">Total tickets confirmed</div>
@@ -14,16 +17,21 @@
           <div>
             <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
           </div>
-          <div class="fs-1">0</div>
+          <div class="fs-1">
+            {{
+              eventOrganizationInfo.event.soldTickets +
+                eventOrganizationInfo.event.checkedInTickets
+            }}
+          </div>
         </div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="card flex-fill mx-3">
-        <div class="card-header text-center">Total tickets confirmed</div>
+        <div class="card-header text-center">Tickets pending</div>
         <div class="card-body d-flex justify-content-between">
           <div>
-            <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
+            <svg-icon key="hourglass-top" width="70px" height="70px"></svg-icon>
           </div>
           <div class="fs-1">0</div>
         </div>
@@ -31,22 +39,33 @@
     </div>
     <div class="col-6 col-md-6">
       <div class="card flex-fill mx-3">
-        <div class="card-header text-center">Total tickets confirmed</div>
+        <div class="card-header text-center">Gross income</div>
         <div class="card-body d-flex justify-content-between">
           <div>
-            <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
+            <svg-icon key="piggy-bank" width="70px" height="70px"></svg-icon>
           </div>
           <div class="fs-1">0</div>
         </div>
       </div>
     </div>
   </div>
-  <div class="row">
+  <div class="row my-4">
     <div class="col-6">
+      <ngb-carousel
+        [showNavigationIndicators]="false"
+        [showNavigationArrows]="true"
+        class="carousel-dark"
+      >
+        <ng-template ngbSlide>
+          <div class="text-center">tickets</div>
+        </ng-template>
+        <ng-template ngbSlide>
+          <div class="text-center">mas tickets</div>
+        </ng-template>
+      </ngb-carousel>
+
       <canvas
         baseChart
-        width="400"
-        height="400"
         [type]="'line'"
         [data]="lineChartData"
         [options]="lineChartOptions"
@@ -54,7 +73,8 @@
       >
       </canvas>
     </div>
-    <div class="col-6">
+
+    <div class="col-6 mx-auto">
       <canvas
         baseChart
         [type]="'pie'"
@@ -67,4 +87,90 @@
       </canvas>
     </div>
   </div>
+
+  <div class="card" *ngIf="event$ | async as event">
+    <div class="card-header">Logistic Info and description</div>
+    <div
+      class="card-body"
+      *ngIf="eventOrganizationInfo$ | async as eventOrganizationInfo"
+    >
+      <div class="row">
+        <div class="col-2">
+          <img
+            src="/file/{{ eventOrganizationInfo.event.fileBlobId }}"
+            alt=""
+            class="img-fluid"
+          />
+        </div>
+        <div class="col-6">
+          <dl class="dl-horizontal">
+            <dt>Public URL</dt>
+            <dd>
+              <!-- <a ng-href="{{ eventPublicURL }}" target="_blank" rel="noopener">{{
+              eventPublicURL
+            }}</a> -->
+            </dd>
+            <dt>Organized by</dt>
+            <dd>
+              {{ eventOrganizationInfo.organization.name }} &lt;{{
+                eventOrganizationInfo.organization.email
+              }}&gt;
+            </dd>
+            <dt>Website URL</dt>
+            <dd>
+              <a
+                href="{{ eventOrganizationInfo.event.websiteUrl }}"
+                target="_blank"
+                rel="noopener"
+                >{{ eventOrganizationInfo.event.websiteUrl }}</a
+              >
+            </dd>
+            <dt>T&C URL</dt>
+            <dd>
+              <a
+                href="{{ eventOrganizationInfo.event.termsAndConditionsUrl }}"
+                target="_blank"
+                rel="noopener"
+                >{{ eventOrganizationInfo.event.termsAndConditionsUrl }}</a
+              >
+            </dd>
+            <dt data-ng-if="event.privacyPolicyUrl">Privacy Policy URL</dt>
+            <dd data-ng-if="event.privacyPolicyUrl">
+              <a
+                href="{{ eventOrganizationInfo.event.privacyPolicyUrl }}"
+                target="_blank"
+                rel="noopener"
+                >{{ eventOrganizationInfo.event.privacyPolicyUrl }}</a
+              >
+            </dd>
+            <dt data-ng-if="event.format !== 'ONLINE'">Location</dt>
+            <dd data-ng-if="event.format !== 'ONLINE'">
+              <a
+                href="{{ eventOrganizationInfo.event.location }}"
+                target="_blank"
+                rel="noopener"
+                >{{ eventOrganizationInfo.event.location }}</a
+              >
+            </dd>
+            <dt>Languages</dt>
+            <dd>
+              <ol class="breadcrumb language-breadcrumb">
+                <li data-ng-repeat="cl in event.contentLanguages">
+                  <!-- {{ cl.displayLanguage }} -->
+                </li>
+              </ol>
+            </dd>
+            <dt>Start Date/Time</dt>
+            <dd>{{ eventOrganizationInfo.event.formattedBegin | date }}</dd>
+            <dt>End Date/Time</dt>
+            <dd>{{ eventOrganizationInfo.event.formattedEnd | date }}</dd>
+            <dt>Time Zone</dt>
+            <dd>{{ eventOrganizationInfo.event.timeZone }}</dd>
+          </dl>
+        </div>
+        <div class="col-4"></div>
+      </div>
+    </div>
+  </div>
 </app-section-dashboard>
+<!-- {{ eventInfo$ | async | json }} -->

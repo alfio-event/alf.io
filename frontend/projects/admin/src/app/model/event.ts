@@ -1,28 +1,42 @@
+import { Organization } from './organization';
+
 export interface EventInfo {
-    id: number;
-    displayName: string;
-    status: string; // TODO: enum
-    shortName: string;
-    organizationId: number;
-    allowedPaymentProxies: string[]; // TODO: enum
-    expired: boolean;
-    notAllocatedTickets: number;
-    fileBlobId: string;
-    availableSeats: number;
-    checkedInTickets: number;
-    notSoldTickets: number;
-    soldTickets: number;
-    pendingTickets: number;
-    dynamicAllocation: number;
-    releasedTickets: number;
-    formattedEnd: string;
-    visibleForCurrentUser: boolean;
-    warningNeeded: boolean;
-    formattedBegin: string;
-    displayStatistics: boolean;
+  allowedPaymentProxies: string[]; // TODO: enum
+  availableSeats: number;
+  checkedInTickets: number;
+  description: { [lang: string]: string };
+  displayName: string;
+  displayStatistics: boolean;
+  dynamicAllocation: number;
+  expired: boolean;
+  fileBlobId: string;
+  formattedBegin: string;
+  formattedEnd: string;
+  id: number;
+  location: string;
+  notAllocatedTickets: number;
+  notSoldTickets: number;
+  organizationId: number;
+  pendingTickets: number;
+  privacyPolicyUrl: string;
+  releasedTickets: number;
+  shortName: string;
+  soldTickets: number;
+  status: string; // TODO: enum
+  termsAndConditionsUrl: string;
+  timeZone: string;
+  visibleForCurrentUser: boolean;
+  warningNeeded: boolean;
+  websiteUrl: string;
+}
+
+export interface EventOrganizationInfo {
+  event: EventInfo;
+  organization: Organization;
 }
 
 export interface Event {
   id: number;
   displayName: string;
+  shortName: string;
 }
