@@ -17,6 +17,7 @@
 package alfio.controller.api;
 
 import alfio.controller.api.v2.user.support.ReservationAccessDenied;
+import alfio.manager.support.AccessDeniedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageConversionException;
@@ -66,6 +67,14 @@ public class ApiControllerExceptionHandler {
     public String notAuthorized(ReservationAccessDenied rad) {
         log.trace("intercepted ReservationAccessDenied", rad);
         return "Access to this reservation has been denied";
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    public String accessDenied(AccessDeniedException accessDeniedException) {
+        log.trace("intercepted AccessDeniedException", accessDeniedException);
+        return "Access to resource has been denied";
     }
 
 }
