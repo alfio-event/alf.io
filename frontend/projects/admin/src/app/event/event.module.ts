@@ -1,16 +1,16 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TranslateModule } from '@ngx-translate/core';
-import { provideSvgIconsConfig, SvgIconComponent } from '@ngneat/svg-icon';
+import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { OrganizationService } from '../shared/organization.service';
+import { NgbCarouselModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
+import { provideSvgIconsConfig, SvgIconComponent } from '@ngneat/svg-icon';
+import { TranslateModule } from '@ngx-translate/core';
+import { NgChartsModule } from 'ng2-charts';
 import { EventService } from '../shared/event.service';
 import { ICON_CONFIG } from '../shared/icons';
+import { OrganizationService } from '../shared/organization.service';
+import { SharedModule } from '../shared/shared.module';
 import { EventDashboardComponent } from './event-dashboard/event-dashboard.component';
 import { EventMenuComponent } from './event-menu/event-menu.component';
-import { SharedModule } from '../shared/shared.module';
-import { NgChartsModule } from 'ng2-charts';
-import { NgbCarouselModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [EventMenuComponent, EventDashboardComponent],
@@ -21,6 +21,7 @@ import { NgbCarouselModule } from '@ng-bootstrap/ng-bootstrap';
     SharedModule,
     NgChartsModule,
     NgbCarouselModule,
+    NgbNavModule,
     RouterModule.forChild([{ path: '', component: EventDashboardComponent }]),
   ],
   providers: [

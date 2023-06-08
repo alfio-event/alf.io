@@ -17,6 +17,7 @@
           <div>
             <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
           </div>
+
           <div class="fs-1">
             {{
               eventOrganizationInfo.event.soldTickets +
@@ -33,7 +34,9 @@
           <div>
             <svg-icon key="hourglass-top" width="70px" height="70px"></svg-icon>
           </div>
-          <div class="fs-1">0</div>
+          <div class="fs-1">
+            {{ eventOrganizationInfo.event.pendingTickets }}
+          </div>
         </div>
       </div>
     </div>
@@ -44,27 +47,19 @@
           <div>
             <svg-icon key="piggy-bank" width="70px" height="70px"></svg-icon>
           </div>
-          <div class="fs-1">0</div>
+          <div class="fs-1">
+            {{ eventOrganizationInfo.event.grossIncome }}
+            {{ eventOrganizationInfo.event.currency }}
+          </div>
         </div>
       </div>
     </div>
   </div>
   <div class="row my-4">
-    <div class="col-6">
-      <ngb-carousel
-        [showNavigationIndicators]="false"
-        [showNavigationArrows]="true"
-        class="carousel-dark"
-      >
-        <ng-template ngbSlide>
-          <div class="text-center">tickets</div>
-        </ng-template>
-        <ng-template ngbSlide>
-          <div class="text-center">mas tickets</div>
-        </ng-template>
-      </ngb-carousel>
-
+    <div class="col-6 d-flex justify-content-center align-items-center">
       <canvas
+        width="700px"
+        height="200"
         baseChart
         [type]="'line'"
         [data]="lineChartData"
@@ -74,7 +69,7 @@
       </canvas>
     </div>
 
-    <div class="col-6 mx-auto">
+    <div class="col-6 d-flex justify-content-center align-items-center">
       <canvas
         baseChart
         [type]="'pie'"
@@ -103,21 +98,22 @@
           />
         </div>
         <div class="col-6">
-          <dl class="dl-horizontal">
-            <dt>Public URL</dt>
-            <dd>
+          <dl class="row">
+            <dt class="col-sm-3">Public URL</dt>
+            <dd class="col-sm-9">
+              www.com
               <!-- <a ng-href="{{ eventPublicURL }}" target="_blank" rel="noopener">{{
               eventPublicURL
             }}</a> -->
             </dd>
-            <dt>Organized by</dt>
-            <dd>
+            <dt class="col-sm-3">Organized by</dt>
+            <dd class="col-sm-9">
               {{ eventOrganizationInfo.organization.name }} &lt;{{
                 eventOrganizationInfo.organization.email
               }}&gt;
             </dd>
-            <dt>Website URL</dt>
-            <dd>
+            <dt class="col-sm-3">Website URL</dt>
+            <dd class="col-sm-9">
               <a
                 href="{{ eventOrganizationInfo.event.websiteUrl }}"
                 target="_blank"
@@ -125,8 +121,8 @@
                 >{{ eventOrganizationInfo.event.websiteUrl }}</a
               >
             </dd>
-            <dt>T&C URL</dt>
-            <dd>
+            <dt class="col-sm-3">T&C URL</dt>
+            <dd class="col-sm-9">
               <a
                 href="{{ eventOrganizationInfo.event.termsAndConditionsUrl }}"
                 target="_blank"
@@ -134,8 +130,10 @@
                 >{{ eventOrganizationInfo.event.termsAndConditionsUrl }}</a
               >
             </dd>
-            <dt data-ng-if="event.privacyPolicyUrl">Privacy Policy URL</dt>
-            <dd data-ng-if="event.privacyPolicyUrl">
+            <dt data-ng-if="event.privacyPolicyUrl" class="col-sm-3">
+              Privacy Policy URL
+            </dt>
+            <dd data-ng-if="event.privacyPolicyUrl" class="col-sm-9">
               <a
                 href="{{ eventOrganizationInfo.event.privacyPolicyUrl }}"
                 target="_blank"
@@ -143,8 +141,10 @@
                 >{{ eventOrganizationInfo.event.privacyPolicyUrl }}</a
               >
             </dd>
-            <dt data-ng-if="event.format !== 'ONLINE'">Location</dt>
-            <dd data-ng-if="event.format !== 'ONLINE'">
+            <dt *ngIf="!eventOrganizationInfo.event.online" class="col-sm-3">
+              Location
+            </dt>
+            <dd *ngIf="!eventOrganizationInfo.event.online" class="col-sm-9">
               <a
                 href="{{ eventOrganizationInfo.event.location }}"
                 target="_blank"
@@ -152,25 +152,56 @@
                 >{{ eventOrganizationInfo.event.location }}</a
               >
             </dd>
-            <dt>Languages</dt>
-            <dd>
-              <ol class="breadcrumb language-breadcrumb">
-                <li data-ng-repeat="cl in event.contentLanguages">
-                  <!-- {{ cl.displayLanguage }} -->
+            <dt class="col-sm-3">Languages</dt>
+            <dd class="col-sm-9">
+              <ul class="breadcrumb language-breadcrumb">
+                <li
+                  *ngFor="
+                    let language of eventOrganizationInfo.event.contentLanguages
+                  "
+                >
+                  {{ language.displayLanguage }}
                 </li>
-              </ol>
+              </ul>
             </dd>
-            <dt>Start Date/Time</dt>
-            <dd>{{ eventOrganizationInfo.event.formattedBegin | date }}</dd>
-            <dt>End Date/Time</dt>
-            <dd>{{ eventOrganizationInfo.event.formattedEnd | date }}</dd>
-            <dt>Time Zone</dt>
-            <dd>{{ eventOrganizationInfo.event.timeZone }}</dd>
+            <dt class="col-sm-3">Start Date/Time</dt>
+            <dd class="col-sm-9">
+              {{ eventOrganizationInfo.event.formattedBegin | date }}
+            </dd>
+            <dt class="col-sm-3">End Date/Time</dt>
+            <dd class="col-sm-9">
+              {{ eventOrganizationInfo.event.formattedEnd | date }}
+            </dd>
+            <dt class="col-sm-3">Time Zone</dt>
+            <dd class="col-sm-9">{{ eventOrganizationInfo.event.timeZone }}</dd>
           </dl>
         </div>
-        <div class="col-4"></div>
+        <div class="col-4">
+          <ul ngbNav #nav="ngbNav" class="nav-tabs">
+            <li
+              *ngFor="
+                let language of eventOrganizationInfo.event.description
+                  | keyvalue;
+                let i = index
+              "
+              [ngbNavItem]="language.key"
+            >
+              <a ngbNavLink>{{ language.key }}</a>
+              <ng-template ngbNavContent>
+                <pre>{{ language.value }}</pre>
+              </ng-template>
+            </li>
+          </ul>
+
+          <div [ngbNavOutlet]="nav" class="mt-2"></div>
+        </div>
       </div>
+      <hr />
     </div>
   </div>
+  <div class="card mt-5">
+    <div class="card-header">Seats and payment info</div>
+  </div>
+
+  {{ eventOrganizationInfo$ | async | json }}
 </app-section-dashboard>
-<!-- {{ eventInfo$ | async | json }} -->

@@ -4,9 +4,15 @@ export interface EventInfo {
   allowedPaymentProxies: string[]; // TODO: enum
   availableSeats: number;
   checkedInTickets: number;
+  currency: string;
   description: { [lang: string]: string };
   displayName: string;
   displayStatistics: boolean;
+  displayLanguage: string;
+  contentLanguages: {
+    displayLanguage: string;
+    language: string;
+  }[];
   dynamicAllocation: number;
   expired: boolean;
   fileBlobId: string;
@@ -17,6 +23,7 @@ export interface EventInfo {
   notAllocatedTickets: number;
   notSoldTickets: number;
   organizationId: number;
+  online: boolean;
   pendingTickets: number;
   privacyPolicyUrl: string;
   releasedTickets: number;
@@ -28,6 +35,7 @@ export interface EventInfo {
   visibleForCurrentUser: boolean;
   warningNeeded: boolean;
   websiteUrl: string;
+  grossIncome: number;
 }
 
 export interface EventOrganizationInfo {
