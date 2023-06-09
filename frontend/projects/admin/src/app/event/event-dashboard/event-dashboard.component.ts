@@ -2,7 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 import { Observable, map, of, switchMap } from 'rxjs';
-import { Event, EventOrganizationInfo } from '../../model/event';
+import {
+  Event,
+  EventOrganizationInfo,
+  EventTicketsStatistics,
+} from '../../model/event';
 import { EventService } from '../../shared/event.service';
 
 @Component({
@@ -14,6 +18,8 @@ export class EventDashboardComponent implements OnInit {
   public eventId$: Observable<string | null> = of();
   public event$: Observable<Event | null> = of();
   public eventOrganizationInfo$: Observable<EventOrganizationInfo | null> =
+    of();
+  public eventTicketsStatistics$: Observable<EventTicketsStatistics | null> =
     of();
 
   public pieChartOptions: ChartOptions<'pie'> = {
@@ -58,17 +64,27 @@ export class EventDashboardComponent implements OnInit {
     route: ActivatedRoute
   ) {
     this.eventId$ = route.paramMap.pipe(map((pm) => pm.get('eventId')));
-    route.paramMap.subscribe((result) => console.log(result));
+
     this.event$ = this.eventId$.pipe(
       switchMap((eventId) =>
         eventId != null ? eventService.getEvent(eventId) : of()
       )
     );
+
     this.eventOrganizationInfo$ = this.event$.pipe(
       switchMap((event) =>
         event != null ? eventService.getEventByShortName(event.shortName) : of()
       )
     );
+
+    this.eventTicketsStatistics$ = this.event$.pipe(
+      switchMap((event) =>
+        event != null
+          ? eventService.getTicketsStatistics(event.shortName)
+          : of()
+      )
+    );
+
     this.eventOrganizationInfo$.subscribe((eventOrganizationInfo) => {
       const event = eventOrganizationInfo?.event;
       if (!event) {

@@ -48,3 +48,15 @@ export interface Event {
   displayName: string;
   shortName: string;
 }
+
+export interface EventTicketsStatistics {
+  granularity: string;
+  sold: {
+    count: number;
+    date: string;
+  }[];
+  reserved: {
+    count: number;
+    date: string;
+  }[];
+}
