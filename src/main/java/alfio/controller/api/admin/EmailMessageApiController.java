@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.api.support.PageAndContent;
+import alfio.manager.AccessService;
 import alfio.manager.NotificationManager;
 import alfio.manager.PurchaseContextManager;
 import alfio.model.EmailMessage;
@@ -43,6 +44,7 @@ public class EmailMessageApiController {
 
     private final NotificationManager notificationManager;
     private final PurchaseContextManager purchaseContextManager;
+    private final AccessService accessService;
 
     @GetMapping("/")
     public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
@@ -50,6 +52,7 @@ public class EmailMessageApiController {
                                                                            @RequestParam(value = "page", required = false) Integer page,
                                                                            @RequestParam(value = "search", required = false) String search,
                                                                            Principal principal) {
+        accessService.checkPurchaseContextOwnership(principal, purchaseContextType, publicIdentifier);
         var purchaseContext = purchaseContextManager.findBy(purchaseContextType, publicIdentifier).orElseThrow();
         ZoneId zoneId = purchaseContext.getZoneId();
         Pair<Integer, List<LightweightMailMessage>> found = notificationManager.loadAllMessagesForPurchaseContext(purchaseContext, page, search);
@@ -64,6 +67,7 @@ public class EmailMessageApiController {
                                                     @PathVariable("messageId") int messageId,
                                                     Principal principal) {
         var purchaseContext = purchaseContextManager.findBy(purchaseContextType, publicIdentifier).orElseThrow();
+        accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());
         return notificationManager.loadSingleMessageForPurchaseContext(purchaseContext, messageId).map(m -> new LightweightEmailMessage(m, purchaseContext.getZoneId(), false)).orElseThrow(IllegalArgumentException::new);
     }
 

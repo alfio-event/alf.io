@@ -30,10 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Principal;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
@@ -142,17 +139,34 @@ public class AccessService {
                                           String publicIdentifier,
                                           String reservationId) {
         if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
-            checkOrganizationOwnershipForEvent(principal, publicIdentifier, reservationId);
+            checkReservationOwnershipForEvent(principal, publicIdentifier, reservationId);
         } else {
             var subscriptionDescriptor = subscriptionRepository.findDescriptorByReservationId(reservationId)
                 .orElseThrow(AccessDeniedException::new);
+            checkOrganizationOwnership(principal, subscriptionDescriptor.getOrganizationId());
             if (!subscriptionDescriptor.getPublicIdentifier().equals(publicIdentifier)) {
                 throw new AccessDeniedException();
             }
         }
     }
 
-    private void checkOrganizationOwnershipForEvent(Principal principal, String publicIdentifier, String reservationId) {
+    public void checkPurchaseContextOwnership(Principal principal,
+                                                         PurchaseContext.PurchaseContextType purchaseContextType,
+                                                         String publicIdentifier) {
+        if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
+            checkEventOwnership(principal, publicIdentifier);
+        } else {
+            checkSubscriptionDescriptorOwnership(principal, publicIdentifier);
+        }
+    }
+
+    public void checkSubscriptionDescriptorOwnership(Principal principal, String publicIdentifier) {
+        int organizationId = subscriptionRepository.findOrganizationIdForDescriptor(UUID.fromString(publicIdentifier))
+            .orElseThrow(AccessDeniedException::new);
+        checkOrganizationOwnership(principal, organizationId);
+    }
+
+    private void checkReservationOwnershipForEvent(Principal principal, String publicIdentifier, String reservationId) {
         var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(publicIdentifier)
             .orElseThrow(AccessDeniedException::new);
         checkOrganizationOwnership(principal, event.getOrganizationId());
@@ -166,7 +180,7 @@ public class AccessService {
                                      String publicIdentifier,
                                      String reservationId,
                                      int ticketId) {
-        checkOrganizationOwnershipForEvent(principal, publicIdentifier, reservationId);
+        checkReservationOwnershipForEvent(principal, publicIdentifier, reservationId);
         var tickets = ticketRepository.findByIds(List.of(ticketId));
         if (tickets.size() != 1 || !tickets.get(0).getTicketsReservationId().equals(reservationId)) {
             throw new AccessDeniedException();

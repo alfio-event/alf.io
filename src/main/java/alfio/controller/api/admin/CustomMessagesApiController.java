@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.support.CustomMessageManager;
 import alfio.model.modification.MessageModification;
 import lombok.extern.log4j.Log4j2;
@@ -34,10 +35,13 @@ import java.util.Optional;
 public class CustomMessagesApiController {
 
     private final CustomMessageManager customMessageManager;
+    private final AccessService accessService;
 
     @Autowired
-    public CustomMessagesApiController(CustomMessageManager customMessageManager) {
+    public CustomMessagesApiController(CustomMessageManager customMessageManager,
+                                       AccessService accessService) {
         this.customMessageManager = customMessageManager;
+        this.accessService = accessService;
     }
 
     @ExceptionHandler(IllegalStateException.class)
@@ -52,6 +56,7 @@ public class CustomMessagesApiController {
     public Map<String, Object> preview(@PathVariable("eventName") String eventName,
                                        @RequestParam(required = false, value = "categoryId") Integer categoryId,
                                        @RequestBody List<MessageModification> messageModifications, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return customMessageManager.generatePreview(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
     }
 
@@ -60,6 +65,7 @@ public class CustomMessagesApiController {
                     @RequestParam(required = false, value = "categoryId") Integer categoryId,
                     @RequestBody List<MessageModification> messageModifications,
                     Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         customMessageManager.sendMessages(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
     }
 

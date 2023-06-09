@@ -154,6 +154,9 @@ public interface SubscriptionRepository {
     @Query("select * from subscription_descriptor where id = :id and status = 'ACTIVE'")
     Optional<SubscriptionDescriptor> findOne(@Bind("id") UUID id);
 
+    @Query("select organization_id_fk from subscription_descriptor where status = 'ACTIVE' and id = :id")
+    Optional<Integer> findOrganizationIdForDescriptor(@Bind("id") UUID id);
+
     @Query("select * from subscription_descriptor where id = (select subscription_descriptor_fk from subscription where reservation_id_fk = :reservationId) and status = 'ACTIVE'")
     Optional<SubscriptionDescriptor> findDescriptorByReservationId(@Bind("reservationId") String reservationId);
 
