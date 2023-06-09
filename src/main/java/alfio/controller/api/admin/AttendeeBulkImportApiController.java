@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.AdminReservationRequestManager;
 import alfio.model.AdminReservationRequestStats;
 import alfio.model.modification.AdminReservationModification;
@@ -31,12 +32,14 @@ import java.security.Principal;
 public class AttendeeBulkImportApiController {
 
     private final AdminReservationRequestManager requestManager;
+    private final AccessService accessService;
 
     @PostMapping("")
     public Result<String> createReservations(@PathVariable("eventName") String eventName,
                                              @RequestBody AdminReservationModification body,
                                              @RequestParam(name="oneReservationPerAttendee", defaultValue = "false", required = false) boolean oneReservationPerAttendee,
                                              Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return requestManager.scheduleReservations(eventName, body, !oneReservationPerAttendee, principal.getName());
     }
 
@@ -44,6 +47,7 @@ public class AttendeeBulkImportApiController {
     public Result<AdminReservationRequestStats> getRequestsStatus(@PathVariable("eventName") String eventName,
                                                                   @PathVariable("requestId") String requestId,
                                                                   Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return requestManager.getRequestStatus(requestId, eventName, principal.getName());
     }
 
