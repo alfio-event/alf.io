@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ChartConfiguration, ChartOptions } from 'chart.js';
+import { ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 import { Observable, map, of, switchMap } from 'rxjs';
 import { Event, EventOrganizationInfo } from '../../model/event';
 import { EventService } from '../../shared/event.service';
@@ -16,7 +16,6 @@ export class EventDashboardComponent implements OnInit {
   public eventOrganizationInfo$: Observable<EventOrganizationInfo | null> =
     of();
 
-  public statistics: any = [];
   public pieChartOptions: ChartOptions<'pie'> = {
     responsive: false,
     plugins: {
@@ -26,23 +25,21 @@ export class EventDashboardComponent implements OnInit {
       },
     },
   };
-  public pieChartLabels = [
-    ['chekedIn', 'Sales'],
-    ['In', 'Store', 'Sales'],
-    'Mail Sales',
-  ];
-  public pieChartDatasets = [
-    {
-      data: [300, 500, 100],
-    },
-  ];
-  public pieChartLegend = true;
-  public pieChartPlugins = [];
-  public lineChartData: ChartConfiguration<'line'>['data'] = {
-    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+  public pieChartData: ChartData<'pie', number[], string | string[]> = {
+    labels: [],
     datasets: [
       {
-        data: [65, 59, 80, 81, 56, 55, 40],
+        data: [],
+        backgroundColor: [],
+      },
+    ],
+  };
+
+  public lineChartData: ChartConfiguration<'line'>['data'] = {
+    labels: [],
+    datasets: [
+      {
+        data: [],
         label: 'Series A',
         fill: true,
         tension: 0.5,
@@ -72,6 +69,61 @@ export class EventDashboardComponent implements OnInit {
         event != null ? eventService.getEventByShortName(event.shortName) : of()
       )
     );
+    this.eventOrganizationInfo$.subscribe((eventOrganizationInfo) => {
+      const event = eventOrganizationInfo?.event;
+      if (!event) {
+        return;
+      }
+      const pieData = [
+        {
+          value: event.checkedInTickets,
+          name: 'Checked in',
+          backgroundColor: '#5cb85c',
+          meta: 'Checked in (' + event.checkedInTickets + ')',
+        },
+        {
+          value: event.soldTickets,
+          name: 'Sold',
+          backgroundColor: '#f0ad4e',
+          meta: 'Sold (' + event.soldTickets + ')',
+        },
+        {
+          value: event.pendingTickets + event.releasedTickets,
+          name: 'Pending',
+          backgroundColor: '#7670b7',
+          meta:
+            'Pending (' + (event.pendingTickets + event.releasedTickets) + ')',
+        },
+        {
+          value: event.notSoldTickets,
+          name: 'Reserved for categories',
+          backgroundColor: '#f0ad4e',
+          meta: 'Reserved for categories (' + event.notSoldTickets + ')',
+        },
+        {
+          value: event.notAllocatedTickets,
+          name: 'Not yet allocated',
+          backgroundColor: '#d9534f',
+          meta: 'Not yet allocated (' + event.notAllocatedTickets + ')',
+        },
+        {
+          value: event.dynamicAllocation,
+          name: 'Available',
+          backgroundColor: '#428bca',
+          meta: 'Available (' + event.dynamicAllocation + ')',
+        },
+      ].filter((item) => item.value > 0);
+
+      this.pieChartData = {
+        labels: pieData.map((item) => item.name),
+        datasets: [
+          {
+            data: pieData.map((item) => item.value),
+            backgroundColor: pieData.map((item) => item.backgroundColor),
+          },
+        ],
+      };
+    });
   }
 
   ngOnInit(): void {}

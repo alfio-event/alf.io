@@ -73,11 +73,9 @@
       <canvas
         baseChart
         [type]="'pie'"
-        [datasets]="pieChartDatasets"
-        [labels]="pieChartLabels"
+        [data]="pieChartData"
         [options]="pieChartOptions"
-        [plugins]="pieChartPlugins"
-        [legend]="pieChartLegend"
+        [legend]="true"
       >
       </canvas>
     </div>
@@ -188,7 +186,7 @@
             >
               <a ngbNavLink>{{ language.key }}</a>
               <ng-template ngbNavContent>
-                <pre>{{ language.value }}</pre>
+                <pre class="pt-3">{{ language.value }}</pre>
               </ng-template>
             </li>
           </ul>
