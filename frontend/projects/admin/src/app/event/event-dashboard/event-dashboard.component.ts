@@ -4,10 +4,12 @@ import { ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 import { Observable, map, of, switchMap } from 'rxjs';
 import {
   Event,
+  EventInfo,
   EventOrganizationInfo,
   EventTicketsStatistics,
 } from '../../model/event';
 import { EventService } from '../../shared/event.service';
+import { formatDate } from '@angular/common';
 
 @Component({
   selector: 'app-event-dashboard',
@@ -43,16 +45,7 @@ export class EventDashboardComponent implements OnInit {
 
   public lineChartData: ChartConfiguration<'line'>['data'] = {
     labels: [],
-    datasets: [
-      {
-        data: [],
-        label: 'Series A',
-        fill: true,
-        tension: 0.5,
-        borderColor: 'black',
-        backgroundColor: 'rgba(255,0,0,0.3)',
-      },
-    ],
+    datasets: [],
   };
   public lineChartOptions: ChartOptions<'line'> = {
     responsive: false,
@@ -90,57 +83,89 @@ export class EventDashboardComponent implements OnInit {
       if (!event) {
         return;
       }
-      const pieData = [
-        {
-          value: event.checkedInTickets,
-          name: 'Checked in',
-          backgroundColor: '#5cb85c',
-          meta: 'Checked in (' + event.checkedInTickets + ')',
-        },
-        {
-          value: event.soldTickets,
-          name: 'Sold',
-          backgroundColor: '#f0ad4e',
-          meta: 'Sold (' + event.soldTickets + ')',
-        },
-        {
-          value: event.pendingTickets + event.releasedTickets,
-          name: 'Pending',
-          backgroundColor: '#7670b7',
-          meta:
-            'Pending (' + (event.pendingTickets + event.releasedTickets) + ')',
-        },
-        {
-          value: event.notSoldTickets,
-          name: 'Reserved for categories',
-          backgroundColor: '#f0ad4e',
-          meta: 'Reserved for categories (' + event.notSoldTickets + ')',
-        },
-        {
-          value: event.notAllocatedTickets,
-          name: 'Not yet allocated',
-          backgroundColor: '#d9534f',
-          meta: 'Not yet allocated (' + event.notAllocatedTickets + ')',
-        },
-        {
-          value: event.dynamicAllocation,
-          name: 'Available',
-          backgroundColor: '#428bca',
-          meta: 'Available (' + event.dynamicAllocation + ')',
-        },
-      ].filter((item) => item.value > 0);
+      this.loadPieData(event);
+    });
 
-      this.pieChartData = {
-        labels: pieData.map((item) => item.name),
-        datasets: [
-          {
-            data: pieData.map((item) => item.value),
-            backgroundColor: pieData.map((item) => item.backgroundColor),
-          },
-        ],
-      };
+    this.eventTicketsStatistics$.subscribe((eventTicketsStatistics) => {
+      if (!eventTicketsStatistics) {
+        return;
+      }
+      this.loadLineData(eventTicketsStatistics);
     });
   }
 
+  loadLineData(eventTicketsStatistics: EventTicketsStatistics) {
+    this.lineChartData = {
+      labels: eventTicketsStatistics.sold.map((item) =>
+        formatDate(item.date, 'mediumDate', 'en')
+      ),
+      datasets: [
+        {
+          data: eventTicketsStatistics.sold.map((item) => item.count),
+          label: 'Created Reservations',
+          borderColor: 'green',
+          backgroundColor: 'green',
+        },
+        {
+          data: eventTicketsStatistics.reserved.map((item) => item.count),
+          label: 'Confirmed Reservations',
+          borderColor: 'orange',
+          backgroundColor: 'orange',
+        },
+      ],
+    };
+  }
+
+  loadPieData(event: EventInfo) {
+    const pieData = [
+      {
+        value: event.checkedInTickets,
+        name: 'Checked in',
+        backgroundColor: '#5cb85c',
+        meta: 'Checked in (' + event.checkedInTickets + ')',
+      },
+      {
+        value: event.soldTickets,
+        name: 'Sold',
+        backgroundColor: '#f0ad4e',
+        meta: 'Sold (' + event.soldTickets + ')',
+      },
+      {
+        value: event.pendingTickets + event.releasedTickets,
+        name: 'Pending',
+        backgroundColor: '#7670b7',
+        meta:
+          'Pending (' + (event.pendingTickets + event.releasedTickets) + ')',
+      },
+      {
+        value: event.notSoldTickets,
+        name: 'Reserved for categories',
+        backgroundColor: '#f0ad4e',
+        meta: 'Reserved for categories (' + event.notSoldTickets + ')',
+      },
+      {
+        value: event.notAllocatedTickets,
+        name: 'Not yet allocated',
+        backgroundColor: '#d9534f',
+        meta: 'Not yet allocated (' + event.notAllocatedTickets + ')',
+      },
+      {
+        value: event.dynamicAllocation,
+        name: 'Available',
+        backgroundColor: '#428bca',
+        meta: 'Available (' + event.dynamicAllocation + ')',
+      },
+    ].filter((item) => item.value > 0);
+
+    this.pieChartData = {
+      labels: pieData.map((item) => item.name),
+      datasets: [
+        {
+          data: pieData.map((item) => item.value),
+          backgroundColor: pieData.map((item) => item.backgroundColor),
+        },
+      ],
+    };
+  }
   ngOnInit(): void {}
 }

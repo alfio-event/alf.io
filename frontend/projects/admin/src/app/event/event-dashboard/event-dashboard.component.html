@@ -158,7 +158,9 @@
                     let language of eventOrganizationInfo.event.contentLanguages
                   "
                 >
-                  {{ language.displayLanguage }}
+                  <span class="me-2">{{
+                    language.displayLanguage | titlecase
+                  }}</span>
                 </li>
               </ul>
             </dd>
