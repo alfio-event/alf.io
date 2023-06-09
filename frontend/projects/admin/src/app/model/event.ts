@@ -18,6 +18,7 @@ export interface EventInfo {
   fileBlobId: string;
   formattedBegin: string;
   formattedEnd: string;
+  freeOfCharge: boolean;
   id: number;
   location: string;
   notAllocatedTickets: number;
@@ -36,6 +37,9 @@ export interface EventInfo {
   warningNeeded: boolean;
   websiteUrl: string;
   grossIncome: number;
+  regularPrice: number;
+  finalPrice: number;
+  vatPercentage: number;
 }
 
 export interface EventOrganizationInfo {

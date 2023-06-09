@@ -10,6 +10,8 @@ import {
 } from '../../model/event';
 import { EventService } from '../../shared/event.service';
 import { formatDate } from '@angular/common';
+import { ConfigurationService } from '../../shared/configuration.service';
+import { InstanceSetting } from '../../model/instance-settings';
 
 @Component({
   selector: 'app-event-dashboard',
@@ -23,6 +25,7 @@ export class EventDashboardComponent implements OnInit {
     of();
   public eventTicketsStatistics$: Observable<EventTicketsStatistics | null> =
     of();
+  public instanceSetting$: Observable<InstanceSetting> = of();
 
   public pieChartOptions: ChartOptions<'pie'> = {
     responsive: false,
@@ -54,9 +57,11 @@ export class EventDashboardComponent implements OnInit {
 
   constructor(
     private readonly eventService: EventService,
-    route: ActivatedRoute
+    private readonly route: ActivatedRoute,
+    private readonly configurationService: ConfigurationService
   ) {
     this.eventId$ = route.paramMap.pipe(map((pm) => pm.get('eventId')));
+    this.instanceSetting$ = this.configurationService.loadInstanceSetting();
 
     this.event$ = this.eventId$.pipe(
       switchMap((eventId) =>

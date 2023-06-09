@@ -11,9 +11,10 @@ import { OrganizationService } from '../shared/organization.service';
 import { SharedModule } from '../shared/shared.module';
 import { EventDashboardComponent } from './event-dashboard/event-dashboard.component';
 import { EventMenuComponent } from './event-menu/event-menu.component';
+import { TranslatePaymentProxiesPipe } from './translate-payment-proxies.pipe';
 
 @NgModule({
-  declarations: [EventMenuComponent, EventDashboardComponent],
+  declarations: [EventMenuComponent, EventDashboardComponent, TranslatePaymentProxiesPipe],
   imports: [
     TranslateModule.forChild(),
     CommonModule,

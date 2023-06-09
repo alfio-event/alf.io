@@ -6,78 +6,84 @@
     <h2 class="my-4">{{ event.displayName }}</h2>
   </div>
   <hr />
-  <div
-    class="row"
-    *ngIf="eventOrganizationInfo$ | async as eventOrganizationInfo"
-  >
-    <div class="col-6 col-md-3">
-      <div class="card flex-fill mx-3">
-        <div class="card-header text-center">Total tickets confirmed</div>
-        <div class="card-body d-flex justify-content-between">
-          <div>
-            <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
-          </div>
+  <div *ngIf="eventOrganizationInfo$ | async as eventOrganizationInfo">
+    <div *ngIf="eventOrganizationInfo.event.displayStatistics" class="row">
+      <div class="col-6 col-md-3">
+        <div class="card flex-fill mx-3">
+          <div class="card-header text-center">Total tickets confirmed</div>
+          <div class="card-body d-flex justify-content-between">
+            <div>
+              <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
+            </div>
 
-          <div class="fs-1">
-            {{
-              eventOrganizationInfo.event.soldTickets +
-                eventOrganizationInfo.event.checkedInTickets
-            }}
+            <div class="fs-1">
+              {{
+                eventOrganizationInfo.event.soldTickets +
+                  eventOrganizationInfo.event.checkedInTickets
+              }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card flex-fill mx-3">
+          <div class="card-header text-center">Tickets pending</div>
+          <div class="card-body d-flex justify-content-between">
+            <div>
+              <svg-icon
+                key="hourglass-top"
+                width="70px"
+                height="70px"
+              ></svg-icon>
+            </div>
+            <div class="fs-1">
+              {{ eventOrganizationInfo.event.pendingTickets }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-6">
+        <div
+          class="card flex-fill mx-3"
+          *ngIf="!eventOrganizationInfo.event.freeOfCharge"
+        >
+          <div class="card-header text-center">Gross income</div>
+          <div class="card-body d-flex justify-content-between">
+            <div>
+              <svg-icon key="piggy-bank" width="70px" height="70px"></svg-icon>
+            </div>
+            <div class="fs-1">
+              {{ eventOrganizationInfo.event.grossIncome }}
+              {{ eventOrganizationInfo.event.currency }}
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
-      <div class="card flex-fill mx-3">
-        <div class="card-header text-center">Tickets pending</div>
-        <div class="card-body d-flex justify-content-between">
-          <div>
-            <svg-icon key="hourglass-top" width="70px" height="70px"></svg-icon>
-          </div>
-          <div class="fs-1">
-            {{ eventOrganizationInfo.event.pendingTickets }}
-          </div>
-        </div>
+    <div class="row my-4">
+      <div class="col-6 d-flex justify-content-center align-items-center">
+        <canvas
+          width="700px"
+          height="200"
+          baseChart
+          [type]="'line'"
+          [data]="lineChartData"
+          [options]="lineChartOptions"
+          [legend]="lineChartLegend"
+        >
+        </canvas>
       </div>
-    </div>
-    <div class="col-6 col-md-6">
-      <div class="card flex-fill mx-3">
-        <div class="card-header text-center">Gross income</div>
-        <div class="card-body d-flex justify-content-between">
-          <div>
-            <svg-icon key="piggy-bank" width="70px" height="70px"></svg-icon>
-          </div>
-          <div class="fs-1">
-            {{ eventOrganizationInfo.event.grossIncome }}
-            {{ eventOrganizationInfo.event.currency }}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="row my-4">
-    <div class="col-6 d-flex justify-content-center align-items-center">
-      <canvas
-        width="700px"
-        height="200"
-        baseChart
-        [type]="'line'"
-        [data]="lineChartData"
-        [options]="lineChartOptions"
-        [legend]="lineChartLegend"
-      >
-      </canvas>
-    </div>
 
-    <div class="col-6 d-flex justify-content-center align-items-center">
-      <canvas
-        baseChart
-        [type]="'pie'"
-        [data]="pieChartData"
-        [options]="pieChartOptions"
-        [legend]="true"
-      >
-      </canvas>
+      <div class="col-6 d-flex justify-content-center align-items-center">
+        <canvas
+          baseChart
+          [type]="'pie'"
+          [data]="pieChartData"
+          [options]="pieChartOptions"
+          [legend]="true"
+        >
+        </canvas>
+      </div>
     </div>
   </div>
 
@@ -99,10 +105,20 @@
           <dl class="row">
             <dt class="col-sm-3">Public URL</dt>
             <dd class="col-sm-9">
-              www.com
-              <!-- <a ng-href="{{ eventPublicURL }}" target="_blank" rel="noopener">{{
-              eventPublicURL
-            }}</a> -->
+              <a
+                [href]="
+                  (instanceSetting$ | async)?.baseUrl +
+                  '/event/' +
+                  eventOrganizationInfo.event.shortName
+                "
+                target="_blank"
+                rel="noopener"
+                >{{
+                  (instanceSetting$ | async)?.baseUrl +
+                    "/event/" +
+                    eventOrganizationInfo.event.shortName
+                }}</a
+              >
             </dd>
             <dt class="col-sm-3">Organized by</dt>
             <dd class="col-sm-9">
@@ -128,10 +144,16 @@
                 >{{ eventOrganizationInfo.event.termsAndConditionsUrl }}</a
               >
             </dd>
-            <dt data-ng-if="event.privacyPolicyUrl" class="col-sm-3">
+            <dt
+              *ngIf="eventOrganizationInfo.event.privacyPolicyUrl"
+              class="col-sm-3"
+            >
               Privacy Policy URL
             </dt>
-            <dd data-ng-if="event.privacyPolicyUrl" class="col-sm-9">
+            <dd
+              *ngIf="eventOrganizationInfo.event.privacyPolicyUrl"
+              class="col-sm-9"
+            >
               <a
                 href="{{ eventOrganizationInfo.event.privacyPolicyUrl }}"
                 target="_blank"
@@ -152,7 +174,7 @@
             </dd>
             <dt class="col-sm-3">Languages</dt>
             <dd class="col-sm-9">
-              <ul class="breadcrumb language-breadcrumb">
+              <ul class="breadcrumb language-breadcrumb mb-0">
                 <li
                   *ngFor="
                     let language of eventOrganizationInfo.event.contentLanguages
@@ -197,9 +219,99 @@
         </div>
       </div>
       <hr />
+      <div class="d-flex flex-row-reverse">
+        <button class="btn btn-lg btn-primary">Edit</button>
+      </div>
     </div>
   </div>
-  <div class="card mt-5">
+  <div
+    class="card mt-5"
+    *ngIf="eventOrganizationInfo$ | async as eventOrganizationInfo"
+  >
     <div class="card-header">Seats and payment info</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-xs-12 col-lg-6">
+          <dl class="row">
+            <dt class="col-sm-3">Tickets Price</dt>
+            <dd class="col-sm-9">
+              <span *ngIf="eventOrganizationInfo.event.freeOfCharge"
+                >Free of charge</span
+              >
+              <span *ngIf="!eventOrganizationInfo.event.freeOfCharge">{{
+                eventOrganizationInfo.event.regularPrice
+                  | currency : eventOrganizationInfo.event.currency || ""
+              }}</span>
+            </dd>
+            <dt
+              class="col-sm-3"
+              *ngIf="!eventOrganizationInfo.event.freeOfCharge"
+            >
+              Payment methods
+            </dt>
+            <dd
+              class="col-sm-9"
+              *ngIf="!eventOrganizationInfo.event.freeOfCharge"
+            >
+              {{
+                eventOrganizationInfo.event.allowedPaymentProxies
+                  | translatePaymentProxies
+              }}
+              <!-- <div
+                class="text-warning"
+                data-ng-if="(allowedPaymentProxies | paymentMethodFilter : true : event.currency).length > 0"
+              >
+                <i class="fa fa-info-circle"></i> The following Methods are not
+                available:
+                <span
+                  data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter : true : event.currency"
+                  >{{ p.id }}<span data-ng-if="!$last">, </span></span
+                >. Please check that the provider support the selected currency or
+                the
+                <a
+                  data-ui-sref="configuration.organization({organizationId: event.organizationId})"
+                  >configuration</a
+                >.
+              </div> -->
+            </dd>
+            <dt class="col-sm-3">Max tickets</dt>
+            <dd class="col-sm-9">
+              {{ eventOrganizationInfo.event.availableSeats }}
+            </dd>
+            <dt
+              class="col-sm-3"
+              *ngIf="!eventOrganizationInfo.event.freeOfCharge"
+            >
+              VAT (%)
+            </dt>
+            <dd
+              class="col-sm-9"
+              *ngIf="!eventOrganizationInfo.event.freeOfCharge"
+            >
+              {{ eventOrganizationInfo.event.vatPercentage | currency : "" }}
+            </dd>
+            <dt
+              class="col-sm-3"
+              *ngIf="!eventOrganizationInfo.event.freeOfCharge"
+            >
+              Final Price
+            </dt>
+            <dd
+              class="col-sm-9"
+              *ngIf="!eventOrganizationInfo.event.freeOfCharge"
+            >
+              {{
+                eventOrganizationInfo.event.finalPrice
+                  | currency : eventOrganizationInfo.event.currency || ""
+              }}
+            </dd>
+          </dl>
+        </div>
+        <hr />
+        <div class="d-flex flex-row-reverse">
+          <button class="btn btn-lg btn-primary">Edit</button>
+        </div>
+      </div>
+    </div>
   </div>
 </app-section-dashboard>
