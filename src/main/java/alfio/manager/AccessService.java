@@ -97,6 +97,12 @@ public class AccessService {
         throw new AccessDeniedException(); //"User " + principal.getName() + " don't have ownership to organizationId " + organizationId
     }
 
+    public void ensureAdmin(Principal principal) {
+        if (!isAdmin(principal)) {
+            throw new AccessDeniedException();
+        }
+    }
+
     public void checkEventOwnership(Principal principal, int eventId) {
         var orgId = eventRepository.findOrganizationIdByEventId(eventId);
         checkOrganizationOwnership(principal, orgId);
@@ -104,6 +110,14 @@ public class AccessService {
 
     public void checkEventOwnership(Principal principal, String eventShortName) {
         var orgId = eventRepository.findOrganizationIdByShortName(eventShortName);
+        checkOrganizationOwnership(principal, orgId);
+    }
+
+    public void checkEventOwnership(Principal principal, String eventShortName, int organizationId) {
+        var orgId = eventRepository.findOrganizationIdByShortName(eventShortName);
+        if (orgId != organizationId) {
+            throw new AccessDeniedException();
+        }
         checkOrganizationOwnership(principal, orgId);
     }
 
