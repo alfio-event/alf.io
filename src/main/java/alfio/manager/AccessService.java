@@ -18,7 +18,9 @@ package alfio.manager;
 
 import alfio.config.authentication.support.APITokenAuthentication;
 import alfio.manager.support.AccessDeniedException;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.PurchaseContext;
+import alfio.model.modification.GroupModification;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
@@ -57,6 +59,8 @@ public class AccessService {
     private final TicketReservationRepository reservationRepository;
     private final TicketRepository ticketRepository;
     private final BillingDocumentRepository billingDocumentRepository;
+    private final GroupRepository groupRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
     public AccessService(UserRepository userRepository,
                          AuthorityRepository authorityRepository,
@@ -65,7 +69,9 @@ public class AccessService {
                          SubscriptionRepository subscriptionRepository,
                          TicketReservationRepository reservationRepository,
                          TicketRepository ticketRepository,
-                         BillingDocumentRepository billingDocumentRepository) {
+                         BillingDocumentRepository billingDocumentRepository,
+                         GroupRepository groupRepository,
+                         TicketCategoryRepository ticketCategoryRepository) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
         this.userOrganizationRepository = userOrganizationRepository;
@@ -74,6 +80,8 @@ public class AccessService {
         this.reservationRepository = reservationRepository;
         this.ticketRepository = ticketRepository;
         this.billingDocumentRepository = billingDocumentRepository;
+        this.groupRepository = groupRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
     }
 
     public void checkUserAccess(Principal principal, int userId) {
@@ -103,22 +111,39 @@ public class AccessService {
         }
     }
 
-    public void checkEventOwnership(Principal principal, int eventId) {
-        var orgId = eventRepository.findOrganizationIdByEventId(eventId);
-        checkOrganizationOwnership(principal, orgId);
+    public EventAndOrganizationId checkEventOwnership(Principal principal, int eventId) {
+        var eventAndOrgId = eventRepository.findEventAndOrganizationIdById(eventId);
+        checkOrganizationOwnership(principal, eventAndOrgId.getOrganizationId());
+        return eventAndOrgId;
     }
 
-    public void checkEventOwnership(Principal principal, String eventShortName) {
-        var orgId = eventRepository.findOrganizationIdByShortName(eventShortName);
-        checkOrganizationOwnership(principal, orgId);
+    public EventAndOrganizationId checkEventOwnership(Principal principal, String eventShortName) {
+        var eventAndOrgId = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName)
+            .orElseThrow(AccessDeniedException::new);
+        checkOrganizationOwnership(principal, eventAndOrgId.getOrganizationId());
+        return eventAndOrgId;
+    }
+
+    public EventAndOrganizationId checkCategoryOwnership(Principal principal, int eventId, int categoryId) {
+        var eventAndOrganizationId = checkEventOwnership(principal, eventId);
+        if (!Boolean.TRUE.equals(ticketCategoryRepository.checkCategoryExistsForEvent(categoryId, eventAndOrganizationId.getId()))) {
+            throw new AccessDeniedException();
+        }
+        return eventAndOrganizationId;
+    }
+
+    public void checkCategoryOwnership(Principal principal, String eventShortName, int categoryId) {
+        var eventAndOrganizationId = checkEventOwnership(principal, eventShortName);
+        if (!Boolean.TRUE.equals(ticketCategoryRepository.checkCategoryExistsForEvent(categoryId, eventAndOrganizationId.getId()))) {
+            throw new AccessDeniedException();
+        }
     }
 
     public void checkEventOwnership(Principal principal, String eventShortName, int organizationId) {
-        var orgId = eventRepository.findOrganizationIdByShortName(eventShortName);
+        int orgId = checkEventOwnership(principal, eventShortName).getOrganizationId();
         if (orgId != organizationId) {
             throw new AccessDeniedException();
         }
-        checkOrganizationOwnership(principal, orgId);
     }
 
     private static boolean isSystemApiUser(Principal principal) {
@@ -210,5 +235,35 @@ public class AccessService {
         if (!Boolean.TRUE.equals(billingDocumentRepository.checkBillingDocumentExistsForReservation(billingDocumentId, reservationId))) {
             throw new AccessDeniedException();
         }
+    }
+
+    public void checkGroupLinkOwnership(Principal principal, int groupLinkId, int organizationId, int eventId, Integer categoryId) {
+        var eventAndOrgId = checkEventOwnership(principal, eventId);
+        if (eventAndOrgId.getOrganizationId() != organizationId) {
+            throw new AccessDeniedException();
+        }
+        if (!Boolean.TRUE.equals(groupRepository.checkGroupLinkExists(groupLinkId, organizationId, eventId, categoryId))) {
+            throw new AccessDeniedException();
+        }
+    }
+    public void checkGroupOwnership(Principal principal, int groupId, int organizationId) {
+        checkOrganizationOwnership(principal, organizationId);
+        if (!Boolean.TRUE.equals(groupRepository.checkGroupExists(groupId, organizationId))) {
+            throw new AccessDeniedException();
+        }
+    }
+
+    public void checkGroupUpdateRequest(Principal principal, int groupId, int organizationId, GroupModification groupModification) {
+        if (groupModification.getOrganizationId() != organizationId || groupModification.getId() != groupId) {
+            throw new AccessDeniedException();
+        }
+        checkGroupOwnership(principal, groupId, organizationId);
+    }
+
+    public void checkGroupCreateRequest(Principal principal, int organizationId, GroupModification groupModification) {
+        if (groupModification.getOrganizationId() != organizationId) {
+            throw new AccessDeniedException();
+        }
+        checkOrganizationOwnership(principal, organizationId);
     }
 }

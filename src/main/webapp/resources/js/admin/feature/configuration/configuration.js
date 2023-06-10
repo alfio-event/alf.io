@@ -634,7 +634,7 @@
     function unlinkGroup(conf, GroupService, loadFn) {
         return function(organizationId, groupLink) {
             if(groupLink && angular.isDefined(groupLink.id)) {
-                GroupService.unlinkFrom(organizationId, groupLink.id).then(function() {
+                GroupService.unlinkFrom(organizationId, groupLink.id, conf).then(function() {
                     loadFn();
                 });
             } else {
