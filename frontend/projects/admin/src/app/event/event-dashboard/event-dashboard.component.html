@@ -176,13 +176,12 @@
             <dd class="col-sm-9">
               <ul class="breadcrumb language-breadcrumb mb-0">
                 <li
+                  class="breadcrumb-item"
                   *ngFor="
                     let language of eventOrganizationInfo.event.contentLanguages
                   "
                 >
-                  <span class="me-2">{{
-                    language.displayLanguage | titlecase
-                  }}</span>
+                  <span>{{ language.displayLanguage | titlecase }}</span>
                 </li>
               </ul>
             </dd>
@@ -315,62 +314,6 @@
             <button class="btn btn-lg btn-primary">Edit</button>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-  <div class="mt-5">
-    <h3>Categories</h3>
-    <h5 class="text-muted">
-      Here the categories that have been defined for this event.
-    </h5>
-  </div>
-  <button
-    type="button"
-    class="btn btn-success"
-    data-ng-disabled="!event.addCategoryEnabled"
-    data-ng-click="addCategory(event)"
-  >
-    <svg-icon key="add"></svg-icon> add category
-  </button>
-  <hr />
-  <div>
-    <label
-      class="btn btn-sm btn-default ng-pristine ng-untouched ng-valid ng-not-empty active"
-      data-ng-model="selection.active"
-      data-uib-btn-checkbox=""
-      ><i
-        class="fa fa-check-square-o"
-        data-ng-class="{'fa-check-square-o': selection.active, 'fa-square-o': !selection.active}"
-      ></i>
-      Active <span class="badge ng-binding">1</span></label
-    >
-    <label
-      class="btn btn-sm btn-default ng-pristine ng-untouched ng-valid ng-not-empty"
-      data-ng-model="selection.expired"
-      data-uib-btn-checkbox=""
-      ><i
-        class="fa fa-square-o"
-        data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"
-      ></i>
-      Expired <span class="badge ng-binding">0</span></label
-    >
-    <label
-      ><div class="input-group">
-        <div class="input-group-addon"><i class="fa fa-search"></i></div>
-        <input
-          type="text"
-          class="form-control input-sm ng-pristine ng-untouched ng-valid ng-empty"
-          data-ng-model="selection.freeText"
-          data-ng-change="updateSelectionText(selection.freeText)"
-        /></div
-    ></label>
-  </div>
-  <div class="card mt-4">
-    <div class="card-header"></div>
-    <div class="card-body">
-      <hr />
-      <div class="d-flex flex-row-reverse">
-        <button class="btn btn-lg btn-primary">Edit</button>
       </div>
     </div>
   </div>

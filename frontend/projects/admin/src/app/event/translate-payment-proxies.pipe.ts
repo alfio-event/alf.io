@@ -14,7 +14,7 @@ const PAYMENT_PROXY_DESCRIPTIONS = {
   name: 'translatePaymentProxies',
 })
 export class TranslatePaymentProxiesPipe implements PipeTransform {
-  transform(list: string[], ...args: unknown[]): unknown {
+  transform(list: string[]): string[] {
     return list.map((item) =>
       PAYMENT_PROXY_DESCRIPTIONS[item] ? PAYMENT_PROXY_DESCRIPTIONS[item] : item
     );
