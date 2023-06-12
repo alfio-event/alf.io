@@ -50,7 +50,7 @@
     <div>
       <button
         class="btn btn-lg btn-outline-secondary"
-        [routerLink]="['/access-control/users']"
+        (click)="activeModal.dismiss('Close click')"
       >
         Cancel
       </button>
