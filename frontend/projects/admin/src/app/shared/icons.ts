@@ -4,6 +4,7 @@ import { addIcon } from '../svg/add';
 import { addCircleNewIcon } from '../svg/add-circle-new';
 import { arrowdropdownIcon } from '../svg/arrowdropdown';
 import { calendarEventIcon } from '../svg/calendar-event';
+import { categoryIcon } from '../svg/category';
 import { checkIcon } from '../svg/check';
 import { deleteIcon } from '../svg/delete';
 import { detailsIcon } from '../svg/details';
@@ -14,10 +15,12 @@ import { groupsIcon } from '../svg/groups';
 import { homeIcon } from '../svg/home';
 import { hourglassTopIcon } from '../svg/hourglass-top';
 import { keyIcon } from '../svg/key';
+import { lockOpenIcon } from '../svg/lock-open';
 import { organizationIcon } from '../svg/organization';
 import { paymentsIcon } from '../svg/payments';
 import { piggyBankIcon } from '../svg/piggy-bank';
 import { resetIcon } from '../svg/reset';
+import { searchIcon } from '../svg/search';
 import { settingsIcon } from '../svg/settings';
 import { subscriptionIcon } from '../svg/subscription';
 import { ticketIcon } from '../svg/ticket';
@@ -31,6 +34,7 @@ const ICONS = [
   addIcon,
   arrowdropdownIcon,
   calendarEventIcon,
+  categoryIcon,
   checkIcon,
   deleteIcon,
   detailsIcon,
@@ -41,10 +45,12 @@ const ICONS = [
   homeIcon,
   hourglassTopIcon,
   keyIcon,
+  lockOpenIcon,
   organizationIcon,
   paymentsIcon,
   piggyBankIcon,
   resetIcon,
+  searchIcon,
   settingsIcon,
   subscriptionIcon,
   ticketIcon,

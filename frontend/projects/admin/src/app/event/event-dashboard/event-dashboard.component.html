@@ -317,4 +317,39 @@
       </div>
     </div>
   </div>
+  <h3 class="mt-5"><svg-icon key="category"></svg-icon>Categories</h3>
+  <p class="text-muted">
+    Here the categories that have been defined for this event.
+  </p>
+  <div class="py-2">
+    <button
+      type="button"
+      class="btn btn-success d-flex align-items-center"
+      [routerLink]="[]"
+    >
+      <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+      add new
+    </button>
+  </div>
+  <hr />
+  <div class="form-check form-check-inline">
+    <input
+      mdbCheckbox
+      class="form-check-input"
+      type="checkbox"
+      id="inlineCheckbox1"
+      value="option1"
+    />
+    <label class="form-check-label" for="inlineCheckbox1">Active</label>
+  </div>
+  <div class="form-check form-check-inline">
+    <input
+      mdbCheckbox
+      class="form-check-input"
+      type="checkbox"
+      id="inlineCheckbox2"
+      value="option2"
+    />
+    <label class="form-check-label" for="inlineCheckbox2">Expired</label>
+  </div>
 </app-section-dashboard>
