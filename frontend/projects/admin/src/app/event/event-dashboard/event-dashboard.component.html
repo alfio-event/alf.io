@@ -3,6 +3,7 @@
     <app-event-menu></app-event-menu>
   </div>
   <div *ngIf="event$ | async as event">
+    <a class="btn" href=""><svg-icon key="edit"></svg-icon></a>
     <h2 class="my-4">{{ event.displayName }}</h2>
   </div>
   <hr />
