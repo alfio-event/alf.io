@@ -1,31 +1,17 @@
 <div class="container">
-  <h1 class="my-3">System API Key</h1>
-  <p>
-    System API Key can be used from external application to create/modify/delete
-    organizations and to create API Keys
-  </p>
+  <h1 class="my-3" translate="admin.api-key.list.title"></h1>
+  <p translate="admin.api-key.list.text"></p>
   <hr />
 
   <div class="d-flex py-3">
-    <select
-      id="UserOrganizationId"
-      class="form-select form-control d-flex mx-3"
-      [(ngModel)]="selectedOrganization"
-    >
-      <option></option>
-      <option *ngFor="let org of organizations$ | async" [ngValue]="org">
-        {{ org.name }}
-      </option>
-    </select>
     <div ngbDropdown class="d-inline-block d-flex mx-3">
       <button
         type="button"
         class="btn btn-outline-primary"
         id="dropdownBasic1"
         ngbDropdownToggle
-      >
-        Download all API Keys for
-      </button>
+        translate="admin.api-key.list.download-api-keys"
+      ></button>
       <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
         <button
           (click)="downloadAllApiKeys(org.id)"
@@ -39,15 +25,16 @@
         class="btn btn-warning mx-3"
         [routerLink]="['/access-control/api-keys/bulk']"
       >
-        <svg-icon key="groups"></svg-icon>Bulk creation
+        <svg-icon key="groups"></svg-icon>
+        <span translate="admin.api-key.list.bulk-creation"></span>
       </a>
       <button
         type="button"
         class="btn btn-success d-flex align-items-center mx-3"
         [routerLink]="['/access-control/api-keys/new']"
+        translate="admin.common.add-new"
       >
         <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
-        add new
       </button>
     </div>
   </div>
@@ -56,14 +43,18 @@
     <table class="table table-striped">
       <thead>
         <tr>
-          <th scope="col">Api key</th>
-          <th scope="col">Description</th>
-          <th scope="col">Role</th>
-          <th scope="col">Member of</th>
-          <th scope="col">QR Code</th>
-          <th scope="col">Edit</th>
-          <th scope="col">Enable / Disable</th>
-          <th scope="col">Delete</th>
+          <th scope="col" translate="admin.api-key.list.api-key"></th>
+          <th scope="col" translate="admin.api-key.list.description"></th>
+          <th scope="col" translate="admin.api-key.list.role"></th>
+          <th scope="col" translate="admin.api-key.list.member-of"></th>
+          <th scope="col" translate="admin.api-key.list.qr-code"></th>
+          <th scope="col" translate="common.edit"></th>
+          <th scope="col">
+            <span translate="admin.api-key.list.enabled"></span>/<span
+              translate="admin.api-key.list.disable"
+            ></span>
+          </th>
+          <th scope="col" translate="admin.common.delete"></th>
         </tr>
       </thead>
       <tbody>
@@ -103,26 +94,27 @@
               *ngIf="user.enabled"
               class="btn btn-warning"
               (click)="enable(user)"
+              translate="admin.api-key.list.disable"
             >
               <svg-icon key="visibilityoff"></svg-icon>
-
-              Disable
             </button>
             <button
               *ngIf="!user.enabled"
               class="btn btn-success"
               (click)="enable(user)"
+              translate="admin.api-key.list.enabled"
             >
               <svg-icon key="visibility-on"></svg-icon>
-
-              Enable
             </button>
           </td>
 
           <td>
-            <button class="btn btn-danger" (click)="deleteUserApikey(user)">
+            <button
+              class="btn btn-danger"
+              (click)="deleteUserApikey(user)"
+              translate="admin.common.delete"
+            >
               <svg-icon key="delete"></svg-icon>
-              Delete
             </button>
           </td>
         </tr>

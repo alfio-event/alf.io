@@ -1,8 +1,11 @@
 <div class="container">
-  <h1>User</h1>
+  <h1 translate="admin.user.new.title"></h1>
   <form [formGroup]="userForm" (ngSubmit)="save()">
     <div class="form-group my-3">
-      <label for="UserOrganizationId">Organization</label>
+      <label
+        for="UserOrganizationId"
+        translate="admin.user.new.organization"
+      ></label>
       <select
         id="UserOrganizationId"
         class="form-select form-control"
@@ -14,7 +17,7 @@
       </select>
     </div>
     <div class="form-group my-3">
-      <label for="userRole">Role</label>
+      <label for="userRole" translate="admin.user.new.role"></label>
       <select id="userRole" class="form-select" formControlName="role">
         <option *ngFor="let role of roles$ | async" [ngValue]="role.role">
           {{ role.description }}
@@ -22,7 +25,7 @@
       </select>
     </div>
     <div class="form-group my-3">
-      <label for="userName">Username</label>
+      <label for="userName" translate="admin.common.username"></label>
       <input
         id="userName"
         type="text"
@@ -34,7 +37,7 @@
       />
     </div>
     <div class="form-group my-3">
-      <label for="userFirstName">First name</label>
+      <label for="userFirstName" translate="common.first-name"></label>
       <input
         id="userFirstName"
         type="text"
@@ -47,7 +50,7 @@
       />
     </div>
     <div class="form-group my-3">
-      <label for="userLastName">Last name</label>
+      <label for="userLastName" translate="common.last-name"></label>
       <input
         id="userLastName"
         type="text"
@@ -61,7 +64,7 @@
     </div>
 
     <div class="form-group my-3">
-      <label for="userMail">Email</label>
+      <label for="userMail" translate="common.email"></label>
       <input
         id="userMail"
         type="email"
@@ -77,18 +80,16 @@
         <button
           class="btn btn-lg btn-outline-secondary"
           [routerLink]="['/access-control/users']"
-        >
-          Cancel
-        </button>
+          translate="admin.common.cancel"
+        ></button>
       </div>
       <div>
         <button
           type="submit"
           class="btn btn-lg btn-primary"
           [disabled]="userForm.invalid"
-        >
-          Save
-        </button>
+          translate="admin.common.save"
+        ></button>
       </div>
     </div>
   </form>

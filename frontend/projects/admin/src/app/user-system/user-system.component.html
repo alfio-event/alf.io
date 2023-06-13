@@ -1,24 +1,24 @@
 <div class="container">
-  <h1 class="my-3">Users</h1>
+  <h1 class="my-3" translate="admin.user.list.title"></h1>
   <hr />
   <div class="d-flex py-3">
     <select
-    id="UserOrganizationId"
-    class="form-select form-control d-flex me-3"
-    [(ngModel)]="selectedOrganization"
-  >
-    <option></option>
-    <option *ngFor="let org of organizations$ | async" [ngValue]="org">
-      {{ org.name }}
-    </option>
-  </select>
+      id="UserOrganizationId"
+      class="form-select form-control d-flex me-3"
+      [(ngModel)]="selectedOrganization"
+    >
+      <option></option>
+      <option *ngFor="let org of organizations$ | async" [ngValue]="org">
+        {{ org.name }}
+      </option>
+    </select>
     <button
       type="button"
       class="btn btn-success d-flex align-items-center"
       [routerLink]="['/access-control/users/new']"
     >
       <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
-      add new
+      <span translate="admin.common.add-new"></span>
     </button>
   </div>
 </div>
@@ -27,19 +27,27 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th scope="col">Enabled</th>
-        <th scope="col">Username</th>
-        <th scope="col">Name</th>
-        <th scope="col">Role</th>
-        <th scope="col">Member of</th>
-        <th scope="col">Edit</th>
-        <th scope="col">Reset password</th>
-        <th scope="col">Enable / Disable</th>
-        <th scope="col">Delete</th>
+        <th scope="col" translate="admin.user.list.enabled"></th>
+        <th scope="col" translate="admin.common.username"></th>
+        <th scope="col" translate="admin.common.name"></th>
+        <th scope="col" translate="admin.user.list.role"></th>
+        <th scope="col" translate="admin.user.list.member-of"></th>
+        <th scope="col" translate="common.edit"></th>
+        <th scope="col" translate="admin.user.list.reset-password"></th>
+        <th scope="col">
+          <span translate="admin.user.list.enabled"></span>/<span
+            translate="admin.user.list.disable"
+          ></span>
+        </th>
+        <th scope="col" translate="admin.common.delete"></th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let user of users$ | async | usersFilterOrg : selectedOrganization">
+      <tr
+        *ngFor="
+          let user of users$ | async | usersFilterOrg : selectedOrganization
+        "
+      >
         <td>{{ user.enabled }}</td>
         <td scope="row">
           {{ user.username }}
@@ -75,24 +83,25 @@
             class="btn btn-warning"
             (click)="enable(user)"
           >
-            <svg-icon key="visibilityoff"></svg-icon>
-
-            Disable
+            <svg-icon key="visibilityoff"></svg-icon
+            ><span translate="admin.user.list.disable"></span>
           </button>
           <button
             *ngIf="!user.enabled"
             class="btn btn-success"
             (click)="enable(user)"
           >
-            <svg-icon key="visibility-on"></svg-icon>
-
-            Enable
+            <svg-icon key="visibility-on"></svg-icon
+            ><span translate="admin.user.list.enabled"></span>
           </button>
         </td>
         <td>
-          <button class="btn btn-danger" (click)="deleteUser(user)">
+          <button
+            class="btn btn-danger"
+            (click)="deleteUser(user)"
+            translate="admin.common.delete"
+          >
             <svg-icon key="delete"></svg-icon>
-            Delete
           </button>
         </td>
       </tr>

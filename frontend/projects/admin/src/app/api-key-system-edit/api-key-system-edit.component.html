@@ -1,9 +1,12 @@
 <div class="container">
-  <h1>User</h1>
+  <h1 translate="admin.api-key.new.title"></h1>
 
   <form [formGroup]="userForm" (ngSubmit)="save()">
     <div class="form-group my-3">
-      <label for="UserOrganizationId">Organization</label>
+      <label
+        for="UserOrganizationId"
+        translate="admin.api-key.new.organization"
+      ></label>
 
       <select
         id="UserOrganizationId"
@@ -21,7 +24,7 @@
     </div>
 
     <div class="form-group my-3">
-      <label for="userRole">Role</label>
+      <label for="userRole" translate="admin.api-key.new.role"></label>
 
       <select
         id="userRole"
@@ -36,7 +39,11 @@
     </div>
 
     <div class="form-group my-3">
-      <label for="organizationDescription"> Description</label>
+      <label
+        for="organizationDescription"
+        translate="admin.api-key.new.description"
+      >
+      </label>
 
       <input
         type="text"
@@ -55,9 +62,8 @@
         <button
           class="btn btn-lg btn-outline-secondary"
           [routerLink]="['/access-control/users']"
-        >
-          Cancel
-        </button>
+          translate="admin.common.cancel"
+        ></button>
       </div>
 
       <div>
@@ -65,9 +71,8 @@
           type="submit"
           class="btn btn-lg btn-primary"
           [disabled]="userForm.invalid"
-        >
-          Save
-        </button>
+          translate="admin.common.save"
+        ></button>
       </div>
     </div>
   </form>

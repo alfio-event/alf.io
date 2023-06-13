@@ -1,6 +1,6 @@
 <div class="container">
   <h1 class="my-4">
-    <span *ngIf="!editMode">Add a new organization</span>
+    <span *ngIf="!editMode" translate="admin.organization.new.title"></span>
     <span *ngIf="editMode"
       >Edit organization {{ (organization$ | async)?.name }}</span
     >
@@ -9,10 +9,10 @@
 
 <div class="container-sm">
   <form [formGroup]="organizationForm" (ngSubmit)="save()">
-    <h2 class="my-3">Organizer Data</h2>
+    <h2 class="my-3" translate="admin.organization.new.organizer-data"></h2>
     <hr />
     <div class="form-group my-3">
-      <label for="organizationName">Name</label>
+      <label for="organizationName" translate="admin.common.name"></label>
       <input
         id="organizationName"
         type="text"
@@ -25,7 +25,7 @@
       />
     </div>
     <div class="form-group my-3">
-      <label for="organizationEmail">Email address</label>
+      <label for="organizationEmail" translate="common.email"></label>
       <input
         id="organizationEmail"
         type="email"
@@ -38,7 +38,10 @@
       />
     </div>
     <div class="form-group my-3">
-      <label for="organizationDescription"> Description</label>
+      <label
+        for="organizationDescription"
+        translate="admin.common.description"
+      ></label>
       <textarea
         id="organizationDescription"
         class="form-control"
@@ -50,10 +53,16 @@
       >
       </textarea>
     </div>
-    <h2 class="my-4">Advanced Configuration</h2>
+    <h2
+      class="my-4"
+      translate="admin.organization.new.advanced-configuration"
+    ></h2>
     <hr />
     <div class="form-group my-3">
-      <label for="organizationSlug">Slug</label>
+      <label
+        for="organizationSlug"
+        translate="admin.organization.new.slug"
+      ></label>
       <div class="input-group">
         <div class="input-group-prepend">
           <span class="input-group-text"
@@ -71,8 +80,10 @@
         </div>
       </div>
       <div class="form-group my-3">
-        <label for="organizationExternalId"
-          >External ID (OpenID organization ID)
+        <label
+          for="organizationExternalId"
+          translate="admin.organization.new.external-id"
+        >
         </label>
         <input
           id="organizationExternalId"
@@ -87,18 +98,16 @@
         <button
           class="btn btn-lg btn-outline-secondary"
           [routerLink]="['/organizations']"
-        >
-          Cancel
-        </button>
+          translate="admin.common.cancel"
+        ></button>
       </div>
       <div>
         <button
           type="submit"
           class="btn btn-lg btn-primary"
           [disabled]="organizationForm.invalid"
-        >
-          Save
-        </button>
+          translate="admin.common.save"
+        ></button>
       </div>
     </div>
   </form>
