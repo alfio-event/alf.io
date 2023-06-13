@@ -17,23 +17,27 @@
   </div>
   <hr />
   <div class="d-flex flex-row-reverse my-3">
-    <button type="button" class="btn btn-success d-flex" [routerLink]="">
+    <button
+      type="button"
+      class="btn btn-success d-flex"
+      [routerLink]=""
+      translate="admin.common.add-new"
+    >
       <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
-      add new
     </button>
     <button
       type="button"
       class="btn btn-secondary d-flex mx-2"
       (click)="openExportDateSelector()"
+      translate="admin.dashboard.export-reservations"
     >
       <svg-icon key="download" class="d-flex align-items-center"></svg-icon>
-      Export reservations
     </button>
   </div>
 
   <ng-container *ngIf="activeFilter">
     <div class="card">
-      <h2 class="card-header">Active</h2>
+      <h2 class="card-header" translate="admin.dashboard.active"></h2>
       <ul class="list-group list-group-flush">
         <li *ngFor="let ev of activeEvents$ | async" class="list-group-item">
           <app-event-item
@@ -46,7 +50,7 @@
   </ng-container>
   <ng-container *ngIf="inactiveFilter">
     <div class="card my-5">
-      <h2 class="card-header">Past</h2>
+      <h2 class="card-header" translate="admin.dashboard.past"></h2>
       <ul class="list-group list-group-flush">
         <li *ngFor="let ev of expiredEvents$ | async" class="list-group-item">
           <a [routerLink]="['./', ev.id]"

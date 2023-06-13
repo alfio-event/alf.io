@@ -1,5 +1,5 @@
 <div class="container">
-  <h1 class="my-3">Organizations</h1>
+  <h1 class="my-3" translate="admin.organization.list.title"></h1>
   <hr />
   <div class="d-flex flex-row-reverse py-3">
     <button
@@ -8,7 +8,7 @@
       [routerLink]="['/organizations/new']"
     >
       <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
-      add new
+      <span translate="admin.common.add-new"></span>
     </button>
   </div>
 </div>
@@ -16,10 +16,10 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Description</th>
-        <th scope="col">Email</th>
-        <th scope="col" class="col-edit">Edit</th>
+        <th scope="col" translate="admin.common.name"></th>
+        <th scope="col" translate="admin.common.description"></th>
+        <th scope="col" translate="common.email"></th>
+        <th scope="col" class="col-edit" translate="common.edit"></th>
       </tr>
     </thead>
     <tbody>
