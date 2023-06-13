@@ -10,7 +10,10 @@
     <div *ngIf="eventOrganizationInfo.event.displayStatistics" class="row">
       <div class="col-6 col-md-3">
         <div class="card flex-fill mx-3">
-          <div class="card-header text-center">Total tickets confirmed</div>
+          <div
+            class="card-header text-center"
+            translate="admin.event-dashboard.total-tickets-confirmed"
+          ></div>
           <div class="card-body d-flex justify-content-between">
             <div>
               <svg-icon key="ticket" width="70px" height="70px"></svg-icon>
@@ -27,7 +30,10 @@
       </div>
       <div class="col-6 col-md-3">
         <div class="card flex-fill mx-3">
-          <div class="card-header text-center">Tickets pending</div>
+          <div
+            class="card-header text-center"
+            translate="admin.event-dashboard.tickets-pending"
+          ></div>
           <div class="card-body d-flex justify-content-between">
             <div>
               <svg-icon
@@ -47,7 +53,10 @@
           class="card flex-fill mx-3"
           *ngIf="!eventOrganizationInfo.event.freeOfCharge"
         >
-          <div class="card-header text-center">Gross income</div>
+          <div
+            class="card-header text-center"
+            translate="admin.event-dashboard.gross-income"
+          ></div>
           <div class="card-body d-flex justify-content-between">
             <div>
               <svg-icon key="piggy-bank" width="70px" height="70px"></svg-icon>
@@ -88,7 +97,10 @@
   </div>
 
   <div class="card" *ngIf="event$ | async as event">
-    <div class="card-header">Logistic Info and description</div>
+    <div
+      class="card-header"
+      translate="admin.event-dashboard.logistics-info-and-description"
+    ></div>
     <div
       class="card-body"
       *ngIf="eventOrganizationInfo$ | async as eventOrganizationInfo"
@@ -103,7 +115,10 @@
         </div>
         <div class="col-6">
           <dl class="row">
-            <dt class="col-sm-3">Public URL</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.public-url"
+            ></dt>
             <dd class="col-sm-9">
               <a
                 [href]="
@@ -120,13 +135,19 @@
                 }}</a
               >
             </dd>
-            <dt class="col-sm-3">Organized by</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.organized-by"
+            ></dt>
             <dd class="col-sm-9">
               {{ eventOrganizationInfo.organization.name }} &lt;{{
                 eventOrganizationInfo.organization.email
               }}&gt;
             </dd>
-            <dt class="col-sm-3">Website URL</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.website-url"
+            ></dt>
             <dd class="col-sm-9">
               <a
                 href="{{ eventOrganizationInfo.event.websiteUrl }}"
@@ -135,7 +156,10 @@
                 >{{ eventOrganizationInfo.event.websiteUrl }}</a
               >
             </dd>
-            <dt class="col-sm-3">T&C URL</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.t-and-c-url"
+            ></dt>
             <dd class="col-sm-9">
               <a
                 href="{{ eventOrganizationInfo.event.termsAndConditionsUrl }}"
@@ -147,9 +171,8 @@
             <dt
               *ngIf="eventOrganizationInfo.event.privacyPolicyUrl"
               class="col-sm-3"
-            >
-              Privacy Policy URL
-            </dt>
+              translate="admin.event-dashboard.privacy-policy-url"
+            ></dt>
             <dd
               *ngIf="eventOrganizationInfo.event.privacyPolicyUrl"
               class="col-sm-9"
@@ -161,9 +184,11 @@
                 >{{ eventOrganizationInfo.event.privacyPolicyUrl }}</a
               >
             </dd>
-            <dt *ngIf="!eventOrganizationInfo.event.online" class="col-sm-3">
-              Location
-            </dt>
+            <dt
+              *ngIf="!eventOrganizationInfo.event.online"
+              class="col-sm-3"
+              translate="admin.event-dashboard.location"
+            ></dt>
             <dd *ngIf="!eventOrganizationInfo.event.online" class="col-sm-9">
               <a
                 href="{{ eventOrganizationInfo.event.location }}"
@@ -172,7 +197,10 @@
                 >{{ eventOrganizationInfo.event.location }}</a
               >
             </dd>
-            <dt class="col-sm-3">Languages</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.languages"
+            ></dt>
             <dd class="col-sm-9">
               <ul class="breadcrumb language-breadcrumb mb-0">
                 <li
@@ -185,15 +213,24 @@
                 </li>
               </ul>
             </dd>
-            <dt class="col-sm-3">Start Date/Time</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.start-date-time"
+            ></dt>
             <dd class="col-sm-9">
               {{ eventOrganizationInfo.event.formattedBegin | date }}
             </dd>
-            <dt class="col-sm-3">End Date/Time</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.end-date-time"
+            ></dt>
             <dd class="col-sm-9">
               {{ eventOrganizationInfo.event.formattedEnd | date }}
             </dd>
-            <dt class="col-sm-3">Time Zone</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.time-zone"
+            ></dt>
             <dd class="col-sm-9">{{ eventOrganizationInfo.event.timeZone }}</dd>
           </dl>
         </div>
@@ -219,7 +256,7 @@
       </div>
       <hr />
       <div class="d-flex flex-row-reverse">
-        <button class="btn btn-lg btn-primary">Edit</button>
+        <button class="btn btn-lg btn-primary" translate="common.edit"></button>
       </div>
     </div>
   </div>
@@ -227,16 +264,23 @@
     class="card mt-5"
     *ngIf="eventOrganizationInfo$ | async as eventOrganizationInfo"
   >
-    <div class="card-header">Seats and payment info</div>
+    <div
+      class="card-header"
+      translate="admin.event-dashboard.seats-and-payment-info"
+    ></div>
     <div class="card-body">
       <div class="row">
         <div class="col-xs-12 col-lg-6">
           <dl class="row">
-            <dt class="col-sm-3">Tickets Price</dt>
-            <dd class="col-sm-9">
-              <span *ngIf="eventOrganizationInfo.event.freeOfCharge"
-                >Free of charge</span
-              >
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.tickets-price"
+            ></dt>
+            <dd
+              class="col-sm-9"
+              translate="admin.event-dashboard.free-of-charge"
+            >
+              <span *ngIf="eventOrganizationInfo.event.freeOfCharge"></span>
               <span *ngIf="!eventOrganizationInfo.event.freeOfCharge">{{
                 eventOrganizationInfo.event.regularPrice
                   | currency : eventOrganizationInfo.event.currency || ""
@@ -245,9 +289,8 @@
             <dt
               class="col-sm-3"
               *ngIf="!eventOrganizationInfo.event.freeOfCharge"
-            >
-              Payment methods
-            </dt>
+              translate="admin.event-dashboard.payment-methods"
+            ></dt>
             <dd
               class="col-sm-9"
               *ngIf="!eventOrganizationInfo.event.freeOfCharge"
@@ -273,16 +316,18 @@
                 >.
               </div> -->
             </dd>
-            <dt class="col-sm-3">Max tickets</dt>
+            <dt
+              class="col-sm-3"
+              translate="admin.event-dashboard.max-tickets"
+            ></dt>
             <dd class="col-sm-9">
               {{ eventOrganizationInfo.event.availableSeats }}
             </dd>
             <dt
               class="col-sm-3"
               *ngIf="!eventOrganizationInfo.event.freeOfCharge"
-            >
-              VAT (%)
-            </dt>
+              translate="admin.event-dashboard.vat"
+            ></dt>
             <dd
               class="col-sm-9"
               *ngIf="!eventOrganizationInfo.event.freeOfCharge"
@@ -292,9 +337,8 @@
             <dt
               class="col-sm-3"
               *ngIf="!eventOrganizationInfo.event.freeOfCharge"
-            >
-              Final Price
-            </dt>
+              translate="admin.event-dashboard.final-price"
+            ></dt>
             <dd
               class="col-sm-9"
               *ngIf="!eventOrganizationInfo.event.freeOfCharge"
@@ -311,24 +355,28 @@
         <div class="col-12">
           <hr />
           <div class="d-flex flex-row-reverse">
-            <button class="btn btn-lg btn-primary">Edit</button>
+            <button
+              class="btn btn-lg btn-primary"
+              translate="common.edit"
+            ></button>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <h3 class="mt-5"><svg-icon key="category"></svg-icon>Categories</h3>
-  <p class="text-muted">
-    Here the categories that have been defined for this event.
-  </p>
+  <h3 class="mt-5">
+    <svg-icon key="category"></svg-icon>
+    <span translate="admin.event-dashboard.categories"></span>
+  </h3>
+  <p class="text-muted" translate="admin.event-dashboard.categories-legend"></p>
   <div class="py-2">
     <button
       type="button"
       class="btn btn-success d-flex align-items-center"
       [routerLink]="[]"
+      translate="admin.common.add-new"
     >
       <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
-      add new
     </button>
   </div>
   <hr />
@@ -340,7 +388,11 @@
       id="inlineCheckbox1"
       value="option1"
     />
-    <label class="form-check-label" for="inlineCheckbox1">Active</label>
+    <label
+      class="form-check-label"
+      for="inlineCheckbox1"
+      translate="admin.event-dashboard.active"
+    ></label>
   </div>
   <div class="form-check form-check-inline">
     <input
@@ -350,6 +402,10 @@
       id="inlineCheckbox2"
       value="option2"
     />
-    <label class="form-check-label" for="inlineCheckbox2">Expired</label>
+    <label
+      class="form-check-label"
+      for="inlineCheckbox2"
+      translate="admin.event-dashboard.expired"
+    ></label>
   </div>
 </app-section-dashboard>
