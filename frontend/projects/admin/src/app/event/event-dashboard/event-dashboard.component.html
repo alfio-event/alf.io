@@ -483,42 +483,70 @@
                 <div class="hidden-xs hidden-sm col-md-4">
                   <div class="progress">
                     <div
+                      *ngIf="ticketCategory.checkedInTickets != 0"
                       class="progress-bar"
                       role="progressbar"
-                      style="width: 15%"
-                      aria-valuenow="ticketCategory.checkedInTickets"
-                      aria-valuemin="0"
-                      aria-valuemax="getActualCapacity(ticketCategory, event)"
+                      [style]="
+                        'width: ' +
+                        (ticketCategory.checkedInTickets /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
                     >
                       {{ ticketCategory.checkedInTickets }}
                     </div>
                     <div
+                      *ngIf="ticketCategory.soldTickets != 0"
                       class="progress-bar bg-success"
                       role="progressbar"
-                      style="width: 30%"
-                      aria-valuenow="ticketCategory.soldTickets"
-                      aria-valuemin="0"
-                      aria-valuemax="getActualCapacity(ticketCategory, event)"
+                      [style]="
+                        'width: ' +
+                        (ticketCategory.soldTickets /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
                     >
                       {{ ticketCategory.soldTickets }}
                     </div>
                     <div
+                      *ngIf="ticketCategory.pendingTickets != 0"
                       class="progress-bar bg-info"
                       role="progressbar"
-                      style="width: 20%"
-                      aria-valuenow="ticketCategory.pendingTickets"
-                      aria-valuemin="0"
-                      aria-valuemax="getActualCapacity(ticketCategory, event)"
+                      [style]="
+                        'width: ' +
+                        (ticketCategory.pendingTickets /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
                     >
                       {{ ticketCategory.pendingTickets }}
                     </div>
                     <div
+                      *ngIf="ticketCategory.notSoldTickets != 0"
                       class="progress-bar bg-info"
                       role="progressbar"
-                      style="width: 20%"
-                      aria-valuenow="ticketCategory.notSoldTickets"
-                      aria-valuemin="0"
-                      aria-valuemax="getActualCapacity(ticketCategory, event)"
+                      [style]="
+                        'width: ' +
+                        (ticketCategory.notSoldTickets /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
                     >
                       {{ ticketCategory.notSoldTickets }}
                     </div>
@@ -527,10 +555,16 @@
                       type="default"
                       class="progress-bar bg-info"
                       role="progressbar"
-                      style="width: 20%"
-                      aria-valuenow="eventOrganizationInfo.event.dynamicAllocation"
-                      aria-valuemin="0"
-                      aria-valuemax="getActualCapacity(ticketCategory, event)"
+                      [style]="
+                        'width: ' +
+                        (eventOrganizationInfo.event.dynamicAllocation /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
                     >
                       {{ eventOrganizationInfo.event.dynamicAllocation }}
                     </div>

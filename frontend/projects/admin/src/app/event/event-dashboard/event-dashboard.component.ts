@@ -199,5 +199,6 @@ export class EventDashboardComponent implements OnInit {
       ? ticketCategory.maxTickets
       : event.dynamicAllocation + ticketCategory.soldTickets;
   }
+
   ngOnInit(): void {}
 }
