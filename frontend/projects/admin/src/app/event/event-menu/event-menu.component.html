@@ -1,40 +1,144 @@
 <div class="container">
-  <ul class="list-unstyled">
-    <li class="text-muted" translate="admin.event.menu.details"></li>
-    <li>
-      <ul class="list-unstyled">
-        <li>
-          <svg-icon key="arrow-back"></svg-icon>
-          <a translate="admin.event.menu.back-to-event-detail" href=""></a>
-        </li>
-        <li>
-          <svg-icon key="description"></svg-icon>
-          <a translate="admin.event.menu.attendees-data-to-collect" href=""></a>
-        </li>
-        <li>
-          <svg-icon key="percent"></svg-icon>
-          <a translate="admin.event.menu.promo-codes" href=""></a>
-        </li>
-        <li>
-          <svg-icon key="insights"></svg-icon>
-          <a translate="admin.event.menu.polls" href=""></a>
-        </li>
-        <li>
-          <svg-icon key="ticket-reserved"></svg-icon>
-          <a translate="admin.event.menu.reservations" href=""></a>
-        </li>
-        <li>
-          <svg-icon key="email-sent"></svg-icon>
-          <a translate="admin.event.menu.email-log" href=""></a>
-        </li>
-      </ul>
-      <ul class="list-unstyled">
-        <li class="text-muted" translate="admin.event.menu.status"></li>
-        <li>
-          <svg-icon key="groups"></svg-icon>
-          <a translate="admin.event.menu.waiting-list" href=""></a>
-        </li>
-      </ul>
-    </li>
-  </ul>
+  <div class="d-flex flex-row container mt-3 d-sm-block">
+    <div ngbDropdown class="d-inline-block me-1">
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        id="dropdownBasic1"
+        ngbDropdownToggle
+        translate="admin.event.menu.actions"
+      ></button>
+      <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.create-reservation"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.import-attendees"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.edit-configuration"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.customize-templates"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.compose-message"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.hide-from-list"
+        ></button>
+        <button ngbDropdownItem translate="admin.event.menu.check-in"></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.copy-this-event"
+        ></button>
+        <button ngbDropdownItem translate="admin.common.delete"></button>
+      </div>
+    </div>
+    <div ngbDropdown class="d-inline-block">
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        id="dropdownBasic1"
+        ngbDropdownToggle
+        translate="admin.event.menu.download"
+      ></button>
+      <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.attendees-data"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.waiting-list"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.sponsors-scan"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.all-billing-documents-pdf"
+        ></button>
+        <button
+          ngbDropdownItem
+          translate="admin.event.menu.all-billing-excel"
+        ></button>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <h3 class="text-muted mt-3" translate="admin.event.menu.details"></h3>
+    <ul class="list-unstyled">
+      <li>
+        <ul class="list-unstyled">
+          <li>
+            <svg-icon key="arrow-back"></svg-icon>
+            <a
+              class="text-decoration-none"
+              translate="admin.event.menu.back-to-event-detail"
+              href=""
+            ></a>
+          </li>
+          <li>
+            <svg-icon key="description"></svg-icon>
+            <a
+              class="text-decoration-none"
+              translate="admin.event.menu.attendees-data-to-collect"
+              href=""
+            ></a>
+          </li>
+          <li>
+            <svg-icon key="percent"></svg-icon>
+            <a
+              class="text-decoration-none"
+              translate="admin.event.menu.promo-codes"
+              href=""
+            ></a>
+          </li>
+          <li>
+            <svg-icon key="insights"></svg-icon>
+            <a
+              class="text-decoration-none"
+              translate="admin.event.menu.polls"
+              href=""
+            ></a>
+          </li>
+          <li>
+            <svg-icon key="ticket-reserved"></svg-icon>
+            <a
+              class="text-decoration-none"
+              translate="admin.event.menu.reservations"
+              href=""
+            ></a>
+          </li>
+          <li>
+            <svg-icon key="email-sent"></svg-icon>
+            <a
+              class="text-decoration-none"
+              translate="admin.event.menu.email-log"
+              routerLink="./email-log"
+            ></a>
+          </li>
+        </ul>
+        <h3 class="text-muted mt-3" translate="admin.event.menu.status"></h3>
+        <ul class="list-unstyled">
+          <li>
+            <svg-icon key="waiting-list"></svg-icon>
+            <a
+              class="text-decoration-none"
+              translate="admin.event.menu.waiting-list"
+              href=""
+            ></a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
 </div>

@@ -32,6 +32,7 @@ import { ticketIcon } from '../svg/ticket';
 import { ticketReservedIcon } from '../svg/ticket-reserved';
 import { visibilityOnIcon } from '../svg/visibility-on';
 import { visibilityoffIcon } from '../svg/visibilityoff';
+import { waitingListIcon } from '../svg/waiting-list';
 
 const ICONS = [
   accessIcon,
@@ -68,6 +69,7 @@ const ICONS = [
   ticketReservedIcon,
   visibilityoffIcon,
   visibilityOnIcon,
+  waitingListIcon,
 ];
 export const ICON_CONFIG = {
   sizes: {

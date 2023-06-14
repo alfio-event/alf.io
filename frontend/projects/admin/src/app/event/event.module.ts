@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { NgbCarouselModule, NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
+import {
+  NgbCarouselModule,
+  NgbDropdownModule,
+  NgbNavModule,
+} from '@ng-bootstrap/ng-bootstrap';
 import { provideSvgIconsConfig, SvgIconComponent } from '@ngneat/svg-icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { NgChartsModule } from 'ng2-charts';
@@ -12,9 +16,20 @@ import { SharedModule } from '../shared/shared.module';
 import { EventDashboardComponent } from './event-dashboard/event-dashboard.component';
 import { EventMenuComponent } from './event-menu/event-menu.component';
 import { TranslatePaymentProxiesPipe } from './translate-payment-proxies.pipe';
+import { EmailLogComponent } from './email-log/email-log.component';
+import { ShowSelectedCategoriesPipe } from './show-selected-categories.pipe';
+import { UiCategoryBuilderPipe } from './ui-category-builder.pipe';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
-  declarations: [EventMenuComponent, EventDashboardComponent, TranslatePaymentProxiesPipe],
+  declarations: [
+    EventMenuComponent,
+    EventDashboardComponent,
+    TranslatePaymentProxiesPipe,
+    EmailLogComponent,
+    ShowSelectedCategoriesPipe,
+    UiCategoryBuilderPipe,
+  ],
   imports: [
     TranslateModule.forChild(),
     CommonModule,
@@ -23,7 +38,13 @@ import { TranslatePaymentProxiesPipe } from './translate-payment-proxies.pipe';
     NgChartsModule,
     NgbCarouselModule,
     NgbNavModule,
-    RouterModule.forChild([{ path: '', component: EventDashboardComponent }]),
+    FormsModule,
+    NgbDropdownModule,
+
+    RouterModule.forChild([
+      { path: '', component: EventDashboardComponent },
+      { path: 'email-log', component: EmailLogComponent },
+    ]),
   ],
   providers: [
     OrganizationService,

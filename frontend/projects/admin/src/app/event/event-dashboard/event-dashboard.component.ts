@@ -12,6 +12,11 @@ import { EventService } from '../../shared/event.service';
 import { formatDate } from '@angular/common';
 import { ConfigurationService } from '../../shared/configuration.service';
 import { InstanceSetting } from '../../model/instance-settings';
+import {
+  TicketAccessType,
+  TicketCategory,
+  TicketCategoryFilter,
+} from 'projects/public/src/app/model/ticket-category';
 
 @Component({
   selector: 'app-event-dashboard',
@@ -28,7 +33,8 @@ export class EventDashboardComponent implements OnInit {
   public instanceSetting$: Observable<InstanceSetting> = of();
 
   public pieChartOptions: ChartOptions<'pie'> = {
-    responsive: false,
+    responsive: true,
+
     plugins: {
       legend: {
         display: true,
@@ -51,9 +57,16 @@ export class EventDashboardComponent implements OnInit {
     datasets: [],
   };
   public lineChartOptions: ChartOptions<'line'> = {
-    responsive: false,
+    responsive: true,
+    maintainAspectRatio: false,
   };
   public lineChartLegend = true;
+
+  public categoryFilter: TicketCategoryFilter = {
+    active: true,
+    expired: false,
+    search: '',
+  };
 
   constructor(
     private readonly eventService: EventService,
@@ -171,6 +184,20 @@ export class EventDashboardComponent implements OnInit {
         },
       ],
     };
+  }
+  countExpired(ticketCategory: TicketCategory[]) {
+    return ticketCategory.filter((ticketCategory) => ticketCategory.expired)
+      .length;
+  }
+  countActive(ticketCategory: TicketCategory[]) {
+    return ticketCategory.filter((ticketCategory) => !ticketCategory.expired)
+      .length;
+  }
+
+  getActualCapacity(ticketCategory: TicketCategory, event: EventInfo) {
+    return ticketCategory.bounded
+      ? ticketCategory.maxTickets
+      : event.dynamicAllocation + ticketCategory.soldTickets;
   }
   ngOnInit(): void {}
 }
