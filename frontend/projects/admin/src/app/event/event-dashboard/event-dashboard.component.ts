@@ -16,6 +16,7 @@ import {
   TicketAccessType,
   TicketCategory,
   TicketCategoryFilter,
+  UiTicketCategory,
 } from 'projects/public/src/app/model/ticket-category';
 
 @Component({
@@ -158,7 +159,7 @@ export class EventDashboardComponent implements OnInit {
       {
         value: event.notSoldTickets,
         name: 'Reserved for categories',
-        backgroundColor: '#f0ad4e',
+        backgroundColor: '#00C4FF',
         meta: 'Reserved for categories (' + event.notSoldTickets + ')',
       },
       {
@@ -198,6 +199,18 @@ export class EventDashboardComponent implements OnInit {
     return ticketCategory.bounded
       ? ticketCategory.maxTickets
       : event.dynamicAllocation + ticketCategory.soldTickets;
+  }
+
+  toggleTokenViewCollapse(ticketCategory: UiTicketCategory) {
+    ticketCategory.tokenViewExpanded = !ticketCategory.tokenViewExpanded;
+  }
+
+  openConfiguration(event: EventInfo, ticketCategory: TicketCategory) {
+    alert('TODO');
+  }
+
+  containsValidTokens(tokenStatus: string) {
+    return tokenStatus != 'WAITING';
   }
 
   ngOnInit(): void {}

@@ -1,13 +1,12 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { EventInfo } from '../model/event';
 import {
-  TicketCategory,
   TicketCategoryFilter,
   UiTicketCategory,
 } from 'projects/public/src/app/model/ticket-category';
 
 @Pipe({
   name: 'showSelectedCategories',
+  pure: false,
 })
 export class ShowSelectedCategoriesPipe implements PipeTransform {
   transform(

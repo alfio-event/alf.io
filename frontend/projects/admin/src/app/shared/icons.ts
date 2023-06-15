@@ -19,11 +19,14 @@ import { homeIcon } from '../svg/home';
 import { hourglassTopIcon } from '../svg/hourglass-top';
 import { insightsIcon } from '../svg/insights';
 import { keyIcon } from '../svg/key';
+import { lockIcon } from '../svg/lock';
 import { lockOpenIcon } from '../svg/lock-open';
 import { organizationIcon } from '../svg/organization';
+import { outgoingMailIcon } from '../svg/outgoing-mail';
 import { paymentsIcon } from '../svg/payments';
 import { percentIcon } from '../svg/percent';
 import { piggyBankIcon } from '../svg/piggy-bank';
+import { qrCodeIcon } from '../svg/qr-code';
 import { resetIcon } from '../svg/reset';
 import { searchIcon } from '../svg/search';
 import { settingsIcon } from '../svg/settings';
@@ -56,6 +59,7 @@ const ICONS = [
   hourglassTopIcon,
   insightsIcon,
   keyIcon,
+  lockIcon,
   lockOpenIcon,
   organizationIcon,
   paymentsIcon,
@@ -70,6 +74,9 @@ const ICONS = [
   visibilityoffIcon,
   visibilityOnIcon,
   waitingListIcon,
+  lockIcon,
+  outgoingMailIcon,
+  qrCodeIcon,
 ];
 export const ICON_CONFIG = {
   sizes: {

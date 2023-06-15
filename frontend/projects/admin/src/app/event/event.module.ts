@@ -5,6 +5,7 @@ import {
   NgbCarouselModule,
   NgbDropdownModule,
   NgbNavModule,
+  NgbTypeaheadModule,
 } from '@ng-bootstrap/ng-bootstrap';
 import { provideSvgIconsConfig, SvgIconComponent } from '@ngneat/svg-icon';
 import { TranslateModule } from '@ngx-translate/core';

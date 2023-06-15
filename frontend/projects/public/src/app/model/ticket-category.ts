@@ -1,38 +1,32 @@
 export type TicketAccessType = 'INHERIT' | 'IN_PERSON' | 'ONLINE';
 
 export interface TicketCategory {
-  id: number;
-  name: string;
-  ticketAccessType: TicketAccessType;
-  bounded: boolean;
-  maximumSaleableTickets: number;
-  description: { [key: string]: string };
-  free: boolean;
-  formattedFinalPrice: string;
-  hasDiscount: boolean;
-  formattedDiscountedPrice: string;
-
-  //
-  expired: boolean;
-  saleInFuture: boolean;
-  formattedInception: { [key: string]: string };
-  formattedExpiration: { [key: string]: string };
-  //
-
-  saleableAndLimitNotReached: boolean;
   accessRestricted: boolean;
-  soldOutOrLimitReached: boolean;
-
   availableTickets: number | null;
-
-  displayTaxInformation: boolean;
-  containingStuckTickets: boolean;
-  containingOrphans: boolean;
-  maxTickets: number;
-  soldTickets: number;
+  bounded: boolean;
   checkedInTickets: number;
-  pendingTickets: number;
+  containingOrphans: boolean;
+  containingStuckTickets: boolean;
+  description: { [key: string]: string };
+  displayTaxInformation: boolean;
+  expired: boolean;
+  formattedDiscountedPrice: string;
+  formattedExpiration: { [key: string]: string };
+  formattedFinalPrice: string;
+  formattedInception: { [key: string]: string };
+  free: boolean;
+  hasDiscount: boolean;
+  id: number;
+  maximumSaleableTickets: number;
+  maxTickets: number;
+  name: string;
   notSoldTickets: number;
+  pendingTickets: number;
+  saleableAndLimitNotReached: boolean;
+  saleInFuture: boolean;
+  soldOutOrLimitReached: boolean;
+  soldTickets: number;
+  ticketAccessType: TicketAccessType;
 }
 
 export class UiTicketCategory implements TicketCategory {
@@ -56,13 +50,16 @@ export class UiTicketCategory implements TicketCategory {
   maximumSaleableTickets: number;
   maxTickets: number;
   name: string;
+  notSoldTickets: number;
+  pendingTickets: number;
   saleableAndLimitNotReached: boolean;
   saleInFuture: boolean;
   soldOutOrLimitReached: boolean;
   soldTickets: number;
   ticketAccessType: TicketAccessType;
-  pendingTickets: number;
-  notSoldTickets: number;
+  tokenViewExpanded: boolean;
+  attendeesList: { key: number; groupName: string }[];
+  tokenStatus: string;
 
   constructor(ticketCategory: TicketCategory) {
     this.accessRestricted = ticketCategory.accessRestricted;
@@ -93,6 +90,9 @@ export class UiTicketCategory implements TicketCategory {
     this.ticketAccessType = ticketCategory.ticketAccessType;
     this.pendingTickets = ticketCategory.pendingTickets;
     this.notSoldTickets = ticketCategory.notSoldTickets;
+    this.tokenViewExpanded = false;
+    this.attendeesList = [];
+    this.tokenStatus = '';
   }
 }
 
