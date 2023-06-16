@@ -14,10 +14,10 @@
     </select>
     <button
       type="button"
-      class="btn btn-success d-flex align-items-center"
+      class="btn btn-success text-nowrap"
       [routerLink]="['/access-control/users/new']"
     >
-      <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+      <svg-icon key="add" size="lg"></svg-icon>
       <span translate="admin.common.add-new"></span>
     </button>
   </div>
@@ -83,25 +83,22 @@
             class="btn btn-warning"
             (click)="enable(user)"
           >
-            <svg-icon key="visibilityoff"></svg-icon
-            ><span translate="admin.user.list.disable"></span>
+            <svg-icon key="visibilityoff" size="lg"></svg-icon>
+            <span translate="admin.user.list.disable"></span>
           </button>
           <button
             *ngIf="!user.enabled"
             class="btn btn-success"
             (click)="enable(user)"
           >
-            <svg-icon key="visibility-on"></svg-icon
-            ><span translate="admin.user.list.enabled"></span>
+            <svg-icon key="visibility-on" size="lg"></svg-icon>
+            <span translate="admin.user.list.enabled"></span>
           </button>
         </td>
         <td>
-          <button
-            class="btn btn-danger"
-            (click)="deleteUser(user)"
-            translate="admin.common.delete"
-          >
-            <svg-icon key="delete"></svg-icon>
+          <button class="btn btn-danger text-nowrap" (click)="deleteUser(user)">
+            <svg-icon key="delete" size="lg"></svg-icon>
+            <span translate="admin.common.delete"></span>
           </button>
         </td>
       </tr>

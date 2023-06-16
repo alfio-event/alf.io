@@ -1,3 +1,4 @@
+import { TicketCategory } from 'projects/public/src/app/model/ticket-category';
 import { Organization } from './organization';
 
 export interface EventInfo {
@@ -40,6 +41,9 @@ export interface EventInfo {
   regularPrice: number;
   finalPrice: number;
   vatPercentage: number;
+  ticketCategories: TicketCategory[];
+  format: string;
+  containingUnboundedCategories: boolean;
 }
 
 export interface EventOrganizationInfo {

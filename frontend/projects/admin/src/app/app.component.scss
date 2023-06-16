@@ -1,6 +1,6 @@
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/mixins';
-@import 'bootstrap/scss/variables';
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/variables";
 
 :host {
   --header-height: 58px;
@@ -14,7 +14,7 @@ header {
  * Sidebar
  */
 
- .sidebar {
+.sidebar {
   position: fixed;
   top: 0;
   /* rtl:raw:
@@ -25,7 +25,7 @@ header {
   left: 0;
   z-index: 100; /* Behind the navbar */
   padding: var(--header-height) 0 0; /* Height of navbar */
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-sticky {
@@ -38,7 +38,7 @@ $sidebarWidth: 76px;
 
 nav#sidebarMenu {
   @include media-breakpoint-up(md) {
-      width: $sidebarWidth;
+    width: $sidebarWidth;
   }
 
   a {
@@ -58,14 +58,12 @@ nav#sidebarMenu {
       color: $primary;
     }
 
-    svg-icon, svg {
+    svg-icon,
+    svg {
       display: flex;
       align-self: center;
     }
-
   }
-
-
 }
 
 main {

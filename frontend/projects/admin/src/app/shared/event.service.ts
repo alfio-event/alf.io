@@ -7,6 +7,7 @@ import {
   EventOrganizationInfo,
   EventTicketsStatistics,
 } from '../model/event';
+import { UiTicketCategory } from 'projects/public/src/app/model/ticket-category';
 
 @Injectable()
 export class EventService {
@@ -43,6 +44,16 @@ export class EventService {
   ): Observable<EventTicketsStatistics> {
     return this.httpClient.get<EventTicketsStatistics>(
       `/admin/api/events/${eventShortName}/ticket-sold-statistics`
+    );
+  }
+  unbindTickets(eventShortName: string, category: UiTicketCategory) {
+    return this.httpClient.put(
+      '/admin/api/events/' +
+        eventShortName +
+        '/category/' +
+        category.id +
+        '/unbind-tickets',
+      null
     );
   }
 }

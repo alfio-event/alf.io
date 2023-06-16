@@ -2,7 +2,11 @@
   <div menu>
     <app-event-menu></app-event-menu>
   </div>
-  <div *ngIf="event$ | async as event">
+  <div
+    *ngIf="event$ | async as event"
+    class="d-flex flex-row align-items-center"
+  >
+    <a class="btn" href=""><svg-icon key="edit"></svg-icon></a>
     <h2 class="my-4">{{ event.displayName }}</h2>
   </div>
   <hr />
@@ -70,10 +74,13 @@
       </div>
     </div>
     <div class="row my-4">
-      <div class="col-6 d-flex justify-content-center align-items-center">
+      <div
+        style="max-height: 250px"
+        class="col-6 d-flex justify-content-center align-items-center"
+      >
         <canvas
           width="700px"
-          height="200"
+          height="250px"
           baseChart
           [type]="'line'"
           [data]="lineChartData"
@@ -83,9 +90,13 @@
         </canvas>
       </div>
 
-      <div class="col-6 d-flex justify-content-center align-items-center">
+      <div
+        style="max-height: 250px"
+        class="col-6 d-flex justify-content-center align-items-center"
+      >
         <canvas
           baseChart
+          height="250px"
           [type]="'pie'"
           [data]="pieChartData"
           [options]="pieChartOptions"
@@ -377,35 +388,425 @@
       translate="admin.common.add-new"
     >
       <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+      <span translate="admin.common.add-new"></span>
     </button>
   </div>
   <hr />
-  <div class="form-check form-check-inline">
-    <input
-      mdbCheckbox
-      class="form-check-input"
-      type="checkbox"
-      id="inlineCheckbox1"
-      value="option1"
-    />
-    <label
-      class="form-check-label"
-      for="inlineCheckbox1"
-      translate="admin.event-dashboard.active"
-    ></label>
-  </div>
-  <div class="form-check form-check-inline">
-    <input
-      mdbCheckbox
-      class="form-check-input"
-      type="checkbox"
-      id="inlineCheckbox2"
-      value="option2"
-    />
-    <label
-      class="form-check-label"
-      for="inlineCheckbox2"
-      translate="admin.event-dashboard.expired"
-    ></label>
+  <div *ngIf="eventOrganizationInfo$ | async as eventOrganizationInfo">
+    <div
+      class="btn-toolbar mb-3"
+      role="toolbar"
+      aria-label="Toolbar with input groups"
+    >
+      <div class="btn-group me-2" role="group" aria-label="First group">
+        <input
+          type="checkbox"
+          class="btn-check"
+          id="checkBoxActive"
+          autocomplete="off"
+          [(ngModel)]="categoryFilter.active"
+        />
+        <label
+          class="btn btn-outline-secondary"
+          for="checkBoxActive"
+          translate="admin.event-dashboard.active"
+          ><span class="badge rounded-pill bg-light text-dark mx-2">{{
+            countActive(eventOrganizationInfo.event.ticketCategories)
+          }}</span></label
+        >
+
+        <input
+          type="checkbox"
+          class="btn-check"
+          id="checkBoxExpired"
+          autocomplete="off"
+          [(ngModel)]="categoryFilter.expired"
+        />
+        <label
+          class="btn btn-outline-secondary"
+          for="checkBoxExpired"
+          translate="admin.event-dashboard.expired"
+          ><span class="badge rounded-pill bg-light text-dark mx-2">{{
+            countExpired(eventOrganizationInfo.event.ticketCategories)
+          }}</span></label
+        >
+      </div>
+      <div class="input-group">
+        <span class="input-group-text" id="btnGroupAddon">
+          <svg-icon key="search"></svg-icon>
+        </span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search category"
+          aria-label="Input group example"
+          aria-describedby="btnGroupAddon"
+          [(ngModel)]="categoryFilter.search"
+        />
+      </div>
+    </div>
+    <div
+      [ngSwitch]="
+        (
+          eventOrganizationInfo.event.ticketCategories
+          | uiCategoryBuilder
+          | showSelectedCategories : categoryFilter
+        ).length
+      "
+    >
+      <div
+        class="alert alert-warning"
+        translate="admin.event-dashboard.alert-warning"
+        *ngSwitchCase="0"
+      ></div>
+      <div *ngSwitchDefault>
+        <div
+          class="card mb-4"
+          *ngFor="
+            let ticketCategory of eventOrganizationInfo.event.ticketCategories
+              | uiCategoryBuilder
+              | showSelectedCategories : categoryFilter
+          "
+          [ngClass]="{
+            'alert alert-warning': ticketCategory.containingOrphans,
+            'alert alert-danger': ticketCategory.containingStuckTickets
+          }"
+          id="ticket-category-{{ ticketCategory.id }}"
+        >
+          <div class="card-header">
+            <div class="card-title">
+              <div class="row align-items-center">
+                <div
+                  class="col-xs-12 col-md-3"
+                  [ngClass]="{ 'text-danger': ticketCategory.displayWarning }"
+                >
+                  <div
+                    class="category-name"
+                    [ngClass]="{ 'category-active': !ticketCategory.expired }"
+                  >
+                    <svg-icon
+                      key="lock"
+                      *ngIf="
+                        !ticketCategory.displayWarning &&
+                        ticketCategory.accessRestricted
+                      "
+                    ></svg-icon>
+                    <svg-icon
+                      key="lock-open"
+                      *ngIf="
+                        !ticketCategory.displayWarning &&
+                        !ticketCategory.accessRestricted
+                      "
+                    ></svg-icon>
+
+                    {{ ticketCategory.name }}
+                    <small
+                      translate="admin.event-dashboard.online"
+                      class="badge bg-success"
+                      style="margin-left: 10px"
+                      *ngIf="
+                        eventOrganizationInfo.event.format === 'HYBRID' &&
+                        ticketCategory.ticketAccessType === 'ONLINE'
+                      "
+                    ></small>
+                  </div>
+                </div>
+                <div class="hidden-xs hidden-sm col-md-3">
+                  <div class="progress">
+                    <div
+                      *ngIf="ticketCategory.checkedInTickets != 0"
+                      class="progress-bar bg-success"
+                      role="progressbar"
+                      [style]="
+                        'width: ' +
+                        (ticketCategory.checkedInTickets /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
+                    >
+                      {{ ticketCategory.checkedInTickets }}
+                    </div>
+                    <div
+                      *ngIf="ticketCategory.soldTickets != 0"
+                      class="progress-bar bg-warning"
+                      role="progressbar"
+                      [style]="
+                        'width: ' +
+                        (ticketCategory.soldTickets /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
+                    >
+                      {{ ticketCategory.soldTickets }}
+                    </div>
+                    <div
+                      *ngIf="ticketCategory.pendingTickets != 0"
+                      class="progress-bar bg-info"
+                      role="progressbar"
+                      [style]="
+                        'width: ' +
+                        (ticketCategory.pendingTickets /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
+                    >
+                      {{ ticketCategory.pendingTickets }}
+                    </div>
+                    <div
+                      *ngIf="ticketCategory.notSoldTickets != 0"
+                      class="progress-bar bg-info"
+                      role="progressbar"
+                      [style]="
+                        'width: ' +
+                        (ticketCategory.notSoldTickets /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
+                    >
+                      {{ ticketCategory.notSoldTickets }}
+                    </div>
+                    <div
+                      *ngIf="!ticketCategory.bounded"
+                      type="default"
+                      class="progress-bar"
+                      role="progressbar"
+                      [style]="
+                        'width: ' +
+                        (eventOrganizationInfo.event.dynamicAllocation /
+                          getActualCapacity(
+                            ticketCategory,
+                            eventOrganizationInfo.event
+                          )) *
+                          100 +
+                        '%'
+                      "
+                    >
+                      {{ eventOrganizationInfo.event.dynamicAllocation }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-xs-12 col-md-6">
+                  <div class="d-flex justify-content-end">
+                    <a
+                      class="btn btn-outline-secondary btn-sm"
+                      href="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})"
+                    >
+                      <svg-icon key="ticket" size="md"></svg-icon>
+                      <span translate="admin.event-dashboard.tickets"></span>
+                    </a>
+                    <a
+                      class="btn btn-outline-secondary btn-sm"
+                      (click)="toggleTokenViewCollapse(ticketCategory)"
+                      *ngIf="ticketCategory.accessRestricted"
+                    >
+                      <svg-icon key="qr-code" size="md"></svg-icon>
+                      <span translate="admin.event-dashboard.tokens"></span>
+                    </a>
+                    <a
+                      class="btn btn-outline-secondary btn-sm"
+                      href="events.single.sendInvitations({eventName: event.shortName, categoryId: ticketCategory.id})"
+                      *ngIf="
+                        ticketCategory.accessRestricted &&
+                        !ticketCategory.expired
+                      "
+                    >
+                      <svg-icon key="outgoing-mail" size="md"></svg-icon>
+                      <span
+                        translate="admin.event-dashboard.send-invitations"
+                      ></span>
+                    </a>
+                    <a
+                      class="btn btn-sm btn-outline-secondary"
+                      (click)="
+                        openConfiguration(
+                          eventOrganizationInfo.event,
+                          ticketCategory
+                        )
+                      "
+                      ><svg-icon key="settings" size="md"></svg-icon>
+                      <span translate="admin.event-dashboard.options"></span
+                    ></a>
+                    <a
+                      class="btn btn-sm btn-danger"
+                      ng-if="canBeDeleted(event, ticketCategory)"
+                      ng-click="deleteCategory(ticketCategory, event)"
+                      ><svg-icon key="delete" size="md"></svg-icon>
+                      <span translate="admin.common.delete"></span
+                    ></a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div
+              *ngIf="ticketCategory.attendeesList"
+              class="alert alert-info text-center"
+            >
+              <span
+                translate="admin.event-dashboard.alert-message-limited-group"
+              >
+                <a
+                  href="groups.edit({orgId: event.organizationId, groupId: ticketCategory.attendeesList.groupId})"
+                  target="_blank"
+                  >{{ ticketCategory.attendeesList }}</a
+                >
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  ng-click="openConfiguration(event, ticketCategory)"
+                  translate="admin.event-dashboard.configure"
+                >
+                  <svg-icon key="settings"></svg-icon></button
+              ></span>
+            </div>
+            <div
+              class="row form-inline text-danger"
+              *ngIf="ticketCategory.containingOrphans"
+            >
+              <div class="col-xs-12" data-ng-form="moveTickets">
+                <svg-icon key="warning"></svg-icon>
+                <span translate="admin.event-dashboard.message-orphans"></span>
+                <select
+                  class="form-control input-sm"
+                  data-ng-model="targetCategoryId"
+                  required
+                  data-ng-options="category.id as category.name for category in validCategories"
+                ></select>
+                <button
+                  class="btn btn-sm btn-warning"
+                  data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)"
+                  translate="admin.event-dashboard.apply"
+                ></button>
+                <button
+                  *ngIf="
+                    eventOrganizationInfo.event.containingUnboundedCategories
+                  "
+                  class="btn btn-sm btn-warning"
+                  (click)="
+                    unbindTickets(
+                      eventOrganizationInfo.event.shortName,
+                      ticketCategory
+                    )
+                  "
+                  translate="admin.event-dashboard.assign-to-dynamic-categories"
+                ></button>
+              </div>
+            </div>
+            <div
+              class="row text-warning"
+              *ngIf="ticketCategory.containingStuckTickets"
+            >
+              <div class="col-xs-12">
+                <svg-icon key="warning"></svg-icon>
+                <span
+                  translate="admin.event-dashboard.alert-message-category-tickets-unknown-state"
+                ></span>
+                <a
+                  translate="admin.event-dashboard.alert-message-category-tickets-unknown-state-link"
+                  ui-sref="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})"
+                ></a
+                >.
+              </div>
+            </div>
+
+            <app-ticket-category-detail></app-ticket-category-detail>
+            <div
+              *ngIf="ticketCategory.accessRestricted"
+              class="wMarginBottom"
+              data-uib-collapse="isTokenViewCollapsed(ticketCategory)"
+            >
+              <!-- <hr /> -->
+              <!-- <button
+                class="btn btn-outline-dark"
+                aria-label="Close"
+                data-ng-click="toggleTokenViewCollapse(ticketCategory)"
+              >
+                <svg-icon key="close"></svg-icon>
+              </button> -->
+              <!-- <h4>Tokens</h4>
+              <div *ngIf="containsValidTokens(ticketCategory.tokenStatus)">
+                <div
+                  *ngFor="(status, tokens) in groupTokensByStatus(ticketCategory.tokenStatus)"
+                >
+                  <h5><strong>{{status}}</strong></h5>
+                  <ul class="list-inline">
+                    <li data-ng-repeat="token in ::tokens">
+                      <a
+                        ng-if="token.status === 'TAKEN'"
+                        data-ui-sref="events.single.reservationsList({eventName: event.shortName, search: token.code})"
+                        title="Find reservation"
+                        >{{::token.code}}</a
+                      >
+                      <span data-ng-if="token.status !== 'TAKEN'">{{::token.code}}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div> -->
+
+              <div
+                class="alert alert-info"
+                *ngIf="!containsValidTokens(ticketCategory.tokenStatus)"
+              >
+                <div class="row">
+                  <div class="col-xs-1">
+                    <svg-icon key="info"></svg-icon>
+                  </div>
+                  <div
+                    class="col-xs-11"
+                    translate="admin.event-dashboard.message-token-generation"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div
+              *ngIf="
+                eventOrganizationInfo.event.format === 'IN_PERSON' ||
+                ticketCategory.ticketAccessType === 'IN_PERSON'
+              "
+            >
+              <hr />
+              <div class="row">
+                <div class="col-12">
+                  <div class="d-flex justify-content-end">
+                    <button
+                      class="btn btn-lg btn-primary btn-lg"
+                      translate="admin.event-dashboard.edit-category"
+                    ></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              *ngIf="
+                eventOrganizationInfo.event.format === 'ONLINE' ||
+                ticketCategory.ticketAccessType === 'ONLINE'
+              "
+            >
+              <!-- <metadata-viewer event="event" parent-id="ticketCategory.id" metadata="ticketCategory.metadata" available-languages="event.contentLanguages" level="'category'">
+                          <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
+                      </metadata-viewer> -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </app-section-dashboard>
