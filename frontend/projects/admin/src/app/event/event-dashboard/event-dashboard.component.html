@@ -515,7 +515,7 @@
                   <div class="progress">
                     <div
                       *ngIf="ticketCategory.checkedInTickets != 0"
-                      class="progress-bar"
+                      class="progress-bar bg-success"
                       role="progressbar"
                       [style]="
                         'width: ' +
@@ -532,7 +532,7 @@
                     </div>
                     <div
                       *ngIf="ticketCategory.soldTickets != 0"
-                      class="progress-bar bg-success"
+                      class="progress-bar bg-warning"
                       role="progressbar"
                       [style]="
                         'width: ' +
@@ -584,7 +584,7 @@
                     <div
                       *ngIf="!ticketCategory.bounded"
                       type="default"
-                      class="progress-bar bg-info"
+                      class="progress-bar"
                       role="progressbar"
                       [style]="
                         'width: ' +
@@ -682,9 +682,8 @@
               *ngIf="ticketCategory.containingOrphans"
             >
               <div class="col-xs-12" data-ng-form="moveTickets">
-                <svg-icon key="warning"></svg-icon> This category contains
-                allocated tickets that cannot be sold anymore. Move them to
-                another category:
+                <svg-icon key="warning"></svg-icon>
+                <span translate="admin.event-dashboard.message-orphans"></span>
                 <select
                   class="form-control input-sm"
                   data-ng-model="targetCategoryId"
@@ -694,9 +693,8 @@
                 <button
                   class="btn btn-sm btn-warning"
                   data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)"
-                >
-                  apply
-                </button>
+                  translate="admin.event-dashboard-apply"
+                ></button>
                 <button
                   *ngIf="
                     eventOrganizationInfo.event.containingUnboundedCategories
@@ -708,9 +706,8 @@
                       ticketCategory
                     )
                   "
-                >
-                  Assign to dynamic categories
-                </button>
+                  translate="admin.event-dashboard-assing-to-dynamic-categories"
+                ></button>
               </div>
             </div>
             <div
@@ -770,12 +767,12 @@
               >
                 <div class="row">
                   <div class="col-xs-1">
-                    <i class="fa fa-info-circle fa-3x"></i>
+                    <svg-icon key="info"></svg-icon>
                   </div>
-                  <div class="col-xs-11">
-                    Token generation in progress. Please wait 30s and then
-                    reload the page.
-                  </div>
+                  <div
+                    class="col-xs-11"
+                    translate="admin.event-dashboard-message-token-generation"
+                  ></div>
                 </div>
               </div>
             </div>

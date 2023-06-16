@@ -18,6 +18,7 @@ import { eventIcon } from '../svg/event';
 import { groupsIcon } from '../svg/groups';
 import { homeIcon } from '../svg/home';
 import { hourglassTopIcon } from '../svg/hourglass-top';
+import { infoIcon } from '../svg/info';
 import { insightsIcon } from '../svg/insights';
 import { keyIcon } from '../svg/key';
 import { lockIcon } from '../svg/lock';
@@ -81,6 +82,7 @@ const ICONS = [
   qrCodeIcon,
   warningIcon,
   closeIcon,
+  infoIcon,
 ];
 export const ICON_CONFIG = {
   sizes: {
