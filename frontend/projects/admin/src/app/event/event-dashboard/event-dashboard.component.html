@@ -444,12 +444,21 @@
         />
       </div>
     </div>
-    <div>
+    <div
+      [ngSwitch]="
+        (
+          eventOrganizationInfo.event.ticketCategories
+          | uiCategoryBuilder
+          | showSelectedCategories : categoryFilter
+        ).length
+      "
+    >
       <div
         class="alert alert-warning"
         translate="admin.event-dashboard.alert-warning"
+        *ngSwitchCase="0"
       ></div>
-      <div>
+      <div *ngSwitchDefault>
         <div
           class="card"
           *ngFor="
@@ -648,10 +657,11 @@
               *ngIf="ticketCategory.attendeesList"
               class="alert alert-info text-center"
             >
-              <span>
-                Access to this category has been limited to Group
+              <span
+                translate="admin.event-dashboard.alert-message-limited-group"
+              >
                 <a
-                  ui-sref="groups.edit({orgId: event.organizationId, groupId: ticketCategory.attendeesList.groupId})"
+                  href="groups.edit({orgId: event.organizationId, groupId: ticketCategory.attendeesList.groupId})"
                   target="_blank"
                   >{{ ticketCategory.attendeesList }}</a
                 >
@@ -669,9 +679,9 @@
               *ngIf="ticketCategory.containingOrphans"
             >
               <div class="col-xs-12" data-ng-form="moveTickets">
-                <i class="fa fa-warning"></i> This category contains allocated
-                tickets that cannot be sold anymore. Move them to another
-                category:
+                <svg-icon key="warning"></svg-icon> This category contains
+                allocated tickets that cannot be sold anymore. Move them to
+                another category:
                 <select
                   class="form-control input-sm"
                   data-ng-model="targetCategoryId"
@@ -685,9 +695,16 @@
                   apply
                 </button>
                 <button
-                  data-ng-if="event.containingUnboundedCategories"
+                  *ngIf="
+                    eventOrganizationInfo.event.containingUnboundedCategories
+                  "
                   class="btn btn-sm btn-warning"
-                  data-ng-click="unbindTickets(event, ticketCategory)"
+                  (click)="
+                    unbindTickets(
+                      eventOrganizationInfo.event.shortName,
+                      ticketCategory
+                    )
+                  "
                 >
                   Assign to dynamic categories
                 </button>
@@ -695,16 +712,17 @@
             </div>
             <div
               class="row text-warning"
-              data-ng-if="ticketCategory.containingStuckTickets"
+              *ngIf="ticketCategory.containingStuckTickets"
             >
               <div class="col-xs-12">
-                <i class="fa fa-warning"></i> This category contains tickets
-                whose reservations are in an unknown state. This could happen
-                when we have troubles after receiving a response from the
-                Payment Gateway. Please
+                <svg-icon key="warning"></svg-icon>
+                <span
+                  translate="admin.event-dashboard.alert-message-category-tickets-unknown-state"
+                ></span>
                 <a
+                  translate="admin.event-dashboard.alert-message-category-tickets-unknown-state-link"
                   ui-sref="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})"
-                  >fix them</a
+                ></a
                 >.
               </div>
             </div>
@@ -713,17 +731,17 @@
                                           data-ticket-category="ticketCategory"
                                           data-panel-mode-enabled="false"></ticket-category-detail> -->
             <div
-              data-ng-if="ticketCategory.accessRestricted"
+              *ngIf="ticketCategory.accessRestricted"
               class="wMarginBottom"
               data-uib-collapse="isTokenViewCollapsed(ticketCategory)"
             >
               <hr />
               <button
-                class="close"
+                class="btn btn-outline-dark"
                 aria-label="Close"
                 data-ng-click="toggleTokenViewCollapse(ticketCategory)"
               >
-                <i class="fa fa-close"></i>
+                <svg-icon key="close"></svg-icon>
               </button>
               <h4>Tokens</h4>
               <div

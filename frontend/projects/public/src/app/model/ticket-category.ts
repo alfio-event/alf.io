@@ -58,7 +58,7 @@ export class UiTicketCategory implements TicketCategory {
   soldTickets: number;
   ticketAccessType: TicketAccessType;
   tokenViewExpanded: boolean;
-  attendeesList: { key: number; groupName: string }[];
+  attendeesList: { groupId: number; groupName: string } | null;
   tokenStatus: string;
 
   constructor(ticketCategory: TicketCategory) {
@@ -91,7 +91,7 @@ export class UiTicketCategory implements TicketCategory {
     this.pendingTickets = ticketCategory.pendingTickets;
     this.notSoldTickets = ticketCategory.notSoldTickets;
     this.tokenViewExpanded = false;
-    this.attendeesList = [];
+    this.attendeesList = null;
     this.tokenStatus = '';
   }
 }

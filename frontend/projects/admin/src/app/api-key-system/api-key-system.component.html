@@ -25,16 +25,20 @@
         class="btn btn-warning mx-3"
         [routerLink]="['/access-control/api-keys/bulk']"
       >
-        <svg-icon key="groups"></svg-icon>
+        <svg-icon key="groups" size="lg"></svg-icon>
         <span translate="admin.api-key.list.bulk-creation"></span>
       </a>
       <button
         type="button"
         class="btn btn-success d-flex align-items-center mx-3"
         [routerLink]="['/access-control/api-keys/new']"
-        translate="admin.common.add-new"
       >
-        <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
+        <svg-icon
+          key="add"
+          size="lg"
+          class="d-flex align-items-center"
+        ></svg-icon>
+        <span translate="admin.common.add-new"></span>
       </button>
     </div>
   </div>
@@ -94,27 +98,27 @@
               *ngIf="user.enabled"
               class="btn btn-warning"
               (click)="enable(user)"
-              translate="admin.api-key.list.disable"
             >
-              <svg-icon key="visibilityoff"></svg-icon>
+              <svg-icon key="visibilityoff" size="lg"></svg-icon>
+              <span translate="admin.api-key.list.disable"></span>
             </button>
             <button
               *ngIf="!user.enabled"
               class="btn btn-success"
               (click)="enable(user)"
-              translate="admin.api-key.list.enabled"
             >
-              <svg-icon key="visibility-on"></svg-icon>
+              <svg-icon key="visibility-on" size="lg"></svg-icon>
+              <span translate="admin.api-key.list.enabled"></span>
             </button>
           </td>
 
           <td>
             <button
-              class="btn btn-danger"
+              class="btn btn-danger text-nowrap"
               (click)="deleteUserApikey(user)"
-              translate="admin.common.delete"
             >
-              <svg-icon key="delete"></svg-icon>
+              <svg-icon key="delete" size="lg"></svg-icon>
+              <span translate="admin.common.delete"></span>
             </button>
           </td>
         </tr>

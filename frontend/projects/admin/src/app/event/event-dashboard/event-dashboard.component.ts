@@ -213,5 +213,9 @@ export class EventDashboardComponent implements OnInit {
     return tokenStatus != 'WAITING';
   }
 
+  unbindTickets(eventShortName: string, category: UiTicketCategory) {
+    this.eventService.unbindTickets(eventShortName, category);
+  }
+
   ngOnInit(): void {}
 }

@@ -43,6 +43,7 @@ export interface EventInfo {
   vatPercentage: number;
   ticketCategories: TicketCategory[];
   format: string;
+  containingUnboundedCategories: boolean;
 }
 
 export interface EventOrganizationInfo {

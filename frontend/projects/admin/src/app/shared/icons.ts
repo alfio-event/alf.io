@@ -7,6 +7,7 @@ import { arrowdropdownIcon } from '../svg/arrowdropdown';
 import { calendarEventIcon } from '../svg/calendar-event';
 import { categoryIcon } from '../svg/category';
 import { checkIcon } from '../svg/check';
+import { closeIcon } from '../svg/close';
 import { deleteIcon } from '../svg/delete';
 import { descriptionIcon } from '../svg/description';
 import { detailsIcon } from '../svg/details';
@@ -36,6 +37,7 @@ import { ticketReservedIcon } from '../svg/ticket-reserved';
 import { visibilityOnIcon } from '../svg/visibility-on';
 import { visibilityoffIcon } from '../svg/visibilityoff';
 import { waitingListIcon } from '../svg/waiting-list';
+import { warningIcon } from '../svg/warning';
 
 const ICONS = [
   accessIcon,
@@ -77,6 +79,8 @@ const ICONS = [
   lockIcon,
   outgoingMailIcon,
   qrCodeIcon,
+  warningIcon,
+  closeIcon,
 ];
 export const ICON_CONFIG = {
   sizes: {
