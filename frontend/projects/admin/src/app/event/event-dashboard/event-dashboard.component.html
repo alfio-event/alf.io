@@ -460,7 +460,7 @@
       ></div>
       <div *ngSwitchDefault>
         <div
-          class="card"
+          class="card mb-4"
           *ngFor="
             let ticketCategory of eventOrganizationInfo.event.ticketCategories
               | uiCategoryBuilder
@@ -474,7 +474,7 @@
         >
           <div class="card-header">
             <div class="card-title">
-              <div class="row">
+              <div class="row align-items-center">
                 <div
                   class="col-xs-12 col-md-3"
                   [ngClass]="{ 'text-danger': ticketCategory.displayWarning }"
@@ -510,7 +510,7 @@
                     ></small>
                   </div>
                 </div>
-                <div class="hidden-xs hidden-sm col-md-4">
+                <div class="hidden-xs hidden-sm col-md-3">
                   <div class="progress">
                     <div
                       *ngIf="ticketCategory.checkedInTickets != 0"
@@ -601,8 +601,8 @@
                   </div>
                 </div>
 
-                <div class="col-xs-12 col-md-5">
-                  <div class="float-end">
+                <div class="col-xs-12 col-md-6">
+                  <div class="d-flex justify-content-end">
                     <a
                       class="btn btn-outline-secondary btn-sm"
                       href="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})"
@@ -625,27 +625,29 @@
                         ticketCategory.accessRestricted &&
                         !ticketCategory.expired
                       "
-                      translate="admin.event-dashboard.send-invitations"
                     >
                       <svg-icon key="outgoing-mail" size="md"></svg-icon>
+                      <span
+                        translate="admin.event-dashboard.send-invitations"
+                      ></span>
                     </a>
                     <a
-                      class="btn btn-outline-secondary"
+                      class="btn btn-sm btn-outline-secondary"
                       (click)="
                         openConfiguration(
                           eventOrganizationInfo.event,
                           ticketCategory
                         )
                       "
-                      ><svg-icon key="settings" size="md"></svg-icon
-                      ><span translate="admin.event-dashboard.options"></span
+                      ><svg-icon key="settings" size="md"></svg-icon>
+                      <span translate="admin.event-dashboard.options"></span
                     ></a>
                     <a
                       class="btn btn-sm btn-danger"
                       ng-if="canBeDeleted(event, ticketCategory)"
                       ng-click="deleteCategory(ticketCategory, event)"
-                      translate="admin.common.delete"
-                      ><svg-icon key="delete" size="md"></svg-icon
+                      ><svg-icon key="delete" size="md"></svg-icon>
+                      <span translate="admin.common.delete"></span
                     ></a>
                   </div>
                 </div>
@@ -735,38 +737,37 @@
               class="wMarginBottom"
               data-uib-collapse="isTokenViewCollapsed(ticketCategory)"
             >
-              <hr />
-              <button
+              <!-- <hr /> -->
+              <!-- <button
                 class="btn btn-outline-dark"
                 aria-label="Close"
                 data-ng-click="toggleTokenViewCollapse(ticketCategory)"
               >
                 <svg-icon key="close"></svg-icon>
-              </button>
-              <h4>Tokens</h4>
-              <div
-                *ngIf="containsValidTokens(ticketCategory.tokenStatus)"
-                ng-init="tokensByStatus = groupTokensByStatus(ticketCategory.tokenStatus)"
-              >
-                <div ng-repeat="(status, tokens) in tokensByStatus">
-                  <!-- <h5><strong>{{status}}</strong></h5> -->
+              </button> -->
+              <!-- <h4>Tokens</h4>
+              <div *ngIf="containsValidTokens(ticketCategory.tokenStatus)">
+                <div
+                  *ngFor="(status, tokens) in groupTokensByStatus(ticketCategory.tokenStatus)"
+                >
+                  <h5><strong>{{status}}</strong></h5>
                   <ul class="list-inline">
                     <li data-ng-repeat="token in ::tokens">
-                      <!-- <a
+                      <a
                         ng-if="token.status === 'TAKEN'"
                         data-ui-sref="events.single.reservationsList({eventName: event.shortName, search: token.code})"
                         title="Find reservation"
                         >{{::token.code}}</a
-                      > -->
-                      <!-- <span data-ng-if="token.status !== 'TAKEN'">{{::token.code}}</span> -->
+                      >
+                      <span data-ng-if="token.status !== 'TAKEN'">{{::token.code}}</span>
                     </li>
                   </ul>
                 </div>
-              </div>
+              </div> -->
 
               <div
                 class="alert alert-info"
-                ng-if="!containsValidTokens(ticketCategory.tokenStatus)"
+                *ngIf="!containsValidTokens(ticketCategory.tokenStatus)"
               >
                 <div class="row">
                   <div class="col-xs-1">
@@ -787,14 +788,13 @@
             >
               <hr />
               <div class="row">
-                <div class="col-md-2 col-md-push-10 col-xs-12">
-                  <button
-                    type="button"
-                    class="btn btn-warning btn-block"
-                    data-ng-click="editCategory(ticketCategory, event)"
-                  >
-                    Edit category
-                  </button>
+                <div class="col-12">
+                  <div class="d-flex justify-content-end">
+                    <button
+                      class="btn btn-lg btn-primary btn-lg"
+                      translate="admin.event-dashboard.edit-category"
+                    ></button>
+                  </div>
                 </div>
               </div>
             </div>

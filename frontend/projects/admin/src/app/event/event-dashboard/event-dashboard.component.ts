@@ -16,6 +16,7 @@ import {
   TicketAccessType,
   TicketCategory,
   TicketCategoryFilter,
+  TicketTokenStatus,
   UiTicketCategory,
 } from 'projects/public/src/app/model/ticket-category';
 
@@ -209,8 +210,8 @@ export class EventDashboardComponent implements OnInit {
     alert('TODO');
   }
 
-  containsValidTokens(tokenStatus: string) {
-    return tokenStatus != 'WAITING';
+  containsValidTokens(tokens: TicketTokenStatus[]) {
+    return tokens.every((token) => token.status !== 'WAITING');
   }
 
   unbindTickets(eventShortName: string, category: UiTicketCategory) {

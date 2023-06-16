@@ -1,5 +1,17 @@
 export type TicketAccessType = 'INHERIT' | 'IN_PERSON' | 'ONLINE';
 
+export interface TicketTokenStatus {
+  accessCodeId: number | null;
+  code: string;
+  id: number;
+  priceInCents: number;
+  recipientEmail: string | null;
+  recipientName: string | null;
+  sentTimestamp: string | null;
+  status: string;
+  ticketCategoryId: number;
+}
+
 export interface TicketCategory {
   accessRestricted: boolean;
   availableTickets: number | null;
@@ -27,6 +39,7 @@ export interface TicketCategory {
   soldOutOrLimitReached: boolean;
   soldTickets: number;
   ticketAccessType: TicketAccessType;
+  tokenStatus: TicketTokenStatus[];
 }
 
 export class UiTicketCategory implements TicketCategory {
@@ -59,7 +72,7 @@ export class UiTicketCategory implements TicketCategory {
   ticketAccessType: TicketAccessType;
   tokenViewExpanded: boolean;
   attendeesList: { groupId: number; groupName: string } | null;
-  tokenStatus: string;
+  tokenStatus: TicketTokenStatus[];
 
   constructor(ticketCategory: TicketCategory) {
     this.accessRestricted = ticketCategory.accessRestricted;
@@ -90,9 +103,9 @@ export class UiTicketCategory implements TicketCategory {
     this.ticketAccessType = ticketCategory.ticketAccessType;
     this.pendingTickets = ticketCategory.pendingTickets;
     this.notSoldTickets = ticketCategory.notSoldTickets;
+    this.tokenStatus = ticketCategory.tokenStatus;
     this.tokenViewExpanded = false;
     this.attendeesList = null;
-    this.tokenStatus = '';
   }
 }
 
