@@ -21,6 +21,7 @@ import { EmailLogComponent } from './email-log/email-log.component';
 import { ShowSelectedCategoriesPipe } from './show-selected-categories.pipe';
 import { UiCategoryBuilderPipe } from './ui-category-builder.pipe';
 import { FormsModule } from '@angular/forms';
+import { TicketCategoryDetailComponent } from './ticket-category-detail/ticket-category-detail.component';
 
 @NgModule({
   declarations: [
@@ -30,6 +31,7 @@ import { FormsModule } from '@angular/forms';
     EmailLogComponent,
     ShowSelectedCategoriesPipe,
     UiCategoryBuilderPipe,
+    TicketCategoryDetailComponent,
   ],
   imports: [
     TranslateModule.forChild(),
