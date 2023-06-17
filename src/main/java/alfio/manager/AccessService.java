@@ -139,11 +139,13 @@ public class AccessService {
         }
     }
 
-    public void checkEventOwnership(Principal principal, String eventShortName, int organizationId) {
-        int orgId = checkEventOwnership(principal, eventShortName).getOrganizationId();
+    public EventAndOrganizationId checkEventOwnership(Principal principal, String eventShortName, int organizationId) {
+        var eventAndOrganizationId = checkEventOwnership(principal, eventShortName);
+        int orgId = eventAndOrganizationId.getOrganizationId();
         if (orgId != organizationId) {
             throw new AccessDeniedException();
         }
+        return eventAndOrganizationId;
     }
 
     private static boolean isSystemApiUser(Principal principal) {

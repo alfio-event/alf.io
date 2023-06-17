@@ -16,9 +16,8 @@
  */
 package alfio.controller.api.v1.admin;
 
-import alfio.manager.EventManager;
+import alfio.manager.AccessService;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -40,25 +39,23 @@ import java.util.stream.Collectors;
 public class ConfigurationApiV1Controller {
 
     private final ConfigurationManager configurationManager;
-    private final EventManager eventManager;
-    private final UserManager userManager;
+    private final AccessService accessService;
 
     public ConfigurationApiV1Controller(ConfigurationManager configurationManager,
-                                        EventManager eventManager,
-                                        UserManager userManager) {
+                                        AccessService accessService) {
         this.configurationManager = configurationManager;
-        this.eventManager = eventManager;
-        this.userManager = userManager;
+        this.accessService = accessService;
     }
 
     @PutMapping("/organization/{organizationId}")
     public ResponseEntity<String> saveConfigurationForOrganization(@PathVariable("organizationId") int organizationId,
                                                                    @RequestBody Map<String, String> configurationKeyValues,
                                                                    Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         var configurationKeys = configurationKeyValues.keySet().stream()
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
-        var validationErrorOptional = validateInput(organizationId, principal, configurationKeyValues, configurationKeys);
+        var validationErrorOptional = validateInput(configurationKeyValues, configurationKeys);
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
         }
@@ -78,17 +75,17 @@ public class ConfigurationApiV1Controller {
                                                             @PathVariable("slug") String eventSlug,
                                                             @RequestBody Map<String, String> configurationKeyValues,
                                                             Principal principal) {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventSlug, organizationId);
         var configurationKeys = configurationKeyValues.keySet().stream()
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
 
-        var validationErrorOptional = validateInput(organizationId, principal, configurationKeyValues, configurationKeys);
+        var validationErrorOptional = validateInput(configurationKeyValues, configurationKeys);
 
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
         }
 
-        var eventAndOrgId = eventManager.getEventAndOrganizationId(eventSlug, principal.getName());
         if (eventAndOrgId.getOrganizationId() != organizationId) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -102,10 +99,6 @@ public class ConfigurationApiV1Controller {
             .collect(Collectors.toList());
         configurationManager.saveAllEventConfiguration(eventId, organizationId, toSave, principal.getName());
         return ResponseEntity.ok().body("OK");
-    }
-
-    private boolean checkUserIsMemberOfOrganization(int organizationId, Principal principal) {
-        return userManager.findUserOrganizations(principal.getName()).stream().noneMatch(o -> o.getId() == organizationId);
     }
 
     static class ConfigurationKeyValue {
@@ -128,14 +121,8 @@ public class ConfigurationApiV1Controller {
         }
     }
 
-    private Optional<ResponseEntity<String>> validateInput(int organizationId,
-                                                           Principal principal,
-                                                           Map<String, String> configurationKeyValues,
+    private Optional<ResponseEntity<String>> validateInput(Map<String, String> configurationKeyValues,
                                                            Set<ConfigurationKeys> configurationKeys) {
-        if (checkUserIsMemberOfOrganization(organizationId, principal)) {
-            return Optional.of(ResponseEntity.status(HttpStatus.FORBIDDEN).build());
-        }
-
         if (configurationKeys.size() != configurationKeyValues.size()) {
             return Optional.of(ResponseEntity.badRequest().body("Request contains duplicate keys"));
         }
