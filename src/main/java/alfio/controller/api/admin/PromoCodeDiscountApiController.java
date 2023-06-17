@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.EventManager;
 import alfio.manager.PromoCodeRequestManager;
 import alfio.model.PromoCodeDiscount;
@@ -41,12 +42,14 @@ public class PromoCodeDiscountApiController {
     private final EventRepository eventRepository;
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
+    private final AccessService accessService;
 
     @PostMapping("/promo-code")
-    public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode) {
+    public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode, Principal principal) {
         Integer eventId = promoCode.getEventId();
         Integer organizationId = promoCode.getOrganizationId();
         ZoneId zoneId = zoneIdFromEventId(eventId, promoCode.getUtcOffset());
+        accessService.checkAccessToPromoCodeEventOrganization(principal, eventId, organizationId);
 
         if(eventId != null && PromoCodeDiscount.supportsCurrencyCode(promoCode.getCodeType(), promoCode.getDiscountType())) {
             String eventCurrencyCode = eventRepository.getEventCurrencyCode(eventId);
@@ -61,7 +64,10 @@ public class PromoCodeDiscountApiController {
     }
 
     @PostMapping("/promo-code/{promoCodeId}")
-    public void updatePromoCode(@PathVariable("promoCodeId") int promoCodeId, @RequestBody PromoCodeDiscountModification promoCode) {
+    public void updatePromoCode(@PathVariable("promoCodeId") int promoCodeId,
+                                @RequestBody PromoCodeDiscountModification promoCode,
+                                Principal principal) {
+        accessService.checkAccessToPromoCodeEventOrganization(principal, promoCode.getEventId(), promoCode.getOrganizationId());
         PromoCodeDiscount pcd = promoCodeRequestManager.findById(promoCodeId).orElseThrow();
         ZoneId zoneId = zoneIdFromEventId(pcd.getEventId(), promoCode.getUtcOffset());
         eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId),
@@ -78,27 +84,33 @@ public class PromoCodeDiscountApiController {
     }
 
     @GetMapping("/events/{eventId}/promo-code")
-    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInEvent(@PathVariable("eventId") int eventId) {
+    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInEvent(@PathVariable("eventId") int eventId, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
         return eventManager.findPromoCodesInEvent(eventId);
     }
 
     @GetMapping("/organization/{organizationId}/promo-code")
-    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInOrganization(@PathVariable("organizationId") int organizationId) {
+    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInOrganization(@PathVariable("organizationId") int organizationId,
+                                                                                         Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         return eventManager.findPromoCodesInOrganization(organizationId);
     }
     
     @DeleteMapping("/promo-code/{promoCodeId}")
-    public void removePromoCode(@PathVariable("promoCodeId") int promoCodeId) {
+    public void removePromoCode(@PathVariable("promoCodeId") int promoCodeId, Principal principal) {
+        accessService.checkAccessToPromoCode(principal, promoCodeId);
         eventManager.deletePromoCode(promoCodeId);
     }
     
     @PostMapping("/promo-code/{promoCodeId}/disable")
-    public void disablePromoCode(@PathVariable("promoCodeId") int promoCodeId) {
+    public void disablePromoCode(@PathVariable("promoCodeId") int promoCodeId, Principal principal) {
+        accessService.checkAccessToPromoCode(principal, promoCodeId);
         promoCodeRequestManager.disablePromoCode(promoCodeId);
     }
     
     @GetMapping("/promo-code/{promoCodeId}/count-use")
-    public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId) {
+    public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId, Principal principal) {
+        accessService.checkAccessToPromoCode(principal, promoCodeId);
         return promoCodeRequestManager.countUsage(promoCodeId);
     }
 
@@ -110,6 +122,8 @@ public class PromoCodeDiscountApiController {
         if (StringUtils.isNotBlank(eventShortName)) {
             eventId = eventManager.getEventAndOrganizationId(eventShortName, principal.getName()).getId();
         }
+        accessService.checkAccessToPromoCode(principal, promoCodeId);
         return promoCodeRequestManager.retrieveDetailedUsage(promoCodeId, eventId);
     }
+
 }

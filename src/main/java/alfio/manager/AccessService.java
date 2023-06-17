@@ -21,6 +21,7 @@ import alfio.manager.support.AccessDeniedException;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.PurchaseContext;
 import alfio.model.modification.GroupModification;
+import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
@@ -61,6 +62,7 @@ public class AccessService {
     private final BillingDocumentRepository billingDocumentRepository;
     private final GroupRepository groupRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final PromoCodeDiscountRepository promoCodeDiscountRepository;
 
     public AccessService(UserRepository userRepository,
                          AuthorityRepository authorityRepository,
@@ -71,7 +73,8 @@ public class AccessService {
                          TicketRepository ticketRepository,
                          BillingDocumentRepository billingDocumentRepository,
                          GroupRepository groupRepository,
-                         TicketCategoryRepository ticketCategoryRepository) {
+                         TicketCategoryRepository ticketCategoryRepository,
+                         PromoCodeDiscountRepository promoCodeDiscountRepository) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
         this.userOrganizationRepository = userOrganizationRepository;
@@ -82,6 +85,7 @@ public class AccessService {
         this.billingDocumentRepository = billingDocumentRepository;
         this.groupRepository = groupRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
+        this.promoCodeDiscountRepository = promoCodeDiscountRepository;
     }
 
     public void checkUserAccess(Principal principal, int userId) {
@@ -114,6 +118,14 @@ public class AccessService {
     public EventAndOrganizationId checkEventOwnership(Principal principal, int eventId) {
         var eventAndOrgId = eventRepository.findEventAndOrganizationIdById(eventId);
         checkOrganizationOwnership(principal, eventAndOrgId.getOrganizationId());
+        return eventAndOrgId;
+    }
+
+    public EventAndOrganizationId checkEventOwnership(Principal principal, int eventId, int organizationId) {
+        var eventAndOrgId = checkEventOwnership(principal, eventId);
+        if (organizationId != eventAndOrgId.getOrganizationId()) {
+            throw new AccessDeniedException();
+        }
         return eventAndOrgId;
     }
 
@@ -267,5 +279,35 @@ public class AccessService {
             throw new AccessDeniedException();
         }
         checkOrganizationOwnership(principal, organizationId);
+    }
+
+    public void checkAccessToPromoCode(Principal principal, int promoCodeId, PromoCodeDiscountModification payload) {
+        int organizationId = checkAccessToPromoCodeEventOrganization(principal, payload.getEventId(), payload.getOrganizationId());
+        if (!Boolean.TRUE.equals(promoCodeDiscountRepository.checkPromoCodeExists(promoCodeId, organizationId, payload.getEventId()))) {
+            throw new AccessDeniedException();
+        }
+    }
+
+    public void checkAccessToPromoCode(Principal principal, int promoCodeId) {
+        var promoCode = promoCodeDiscountRepository.findOptionalById(promoCodeId).orElseThrow(AccessDeniedException::new);
+        if (promoCode.getEventId() != null) {
+            checkEventOwnership(principal, promoCode.getEventId(), promoCode.getOrganizationId());
+        } else {
+            checkOrganizationOwnership(principal, promoCode.getOrganizationId());
+        }
+    }
+
+    public int checkAccessToPromoCodeEventOrganization(Principal principal, Integer eventId, Integer organizationId) {
+        if (eventId == null && organizationId == null) {
+            throw new AccessDeniedException();
+        }
+        if (eventId != null && organizationId != null) {
+            return checkEventOwnership(principal, eventId, organizationId).getOrganizationId();
+        } else if (eventId != null) {
+            return checkEventOwnership(principal, eventId).getOrganizationId();
+        } else {
+            checkOrganizationOwnership(principal, organizationId);
+            return organizationId;
+        }
     }
 }
