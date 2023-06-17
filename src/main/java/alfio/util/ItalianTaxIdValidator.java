@@ -143,7 +143,7 @@ public class ItalianTaxIdValidator {
 
     public static boolean validateVatId(String vatId) {
         var nr = StringUtils.trimToNull(vatId);
-        if(length(nr) != COMPANY_TAX_ID_LENGTH && !StringUtils.isNumeric(nr)) {
+        if(nr == null || (length(nr) != COMPANY_TAX_ID_LENGTH && !StringUtils.isNumeric(nr))) {
             return false;
         }
         int sumEven = 0;
