@@ -45,6 +45,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.*;
 import java.util.*;
 
@@ -213,5 +214,9 @@ public class IntegrationTestUtil {
 
     public static String owner(String username) {
         return username + "_owner";
+    }
+
+    public static Principal principal(String username) {
+        return () -> username;
     }
 }

@@ -47,7 +47,7 @@ public class PollModification {
                             @JsonProperty("description") Map<String, String> description,
                             @JsonProperty("order") Integer order,
                             @JsonProperty("options") List<PollOptionModification> options,
-                            @JsonProperty("accessRestricted") boolean accessRestricted,
+                            @JsonProperty("accessRestricted") Boolean accessRestricted,
                             @JsonProperty("status") Poll.PollStatus status) {
         this.id = id;
         this.title = title;
@@ -58,11 +58,14 @@ public class PollModification {
         this.status = status;
     }
 
-    public boolean isValid(boolean update) {
-        return (!update || id != null)
+    public boolean isValid() {
+        return isValid(null);
+    }
+    public boolean isValid(Long pollId) {
+        return Objects.equals(pollId, id)
             && MapUtils.isNotEmpty(title)
             && CollectionUtils.isNotEmpty(options)
-            && options.stream().allMatch(p -> p.isValid(update && p.getId() != null));
+            && options.stream().allMatch(p -> p.isValid(pollId != null && p.getId() != null));
     }
 
     public static PollModification from(Poll poll) {

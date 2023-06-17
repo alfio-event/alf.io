@@ -106,7 +106,7 @@ public class PollManager {
     }
 
     public Optional<Long> createNewPoll(String eventName, PollModification form) {
-        Validate.isTrue(form.isValid(false));
+        Validate.isTrue(form.isValid());
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
             .map(event -> {
                 List<String> tags = form.isAccessRestricted() ? List.of(UUID.randomUUID().toString()) : List.of();
@@ -124,17 +124,14 @@ public class PollManager {
             });
     }
 
-    public Optional<Boolean> deletePoll(String eventName, Long pollId) {
+    public boolean deletePoll(EventAndOrganizationId event, Long pollId) {
         Validate.isTrue(pollId != null);
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .map(event -> {
-                Validate.isTrue(pollRepository.deletePoll(pollId, event.getId(), event.getOrganizationId()) == 1);
-                return true;
-            });
+        Validate.isTrue(pollRepository.deletePoll(pollId, event.getId(), event.getOrganizationId()) == 1);
+        return true;
     }
 
     public Optional<PollWithOptions> updatePoll(String eventName, PollModification form) {
-        Validate.isTrue(form.isValid(true));
+        Validate.isTrue(form.isValid(form.getId()));
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
             .flatMap(event -> {
                 var pollId = form.getId();
@@ -161,81 +158,64 @@ public class PollManager {
             });
     }
 
-    public Optional<PollWithOptions> updateStatus(Long pollId, String eventName, Poll.PollStatus newStatus) {
+    public Optional<PollWithOptions> updateStatus(Long pollId, EventAndOrganizationId event, Poll.PollStatus newStatus) {
         Validate.isTrue(newStatus != Poll.PollStatus.DRAFT, "can't revert to draft");
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .flatMap(event -> {
-                Validate.isTrue(pollRepository.updateStatus(newStatus, pollId, event.getId()) == 1, "Error while updating status");
-                return getSingleForEvent(pollId, event);
-            });
+        Validate.isTrue(pollRepository.updateStatus(newStatus, pollId, event.getId()) == 1, "Error while updating status");
+        return getSingleForEvent(pollId, event);
     }
 
-    public Optional<List<PollParticipant>> searchTicketsToAllow(String eventName, Long pollId, String filter) {
+    public Optional<List<PollParticipant>> searchTicketsToAllow(EventAndOrganizationId event, Long pollId, String filter) {
         Validate.isTrue(StringUtils.isNotBlank(filter));
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .flatMap(event -> pollRepository.findSingleForEvent(event.getId(), pollId)
-                    .map(p -> ticketSearchRepository.filterConfirmedTicketsInEventForPoll(event.getId(), 20, "%"+filter+"%", p.getAllowedTags())));
+        return pollRepository.findSingleForEvent(event.getId(), pollId)
+            .map(p -> ticketSearchRepository.filterConfirmedTicketsInEventForPoll(event.getId(), 20, "%"+filter+"%", p.getAllowedTags()));
     }
 
-    public Optional<Boolean> allowTicketsToVote(String eventName, List<Integer> ids, long pollId) {
+    public boolean allowTicketsToVote(EventAndOrganizationId event, List<Integer> ids, long pollId) {
         Validate.isTrue(CollectionUtils.isNotEmpty(ids));
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .map(event -> {
-                var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-                Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
-                var tag = poll.getAllowedTags().get(0);
-                var result = ticketRepository.tagTickets(ids, event.getId(), tag);
-                Validate.isTrue(ids.size() == result, "Unable to tag tickets");
-                var auditingResults = auditingRepository.registerTicketTag(ids, List.of(Map.of("tag", tag)));
-                Validate.isTrue(auditingResults == ids.size(), "Error while writing auditing");
-                return true;
-            });
+        var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
+        Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
+        var tag = poll.getAllowedTags().get(0);
+        var result = ticketRepository.tagTickets(ids, event.getId(), tag);
+        Validate.isTrue(ids.size() == result, "Unable to tag tickets");
+        var auditingResults = auditingRepository.registerTicketTag(ids, List.of(Map.of("tag", tag)));
+        Validate.isTrue(auditingResults == ids.size(), "Error while writing auditing");
+        return true;
     }
 
-    public Optional<List<PollParticipant>> removeParticipants(String eventName, List<Integer> ticketIds, long pollId) {
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .map(event -> {
-                var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-                Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
-                var tag = poll.getAllowedTags().get(0);
-                var result = ticketRepository.untagTickets(ticketIds, event.getId(), tag);
-                Validate.isTrue(result == 1, "Error while removing tag");
-                var auditingResults = auditingRepository.registerTicketUntag(ticketIds, List.of(Map.of("tag", tag)));
-                Validate.isTrue(auditingResults == ticketIds.size(), "Error while writing auditing");
-                return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
-            });
+    public List<PollParticipant> removeParticipants(EventAndOrganizationId event, List<Integer> ticketIds, long pollId) {
+        var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
+        Validate.isTrue(CollectionUtils.isNotEmpty(poll.getAllowedTags()));
+        var tag = poll.getAllowedTags().get(0);
+        var result = ticketRepository.untagTickets(ticketIds, event.getId(), tag);
+        Validate.isTrue(result == 1, "Error while removing tag");
+        var auditingResults = auditingRepository.registerTicketUntag(ticketIds, List.of(Map.of("tag", tag)));
+        Validate.isTrue(auditingResults == ticketIds.size(), "Error while writing auditing");
+        return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
     }
 
-    public Optional<PollWithOptions> removeOption(String eventName, Long pollId, Long optionId) {
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .flatMap(event -> {
-                var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-                Validate.isTrue(pollRepository.deleteOption(pollId, optionId) == 1, "Error while deleting option");
-                return getSingleForEvent(poll.getId(), event);
-            });
+    public Optional<PollWithOptions> removeOption(EventAndOrganizationId event, Long pollId, Long optionId) {
+        var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
+        Validate.isTrue(pollRepository.deleteOption(pollId, optionId) == 1, "Error while deleting option");
+        return getSingleForEvent(poll.getId(), event);
     }
 
-    public Optional<List<PollParticipant>> fetchAllowedTickets(String eventName, long pollId) {
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .map(event -> {
-                var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
-                return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
-            });
+    public List<PollParticipant> fetchAllowedTickets(EventAndOrganizationId event, long pollId) {
+        var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
+        return ticketRepository.getTicketsForEventByTags(event.getId(), poll.getAllowedTags());
     }
 
-    public Optional<PollStatistics> getStatisticsFor(String eventName, long pollId) {
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .flatMap(event -> pollRepository.findSingleForEvent(event.getId(), pollId)
-                .map(p -> {
-                    int allowedParticipants;
-                    if(p.getAllowedTags().isEmpty()) {
-                        allowedParticipants = eventRepository.findStatisticsFor(event.getId()).getCheckedInTickets();
-                    } else {
-                        allowedParticipants = ticketRepository.countTicketsMatchingTagsAndStatus(event.getId(), p.getAllowedTags(), List.of(Ticket.TicketStatus.CHECKED_IN.name()));
-                    }
-                    var statistics = pollRepository.getStatisticsFor(p.getId(), event.getId());
-                    return new PollStatistics(statistics.stream().mapToInt(PollOptionStatistics::getVotes).sum(), allowedParticipants, statistics);
-                }));
+    public Optional<PollStatistics> getStatisticsFor(EventAndOrganizationId event, long pollId) {
+        return pollRepository.findSingleForEvent(event.getId(), pollId)
+            .map(p -> {
+                int allowedParticipants;
+                if(p.getAllowedTags().isEmpty()) {
+                    allowedParticipants = eventRepository.findStatisticsFor(event.getId()).getCheckedInTickets();
+                } else {
+                    allowedParticipants = ticketRepository.countTicketsMatchingTagsAndStatus(event.getId(), p.getAllowedTags(), List.of(Ticket.TicketStatus.CHECKED_IN.name()));
+                }
+                var statistics = pollRepository.getStatisticsFor(p.getId(), event.getId());
+                return new PollStatistics(statistics.stream().mapToInt(PollOptionStatistics::getVotes).sum(), allowedParticipants, statistics);
+            });
     }
 
     private void insertOptions(List<PollOptionModification> options, EventAndOrganizationId event, Long pollId) {

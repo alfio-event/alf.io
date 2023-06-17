@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.PollManager;
 import alfio.model.modification.PollModification;
 import alfio.model.poll.Poll;
@@ -29,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,105 +40,129 @@ import java.util.stream.Collectors;
 public class PollAdminApiController {
 
     private final PollManager pollManager;
+    private final AccessService accessService;
 
     @GetMapping
-    ResponseEntity<List<PollModification>> getAllForEvent(@PathVariable("eventName") String eventName) {
+    ResponseEntity<List<PollModification>> getAllForEvent(@PathVariable("eventName") String eventName,
+                                                          Principal principal) {
         if(StringUtils.isEmpty(eventName)) {
             return ResponseEntity.badRequest().build();
         }
+        accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.ok(pollManager.getAllForEvent(eventName).stream().map(PollModification::from).collect(Collectors.toList()));
     }
 
     @GetMapping("/{pollId}")
     ResponseEntity<PollModification> getPollDetail(@PathVariable("eventName") String eventName,
-                                                   @PathVariable("pollId") Long pollId) {
+                                                   @PathVariable("pollId") Long pollId,
+                                                   Principal principal) {
         if(StringUtils.isEmpty(eventName) || pollId == null) {
             return ResponseEntity.badRequest().build();
         }
+        accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.of(pollManager.getSingleForEvent(pollId, eventName).map(PollModification::from));
     }
 
     @PostMapping
     ResponseEntity<Long> createNewPoll(@PathVariable("eventName") String eventName,
-                                       @RequestBody PollModification form) {
-        if(form == null || !form.isValid(false)) {
+                                       @RequestBody PollModification form,
+                                       Principal principal) {
+        if(form == null || !form.isValid()) {
             return ResponseEntity.badRequest().build();
         }
+        accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.of(pollManager.createNewPoll(eventName, form));
     }
 
     @PostMapping("/{pollId}")
     ResponseEntity<PollModification> updatePoll(@PathVariable("eventName") String eventName,
                                                 @PathVariable("pollId") Long pollId,
-                                                @RequestBody PollModification form) {
-        if(form == null || !form.isValid(true) || !pollId.equals(form.getId())) {
+                                                @RequestBody PollModification form,
+                                                Principal principal) {
+        if(form == null || !form.isValid(pollId)) {
             return ResponseEntity.badRequest().build();
         }
+        accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.of(pollManager.updatePoll(eventName, form).map(PollModification::from));
     }
 
     @DeleteMapping("/{pollId}")
     ResponseEntity<Boolean> deletePoll(@PathVariable("eventName") String eventName,
-                                       @PathVariable("pollId") Long pollId) {
-        return ResponseEntity.of(pollManager.deletePoll(eventName, pollId));
+                                       @PathVariable("pollId") Long pollId,
+                                       Principal principal) {
+        var eventAndOrganizationId = accessService.checkEventOwnership(principal, eventName);
+        return ResponseEntity.ok(pollManager.deletePoll(eventAndOrganizationId, pollId));
     }
 
     @DeleteMapping("/{pollId}/option/{optionId}")
     ResponseEntity<PollModification> removeOption(@PathVariable("eventName") String eventName,
                                                  @PathVariable("pollId") Long pollId,
-                                                 @PathVariable("optionId") Long optionId) {
-        return ResponseEntity.of(pollManager.removeOption(eventName, pollId, optionId).map(PollModification::from));
+                                                 @PathVariable("optionId") Long optionId,
+                                                 Principal principal) {
+        var event = accessService.checkEventOwnership(principal, eventName);
+        return ResponseEntity.of(pollManager.removeOption(event, pollId, optionId).map(PollModification::from));
     }
 
     @PutMapping("/{pollId}")
     ResponseEntity<PollModification> updateStatus(@PathVariable("eventName") String eventName,
                                                   @PathVariable("pollId") Long pollId,
-                                                  @RequestBody UpdatePollStatusForm form) {
+                                                  @RequestBody UpdatePollStatusForm form,
+                                                  Principal principal) {
         if(form.status == Poll.PollStatus.DRAFT) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.of(pollManager.updateStatus(pollId, eventName, form.status).map(PollModification::from));
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
+        return ResponseEntity.of(pollManager.updateStatus(pollId, eventAndOrgId, form.status).map(PollModification::from));
     }
 
     @GetMapping("/{pollId}/filter-tickets")
     ResponseEntity<List<PollParticipant>> findAdditionalAttendees(@PathVariable("eventName") String eventName,
                                                                   @PathVariable("pollId") Long pollId,
-                                                                  @RequestParam("filter") String filter) {
+                                                                  @RequestParam("filter") String filter,
+                                                                  Principal principal) {
         if(StringUtils.isBlank(filter)) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.of(pollManager.searchTicketsToAllow(eventName, pollId, filter));
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
+        return ResponseEntity.of(pollManager.searchTicketsToAllow(eventAndOrgId, pollId, filter));
     }
 
     @PostMapping("/{pollId}/allow")
     ResponseEntity<Boolean> allowAttendees(@PathVariable("eventName") String eventName,
-                                                         @PathVariable("pollId") Long pollId,
-                                                         @RequestBody UpdateParticipantsForm form) {
+                                           @PathVariable("pollId") Long pollId,
+                                           @RequestBody UpdateParticipantsForm form,
+                                           Principal principal) {
 
         if(CollectionUtils.isEmpty(form.ticketIds)) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.of(pollManager.allowTicketsToVote(eventName, form.ticketIds, pollId));
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
+        return ResponseEntity.ok(pollManager.allowTicketsToVote(eventAndOrgId, form.ticketIds, pollId));
     }
 
     @GetMapping("/{pollId}/allowed")
     ResponseEntity<List<PollParticipant>> getAllowedAttendees(@PathVariable("eventName") String eventName,
-                                                              @PathVariable("pollId") Long pollId) {
-
-        return ResponseEntity.of(pollManager.fetchAllowedTickets(eventName, pollId));
+                                                              @PathVariable("pollId") Long pollId,
+                                                              Principal principal) {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
+        return ResponseEntity.ok(pollManager.fetchAllowedTickets(eventAndOrgId, pollId));
     }
 
     @DeleteMapping("/{pollId}/allowed")
     ResponseEntity<List<PollParticipant>> forbidAttendees(@PathVariable("eventName") String eventName,
                                                           @PathVariable("pollId") Long pollId,
-                                                          @RequestBody UpdateParticipantsForm form) {
-        return ResponseEntity.of(pollManager.removeParticipants(eventName, form.ticketIds, pollId));
+                                                          @RequestBody UpdateParticipantsForm form,
+                                                          Principal principal) {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
+        return ResponseEntity.ok(pollManager.removeParticipants(eventAndOrgId, form.ticketIds, pollId));
     }
 
     @GetMapping("/{pollId}/stats")
     ResponseEntity<PollStatistics> getStatisticsForEvent(@PathVariable("eventName") String eventName,
-                                                               @PathVariable("pollId") Long pollId) {
-        return ResponseEntity.of(pollManager.getStatisticsFor(eventName, pollId));
+                                                         @PathVariable("pollId") Long pollId,
+                                                         Principal principal) {
+        var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
+        return ResponseEntity.of(pollManager.getStatisticsFor(eventAndOrgId, pollId));
     }
 
     static class UpdatePollStatusForm {
