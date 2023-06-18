@@ -22,6 +22,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationPathLevel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.HttpStatus;
@@ -58,7 +59,7 @@ public class ConfigurationApiV1Controller {
         var configurationKeys = configurationKeyValues.keySet().stream()
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
-        var validationErrorOptional = validateInput(organizationId, principal, configurationKeyValues, configurationKeys);
+        var validationErrorOptional = validateInput(organizationId, ConfigurationPathLevel.ORGANIZATION, principal, configurationKeyValues, configurationKeys);
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
         }
@@ -82,7 +83,7 @@ public class ConfigurationApiV1Controller {
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
 
-        var validationErrorOptional = validateInput(organizationId, principal, configurationKeyValues, configurationKeys);
+        var validationErrorOptional = validateInput(organizationId, ConfigurationPathLevel.EVENT, principal, configurationKeyValues, configurationKeys);
 
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
@@ -129,6 +130,7 @@ public class ConfigurationApiV1Controller {
     }
 
     private Optional<ResponseEntity<String>> validateInput(int organizationId,
+                                                           ConfigurationPathLevel configurationPathLevel,
                                                            Principal principal,
                                                            Map<String, String> configurationKeyValues,
                                                            Set<ConfigurationKeys> configurationKeys) {
@@ -142,6 +144,10 @@ public class ConfigurationApiV1Controller {
 
         if (configurationKeys.contains(ConfigurationKeys.NOT_RECOGNIZED)) {
             return Optional.of(ResponseEntity.badRequest().body("Request contains unrecognized keys"));
+        }
+
+        if (configurationKeys.stream().anyMatch(c -> c.isInternal() || !c.supports(configurationPathLevel))) {
+            return Optional.of(ResponseEntity.badRequest().body("Request contains internal settings"));
         }
 
         return Optional.empty();
