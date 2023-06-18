@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationPathLevel;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.HttpStatus;
@@ -55,7 +56,7 @@ public class ConfigurationApiV1Controller {
         var configurationKeys = configurationKeyValues.keySet().stream()
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
-        var validationErrorOptional = validateInput(configurationKeyValues, configurationKeys);
+        var validationErrorOptional = validateInput(ConfigurationPathLevel.ORGANIZATION, configurationKeyValues, configurationKeys);
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
         }
@@ -80,7 +81,7 @@ public class ConfigurationApiV1Controller {
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
 
-        var validationErrorOptional = validateInput(configurationKeyValues, configurationKeys);
+        var validationErrorOptional = validateInput(ConfigurationPathLevel.EVENT, configurationKeyValues, configurationKeys);
 
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
@@ -121,7 +122,8 @@ public class ConfigurationApiV1Controller {
         }
     }
 
-    private Optional<ResponseEntity<String>> validateInput(Map<String, String> configurationKeyValues,
+    private Optional<ResponseEntity<String>> validateInput(ConfigurationPathLevel configurationPathLevel,
+                                                           Map<String, String> configurationKeyValues,
                                                            Set<ConfigurationKeys> configurationKeys) {
         if (configurationKeys.size() != configurationKeyValues.size()) {
             return Optional.of(ResponseEntity.badRequest().body("Request contains duplicate keys"));
@@ -129,6 +131,10 @@ public class ConfigurationApiV1Controller {
 
         if (configurationKeys.contains(ConfigurationKeys.NOT_RECOGNIZED)) {
             return Optional.of(ResponseEntity.badRequest().body("Request contains unrecognized keys"));
+        }
+
+        if (configurationKeys.stream().anyMatch(c -> c.isInternal() || !c.supports(configurationPathLevel))) {
+            return Optional.of(ResponseEntity.badRequest().body("Request contains internal settings"));
         }
 
         return Optional.empty();
