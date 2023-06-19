@@ -287,14 +287,14 @@
               class="col-sm-3"
               translate="admin.event-dashboard.tickets-price"
             ></dt>
-            <dd
-              class="col-sm-9"
-              translate="admin.event-dashboard.free-of-charge"
-            >
-              <span *ngIf="eventOrganizationInfo.event.freeOfCharge"></span>
+            <dd class="col-sm-9">
+              <span
+                *ngIf="eventOrganizationInfo.event.freeOfCharge"
+                translate="admin.event-dashboard.free-of-charge"
+              ></span>
               <span *ngIf="!eventOrganizationInfo.event.freeOfCharge">{{
                 eventOrganizationInfo.event.regularPrice
-                  | currency : eventOrganizationInfo.event.currency || ""
+                  | currency : eventOrganizationInfo.event.currency
               }}</span>
             </dd>
             <dt
@@ -385,7 +385,6 @@
       type="button"
       class="btn btn-success d-flex align-items-center"
       [routerLink]="[]"
-      translate="admin.common.add-new"
     >
       <svg-icon key="add" class="d-flex align-items-center"></svg-icon>
       <span translate="admin.common.add-new"></span>
