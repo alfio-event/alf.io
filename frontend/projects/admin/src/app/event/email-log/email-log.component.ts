@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { MailService } from 'projects/admin/src/event/mail.service';
-import { Observable, map, mergeMap, of, switchMap } from 'rxjs';
+import { Observable, map, mergeMap, of } from 'rxjs';
 import { EventService } from '../../shared/event.service';
 import { Mail, MailInfo } from '../../model/mail';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-email-log',
@@ -16,7 +17,8 @@ export class EmailLogComponent implements OnInit {
   constructor(
     private readonly mailService: MailService,
     private readonly route: ActivatedRoute,
-    private readonly eventService: EventService
+    private readonly eventService: EventService,
+    private readonly translateService: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -31,5 +33,9 @@ export class EmailLogComponent implements OnInit {
       ),
       mergeMap((event) => this.mailService.getMailInfo(event.shortName, 0, ''))
     );
+  }
+
+  get dateTimeFormat(): string {
+    return this.translateService.instant('admin.common.date-time');
   }
 }

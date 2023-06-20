@@ -34,7 +34,7 @@
       <tbody>
         <tr *ngFor="let mailDetail of mail.left">
           <th scope="row">{{ mailDetail.recipient }}</th>
-          <td>{{ mailDetail.subject }}</td>
+          <td class="text-overflow">{{ mailDetail.subject }}</td>
           <td>
             <a routerLink="./email-detail">{{ mailDetail.message }}</a>
           </td>
@@ -42,8 +42,8 @@
           <td class="text-overflow">
             {{ mailDetail.checksum }}
           </td>
-          <td>{{ mailDetail.requestTimestamp | date }}</td>
-          <td>{{ mailDetail.sentTimestamp | date }}</td>
+          <td>{{ mailDetail.requestTimestamp | date : dateTimeFormat }}</td>
+          <td>{{ mailDetail.sentTimestamp | date : dateTimeFormat }}</td>
         </tr>
       </tbody>
     </table>
