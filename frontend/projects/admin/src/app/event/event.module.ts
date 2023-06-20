@@ -22,6 +22,7 @@ import { ShowSelectedCategoriesPipe } from './show-selected-categories.pipe';
 import { UiCategoryBuilderPipe } from './ui-category-builder.pipe';
 import { FormsModule } from '@angular/forms';
 import { TicketCategoryDetailComponent } from './ticket-category-detail/ticket-category-detail.component';
+import { MailService } from '../../event/mail.service';
 
 @NgModule({
   declarations: [
@@ -52,6 +53,7 @@ import { TicketCategoryDetailComponent } from './ticket-category-detail/ticket-c
   providers: [
     OrganizationService,
     EventService,
+    MailService,
     provideSvgIconsConfig(ICON_CONFIG),
   ],
 })
