@@ -166,7 +166,7 @@ public class AccessService {
             .allMatch(authority -> authority.getAuthority().equals("ROLE_" + SYSTEM_API_CLIENT));
     }
 
-    private boolean isAdmin(Principal user) {
+    public boolean isAdmin(Principal user) {
         return checkRole(user, Collections.singleton(Role.ADMIN));
     }
 
@@ -204,12 +204,28 @@ public class AccessService {
     }
 
     public void checkPurchaseContextOwnership(Principal principal,
-                                                         PurchaseContext.PurchaseContextType purchaseContextType,
-                                                         String publicIdentifier) {
+                                              PurchaseContext.PurchaseContextType purchaseContextType,
+                                              String publicIdentifier) {
         if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
             checkEventOwnership(principal, publicIdentifier);
         } else {
             checkSubscriptionDescriptorOwnership(principal, publicIdentifier);
+        }
+    }
+
+    public void checkPurchaseContextOwnership(Principal principal,
+                                              int organizationId,
+                                              Integer eventId,
+                                              UUID subscriptionDescriptorId) {
+        if (eventId != null) {
+            checkEventOwnership(principal, eventId, organizationId);
+        } else {
+            checkOrganizationOwnership(principal, organizationId);
+            int subscriptionOrg = subscriptionRepository.findOrganizationIdForDescriptor(subscriptionDescriptorId)
+                .orElseThrow(AccessDeniedException::new);
+            if (subscriptionOrg != organizationId) {
+                throw new AccessDeniedException();
+            }
         }
     }
 

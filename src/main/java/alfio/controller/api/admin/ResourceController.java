@@ -17,12 +17,8 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.support.TemplateProcessor;
-import alfio.manager.ExtensionManager;
-import alfio.manager.FileUploadManager;
-import alfio.manager.SubscriptionManager;
-import alfio.manager.UploadedResourceManager;
+import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.subscription.SubscriptionDescriptor;
@@ -69,7 +65,6 @@ public class ResourceController {
 
     private static final String TIMEZONE = "Europe/Zurich";
     private final UploadedResourceManager uploadedResourceManager;
-    private final UserManager userManager;
     private final EventRepository eventRepository;
     private final MessageSourceManager messageSourceManager;
     private final TemplateManager templateManager;
@@ -78,6 +73,7 @@ public class ResourceController {
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
     private final SubscriptionManager subscriptionManager;
+    private final AccessService accessService;
 
 
     @ExceptionHandler(Exception.class)
@@ -122,7 +118,7 @@ public class ResourceController {
 
         if (organizationId != null) {
             PurchaseContext purchaseContext = getPurchaseContext(organizationId, eventId, subscriptionDescriptorId, principal, name);
-
+            accessService.checkPurchaseContextOwnership(principal, organizationId, eventId, subscriptionDescriptorId);
             Organization organization = organizationRepository.getById(organizationId);
             Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(purchaseContext, fileUploadManager);
             Map<String, Object> model = name.prepareSampleModel(organization, purchaseContext, image);
@@ -362,14 +358,14 @@ public class ResourceController {
     //------------------
 
     private void checkAccess(Principal principal) {
-        Validate.isTrue(userManager.isAdmin(userManager.findUserByUsername(principal.getName())));
+        Validate.isTrue(accessService.isAdmin(principal));
     }
 
     private void checkAccess(int organizationId, Principal principal) {
-        Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), organizationId));
+        accessService.checkOrganizationOwnership(principal, organizationId);
     }
 
     private void checkAccess(int organizationId, int eventId, Principal principal) {
-        Validate.isTrue(eventRepository.findEventAndOrganizationIdById(eventId).getOrganizationId() == organizationId && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), organizationId));
+        accessService.checkEventOwnership(principal, eventId, organizationId);
     }
 }
