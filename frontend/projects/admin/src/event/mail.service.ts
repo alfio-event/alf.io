@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { MailInfo } from '../app/model/mail';
+import { Mail } from '../app/model/mail';
 import { Observable } from 'rxjs';
 import { HttpParams } from '@angular/common/http';
 
@@ -10,20 +10,18 @@ import { HttpParams } from '@angular/common/http';
 export class MailService {
   constructor(private httpClient: HttpClient) {}
 
-  getMails(
+  getMailInfo(
     eventShortName: string,
     page: number,
     search: string
-  ): Observable<any> {
+  ): Observable<Mail> {
     const params = {
       params: new HttpParams().set('page', page).set('search', search),
     };
 
-    return this.httpClient.get<any>(
+    return this.httpClient.get<Mail>(
       `admin/api/event/${eventShortName}/email/`,
       params
     );
   }
 }
-
-// http://localhost:8080/admin/api/event/lacasadepapel/email/?page=0&search=
