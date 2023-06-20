@@ -33,7 +33,6 @@ import alfio.util.TemplateResource;
 import com.samskivert.mustache.MustacheException;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.Validate;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -358,7 +357,7 @@ public class ResourceController {
     //------------------
 
     private void checkAccess(Principal principal) {
-        Validate.isTrue(accessService.isAdmin(principal));
+        accessService.checkIsAdmin(principal);
     }
 
     private void checkAccess(int organizationId, Principal principal) {

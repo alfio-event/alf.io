@@ -160,13 +160,19 @@ public class AccessService {
         return eventAndOrganizationId;
     }
 
+    public void checkIsAdmin(Principal principal) {
+        if (!isAdmin(principal)) {
+            throw new AccessDeniedException();
+        }
+    }
+
     private static boolean isSystemApiUser(Principal principal) {
         return principal instanceof APITokenAuthentication
             && ((APITokenAuthentication)principal).getAuthorities().stream()
             .allMatch(authority -> authority.getAuthority().equals("ROLE_" + SYSTEM_API_CLIENT));
     }
 
-    public boolean isAdmin(Principal user) {
+    private boolean isAdmin(Principal user) {
         return checkRole(user, Collections.singleton(Role.ADMIN));
     }
 
