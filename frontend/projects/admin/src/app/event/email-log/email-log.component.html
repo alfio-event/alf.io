@@ -7,15 +7,15 @@
   </div>
 
   <div class="input-group">
-    <div class="input-group-text" id="btnGroupAddon">
+    <div class="input-group-text">
       <svg-icon key="search"></svg-icon>
     </div>
     <input
       type="text"
       class="form-control"
       placeholder="Filter table"
-      aria-label="Input group example"
-      aria-describedby="btnGroupAddon"
+      aria-label="Filter table"
+      aria-describedby="Filter table"
     />
   </div>
   <div class="my-4">
@@ -35,9 +35,13 @@
         <tr *ngFor="let mailDetail of mail.left">
           <th scope="row">{{ mailDetail.recipient }}</th>
           <td>{{ mailDetail.subject }}</td>
-          <td>{{ mailDetail.message }}</td>
+          <td>
+            <a routerLink="./email-detail">{{ mailDetail.message }}</a>
+          </td>
           <td>{{ mailDetail.status }}</td>
-          <td>{{ mailDetail.checksum }}</td>
+          <td class="text-overflow">
+            {{ mailDetail.checksum }}
+          </td>
           <td>{{ mailDetail.requestTimestamp | date }}</td>
           <td>{{ mailDetail.sentTimestamp | date }}</td>
         </tr>

@@ -23,6 +23,7 @@ import { UiCategoryBuilderPipe } from './ui-category-builder.pipe';
 import { FormsModule } from '@angular/forms';
 import { TicketCategoryDetailComponent } from './ticket-category-detail/ticket-category-detail.component';
 import { MailService } from '../../event/mail.service';
+import { EmailDetailComponent } from './email-detail/email-detail.component';
 
 @NgModule({
   declarations: [
@@ -33,6 +34,7 @@ import { MailService } from '../../event/mail.service';
     ShowSelectedCategoriesPipe,
     UiCategoryBuilderPipe,
     TicketCategoryDetailComponent,
+    EmailDetailComponent,
   ],
   imports: [
     TranslateModule.forChild(),
@@ -48,6 +50,7 @@ import { MailService } from '../../event/mail.service';
     RouterModule.forChild([
       { path: '', component: EventDashboardComponent },
       { path: 'email-log', component: EmailLogComponent },
+      { path: 'email-log/email-detail', component: EmailDetailComponent },
     ]),
   ],
   providers: [
