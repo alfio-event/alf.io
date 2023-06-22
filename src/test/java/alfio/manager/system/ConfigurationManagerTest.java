@@ -16,7 +16,6 @@
  */
 package alfio.manager.system;
 
-import alfio.model.PurchaseContext;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import org.junit.jupiter.api.Assertions;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationPathLevel.*;
-import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 
@@ -46,7 +44,7 @@ public class ConfigurationManagerTest {
         Assertions.assertNotNull(intersection);
         List<Configuration> values = intersection.values().stream().flatMap(List::stream).collect(Collectors.toList());
         Assertions.assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
-        Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.VAT_NR && v.getConfigurationPathLevel() == ORGANIZATION));
+        Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.ENABLE_REVERSE_CHARGE_ONLINE && v.getConfigurationPathLevel() == ORGANIZATION));
     }
 
 }
