@@ -1,5 +1,32 @@
 <div class="container my-3">
   <h1>Message detail</h1>
   <hr />
-  <pre>{{ mail$ | async | json }}</pre>
+  <div *ngIf="mail$ | async as mail">
+    <dl data-ng-if="mail">
+      <dt>Recipient</dt>
+      <dd>{{ mail.recipient }}</dd>
+      <dt>Subject</dt>
+      <dd>{{ mail.subject }}</dd>
+      <dt>Message</dt>
+      <dd>
+        <pre class="white">{{ mail.message }}</pre>
+      </dd>
+      <dt>Status</dt>
+      <dd>{{ mail.status }}</dd>
+      <dt>Checksum</dt>
+      <dd class="hidden-sm hidden-xs">{{ mail.checksum }}</dd>
+      <dd class="visible-sm visible-xs">
+        {{ mail.checksum | slice : 0 : 35 }}
+      </dd>
+      <dt>Requested</dt>
+      <dd>{{ mail.requestTimestamp }}</dd>
+      <dt>Sent</dt>
+      <dd>{{ mail.sentTimestamp }}</dd>
+    </dl>
+    <div class="text-center">
+      <a class="btn btn-outline-primary" href="#" [routerLink]="['../']"
+        >back to list</a
+      >
+    </div>
+  </div>
 </div>
