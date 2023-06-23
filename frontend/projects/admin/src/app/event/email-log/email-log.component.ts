@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { MailService } from 'projects/admin/src/event/mail.service';
-import { Observable, map, mergeMap, of } from 'rxjs';
+import { Observable, map, mergeMap, of, retry, tap } from 'rxjs';
 import { EventService } from '../../shared/event.service';
-import { Mail, MailInfo } from '../../model/mail';
+import { Mail } from '../../model/mail';
 import { TranslateService } from '@ngx-translate/core';
 
 @Component({
@@ -26,7 +26,10 @@ export class EmailLogComponent implements OnInit {
   }
 
   loadMails() {
-    this.mail$ = this.route.paramMap.pipe(
+    if (!this.route.parent) {
+      return;
+    }
+    this.mail$ = this.route.parent.paramMap.pipe(
       map((pm) => pm.get('eventId')),
       mergeMap((eventId) =>
         eventId != null ? this.eventService.getEvent(eventId) : of()

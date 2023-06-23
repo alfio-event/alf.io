@@ -24,6 +24,7 @@ import { FormsModule } from '@angular/forms';
 import { TicketCategoryDetailComponent } from './ticket-category-detail/ticket-category-detail.component';
 import { MailService } from '../../event/mail.service';
 import { EmailDetailComponent } from './email-detail/email-detail.component';
+import { EventDetailComponent } from './event-detail/event-detail.component';
 
 @NgModule({
   declarations: [
@@ -35,6 +36,7 @@ import { EmailDetailComponent } from './email-detail/email-detail.component';
     UiCategoryBuilderPipe,
     TicketCategoryDetailComponent,
     EmailDetailComponent,
+    EventDetailComponent,
   ],
   imports: [
     TranslateModule.forChild(),
@@ -48,9 +50,14 @@ import { EmailDetailComponent } from './email-detail/email-detail.component';
     NgbDropdownModule,
 
     RouterModule.forChild([
-      { path: '', component: EventDashboardComponent },
-      { path: 'email-log', component: EmailLogComponent },
-      { path: 'email-log/email-detail', component: EmailDetailComponent },
+      {
+        path: '',
+        component: EventDashboardComponent,
+        children: [
+          { path: '', component: EventDetailComponent },
+          { path: 'email-log', component: EmailLogComponent },
+        ],
+      },
     ]),
   ],
   providers: [

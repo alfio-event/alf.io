@@ -79,7 +79,7 @@
       <li>
         <ul class="list-unstyled">
           <li>
-            <a class="text-decoration-none" href=""
+            <a class="text-decoration-none" [routerLink]="['./']"
               ><svg-icon key="arrow-back"></svg-icon>
               <span translate="admin.event.menu.back-to-event-detail"></span
             ></a>
@@ -111,7 +111,7 @@
             ></a>
           </li>
           <li>
-            <a class="text-decoration-none" routerLink="./email-log"
+            <a class="text-decoration-none" [routerLink]="['./', 'email-log']"
               ><svg-icon key="email-sent"></svg-icon>
               <span translate="admin.event.menu.email-log"></span
             ></a>
