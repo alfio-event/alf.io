@@ -51,6 +51,7 @@ public class Audit {
         REVERT_CHECK_IN,
         BADGE_SCAN,
         UPDATE_TICKET,
+        TICKET_HOLDER_CHANGED,
         TAG_TICKET,
         UNTAG_TICKET,
         UPDATE_TICKET_CATEGORY,

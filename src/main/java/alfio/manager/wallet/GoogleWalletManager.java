@@ -242,7 +242,7 @@ public class GoogleWalletManager {
             event.getShortName().replaceAll("[^\\w.-]", "_"),
             // if the attendee gives their ticket to somebody else, the new ticket holder must be able to add their ticket to the wallet
             // therefore we add count(audit(UPDATE_TICKET)) as suffix for the ticket UUID
-            ticket.getUuid()+ "_" + auditingRepository.countAuditsOfTypeForTicket(ticket.getTicketsReservationId(), ticket.getId(), Audit.EventType.UPDATE_TICKET));
+            ticket.getUuid()+ "_" + auditingRepository.countAuditsOfTypeForTicket(ticket.getTicketsReservationId(), ticket.getId(), Audit.EventType.TICKET_HOLDER_CHANGED));
     }
 
     private String formatEventTicketClassId(Event event, String issuerId, TicketCategory category, String host) {
