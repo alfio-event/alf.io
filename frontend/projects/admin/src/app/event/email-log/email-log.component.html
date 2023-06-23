@@ -1,4 +1,4 @@
-<div class="container" *ngIf="mail$ | async as mail">
+<div class="container" *ngIf="mailLog$ | async as mailLog">
   <h1 class="my-3" translate="admin.event.mail-log.title"></h1>
   <p translate="admin.event.mail-log.legend"></p>
   <hr />
@@ -33,18 +33,18 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let mailDetail of mail.left">
-          <th scope="row">{{ mailDetail.recipient }}</th>
-          <td class="text-overflow">{{ mailDetail.subject }}</td>
+        <tr *ngFor="let mail of mailLog.left">
+          <th scope="row">{{ mail.recipient }}</th>
+          <td class="text-overflow">{{ mail.subject }}</td>
           <td>
-            <a routerLink="./email-detail">{{ mailDetail.message }}</a>
+            <a [routerLink]="['./', mail.id]">{{ mail.message }}</a>
           </td>
-          <td>{{ mailDetail.status }}</td>
+          <td>{{ mail.status }}</td>
           <td class="text-overflow">
-            {{ mailDetail.checksum }}
+            {{ mail.checksum }}
           </td>
-          <td>{{ mailDetail.requestTimestamp | date : dateTimeFormat }}</td>
-          <td>{{ mailDetail.sentTimestamp | date : dateTimeFormat }}</td>
+          <td>{{ mail.requestTimestamp | date : dateTimeFormat }}</td>
+          <td>{{ mail.sentTimestamp | date : dateTimeFormat }}</td>
         </tr>
       </tbody>
     </table>

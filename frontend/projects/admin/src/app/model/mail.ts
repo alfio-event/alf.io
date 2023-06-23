@@ -1,9 +1,9 @@
-export interface Mail {
-  left: MailInfo[];
+export interface MailLog {
+  left: Mail[];
   right: number;
 }
 
-export interface MailInfo {
+export interface Mail {
   message: string;
   id: number;
   subscriptionDescriptorId: number;

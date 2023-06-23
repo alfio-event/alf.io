@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { MailService } from 'projects/admin/src/event/mail.service';
 import { Observable, map, mergeMap, of, retry, tap } from 'rxjs';
 import { EventService } from '../../shared/event.service';
-import { Mail } from '../../model/mail';
+import { MailLog } from '../../model/mail';
 import { TranslateService } from '@ngx-translate/core';
 
 @Component({
@@ -12,7 +12,7 @@ import { TranslateService } from '@ngx-translate/core';
   styleUrls: ['./email-log.component.scss'],
 })
 export class EmailLogComponent implements OnInit {
-  public mail$: Observable<Mail> = of();
+  public mailLog$: Observable<MailLog> = of();
 
   constructor(
     private readonly mailService: MailService,
@@ -29,12 +29,12 @@ export class EmailLogComponent implements OnInit {
     if (!this.route.parent) {
       return;
     }
-    this.mail$ = this.route.parent.paramMap.pipe(
+    this.mailLog$ = this.route.parent.paramMap.pipe(
       map((pm) => pm.get('eventId')),
       mergeMap((eventId) =>
         eventId != null ? this.eventService.getEvent(eventId) : of()
       ),
-      mergeMap((event) => this.mailService.getMailInfo(event.shortName, 0, ''))
+      mergeMap((event) => this.mailService.getAllMails(event.shortName, 0, ''))
     );
   }
 
