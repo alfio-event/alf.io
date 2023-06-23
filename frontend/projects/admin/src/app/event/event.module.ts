@@ -56,6 +56,7 @@ import { EventDetailComponent } from './event-detail/event-detail.component';
         children: [
           { path: '', component: EventDetailComponent },
           { path: 'email-log', component: EmailLogComponent },
+          { path: 'email-log/:emailId', component: EmailDetailComponent },
         ],
       },
     ]),

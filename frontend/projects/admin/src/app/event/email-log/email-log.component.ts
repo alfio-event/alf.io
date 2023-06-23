@@ -26,10 +26,7 @@ export class EmailLogComponent implements OnInit {
   }
 
   loadMails() {
-    if (!this.route.parent) {
-      return;
-    }
-    this.mailLog$ = this.route.parent.paramMap.pipe(
+    this.mailLog$ = this.route.paramMap.pipe(
       map((pm) => pm.get('eventId')),
       mergeMap((eventId) =>
         eventId != null ? this.eventService.getEvent(eventId) : of()

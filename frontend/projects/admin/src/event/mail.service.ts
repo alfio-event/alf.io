@@ -25,7 +25,7 @@ export class MailService {
     );
   }
 
-  getMail(eventShortName: string, emailId: number): Observable<Mail> {
+  getMail(eventShortName: string, emailId: string): Observable<Mail> {
     return this.httpClient.get<Mail>(
       `admin/api/event/${eventShortName}/email/${emailId}`
     );
