@@ -33,7 +33,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let mail of mailLog.left">
+        <tr
+          *ngFor="
+            let mail of mailLog.left
+              | slice : (page - 1) * pageSize : page * pageSize
+          "
+        >
           <th scope="row">{{ mail.recipient }}</th>
           <td class="text-overflow">{{ mail.subject }}</td>
           <td>
@@ -48,5 +53,10 @@
         </tr>
       </tbody>
     </table>
+    <ngb-pagination
+      [(page)]="page"
+      [pageSize]="pageSize"
+      [collectionSize]="mailLog.left.length"
+    ></ngb-pagination>
   </div>
 </div>

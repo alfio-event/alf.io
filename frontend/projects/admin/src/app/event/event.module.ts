@@ -5,6 +5,7 @@ import {
   NgbCarouselModule,
   NgbDropdownModule,
   NgbNavModule,
+  NgbPaginationModule,
   NgbTypeaheadModule,
 } from '@ng-bootstrap/ng-bootstrap';
 import { provideSvgIconsConfig, SvgIconComponent } from '@ngneat/svg-icon';
@@ -48,6 +49,7 @@ import { EventDetailComponent } from './event-detail/event-detail.component';
     NgbNavModule,
     FormsModule,
     NgbDropdownModule,
+    NgbPaginationModule,
 
     RouterModule.forChild([
       {

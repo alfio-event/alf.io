@@ -13,6 +13,8 @@ import { TranslateService } from '@ngx-translate/core';
 })
 export class EmailLogComponent implements OnInit {
   public mailLog$: Observable<MailLog> = of();
+  public page: number = 1;
+  public pageSize: number = 10;
 
   constructor(
     private readonly mailService: MailService,
