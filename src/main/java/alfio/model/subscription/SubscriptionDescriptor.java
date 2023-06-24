@@ -28,9 +28,7 @@ import alfio.util.ClockProvider;
 import alfio.util.LocaleUtil;
 import alfio.util.MustacheCustomTag;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -173,7 +171,7 @@ public class SubscriptionDescriptor implements PurchaseContext {
     @JsonIgnore
     @Override
     public ConfigurationLevel getConfigurationLevel() {
-        return ConfigurationLevel.organization(organizationId);
+        return ConfigurationLevel.subscriptionDescriptor(this);
     }
 
     @Override

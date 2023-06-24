@@ -23,9 +23,7 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
-import alfio.model.PurchaseContext;
 import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.modification.DateTimeModification;
@@ -46,12 +44,9 @@ import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -62,8 +57,6 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 
 @AlfioIntegrationTest
@@ -364,10 +357,10 @@ class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
         res = configurationManager.getFor(Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION), ConfigurationLevel.event(event));
 
-        assertEquals(ConfigurationPathLevel.EVENT, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getConfigurationPathLevelOrDefault(null));
+        assertEquals(ConfigurationPathLevel.PURCHASE_CONTEXT, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getConfigurationPathLevelOrDefault(null));
         assertEquals(20, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(Integer.MIN_VALUE));
-        assertEquals(ConfigurationPathLevel.EVENT, res.get(ENABLE_WAITING_QUEUE).getConfigurationPathLevelOrDefault(null));
-        assertEquals(ConfigurationPathLevel.EVENT, res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getConfigurationPathLevelOrDefault(null));
+        assertEquals(ConfigurationPathLevel.PURCHASE_CONTEXT, res.get(ENABLE_WAITING_QUEUE).getConfigurationPathLevelOrDefault(null));
+        assertEquals(ConfigurationPathLevel.PURCHASE_CONTEXT, res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).getConfigurationPathLevelOrDefault(null));
     }
 
     @Test

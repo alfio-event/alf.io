@@ -21,16 +21,12 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import ch.digitalfondue.npjt.QueryType;
 import lombok.Getter;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @QueryRepository
@@ -40,7 +36,9 @@ public interface ConfigurationRepository {
 
     String SELECT_FROM_SYSTEM = "SELECT id, c_key, c_value, 'SYSTEM' as configuration_path_level FROM configuration ";
     String SELECT_FROM_ORGANIZATION = "SELECT id, c_key, c_value, 'ORGANIZATION' as configuration_path_level FROM configuration_organization where organization_id_fk = :organizationId ";
-    String SELECT_FROM_EVENT = "SELECT id, c_key, c_value, 'EVENT' as configuration_path_level FROM configuration_event where organization_id_fk = :organizationId and event_id_fk = :eventId ";
+    String SELECT_FROM_PURCHASE_CONTEXT = "SELECT id, c_key, c_value, 'PURCHASE_CONTEXT' as configuration_path_level FROM configuration_purchase_context where organization_id_fk = :organizationId ";
+    String SELECT_FROM_EVENT = SELECT_FROM_PURCHASE_CONTEXT + " and event_id_fk = :eventId ";
+    String SELECT_FROM_SUBSCRIPTION_DESCRIPTOR = SELECT_FROM_PURCHASE_CONTEXT + " and subscription_descriptor_id_fk = :subscriptionDescriptorId ";
     String SELECT_FROM_TICKET_CATEGORY = "SELECT id, c_key, c_value, 'TICKET_CATEGORY' as configuration_path_level FROM configuration_ticket_category where organization_id_fk = :organizationId and event_id_fk = :eventId and ticket_category_id_fk = :ticketCategoryId";
 
     @Query(SELECT_FROM_SYSTEM)
@@ -51,6 +49,9 @@ public interface ConfigurationRepository {
 
     @Query(SELECT_FROM_EVENT)
     List<Configuration> findEventConfiguration(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId);
+
+    @Query(SELECT_FROM_SUBSCRIPTION_DESCRIPTOR)
+    List<Configuration> findSubscriptionDescriptorConfiguration(@Bind("organizationId") int organizationId, @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId);
 
     @Query(SELECT_FROM_TICKET_CATEGORY)
     List<Configuration> findCategoryConfiguration(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("ticketCategoryId") int categoryId);
@@ -63,8 +64,8 @@ public interface ConfigurationRepository {
                                         @Bind("flagName") String flagName,
                                         @Bind("flagValue") String flagValue);
 
-    @Query("insert into configuration_event (c_key, c_value, description, event_id_fk, organization_id_fk)" +
-        " select c_key, c_value, description, :targetEventId, :targetOrgId from configuration_event where event_id_fk = :srcEventId and organization_id_fk = :srcOrgId")
+    @Query("insert into configuration_purchase_context (c_key, c_value, description, event_id_fk, organization_id_fk)" +
+        " select c_key, c_value, description, :targetEventId, :targetOrgId from configuration_purchase_context where event_id_fk = :srcEventId and organization_id_fk = :srcOrgId")
     int copyEventConfiguration(@Bind("targetEventId") int targetEventId,
                                @Bind("targetOrgId") int targetOrgId,
                                @Bind("srcEventId") int srcEventId,
@@ -97,6 +98,7 @@ public interface ConfigurationRepository {
     String SYSTEM_FIND_BY_KEY = SELECT_FROM_SYSTEM + " where c_key = :key";
     String ORGANIZATION_FIND_BY_KEY = SELECT_FROM_ORGANIZATION + " and c_key = :key ";
     String EVENT_FIND_BY_KEY = SELECT_FROM_EVENT + " and c_key = :key ";
+    String SUBSCRIPTION_DESCRIPTOR_FIND_BY_KEY = SELECT_FROM_SUBSCRIPTION_DESCRIPTOR + " and c_key = :key ";
     String TICKET_CATEGORY_FIND_BY_KEY = SELECT_FROM_TICKET_CATEGORY + " and c_key = :key";
 
     @Query(SYSTEM_FIND_BY_KEY)
@@ -117,12 +119,22 @@ public interface ConfigurationRepository {
     @Query(EVENT_FIND_BY_KEY)
     Optional<Configuration> findByKeyAtEventLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("key") String key);
 
+    @Query(SUBSCRIPTION_DESCRIPTOR_FIND_BY_KEY)
+    Optional<Configuration> findByKeyAtSubscriptionDescriptorLevel(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
+                                                                   @Bind("organizationId") int organizationId,
+                                                                   @Bind("key") String key);
+
     @Query(TICKET_CATEGORY_FIND_BY_KEY)
     Optional<Configuration> findByKeyAtCategoryLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("key") String key);
 
     @Query(SYSTEM_FIND_BY_KEY + " UNION ALL " + ORGANIZATION_FIND_BY_KEY + " UNION ALL " + EVENT_FIND_BY_KEY)
     List<Configuration> findByEventAndKey(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId,
                                           @Bind("key") String key);
+
+    @Query(SYSTEM_FIND_BY_KEY + " UNION ALL " + ORGANIZATION_FIND_BY_KEY + " UNION ALL " + SUBSCRIPTION_DESCRIPTOR_FIND_BY_KEY)
+    List<Configuration> findBySubscriptionDescriptorAndKey(@Bind("organizationId") int organizationId,
+                                                           @Bind("subscriptionDescriptorId") UUID id,
+                                                           @Bind("key") String keyAsString);
 
     @Query(SYSTEM_FIND_BY_KEY + " UNION ALL " + ORGANIZATION_FIND_BY_KEY + " UNION ALL " + EVENT_FIND_BY_KEY + " UNION ALL " + TICKET_CATEGORY_FIND_BY_KEY)
     List<Configuration> findByTicketCategoryAndKey(@Bind("organizationId") int organizationId,
@@ -142,6 +154,11 @@ public interface ConfigurationRepository {
 
     @Query("("+SELECT_FROM_SYSTEM+" where c_key in (:keys)) UNION ALL " +
         "("+SELECT_FROM_ORGANIZATION+" and c_key in (:keys)) UNION ALL " +
+        "("+SELECT_FROM_SUBSCRIPTION_DESCRIPTOR+" and c_key in (:keys))")
+    List<ConfigurationKeyValuePathLevel> findBySubscriptionDescriptorAndKeys(@Bind("organizationId") int organizationId, @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId, @Bind("keys") Collection<String> keys);
+
+    @Query("("+SELECT_FROM_SYSTEM+" where c_key in (:keys)) UNION ALL " +
+        "("+SELECT_FROM_ORGANIZATION+" and c_key in (:keys)) UNION ALL " +
         "("+SELECT_FROM_EVENT+" and c_key in (:keys)) UNION ALL" +
         "("+SELECT_FROM_TICKET_CATEGORY+" and c_key in (:keys))")
     List<ConfigurationKeyValuePathLevel> findByTicketCategoryAndKeys(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("keys") Collection<String> keys);
@@ -155,8 +172,11 @@ public interface ConfigurationRepository {
     @Query("DELETE FROM configuration_organization where c_key = :key and organization_id_fk = :organizationId")
     void deleteOrganizationLevelByKey(@Bind("key") String key, @Bind("organizationId") int organizationId);
 
-    @Query("DELETE FROM configuration_event where c_key = :key and event_id_fk = :eventId")
+    @Query("DELETE FROM configuration_purchase_context where c_key = :key and event_id_fk = :eventId")
     void deleteEventLevelByKey(@Bind("key") String key, @Bind("eventId") int eventId);
+
+    @Query("DELETE FROM configuration_purchase_context where c_key = :key and subscription_descriptor_id_fk = :subscriptionDescriptorId")
+    void deleteSubscriptionDescriptorLevelByKey(@Bind("key") String key, @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId);
 
     @Query("DELETE FROM configuration_ticket_category where c_key = :key and event_id_fk = :eventId and ticket_category_id_fk = :categoryId")
     void deleteCategoryLevelByKey(@Bind("key") String key, @Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
@@ -170,14 +190,27 @@ public interface ConfigurationRepository {
     @Query("update configuration_organization set c_value = :value where organization_id_fk = :orgId and c_key = :key")
     int updateOrganizationLevel(@Bind("orgId") int orgId, @Bind("key") String key, @Bind("value") String value);
 
-    @Query("update configuration_event set c_value = :value where event_id_fk = :eventId and organization_id_fk = :organizationId and c_key = :key")
+    @Query("update configuration_purchase_context set c_value = :value where event_id_fk = :eventId and organization_id_fk = :organizationId and c_key = :key")
     int updateEventLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("key") String key, @Bind("value") String value);
+
+    @Query("update configuration_purchase_context set c_value = :value where subscription_descriptor_id_fk = :subscriptionDescriptorId and organization_id_fk = :organizationId and c_key = :key")
+    int updateSubscriptionDescriptorLevel(@Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
+                                          @Bind("organizationId") int organizationId,
+                                          @Bind("key") String key,
+                                          @Bind("value") String value);
 
     @Query("update configuration_ticket_category set c_value = :value where event_id_fk = :eventId and organization_id_fk = :organizationId and ticket_category_id_fk = :ticketCategoryId and c_key = :key")
     int updateCategoryLevel(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("key") String key, @Bind("value") String value);
 
-    @Query("INSERT into configuration_event(organization_id_fk, event_id_fk, c_key, c_value, description) values(:orgId, :eventId, :key, :value, :description)")
+    @Query("INSERT into configuration_purchase_context(organization_id_fk, event_id_fk, c_key, c_value, description) values(:orgId, :eventId, :key, :value, :description)")
     int insertEventLevel(@Bind("orgId") int orgId, @Bind("eventId") int eventId, @Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
+
+    @Query("INSERT into configuration_purchase_context(organization_id_fk, subscription_descriptor_id_fk, c_key, c_value, description) values(:orgId, :subscriptionDescriptorId, :key, :value, :description)")
+    int insertSubscriptionDescriptorLevel(@Bind("orgId") int orgId,
+                         @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
+                         @Bind("key") String key,
+                         @Bind("value") String value,
+                         @Bind("description") String description);
 
     @Query("INSERT into configuration_ticket_category(organization_id_fk, event_id_fk, ticket_category_id_fk, c_key, c_value, description) values(:orgId, :eventId, :ticketCategoryId, :key, :value, :description)")
     int insertTicketCategoryLevel(@Bind("orgId") int orgId, @Bind("eventId") int eventId, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("key") String key, @Bind("value") String value, @Bind("description") String description);
@@ -200,6 +233,6 @@ public interface ConfigurationRepository {
     @Query("select coalesce(jsonb_recursive_merge(jsonb_recursive_merge(a.c_value, b.c_value), c.c_value), '{}'::jsonb) from "+
         "(select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) a, "+
         "(select c_value::jsonb from configuration_organization where organization_id_fk = :orgId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) b,"+
-        "(select c_value::jsonb from configuration_event where organization_id_fk = :orgId and event_id_fk = :eventId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) c")
+        "(select c_value::jsonb from configuration_purchase_context where organization_id_fk = :orgId and event_id_fk = :eventId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) c")
     @JSONData Map<String, Map<String, String>> getEventOverrideMessages(@Bind("orgId") int orgId, @Bind("eventId") int eventId);
 }

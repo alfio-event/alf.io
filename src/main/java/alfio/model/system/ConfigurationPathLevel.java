@@ -19,7 +19,7 @@ package alfio.model.system;
 import java.util.Comparator;
 
 public enum ConfigurationPathLevel implements Comparable<ConfigurationPathLevel> {
-    EXTERNAL(-1), SYSTEM(0), ORGANIZATION(1), EVENT(2), TICKET_CATEGORY(3);
+    EXTERNAL(-1), SYSTEM(0), ORGANIZATION(1), PURCHASE_CONTEXT(2), TICKET_CATEGORY(3);
 
     private final int priority;
 
