@@ -20,7 +20,8 @@ import alfio.model.EventAndOrganizationId;
 import alfio.model.system.ConfigurationPathLevel;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigurationLevelTest {
 
@@ -50,7 +51,7 @@ class ConfigurationLevelTest {
     void event() {
         ConfigurationLevel event = ConfigurationLevel.event(new EventAndOrganizationId(1, 666));
         assertTrue(event instanceof ConfigurationLevels.EventLevel);
-        assertEquals(ConfigurationPathLevel.EVENT, event.getPathLevel());
+        assertEquals(ConfigurationPathLevel.PURCHASE_CONTEXT, event.getPathLevel());
         var eventLevel = (ConfigurationLevels.EventLevel) event;
         assertEquals(666, eventLevel.organizationId);
         assertEquals(1, eventLevel.eventId);

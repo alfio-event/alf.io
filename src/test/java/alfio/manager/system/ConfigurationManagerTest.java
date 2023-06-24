@@ -16,7 +16,6 @@
  */
 package alfio.manager.system;
 
-import alfio.model.PurchaseContext;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import org.junit.jupiter.api.Assertions;
@@ -27,26 +26,25 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationPathLevel.*;
-import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 
     @Test
     public void testUnionEvent() {
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> intersection = ConfigurationManager.union(SYSTEM, EVENT);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> intersection = ConfigurationManager.union(SYSTEM, PURCHASE_CONTEXT);
         Assertions.assertNotNull(intersection);
         List<Configuration> values = intersection.values().stream().flatMap(List::stream).collect(Collectors.toList());
-        Assertions.assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
+        Assertions.assertTrue(ConfigurationKeys.byPathLevel(PURCHASE_CONTEXT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == PURCHASE_CONTEXT)));
         Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.BASE_URL && v.getConfigurationPathLevel() == SYSTEM));
     }
 
     @Test
     public void testUnionOrganization() {
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> intersection = ConfigurationManager.union(EVENT, ORGANIZATION);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> intersection = ConfigurationManager.union(PURCHASE_CONTEXT, ORGANIZATION);
         Assertions.assertNotNull(intersection);
         List<Configuration> values = intersection.values().stream().flatMap(List::stream).collect(Collectors.toList());
-        Assertions.assertTrue(ConfigurationKeys.byPathLevel(EVENT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == EVENT)));
-        Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.VAT_NR && v.getConfigurationPathLevel() == ORGANIZATION));
+        Assertions.assertTrue(ConfigurationKeys.byPathLevel(PURCHASE_CONTEXT).stream().allMatch(k -> values.stream().anyMatch(v -> v.getConfigurationKey() == k && v.getConfigurationPathLevel() == PURCHASE_CONTEXT)));
+        Assertions.assertTrue(values.stream().anyMatch(v -> v.getConfigurationKey() == ConfigurationKeys.ENABLE_REVERSE_CHARGE_ONLINE && v.getConfigurationPathLevel() == ORGANIZATION));
     }
 
 }

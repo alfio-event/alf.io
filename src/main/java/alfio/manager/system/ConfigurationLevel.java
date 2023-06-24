@@ -18,9 +18,12 @@ package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
 import alfio.model.PurchaseContext;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.ConfigurationPathLevel;
 
+import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.UUID;
 
 public interface ConfigurationLevel {
 
@@ -32,6 +35,10 @@ public interface ConfigurationLevel {
 
     default OptionalInt getEventId() {
         return OptionalInt.empty();
+    }
+
+    default Optional<UUID> getSubscriptionDescriptorId() {
+        return Optional.empty();
     }
 
     default OptionalInt getTicketCategoryId() {
@@ -54,11 +61,15 @@ public interface ConfigurationLevel {
         return new ConfigurationLevels.EventLevel(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId());
     }
 
+    static ConfigurationLevel subscriptionDescriptor(SubscriptionDescriptor subscriptionDescriptor) {
+        return new ConfigurationLevels.SubscriptionDescriptorLevel(subscriptionDescriptor.getOrganizationId(), subscriptionDescriptor.getId());
+    }
+
     static ConfigurationLevel purchaseContext(PurchaseContext purchaseContext) {
         if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             return event(purchaseContext.event().orElseThrow());
         }
-        return organization(purchaseContext.getOrganizationId());
+        return subscriptionDescriptor((SubscriptionDescriptor) purchaseContext);
     }
 
     static ConfigurationLevel organization(int organizationId) {

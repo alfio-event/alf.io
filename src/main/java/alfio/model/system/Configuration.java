@@ -17,6 +17,7 @@
 package alfio.model.system;
 
 import alfio.model.EventAndOrganizationId;
+import alfio.model.subscription.SubscriptionDescriptor;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,6 +27,7 @@ import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.UUID;
 import java.util.function.Function;
 
 @Getter
@@ -131,7 +133,27 @@ public class Configuration implements Comparable<Configuration> {
 
         @Override
         public ConfigurationPathLevel pathLevel() {
-            return ConfigurationPathLevel.EVENT;
+            return ConfigurationPathLevel.PURCHASE_CONTEXT;
+        }
+
+    }
+
+    @EqualsAndHashCode
+    @Getter
+    public static class SubscriptionDescriptorConfigurationPath implements ConfigurationPath {
+
+        private final int organizationId;
+        private final UUID id;
+
+        private SubscriptionDescriptorConfigurationPath(int organizationId, UUID id) {
+            this.organizationId = organizationId;
+            this.id = id;
+        }
+
+
+        @Override
+        public ConfigurationPathLevel pathLevel() {
+            return ConfigurationPathLevel.PURCHASE_CONTEXT;
         }
 
     }
@@ -202,6 +224,10 @@ public class Configuration implements Comparable<Configuration> {
 
     public static ConfigurationPathKey from(EventAndOrganizationId eventAndOrganizationId, ConfigurationKeys key) {
         return getEventConfiguration(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), key);
+    }
+
+    public static ConfigurationPathKey from(SubscriptionDescriptor subscriptionDescriptor, ConfigurationKeys key) {
+        return new ConfigurationPathKey(new SubscriptionDescriptorConfigurationPath(subscriptionDescriptor.getOrganizationId(), subscriptionDescriptor.getId()), key);
     }
 
     public static Function<ConfigurationKeys, ConfigurationPathKey> from(EventAndOrganizationId e) {

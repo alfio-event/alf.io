@@ -24,9 +24,11 @@ import alfio.controller.api.v2.user.support.PurchaseContextInfoBuilder;
 import alfio.manager.system.ConfigurationLevels.CategoryLevel;
 import alfio.manager.system.ConfigurationLevels.EventLevel;
 import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
+import alfio.manager.system.ConfigurationLevels.SubscriptionDescriptorLevel;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.ConfigurationModification;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
@@ -70,7 +72,7 @@ import static java.util.stream.Collectors.toList;
 public class ConfigurationManager {
 
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
-    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
+    private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> PURCHASE_CONTEXT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.PURCHASE_CONTEXT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
 
     private final ConfigurationRepository configurationRepository;
@@ -94,10 +96,15 @@ public class ConfigurationManager {
                 configList.addAll(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
                 return selectPath(configList);
             }
-            case EVENT: {
-                EventConfigurationPath o = (EventConfigurationPath) path;
-                configList.addAll(configurationRepository.findByEventAndKey(o.getOrganizationId(),
-                    o.getId(), keyAsString));
+            case PURCHASE_CONTEXT: {
+                if (path instanceof EventConfigurationPath) {
+                    EventConfigurationPath o = (EventConfigurationPath) path;
+                    configList.addAll(configurationRepository.findByEventAndKey(o.getOrganizationId(),
+                        o.getId(), keyAsString));
+                } else {
+                    SubscriptionDescriptorConfigurationPath o = (SubscriptionDescriptorConfigurationPath) path;
+                    configList.addAll(configurationRepository.findBySubscriptionDescriptorAndKey(o.getOrganizationId(), o.getId(), keyAsString));
+                }
                 return selectPath(configList);
             }
             case TICKET_CATEGORY: {
@@ -133,9 +140,14 @@ public class ConfigurationManager {
                 OrganizationConfigurationPath orgPath = (OrganizationConfigurationPath) path;
                 saveOrganizationConfiguration(orgPath.getId(), pathKey.getKey().name(), value);
                 break;
-            case EVENT:
-                EventConfigurationPath eventPath = (EventConfigurationPath) path;
-                saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
+            case PURCHASE_CONTEXT:
+                if (path instanceof EventConfigurationPath) {
+                    var eventPath = (EventConfigurationPath) path;
+                    saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
+                } else {
+                    var subscriptionDescriptorPath = (SubscriptionDescriptorConfigurationPath) path;
+                    saveSubscriptionDescriptorConfiguration(subscriptionDescriptorPath.getId(), subscriptionDescriptorPath.getOrganizationId(), pathKey.getKey().name(), value);
+                }
                 break;
             default:
                 throw new IllegalStateException("can't reach here");
@@ -175,6 +187,26 @@ public class ConfigurationManager {
         } else {
             configurationRepository.insertEventLevel(organizationId, eventId, key, value.get(), ConfigurationKeys.fromString(key).getDescription());
         }
+    }
+
+    private void saveSubscriptionDescriptorConfiguration(UUID id, int organizationId, String key, String optionValue) {
+        Optional<Configuration> existing = configurationRepository.findByKeyAtSubscriptionDescriptorLevel(id, organizationId, key);
+        Optional<String> value = evaluateValue(key, optionValue);
+        if(value.isEmpty()) {
+            configurationRepository.deleteSubscriptionDescriptorLevelByKey(key, id);
+        } else if (existing.isPresent()) {
+            configurationRepository.updateSubscriptionDescriptorLevel(id, organizationId, key, value.get());
+        } else {
+            configurationRepository.insertSubscriptionDescriptorLevel(organizationId, id, key, value.get(), ConfigurationKeys.fromString(key).getDescription());
+        }
+    }
+
+    public void saveAllSubscriptionDescriptorConfiguration(SubscriptionDescriptor sd, List<ConfigurationModification> list, String username) {
+        User user = userManager.findUserByUsername(username);
+        Validate.isTrue(userManager.isOwnerOfOrganization(user, sd.getOrganizationId()), "Cannot update settings, user is not owner");
+        list.stream()
+            .filter(ConfigurationManager::toBeSaved)
+            .forEach(c -> saveSubscriptionDescriptorConfiguration(sd.getId(), sd.getOrganizationId(), c.getKey(), c.getValue()));
     }
 
     public void saveAllEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
@@ -329,9 +361,20 @@ public class ConfigurationManager {
             return Collections.emptyMap();
         }
         boolean isAdmin = userManager.isAdmin(user);
-        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, PURCHASE_CONTEXT)).sorted().collect(groupByCategory());
         boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
-        return removeAlfioPISettingsIfNeeded(offlineCheckInEnabled, groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing));
+        return removeAlfioPISettingsIfNeeded(offlineCheckInEnabled, groupByCategory(isAdmin ? union(SYSTEM, PURCHASE_CONTEXT) : PURCHASE_CONTEXT_CONFIGURATION, existing));
+    }
+
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadSubscriptionDescriptorConfig(SubscriptionDescriptor subscriptionDescriptor, String username) {
+        User user = userManager.findUserByUsername(username);
+        int organizationId = subscriptionDescriptor.getOrganizationId();
+        if(!userManager.isOwnerOfOrganization(user, organizationId)) {
+            return Collections.emptyMap();
+        }
+        boolean isAdmin = userManager.isAdmin(user);
+        Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findSubscriptionDescriptorConfiguration(organizationId, subscriptionDescriptor.getId()).stream().filter(checkActualConfigurationLevel(isAdmin, PURCHASE_CONTEXT)).sorted().collect(groupByCategory());
+        return groupByCategory(isAdmin ? union(SYSTEM, PURCHASE_CONTEXT) : PURCHASE_CONTEXT_CONFIGURATION, existing);
     }
 
     public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
@@ -548,9 +591,15 @@ public class ConfigurationManager {
             case ORGANIZATION:
                 found.addAll(configurationRepository.findByOrganizationAndKeys(((OrganizationLevel)configurationLevel).organizationId, keysAsString));
                 break;
-            case EVENT:
-                var eventLevel = (EventLevel) configurationLevel;
-                found.addAll(configurationRepository.findByEventAndKeys(eventLevel.organizationId, eventLevel.eventId, keysAsString));
+            case PURCHASE_CONTEXT:
+                if (configurationLevel instanceof EventLevel) {
+                    // event
+                    var eventLevel = (EventLevel) configurationLevel;
+                    found.addAll(configurationRepository.findByEventAndKeys(eventLevel.organizationId, eventLevel.eventId, keysAsString));
+                } else {
+                    var subscriptionDescriptorLevel = (SubscriptionDescriptorLevel) configurationLevel;
+                    found.addAll(configurationRepository.findBySubscriptionDescriptorAndKeys(subscriptionDescriptorLevel.organizationId, subscriptionDescriptorLevel.subscriptionDescriptorId, keysAsString));
+                }
                 break;
             case TICKET_CATEGORY:
                 var categoryLevel = (CategoryLevel) configurationLevel;

@@ -1374,7 +1374,7 @@ public class TicketReservationManager {
         extensionManager.handleTicketAssignment(newTicket, ticketCategoryRepository.getById(ticket.getCategoryId()), updateTicketOwner.getAdditional());
 
         if (isTicketBeingReassigned(ticket, updateTicketOwner, event)) {
-            invalidateAccess(event, ticket);
+            invalidateAccess(event, ticket, true);
         }
 
         Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
@@ -1585,7 +1585,7 @@ public class TicketReservationManager {
             throw new IllegalStateException("Cannot release reserved tickets");
         }
         //
-        invalidateAccess(event, ticket);
+        invalidateAccess(event, ticket, false);
 
         String reservationId = ticketReservation.getId();
         //#365 - reset UUID when releasing a ticket
@@ -1622,7 +1622,11 @@ public class TicketReservationManager {
         extensionManager.handleTicketCancelledForEvent(event, Collections.singletonList(ticket.getUuid()));
     }
 
-    private void invalidateAccess(Event event, Ticket ticket) {
+    private void invalidateAccess(Event event, Ticket ticket, boolean reassigned) {
+        if (reassigned) {
+            auditingRepository.insert(ticket.getTicketsReservationId(), null,
+                event.getId(), TICKET_HOLDER_CHANGED, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
+        }
         applicationEventPublisher.publishEvent(new InvalidateAccess(ticket, ticketRepository.getTicketMetadata(ticket.getId()), event));
     }
 

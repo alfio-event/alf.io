@@ -45,6 +45,9 @@ create or replace view count_resources_assigned_to_event_org as (
     select count(*) cnt, organization_id_fk org, event_id_fk ev, 'configuration_event' entity from configuration_event group by 3, 2
 
     union all
+    select count(*) cnt, organization_id_fk org, event_id_fk ev, 'configuration_purchase_context' entity from configuration_purchase_context where event_id_fk is not null group by 3, 2
+
+    union all
     select count(*) cnt, organization_id_fk org, event_id_fk ev, 'configuration_ticket_category' entity from configuration_ticket_category group by 3, 2
 
     union all
