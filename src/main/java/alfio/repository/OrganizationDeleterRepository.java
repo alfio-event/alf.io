@@ -50,6 +50,10 @@ public interface OrganizationDeleterRepository {
         " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
     int deleteConfigurationForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
 
+    @Query("delete from configuration_purchase_context where organization_id_fk in(:organizationIds)" +
+        " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
+    int deleteConfigurationForPurchaseContexts(@Bind("organizationIds") List<Integer> organizationIds);
+
     @Query("delete from resource_organizer where organization_id_fk in(:organizationIds)" +
         " and organization_id_fk not in (" + SELECT_EMPTY_ORGANIZATIONS + ")")
     int deleteResourcesForEmptyOrganizations(@Bind("organizationIds") List<Integer> organizationIds);
@@ -91,6 +95,9 @@ public interface OrganizationDeleterRepository {
         // delete configuration
         int deletedConfigurations = deleteConfigurationForEmptyOrganizations(organizationIds);
         LOGGER.info("deleted {} configurations", deletedConfigurations);
+
+        deletedConfigurations = deleteConfigurationForPurchaseContexts(organizationIds);
+        LOGGER.info("deleted {} configurations for purchase_contexts", deletedConfigurations);
 
         // delete resources
         int deletedResources = deleteResourcesForEmptyOrganizations(organizationIds);

@@ -16,10 +16,13 @@
  */
 package alfio.controller.api.v1.admin;
 
-import alfio.manager.EventManager;
+import alfio.manager.PurchaseContextManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.Event;
+import alfio.model.PurchaseContext;
 import alfio.model.modification.ConfigurationModification;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
@@ -41,14 +44,14 @@ import java.util.stream.Collectors;
 public class ConfigurationApiV1Controller {
 
     private final ConfigurationManager configurationManager;
-    private final EventManager eventManager;
+    private final PurchaseContextManager purchaseContextManager;
     private final UserManager userManager;
 
     public ConfigurationApiV1Controller(ConfigurationManager configurationManager,
-                                        EventManager eventManager,
+                                        PurchaseContextManager purchaseContextManager,
                                         UserManager userManager) {
         this.configurationManager = configurationManager;
-        this.eventManager = eventManager;
+        this.purchaseContextManager = purchaseContextManager;
         this.userManager = userManager;
     }
 
@@ -74,34 +77,57 @@ public class ConfigurationApiV1Controller {
         return ResponseEntity.ok().body("OK");
     }
 
-    @PutMapping("/organization/{organizationId}/event/{slug}")
-    public ResponseEntity<String> saveConfigurationForEvent(@PathVariable("organizationId") int organizationId,
-                                                            @PathVariable("slug") String eventSlug,
-                                                            @RequestBody Map<String, String> configurationKeyValues,
-                                                            Principal principal) {
+    @PutMapping("/organization/{organizationId}/{purchaseContextType}/{publicIdentifier}")
+    public ResponseEntity<String> saveConfigurationForPurchaseContext(@PathVariable("organizationId") int organizationId,
+                                                                      @PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
+                                                                      @PathVariable("publicIdentifier") String publicIdentifier,
+                                                                      @RequestBody Map<String, String> configurationKeyValues,
+                                                                      Principal principal) {
         var configurationKeys = configurationKeyValues.keySet().stream()
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
 
-        var validationErrorOptional = validateInput(organizationId, ConfigurationPathLevel.EVENT, principal, configurationKeyValues, configurationKeys);
+        var validationErrorOptional = validateInput(organizationId, ConfigurationPathLevel.PURCHASE_CONTEXT, principal, configurationKeyValues, configurationKeys);
 
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
         }
 
-        var eventAndOrgId = eventManager.getEventAndOrganizationId(eventSlug, principal.getName());
-        if (eventAndOrgId.getOrganizationId() != organizationId) {
+        var purchaseContextOptional = purchaseContextManager.findBy(purchaseContextType, publicIdentifier);
+
+        if (purchaseContextOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        int eventId = eventAndOrgId.getId();
-        var existingIds = configurationManager.loadEventConfig(eventId, principal.getName()).values().stream()
-            .flatMap(List::stream)
-            .filter(c -> configurationKeys.contains(c.getConfigurationKey()))
-            .collect(Collectors.toMap(Configuration::getKey, Configuration::getId));
-        var toSave = configurationKeyValues.entrySet().stream()
-            .map(ckv -> new ConfigurationModification(existingIds.get(ckv.getKey()), ckv.getKey(), ckv.getValue()))
-            .collect(Collectors.toList());
-        configurationManager.saveAllEventConfiguration(eventId, organizationId, toSave, principal.getName());
+
+        var purchaseContext = purchaseContextOptional.get();
+
+        if (purchaseContext.getOrganizationId() != organizationId) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+            int eventId = ((Event) purchaseContext).getId();
+            var existingIds = configurationManager.loadEventConfig(eventId, principal.getName()).values().stream()
+                .flatMap(List::stream)
+                .filter(c -> configurationKeys.contains(c.getConfigurationKey()))
+                .collect(Collectors.toMap(Configuration::getKey, Configuration::getId));
+            var toSave = configurationKeyValues.entrySet().stream()
+                .map(ckv -> new ConfigurationModification(existingIds.get(ckv.getKey()), ckv.getKey(), ckv.getValue()))
+                .collect(Collectors.toList());
+            configurationManager.saveAllEventConfiguration(eventId, organizationId, toSave, principal.getName());
+        } else {
+            var sd = (SubscriptionDescriptor) purchaseContext;
+            var existingIds = configurationManager.loadSubscriptionDescriptorConfig(sd, principal.getName()).values().stream()
+                .flatMap(List::stream)
+                .filter(c -> configurationKeys.contains(c.getConfigurationKey()))
+                .collect(Collectors.toMap(Configuration::getKey, Configuration::getId));
+            var toSave = configurationKeyValues.entrySet().stream()
+                .map(ckv -> new ConfigurationModification(existingIds.get(ckv.getKey()), ckv.getKey(), ckv.getValue()))
+                .collect(Collectors.toList());
+            configurationManager.saveAllSubscriptionDescriptorConfiguration(sd, toSave, principal.getName());
+        }
+
+
         return ResponseEntity.ok().body("OK");
     }
 

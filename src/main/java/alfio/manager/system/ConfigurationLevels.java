@@ -19,7 +19,9 @@ package alfio.manager.system;
 import alfio.model.system.ConfigurationPathLevel;
 import lombok.AllArgsConstructor;
 
+import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.UUID;
 
 import static alfio.model.system.ConfigurationPathLevel.*;
 
@@ -61,7 +63,7 @@ class ConfigurationLevels {
 
         @Override
         public ConfigurationPathLevel getPathLevel() {
-            return EVENT;
+            return PURCHASE_CONTEXT;
         }
 
         @Override
@@ -72,6 +74,31 @@ class ConfigurationLevels {
         @Override
         public OptionalInt getEventId() {
             return OptionalInt.of(eventId);
+        }
+    }
+
+    static class SubscriptionDescriptorLevel implements ConfigurationLevel {
+        final int organizationId;
+        final UUID subscriptionDescriptorId;
+
+        SubscriptionDescriptorLevel(int organizationId, UUID subscriptionDescriptorId) {
+            this.organizationId = organizationId;
+            this.subscriptionDescriptorId = subscriptionDescriptorId;
+        }
+
+        @Override
+        public ConfigurationPathLevel getPathLevel() {
+            return PURCHASE_CONTEXT;
+        }
+
+        @Override
+        public OptionalInt getOrganizationId() {
+            return OptionalInt.of(organizationId);
+        }
+
+        @Override
+        public Optional<UUID> getSubscriptionDescriptorId() {
+            return Optional.of(subscriptionDescriptorId);
         }
     }
 

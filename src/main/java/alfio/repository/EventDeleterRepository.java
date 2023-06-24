@@ -29,6 +29,9 @@ public interface EventDeleterRepository {
 	@Query("delete from configuration_event where event_id_fk = :eventId")
 	int deleteConfigurationEvent(@Bind("eventId") int eventId);
 
+    @Query("delete from configuration_purchase_context where event_id_fk = :eventId")
+    int deleteConfigurationPurchaseContext(@Bind("eventId") int eventId);
+
 	@Query("delete from configuration_ticket_category where event_id_fk = :eventId")
 	int deleteConfigurationTicketCategory(@Bind("eventId") int eventId);
 	
@@ -116,6 +119,7 @@ public interface EventDeleterRepository {
         deleteWhitelistedTickets(eventId);
         deleteGroupLinks(eventId);
         deleteConfigurationEvent(eventId);
+        deleteConfigurationPurchaseContext(eventId);
         deleteConfigurationTicketCategory(eventId);
         deleteEmailMessage(eventId);
         deleteTicketFieldValue(eventId);

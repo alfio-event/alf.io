@@ -22,7 +22,9 @@ import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.controller.api.v1.admin.ConfigurationApiV1Controller;
 import alfio.controller.api.v1.admin.EventApiV1Controller;
+import alfio.controller.api.v1.admin.SubscriptionApiV1Controller;
 import alfio.manager.user.UserManager;
+import alfio.model.PurchaseContext;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.user.Organization;
@@ -34,6 +36,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
+import alfio.util.ClockProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -47,10 +50,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import static alfio.controller.api.v1.EventApiV1IntegrationTest.creationRequest;
+import static alfio.controller.api.v1.SubscriptionApiV1IntegrationTest.modificationRequest;
+import static alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.Map.entry;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @AlfioIntegrationTest
@@ -70,7 +74,11 @@ class ConfigurationApiV1IntegrationTest extends BaseIntegrationTest {
     @Autowired
     private EventApiV1Controller eventApiController;
     @Autowired
+    private SubscriptionApiV1Controller subscriptionApiV1Controller;
+    @Autowired
     private ConfigurationApiV1Controller controller;
+    @Autowired
+    private ClockProvider clockProvider;
 
     private Principal mockPrincipal;
     private Organization organization;
@@ -104,9 +112,32 @@ class ConfigurationApiV1IntegrationTest extends BaseIntegrationTest {
             entry(USE_INVOICE_NUMBER_AS_ID.name(), "true"),
             entry(VAT_NUMBER_IS_REQUIRED.name(), "true")
         );
-        var response = controller.saveConfigurationForEvent(organization.getId(), slug, payload, mockPrincipal);
+        var response = controller.saveConfigurationForPurchaseContext(organization.getId(), PurchaseContext.PurchaseContextType.event, slug, payload, mockPrincipal);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         var modified = configurationRepository.findByEventAndKeys(organization.getId(), eventId, OPTIONS_TO_MODIFY);
+        assertEquals(3, modified.size());
+        for (ConfigurationKeyValuePathLevel kv : modified) {
+            assertEquals(kv.getConfigurationKey() == GENERATE_ONLY_INVOICE ? "false" : "true", kv.getValue());
+        }
+    }
+
+    @Test
+    void addSubscriptionConfiguration() {
+        var createResponse = subscriptionApiV1Controller.create(modificationRequest(ONCE_PER_EVENT, true, clockProvider), mockPrincipal);
+        assertTrue(createResponse.getStatusCode().is2xxSuccessful());
+        assertNotNull(createResponse.getBody());
+        var subscriptionDescriptorId = UUID.fromString(createResponse.getBody());
+        var existing = configurationRepository.findBySubscriptionDescriptorAndKeys(organization.getId(), subscriptionDescriptorId, OPTIONS_TO_MODIFY);
+        assertTrue(existing.isEmpty());
+        assertEquals(1, configurationRepository.insertSubscriptionDescriptorLevel(organization.getId(), subscriptionDescriptorId, GENERATE_ONLY_INVOICE.name(), "true", ""));
+        var payload = Map.ofEntries(
+            entry(GENERATE_ONLY_INVOICE.name(), "false"),
+            entry(USE_INVOICE_NUMBER_AS_ID.name(), "true"),
+            entry(VAT_NUMBER_IS_REQUIRED.name(), "true")
+        );
+        var response = controller.saveConfigurationForPurchaseContext(organization.getId(), PurchaseContext.PurchaseContextType.subscription, subscriptionDescriptorId.toString(), payload, mockPrincipal);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        var modified = configurationRepository.findBySubscriptionDescriptorAndKeys(organization.getId(), subscriptionDescriptorId, OPTIONS_TO_MODIFY);
         assertEquals(3, modified.size());
         for (ConfigurationKeyValuePathLevel kv : modified) {
             assertEquals(kv.getConfigurationKey() == GENERATE_ONLY_INVOICE ? "false" : "true", kv.getValue());
