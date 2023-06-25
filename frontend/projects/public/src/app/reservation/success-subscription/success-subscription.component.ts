@@ -63,7 +63,7 @@ export class SuccessSubscriptionComponent implements OnInit {
     this.reservationService.getReservationInfo(this.reservationId).subscribe(resInfo => {
       this.processReservationInfo(resInfo);
       if (!this.reservationFinalized) {
-        pollReservationStatus(this.reservationId, this.reservationService, this.processReservationInfo);
+        pollReservationStatus(this.reservationId, this.reservationService, res1 => this.processReservationInfo(res1));
       }
     });
   }
@@ -106,9 +106,9 @@ export class SuccessSubscriptionComponent implements OnInit {
 
   get displayPin(): boolean {
     if (this.subscriptionInfo.configuration != null) {
-      return this.subscriptionInfo.configuration.displayPin;
+      return this.reservationFinalized && this.subscriptionInfo.configuration.displayPin;
     }
-    return true; // by default, we display PIN
+    return this.reservationFinalized; // by default, we display PIN
   }
 
   public reSendReservationEmail(): void {

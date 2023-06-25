@@ -57,4 +57,11 @@ export class SubscriptionSummaryComponent {
     }
     return '';
   }
+
+  hasData(owner: SubscriptionOwner): boolean {
+    return owner != null
+      && owner.firstName != null
+      && owner.lastName != null
+      && owner.email != null;
+  }
 }
