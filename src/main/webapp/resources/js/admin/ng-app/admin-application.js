@@ -56,9 +56,17 @@
                     }
                 }
             })
+            .state('system-edit-resources', {
+                url: '/show-resources/:resourceName/',
+                template: '<resources-edit system="true" resource-name="ctrl.resourceName"></resources-edit>',
+                controller: function($state) {
+                    this.resourceName = $state.params.resourceName;
+                },
+                controllerAs: 'ctrl'
+            })
             .state('organization-edit-resources', {
                 url: '/organizations/:organizationId/show-resources/:resourceName/',
-                template: '<resources-edit for-organization="true" organization-id="ctrl.organizationId" resource-name="ctrl.resourceName"></resources-show>',
+                template: '<resources-edit for-organization="true" organization-id="ctrl.organizationId" resource-name="ctrl.resourceName"></resources-edit>',
                 controller: function($state) {
                     this.organizationId = $state.params.organizationId;
                     this.resourceName = $state.params.resourceName;

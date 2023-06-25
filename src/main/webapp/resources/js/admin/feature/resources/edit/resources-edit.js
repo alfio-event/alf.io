@@ -3,6 +3,7 @@
 
     angular.module('adminApplication').component('resourcesEdit', {
         bindings: {
+            system: '<',
             event:'<',
             forOrganization: '<',
             organizationId: '<',
@@ -27,6 +28,9 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
     };
 
     function getOrgId() {
+        if (ctrl.system) {
+            return undefined;
+        }
         return ctrl.forOrganization ? ctrl.organizationId : ctrl.event.organizationId;
     }
 
@@ -70,7 +74,9 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
     function previewFor(locale) {
         delete ctrl.error;
         var newText  = ctrl.resources[locale];
-        ResourceService.preview(getOrgId(), ctrl.forOrganization ? undefined : ctrl.event.id, ctrl.resourceName, locale, {fileAsString: newText}).then(function(res) {
+        var orgId = ctrl.system ? undefined : getOrgId();
+        var eventId = ctrl.system || ctrl.forOrganization ? undefined : ctrl.event.id
+        ResourceService.preview(orgId, eventId, ctrl.resourceName, locale, {fileAsString: newText}).then(function(res) {
             if(!res.download) {
                 ctrl.previewedText = res.text;
                 ctrl.previewMode = true;
@@ -84,7 +90,9 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
         ctrl.previewMode = false;
         var newText  = ctrl.resources[locale];
         var saver;
-        if(ctrl.forOrganization) {
+        if (ctrl.system) {
+            saver = ResourceService.uploadSystemFile({fileAsString: newText, name: getFileName(locale), type: 'text/plain'});
+        } else if(ctrl.forOrganization) {
             saver = ResourceService.uploadOrganizationFile(getOrgId(), {fileAsString: newText, name: getFileName(locale), type: 'text/plain'});
         } else {
             saver = ResourceService.uploadFile(ctrl.event.organizationId, ctrl.event.id, {fileAsString: newText, name: getFileName(locale), type: 'text/plain'});
@@ -96,7 +104,9 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
         delete ctrl.error;
         ctrl.previewMode = false;
         var deleter;
-        if(ctrl.forOrganization) {
+        if (ctrl.system) {
+            deleter = ResourceService.deleteSystemFile(getFileName(locale));
+        } else if(ctrl.forOrganization) {
             deleter = ResourceService.deleteOrganizationFile(getOrgId(), getFileName(locale));
         } else {
             deleter = ResourceService.deleteFile(ctrl.event.organizationId, ctrl.event.id, getFileName(locale));
@@ -118,7 +128,7 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
         ctrl.editors = {};
 
         var languageLoader;
-        if(ctrl.forOrganization) {
+        if(ctrl.system || ctrl.forOrganization) {
             languageLoader = EventService.getAllLanguages();
         } else {
             languageLoader = EventService.getSelectedLanguages(ctrl.event.shortName);
@@ -138,7 +148,9 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
                 });
 
                 var metadataLoader;
-                if(ctrl.forOrganization) {
+                if (ctrl.system) {
+                    metadataLoader = ResourceService.getMetadataForSystemResource(getFileName(locale));
+                } else if(ctrl.forOrganization) {
                     metadataLoader = ResourceService.getMetadataForOrganizationResource(getOrgId(), getFileName(locale));
                 } else {
                     metadataLoader = ResourceService.getMetadataForEventResource(getOrgId(), ctrl.event.id, getFileName(locale))
@@ -151,7 +163,9 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
                 metadataLoader.then(function(res) {
                     ctrl.resourcesMetadata[locale] = res.data;
                     var resourceLoader;
-                    if(ctrl.forOrganization) {
+                    if (ctrl.system) {
+                        resourceLoader = ResourceService.getSystemResource(getFileName(locale));
+                    } else if(ctrl.forOrganization) {
                         resourceLoader = ResourceService.getOrganizationResource(getOrgId(), getFileName(locale));
                     } else {
                         resourceLoader = ResourceService.getEventResource(getOrgId(), ctrl.event.id, getFileName(locale)).then(
@@ -174,7 +188,7 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
     }
 
     function showDeleteButton(locale) {
-        if(ctrl.forOrganization) {
+        if(ctrl.system || ctrl.forOrganization) {
             return ctrl.resourcesMetadata[locale];
         } else {
             return ctrl.resourcesMetadata[locale] && ctrl.resourcesMetadata[locale].eventId === ctrl.event.id;
