@@ -35,7 +35,7 @@ public class SubscriptionReservationCreationRequest implements ReservationAPICre
     public SubscriptionReservationCreationRequest(@JsonProperty("metadata") Map<String, String> metadata,
                                                   @JsonProperty("user") ReservationUser user,
                                                   @JsonProperty("language") String language,
-                                                  @JsonProperty("reservationConfiguration") ReservationConfiguration reservationConfiguration,
+                                                  @JsonProperty("configuration") ReservationConfiguration reservationConfiguration,
                                                   @JsonProperty("subscriptionConfiguration") SubscriptionConfiguration subscriptionConfiguration) {
         this.metadata = metadata;
         this.user = user;
