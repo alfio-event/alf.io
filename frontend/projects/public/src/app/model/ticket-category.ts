@@ -1,6 +1,6 @@
 export type TicketAccessType = 'INHERIT' | 'IN_PERSON' | 'ONLINE';
 
-export class TicketCategory {
+export interface TicketCategory {
     id: number;
     name: string;
     ticketAccessType: TicketAccessType;
