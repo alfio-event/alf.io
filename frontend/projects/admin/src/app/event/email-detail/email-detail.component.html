@@ -1,32 +1,35 @@
 <div class="container my-3">
-  <h1>Message detail</h1>
+  <h1 translate="admin.event.mail-detail.title"></h1>
   <hr />
   <div *ngIf="mail$ | async as mail">
     <dl data-ng-if="mail">
-      <dt>Recipient</dt>
+      <dt translate="admin.event.mail-detail.recipient"></dt>
       <dd>{{ mail.recipient }}</dd>
-      <dt>Subject</dt>
+      <dt translate="admin.event.mail-detail.subject"></dt>
       <dd>{{ mail.subject }}</dd>
-      <dt>Message</dt>
+      <dt translate="admin.event.mail-detail.message"></dt>
       <dd>
         <pre class="white">{{ mail.message }}</pre>
       </dd>
-      <dt>Status</dt>
+      <dt translate="admin.event.mail-detail.status"></dt>
       <dd>{{ mail.status }}</dd>
-      <dt>Checksum</dt>
+      <dt translate="admin.event.mail-detail.checksum"></dt>
       <dd class="hidden-sm hidden-xs">{{ mail.checksum }}</dd>
       <dd class="visible-sm visible-xs">
         {{ mail.checksum | slice : 0 : 35 }}
       </dd>
-      <dt>Requested</dt>
+      <dt translate="admin.event.mail-detail.requested"></dt>
       <dd>{{ mail.requestTimestamp }}</dd>
-      <dt>Sent</dt>
+      <dt translate="admin.event.mail-detail.sent"></dt>
       <dd>{{ mail.sentTimestamp }}</dd>
     </dl>
     <div class="text-center">
-      <a class="btn btn-outline-primary" href="#" [routerLink]="['../']"
-        >back to list</a
-      >
+      <a
+        class="btn btn-outline-primary"
+        href="#"
+        [routerLink]="['../']"
+        translate="admin.event.mail-detail.back-to-list"
+      ></a>
     </div>
   </div>
 </div>
