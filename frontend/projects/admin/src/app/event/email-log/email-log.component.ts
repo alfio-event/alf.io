@@ -12,6 +12,7 @@ import { TranslateService } from '@ngx-translate/core';
   styleUrls: ['./email-log.component.scss'],
 })
 export class EmailLogComponent implements OnInit {
+  public searchText = '';
   public mailLog$: Observable<MailLog> = of();
   public page: number = 1;
   public pageSize: number = 10;
@@ -33,11 +34,17 @@ export class EmailLogComponent implements OnInit {
       mergeMap((eventId) =>
         eventId != null ? this.eventService.getEvent(eventId) : of()
       ),
-      mergeMap((event) => this.mailService.getAllMails(event.shortName, 0, ''))
+      mergeMap((event) =>
+        this.mailService.getAllMails(event.shortName, 0, this.searchText)
+      )
     );
   }
 
   get dateTimeFormat(): string {
     return this.translateService.instant('admin.common.date-time');
+  }
+
+  search() {
+    this.loadMails();
   }
 }

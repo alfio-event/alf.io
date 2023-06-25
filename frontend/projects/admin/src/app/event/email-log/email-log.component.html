@@ -8,17 +8,22 @@
   </div>
 
   <div class="input-group">
-    <div class="input-group-text">
+    <button class="btn btn-outline-secondary" type="button" (click)="search()">
       <svg-icon key="search"></svg-icon>
-    </div>
+    </button>
+
     <input
       type="text"
       class="form-control"
       placeholder="Filter table"
       aria-label="Filter table"
       aria-describedby="Filter table"
+      [(ngModel)]="searchText"
+      autofocus
+      (keydown.enter)="search()"
     />
   </div>
+
   <div class="my-4">
     <table class="table table-striped">
       <thead>
@@ -53,10 +58,12 @@
         </tr>
       </tbody>
     </table>
-    <ngb-pagination
-      [(page)]="page"
-      [pageSize]="pageSize"
-      [collectionSize]="mailLog.left.length"
-    ></ngb-pagination>
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [(page)]="page"
+        [pageSize]="pageSize"
+        [collectionSize]="mailLog.left.length"
+      ></ngb-pagination>
+    </div>
   </div>
 </div>
