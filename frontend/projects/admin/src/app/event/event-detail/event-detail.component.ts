@@ -13,12 +13,11 @@ import { formatDate } from '@angular/common';
 import { ConfigurationService } from '../../shared/configuration.service';
 import { InstanceSetting } from '../../model/instance-settings';
 import {
-  TicketAccessType,
   TicketCategory,
   TicketCategoryFilter,
   TicketTokenStatus,
   UiTicketCategory,
-} from 'projects/public/src/app/model/ticket-category';
+} from '../../model/ticket-category';
 
 @Component({
   selector: 'app-event-detail',
