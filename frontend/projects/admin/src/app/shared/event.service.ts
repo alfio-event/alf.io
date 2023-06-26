@@ -1,13 +1,9 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
-import {
-  Event,
-  EventInfo,
-  EventOrganizationInfo,
-  EventTicketsStatistics,
-} from '../model/event';
-import { UiTicketCategory } from 'projects/public/src/app/model/ticket-category';
+import {HttpClient} from '@angular/common/http';
+import {Injectable} from '@angular/core';
+import {map, Observable} from 'rxjs';
+import {Event, EventInfo, EventOrganizationInfo, EventTicketsStatistics,} from '../model/event';
+import {UiTicketCategory} from '../model/ticket-category';
+
 
 @Injectable()
 export class EventService {

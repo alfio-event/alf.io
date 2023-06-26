@@ -166,10 +166,11 @@ export class BookingComponent implements OnInit, AfterViewInit {
   private buildSubscriptionOwnerFormGroup(subscriptionInfos: Array<ReservationSubscriptionInfo> | undefined, user?: User): UntypedFormGroup {
     if (subscriptionInfos != null) {
       const subscriptionInfo = subscriptionInfos[0];
+      const email = subscriptionInfo.owner?.email || (this.emailEditForbidden ? this.reservationInfo.email : null) || user?.emailAddress;
       return this.formBuilder.group({
         firstName: subscriptionInfo.owner?.firstName || user?.firstName,
         lastName: subscriptionInfo.owner?.lastName || user?.lastName,
-        email: subscriptionInfo.owner?.email || user?.emailAddress
+        email
       });
     } else {
       return null;
@@ -318,5 +319,9 @@ export class BookingComponent implements OnInit, AfterViewInit {
 
   get showContactData(): boolean {
     return !embedded || !this.reservationInfo.metadata.hideContactData;
+  }
+
+  get emailEditForbidden(): boolean {
+    return this.reservationInfo.metadata.lockEmailEdit;
   }
 }

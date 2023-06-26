@@ -119,7 +119,7 @@
           <div class="col-12">
             <div class="form-group">
               <label class="form-label" class="form-label" for="subscription-email">{{'common.email' | translate}} *</label>
-              <input id="subscription-email" formControlName="email" type="email" class="form-control" appInvalidFeedback>
+              <input id="subscription-email" formControlName="email" type="email" [ngClass]="{'form-control': !emailEditForbidden, 'form-control-plaintext': emailEditForbidden}" appInvalidFeedback>
             </div>
           </div>
         </div>

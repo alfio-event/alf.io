@@ -42,7 +42,7 @@
   <dt class="col-icon text-muted"><fa-icon [icon]="['fas', 'money-bill']" [title]="'reservation-page.price' | translate"></fa-icon></dt>
   <dd class="col-text font-weight-bold"><app-price-tag [formattedPrice]="subscription.formattedPrice" [purchaseContext]="subscription" [showTaxDetails]="true" [singleLineLayout]="true"></app-price-tag></dd>
 
-  <ng-container *ngIf="owner">
+  <ng-container *ngIf="hasData(owner)">
     <dt class="col-icon text-muted"><fa-icon [icon]="['fas', 'address-card']" [title]="'reservation-page-complete.subscription.owner' | translate"></fa-icon></dt>
     <dd class="col-text">{{owner.firstName}} {{owner.lastName}} ({{owner.email}})</dd>
   </ng-container>

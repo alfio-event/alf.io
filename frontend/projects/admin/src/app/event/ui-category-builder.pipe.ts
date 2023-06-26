@@ -1,8 +1,6 @@
-import { Pipe, PipeTransform } from '@angular/core';
-import {
-  TicketCategory,
-  UiTicketCategory,
-} from 'projects/public/src/app/model/ticket-category';
+import {Pipe, PipeTransform} from '@angular/core';
+import {TicketCategory, UiTicketCategory} from '../model/ticket-category';
+
 
 @Pipe({
   name: 'uiCategoryBuilder',

@@ -1,5 +1,5 @@
-import { TicketCategory } from 'projects/public/src/app/model/ticket-category';
-import { Organization } from './organization';
+import {Organization} from './organization';
+import {TicketCategory} from './ticket-category';
 
 export interface EventInfo {
   allowedPaymentProxies: string[]; // TODO: enum
