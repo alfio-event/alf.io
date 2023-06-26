@@ -8,10 +8,6 @@
   </div>
 
   <div class="input-group">
-    <button class="btn btn-outline-secondary" type="button" (click)="search()">
-      <svg-icon key="search"></svg-icon>
-    </button>
-
     <input
       type="text"
       class="form-control"
@@ -22,6 +18,12 @@
       autofocus
       (keydown.enter)="search()"
     />
+    <button
+      class="btn btn-outline-secondary"
+      type="button"
+      (click)="search()"
+      translate="admin.common.search"
+    ></button>
   </div>
 
   <div class="my-4">
