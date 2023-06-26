@@ -60,7 +60,7 @@ export class UserService implements OnDestroy {
           if (response.status === 204) {
             return ANONYMOUS;
           } else {
-            return response.body;
+            return response.body as User;
           }
         })
       );
