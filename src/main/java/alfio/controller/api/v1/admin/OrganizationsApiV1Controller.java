@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v1.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.OrganizationDeleter;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
@@ -34,16 +35,20 @@ import java.util.List;
 public class OrganizationsApiV1Controller {
     private final UserManager userManager;
     private final OrganizationDeleter organizationDeleter;
+    private final AccessService accessService;
 
     @Autowired
     public OrganizationsApiV1Controller(UserManager userManager,
-                                        OrganizationDeleter organizationDeleter) {
+                                        OrganizationDeleter organizationDeleter,
+                                        AccessService accessService) {
         this.userManager = userManager;
         this.organizationDeleter = organizationDeleter;
+        this.accessService = accessService;
     }
 
     @PostMapping("/create")
     public ResponseEntity<Organization> createOrganization(@RequestBody OrganizationModification om, Principal principal) {
+        accessService.ensureSystemApiKey(principal);
         if (om == null || !om.isValid(true)) {
             return ResponseEntity.badRequest().build();
         }
@@ -52,17 +57,20 @@ public class OrganizationsApiV1Controller {
     }
 
     @GetMapping("/list")
-    public List<Organization> getAllOrganizations() {
+    public List<Organization> getAllOrganizations(Principal principal) {
+        accessService.ensureSystemApiKey(principal);
         return userManager.findUserOrganizations(UserManager.ADMIN_USERNAME);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Organization> getSingleOrganization(@PathVariable("id") int organizationId) {
+    public ResponseEntity<Organization> getSingleOrganization(@PathVariable("id") int organizationId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.of(userManager.findOptionalOrganizationById(organizationId, UserManager.ADMIN_USERNAME));
     }
 
     @PutMapping("/{id}/api-key")
     public OrganizationApiKey createApiKeyForOrganization(@PathVariable("id") int organizationId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName("ROLE_API_CLIENT"), User.Type.API_KEY, null, "Auto-generated API Key", principal);
         return new OrganizationApiKey(organizationId, user.getUsername());
     }
@@ -80,6 +88,7 @@ public class OrganizationsApiV1Controller {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") int organizationId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         boolean result = organizationDeleter.deleteOrganization(organizationId, principal);
         if (result) {
             return ResponseEntity.ok().build();

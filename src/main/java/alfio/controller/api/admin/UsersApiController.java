@@ -138,7 +138,7 @@ public class UsersApiController {
 
     @PostMapping("/organizations/new")
     public String insertOrganization(@RequestBody OrganizationModification om, Principal principal) {
-        accessService.checkIsAdmin(principal);
+        accessService.ensureAdmin(principal);
         userManager.createOrganization(om, principal);
         return OK;
     }

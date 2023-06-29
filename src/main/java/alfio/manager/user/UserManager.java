@@ -451,18 +451,7 @@ public class UserManager {
     }
 
     private void checkAccessToOrganizationId(Principal principal, int organizationId) {
-        if (principal == null) {
-            return;
-        }
-        if (isSystemApiUser(principal)) {
-            log.trace("Allowing access to Organization " + organizationId + " to System API Key");
-            return;
-        }
-        if (isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return;
-        }
-        log.warn("User {} don't have access to organizationId {}", principal.getName(), organizationId);
-        throw new IllegalArgumentException("User " + principal.getName() + " don't have access to organizationId " + organizationId);
+        accessService.checkOrganizationOwnership(principal, organizationId);
     }
 
     private boolean isSystemApiUser(Principal principal) {

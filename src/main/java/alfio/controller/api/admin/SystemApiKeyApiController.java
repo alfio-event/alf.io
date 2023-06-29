@@ -42,7 +42,7 @@ public class SystemApiKeyApiController {
 
     @GetMapping()
     public ResponseEntity<String> retrieveApiKey(Principal principal) {
-        accessService.checkIsAdmin(principal);
+        accessService.ensureAdmin(principal);
         try {
             return ResponseEntity.ok(configurationManager.retrieveSystemApiKey(false));
         } catch(RuntimeException e) {
@@ -53,7 +53,7 @@ public class SystemApiKeyApiController {
 
     @PutMapping()
     public ResponseEntity<String> rotateApiKey(Principal principal) {
-        accessService.checkIsAdmin(principal);
+        accessService.ensureAdmin(principal);
         try {
             return ResponseEntity.ok(configurationManager.retrieveSystemApiKey(true));
         } catch(RuntimeException e) {

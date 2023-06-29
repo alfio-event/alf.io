@@ -357,7 +357,7 @@ public class ResourceController {
     //------------------
 
     private void checkAccess(Principal principal) {
-        accessService.checkIsAdmin(principal);
+        accessService.ensureAdmin(principal);
     }
 
     private void checkAccess(int organizationId, Principal principal) {

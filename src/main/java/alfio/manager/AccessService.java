@@ -140,6 +140,12 @@ public class AccessService {
         }
     }
 
+    public void ensureSystemApiKey(Principal principal) {
+        if (!isSystemApiUser(principal)) {
+            throw new AccessDeniedException();
+        }
+    }
+
     public EventAndOrganizationId checkEventOwnership(Principal principal, int eventId) {
         var eventAndOrgId = eventRepository.findEventAndOrganizationIdById(eventId);
         checkOrganizationOwnership(principal, eventAndOrgId.getOrganizationId());
@@ -183,12 +189,6 @@ public class AccessService {
             throw new AccessDeniedException();
         }
         return eventAndOrganizationId;
-    }
-
-    public void checkIsAdmin(Principal principal) {
-        if (!isAdmin(principal)) {
-            throw new AccessDeniedException();
-        }
     }
 
     private static boolean isSystemApiUser(Principal principal) {
