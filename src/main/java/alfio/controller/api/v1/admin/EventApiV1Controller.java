@@ -23,8 +23,11 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.*;
+import alfio.model.Event;
+import alfio.model.EventWithAdditionalInfo;
+import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
+import alfio.model.PromoCodeDiscount;
 import alfio.model.api.v1.admin.CheckInLogEntry;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.api.v1.admin.LinkedSubscriptions;
@@ -79,6 +82,7 @@ public class EventApiV1Controller {
     private final ConfigurationManager configurationManager;
     private final AdminJobManager adminJobManager;
     private final CheckInManager checkInManager;
+    private final AccessService accessService;
 
     @PostMapping("/create")
     @Transactional
@@ -134,6 +138,7 @@ public class EventApiV1Controller {
 
     @GetMapping("/{slug}/stats")
     public ResponseEntity<EventWithAdditionalInfo> stats(@PathVariable("slug") String slug, Principal user) {
+        accessService.checkEventOwnership(user, slug);
         Result<EventWithAdditionalInfo> result = new Result.Builder<EventWithAdditionalInfo>()
             .build(() -> eventStatisticsManager.getEventWithAdditionalInfo(slug,user.getName()));
 
@@ -146,6 +151,7 @@ public class EventApiV1Controller {
 
     @DeleteMapping("/{slug}")
     public ResponseEntity<String> delete(@PathVariable("slug") String slug, Principal user) {
+        accessService.checkEventOwnership(user, slug);
         Result<String> result =  new Result.Builder<String>()
             .build(() -> {
                 eventManager.getOptionalEventAndOrganizationIdByName(slug,user.getName()).ifPresent( e -> eventManager.deleteEvent(e.getId(),user.getName()));
@@ -161,7 +167,7 @@ public class EventApiV1Controller {
 
     @PostMapping("/update/{slug}")
     public ResponseEntity<String> update(@PathVariable("slug") String slug, @RequestBody EventCreationRequest request, Principal user) {
-
+        accessService.checkEventOwnership(user, slug);
         String imageRef = fetchImage(request.getImageUrl());
 
         Result<String> result =  new Result.Builder<String>()
@@ -176,22 +182,15 @@ public class EventApiV1Controller {
 
     @GetMapping("/{slug}/subscriptions")
     public ResponseEntity<LinkedSubscriptions> getLinkedSubscriptions(@PathVariable("slug") String slug, Principal user) {
-
-        var subscriptionIdsOptional = eventManager.getOptionalEventAndOrganizationIdByName(slug, user.getName())
-            .map(event -> retrieveLinkedSubscriptionsForEvent(slug, event.getId(), event.getOrganizationId()));
-
-        return ResponseEntity.of(subscriptionIdsOptional);
+        var event = accessService.checkEventOwnership(user, slug);
+        return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, event.getId(), event.getOrganizationId()));
     }
 
     @PutMapping("/{slug}/subscriptions")
     public ResponseEntity<LinkedSubscriptions> updateLinkedSubscriptions(@PathVariable("slug") String slug,
                                                                          @RequestBody List<UUID> subscriptions,
                                                                          Principal user) {
-        var eventOptional = eventManager.getOptionalByName(slug, user.getName());
-        if (eventOptional.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        var eventAndOrgId = eventOptional.get();
+        var eventAndOrgId = accessService.checkDescriptorsLinkRequest(user, slug, subscriptions);
         eventManager.updateLinkedSubscriptions(subscriptions, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId());
         return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, eventAndOrgId.getId(), eventAndOrgId.getOrganizationId()));
     }
@@ -199,19 +198,19 @@ public class EventApiV1Controller {
     @PostMapping("/{slug}/generate-subscribers-tickets")
     public ResponseEntity<Boolean> generateTicketsForSubscribers(@PathVariable("slug") String slug,
                                                                  Principal user) {
-        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(slug, user.getName()).map(eventAndOrganizationId -> {
-            Map<String, Object> params = Map.of(
-                AssignTicketToSubscriberJobExecutor.EVENT_ID, eventAndOrganizationId.getId(),
-                AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, eventAndOrganizationId.getOrganizationId(),
-                AssignTicketToSubscriberJobExecutor.FORCE_GENERATION, true
-            );
-            return adminJobManager.scheduleExecution(ASSIGN_TICKETS_TO_SUBSCRIBERS, params);
-        }));
+        var eventAndOrganizationId = accessService.checkEventOwnership(user, slug);
+        Map<String, Object> params = Map.of(
+            AssignTicketToSubscriberJobExecutor.EVENT_ID, eventAndOrganizationId.getId(),
+            AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, eventAndOrganizationId.getOrganizationId(),
+            AssignTicketToSubscriberJobExecutor.FORCE_GENERATION, true
+        );
+        return ResponseEntity.ok(adminJobManager.scheduleExecution(ASSIGN_TICKETS_TO_SUBSCRIBERS, params));
     }
 
     @GetMapping("/{slug}/check-in-log")
     public ResponseEntity<List<CheckInLogEntry>> checkInLog(@PathVariable("slug") String slug,
                                                       Principal user) {
+        accessService.checkEventOwnership(user, slug);
         try {
             return ResponseEntity.ok(checkInManager.retrieveLogEntries(slug, user.getName()));
         } catch (Exception ex) {

@@ -264,6 +264,14 @@ public class AccessService {
         }
     }
 
+    public EventAndOrganizationId checkDescriptorsLinkRequest(Principal principal, String eventSlug, List<UUID> descriptorsToLink) {
+        var event = checkEventOwnership(principal, eventSlug);
+        var count = subscriptionRepository.countDescriptorsBelongingToOrganization(descriptorsToLink, event.getOrganizationId());
+        if (count == null || descriptorsToLink.size() != count) {
+            throw new AccessDeniedException();
+        }
+        return event;
+    }
     public void checkSubscriptionDescriptorOwnership(Principal principal, String publicIdentifier) {
         int organizationId = subscriptionRepository.findOrganizationIdForDescriptor(UUID.fromString(publicIdentifier))
             .orElseThrow(AccessDeniedException::new);
