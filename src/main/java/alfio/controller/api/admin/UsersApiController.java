@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.config.authentication.support.AuthenticationConstants;
+import alfio.manager.AccessService;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
@@ -61,6 +62,7 @@ public class UsersApiController {
     private static final String OK = "OK";
     private final UserManager userManager;
     private final ConfigurationManager configurationManager;
+    private final AccessService accessService;
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -129,42 +131,45 @@ public class UsersApiController {
 
     @PostMapping("/api-keys/bulk")
     public ResponseEntity<String> bulkCreate(@RequestBody BulkApiKeyCreation request, Principal principal) {
-        Optional<User> userOptional = userManager.findOptionalEnabledUserByUsername(principal.getName())
-            .filter(u -> userManager.isOwnerOfOrganization(u, request.organizationId));
-        if(userOptional.isPresent()) {
-            userManager.bulkInsertApiKeys(request.organizationId, request.role, request.descriptions, principal);
-            return ResponseEntity.ok("OK");
-        }
-        return ResponseEntity.badRequest().build();
+        accessService.checkOrganizationOwnership(principal, request.organizationId);
+        userManager.bulkInsertApiKeys(request.organizationId, request.role, request.descriptions, principal);
+        return ResponseEntity.ok(OK);
     }
 
     @PostMapping("/organizations/new")
     public String insertOrganization(@RequestBody OrganizationModification om, Principal principal) {
+        accessService.checkIsAdmin(principal);
         userManager.createOrganization(om, principal);
         return OK;
     }
 
     @PostMapping("/organizations/update")
     public String updateOrganization(@RequestBody OrganizationModification om, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, om.getId());
         userManager.updateOrganization(om, principal);
         return OK;
     }
 
     @PostMapping("/organizations/check")
     public ValidationResult validateOrganization(@RequestBody OrganizationModification om, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, om.getId());
         return userManager.validateOrganization(om, principal);
     }
 
     @PostMapping("/organizations/validate-slug")
     public ValidationResult validateSlug(@RequestBody OrganizationModification om, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, om.getId());
         return userManager.validateOrganizationSlug(om, principal);
     }
 
     @PostMapping("/users/check")
-    public ValidationResult validateUser(@RequestBody UserModification userModification) {
+    public ValidationResult validateUser(@RequestBody UserModification userModification, Principal principal) {
         if(userModification.getType() == User.Type.API_KEY) {
             return ValidationResult.success();
         } else {
+            if (userModification.getId() != null) {
+                accessService.checkAccessToUser(principal, userModification.getId());
+            }
             return userManager.validateUser(userModification.getId(), userModification.getUsername(),
                     userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
         }
@@ -172,6 +177,7 @@ public class UsersApiController {
 
     @PostMapping("/users/edit")
     public String editUser(@RequestBody UserModification userModification, Principal principal) {
+        accessService.checkAccessToUser(principal, userModification.getId());
         userManager.editUser(userModification.getId(), userModification.getOrganizationId(),
             userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(),
             userModification.getEmailAddress(), userModification.getDescription(),
@@ -181,6 +187,7 @@ public class UsersApiController {
 
     @PostMapping("/users/new")
     public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam("baseUrl") String baseUrl, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, userModification.getOrganizationId());
         Role requested = Role.valueOf(userModification.getRole());
         Validate.isTrue(userManager.getAvailableRoles(principal.getName()).stream().anyMatch(requested::equals), String.format("Requested role %s is not available for current user", userModification.getRole()));
         User.Type type = userModification.getType();
@@ -195,21 +202,17 @@ public class UsersApiController {
 
     @GetMapping("/api-keys/organization/{organizationId}/all")
     public void getAllApiKeys(@PathVariable("organizationId") int organizationId, HttpServletResponse response, Principal principal) throws IOException {
-        String username = principal.getName();
-        if(userManager.isOwnerOfOrganization(username, organizationId)) {
-            response.setContentType("application/zip");
-            response.setHeader("Content-Disposition", "attachment; filename=apiKeys.zip");
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=apiKeys.zip");
 
-            String baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
-            try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
-                for (User user : userManager.findAllApiKeysFor(organizationId)) {
-                    Pair<String, byte[]> result = generateApiKeyQRCode(user, baseUrl);
-                    zipOS.putNextEntry(new ZipEntry(user.getType().name() + "-" +result.getLeft()+".png"));
-                    StreamUtils.copy(result.getRight(), zipOS);
-                }
+        String baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
+        try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
+            for (User user : userManager.findAllApiKeysFor(organizationId)) {
+                Pair<String, byte[]> result = generateApiKeyQRCode(user, baseUrl);
+                zipOS.putNextEntry(new ZipEntry(user.getType().name() + "-" +result.getLeft()+".png"));
+                StreamUtils.copy(result.getRight(), zipOS);
             }
-        } else {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
     }
 

@@ -17,6 +17,7 @@
 package alfio.manager.user;
 
 import alfio.config.authentication.support.APITokenAuthentication;
+import alfio.manager.AccessService;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.*;
@@ -67,6 +68,7 @@ public class UserManager {
     private final PasswordEncoder passwordEncoder;
     private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final FindByIndexNameSessionRepository<?> sessionsByPrincipalFinder;
+    private final AccessService accessService;
 
 
     private List<Authority> getUserAuthorities(User user) {
@@ -440,21 +442,7 @@ public class UserManager {
         if (principal == null) {
             return;
         }
-        var currentUser = findUserByUsername(principal.getName());
-        if (isAdmin(currentUser)) {
-            return;
-        }
-        var targetUser = internalFindUser(userId);
-        var targetUserOrgs = findUserOrganizations(targetUser.getUsername());
-        Assert.state(!targetUser.getUsername().equals(ADMIN_USERNAME) && !isAdmin(targetUser), "Targeted user cannot be admin");
-        Assert.isTrue(targetUserOrgs.size() == 1, "Targeted user can only be in one organization");
-        for (var org : targetUserOrgs) {
-            if (isOwnerOfOrganization(currentUser, org.getId())) {
-                return;
-            }
-        }
-        log.warn("User {} does not have access to userId {}", principal.getName(), userId);
-        throw new IllegalStateException("User " + principal.getName() + " does not have access to userId " + userId);
+        accessService.checkAccessToUser(principal, userId);
     }
 
     private void checkAccessToUserIdAndNewOrganization(Principal principal, int userId, int newOrganization) {

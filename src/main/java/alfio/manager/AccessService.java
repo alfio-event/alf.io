@@ -22,9 +22,11 @@ import alfio.model.EventAndOrganizationId;
 import alfio.model.PurchaseContext;
 import alfio.model.modification.GroupModification;
 import alfio.model.modification.PromoCodeDiscountModification;
+import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.AuthorityRepository;
+import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +39,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
+import static alfio.manager.user.UserManager.ADMIN_USERNAME;
 
 /**
  * Centralized service for checking if a given Principal can
@@ -63,6 +66,7 @@ public class AccessService {
     private final GroupRepository groupRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
+    private final OrganizationRepository organizationRepository;
 
     public AccessService(UserRepository userRepository,
                          AuthorityRepository authorityRepository,
@@ -74,7 +78,8 @@ public class AccessService {
                          BillingDocumentRepository billingDocumentRepository,
                          GroupRepository groupRepository,
                          TicketCategoryRepository ticketCategoryRepository,
-                         PromoCodeDiscountRepository promoCodeDiscountRepository) {
+                         PromoCodeDiscountRepository promoCodeDiscountRepository,
+                         OrganizationRepository organizationRepository) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
         this.userOrganizationRepository = userOrganizationRepository;
@@ -86,10 +91,30 @@ public class AccessService {
         this.groupRepository = groupRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.promoCodeDiscountRepository = promoCodeDiscountRepository;
+        this.organizationRepository = organizationRepository;
     }
 
-    public void checkUserAccess(Principal principal, int userId) {
-        throw new AccessDeniedException();
+    public void checkAccessToUser(Principal principal, Integer userId) {
+        if (userId == null || principal == null) {
+            throw new AccessDeniedException();
+        }
+        if (isAdmin(principal) || isSystemApiUser(principal)) {
+            log.trace("principal {} identified as ADMIN is allowed to retrieve user details for user {}", principal.getName(), userId);
+            return;
+        }
+        var targetUser = userRepository.findOptionalById(userId).orElseThrow(AccessDeniedException::new);
+        // target user cannot be an admin because current user is NOT an admin
+        if (targetUser.getUsername().equals(ADMIN_USERNAME) || checkRole(targetUser.getUsername(), EnumSet.of(Role.ADMIN))) {
+            throw new AccessDeniedException();
+        }
+        var targetUserOrgs = organizationRepository.findAllForUser(targetUser.getUsername());
+        if (targetUserOrgs.size() != 1) {
+            log.warn("denied access to user {} which is member of {} organizations", targetUser.getUsername(), targetUserOrgs.size());
+            throw new AccessDeniedException();
+        }
+        for (Organization targetUserOrg : targetUserOrgs) {
+            checkOrganizationOwnership(principal, targetUserOrg.getId());
+        }
     }
 
     public void checkOrganizationOwnership(Principal principal, int organizationId) {
@@ -105,7 +130,7 @@ public class AccessService {
             log.trace("Allowing ownership to Organization {} to user {}", organizationId, principal.getName());
             return;
         }
-        log.warn("User {} don't have ownership to organizationId {}", principal.getName(), organizationId);
+        log.warn("User {} is NOT an owner of organizationId {}", principal.getName(), organizationId);
         throw new AccessDeniedException(); //"User " + principal.getName() + " don't have ownership to organizationId " + organizationId
     }
 
@@ -180,8 +205,12 @@ public class AccessService {
         return checkRole(principal, EnumSet.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER));
     }
     private boolean checkRole(Principal principal, Set<Role> expectedRoles) {
+        return checkRole(principal.getName(), expectedRoles);
+    }
+
+    private boolean checkRole(String username, Set<Role> expectedRoles) {
         var roleNames = expectedRoles.stream().map(Role::getRoleName).collect(Collectors.toSet());
-        return authorityRepository.checkRole(principal.getName(), roleNames);
+        return authorityRepository.checkRole(username, roleNames);
     }
 
     private boolean isOwnerOfOrganization(Principal principal, int organizationId) {
