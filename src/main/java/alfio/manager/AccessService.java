@@ -390,4 +390,13 @@ public class AccessService {
             return organizationId;
         }
     }
+
+    public void checkEventLinkRequest(Principal principal, String subscriptionId, List<String> eventSlugs) {
+        int organizationId = subscriptionRepository.findOrganizationIdForDescriptor(UUID.fromString(subscriptionId))
+            .orElseThrow(AccessDeniedException::new);
+        checkOrganizationOwnership(principal, organizationId);
+        if (eventSlugs.size() > 0 && eventSlugs.size() != eventRepository.countEventsInOrganization(organizationId, eventSlugs)) {
+            throw new AccessDeniedException();
+        }
+    }
 }

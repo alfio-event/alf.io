@@ -183,6 +183,8 @@ public interface EventRepository {
     Integer countExistingTickets(@Bind("eventId") int eventId);
     @Query("select count(*) from event")
     Integer countEvents();
+    @Query("select count(*) from event where org_id = :organizationId and short_name in (:eventShortNames)")
+    Integer countEventsInOrganization(@Bind("organizationId") int organizationId, @Bind("eventShortNames") Collection<String> shortNames);
 
     @Query(value = "update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds)) returning id", type = QueryType.MODIFYING_WITH_RETURN)
     List<Integer> disableEventsForUsers(@Bind("userIds") Collection<Integer> userIds);

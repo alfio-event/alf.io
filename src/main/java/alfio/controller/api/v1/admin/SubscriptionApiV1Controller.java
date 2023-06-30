@@ -17,10 +17,7 @@
 package alfio.controller.api.v1.admin;
 
 import alfio.controller.api.admin.SubscriptionApiController;
-import alfio.manager.EventManager;
-import alfio.manager.FileDownloadManager;
-import alfio.manager.FileUploadManager;
-import alfio.manager.SubscriptionManager;
+import alfio.manager.*;
 import alfio.manager.user.UserManager;
 import alfio.model.api.v1.admin.SubscriptionDescriptorModificationRequest;
 import alfio.model.modification.SubscriptionDescriptorModification;
@@ -50,17 +47,20 @@ public class SubscriptionApiV1Controller {
     private final FileDownloadManager fileDownloadManager;
     private final UserManager userManager;
     private final EventManager eventManager;
+    private final AccessService accessService;
 
     public SubscriptionApiV1Controller(SubscriptionManager subscriptionManager,
                                        FileUploadManager fileUploadManager,
                                        FileDownloadManager fileDownloadManager,
                                        UserManager userManager,
-                                       EventManager eventManager) {
+                                       EventManager eventManager,
+                                       AccessService accessService) {
         this.subscriptionManager = subscriptionManager;
         this.fileUploadManager = fileUploadManager;
         this.fileDownloadManager = fileDownloadManager;
         this.userManager = userManager;
         this.eventManager = eventManager;
+        this.accessService = accessService;
     }
 
     @PostMapping("/create")
@@ -85,6 +85,7 @@ public class SubscriptionApiV1Controller {
     @PostMapping("/{subscriptionId}/update")
     public ResponseEntity<String> update(@PathVariable("subscriptionId") UUID subscriptionId,
                                          @RequestBody SubscriptionDescriptorModificationRequest request, Principal principal) {
+        accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId.toString());
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
         String imageRef = null;
         if(StringUtils.isNotEmpty(request.getImageUrl())) {
@@ -104,24 +105,27 @@ public class SubscriptionApiV1Controller {
     @GetMapping("/{subscriptionId}")
     public ResponseEntity<SubscriptionDescriptorWithStatistics> get(@PathVariable("subscriptionId") UUID subscriptionId,
                                                                     Principal principal) {
+        accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId.toString());
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
         return ResponseEntity.of(subscriptionManager.loadSubscriptionWithStatistics(subscriptionId, organization.getId()));
     }
 
     @GetMapping("/{subscriptionId}/events")
     public ResponseEntity<List<String>> getLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
-                                                 Principal principal) {
+                                                        Principal principal) {
+        accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId.toString());
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
         return ResponseEntity.ok(loadLinkedEvents(subscriptionManager.getLinkedEvents(organization.getId(), subscriptionId)));
     }
 
     @PostMapping("/{subscriptionId}/events")
     public ResponseEntity<List<String>> updateLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
-                                                    @RequestBody List<String> eventSlugs,
-                                                    Principal principal) {
+                                                           @RequestBody List<String> eventSlugs,
+                                                           Principal principal) {
         if (eventSlugs == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
+        accessService.checkEventLinkRequest(principal, subscriptionId.toString(), eventSlugs);
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
         int organizationId = organization.getId();
 
@@ -142,6 +146,7 @@ public class SubscriptionApiV1Controller {
 
     @DeleteMapping("/{subscriptionId}/deactivate")
     public ResponseEntity<Void> deactivate(@PathVariable("subscriptionId") UUID descriptorId, Principal principal) {
+        accessService.checkSubscriptionDescriptorOwnership(principal, descriptorId.toString());
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
         int organizationId = organization.getId();
         return SubscriptionApiController.deactivateSubscriptionDescriptor(organizationId, descriptorId, subscriptionManager);
