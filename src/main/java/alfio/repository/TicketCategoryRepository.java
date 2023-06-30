@@ -63,6 +63,9 @@ public interface TicketCategoryRepository {
     @Query("select exists(select id from ticket_category where id = :id and " + CHECK_ACTIVE + ")")
     Boolean checkCategoryExistsForEvent(@Bind("id") int id, @Bind("eventId") int eventId);
 
+    @Query("select count(*) from ticket_category where id in (:ids) and " + CHECK_ACTIVE)
+    Integer countCategoriesBelongingToEvent(@Bind("eventId") int eventId, @Bind("ids") Collection<Integer> categoryIds);
+
     @Query("select * from ticket_category_with_currency where id in (:ids) and " + CHECK_ACTIVE)
     List<TicketCategory> getByIdsAndActive(@Bind("ids") Collection<Integer> ids, @Bind("eventId") int eventId);
 

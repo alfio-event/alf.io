@@ -16,10 +16,7 @@
  */
 package alfio.controller.api.v1.admin;
 
-import alfio.manager.EventManager;
-import alfio.manager.PromoCodeRequestManager;
-import alfio.manager.PurchaseContextManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
@@ -54,16 +51,19 @@ public class ReservationApiV1Controller {
     private final PurchaseContextManager purchaseContextManager;
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
+    private final AccessService accessService;
 
     @Autowired
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
                                       PurchaseContextManager purchaseContextManager,
                                       PromoCodeRequestManager promoCodeRequestManager,
-                                      EventManager eventManager) {
+                                      EventManager eventManager,
+                                      AccessService accessService) {
         this.ticketReservationManager = ticketReservationManager;
         this.purchaseContextManager = purchaseContextManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
         this.eventManager = eventManager;
+        this.accessService = accessService;
     }
 
     @PostMapping("/event/{slug}/reservation")
@@ -71,6 +71,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<CreationResponse> createTicketsReservation(@PathVariable("slug") String eventSlug,
                                                                      @RequestBody TicketReservationCreationRequest reservationCreationRequest,
                                                                      Principal principal) {
+        accessService.checkEventReservationCreationRequest(principal, eventSlug, reservationCreationRequest);
         var bindingResult = new BeanPropertyBindingResult(reservationCreationRequest, "reservation");
 
         var optionalEvent = purchaseContextManager.findBy(PurchaseContextType.event, eventSlug);
@@ -97,6 +98,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<CreationResponse> createSubscriptionReservation(@PathVariable("id") String subscriptionId,
                                                                           @RequestBody SubscriptionReservationCreationRequest creationRequest,
                                                                           Principal principal) {
+        accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId);
         var bindingResult = new BeanPropertyBindingResult(creationRequest, "reservation");
 
         var optionalDescriptor = purchaseContextManager.findBy(PurchaseContextType.subscription, subscriptionId);

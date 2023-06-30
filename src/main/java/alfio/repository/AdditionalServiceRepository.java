@@ -77,4 +77,7 @@ public interface AdditionalServiceRepository {
 
     @Query("select * from additional_service_with_currency where event_id_fk = :eventId and supplement_policy = :supplementPolicy order by ordinal")
     List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);
+
+    @Query("select count(*) from additional_service where event_id_fk = :eventId and id in(:ids)")
+    Integer countAdditionalServicesBelongingToEvent(@Bind("eventId") int eventId, @Bind("ids") Collection<Integer> ids);
 }

@@ -17,11 +17,14 @@
 package alfio.manager;
 
 import alfio.config.authentication.support.APITokenAuthentication;
+import alfio.controller.form.ReservationCreate;
 import alfio.manager.support.AccessDeniedException;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.PurchaseContext;
+import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.GroupModification;
 import alfio.model.modification.PromoCodeDiscountModification;
+import alfio.model.modification.ReservationRequest;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
@@ -67,6 +70,7 @@ public class AccessService {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
     private final OrganizationRepository organizationRepository;
+    private final AdditionalServiceRepository additionalServiceRepository;
 
     public AccessService(UserRepository userRepository,
                          AuthorityRepository authorityRepository,
@@ -79,7 +83,8 @@ public class AccessService {
                          GroupRepository groupRepository,
                          TicketCategoryRepository ticketCategoryRepository,
                          PromoCodeDiscountRepository promoCodeDiscountRepository,
-                         OrganizationRepository organizationRepository) {
+                         OrganizationRepository organizationRepository,
+                         AdditionalServiceRepository additionalServiceRepository) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
         this.userOrganizationRepository = userOrganizationRepository;
@@ -92,6 +97,7 @@ public class AccessService {
         this.ticketCategoryRepository = ticketCategoryRepository;
         this.promoCodeDiscountRepository = promoCodeDiscountRepository;
         this.organizationRepository = organizationRepository;
+        this.additionalServiceRepository = additionalServiceRepository;
     }
 
     public void checkAccessToUser(Principal principal, Integer userId) {
@@ -178,6 +184,21 @@ public class AccessService {
     public void checkCategoryOwnership(Principal principal, String eventShortName, int categoryId) {
         var eventAndOrganizationId = checkEventOwnership(principal, eventShortName);
         if (!Boolean.TRUE.equals(ticketCategoryRepository.checkCategoryExistsForEvent(categoryId, eventAndOrganizationId.getId()))) {
+            throw new AccessDeniedException();
+        }
+    }
+
+    public void checkEventReservationCreationRequest(Principal principal,
+                                                     String eventShortName,
+                                                     ReservationCreate<? extends ReservationRequest> createRequest) {
+        var eventAndOrganizationId = checkEventOwnership(principal, eventShortName);
+        var categoryIds = createRequest.getTickets().stream().map(ReservationRequest::getTicketCategoryId).collect(Collectors.toSet());
+        int eventId = eventAndOrganizationId.getId();
+        if (categoryIds.size() != ticketCategoryRepository.countCategoriesBelongingToEvent(eventId, categoryIds)) {
+            throw new AccessDeniedException();
+        }
+        var additionalServicesIds = createRequest.getAdditionalServices().stream().map(AdditionalServiceReservationModification::getAdditionalServiceId).collect(Collectors.toSet());
+        if (additionalServicesIds.size() > 0 && additionalServicesIds.size() != additionalServiceRepository.countAdditionalServicesBelongingToEvent(eventId, additionalServicesIds)) {
             throw new AccessDeniedException();
         }
     }
