@@ -399,4 +399,22 @@ public class AccessService {
             throw new AccessDeniedException();
         }
     }
+
+    public EventAndOrganizationId canAccessEvent(Principal principal, String eventShortName) {
+        var eventAndOrgId = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName)
+            .orElseThrow(AccessDeniedException::new);
+        var user = userRepository.getByUsername(principal.getName());
+        if (!userOrganizationRepository.userIsInOrganization(user.getId(), eventAndOrgId.getOrganizationId())) {
+            throw new AccessDeniedException();
+        }
+        return eventAndOrgId;
+    }
+
+    public void canAccessTicket(Principal principal, String eventShortName, String uuid) {
+        var eventAndOrgId = canAccessEvent(principal, eventShortName);
+        var ticket = ticketRepository.findByUUID(uuid);
+        if (ticket.getEventId() != eventAndOrgId.getId()) {
+            throw new AccessDeniedException();
+        }
+    }
 }

@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v1;
 
+import alfio.manager.AccessService;
 import alfio.manager.AttendeeManager;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
@@ -53,10 +54,12 @@ public class AttendeeApiController {
 
     public static final String ALFIO_OPERATOR_HEADER = "Alfio-Operator";
     private final AttendeeManager attendeeManager;
+    private final AccessService accessService;
 
     @Autowired
-    public AttendeeApiController(AttendeeManager attendeeManager) {
+    public AttendeeApiController(AttendeeManager attendeeManager, AccessService accessService) {
         this.attendeeManager = attendeeManager;
+        this.accessService = accessService;
     }
 
     @ExceptionHandler({DataIntegrityViolationException.class, IllegalArgumentException.class})
@@ -96,6 +99,7 @@ public class AttendeeApiController {
             .map(EventUtil.JSON_DATETIME_FORMATTER::parse)
             .flatMap(d -> Wrappers.safeSupplier(() -> ZonedDateTime.of(LocalDateTime.from(d), ZoneOffset.UTC)))
             .orElse(SponsorScanRepository.DEFAULT_TIMESTAMP);
+        accessService.canAccessEvent(principal, eventShortName);
         return attendeeManager.retrieveScannedAttendees(eventShortName, principal.getName(), start).map(ResponseEntity::ok).orElse(notFound());
     }
 
@@ -117,6 +121,7 @@ public class AttendeeApiController {
      */
     @GetMapping("/{eventKey}/ticket/{UUID}")
     public Result<TicketWithAdditionalFields> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
+        accessService.canAccessTicket(principal, eventShortName, uuid);
         return attendeeManager.retrieveTicket(eventShortName, uuid, principal.getName());
     }
 
