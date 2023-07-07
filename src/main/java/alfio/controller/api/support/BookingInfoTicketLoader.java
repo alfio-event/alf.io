@@ -160,8 +160,11 @@ public class BookingInfoTicketLoader {
 
     private static AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, Description> description) {
         var fields = t.getFields().stream().map(f -> new Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
+        var restrictedValues = t.getRestrictedValues().stream()
+            .filter(rv -> Objects.equals(t.getValue(), rv) || !t.getDisabledValues().contains(rv))
+            .collect(Collectors.toList());
         return new AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(), t.isEditable(),
-            t.getMinLength(), t.getMaxLength(), t.getRestrictedValues(),
+            t.getMinLength(), t.getMaxLength(), restrictedValues,
             fields, t.isBeforeStandardFields(), description);
     }
 
