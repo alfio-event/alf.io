@@ -17,6 +17,7 @@
 package alfio.controller.form;
 
 import alfio.controller.support.CustomBindingResult;
+import alfio.manager.ExtensionManager;
 import alfio.manager.SameCountryValidator;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
@@ -96,7 +97,8 @@ public class ContactAndTicketsForm implements Serializable {
                          SameCountryValidator vatValidator,
                          Map<ConfigurationKeys, Boolean> formValidationParameters,
                          Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer,
-                         boolean reservationRequiresPayment) {
+                         boolean reservationRequiresPayment,
+                         ExtensionManager extensionManager) {
 
 
         formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false), reservationRequiresPayment);
@@ -107,7 +109,7 @@ public class ContactAndTicketsForm implements Serializable {
                     .filter(m -> !m.isEmpty())
                     .map(m -> m.entrySet().stream().map(e -> {
                         var filteredForTicket = ticketFieldsFilterer.orElseThrow().getFieldsForTicket(e.getKey());
-                        return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator);
+                        return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator, extensionManager);
                     }))
                     .map(s -> s.collect(Collectors.toList()));
 

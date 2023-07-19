@@ -34,6 +34,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 
 import java.util.*;
@@ -75,7 +76,7 @@ public class TicketHelper {
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
                                                                            String ticketIdentifier,
                                                                            UpdateTicketOwnerForm updateTicketOwner,
-                                                                           Optional<Errors> bindingResult,
+                                                                           Optional<BindingResult> bindingResult,
                                                                            Locale fallbackLocale,
                                                                            Optional<UserDetails> userDetails,
                                                                            boolean addPrefix) {
@@ -85,7 +86,7 @@ public class TicketHelper {
     }
 
     private Triple<ValidationResult, Event, Ticket> assignTicket(UpdateTicketOwnerForm updateTicketOwner,
-                                                                 Optional<Errors> bindingResult,
+                                                                 Optional<BindingResult> bindingResult,
                                                                  Locale fallbackLocale,
                                                                  Optional<UserDetails> userDetails,
                                                                  Triple<Event, TicketReservation, Ticket> result,
@@ -112,7 +113,7 @@ public class TicketHelper {
         var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, ticketUUID -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()));
 
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
-        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator)
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)
                 .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, fallbackLocale, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
@@ -125,7 +126,7 @@ public class TicketHelper {
                                                                           String reservationId,
                                                                           String ticketIdentifier,
                                                                           UpdateTicketOwnerForm updateTicketOwner,
-                                                                          Optional<Errors> bindingResult,
+                                                                          Optional<BindingResult> bindingResult,
                                                                           Locale fallbackLocale,
                                                                           Optional<UserDetails> userDetails) {
 
@@ -137,7 +138,7 @@ public class TicketHelper {
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
                                                                           String ticketIdentifier,
                                                                           UpdateTicketOwnerForm updateTicketOwner,
-                                                                          Optional<Errors> bindingResult,
+                                                                          Optional<BindingResult> bindingResult,
                                                                           Locale locale) {
         return assignTicket(eventName, ticketIdentifier, updateTicketOwner, bindingResult, locale, Optional.empty(), false);
     }
@@ -149,7 +150,7 @@ public class TicketHelper {
                                                                                     String firstName,
                                                                                     String lastName,
                                                                                     String userLanguage,
-                                                                                    Optional<Errors> bindingResult,
+                                                                                    Optional<BindingResult> bindingResult,
                                                                                     Locale locale) {
         List<Ticket> tickets = ticketReservationManager.findTicketsInReservation(reservationId);
         if(tickets.size() > 1) {

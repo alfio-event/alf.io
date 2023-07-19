@@ -442,7 +442,7 @@ public class ReservationApiV2Controller {
 
             //
             contactAndTicketsForm.validate(bindingResult, purchaseContext, new SameCountryValidator(configurationManager, extensionManager, purchaseContext, reservationId, vatChecker),
-                formValidationParameters, ticketFieldFilterer, reservationCost.requiresPayment());
+                formValidationParameters, ticketFieldFilterer, reservationCost.requiresPayment(), extensionManager);
             //
 
             if(!bindingResult.hasErrors()) {
@@ -494,7 +494,7 @@ public class ReservationApiV2Controller {
         if(!contactAndTicketsForm.isPostponeAssignment()) {
             contactAndTicketsForm.getTickets().forEach((ticketId, owner) -> {
                 if (preAssign) {
-                    Optional<Errors> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
+                    Optional<BindingResult> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
                     ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, locale, Optional.empty());
                 } else {
                     ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), locale, Optional.empty(), true);

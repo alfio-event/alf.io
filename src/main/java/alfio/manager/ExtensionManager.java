@@ -19,11 +19,13 @@ package alfio.manager;
 
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.form.ContactAndTicketsForm;
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.extension.ExtensionService;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.support.extension.ExtensionEvent;
+import alfio.manager.support.extension.ValidationErrorNotifier;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -321,6 +323,15 @@ public class ExtensionManager {
         );
 
         syncCall(ExtensionEvent.RESERVATION_VALIDATION, purchaseContext, payload, Void.class);
+    }
+
+    public void handleTicketUpdateValidation(PurchaseContext purchaseContext, UpdateTicketOwnerForm form, BindingResult bindingResult, String keyPrefix) {
+        Map<String, Object> payload = Map.of(
+            "form", form,
+            "validationErrorNotifier", new ValidationErrorNotifier(bindingResult, keyPrefix)
+        );
+
+        syncCall(TICKET_UPDATE_VALIDATION, purchaseContext, payload, Void.class);
     }
 
     public void handleUserProfileValidation(Object clientForm, BindingResult bindingResult) {

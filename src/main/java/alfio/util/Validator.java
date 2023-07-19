@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
+import alfio.manager.ExtensionManager;
 import alfio.manager.GroupManager;
 import alfio.manager.SameCountryValidator;
 import alfio.model.*;
@@ -33,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
@@ -245,10 +247,11 @@ public final class Validator {
 
     public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form,
                                                             List<TicketFieldConfiguration> additionalFieldsForTicket,
-                                                            Optional<Errors> errorsOptional,
+                                                            Optional<BindingResult> errorsOptional,
                                                             Event event,
                                                             String baseField,
-                                                            SameCountryValidator vatValidator) {
+                                                            SameCountryValidator vatValidator,
+                                                            ExtensionManager extensionManager) {
         if(errorsOptional.isEmpty()) {
             return ValidationResult.success();//already validated
         }
@@ -259,7 +262,7 @@ public final class Validator {
             prefix = prefix + ".";
         }
 
-        Errors errors = errorsOptional.get();
+        var errors = errorsOptional.get();
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, prefix + EMAIL_KEY, ERROR_EMAIL);
         String email = form.getEmail();
         if(!isEmailValid(email)) {
@@ -282,6 +285,10 @@ public final class Validator {
         final String prefixForLambda = prefix;
         for(TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
             validateFieldConfiguration(form, vatValidator, errors, prefixForLambda, fieldConf);
+        }
+
+        if (!errors.hasErrors()) {
+            extensionManager.handleTicketUpdateValidation(event, form, errors, prefix);
         }
 
         return evaluateValidationResult(errors);
