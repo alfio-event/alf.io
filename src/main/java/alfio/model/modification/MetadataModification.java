@@ -49,8 +49,8 @@ public class MetadataModification {
             new OnlineConfiguration(callLinks.stream().map(CallLinkModification::toCallLink).collect(Collectors.toList())),
             requirementsDescriptions,
             List.of(),
-            null
-        );
+            null,
+            Map.of());
     }
 
     @Getter
