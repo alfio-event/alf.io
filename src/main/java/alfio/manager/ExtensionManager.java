@@ -114,7 +114,7 @@ public class ExtensionManager {
 
     AlfioMetadata handleMetadataUpdate(Event event, Organization organization, AlfioMetadata metadata) {
         Map<String, Object> payload = buildMetadataUpdatePayload(organization, metadata);
-        return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
+        return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class, false);
     }
 
 
