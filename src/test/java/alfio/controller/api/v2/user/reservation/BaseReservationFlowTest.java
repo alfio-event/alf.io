@@ -1059,9 +1059,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
 
                 // check failures
-                assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
-                assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket", null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
-                assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket", null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier, null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
                 //
 
 
@@ -1118,8 +1118,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
                     // check register sponsor scan success flow
                     assertTrue(attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
                     // scanned badges returns only unique values for a limited subset of columns
                     assertEquals(1, attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
 
@@ -1139,10 +1139,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     //
 
                     // check update notes
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT", null), sponsorPrincipal, null).getBody().getResult().getStatus());
                     var scannedBadges = attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody();
                     assertEquals(1, requireNonNull(scannedBadges).size());
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT", null), sponsorPrincipal, null).getBody().getResult().getStatus());
                     scannedBadges = attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody();
                     assertEquals(1, requireNonNull(scannedBadges).size());
                     response = new MockHttpServletResponse();
@@ -1159,7 +1159,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
                     // scan from a different operator
                     response = new MockHttpServletResponse();
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, "OP2").getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null, null), sponsorPrincipal, "OP2").getBody().getResult().getStatus());
                     eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
                     csvReader = new CSVReader(new StringReader(response.getContentAsString()));
                     csvSponsorScan = csvReader.readAll();

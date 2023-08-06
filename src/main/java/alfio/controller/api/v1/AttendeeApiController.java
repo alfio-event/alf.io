@@ -76,7 +76,7 @@ public class AttendeeApiController {
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request,
                                                             Principal principal,
                                                             @RequestHeader(name = ALFIO_OPERATOR_HEADER, required = false) String operator) {
-        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName(), operator));
+        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName(), operator, request.timestamp));
     }
 
     @PostMapping("/sponsor-scan/bulk")
@@ -85,7 +85,7 @@ public class AttendeeApiController {
                                                                    @RequestHeader(name = ALFIO_OPERATOR_HEADER, required = false) String operator) {
         String username = principal.getName();
         return ResponseEntity.ok(requests.stream()
-            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, username, operator))
+            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, username, operator, request.timestamp))
             .collect(Collectors.toList()));
     }
 
@@ -130,18 +130,21 @@ public class AttendeeApiController {
         private final String ticketIdentifier;
         private final String notes;
         private final SponsorScan.LeadStatus leadStatus;
+        private final Long timestamp;
 
         @JsonCreator
         public SponsorScanRequest(@JsonProperty("eventName") String eventName,
                                   @JsonProperty("ticketIdentifier") String ticketIdentifier,
                                   @JsonProperty("notes") String notes,
-                                  @JsonProperty("leadStatus") String leadStatus) {
+                                  @JsonProperty("leadStatus") String leadStatus,
+                                  @JsonProperty("timestamp") Long timestamp) {
             this.eventName = eventName;
             this.ticketIdentifier = ticketIdentifier;
             this.notes = notes;
             this.leadStatus = Optional.ofNullable(leadStatus)
                 .flatMap(l -> optionally(() -> SponsorScan.LeadStatus.valueOf(l)))
                 .orElse(SponsorScan.LeadStatus.WARM);
+            this.timestamp = timestamp;
         }
     }
 
