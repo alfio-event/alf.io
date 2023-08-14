@@ -81,6 +81,8 @@ public class ExtensionManager {
     private static final String ORGANIZATION_ID = "organizationId";
     private static final String RESERVATION_ID = "reservationId";
     private static final String EVENT = "event";
+    private static final String CAPABILITY_REQUEST = "request";
+    private static final String METADATA = "metadata";
     public static final String TICKET_METADATA = "ticketMetadata";
     private final ExtensionService extensionService;
     private final EventRepository eventRepository;
@@ -123,13 +125,22 @@ public class ExtensionManager {
                                                                 AlfioMetadata existingMetadata,
                                                                 Map<String, String> requestParams) {
         Map<String, Object> context = buildMetadataUpdatePayload(organization, existingMetadata);
-        context.put("request", requestParams);
+        context.put(CAPABILITY_REQUEST, requestParams);
         return internalExecuteCapability(ExtensionCapability.GENERATE_MEETING_LINK, context, event, AlfioMetadata.class);
+    }
+
+    Optional<String> handleGenerateLinkCapability(Event event,
+                                                  AlfioMetadata existingMetadata,
+                                                  Map<String, String> requestParams) {
+        Map<String, Object> context = new HashMap<>();
+        context.put(METADATA, existingMetadata);
+        context.put(CAPABILITY_REQUEST, requestParams);
+        return internalExecuteCapability(ExtensionCapability.LINK_EXTERNAL_APPLICATION, context, event, String.class);
     }
 
     private Map<String, Object> buildMetadataUpdatePayload(Organization organization, AlfioMetadata metadata) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("metadata", metadata);
+        payload.put(METADATA, metadata);
         payload.put(ORGANIZATION, organization);
         payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organization.getId())).getRequiredValue());
         return payload;
@@ -488,7 +499,7 @@ public class ExtensionManager {
                                              PurchaseContext purchaseContext,
                                              Class<T> resultType) {
         var contextParams = new HashMap<String, Object>();
-        contextParams.put("request", params);
+        contextParams.put(CAPABILITY_REQUEST, params);
         return internalExecuteCapability(capability, contextParams, purchaseContext, resultType);
     }
 
@@ -545,7 +556,7 @@ public class ExtensionManager {
                                                                                SubscriptionMetadata subscriptionMetadata) {
         var context = new HashMap<String, Object>();
         context.put("subscription", subscription);
-        context.put("metadata", Objects.requireNonNullElseGet(subscriptionMetadata, SubscriptionMetadata::empty));
+        context.put(METADATA, Objects.requireNonNullElseGet(subscriptionMetadata, SubscriptionMetadata::empty));
         context.put("subscriptionDescriptor", descriptor);
         return Optional.ofNullable(syncCall(ExtensionEvent.SUBSCRIPTION_ASSIGNED_GENERATE_METADATA, descriptor, context, SubscriptionMetadata.class, false));
     }

@@ -34,7 +34,6 @@ import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.support.CheckInOutputColorConfiguration.ColorConfiguration;
 import alfio.model.system.ConfigurationKeys;
@@ -1215,6 +1214,8 @@ public class EventManager {
                             eventRepository.updateMetadata(requireNonNullElseGet(metadata, AlfioMetadata::empty), event.getId());
                             return "metadata updated";
                         });
+                } else if (capability == ExtensionCapability.LINK_EXTERNAL_APPLICATION) {
+                    return extensionManager.handleGenerateLinkCapability(event, getMetadataForEvent(event), requestParams);
                 } else {
                     return extensionManager.executeCapability(capability, requestParams, event, String.class);
                 }

@@ -103,6 +103,14 @@
                     </li>
                 </ul>
             </li>
+            <li ng-if="ctrl.hasLinkedApplications"><h4 class="text-muted">Linked Applications</h4></li>
+            <li ng-if="ctrl.hasLinkedApplications">
+                <ul class="nav nav-pills nav-stacked">
+                    <li role="presentation" data-ng-repeat="link in ctrl.linkedApplications">
+                        <a ng-click="ctrl.linkSelected(ctrl.event, link, $event)"><i class="fa fa-external-link"></i> {{link.label}}</a>
+                    </li>
+                </ul>
+            </li>
         </ul>
         <hr />
     </section>
@@ -146,7 +154,7 @@
         </ul>
     </section>
     <footer data-ng-if="ctrl.currentView !== 'UNKNOWN'">
-        <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{ctrl.applicationInfo.version}}</h5>
-        <small><a href="https://github.com/alfio-event/alf.io/issues" target="_blank">report an issue</a> or <a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="nofollow noopener noreferrer">ask for help</a></small>
+        <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank" rel="noopener">Alf.io</a> v.{{ctrl.applicationInfo.version}}</h5>
+        <small><a href="https://github.com/alfio-event/alf.io/issues" target="_blank" rel="noopener">report an issue</a> or <a href="https://github.com/alfio-event/alf.io/discussions" target="_blank" rel="nofollow noopener noreferrer">ask for help</a></small>
     </footer>
 </div>

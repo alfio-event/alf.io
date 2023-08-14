@@ -1129,7 +1129,7 @@
         }
     }]);
 
-    directives.directive('alfioSidebar', ['EventService', 'OrganizationService', 'UtilsService', 'ConfigurationService', '$state', '$window', '$rootScope', function(EventService, OrganizationService, UtilsService, ConfigurationService, $state, $window, $rootScope) {
+    directives.directive('alfioSidebar', ['EventService', 'OrganizationService', 'UtilsService', 'ConfigurationService', '$state', '$window', '$rootScope', '$uibModal', function(EventService, OrganizationService, UtilsService, ConfigurationService, $state, $window, $rootScope, $uibModal) {
         return {
             restrict: 'E',
             bindToController: true,
@@ -1179,6 +1179,38 @@
                             ctrl.filterChanged = function() {
                                 $rootScope.$emit('SidebarCategoryFilterUpdated', ctrl.categoryFilter);
                             };
+                            ctrl.hasLinkedApplications = false;
+                            if (ctrl.owner && ctrl.event.supportedCapabilities) {
+                                ctrl.linkedApplications = (ctrl.event.supportedCapabilities || []).filter(function(c) {
+                                    return c.capability === 'LINK_EXTERNAL_APPLICATION';
+                                }).flatMap(function(c) {
+                                    return (c.details || []).map(function(d) {
+                                        return {
+                                            label: d.label,
+                                            selector: d.selector,
+                                            capability: c.capability
+                                        }
+                                    });
+                                });
+                                ctrl.hasLinkedApplications = ctrl.linkedApplications.length > 0;
+                                ctrl.linkSelected = function(event, link, $browserEvent) {
+                                    $browserEvent.stopPropagation();
+                                    $uibModal.open({
+                                        size: 'sm',
+                                        template: '<open-generated-link data-event="$ctrl.event" data-link="$ctrl.link" data-on-success="$ctrl.ok()"></open-generated-link>',
+                                        backdrop: 'static',
+                                        controllerAs: '$ctrl',
+                                        controller: function ($scope) {
+                                            var ctrl = this;
+                                            ctrl.event = event;
+                                            ctrl.link = link;
+                                            ctrl.ok = function () {
+                                                $scope.$close(true);
+                                            };
+                                        }
+                                    });
+                                }
+                            }
                             toUnbind.push($rootScope.$on('CategoryFilterUpdated', function(ev, categoryFilter) {
                                 if(categoryFilter) {
                                     ctrl.categoryFilter.freeText = categoryFilter.freeText;
