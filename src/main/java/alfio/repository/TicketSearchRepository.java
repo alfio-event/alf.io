@@ -90,7 +90,7 @@ public interface TicketSearchRepository {
                                                                  @Bind("categoryId") int categoryId,
                                                                  @Bind("search") String search);
 
-    @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity limit :pageSize offset :page")
+    @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_registration_ts desc nulls last, tr_validity limit :pageSize offset :page")
     List<TicketReservation> findReservationsForEvent(@Bind("eventId") int eventId,
                                                      @Bind("page") int page,
                                                      @Bind("pageSize") int pageSize,
