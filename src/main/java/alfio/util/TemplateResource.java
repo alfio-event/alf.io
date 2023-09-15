@@ -74,7 +74,12 @@ public enum TemplateResource {
     CONFIRMATION_EMAIL_SUBSCRIPTION("/alfio/templates/confirmation-email-subscription", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, PurchaseContext event, Optional<ImageData> imageData) {
-            return prepareSampleDataForConfirmationEmail(organization, (Event) event);
+            var model = prepareSampleDataForConfirmationEmail(organization, (Event) event);
+            model.put("pin", "ABCDE");
+            model.put("subscriptionId", UUID.randomUUID().toString());
+            model.put("includePin", true);
+            model.put("fullName", "Firstname Lastname");
+            return model;
         }
     },
     OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", TEXT_PLAIN_VALUE, TemplateManager.TemplateOutput.TEXT) {
