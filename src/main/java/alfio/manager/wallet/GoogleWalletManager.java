@@ -225,7 +225,7 @@ public class GoogleWalletManager {
     }
 
     private void persistPassId(Ticket ticket, String eventObjectId) {
-        var metadataContainer = ticketRepository.getTicketMetadata(ticket.getId());
+        var metadataContainer = Objects.requireNonNullElseGet(ticketRepository.getTicketMetadata(ticket.getId()), TicketMetadataContainer::empty);
         var existingMetadata = metadataContainer.getMetadataForKey(TicketMetadataContainer.GENERAL);
         var attributesMap = existingMetadata.map(ticketMetadata -> new HashMap<>(ticketMetadata.getAttributes()))
             .orElseGet(HashMap::new);
