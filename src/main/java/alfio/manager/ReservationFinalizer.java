@@ -28,6 +28,7 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.TransactionMetadataModification;
@@ -367,8 +368,17 @@ public class ReservationFinalizer {
         subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0); // at the moment it's safe because there can be only one subscription per reservation
         var subscriptionId = subscription.getId();
         auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString());
-        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, subscriptionRepository.getSubscriptionMetadata(subscriptionId))
-            .ifPresent(metadata -> subscriptionRepository.setMetadataForSubscription(subscriptionId, metadata));
+        var originalMetadata = subscriptionRepository.getSubscriptionMetadata(subscriptionId);
+        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, originalMetadata)
+            .ifPresent(metadata -> {
+                var metadataToSave = metadata;
+                if (originalMetadata != null) {
+                    var properties = new HashMap<>(originalMetadata.getProperties());
+                    properties.putAll(metadata.getProperties());
+                    metadataToSave = new SubscriptionMetadata(properties, originalMetadata.getConfiguration());
+                }
+                subscriptionRepository.setMetadataForSubscription(subscriptionId, metadataToSave);
+            });
     }
 
     private void acquireEventTickets(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, Event event) {
