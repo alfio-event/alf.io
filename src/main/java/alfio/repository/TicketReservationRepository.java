@@ -145,7 +145,7 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set invoice_model = :invoiceModel where id = :reservationId")
     int addReservationInvoiceOrReceiptModel(@Bind("reservationId") String reservationId, @Bind("invoiceModel") String invoiceModel);
 
-    @Query("update tickets_reservation set invoice_number = :invoiceNumber where id = :reservationId")
+    @Query("update tickets_reservation set invoice_number = :invoiceNumber where id = :reservationId and invoice_number is null")
     int setInvoiceNumber(@Bind("reservationId") String reservationId, @Bind("invoiceNumber") String invoiceNumber);
 
 

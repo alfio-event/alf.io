@@ -224,6 +224,10 @@ public class ReservationFinalizer {
         var reservationId = spec.getReservationId();
         var purchaseContext = spec.getPurchaseContext();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        if (reservation.getStatus() == COMPLETE) {
+            log.warn("Ignoring completeReservation for reservation {} with status COMPLETE", reservationId);
+            return;
+        }
         if (reservation.getStatus() != FINALIZING && reservation.getStatus() != OFFLINE_FINALIZING) {
             throw new IncompatibleStateException("Status " + reservation.getStatus() + " is not compatible with finalization.");
         }
