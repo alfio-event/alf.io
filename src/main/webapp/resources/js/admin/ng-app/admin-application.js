@@ -2171,6 +2171,7 @@
                 var eventDescriptor = results[1].data;
                 $scope.organization = eventDescriptor.organization;
                 $scope.eventName = eventDescriptor.event.shortName;
+                $scope.eventDisplayName = eventDescriptor.event.displayName;
                 $scope.onlineEvent = eventDescriptor.event.online;
         });
 
