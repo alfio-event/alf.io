@@ -94,7 +94,7 @@ public class CustomMessageManager {
                 .parallel()
                 .map(t -> {
                     Model model = new ExtendedModelMap();
-                    model.addAttribute("eventName", eventName);
+                    model.addAttribute("eventName", event.getDisplayName());
                     model.addAttribute("fullName", t.getFullName());
                     model.addAttribute("organizationName", organization.getName());
                     model.addAttribute("organizationEmail", organization.getEmail());
