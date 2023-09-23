@@ -53,6 +53,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -296,8 +297,12 @@ public class ReservationFinalizer {
             reservationOperationHelper.sendConfirmationEmail(purchaseContext, ticketReservation, locale, username);
         }
     }
-
+    @Transactional
     public void acquireSpecialPriceTokens(String reservationId) {
+        internalAcquireSpecialPriceTokens(reservationId);
+    }
+
+    private void internalAcquireSpecialPriceTokens(String reservationId) {
         specialPriceRepository.updateStatusForReservation(singletonList(reservationId), SpecialPrice.Status.TAKEN.toString());
     }
 
@@ -315,7 +320,7 @@ public class ReservationFinalizer {
             default: throw new IllegalStateException("not supported purchase context");
         }
 
-        acquireSpecialPriceTokens(reservationId);
+        internalAcquireSpecialPriceTokens(reservationId);
         ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
         int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, COMPLETE.toString(), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
