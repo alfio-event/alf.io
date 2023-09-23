@@ -434,7 +434,8 @@ public class ExtensionManager {
     public Optional<PromoCodeDiscount> handleDynamicDiscount(Event event, Map<Integer, Long> quantityByCategory, String reservationId) {
         try {
             var values = new HashMap<String, Object>();
-            values.put("quantityByCategory", quantityByCategory);
+            values.put("quantityByCategory", quantityByCategory.entrySet().stream()
+                .map(entry -> new QuantityByCategoryId(entry.getKey(), entry.getValue().intValue())).collect(Collectors.toList()));
             values.put(RESERVATION_ID, reservationId);
             var dynamicDiscountResult = syncCall(ExtensionEvent.DYNAMIC_DISCOUNT_APPLICATION, event,
                 values, DynamicDiscount.class);
