@@ -60,7 +60,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.function.Function;
 
@@ -358,9 +357,9 @@ public class ReservationFinalizer {
             validityFrom = confirmationTimestamp;
             var temporalUnit = requireNonNullElse(subscriptionDescriptor.getValidityTimeUnit(), SubscriptionDescriptor.SubscriptionTimeUnit.DAYS).getTemporalUnit();
             validityTo = confirmationTimestamp.plus(subscriptionDescriptor.getValidityUnits(), temporalUnit)
-                .with(ChronoField.HOUR_OF_DAY, 23)
-                .with(ChronoField.MINUTE_OF_HOUR, 59)
-                .with(ChronoField.SECOND_OF_MINUTE, 59);
+                .withHour(23)
+                .withMinute(59)
+                .withSecond(59);
         }
         var subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
         var updatedSubscriptions = subscriptionRepository.confirmSubscription(reservationId,

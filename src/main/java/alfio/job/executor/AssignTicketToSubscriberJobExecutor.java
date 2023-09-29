@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static alfio.manager.NotificationManager.SEND_TICKET_CC;
 import static alfio.model.system.ConfigurationKeys.GENERATE_TICKETS_FOR_SUBSCRIPTIONS;
 
 @Component
@@ -145,15 +146,22 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
 
     private List<Attendee> toAttendees(List<AvailableSubscriptionsByEvent> subscriptions) {
         return subscriptions.stream()
-            .map(s -> new Attendee(null,
-                s.getFirstName(),
-                s.getLastName(),
-                s.getEmailAddress(),
-                s.getUserLanguage(),
-                false,
-                s.getSubscriptionId() + "_auto",
-                s.getSubscriptionId(),
-                Map.of())
+            .map(s -> {
+                Map<String, String> metadata = Map.of();
+                if (!s.getEmailAddress().strip().equalsIgnoreCase(s.getReservationEmail().strip())) {
+                    metadata = Map.of(SEND_TICKET_CC, "[\""+s.getReservationEmail()+"\"]");
+                }
+                return new Attendee(null,
+                        s.getFirstName(),
+                        s.getLastName(),
+                        s.getEmailAddress(),
+                        s.getUserLanguage(),
+                        false,
+                        s.getSubscriptionId() + "_auto",
+                        s.getSubscriptionId(),
+                        Map.of(),
+                        metadata);
+                }
             ).collect(Collectors.toList());
     }
 }

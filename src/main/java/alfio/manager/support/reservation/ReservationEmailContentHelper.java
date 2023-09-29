@@ -129,8 +129,9 @@ public class ReservationEmailContentHelper {
                 METADATA_ATTRIBUTES_KEY, metadata.getProperties());
             var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, List.of(), initialModel);
             var subscriptionAttachments = new ArrayList<>(attachments);
-            subscriptionAttachments.add(generateSubscriptionAttachment(firstSubscription));
-            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : subscriptionAttachments));
+            var subscriptionAttachment = generateSubscriptionAttachment(firstSubscription);
+            subscriptionAttachments.add(subscriptionAttachment);
+            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of(subscriptionAttachment) : subscriptionAttachments));
             if(sendSeparateEmailToOwner) {
                 var separateModel = new HashMap<>(model);
                 separateModel.put("includePin", false);

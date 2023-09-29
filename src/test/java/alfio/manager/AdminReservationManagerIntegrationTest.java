@@ -19,7 +19,6 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
@@ -27,7 +26,6 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.modification.AdminReservationModification.*;
 import alfio.model.result.Result;
-import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -35,17 +33,14 @@ import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
-import alfio.util.LocaleUtil;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -365,7 +360,7 @@ class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
 
     private List<Attendee> generateAttendees(int count) {
         return IntStream.range(0, count)
-            .mapToObj(i -> new Attendee(null, "Attendee "+i, "Test" + i, "attendee"+i+"@test.ch", "en",false, null, null, Collections.emptyMap()))
+            .mapToObj(i -> new Attendee(null, "Attendee "+i, "Test" + i, "attendee"+i+"@test.ch", "en",false, null, null, Collections.emptyMap(), null))
             .collect(toList());
     }
 }

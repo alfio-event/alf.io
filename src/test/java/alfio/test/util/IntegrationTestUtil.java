@@ -23,6 +23,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.AllocationStatus;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
+import alfio.model.TicketReservation;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
@@ -202,9 +203,10 @@ public class IntegrationTestUtil {
         var subscriptionId = subscriptionRepository.selectFreeSubscription(descriptor.getId()).orElseThrow();
         var subscriptionReservationId = UUID.randomUUID().toString();
         ticketReservationRepository.createNewReservation(subscriptionReservationId, ZonedDateTime.now(ClockProvider.clock()), Date.from(Instant.now(ClockProvider.clock())), null, "en", null, new BigDecimal("7.7"), true, "CHF", organizationId, null);
+        ticketReservationRepository.updateTicketReservation(subscriptionReservationId, TicketReservation.TicketReservationStatus.COMPLETE.name(), "subscription+buyer@test.com", "full name", "full", "name", "en", "", ZonedDateTime.now(), PaymentProxy.ADMIN.name(), null);
         subscriptionRepository.bindSubscriptionToReservation(subscriptionReservationId, descriptor.getPrice(), AllocationStatus.PENDING, subscriptionId);
         subscriptionRepository.confirmSubscription(subscriptionReservationId, AllocationStatus.ACQUIRED,
-            "Test", "Mc Test", "tickettest@test.com", maxEntries,
+            "Test", "Mc Test", "subscription+owner@test.com", maxEntries,
             null, null, ZonedDateTime.now(ClockProvider.clock()), zoneId.toString());
         var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
         assertEquals(descriptor.getPrice(), subscription.getSrcPriceCts());

@@ -28,6 +28,8 @@ import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.metadata.TicketMetadata;
+import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.Attendee;
 import alfio.model.modification.AdminReservationModification.Category;
@@ -592,6 +594,10 @@ public class AdminReservationManager {
                 }
                 if(!attendee.getAdditionalInfo().isEmpty()) {
                     ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
+                }
+                if (!attendee.getMetadata().isEmpty()) {
+                    var ticketMetadata = new TicketMetadata(null, null, attendee.getMetadata());
+                    ticketRepository.updateTicketMetadata(ticketId, TicketMetadataContainer.fromMetadata(ticketMetadata));
                 }
             }
             specialPriceIterator.map(Iterator::next)

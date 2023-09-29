@@ -27,7 +27,7 @@ import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.metadata.SubscriptionMetadata;
-import alfio.model.subscription.Subscription;
+import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -74,6 +74,7 @@ import static java.util.Objects.requireNonNullElseGet;
 @Log4j2
 public class NotificationManager {
 
+    public static final String SEND_TICKET_CC = "sendTicketCc";
     private static final String EVENT_ID = "eventId";
     private final Mailer mailer;
     private final MessageSourceManager messageSourceManager;
@@ -84,6 +85,7 @@ public class NotificationManager {
     private final Gson gson;
     private final ClockProvider clockProvider;
     private final PurchaseContextManager purchaseContextManager;
+    private final TicketRepository ticketRepository;
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
@@ -112,6 +114,7 @@ public class NotificationManager {
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
         this.organizationRepository = organizationRepository;
+        this.ticketRepository = ticketRepository;
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED);
         this.tx = new TransactionTemplate(transactionManager, definition);
         this.configurationManager = configurationManager;
@@ -291,15 +294,28 @@ public class NotificationManager {
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, renderedTemplate);
         String recipient = ticket.getEmail();
-        
+        String cc = getCCForTicket(ticket);
+
         tx.execute(status -> {
             emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
                 // see issue #967
                 id -> emailMessageRepository.updateStatusToWaitingWithHtml(id, renderedTemplate.getHtmlPart()),
-                () -> emailMessageRepository.insert(event.getId(), null, reservation.getId(), recipient, null, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock()), event.getOrganizationId())
+                () -> emailMessageRepository.insert(event.getId(), null, reservation.getId(), recipient, cc, subject, renderedTemplate.getTextPart(), renderedTemplate.getHtmlPart(), encodedAttachments, checksum, ZonedDateTime.now(clockProvider.getClock()), event.getOrganizationId())
             );
             return null;
         });
+    }
+
+    private String getCCForTicket(Ticket ticket) {
+        var metadata = ticketRepository.getTicketMetadata(ticket.getId());
+        if (metadata != null) {
+            var key = metadata.getMetadataForKey(TicketMetadataContainer.GENERAL);
+            if (key.isEmpty()) {
+                return null;
+            }
+            return key.get().getAttributes().get(SEND_TICKET_CC);
+        }
+        return null;
     }
 
     public void sendSimpleEmail(PurchaseContext purchaseContext, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder) {

@@ -171,6 +171,7 @@ public class AdminReservationModification implements Serializable {
         private final String reference;
         private final UUID subscriptionId;
         private final Map<String, List<String>> additionalInfo;
+        private final Map<String, String> metadata;
 
         @JsonCreator
         public Attendee(@JsonProperty("ticketId") Integer ticketId,
@@ -181,16 +182,18 @@ public class AdminReservationModification implements Serializable {
                         @JsonProperty("forbidReassignment") Boolean reassignmentForbidden,
                         @JsonProperty("reference") String reference,
                         @JsonProperty("subscriptionId") UUID subscriptionId,
-                        @JsonProperty("additionalInfo") Map<String, List<String>> additionalInfo) {
+                        @JsonProperty("additionalInfo") Map<String, List<String>> additionalInfo,
+                        @JsonProperty("metadata") Map<String, String> metadata) {
             this.ticketId = ticketId;
             this.firstName = trimToEmpty(firstName);
             this.lastName = trimToEmpty(lastName);
             this.emailAddress = trimToEmpty(emailAddress);
             this.language = language;
-            this.reassignmentForbidden = Optional.ofNullable(reassignmentForbidden).orElse(false);
+            this.reassignmentForbidden = Objects.requireNonNullElse(reassignmentForbidden, false);
             this.reference = reference;
             this.subscriptionId = subscriptionId;
-            this.additionalInfo = Optional.ofNullable(additionalInfo).orElse(Collections.emptyMap());
+            this.additionalInfo = Objects.requireNonNullElse(additionalInfo, Map.of());
+            this.metadata = Objects.requireNonNullElse(metadata, Map.of());
         }
 
         public boolean isEmpty() {
@@ -271,7 +274,8 @@ public class AdminReservationModification implements Serializable {
                         a.reassignmentForbidden,
                         a.reference,
                         a.subscriptionId,
-                        singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))))).collect(toList());
+                        singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))),
+                        Map.of())).collect(toList());
                 return new TicketsInfo(ti.getCategory(), attendees, ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees());
             }).collect(toList());
             return Json.toJson(new AdminReservationModification(src.expiration,
