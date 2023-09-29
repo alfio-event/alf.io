@@ -18,6 +18,9 @@ package alfio.controller.api.v1.admin;
 
 import alfio.manager.OrganizationDeleter;
 import alfio.manager.user.UserManager;
+import alfio.model.api.v1.admin.ApiKeyType;
+import alfio.model.api.v1.admin.CreateApiKeyRequest;
+import alfio.model.api.v1.admin.OrganizationApiKey;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -28,6 +31,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+
+import static alfio.config.authentication.support.AuthenticationConstants.API_CLIENT;
 
 @RestController
 @RequestMapping("/api/v1/admin/system/organization")
@@ -62,9 +67,21 @@ public class OrganizationsApiV1Controller {
     }
 
     @PutMapping("/{id}/api-key")
-    public OrganizationApiKey createApiKeyForOrganization(@PathVariable("id") int organizationId, Principal principal) {
-        var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName("ROLE_API_CLIENT"), User.Type.API_KEY, null, "Auto-generated API Key", principal);
-        return new OrganizationApiKey(organizationId, user.getUsername());
+    public ResponseEntity<OrganizationApiKey> createApiKeyForOrganization(@PathVariable("id") int organizationId,
+                                                                          @RequestBody(required = false) CreateApiKeyRequest createApiKeyRequest,
+                                                                          Principal principal) {
+        ApiKeyType keyType = ApiKeyType.API_CLIENT;
+        String description = CreateApiKeyRequest.DEFAULT_DESCRIPTION;
+        if (createApiKeyRequest != null) {
+            var keyTypeOptional = ApiKeyType.safeValueOf(createApiKeyRequest.apiKeyType());
+            if (keyTypeOptional.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            keyType = keyTypeOptional.get();
+            description = createApiKeyRequest.description();
+        }
+        var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName(keyType.roleName()), User.Type.API_KEY, null, description, principal);
+        return ResponseEntity.ok(new OrganizationApiKey(organizationId, user.getUsername(), keyType));
     }
 
     @PostMapping("/{id}")
@@ -88,21 +105,4 @@ public class OrganizationsApiV1Controller {
         }
     }
 
-    static class OrganizationApiKey {
-        private final int organizationId;
-        private final String apiKey;
-
-        OrganizationApiKey(int organizationId, String apiKey) {
-            this.organizationId = organizationId;
-            this.apiKey = apiKey;
-        }
-
-        public int getOrganizationId() {
-            return organizationId;
-        }
-
-        public String getApiKey() {
-            return apiKey;
-        }
-    }
 }
