@@ -125,6 +125,7 @@ class TicketReservationManagerUnitTest {
         groupManager = mock(GroupManager.class);
         BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
         json = mock(Json.class);
+        var additionalServiceManager = new AdditionalServiceManager(additionalServiceRepository, additionalServiceTextRepository, additionalServiceItemRepository, mock(NamedParameterJdbcTemplate.class));
 
         when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
@@ -148,9 +149,7 @@ class TicketReservationManagerUnitTest {
             transactionManager,
             waitingQueueManager,
             ticketFieldRepository,
-            additionalServiceRepository,
-            additionalServiceItemRepository,
-            additionalServiceTextRepository,
+            additionalServiceManager,
             auditingRepository,
             userRepository,
             extensionManager,

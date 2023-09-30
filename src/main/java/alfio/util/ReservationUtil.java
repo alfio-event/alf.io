@@ -18,16 +18,18 @@ package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationCreate;
+import alfio.manager.AdditionalServiceManager;
 import alfio.manager.EventManager;
 import alfio.manager.PromoCodeRequestManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.modification.*;
+import alfio.model.modification.ASReservationWithOptionalCodeModification;
+import alfio.model.modification.AdditionalServiceReservationModification;
+import alfio.model.modification.ReservationRequest;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.BindingResult;
@@ -71,6 +73,7 @@ public class ReservationUtil {
                                                                                                                                                       Errors bindingResult,
                                                                                                                                                       TicketReservationManager tickReservationManager,
                                                                                                                                                       EventManager eventManager,
+                                                                                                                                                      AdditionalServiceManager additionalServiceManager,
                                                                                                                                                       String validatedPromoCodeDiscount,
                                                                                                                                                       Event event) {
 
@@ -105,7 +108,7 @@ public class ReservationUtil {
 
 
         final boolean validAdditionalServiceSelected = additionalServices.stream().allMatch(asm -> {
-            AdditionalService as = eventManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
+            AdditionalService as = additionalServiceManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
             ZonedDateTime now = event.now(ClockProvider.clock());
             return as.getInception(event.getZoneId()).isBefore(now) &&
                 as.getExpiration(event.getZoneId()).isAfter(now) &&

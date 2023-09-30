@@ -16,10 +16,7 @@
  */
 package alfio.controller.api.v1.admin;
 
-import alfio.manager.EventManager;
-import alfio.manager.PromoCodeRequestManager;
-import alfio.manager.PurchaseContextManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
@@ -54,16 +51,19 @@ public class ReservationApiV1Controller {
     private final PurchaseContextManager purchaseContextManager;
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
+    private final AdditionalServiceManager additionalServiceManager;
 
     @Autowired
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
                                       PurchaseContextManager purchaseContextManager,
                                       PromoCodeRequestManager promoCodeRequestManager,
-                                      EventManager eventManager) {
+                                      EventManager eventManager,
+                                      AdditionalServiceManager additionalServiceManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.purchaseContextManager = purchaseContextManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
         this.eventManager = eventManager;
+        this.additionalServiceManager = additionalServiceManager;
     }
 
     @PostMapping("/event/{slug}/reservation")
@@ -80,7 +80,7 @@ public class ReservationApiV1Controller {
         var event = (Event) optionalEvent.get();
         Optional<String> promoCodeDiscount = ReservationUtil.checkPromoCode(reservationCreationRequest, event, promoCodeRequestManager, bindingResult);
         var locale = Locale.forLanguageTag(requireNonNullElseGet(reservationCreationRequest.getLanguage(), () -> event.getContentLanguages().get(0).getLanguage()));
-        var selected = ReservationUtil.validateCreateRequest(reservationCreationRequest, bindingResult, ticketReservationManager, eventManager, "", event);
+        var selected = ReservationUtil.validateCreateRequest(reservationCreationRequest, bindingResult, ticketReservationManager, eventManager, additionalServiceManager, "", event);
         if(selected.isPresent() && !bindingResult.hasErrors()) {
             var pair = selected.get();
             return ticketReservationManager.createTicketReservation(event, pair.getLeft(), pair.getRight(), promoCodeDiscount, locale, bindingResult, principal)

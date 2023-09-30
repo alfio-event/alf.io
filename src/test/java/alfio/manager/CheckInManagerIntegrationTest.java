@@ -39,10 +39,8 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -81,6 +79,8 @@ class CheckInManagerIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private TicketRepository ticketRepository;
+    @Autowired
+    private AdditionalServiceManager additionalServiceManager;
 
     @Test
     void testReturnOnlyOnce() {
@@ -111,10 +111,10 @@ class CheckInManagerIntegrationTest {
             AdditionalService.AdditionalServiceType.SUPPLEMENT,
             AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT
         );
-        var additionalService = eventManager.insertAdditionalService(event, additionalServiceRequest);
+        var additionalService = additionalServiceManager.insertAdditionalService(event, additionalServiceRequest);
         var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(AVAILABLE_SEATS);
+        tr.setQuantity(AVAILABLE_SEATS);
         tr.setTicketCategoryId(category.getId());
 
         var tickets = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());

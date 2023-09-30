@@ -42,11 +42,9 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -382,8 +380,8 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, 100, 1, ZonedDateTime.now(ClockProvider.clock()).minusHours(1), ZonedDateTime.now(ClockProvider.clock()).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
-        var secondAsKey = additionalServiceRepository.insert(event.getId(), 500, true, 2, 100, 1, ZonedDateTime.now(ClockProvider.clock()).minusHours(1), ZonedDateTime.now(ClockProvider.clock()).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.DONATION, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
+        var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, -1, 1, ZonedDateTime.now(ClockProvider.clock()).minusHours(1), ZonedDateTime.now(ClockProvider.clock()).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
+        var secondAsKey = additionalServiceRepository.insert(event.getId(), 500, true, 2, -1, 1, ZonedDateTime.now(ClockProvider.clock()).minusHours(1), ZonedDateTime.now(ClockProvider.clock()).plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.DONATION, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
@@ -678,7 +676,7 @@ class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
 
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(10);
+        tr.setQuantity(10);
         tr.setTicketCategoryId(bounded.getId());
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());

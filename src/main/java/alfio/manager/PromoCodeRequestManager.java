@@ -64,6 +64,7 @@ public class PromoCodeRequestManager {
     private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
     private final ClockProvider clockProvider;
+    private final AdditionalServiceManager additionalServiceManager;
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -210,7 +211,7 @@ public class PromoCodeRequestManager {
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount,
                                                      Principal principal) {
-        return ReservationUtil.validateCreateRequest(reservation, bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
+        return ReservationUtil.validateCreateRequest(reservation, bindingResult, ticketReservationManager, eventManager, additionalServiceManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult, principal));
     }
 

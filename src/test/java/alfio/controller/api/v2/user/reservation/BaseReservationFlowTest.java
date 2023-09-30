@@ -179,18 +179,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
 
         // add additional service
-        var addServ = new EventModification.AdditionalService(null, new BigDecimal("40.00"), true, 0, 1, 1,
-
-            new DateTimeModification(ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalDate(), ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalTime()),
-            new DateTimeModification(context.event.getEnd().plusDays(2).toLocalDate(), context.event.getEnd().plusDays(2).toLocalTime()),
-            context.event.getVat(), AdditionalService.VatType.INHERITED,
-            null,
-            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional title", AdditionalServiceText.TextType.TITLE)),
-            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional desc", AdditionalServiceText.TextType.DESCRIPTION)),
-
-            AdditionalService.AdditionalServiceType.SUPPLEMENT,
-            AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET
-        );
+        var addServ = buildAdditionalService(context);
         var addServRes = additionalServiceApiController.insert(context.event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"));
         assertNotNull(addServRes.getBody());
         additionalServiceId = addServRes.getBody().getId();
@@ -207,6 +196,21 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         //
 
         specialPriceTokenGenerator.generatePendingCodes();
+    }
+
+    protected EventModification.AdditionalService buildAdditionalService(ReservationFlowContext context) {
+        return new EventModification.AdditionalService(null, new BigDecimal("40.00"), true, 0, -1, 1,
+
+            new DateTimeModification(ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalDate(), ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalTime()),
+            new DateTimeModification(context.event.getEnd().plusDays(2).toLocalDate(), context.event.getEnd().plusDays(2).toLocalTime()),
+            context.event.getVat(), AdditionalService.VatType.INHERITED,
+            null,
+            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional title", AdditionalServiceText.TextType.TITLE)),
+            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional desc", AdditionalServiceText.TextType.DESCRIPTION)),
+
+            AdditionalService.AdditionalServiceType.SUPPLEMENT,
+            AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET
+        );
     }
 
     protected Stream<String> getExtensionEventsToRegister() {

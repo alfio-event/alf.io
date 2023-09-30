@@ -223,6 +223,7 @@ class TicketReservationManagerTest {
         reservationHelper = mock(ReservationEmailContentHelper.class);
         reservationCostCalculator = mock(ReservationCostCalculator.class);
         var osm = mock(OrderSummaryGenerator.class);
+        var additionalServiceManager = new AdditionalServiceManager(additionalServiceRepository, additionalServiceTextRepository, additionalServiceItemRepository, mock(NamedParameterJdbcTemplate.class));
         reservationFinalizer = new ReservationFinalizer(transactionManager,
             ticketReservationRepository, userRepository, extensionManager, auditingRepository, TestUtil.clockProvider(),
             configurationManager, null, ticketRepository, reservationHelper, specialPriceRepository,
@@ -245,9 +246,7 @@ class TicketReservationManagerTest {
             transactionManager,
             waitingQueueManager,
             ticketFieldRepository,
-            additionalServiceRepository,
-            additionalServiceItemRepository,
-            additionalServiceTextRepository,
+            additionalServiceManager,
             auditingRepository,
             userRepository,
             extensionManager,

@@ -83,4 +83,21 @@ public interface AdditionalServiceItemRepository {
                                                                           @Bind("additionalServiceType") String additionalServiceType,
                                                                           @Bind("locale") String locale);
 
+    @Query("select count(*) from additional_service_item where additional_service_id_fk = :serviceId and status <> 'INVALIDATED'")
+    int countItemsForService(@Bind("serviceId") int additionalServiceId);
+
+    @Query(type = QueryType.TEMPLATE, value = "insert into additional_service_item (uuid, creation, tickets_reservation_uuid, additional_service_id_fk, status, event_id_fk, src_price_cts, final_price_cts, vat_cts, discount_cts, currency_code) " +
+        "values(:uuid, now(), :ticketsReservationUuid, :additionalServiceId, :status, :eventId, :srcPriceCts, :finalPriceCts, :vatCts, :discountCts, :currencyCode)")
+    String batchInsert();
+
+    @Query(type = QueryType.TEMPLATE, value = "update additional_service_item set tickets_reservation_uuid = :ticketsReservationUuid, status = :status, src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode" +
+        " where id = :id and additional_service_id_fk = :additionalServiceId")
+    String batchUpdate();
+
+    @Query("update additional_service_item set status = 'INVALIDATED' where id in (select id from additional_service_item where additional_service_id_fk = :serviceId and status = 'FREE' limit :count)")
+    int invalidateItems(@Bind("serviceId") int additionalServiceId, @Bind("count") int count);
+
+    @Query("select id from additional_service_item where additional_service_id_fk = :serviceId and status = 'FREE' limit :count for update skip locked")
+    List<Integer> lockExistingItems(@Bind("serviceId") int additionalServiceId, @Bind("count") int count);
+
 }

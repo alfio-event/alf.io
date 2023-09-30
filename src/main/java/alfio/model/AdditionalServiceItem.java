@@ -26,11 +26,11 @@ public class AdditionalServiceItem {
 
     // are considered "Confirmed": ACQUIRED, CHECKED_IN and TO_BE_PAID
     public enum AdditionalServiceItemStatus {
-        FREE, // <- unused
+        FREE,
         PENDING, TO_BE_PAID, ACQUIRED, CANCELLED,
         CHECKED_IN, // <- unused
         EXPIRED,
-        INVALIDATED, RELEASED // <- both unused
+        INVALIDATED, RELEASED
     }
 
     private final int id;

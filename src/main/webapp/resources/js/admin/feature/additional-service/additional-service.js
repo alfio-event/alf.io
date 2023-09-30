@@ -258,7 +258,6 @@
         var ctrl = this;
         if(!ctrl.item) {
             ctrl.item = {
-                availableQuantity: -1,
                 maxQtyPerOrder: 1,
                 priceInCents: 0,
                 fixPrice: ctrl.type === 'SUPPLEMENT',
@@ -312,6 +311,7 @@
         ctrl.save = function() {
             if(ctrl.additionalServiceForm.$valid) {
                 ctrl.item.type = ctrl.type; // fix type
+                ctrl.item.availableQuantity = ctrl.item.availableQuantity || -1;
                 ValidationService.validationPerformer($q, AdditionalServiceManager.validate, ctrl.item, ctrl.additionalServiceForm).then(function() {
                     ctrl.onEditComplete({'item': ctrl.item});
                 }, angular.noop);
