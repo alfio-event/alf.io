@@ -891,7 +891,7 @@ public class EventManager {
         }
 
         if(PromoCodeDiscount.CodeType.ACCESS == codeType) {
-            Validate.isTrue(hiddenCategoryId != null, "Hidden category is required");
+            Validate.notNull(hiddenCategoryId, "Hidden category is required");
         }
 
         //
