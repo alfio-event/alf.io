@@ -273,7 +273,8 @@ public class EventCreationRequest{
                 ordinal,
                 null,
                 null,
-                AlfioMetadata.empty());
+                AlfioMetadata.empty(),
+                true);
         }
     }
 

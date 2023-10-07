@@ -23,8 +23,11 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.*;
+import alfio.model.Event;
+import alfio.model.EventWithAdditionalInfo;
+import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
+import alfio.model.PromoCodeDiscount;
 import alfio.model.api.v1.admin.CheckInLogEntry;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.api.v1.admin.LinkedSubscriptions;
@@ -160,6 +163,7 @@ public class EventApiV1Controller {
 
 
     @PostMapping("/update/{slug}")
+    @Transactional
     public ResponseEntity<String> update(@PathVariable("slug") String slug, @RequestBody EventCreationRequest request, Principal user) {
 
         String imageRef = fetchImage(request.getImageUrl());
@@ -235,7 +239,6 @@ public class EventApiV1Controller {
         EventModification em = request.toEventModificationUpdate(original, organization, imageRef);
 
         eventManager.updateEventHeader(event, em, user.getName());
-        eventManager.updateEventPrices(event, em, user.getName());
 
 
         if (em.getTicketCategories() != null && !em.getTicketCategories().isEmpty()) {
@@ -249,6 +252,8 @@ public class EventApiV1Controller {
                 }
             });
         }
+
+        eventManager.updateEventPrices(event, em, user.getName());
 
 
         // TODO discusson about promocode needed

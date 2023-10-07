@@ -569,7 +569,7 @@ public class EventManager {
     }
 
     Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm, String username) {
-        return updateCategory(categoryId, event, tcm, username, false);
+        return updateCategory(categoryId, event, tcm, username, tcm.isSkipWaitingList());
     }
 
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
@@ -909,7 +909,7 @@ public class EventManager {
                 throw new IllegalStateException("Cannot invalidate "+absDifference+" tickets. There are only "+actualDifference+" free tickets");
             }
             ticketRepository.invalidateTickets(ids);
-            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(event.now(clockProvider).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
+            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(event.now(clockProvider).toInstant()), absDifference, resetToFree ? TicketStatus.FREE : TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
             ticketRepository.bulkTicketInitialization(params);
         }
     }
