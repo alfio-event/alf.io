@@ -25,14 +25,13 @@ import alfio.model.modification.OrganizationModification;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
-
-import static alfio.config.authentication.support.AuthenticationConstants.API_CLIENT;
 
 @RestController
 @RequestMapping("/api/v1/admin/system/organization")
@@ -72,7 +71,7 @@ public class OrganizationsApiV1Controller {
                                                                           Principal principal) {
         ApiKeyType keyType = ApiKeyType.API_CLIENT;
         String description = CreateApiKeyRequest.DEFAULT_DESCRIPTION;
-        if (createApiKeyRequest != null) {
+        if (createApiKeyRequest != null && StringUtils.isNotBlank(createApiKeyRequest.apiKeyType())) {
             var keyTypeOptional = ApiKeyType.safeValueOf(createApiKeyRequest.apiKeyType());
             if (keyTypeOptional.isEmpty()) {
                 return ResponseEntity.badRequest().build();
