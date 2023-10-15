@@ -116,6 +116,10 @@ public class UserManager {
         return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
     }
 
+    public Optional<Integer> findUserIdByApiKey(String apiKey, int organizationId) {
+        return userRepository.findUserIdForApiKey(organizationId, apiKey);
+    }
+
     @Transactional(readOnly = true)
     public Optional<User> findOptionalEnabledUserByUsername(String username) {
         return userRepository.findEnabledByUsername(username);
@@ -342,12 +346,16 @@ public class UserManager {
         //
         checkAccessToUserId(principal, userId);
         //
-        var currentUsername = principal.getName();
-        User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
-        Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot delete your own account.");
+        if (!isSystemApiUser(principal)) {
+            var currentUsername = principal.getName();
+            User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
+            Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot delete your own account.");
+        }
+
         var userToDelete = userRepository.findById(userId);
         userRepository.deleteUserAndReferences(userId);
         invalidateSessionsForUser(userToDelete.getUsername());
+        log.warn("Deleted user (id: {}, username: {}) as requested by {}", userId, userToDelete.getUsername(), principal.getName());
     }
 
     private void invalidateSessionsForUser(String username) {
@@ -437,7 +445,7 @@ public class UserManager {
     }
 
     private void checkAccessToUserId(Principal principal, int userId) {
-        if (principal == null) {
+        if (principal == null || isSystemApiUser(principal)) {
             return;
         }
         var currentUser = findUserByUsername(principal.getName());

@@ -83,6 +83,16 @@ public class OrganizationsApiV1Controller {
         return ResponseEntity.ok(new OrganizationApiKey(organizationId, user.getUsername(), keyType));
     }
 
+    @DeleteMapping("/{id}/api-key/{apiKey}")
+    public ResponseEntity<Boolean> deleteApiKeyForOrganization(@PathVariable("id") int organizationId,
+                                                               @PathVariable("apiKey") String apiKey,
+                                                               Principal principal) {
+        return ResponseEntity.of(userManager.findUserIdByApiKey(apiKey, organizationId).map(userId -> {
+            userManager.deleteUser(userId, principal);
+            return true;
+        }));
+    }
+
     @PostMapping("/{id}")
     public ResponseEntity<Organization> update(@PathVariable("id") int organizationId,
                                                @RequestBody OrganizationModification om,
