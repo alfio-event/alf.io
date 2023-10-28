@@ -345,7 +345,7 @@ public class ReservationFinalizer {
     }
 
     private void acquireSubscription(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, CustomerName customerName, String email) {
-        var status = paymentProxy.isDeskPaymentRequired() ? AllocationStatus.TO_BE_PAID : AllocationStatus.ACQUIRED;
+        log.debug("Acquiring subscriptions for reservation {}; payment method: {}", reservationId, paymentProxy);
         var subscriptionDescriptor = (SubscriptionDescriptor) purchaseContext;
         ZonedDateTime validityFrom = null;
         ZonedDateTime validityTo = null;
@@ -363,7 +363,7 @@ public class ReservationFinalizer {
         }
         var subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
         var updatedSubscriptions = subscriptionRepository.confirmSubscription(reservationId,
-            status,
+            AllocationStatus.ACQUIRED,
             requireNonNullElse(subscription.getFirstName(), customerName.getFirstName()),
             requireNonNullElse(subscription.getLastName(), customerName.getLastName()),
             requireNonNullElse(subscription.getEmail(), email),

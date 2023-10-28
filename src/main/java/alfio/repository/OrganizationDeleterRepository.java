@@ -80,6 +80,9 @@ public interface OrganizationDeleterRepository {
     @Query("delete from email_message where organization_id_fk in (:organizationIds)")
     int deleteEmailMessages(@Bind("organizationIds") List<Integer> organizationIds);
 
+    @Query("delete from b_transaction where organization_id_fk in (:organizationIds)")
+    int deleteAllTransactions(@Bind("organizationIds") List<Integer> organizationIds);
+
     default void deleteEmptyOrganizations(List<Integer> organizationIds) {
         // delete invoice sequences
         int deletedSequences = deleteInvoiceSequencesForEmptyOrganizations(organizationIds);
@@ -110,6 +113,9 @@ public interface OrganizationDeleterRepository {
         int deletedSubscriptions = deleteSubscriptions(organizationIds);
         int deletedDescriptors = deleteSubscriptionDescriptors(organizationIds);
         LOGGER.info("deleted {} subscription descriptors and {} subscriptions", deletedDescriptors, deletedSubscriptions);
+
+        int deletedTransactions = deleteAllTransactions(organizationIds);
+        LOGGER.info("deleted {} transactions", deletedTransactions);
 
         // delete all reservations
         int deletedReservations = deleteReservations(organizationIds);
