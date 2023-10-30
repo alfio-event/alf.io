@@ -30,7 +30,6 @@ import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -309,7 +308,7 @@ public class AdditionalServiceManager {
     public void linkItemsToTickets(String reservationId,
                                    AdditionalServiceLinkForm additionalServiceLinkForm,
                                    List<Ticket> tickets) {
-        if (additionalServiceLinkForm.getAdditionalServiceLinks().isEmpty()) {
+        if (additionalServiceLinkForm == null || CollectionUtils.isEmpty(additionalServiceLinkForm.getAdditionalServiceLinks())) {
             return;
         }
         var parameterSources = additionalServiceLinkForm.getAdditionalServiceLinks().stream()
