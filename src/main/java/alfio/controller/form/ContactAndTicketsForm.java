@@ -19,6 +19,7 @@ package alfio.controller.form;
 import alfio.controller.support.CustomBindingResult;
 import alfio.manager.ExtensionManager;
 import alfio.manager.SameCountryValidator;
+import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
@@ -38,10 +39,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static alfio.util.ErrorsCode.STEP_2_INVALID_VAT;
-import static alfio.util.ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA;
+import static alfio.util.ErrorsCode.*;
 
 // step 2 : contact/claim tickets
 //
@@ -82,6 +83,8 @@ public class ContactAndTicketsForm implements Serializable {
     private boolean differentSubscriptionOwner;
     private UpdateSubscriptionOwnerForm subscriptionOwner;
 
+    private AdditionalServiceLinkForm additionalServiceLinkForm;
+
     //
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
@@ -104,6 +107,7 @@ public class ContactAndTicketsForm implements Serializable {
         formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false), reservationRequiresPayment);
 
         purchaseContext.event().ifPresent(event -> {
+            checkAdditionalServiceItemsLink(event, bindingResult);
             if(!postponeAssignment) {
                 Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                     .filter(m -> !m.isEmpty())
@@ -127,6 +131,12 @@ public class ContactAndTicketsForm implements Serializable {
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.email", ErrorsCode.STEP_2_EMPTY_EMAIL);
+        }
+    }
+
+    private void checkAdditionalServiceItemsLink(Event event, BindingResult bindingResult) {
+        if (event.supportsLinkedAdditionalServices() && additionalServiceLinkForm != null && !additionalServiceLinkForm.isValid()) {
+            bindingResult.reject(STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED);
         }
     }
 

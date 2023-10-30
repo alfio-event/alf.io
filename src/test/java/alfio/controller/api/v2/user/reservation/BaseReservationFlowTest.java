@@ -716,12 +716,15 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             var ticket1 = ticketsByCat.get(0).getTickets().get(0);
             assertEquals(1, ticket1.getTicketFieldConfigurationBeforeStandard().size()); // 1
-            assertEquals(2, ticket1.getTicketFieldConfigurationAfterStandard().size()); // 1 + 1 additional service related field (appear only on first ticket)
+            assertEquals(1, ticket1.getTicketFieldConfigurationAfterStandard().size()); // 1 + 1 additional service related field (appear only on first ticket)
 
             var ticket2 = ticketsByCat.get(0).getTickets().get(1);
             assertEquals(1, ticket2.getTicketFieldConfigurationBeforeStandard().size()); // 1
             assertEquals(1, ticket2.getTicketFieldConfigurationAfterStandard().size()); // 1
 
+            var additionalServiceWithData = resInfoRes.getBody().getAdditionalServiceWithData();
+            assertEquals(1, additionalServiceWithData.size());
+            assertEquals(1, additionalServiceWithData.get(0).getTicketFieldConfiguration().size());
 
             var contactForm = new ContactAndTicketsForm();
 
@@ -746,10 +749,16 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             contactForm.setTickets(Map.of(ticket1.getUuid(), ticketForm1, ticket2.getUuid(), ticketForm2));
 
+            var additionalServiceLinkForm = new AdditionalServiceLinkForm();
+            var additionalServiceLink = new AdditionalServiceLinkForm.AdditionalServiceLink();
+            additionalServiceLink.setAdditionalServiceItemId(additionalServiceWithData.get(0).getItemId());
+            additionalServiceLink.setTicketUUID(ticket2.getUuid());
+            additionalServiceLinkForm.setAdditionalServiceLinks(List.of(additionalServiceLink));
+            contactForm.setAdditionalServiceLinkForm(additionalServiceLinkForm);
             var failure = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatusCode());
             assertNotNull(failure.getBody());
-            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("tickets["+ticket1.getUuid()+"].additional[field3][0]")).count()); //<- missing mandatory
+            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("tickets["+ticket2.getUuid()+"].additional[field3][0]")).count()); //<- missing mandatory
 
             //check billing errors
             assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("billingAddressLine1")).count()); //<- missing mandatory

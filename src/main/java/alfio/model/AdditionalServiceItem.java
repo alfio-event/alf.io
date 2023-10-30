@@ -41,6 +41,7 @@ public class AdditionalServiceItem {
     private final int additionalServiceId;
     private final AdditionalServiceItemStatus status;
     private final int eventId;
+    private final Integer ticketId;
 
     private final Integer srcPriceCts;
     private final Integer finalPriceCts;
@@ -60,7 +61,8 @@ public class AdditionalServiceItem {
                                  @Column("final_price_cts") Integer finalPriceCts,
                                  @Column("vat_cts") Integer vatCts,
                                  @Column("discount_cts") Integer discountCts,
-                                 @Column("currency_code") String currencyCode) {
+                                 @Column("currency_code") String currencyCode,
+                                 @Column("ticket_id_fk") Integer ticketId) {
         this.id = id;
         this.uuid = uuid;
         this.utcCreation = utcCreation;
@@ -74,5 +76,6 @@ public class AdditionalServiceItem {
         this.vatCts = vatCts;
         this.discountCts = discountCts;
         this.currencyCode = currencyCode;
+        this.ticketId = ticketId;
     }
 }

@@ -110,11 +110,12 @@ public class BookingInfoTicketLoader {
             onlineEventStarted);
     }
 
-    public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, EventAndOrganizationId event) {
+    public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, Event event) {
         var fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
         return new Validator.TicketFieldsFilterer(fields, ticketHelper.getTicketUUIDToCategoryId(),
             new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(reservationId)),
-            ticketReservationManager.findFirstInReservation(reservationId));
+            ticketReservationManager.findFirstInReservation(reservationId),
+            event.supportsLinkedAdditionalServices());
     }
 
     private static BookingInfoTicket toBookingInfoTicket(Ticket ticket,
@@ -168,7 +169,7 @@ public class BookingInfoTicketLoader {
             fields, t.isBeforeStandardFields(), description);
     }
 
-    private static Map<String, Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
+    public static Map<String, Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
         return descs.stream().collect(Collectors.toMap(TicketFieldDescription::getLocale,
             d -> new Description(d.getLabelDescription(), d.getPlaceholderDescription(), d.getRestrictedValuesDescription())));
     }

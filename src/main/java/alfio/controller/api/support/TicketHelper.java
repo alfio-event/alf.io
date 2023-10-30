@@ -38,6 +38,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,11 +62,9 @@ public class TicketHelper {
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
-    private final TicketReservationRepository ticketReservationRepository;
-    private final EventManager eventManager;
 
 
-    public Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
+    public BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
         return EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
     }
 
@@ -110,7 +109,7 @@ public class TicketHelper {
 
         var additionalServiceIds = new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(t.getTicketsReservationId()));
 
-        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, ticketUUID -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()));
+        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, ticketUUID -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()), event.supportsLinkedAdditionalServices());
 
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
         ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)

@@ -123,7 +123,7 @@ public class TicketFieldConfigurationDescriptionAndValue {
     }
 
     public boolean isBeforeStandardFields() {
-        return getOrder() < 0;
+        return isBeforeStandardFields(ticketFieldConfiguration);
     }
 
     private static boolean isFieldValueEnabled(TicketFieldConfiguration ticketFieldConfiguration, String value) {
@@ -139,6 +139,10 @@ public class TicketFieldConfigurationDescriptionAndValue {
         private final int fieldCounter;
         private final String fieldValue;
         private final Boolean editable;
+    }
+
+    public static boolean isBeforeStandardFields(TicketFieldConfiguration ticketFieldConfiguration) {
+        return ticketFieldConfiguration.getOrder() < 0;
     }
 
 }

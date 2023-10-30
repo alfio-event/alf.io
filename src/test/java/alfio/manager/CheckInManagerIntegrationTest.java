@@ -135,7 +135,7 @@ class CheckInManagerIntegrationTest {
         ticketReservationManager.confirmOfflinePayment(event, reservationId, null, eventAndUser.getRight());
 
         var returnedAdditionalServices = ticketReservationManager.findTicketsInReservation(reservationId).stream()
-            .filter(ticket -> !checkInManager.getAdditionalServicesForTicket(ticket).isEmpty())
+            .filter(ticket -> !checkInManager.getAdditionalServicesForTicket(ticket, event).isEmpty())
             .collect(Collectors.toList());
         //
         assertEquals(1, returnedAdditionalServices.size());

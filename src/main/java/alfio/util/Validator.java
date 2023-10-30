@@ -226,10 +226,11 @@ public final class Validator {
         private final Function<String, Integer> fromTicketUUIDToTicketCategoryId;
         private final Set<Integer> additionalServiceIds;
         private final Optional<Ticket> firstTicketInReservation;
+        private final boolean eventSupportsAdditionalFieldsLink;
 
 
         public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUUID) {
-            var isFirstTicket = firstTicketInReservation.map(first -> ticketUUID.equals(first.getUuid())).orElse(false);
+            var isFirstTicket = !eventSupportsAdditionalFieldsLink && firstTicketInReservation.map(first -> ticketUUID.equals(first.getUuid())).orElse(false);
             return filterFieldsForTicket(additionalFieldsForEvent, fromTicketUUIDToTicketCategoryId.apply(ticketUUID), additionalServiceIds, isFirstTicket);
         }
 

@@ -102,7 +102,7 @@ public class AttendeeManager {
             .checkPrecondition(maybeTicket::isPresent, ErrorCode.custom("ticket_not_found", "ticket not found"))
             .build(() -> {
                 var ticket = maybeTicket.orElseThrow();
-                var descriptionAndValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository).apply(ticket);
+                var descriptionAndValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository).apply(ticket, event);
                 return new TicketWithAdditionalFields(ticket, descriptionAndValues);
             });
     }

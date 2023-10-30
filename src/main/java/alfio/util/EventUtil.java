@@ -24,6 +24,7 @@ import alfio.model.metadata.OnlineConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.AdditionalServiceItemRepository;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
 import biweekly.ICalVersion;
@@ -50,12 +51,14 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.model.EventCheckInInfo.VERSION_FOR_CODE_CASE_INSENSITIVE;
+import static alfio.model.EventCheckInInfo.VERSION_FOR_LINKED_ADDITIONAL_SERVICE;
 import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
@@ -214,19 +217,17 @@ public final class EventUtil {
             .toUriString();
     }
 
-    public static Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues(TicketRepository ticketRepository,
-                                                                                                          TicketFieldRepository ticketFieldRepository,
-                                                                                                          AdditionalServiceItemRepository additionalServiceItemRepository) {
-        return ticket -> {
-            List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(ticket.getTicketsReservationId());
-            //WORKAROUND: we only add the additionalServiceItems related fields only if it's the _first_ ticket of the reservation
-            boolean isFirstTicket = ticketsInReservation.get(0).getId() == ticket.getId();
+    public static BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues(TicketRepository ticketRepository,
+                                                                                                                   TicketFieldRepository ticketFieldRepository,
+                                                                                                                   AdditionalServiceItemRepository additionalServiceItemRepository) {
+        return (ticket, event) -> {
+            String reservationId = ticket.getTicketsReservationId();
+            var additionalServiceItems = getBookedAdditionalServices(ticketRepository, additionalServiceItemRepository, ticket, event, reservationId);
 
             Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
             Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId());
             Function<TicketFieldConfiguration, String> extractor = f -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
-            List<AdditionalServiceItem> additionalServiceItems = isFirstTicket ? additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId()) : Collections.emptyList();
-            Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
+            Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toSet());
             return ticketFieldRepository.findAdditionalFieldsForEvent(ticket.getEventId())
                 .stream()
                 .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
@@ -237,6 +238,18 @@ public final class EventUtil {
                 })
                 .collect(Collectors.toList());
         };
+    }
+
+    private static List<BookedAdditionalService> getBookedAdditionalServices(TicketRepository ticketRepository, AdditionalServiceItemRepository additionalServiceItemRepository, Ticket ticket, Event event, String reservationId) {
+        if (event.supportsLinkedAdditionalServices()) {
+            return additionalServiceItemRepository.getAdditionalServicesBookedForTicket(reservationId, ticket.getId(), ticket.getUserLanguage(), event.getId());
+        } else {
+            var ticketsInReservation = ticketRepository.findTicketIdsInReservation(reservationId);
+            if (ticketsInReservation.get(0).equals(ticket.getId())) {
+                return additionalServiceItemRepository.getAdditionalServicesBookedForReservation(reservationId, ticket.getUserLanguage(), event.getId());
+            }
+        }
+        return List.of();
     }
 
     public static Optional<String> findMatchingLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
@@ -293,5 +306,10 @@ public final class EventUtil {
     public static boolean supportsCaseInsensitiveQRCode(String version) {
         return version != null
             && MigrationVersion.fromVersion(version).compareTo(MigrationVersion.fromVersion(VERSION_FOR_CODE_CASE_INSENSITIVE)) >= 0;
+    }
+
+    public static boolean supportsLinkedAdditionalServices(String version) {
+        return version != null
+            && MigrationVersion.fromVersion(version).compareTo(MigrationVersion.fromVersion(VERSION_FOR_LINKED_ADDITIONAL_SERVICE)) >= 0;
     }
 }

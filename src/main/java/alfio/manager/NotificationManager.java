@@ -132,7 +132,7 @@ public class NotificationManager {
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF, receiptOrInvoiceFactory(purchaseContextManager, eventRepository,
             payload -> TemplateProcessor.buildCreditNotePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passKitManager::getPass);
-        Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
+        var retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository, subscriptionRepository));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF, generateSubscriptionPDF(organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, extensionManager, subscriptionRepository));
     }
@@ -143,7 +143,7 @@ public class NotificationManager {
                                                                            FileUploadManager fileUploadManager,
                                                                            TemplateManager templateManager,
                                                                            TicketReservationRepository ticketReservationRepository,
-                                                                           Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
+                                                                           BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                                                            ExtensionManager extensionManager,
                                                                            TicketRepository ticketRepository,
                                                                            SubscriptionRepository subscriptionRepository) {

@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-class ReservationFlowContext {
+public class ReservationFlowContext {
     final Event event;
     final String userId;
     final UUID subscriptionId;

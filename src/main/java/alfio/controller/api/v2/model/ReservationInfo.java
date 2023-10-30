@@ -16,7 +16,9 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.controller.api.support.AdditionalField;
 import alfio.controller.api.support.BookingInfoTicket;
+import alfio.controller.form.AdditionalServiceLinkForm;
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
 import alfio.model.ReservationMetadata;
@@ -81,6 +83,8 @@ public class ReservationInfo {
     private final List<SubscriptionInfo> subscriptionInfos;
 
     private final ReservationMetadata metadata;
+
+    private final List<AdditionalServiceWithData> additionalServiceWithData;
 
 
     @AllArgsConstructor
@@ -148,6 +152,15 @@ public class ReservationInfo {
         private final String firstName;
         private final String lastName;
         private final String email;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class AdditionalServiceWithData {
+        private final Map<String, String> title;
+        private final int itemId;
+        private final Integer ticketId;
+        private final List<AdditionalField> ticketFieldConfiguration;
     }
 
 }

@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.controller.form.AdditionalServiceLinkForm;
 import alfio.manager.support.reservation.NotEnoughItemsException;
 import alfio.model.*;
 import alfio.model.decorator.AdditionalServicePriceContainer;
@@ -23,10 +24,13 @@ import alfio.model.modification.EventModification;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.AdditionalServiceRepository;
 import alfio.repository.AdditionalServiceTextRepository;
+import alfio.repository.TicketRepository;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -52,6 +56,7 @@ public class AdditionalServiceManager {
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final TicketRepository ticketRepository;
 
 
     public List<AdditionalService> loadAllForEvent(int eventId) {
@@ -281,7 +286,7 @@ public class AdditionalServiceManager {
         return additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, additionalServiceItemStatus);
     }
 
-    List<AdditionalServiceItem> findItemsInReservation(String reservationId) {
+    public List<AdditionalServiceItem> findItemsInReservation(String reservationId) {
         return additionalServiceItemRepository.findByReservationUuid(reservationId);
     }
 
@@ -296,4 +301,30 @@ public class AdditionalServiceManager {
     List<AdditionalService> findAllInEventWithPolicy(int eventId, AdditionalService.SupplementPolicy supplementPolicy) {
         return additionalServiceRepository.findAllInEventWithPolicy(eventId, supplementPolicy);
     }
+
+    public List<AdditionalService> loadAllForReservation(String reservationId, int eventId) {
+        return additionalServiceRepository.loadAllForReservation(reservationId, eventId);
+    }
+
+    public void linkItemsToTickets(String reservationId,
+                                   AdditionalServiceLinkForm additionalServiceLinkForm,
+                                   List<Ticket> tickets) {
+        if (additionalServiceLinkForm.getAdditionalServiceLinks().isEmpty()) {
+            return;
+        }
+        var parameterSources = additionalServiceLinkForm.getAdditionalServiceLinks().stream()
+            .map(asl -> {
+                Integer ticketId = tickets.stream()
+                    .filter(t -> StringUtils.isNotEmpty(asl.getTicketUUID()) && t.getUuid().equals(asl.getTicketUUID()))
+                    .findFirst()
+                    .map(Ticket::getId)
+                    .orElse(null);
+                return new MapSqlParameterSource("ticketId", ticketId)
+                    .addValue("itemId", asl.getAdditionalServiceItemId())
+                    .addValue("reservationId", reservationId);
+            }).toArray(MapSqlParameterSource[]::new);
+        jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), parameterSources);
+    }
+
+
 }
