@@ -24,7 +24,10 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
-import alfio.repository.*;
+import alfio.repository.AdditionalServiceItemRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketFieldRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import alfio.util.Validator.AdvancedTicketAssignmentValidator;
@@ -35,7 +38,6 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.Errors;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -43,7 +45,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toSet;
 
 @Component
 @AllArgsConstructor
@@ -107,9 +109,15 @@ public class TicketHelper {
             new GroupManager.WhitelistValidator(event.getId(), groupManager));
 
 
-        var additionalServiceIds = new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(t.getTicketsReservationId()));
+        var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(ticketReservation.getId());
+        var additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(toSet());
 
-        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, ticketUUID -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()), event.supportsLinkedAdditionalServices());
+        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf,
+            ticketRepository.findTicketsInReservation(ticketReservation.getId()),
+            additionalServiceIds,
+            ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()),
+            event.supportsLinkedAdditionalServices(),
+            additionalServiceItems);
 
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
         ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)
@@ -201,10 +209,9 @@ public class TicketHelper {
                 .filter(StringUtils::isNotBlank)
                 .map(LocaleUtil::forLanguageTag)
                 .orElse(fallBackLocale);
-        TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
         var ticketLanguage = LocaleUtil.getTicketLanguage(t, fallBackLocale);
         ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
-                getConfirmationTextBuilder(ticketLanguage, event, ticketReservation, t, category),
+                getConfirmationTextBuilder(ticketLanguage, event, ticketReservation, t),
                 getOwnerChangeTextBuilder(ticketLanguage, t, event),
                 userDetails);
         if(t.hasBeenSold() && !groupManager.findLinks(event.getId(), t.getCategoryId()).isEmpty()) {
@@ -221,8 +228,7 @@ public class TicketHelper {
     public PartialTicketTextGenerator getConfirmationTextBuilder(Locale ticketLanguage,
                                                                  Event event,
                                                                  TicketReservation ticketReservation,
-                                                                 Ticket ticket,
-                                                                 TicketCategory ticketCategory) {
+                                                                 Ticket ticket) {
         return ticketReservationManager.getTicketEmailGenerator(event,
             ticketReservation,
             ticketLanguage,

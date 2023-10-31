@@ -223,25 +223,54 @@ public final class Validator {
     public static class TicketFieldsFilterer {
 
         private final List<TicketFieldConfiguration> additionalFieldsForEvent;
-        private final Function<String, Integer> fromTicketUUIDToTicketCategoryId;
+        private final List<Ticket> ticketsInReservation;
         private final Set<Integer> additionalServiceIds;
         private final Optional<Ticket> firstTicketInReservation;
         private final boolean eventSupportsAdditionalFieldsLink;
+        private final List<AdditionalServiceItem> additionalServiceItems;
 
 
-        public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUUID) {
-            var isFirstTicket = !eventSupportsAdditionalFieldsLink && firstTicketInReservation.map(first -> ticketUUID.equals(first.getUuid())).orElse(false);
-            return filterFieldsForTicket(additionalFieldsForEvent, fromTicketUUIDToTicketCategoryId.apply(ticketUUID), additionalServiceIds, isFirstTicket);
+        public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUuid) {
+            var ticket = ticketsInReservation.stream().filter(t -> t.getUuid().equals(ticketUuid)).findFirst().orElseThrow();
+            var isFirstTicket = firstTicketInReservation.map(first -> ticket.getUuid().equals(first.getUuid())).orElse(false);
+            return filterFieldsForTicket(additionalFieldsForEvent, ticket, additionalServiceIds, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems);
         }
 
         private static List<TicketFieldConfiguration> filterFieldsForTicket(List<TicketFieldConfiguration> additionalFieldsForEvent,
-                                                                            Integer ticketCategoryId,
+                                                                            Ticket ticket,
                                                                             Set<Integer> additionalServiceIds,
-                                                                            boolean isFirstTicket) {
+                                                                            boolean isFirstTicket,
+                                                                            boolean eventSupportsAdditionalFieldsLink,
+                                                                            List<AdditionalServiceItem> additionalServiceItems) {
             return additionalFieldsForEvent.stream()
-                .filter(field -> field.rulesApply(ticketCategoryId))
-                .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ATTENDEE || (isFirstTicket && Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent()))
+                .filter(field -> field.rulesApply(ticket.getCategoryId()))
+                .filter(f -> {
+                    if (f.getContext() == TicketFieldConfiguration.Context.ATTENDEE) {
+                        return true;
+                    }
+                    // field context is "Additional Service"
+                    if (!isFirstTicket && !eventSupportsAdditionalFieldsLink) {
+                        return false;
+                    }
+                    boolean included = isAdditionalServiceIncluded(f, additionalServiceIds);
+                    if (!included) {
+                        return false;
+                    }
+                    return !eventSupportsAdditionalFieldsLink || checkLinked(ticket, additionalServiceItems);
+                })
                 .collect(Collectors.toList());
+        }
+
+        private static boolean checkLinked(Ticket ticket, List<AdditionalServiceItem> additionalServiceItems) {
+            return additionalServiceItems.stream()
+                .anyMatch(asi -> asi.getTicketId() != null && asi.getTicketId() == ticket.getId());
+        }
+
+        private static boolean isAdditionalServiceIncluded(TicketFieldConfiguration f, Set<Integer> additionalServiceIds) {
+            if (f.getAdditionalServiceId() == null) {
+                return false;
+            }
+            return additionalServiceIds.contains(f.getAdditionalServiceId());
         }
     }
 

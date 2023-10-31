@@ -168,6 +168,7 @@ public class TicketReservationManager {
     private final ReservationAuditingHelper auditingHelper;
     private final ReservationFinalizer reservationFinalizer;
     private final AdditionalServiceManager additionalServiceManager;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
@@ -203,7 +204,8 @@ public class TicketReservationManager {
                                     ReservationCostCalculator reservationCostCalculator,
                                     ReservationEmailContentHelper reservationHelper,
                                     ReservationFinalizer reservationFinalizer,
-                                    OrderSummaryGenerator orderSummaryGenerator) {
+                                    OrderSummaryGenerator orderSummaryGenerator,
+                                    AdditionalServiceItemRepository additionalServiceItemRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -220,6 +222,7 @@ public class TicketReservationManager {
         this.templateManager = templateManager;
         this.waitingQueueManager = waitingQueueManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
         DefaultTransactionDefinition serialized = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         serialized.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
         this.serializedTransactionTemplate = new TransactionTemplate(transactionManager, serialized);
@@ -1248,6 +1251,7 @@ public class TicketReservationManager {
         groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
+        additionalServiceItemRepository.deleteAdditionalServiceItemsByReservationId(reservationId);
         subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
         int updatedAS = additionalServiceManager.updateStatusForReservationId(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
         purchaseContext.event().ifPresent(event -> {

@@ -112,10 +112,11 @@ public class BookingInfoTicketLoader {
 
     public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, Event event) {
         var fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        return new Validator.TicketFieldsFilterer(fields, ticketHelper.getTicketUUIDToCategoryId(),
+        return new Validator.TicketFieldsFilterer(fields, ticketReservationManager.findTicketsInReservation(reservationId),
             new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(reservationId)),
             ticketReservationManager.findFirstInReservation(reservationId),
-            event.supportsLinkedAdditionalServices());
+            event.supportsLinkedAdditionalServices(),
+            additionalServiceItemRepository.findByReservationUuid(reservationId));
     }
 
     private static BookingInfoTicket toBookingInfoTicket(Ticket ticket,

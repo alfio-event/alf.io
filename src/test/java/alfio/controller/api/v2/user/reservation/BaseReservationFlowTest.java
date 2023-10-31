@@ -745,7 +745,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             ticketForm2.setFirstName("ticketfull");
             ticketForm2.setLastName("ticketname");
             ticketForm2.setEmail("tickettest@test.com");
-            ticketForm2.setAdditional(Map.of("field1", Collections.singletonList("value")));
+            ticketForm2.setAdditional(new HashMap<>(Map.of("field1", Collections.singletonList("value"))));
 
             contactForm.setTickets(Map.of(ticket1.getUuid(), ticketForm1, ticket2.getUuid(), ticketForm2));
 
@@ -773,7 +773,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             contactForm.setBillingAddressCity("CITY");
             contactForm.setBillingAddressZip("ZIP");
 
-            ticketForm1.getAdditional().put("field3", Collections.singletonList("missing value"));
+            ticketForm2.getAdditional().put("field3", Collections.singletonList("missing value"));
             var success = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.OK, success.getStatusCode());
 

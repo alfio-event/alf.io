@@ -37,8 +37,11 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -46,15 +49,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.EventCheckInInfo.VERSION_FOR_CODE_CASE_INSENSITIVE;
+import static alfio.model.EventCheckInInfo.VERSION_FOR_LINKED_ADDITIONAL_SERVICE;
 import static alfio.test.util.IntegrationTestUtil.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -81,6 +82,9 @@ class CheckInManagerIntegrationTest {
     private TicketRepository ticketRepository;
     @Autowired
     private AdditionalServiceManager additionalServiceManager;
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
+
 
     @Test
     void testReturnOnlyOnce() {
@@ -134,13 +138,38 @@ class CheckInManagerIntegrationTest {
         assertTrue(result.isSuccessful());
         ticketReservationManager.confirmOfflinePayment(event, reservationId, null, eventAndUser.getRight());
 
+        var ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, event);
+        //
+        assertEquals(0, ticketsWithAdditionalServices.size()); // event supports link
+
+        // disable link support
+        jdbcTemplate.update("update event set version = :version where id = :id", new MapSqlParameterSource("id", event.getId()).addValue("version", VERSION_FOR_CODE_CASE_INSENSITIVE));
+        ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
+        //
+        assertEquals(1, ticketsWithAdditionalServices.size());
+        assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), ticketsWithAdditionalServices.get(0).getId());
+
+        // re-enable support
+        jdbcTemplate.update("update event set version = :version where id = :id", new MapSqlParameterSource("id", event.getId()).addValue("version", VERSION_FOR_LINKED_ADDITIONAL_SERVICE));
+        ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
+        assertEquals(0, ticketsWithAdditionalServices.size()); // event supports link
+
+        var ticketId = jdbcTemplate.queryForObject("select min(id) from ticket where tickets_reservation_id = :reservationId", Map.of("reservationId", reservationId), Integer.class);
+        assertNotNull(ticketId);
+        jdbcTemplate.update("update additional_service_item set ticket_id_fk = :ticketId where tickets_reservation_uuid = :reservationId", Map.of("ticketId", ticketId, "reservationId", reservationId));
+
+        // verify link works
+        ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
+        assertEquals(1, ticketsWithAdditionalServices.size());
+        assertEquals(ticketId, ticketsWithAdditionalServices.get(0).getId());
+    }
+
+    @NotNull
+    private List<Ticket> ticketsWithAdditionalServices(String reservationId, Event event) {
         var returnedAdditionalServices = ticketReservationManager.findTicketsInReservation(reservationId).stream()
             .filter(ticket -> !checkInManager.getAdditionalServicesForTicket(ticket, event).isEmpty())
             .collect(Collectors.toList());
-        //
-        assertEquals(1, returnedAdditionalServices.size());
-        assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), returnedAdditionalServices.get(0).getId());
-
+        return returnedAdditionalServices;
     }
 
 }
