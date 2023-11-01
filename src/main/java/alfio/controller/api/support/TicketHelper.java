@@ -45,8 +45,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toSet;
-
 @Component
 @AllArgsConstructor
 public class TicketHelper {
@@ -109,13 +107,10 @@ public class TicketHelper {
             new GroupManager.WhitelistValidator(event.getId(), groupManager));
 
 
-        var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(ticketReservation.getId());
-        var additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(toSet());
+        var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), ticketReservation.getId());
 
         var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf,
             ticketRepository.findTicketsInReservation(ticketReservation.getId()),
-            additionalServiceIds,
-            ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()),
             event.supportsLinkedAdditionalServices(),
             additionalServiceItems);
 

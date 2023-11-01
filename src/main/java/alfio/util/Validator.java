@@ -29,7 +29,6 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -219,21 +218,32 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    @AllArgsConstructor
     public static class TicketFieldsFilterer {
 
         private final List<TicketFieldConfiguration> additionalFieldsForEvent;
         private final List<Ticket> ticketsInReservation;
-        private final Set<Integer> additionalServiceIds;
+        private final Set<Integer> additionalFieldsForReservation;
         private final Optional<Ticket> firstTicketInReservation;
         private final boolean eventSupportsAdditionalFieldsLink;
         private final List<AdditionalServiceItem> additionalServiceItems;
+
+        public TicketFieldsFilterer(List<TicketFieldConfiguration> additionalFieldsForEvent,
+                                    List<Ticket> ticketsInReservation,
+                                    boolean eventSupportsAdditionalFieldsLink,
+                                    List<AdditionalServiceItem> additionalServiceItems) {
+            this.additionalFieldsForEvent = additionalFieldsForEvent;
+            this.ticketsInReservation = ticketsInReservation;
+            this.additionalFieldsForReservation = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
+            this.firstTicketInReservation = ticketsInReservation.stream().findFirst();
+            this.eventSupportsAdditionalFieldsLink = eventSupportsAdditionalFieldsLink;
+            this.additionalServiceItems = additionalServiceItems;
+        }
 
 
         public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUuid) {
             var ticket = ticketsInReservation.stream().filter(t -> t.getUuid().equals(ticketUuid)).findFirst().orElseThrow();
             var isFirstTicket = firstTicketInReservation.map(first -> ticket.getUuid().equals(first.getUuid())).orElse(false);
-            return filterFieldsForTicket(additionalFieldsForEvent, ticket, additionalServiceIds, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems);
+            return filterFieldsForTicket(additionalFieldsForEvent, ticket, additionalFieldsForReservation, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems);
         }
 
         private static List<TicketFieldConfiguration> filterFieldsForTicket(List<TicketFieldConfiguration> additionalFieldsForEvent,

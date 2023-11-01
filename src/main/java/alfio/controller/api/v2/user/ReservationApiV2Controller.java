@@ -132,8 +132,6 @@ public class ReservationApiV2Controller {
 
 
             // check if the user can cancel ticket
-            boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
-            //
 
             var ticketsInfo = purchaseContext.event().filter(e -> !ticketIds.isEmpty()).map(event -> {
                 var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
@@ -146,6 +144,7 @@ public class ReservationApiV2Controller {
 
                 var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
                 var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
+                var hasPaidSupplement = ticketReservationManager.hasPaidSupplements(event.getId(), reservationId);
                 //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
                 var ticketsInReservation = ticketsByCategory
                     .entrySet()
@@ -232,7 +231,7 @@ public class ReservationApiV2Controller {
     private List<ReservationInfo.AdditionalServiceWithData> getAdditionalServicesWithData(PurchaseContext purchaseContext, String reservationId) {
         if (purchaseContext.ofType(PurchaseContextType.event) && ((Event)purchaseContext).supportsLinkedAdditionalServices()) {
             var event = ((Event)purchaseContext);
-            var additionalServiceItems = additionalServiceManager.findItemsInReservation(reservationId);
+            var additionalServiceItems = additionalServiceManager.findItemsInReservation(event.getId(), reservationId);
             if (!additionalServiceItems.isEmpty()) {
                 var additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toList());
                 var additionalItemDescriptionsById = additionalServiceManager.getDescriptionsByAdditionalServiceIds(additionalServiceIds);
@@ -259,7 +258,7 @@ public class ReservationApiV2Controller {
                             })
                             .collect(Collectors.toList());
                         return additionalServiceItems.stream().filter(asi -> asi.getAdditionalServiceId() == as.getId())
-                            .map(asi -> new ReservationInfo.AdditionalServiceWithData(additionalItemTitle, asi.getAdditionalServiceId(), asi.getTicketId(), fields));
+                            .map(asi -> new ReservationInfo.AdditionalServiceWithData(additionalItemTitle, asi.getId(), asi.getTicketId(), fields));
                     }).collect(Collectors.toList());
             }
 
@@ -486,7 +485,7 @@ public class ReservationApiV2Controller {
 
             purchaseContext.event().ifPresent(event -> {
                 var tickets = assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
-                additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServiceLinkForm(), tickets);
+                additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets);
             });
 
             if(purchaseContext.ofType(PurchaseContextType.subscription) && contactAndTicketsForm.isDifferentSubscriptionOwner()) {
@@ -502,7 +501,8 @@ public class ReservationApiV2Controller {
 
             //
             contactAndTicketsForm.validate(bindingResult, purchaseContext, new SameCountryValidator(configurationManager, extensionManager, purchaseContext, reservationId, vatChecker),
-                formValidationParameters, ticketFieldFilterer, reservationCost.requiresPayment(), extensionManager);
+                formValidationParameters, ticketFieldFilterer, reservationCost.requiresPayment(), extensionManager,
+                () -> additionalServiceManager.countItemsInReservation(purchaseContext, reservationId));
             //
 
             if(!bindingResult.hasErrors()) {

@@ -1251,10 +1251,10 @@ public class TicketReservationManager {
         groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
-        additionalServiceItemRepository.deleteAdditionalServiceItemsByReservationId(reservationId);
         subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
-        int updatedAS = additionalServiceManager.updateStatusForReservationId(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
         purchaseContext.event().ifPresent(event -> {
+            additionalServiceItemRepository.deleteAdditionalServiceItemsByReservationId(event.getId(), reservationId);
+            int updatedAS = additionalServiceManager.updateStatusForReservationId(event.getId(), reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
             int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
                 tickedId -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), tickedId, UUID.randomUUID().toString())
             ).sum();
@@ -1581,7 +1581,7 @@ public class TicketReservationManager {
 
         String ticketCategoryDescription = ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
 
-        List<AdditionalServiceItem> additionalServiceItems = additionalServiceManager.findItemsInReservation(reservationId);
+        List<AdditionalServiceItem> additionalServiceItems = additionalServiceManager.findItemsInReservation(event.getId(), reservationId);
         Map<String, Object> adminModel = TemplateResource.buildModelForTicketHasBeenCancelledAdmin(organization, event, ticket,
             ticketCategoryDescription, additionalServiceItems, asi -> additionalServiceManager.loadItemTitle(asi, locale));
         notificationManager.sendSimpleEmail(event, null, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
@@ -1654,8 +1654,8 @@ public class TicketReservationManager {
     }
 
 
-    public boolean hasPaidSupplements(String reservationId) {
-        return additionalServiceManager.hasPaidSupplements(reservationId);
+    public boolean hasPaidSupplements(int eventId, String reservationId) {
+        return additionalServiceManager.hasPaidSupplements(eventId, reservationId);
     }
 
     public int revertTicketsToFreeIfAccessRestricted(int eventId) {

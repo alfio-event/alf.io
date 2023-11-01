@@ -97,7 +97,7 @@ public class CheckInManager {
         ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.CHECKED_IN.toString());
         ticketRepository.toggleTicketLocking(ticket.getId(), ticket.getCategoryId(), true);
         if (event.supportsLinkedAdditionalServices()) {
-            int n = additionalServiceItemRepository.updateItemsStatusWithTicketId(ticket.getTicketsReservationId(), ticket.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CHECKED_IN);
+            int n = additionalServiceItemRepository.updateItemsStatusWithTicketId(event.getId(), ticket.getTicketsReservationId(), ticket.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CHECKED_IN);
             if (n > 0) {
                 log.debug("Checked in {} additional services for ticket {}", n, uuid);
             }
@@ -243,7 +243,7 @@ public class CheckInManager {
                 ticketRepository.updateTicketStatusWithUUID(ticketIdentifier, revertedStatus.toString());
                 var event = eventRepository.findById(eventId);
                 if (event.supportsLinkedAdditionalServices()) {
-                    additionalServiceItemRepository.updateItemsStatusWithTicketId(t.getTicketsReservationId(), t.getId(), onSitePayment ? AdditionalServiceItem.AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItem.AdditionalServiceItemStatus.ACQUIRED);
+                    additionalServiceItemRepository.updateItemsStatusWithTicketId(t.getEventId(), t.getTicketsReservationId(), t.getId(), onSitePayment ? AdditionalServiceItem.AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItem.AdditionalServiceItemStatus.ACQUIRED);
                 }
                 scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, OK_READY_TO_BE_CHECKED_IN, ScanAudit.Operation.REVERT);
                 auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.REVERT_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));

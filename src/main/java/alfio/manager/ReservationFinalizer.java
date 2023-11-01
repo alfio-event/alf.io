@@ -418,7 +418,7 @@ public class ReservationFinalizer {
             });
             auditingHelper.auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticketWithMetadata.getTicket(), Collections.emptyMap(), event.getId());
         });
-        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
+        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(event.getId(), reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
     }
 

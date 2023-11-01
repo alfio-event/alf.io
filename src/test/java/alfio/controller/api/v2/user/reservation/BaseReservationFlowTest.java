@@ -753,8 +753,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var additionalServiceLink = new AdditionalServiceLinkForm.AdditionalServiceLink();
             additionalServiceLink.setAdditionalServiceItemId(additionalServiceWithData.get(0).getItemId());
             additionalServiceLink.setTicketUUID(ticket2.getUuid());
-            additionalServiceLinkForm.setAdditionalServiceLinks(List.of(additionalServiceLink));
-            contactForm.setAdditionalServiceLinkForm(additionalServiceLinkForm);
+            additionalServiceLinkForm.setLinks(List.of(additionalServiceLink));
+            contactForm.setAdditionalServices(additionalServiceLinkForm);
             var failure = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatusCode());
             assertNotNull(failure.getBody());

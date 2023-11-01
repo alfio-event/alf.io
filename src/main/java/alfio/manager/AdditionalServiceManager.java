@@ -281,20 +281,27 @@ public class AdditionalServiceManager {
             .addValue("currencyCode", event.getCurrency());
     }
 
-    int updateStatusForReservationId(String reservationId, AdditionalServiceItem.AdditionalServiceItemStatus additionalServiceItemStatus) {
-        return additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, additionalServiceItemStatus);
+    int updateStatusForReservationId(int eventId, String reservationId, AdditionalServiceItem.AdditionalServiceItemStatus additionalServiceItemStatus) {
+        return additionalServiceItemRepository.updateItemsStatusWithReservationUUID(eventId, reservationId, additionalServiceItemStatus);
     }
 
-    public List<AdditionalServiceItem> findItemsInReservation(String reservationId) {
-        return additionalServiceItemRepository.findByReservationUuid(reservationId);
+    public List<AdditionalServiceItem> findItemsInReservation(int eventId, String reservationId) {
+        return additionalServiceItemRepository.findByReservationUuid(eventId, reservationId);
+    }
+
+    public int countItemsInReservation(PurchaseContext purchaseContext, String reservationId) {
+        if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+            return additionalServiceItemRepository.countByReservationUuid(((Event) purchaseContext).getId(), reservationId);
+        }
+        return 0;
     }
 
     Optional<AdditionalServiceText> loadItemTitle(AdditionalServiceItem asi, Locale locale) {
         return additionalServiceTextRepository.findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE);
     }
 
-    boolean hasPaidSupplements(String reservationId) {
-        return additionalServiceItemRepository.hasPaidSupplements(reservationId);
+    boolean hasPaidSupplements(int eventId, String reservationId) {
+        return additionalServiceItemRepository.hasPaidSupplements(eventId, reservationId);
     }
 
     List<AdditionalService> findAllInEventWithPolicy(int eventId, AdditionalService.SupplementPolicy supplementPolicy) {
@@ -308,10 +315,10 @@ public class AdditionalServiceManager {
     public void linkItemsToTickets(String reservationId,
                                    AdditionalServiceLinkForm additionalServiceLinkForm,
                                    List<Ticket> tickets) {
-        if (additionalServiceLinkForm == null || CollectionUtils.isEmpty(additionalServiceLinkForm.getAdditionalServiceLinks())) {
+        if (additionalServiceLinkForm == null || CollectionUtils.isEmpty(additionalServiceLinkForm.getLinks())) {
             return;
         }
-        var parameterSources = additionalServiceLinkForm.getAdditionalServiceLinks().stream()
+        var parameterSources = additionalServiceLinkForm.getLinks().stream()
             .map(asl -> {
                 Integer ticketId = tickets.stream()
                     .filter(t -> StringUtils.isNotEmpty(asl.getTicketUUID()) && t.getUuid().equals(asl.getTicketUUID()))
@@ -322,7 +329,8 @@ public class AdditionalServiceManager {
                     .addValue("itemId", asl.getAdditionalServiceItemId())
                     .addValue("reservationId", reservationId);
             }).toArray(MapSqlParameterSource[]::new);
-        jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), parameterSources);
+        var results = jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), parameterSources);
+        Validate.isTrue(Arrays.stream(results).allMatch(i -> i == 1));
     }
 
 

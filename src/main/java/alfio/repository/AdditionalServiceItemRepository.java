@@ -37,7 +37,7 @@ public interface AdditionalServiceItemRepository {
         "  and asd.locale = :language" +
         "  and asd.type = 'TITLE'" +
         "  and ai.tickets_reservation_uuid = :reservationId";
-    String UPDATE_STATUS = "update additional_service_item set status = :status where tickets_reservation_uuid = :reservationUuid";
+    String UPDATE_STATUS = "update additional_service_item set status = :status where event_id_fk = :eventId and tickets_reservation_uuid = :reservationUuid";
 
     @Query("insert into additional_service_item (uuid, creation, tickets_reservation_uuid, additional_service_id_fk, status, event_id_fk, src_price_cts, final_price_cts, vat_cts, discount_cts, currency_code) " +
         "values(:uuid, :creation, :ticketsReservationUuid, :additionalServiceId, :status, :eventId, :srcPriceCts, :finalPriceCts, :vatCts, :discountCts, :currencyCode)")
@@ -54,22 +54,25 @@ public interface AdditionalServiceItemRepository {
                                            @Bind("discountCts") Integer discountCts,
                                            @Bind("currencyCode") String currencyCode);
 
-    @Query("select * from additional_service_item where tickets_reservation_uuid = :reservationUuid")
-    List<AdditionalServiceItem> findByReservationUuid(@Bind("reservationUuid") String reservationUuid);
+    @Query("select * from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationUuid")
+    List<AdditionalServiceItem> findByReservationUuid(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid);
 
-    @Query("select additional_service_id_fk from additional_service_item where tickets_reservation_uuid = :reservationUuid")
-    List<Integer> findAdditionalServiceIdsByReservationUuid(@Bind("reservationUuid") String reservationUuid);
+    @Query("select additional_service_id_fk from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationUuid")
+    List<Integer> findAdditionalServiceIdsByReservationUuid(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid);
 
     @Query(UPDATE_STATUS)
-    int updateItemsStatusWithReservationUUID(@Bind("reservationUuid") String reservationUuid, @Bind("status") AdditionalServiceItemStatus status);
+    int updateItemsStatusWithReservationUUID(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid, @Bind("status") AdditionalServiceItemStatus status);
 
     @Query(UPDATE_STATUS + " and ticket_id_fk = :ticketId")
-    int updateItemsStatusWithTicketId(@Bind("reservationUuid") String reservationUuid, @Bind("ticketId") int ticketId, @Bind("status") AdditionalServiceItemStatus status);
+    int updateItemsStatusWithTicketId(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid, @Bind("ticketId") int ticketId, @Bind("status") AdditionalServiceItemStatus status);
 
     @Query("select count(*) > 0 from additional_service_item " +
         " inner join additional_service on additional_service_id_fk = additional_service.id " +
-        " where service_type = 'SUPPLEMENT' and tickets_reservation_uuid = :reservationId and final_price_cts > 0")
-    boolean hasPaidSupplements(@Bind("reservationId") String reservationId);
+        " where additional_service_item.event_id_fk = :eventId and service_type = 'SUPPLEMENT' and tickets_reservation_uuid = :reservationId and final_price_cts > 0")
+    boolean hasPaidSupplements(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
+
+    @Query("select count(*) from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationId")
+    int countByReservationUuid(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
 
     @Query(SELECT_BOOKED_ADDITIONAL_SERVICES + "  group by ads.id, asd.value")
     List<BookedAdditionalService> getAdditionalServicesBookedForReservation(@Bind("reservationId") String reservationId,
@@ -124,7 +127,6 @@ public interface AdditionalServiceItemRepository {
     @Query(type = QueryType.TEMPLATE, value = "update additional_service_item set ticket_id_fk = :ticketId where id = :itemId and tickets_reservation_uuid = :reservationId")
     String batchLinkToTicket();
 
-    @Query("delete from additional_service_item where tickets_reservation_uuid = :reservationId")
-    int deleteAdditionalServiceItemsByReservationId(@Bind("reservationId") String reservationId);
-
+    @Query("delete from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationId")
+    int deleteAdditionalServiceItemsByReservationId(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
 }

@@ -35,11 +35,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.*;
+import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
 
 import static alfio.util.ErrorsCode.*;
@@ -83,7 +80,7 @@ public class ContactAndTicketsForm implements Serializable {
     private boolean differentSubscriptionOwner;
     private UpdateSubscriptionOwnerForm subscriptionOwner;
 
-    private AdditionalServiceLinkForm additionalServiceLinkForm;
+    private AdditionalServiceLinkForm additionalServices;
 
     //
 
@@ -96,18 +93,20 @@ public class ContactAndTicketsForm implements Serializable {
 
 
 
-    public void validate(CustomBindingResult bindingResult, PurchaseContext purchaseContext,
+    public void validate(CustomBindingResult bindingResult,
+                         PurchaseContext purchaseContext,
                          SameCountryValidator vatValidator,
                          Map<ConfigurationKeys, Boolean> formValidationParameters,
                          Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer,
                          boolean reservationRequiresPayment,
-                         ExtensionManager extensionManager) {
+                         ExtensionManager extensionManager,
+                         IntSupplier additionalServiceItemsCount) {
 
 
         formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false), reservationRequiresPayment);
 
         purchaseContext.event().ifPresent(event -> {
-            checkAdditionalServiceItemsLink(event, bindingResult);
+            checkAdditionalServiceItemsLink(event, bindingResult, additionalServiceItemsCount);
             if(!postponeAssignment) {
                 Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                     .filter(m -> !m.isEmpty())
@@ -134,8 +133,14 @@ public class ContactAndTicketsForm implements Serializable {
         }
     }
 
-    private void checkAdditionalServiceItemsLink(Event event, BindingResult bindingResult) {
-        if (event.supportsLinkedAdditionalServices() && additionalServiceLinkForm != null && !additionalServiceLinkForm.isValid()) {
+    private void checkAdditionalServiceItemsLink(Event event,
+                                                 BindingResult bindingResult,
+                                                 IntSupplier additionalServiceItemsCount) {
+        if (!event.supportsLinkedAdditionalServices()) {
+            return;
+        }
+        var form = Objects.requireNonNullElseGet(additionalServices, AdditionalServiceLinkForm::new);
+        if (!form.isValid(additionalServiceItemsCount.getAsInt())) {
             bindingResult.reject(STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED);
         }
     }

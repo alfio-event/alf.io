@@ -18,25 +18,27 @@ package alfio.controller.form;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class AdditionalServiceLinkForm {
+public class AdditionalServiceLinkForm implements Serializable {
 
-    private List<AdditionalServiceLink> additionalServiceLinks;
+    private List<AdditionalServiceLink> links;
 
-    public List<AdditionalServiceLink> getAdditionalServiceLinks() {
-        return additionalServiceLinks;
+    public List<AdditionalServiceLink> getLinks() {
+        return links;
     }
 
-    public void setAdditionalServiceLinks(List<AdditionalServiceLink> additionalServiceLinks) {
-        this.additionalServiceLinks = additionalServiceLinks;
+    public void setLinks(List<AdditionalServiceLink> links) {
+        this.links = links;
     }
 
-    public boolean isValid() {
-        return CollectionUtils.isEmpty(additionalServiceLinks) || additionalServiceLinks.stream().allMatch(AdditionalServiceLink::isValid);
+    public boolean isValid(int count) {
+        return (count == 0 && CollectionUtils.isEmpty(links))
+            || (links.size() == count && links.stream().allMatch(AdditionalServiceLink::isValid));
     }
 
-    public static class AdditionalServiceLink {
+    public static class AdditionalServiceLink implements Serializable {
         private int additionalServiceItemId;
         private String ticketUUID;
 

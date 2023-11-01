@@ -60,7 +60,7 @@ public class BookingInfoTicketLoader {
             .stream()
             .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
 
-        boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(ticket.getTicketsReservationId());
+        boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(ticket.getEventId(), ticket.getTicketsReservationId());
         Map<String, String> formattedDates = Map.of();
         boolean onlineEventStarted = false;
         if(event.isOnline()) {
@@ -112,11 +112,10 @@ public class BookingInfoTicketLoader {
 
     public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, Event event) {
         var fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        return new Validator.TicketFieldsFilterer(fields, ticketReservationManager.findTicketsInReservation(reservationId),
-            new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(reservationId)),
-            ticketReservationManager.findFirstInReservation(reservationId),
+        return new Validator.TicketFieldsFilterer(fields,
+            ticketReservationManager.findTicketsInReservation(reservationId),
             event.supportsLinkedAdditionalServices(),
-            additionalServiceItemRepository.findByReservationUuid(reservationId));
+            additionalServiceItemRepository.findByReservationUuid(event.getId(), reservationId));
     }
 
     private static BookingInfoTicket toBookingInfoTicket(Ticket ticket,

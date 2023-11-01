@@ -17,5 +17,3 @@
 
 alter table additional_service_item
     add column ticket_id_fk integer constraint "asi_ticket_id_fk" references ticket(id);
-alter table additional_service_item
-    add constraint "tickets_reservation_uuid_fk" foreign key (tickets_reservation_uuid) references tickets_reservation(id);

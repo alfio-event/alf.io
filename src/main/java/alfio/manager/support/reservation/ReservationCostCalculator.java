@@ -112,7 +112,7 @@ public class ReservationCostCalculator {
 
     Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> streamAdditionalServiceItems(String reservationId, PurchaseContext purchaseContext) {
         return purchaseContext.event().map(event -> {
-            return additionalServiceItemRepository.findByReservationUuid(reservationId)
+            return additionalServiceItemRepository.findByReservationUuid(event.getId(), reservationId)
                 .stream()
                 .collect(Collectors.groupingBy(AdditionalServiceItem::getAdditionalServiceId))
                 .entrySet()
