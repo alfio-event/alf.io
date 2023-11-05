@@ -20,6 +20,8 @@ import alfio.controller.form.AdditionalServiceLinkForm;
 import alfio.manager.support.reservation.NotEnoughItemsException;
 import alfio.model.*;
 import alfio.model.decorator.AdditionalServicePriceContainer;
+import alfio.model.modification.ASReservationWithOptionalCodeModification;
+import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.EventModification;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.AdditionalServiceRepository;
@@ -28,6 +30,7 @@ import alfio.repository.TicketRepository;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
+import org.apache.commons.collections4.iterators.LoopingIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -41,9 +44,13 @@ import org.springframework.util.CollectionUtils;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET;
 import static alfio.util.MonetaryUtil.unitToCents;
+import static java.util.Objects.requireNonNullElse;
 
 @Component
 @AllArgsConstructor
@@ -325,13 +332,98 @@ public class AdditionalServiceManager {
                     .findFirst()
                     .map(Ticket::getId)
                     .orElse(null);
-                return new MapSqlParameterSource("ticketId", ticketId)
-                    .addValue("itemId", asl.getAdditionalServiceItemId())
-                    .addValue("reservationId", reservationId);
+                return batchLinkSource(reservationId, asl.getAdditionalServiceItemId(), ticketId);
             }).toArray(MapSqlParameterSource[]::new);
         var results = jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), parameterSources);
         Validate.isTrue(Arrays.stream(results).allMatch(i -> i == 1));
     }
 
+    private static MapSqlParameterSource batchLinkSource(String reservationId, int itemId, Integer ticketId) {
+        return new MapSqlParameterSource("ticketId", ticketId)
+            .addValue("itemId", itemId)
+            .addValue("reservationId", reservationId);
+    }
 
+
+    public void bookAdditionalServicesForReservation(Event event,
+                                                     String reservationId,
+                                                     List<ASReservationWithOptionalCodeModification> additionalServices,
+                                                     Optional<PromoCodeDiscount> discount) {
+        var ticketIds = ticketRepository.findTicketIdsInReservation(reservationId);
+        int ticketCount = ticketIds.size();
+        // apply valid additional service with supplement policy mandatory one for ticket
+        var additionalServicesForEvent = loadAllForEvent(event.getId());
+
+        var automatic = additionalServicesForEvent.stream().filter(as -> as.getSupplementPolicy() == MANDATORY_ONE_FOR_TICKET && as.getSaleable())
+            .map(as -> {
+                AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
+                asrm.setAdditionalServiceId(as.getId());
+                asrm.setQuantity(ticketCount);
+                return new ASReservationWithOptionalCodeModification(asrm, Optional.empty());
+            }).collect(Collectors.toList());
+
+        if (automatic.isEmpty() && additionalServices.isEmpty()) {
+            // skip additional queries
+            return;
+        }
+        var items = new ArrayList<>(automatic);
+        items.addAll(additionalServices);
+        reserveAdditionalServicesForReservation(event, reservationId, items, discount.orElse(null), additionalServicesForEvent, ticketIds);
+    }
+
+    private void reserveAdditionalServicesForReservation(Event event,
+                                                         String reservationId,
+                                                         List<ASReservationWithOptionalCodeModification> additionalServiceReservationList,
+                                                         PromoCodeDiscount discount,
+                                                         List<AdditionalService> additionalServicesForEvent,
+                                                         List<Integer> ticketIds) {
+        additionalServiceReservationList.forEach(additionalServiceReservation -> {
+            if (additionalServiceReservation.getAdditionalServiceId() == null) {
+                return;
+            }
+            var optionalAs = additionalServicesForEvent.stream()
+                .filter(as -> as.getId() == additionalServiceReservation.getAdditionalServiceId())
+                .findFirst();
+            if (optionalAs.isEmpty()) {
+                return;
+            }
+            var as = optionalAs.get();
+            if (additionalServiceReservation.getQuantity() > 0 && (as.isFixPrice() || requireNonNullElse(additionalServiceReservation.getAmount(), BigDecimal.ZERO).compareTo(BigDecimal.ZERO) > 0)) {
+                bookAdditionalServiceItems(additionalServiceReservation.getQuantity(), additionalServiceReservation.getAmount(), as, event, discount, reservationId);
+            }
+        });
+
+        // link additional services to tickets
+        var bookedItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), reservationId);
+        var byPolicy = additionalServicesForEvent.stream()
+            .filter(as -> additionalServiceReservationList.stream().anyMatch(findAdditionalServiceRequest(as)))
+            .collect(Collectors.groupingBy(AdditionalService::getSupplementPolicy));
+
+        var parameterSources = byPolicy.entrySet().stream()
+            .flatMap(entry -> {
+                var values = entry.getValue();
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("Processing {} items with policy {}", values.size(), entry.getKey());
+                }
+                return values.stream()
+                    .flatMap(m -> linkWithEveryTicket(reservationId, additionalServiceReservationList, bookedItems, ticketIds, m));
+            }).toArray(MapSqlParameterSource[]::new);
+        var results = jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), parameterSources);
+        Validate.isTrue(Arrays.stream(results).allMatch(i -> i == 1));
+    }
+
+    private static Stream<MapSqlParameterSource> linkWithEveryTicket(String reservationId, List<ASReservationWithOptionalCodeModification> additionalServiceReservationList, List<AdditionalServiceItem> bookedItems, List<Integer> ticketIds, AdditionalService m) {
+        var additionalServiceRequest = additionalServiceReservationList.stream()
+            .filter(findAdditionalServiceRequest(m))
+            .findFirst()
+            .orElseThrow();
+        var ticketIterator = new LoopingIterator<>(ticketIds); // using looping iterator to handle potential overflow
+        return bookedItems.stream()
+            .filter(i -> i.getAdditionalServiceId() == additionalServiceRequest.getAdditionalServiceId())
+            .map(i -> batchLinkSource(reservationId, i.getId(), ticketIterator.next()));
+    }
+
+    private static Predicate<ASReservationWithOptionalCodeModification> findAdditionalServiceRequest(AdditionalService as) {
+        return asr -> as.getId() == asr.getAdditionalServiceId();
+    }
 }

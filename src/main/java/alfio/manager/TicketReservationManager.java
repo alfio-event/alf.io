@@ -42,7 +42,10 @@ import alfio.model.group.LinkedGroup;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
-import alfio.model.modification.*;
+import alfio.model.modification.ASReservationWithOptionalCodeModification;
+import alfio.model.modification.AttendeeData;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.modification.TransactionMetadataModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.WarningMessage;
@@ -333,23 +336,9 @@ public class TicketReservationManager {
 
         list.forEach(t -> reserveTicketsForCategory(event, reservationId, t, locale, forWaitingQueue, discount.orElse(null), dynamicDiscount.orElse(null)));
 
-        int ticketCount = list
-            .stream()
-            .map(TicketReservationWithOptionalCodeModification::getQuantity)
-            .mapToInt(Integer::intValue).sum();
+        // add all additional services
+        additionalServiceManager.bookAdditionalServicesForReservation(event, reservationId, additionalServices, discount);
 
-        // apply valid additional service with supplement policy mandatory one for ticket
-        additionalServiceManager.findAllInEventWithPolicy(event.getId(), AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET)
-            .stream()
-            .filter(AdditionalService::getSaleable)
-            .forEach(as -> {
-                AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
-                asrm.setAdditionalServiceId(as.getId());
-                asrm.setQuantity(ticketCount);
-                reserveAdditionalServicesForReservation(event, reservationId, new ASReservationWithOptionalCodeModification(asrm, Optional.empty()), discount.orElse(null));
-        });
-
-        additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event, reservationId, as, discount.orElse(null)));
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = event.getVatStatus();
         ticketReservationRepository.updateBillingData(event.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), event.getCurrency(), null, null, false, reservationId);
@@ -541,16 +530,6 @@ public class TicketReservationManager {
             }
             throw new TooManyTicketsForDiscountCodeException();
         }
-    }
-
-    private void reserveAdditionalServicesForReservation(Event event, String reservationId, ASReservationWithOptionalCodeModification additionalServiceReservation, PromoCodeDiscount discount) {
-        Optional.ofNullable(additionalServiceReservation.getAdditionalServiceId())
-            .flatMap(id -> additionalServiceManager.getOptionalById(id, event.getId()))
-            .filter(as -> additionalServiceReservation.getQuantity() > 0 && (as.isFixPrice() || Optional.ofNullable(additionalServiceReservation.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
-            .ifPresent(as -> {
-                additionalServiceManager.bookAdditionalServiceItems(additionalServiceReservation.getQuantity(), additionalServiceReservation.getAmount(), as, event, discount, reservationId);
-            });
-
     }
 
     List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, List<TicketStatus> requiredStatuses) {

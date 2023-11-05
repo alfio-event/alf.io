@@ -140,28 +140,29 @@ class CheckInManagerIntegrationTest {
 
         var ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, event);
         //
-        assertEquals(0, ticketsWithAdditionalServices.size()); // event supports link
+        assertEquals(1, ticketsWithAdditionalServices.size());
+        var firstTicket = ticketsWithAdditionalServices.get(0);
+        assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), firstTicket.getId());
 
         // disable link support
         jdbcTemplate.update("update event set version = :version where id = :id", new MapSqlParameterSource("id", event.getId()).addValue("version", VERSION_FOR_CODE_CASE_INSENSITIVE));
         ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
+        firstTicket = ticketsWithAdditionalServices.get(0);
         //
         assertEquals(1, ticketsWithAdditionalServices.size());
-        assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), ticketsWithAdditionalServices.get(0).getId());
+        assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), firstTicket.getId());
 
         // re-enable support
         jdbcTemplate.update("update event set version = :version where id = :id", new MapSqlParameterSource("id", event.getId()).addValue("version", VERSION_FOR_LINKED_ADDITIONAL_SERVICE));
-        ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
-        assertEquals(0, ticketsWithAdditionalServices.size()); // event supports link
-
-        var ticketId = jdbcTemplate.queryForObject("select min(id) from ticket where tickets_reservation_id = :reservationId", Map.of("reservationId", reservationId), Integer.class);
+        var ticketId = jdbcTemplate.queryForObject("select min(id) from ticket where tickets_reservation_id = :reservationId and id <> :ticketId", Map.of("reservationId", reservationId, "ticketId", firstTicket.getId()), Integer.class);
         assertNotNull(ticketId);
         jdbcTemplate.update("update additional_service_item set ticket_id_fk = :ticketId where tickets_reservation_uuid = :reservationId", Map.of("ticketId", ticketId, "reservationId", reservationId));
 
         // verify link works
         ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
+        firstTicket = ticketsWithAdditionalServices.get(0);
         assertEquals(1, ticketsWithAdditionalServices.size());
-        assertEquals(ticketId, ticketsWithAdditionalServices.get(0).getId());
+        assertEquals(ticketId, firstTicket.getId());
     }
 
     @NotNull

@@ -51,7 +51,7 @@ public class BookingInfoTicketLoader {
     private final ClockProvider clockProvider;
 
 
-    public BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event) {
+    public BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event, Set<TicketFieldConfiguration.Context> contexts) {
         var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
             .stream()
             .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
@@ -81,7 +81,8 @@ public class BookingInfoTicketLoader {
             descriptionsByTicketFieldId,
             valuesByTicketIds,
             formattedDates,
-            onlineEventStarted);
+            onlineEventStarted,
+            contexts);
     }
 
     public BookingInfoTicket toBookingInfoTicket(Ticket t,
@@ -91,7 +92,8 @@ public class BookingInfoTicketLoader {
                                                  Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
                                                  Map<Integer, List<TicketFieldValue>> valuesByTicketIds,
                                                  Map<String, String> formattedOnlineCheckInDate,
-                                                 boolean onlineEventStarted) {
+                                                 boolean onlineEventStarted,
+                                                 Set<TicketFieldConfiguration.Context> contexts) {
         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
         var configuration = configurationManager.getFor(EnumSet.of(ALLOW_FREE_TICKETS_CANCELLATION, SEND_TICKETS_AUTOMATICALLY, ALLOW_TICKET_DOWNLOAD), ConfigurationLevel.ticketCategory(event, t.getCategoryId()));
         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
@@ -103,7 +105,7 @@ public class BookingInfoTicketLoader {
             cancellationEnabled,
             configuration.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault(),
             configuration.get(ALLOW_TICKET_DOWNLOAD).getValueAsBooleanOrDefault(),
-            ticketFieldsFilterer.getFieldsForTicket(t.getUuid()),
+            ticketFieldsFilterer.getFieldsForTicket(t.getUuid(), contexts),
             descriptionsByTicketFieldId,
             valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()),
             formattedOnlineCheckInDate,
@@ -133,6 +135,8 @@ public class BookingInfoTicketLoader {
 
 
         var ticketFieldsAdditional = ticketFields.stream()
+            // hide additional service related fields
+            .filter(ticketFieldConfiguration -> ticketFieldConfiguration.getAdditionalServiceId() != null)
             .sorted(Comparator.comparing(TicketFieldConfiguration::getOrder))
             .map(tfc -> {
                 var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!

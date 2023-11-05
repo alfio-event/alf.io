@@ -57,9 +57,6 @@ public interface AdditionalServiceItemRepository {
     @Query("select * from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationUuid")
     List<AdditionalServiceItem> findByReservationUuid(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid);
 
-    @Query("select additional_service_id_fk from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationUuid")
-    List<Integer> findAdditionalServiceIdsByReservationUuid(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid);
-
     @Query(UPDATE_STATUS)
     int updateItemsStatusWithReservationUUID(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid, @Bind("status") AdditionalServiceItemStatus status);
 

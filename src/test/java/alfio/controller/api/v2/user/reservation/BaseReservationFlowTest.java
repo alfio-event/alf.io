@@ -717,6 +717,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var ticket1 = ticketsByCat.get(0).getTickets().get(0);
             assertEquals(1, ticket1.getTicketFieldConfigurationBeforeStandard().size()); // 1
             assertEquals(1, ticket1.getTicketFieldConfigurationAfterStandard().size()); // 1 + 1 additional service related field (appear only on first ticket)
+            assertEquals(1, resInfoRes.getBody().getAdditionalServiceWithData().size());
 
             var ticket2 = ticketsByCat.get(0).getTickets().get(1);
             assertEquals(1, ticket2.getTicketFieldConfigurationBeforeStandard().size()); // 1

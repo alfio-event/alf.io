@@ -22,6 +22,7 @@ import alfio.manager.SameCountryValidator;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.TicketFieldConfiguration;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.result.WarningMessage;
@@ -111,7 +112,7 @@ public class ContactAndTicketsForm implements Serializable {
                 Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                     .filter(m -> !m.isEmpty())
                     .map(m -> m.entrySet().stream().map(e -> {
-                        var filteredForTicket = ticketFieldsFilterer.orElseThrow().getFieldsForTicket(e.getKey());
+                        var filteredForTicket = ticketFieldsFilterer.orElseThrow().getFieldsForTicket(e.getKey(), EnumSet.allOf(TicketFieldConfiguration.Context.class));
                         return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator, extensionManager);
                     }))
                     .map(s -> s.collect(Collectors.toList()));

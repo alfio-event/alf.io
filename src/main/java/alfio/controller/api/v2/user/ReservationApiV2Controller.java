@@ -152,7 +152,7 @@ public class ReservationApiV2Controller {
                     .map(e -> {
                         var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
                         var ts = e.getValue().stream()
-                            .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false))
+                            .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false, EnumSet.of(TicketFieldConfiguration.Context.ATTENDEE)))
                             .collect(Collectors.toList());
                         return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
                     })

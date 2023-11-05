@@ -240,10 +240,10 @@ public final class Validator {
         }
 
 
-        public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUuid) {
+        public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUuid, Set<TicketFieldConfiguration.Context> requestedContexts) {
             var ticket = ticketsInReservation.stream().filter(t -> t.getUuid().equals(ticketUuid)).findFirst().orElseThrow();
             var isFirstTicket = firstTicketInReservation.map(first -> ticket.getUuid().equals(first.getUuid())).orElse(false);
-            return filterFieldsForTicket(additionalFieldsForEvent, ticket, additionalFieldsForReservation, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems);
+            return filterFieldsForTicket(additionalFieldsForEvent, ticket, additionalFieldsForReservation, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems, requestedContexts);
         }
 
         private static List<TicketFieldConfiguration> filterFieldsForTicket(List<TicketFieldConfiguration> additionalFieldsForEvent,
@@ -251,10 +251,14 @@ public final class Validator {
                                                                             Set<Integer> additionalServiceIds,
                                                                             boolean isFirstTicket,
                                                                             boolean eventSupportsAdditionalFieldsLink,
-                                                                            List<AdditionalServiceItem> additionalServiceItems) {
+                                                                            List<AdditionalServiceItem> additionalServiceItems,
+                                                                            Set<TicketFieldConfiguration.Context> requestedContexts) {
             return additionalFieldsForEvent.stream()
                 .filter(field -> field.rulesApply(ticket.getCategoryId()))
                 .filter(f -> {
+                    if (!requestedContexts.contains(f.getContext())) {
+                        return false;
+                    }
                     if (f.getContext() == TicketFieldConfiguration.Context.ATTENDEE) {
                         return true;
                     }
@@ -263,10 +267,7 @@ public final class Validator {
                         return false;
                     }
                     boolean included = isAdditionalServiceIncluded(f, additionalServiceIds);
-                    if (!included) {
-                        return false;
-                    }
-                    return !eventSupportsAdditionalFieldsLink || checkLinked(ticket, additionalServiceItems);
+                    return included && (!eventSupportsAdditionalFieldsLink || checkLinked(ticket, additionalServiceItems));
                 })
                 .collect(Collectors.toList());
         }
