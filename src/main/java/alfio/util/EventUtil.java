@@ -24,7 +24,6 @@ import alfio.model.metadata.OnlineConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
 import biweekly.ICalVersion;
@@ -244,8 +243,8 @@ public final class EventUtil {
         if (event.supportsLinkedAdditionalServices()) {
             return additionalServiceItemRepository.getAdditionalServicesBookedForTicket(reservationId, ticket.getId(), ticket.getUserLanguage(), event.getId());
         } else {
-            var ticketsInReservation = ticketRepository.findTicketIdsInReservation(reservationId);
-            if (ticketsInReservation.get(0).equals(ticket.getId())) {
+            var ticketsInReservation = ticketRepository.findFirstTicketIdInReservation(reservationId);
+            if (ticketsInReservation.filter(id -> id == ticket.getId()).isPresent()) {
                 return additionalServiceItemRepository.getAdditionalServicesBookedForReservation(reservationId, ticket.getUserLanguage(), event.getId());
             }
         }

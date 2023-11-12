@@ -18,7 +18,6 @@ package alfio.controller.api.v2.model;
 
 import alfio.controller.api.support.AdditionalField;
 import alfio.controller.api.support.BookingInfoTicket;
-import alfio.controller.form.AdditionalServiceLinkForm;
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
 import alfio.model.ReservationMetadata;
@@ -159,7 +158,7 @@ public class ReservationInfo {
     public static class AdditionalServiceWithData {
         private final Map<String, String> title;
         private final int itemId;
-        private final Integer ticketId;
+        private final String ticketUUID;
         private final List<AdditionalField> ticketFieldConfiguration;
     }
 

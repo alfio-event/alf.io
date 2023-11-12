@@ -18,6 +18,7 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.support.AdditionalField;
 import alfio.controller.api.support.BookingInfoTicketLoader;
+import alfio.controller.api.support.Field;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.PaymentProxyWithParameters;
 import alfio.controller.api.v2.model.ReservationInfo;
@@ -70,12 +71,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static alfio.controller.api.support.BookingInfoTicketLoader.fromFieldDescriptions;
 import static alfio.model.TicketFieldConfigurationDescriptionAndValue.isBeforeStandardFields;
 import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
 import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.toMap;
 
@@ -125,49 +126,53 @@ public class ReservationApiV2Controller {
             validateAccessToReservation(principal, reservation);
 
             var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, purchaseContext);
-
-            var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
-
-            var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
-
-
-            // check if the user can cancel ticket
-
-            var ticketsInfo = purchaseContext.event().filter(e -> !ticketIds.isEmpty()).map(event -> {
-                var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
-                    .stream()
-                    .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
-
-                var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
-                    .stream()
-                    .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
-
-                var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
-                var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
-                var hasPaidSupplement = ticketReservationManager.hasPaidSupplements(event.getId(), reservationId);
-                //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
-                var ticketsInReservation = ticketsByCategory
-                    .entrySet()
-                    .stream()
-                    .map(e -> {
-                        var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
-                        var ts = e.getValue().stream()
-                            .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false, EnumSet.of(TicketFieldConfiguration.Context.ATTENDEE)))
-                            .collect(Collectors.toList());
-                        return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
-                    })
-                    .collect(Collectors.toList());
-                return Pair.of(ticketsByCategory, ticketsInReservation);
-            });
-            var ticketsByCategory = ticketsInfo.map(Pair::getLeft).orElse(Map.of());
-            var ticketsInReservation = ticketsInfo.map(Pair::getRight).orElse(List.of());
-
-
+            List<TicketsByTicketCategory> ticketsInReservation = null;
+            Set<Integer> categoryIds = null;
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
+            boolean containsCategoriesLinkedToGroups = false;
+            List<ReservationInfo.AdditionalServiceWithData> additionalServices = null;
+            if (purchaseContext.ofType(PurchaseContextType.event)) {
+                var event = (Event) purchaseContext;
+                var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
+                var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
+
+                // check if the user can cancel ticket
+                if (!ticketIds.isEmpty()) {
+                    var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
+                        .stream()
+                        .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
+
+                    var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
+                        .stream()
+                        .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+
+                    var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
+                    var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
+                    var hasPaidSupplement = ticketReservationManager.hasPaidSupplements(event.getId(), reservationId);
+                    var categories = ticketCategoryRepository.findCategoriesInReservation(reservationId);
+                    ticketsInReservation = ticketsByCategory
+                        .entrySet()
+                        .stream()
+                        .map(e -> {
+                            var tc = categories.stream().filter(t -> t.getId() == e.getKey()).findFirst().orElseThrow();
+                            var ts = e.getValue().stream()
+                                .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false, EnumSet.of(TicketFieldConfiguration.Context.ATTENDEE)))
+                                .collect(Collectors.toList());
+                            return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
+                        })
+                        .collect(Collectors.toList());
+                    containsCategoriesLinkedToGroups = ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId());
+                    categoryIds = ticketsByCategory.keySet();
+                    additionalServices = getAdditionalServicesWithData(event, reservationId, valuesByTicketIds, descriptionsByTicketFieldId, tickets);
+                }
+
+
+            }
+
+
 
             var shortReservationId =  configurationManager.getShortReservationID(purchaseContext, reservation);
             //
-
 
             var formattedExpirationDate = reservation.getValidity() != null ? formatDateForLocales(purchaseContext, ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), purchaseContext.getZoneId()), "datetime.pattern") : null;
 
@@ -175,8 +180,7 @@ public class ReservationApiV2Controller {
             boolean tokenAcquired = paymentToken.isPresent();
             PaymentProxy selectedPaymentProxy = paymentToken.map(PaymentToken::getPaymentProvider).orElse(null);
 
-            //
-            var containsCategoriesLinkedToGroups = purchaseContext.event().map(event -> ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())).orElse(false);
+
             //
             List<ReservationInfo.SubscriptionInfo> subscriptionInfos = null;
             if (purchaseContext.ofType(PurchaseContextType.subscription)) {
@@ -195,12 +199,11 @@ public class ReservationApiV2Controller {
                     .collect(Collectors.toList());
             }
 
-            var additionalServices = getAdditionalServicesWithData(purchaseContext, reservationId);
-
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
                 reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
                 reservation.getValidity().getTime(),
-                ticketsInReservation, new ReservationInfo.ReservationInfoOrderSummary(orderSummary), reservation.getStatus(),
+                requireNonNullElse(ticketsInReservation, List.of()),
+                new ReservationInfo.ReservationInfoOrderSummary(orderSummary), reservation.getStatus(),
                 additionalInfo.hasBeenValidated(),
                 formattedExpirationDate,
                 reservation.getInvoiceNumber(),
@@ -217,10 +220,10 @@ public class ReservationApiV2Controller {
                 additionalInfo.getBillingDetails(),
                 //
                 containsCategoriesLinkedToGroups,
-                getActivePaymentMethods(purchaseContext, ticketsByCategory.keySet(), orderSummary, reservationId),
+                getActivePaymentMethods(purchaseContext, requireNonNullElse(categoryIds, Set.of()), orderSummary, reservationId),
                 subscriptionInfos,
                 ticketReservationRepository.getMetadata(reservationId),
-                additionalServices
+                requireNonNullElse(additionalServices, List.of())
                 ));
         }));
 
@@ -228,7 +231,10 @@ public class ReservationApiV2Controller {
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private List<ReservationInfo.AdditionalServiceWithData> getAdditionalServicesWithData(PurchaseContext purchaseContext, String reservationId) {
+    private List<ReservationInfo.AdditionalServiceWithData> getAdditionalServicesWithData(PurchaseContext purchaseContext,
+                                                                                          String reservationId,
+                                                                                          Map<Integer, List<TicketFieldValue>> valuesByTicketIds,
+                                                                                          Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId, List<Ticket> tickets) {
         if (purchaseContext.ofType(PurchaseContextType.event) && ((Event)purchaseContext).supportsLinkedAdditionalServices()) {
             var event = ((Event)purchaseContext);
             var additionalServiceItems = additionalServiceManager.findItemsInReservation(event.getId(), reservationId);
@@ -238,45 +244,37 @@ public class ReservationApiV2Controller {
                 var additionalFieldsById = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()).stream()
                     .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ADDITIONAL_SERVICE && additionalServiceIds.contains(f.getAdditionalServiceId()))
                     .collect(Collectors.groupingBy(TicketFieldConfiguration::getAdditionalServiceId));
-                var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
-                    .stream()
-                    .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
-                var ticketValues = findAllValues(additionalServiceItems);
 
-                return additionalServiceManager.loadAllForReservation(reservationId, event.getId()).stream()
-                    .flatMap(as -> {
-                        var additionalItemTitle = additionalItemDescriptionsById.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
-                        var fields = additionalFieldsById.getOrDefault(as.getId(), List.of()).stream()
-                            .flatMap(tfc -> {
-                                var values = ticketValues.getOrDefault(tfc.getId(), List.of());
-                                if (!values.isEmpty()) {
-                                    return values.stream()
-                                        // FIXME fields
-                                        .map(v -> new AdditionalField(tfc.getName(), v.getValue(), tfc.getType(), tfc.isRequired(), tfc.isEditable(), tfc.getMinLength(), tfc.getMaxLength(), tfc.getRestrictedValues(), List.of(), isBeforeStandardFields(tfc), fromFieldDescriptions(descriptionsByTicketFieldId.get(tfc.getId()))));
+                return additionalServiceItems.stream()
+                    .map(as -> {
+                        var additionalItemTitle = additionalItemDescriptionsById.getOrDefault(as.getAdditionalServiceId(), Map.of())
+                            .getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
+                        var ticketId = as.getTicketId();
+                        var fields = additionalFieldsById.getOrDefault(as.getAdditionalServiceId(), List.of()).stream()
+                            .map(fieldConfiguration -> {
+                                Optional<TicketFieldValue> value = Optional.empty();
+                                if (ticketId != null && valuesByTicketIds.containsKey(ticketId)) {
+                                    value = valuesByTicketIds.get(ticketId).stream()
+                                        .filter(fv -> fv.getTicketFieldConfigurationId() == fieldConfiguration.getId())
+                                        .findFirst();
                                 }
-                                return Stream.of(new AdditionalField(tfc.getName(), null, tfc.getType(), tfc.isRequired(), tfc.isEditable(), tfc.getMinLength(), tfc.getMaxLength(), tfc.getRestrictedValues(), List.of(), isBeforeStandardFields(tfc), fromFieldDescriptions(descriptionsByTicketFieldId.get(tfc.getId()))));
+                                var valueAsString = value.map(TicketFieldValue::getValue).orElse("");
+                                return AdditionalField.fromFieldConfiguration(fieldConfiguration,
+                                    valueAsString,
+                                    List.of(new Field(0, valueAsString)),
+                                    isBeforeStandardFields(fieldConfiguration),
+                                    fromFieldDescriptions(descriptionsByTicketFieldId.get(fieldConfiguration.getId())));
                             })
                             .collect(Collectors.toList());
-                        return additionalServiceItems.stream().filter(asi -> asi.getAdditionalServiceId() == as.getId())
-                            .map(asi -> new ReservationInfo.AdditionalServiceWithData(additionalItemTitle, asi.getId(), asi.getTicketId(), fields));
+                        var ticketUUID = tickets.stream().filter(t -> ticketId != null && t.getId() == ticketId)
+                            .map(Ticket::getUuid)
+                            .findFirst()
+                            .orElse(null);
+                        return new ReservationInfo.AdditionalServiceWithData(additionalItemTitle, as.getId(), ticketUUID, fields);
                     }).collect(Collectors.toList());
             }
-
         }
         return List.of();
-    }
-
-    private Map<Integer, List<TicketFieldValue>> findAllValues(List<AdditionalServiceItem> items) {
-        var ticketIds = items.stream()
-            .map(AdditionalServiceItem::getTicketId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-        if (!ticketIds.isEmpty()) {
-            return ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
-                .stream()
-                .collect(Collectors.groupingBy(TicketFieldValue::getTicketFieldConfigurationId));
-        }
-        return Map.of();
     }
 
     private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(PurchaseContext purchaseContext,
