@@ -22,6 +22,7 @@ import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.QueryType;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 
 @QueryRepository
 public interface TicketFieldRepository extends FieldRepository {
+
+    String INSERT_VALUE = "insert into ticket_field_value(ticket_id_fk, ticket_field_configuration_id_fk, field_value) values (:ticketId, :fieldConfigurationId, :value)";
 
     @Query("select count(*) from ticket_field_value where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
     Integer countFilledOptionalData(@Bind("ticketId") int id);
@@ -57,8 +60,11 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("update ticket_field_value set field_value = :value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
     int updateValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId, @Bind("value") String value);
 
-    @Query("insert into ticket_field_value(ticket_id_fk, ticket_field_configuration_id_fk, field_value) values (:ticketId, :fieldConfigurationId, :value)")
+    @Query(INSERT_VALUE)
     int insertValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId, @Bind("value") String value);
+
+    @Query(type = QueryType.TEMPLATE, value = INSERT_VALUE)
+    String insertValue();
 
     @Query("delete from ticket_field_value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
     int deleteValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId);
@@ -68,6 +74,10 @@ public interface TicketFieldRepository extends FieldRepository {
 
     @Query("delete from ticket_field_value where ticket_id_fk in (:ticketIds)")
     int deleteAllValuesForTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
+
+    @Query("delete from ticket_field_value where ticket_id_fk in (:ticketIds) and ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId and context = 'ADDITIONAL_SERVICE')")
+    int deleteAllValuesForAdditionalItems(@Bind("ticketIds") Collection<Integer> ticketIds,
+                                          @Bind("eventId") int eventId);
 
     @Query("delete from ticket_field_value fv using ticket t where t.id = fv.ticket_id_fk and t.tickets_reservation_id in(:reservationIds)")
     int deleteAllValuesForReservations(@Bind("reservationIds") List<String> reservationIds);
@@ -95,14 +105,7 @@ public interface TicketFieldRepository extends FieldRepository {
         Map<String, Integer> fieldNameToId = additionalFieldsForEvent.stream().collect(Collectors.toMap(TicketFieldConfiguration::getName, TicketFieldConfiguration::getId));
 
         values.forEach((fieldName, fieldValues) -> {
-            String fieldValue;
-            if(fieldValues.size() == 1) {
-                fieldValue = fieldValues.get(0);
-            } else if(fieldValues.stream().anyMatch(StringUtils::isNotBlank)) {
-                fieldValue = Json.toJson(fieldValues);
-            } else {
-                fieldValue = "";
-            }
+            var fieldValue = getFieldValueJson(fieldValues);
 
             boolean isNotBlank = StringUtils.isNotBlank(fieldValue);
             if(toUpdate.containsKey(fieldName)) {
@@ -118,6 +121,18 @@ public interface TicketFieldRepository extends FieldRepository {
                 insertValue(ticketId, fieldNameToId.get(fieldName), fieldValue);
             }
         });
+    }
+
+    default String getFieldValueJson(List<String> fieldValues) {
+        String fieldValue;
+        if(fieldValues.size() == 1) {
+            fieldValue = fieldValues.get(0);
+        } else if(fieldValues.stream().anyMatch(StringUtils::isNotBlank)) {
+            fieldValue = Json.toJson(fieldValues);
+        } else {
+            fieldValue = "";
+        }
+        return fieldValue;
     }
 
     default Map<String, TicketFieldValue> findAllByTicketIdGroupedByName(int id) {

@@ -16,6 +16,8 @@
  */
 package alfio.util;
 
+import alfio.controller.form.AdditionalFieldsContainer;
+import alfio.controller.form.AdditionalServiceLinkForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.manager.ExtensionManager;
@@ -334,8 +336,19 @@ public final class Validator {
 
         return evaluateValidationResult(errors);
     }
+    
+    public static ValidationResult validateFieldsForTicket(AdditionalServiceLinkForm form,
+                                                           List<TicketFieldConfiguration> additionalFieldsForTicket,
+                                                           BindingResult errors,
+                                                           String prefix,
+                                                           SameCountryValidator vatValidator) {
+        for(TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
+            validateFieldConfiguration(form, vatValidator, errors, prefix, fieldConf);
+        }
+        return evaluateValidationResult(errors);
+    }
 
-    private static void validateFieldConfiguration(UpdateTicketOwnerForm form, SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf) {
+    private static void validateFieldConfiguration(AdditionalFieldsContainer form, SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf) {
         boolean isField = form.getAdditional() != null && form.getAdditional().containsKey(fieldConf.getName());
 
         if(!isField) {
@@ -363,6 +376,19 @@ public final class Validator {
 
     private static void validateFieldValue(SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf, List<String> values, int i) {
         String formValue = values.get(i);
+
+        fieldValueBasicValidation(errors, prefixForLambda, fieldConf, i, formValue);
+
+        try {
+            if (fieldConf.isEuVat() && !vatValidator.test(formValue)) {
+                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.STEP_2_INVALID_VAT);
+            }
+        } catch (IllegalStateException e) {
+            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.VIES_IS_DOWN);
+        }
+    }
+
+    private static void fieldValueBasicValidation(Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf, int i, String formValue) {
         if(fieldConf.isMaxLengthDefined()) {
             validateMaxLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", "error.tooLong", fieldConf.getMaxLength(), errors);
         }
@@ -383,14 +409,6 @@ public final class Validator {
         if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
             errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]",
                 "error.disabledValue", null, null);
-        }
-
-        try {
-            if (fieldConf.isEuVat() && !vatValidator.test(formValue)) {
-                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.STEP_2_INVALID_VAT);
-            }
-        } catch (IllegalStateException e) {
-            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.VIES_IS_DOWN);
         }
     }
 

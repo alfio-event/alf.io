@@ -26,7 +26,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Data
-public class UpdateTicketOwnerForm implements Serializable {
+public class UpdateTicketOwnerForm implements Serializable, AdditionalFieldsContainer {
     private String email;
     private String fullName;
     private String firstName;

@@ -22,7 +22,6 @@ import alfio.manager.SameCountryValidator;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
-import alfio.model.TicketFieldConfiguration;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.result.WarningMessage;
@@ -38,8 +37,11 @@ import org.springframework.validation.ValidationUtils;
 import java.io.Serializable;
 import java.util.*;
 import java.util.function.IntSupplier;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
+import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 import static alfio.util.ErrorsCode.*;
 
 // step 2 : contact/claim tickets
@@ -81,7 +83,7 @@ public class ContactAndTicketsForm implements Serializable {
     private boolean differentSubscriptionOwner;
     private UpdateSubscriptionOwnerForm subscriptionOwner;
 
-    private AdditionalServiceLinkForm additionalServices;
+    private Map<String, AdditionalServiceLinkForm> additionalServices = new HashMap<>();
 
     //
 
@@ -107,12 +109,13 @@ public class ContactAndTicketsForm implements Serializable {
         formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false), reservationRequiresPayment);
 
         purchaseContext.event().ifPresent(event -> {
-            checkAdditionalServiceItemsLink(event, bindingResult, additionalServiceItemsCount);
+            var fieldsFilterer = ticketFieldsFilterer.orElseThrow();
+            checkAdditionalServiceItemsLink(event, bindingResult, additionalServiceItemsCount, vatValidator, fieldsFilterer);
             if(!postponeAssignment) {
                 Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                     .filter(m -> !m.isEmpty())
                     .map(m -> m.entrySet().stream().map(e -> {
-                        var filteredForTicket = ticketFieldsFilterer.orElseThrow().getFieldsForTicket(e.getKey(), EnumSet.allOf(TicketFieldConfiguration.Context.class));
+                        var filteredForTicket = fieldsFilterer.getFieldsForTicket(e.getKey(), EnumSet.of(ATTENDEE));
                         return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator, extensionManager);
                     }))
                     .map(s -> s.collect(Collectors.toList()));
@@ -136,13 +139,26 @@ public class ContactAndTicketsForm implements Serializable {
 
     private void checkAdditionalServiceItemsLink(Event event,
                                                  BindingResult bindingResult,
-                                                 IntSupplier additionalServiceItemsCount) {
+                                                 IntSupplier additionalServiceItemsCount,
+                                                 SameCountryValidator vatValidator,
+                                                 Validator.TicketFieldsFilterer ticketFieldsFilterer) {
         if (!event.supportsLinkedAdditionalServices()) {
             return;
         }
-        var form = Objects.requireNonNullElseGet(additionalServices, AdditionalServiceLinkForm::new);
-        if (!form.isValid(additionalServiceItemsCount.getAsInt())) {
+        Map<String, AdditionalServiceLinkForm> form = Objects.requireNonNullElseGet(additionalServices, Map::of);
+        if (additionalServiceItemsCount.getAsInt() != form.size()
+            || form.values().stream().anyMatch(Predicate.not(AdditionalServiceLinkForm::isValid))) {
             bindingResult.reject(STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED);
+        }
+        List<ValidationResult> validationResults = form.entrySet().stream().map(e -> {
+            var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(e.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
+                return Validator.validateFieldsForTicket(e.getValue(), filteredForTicket, bindingResult, "additionalServices["+e.getKey()+"].", vatValidator);
+            }).collect(Collectors.toList());
+
+        boolean success = validationResults.stream().allMatch(ValidationResult::isSuccess);
+        if(!success) {
+            String errorCode = containsVatValidationError(validationResults) ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
+            bindingResult.reject(errorCode);
         }
     }
 

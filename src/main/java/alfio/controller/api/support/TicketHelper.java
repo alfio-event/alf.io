@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.support;
 
+import alfio.controller.form.AdditionalServiceLinkForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
@@ -25,7 +26,6 @@ import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
 import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -35,6 +35,10 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -49,11 +53,11 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 public class TicketHelper {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(TicketHelper.class);
     private static final Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
 
     private final TicketReservationManager ticketReservationManager;
     private final OrganizationRepository organizationRepository;
-    private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
     private final TicketFieldRepository ticketFieldRepository;
@@ -62,6 +66,7 @@ public class TicketHelper {
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
 
     public BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
@@ -125,16 +130,15 @@ public class TicketHelper {
      * This method has been implemented explicitly for PayPal, since we need to pre-assign tickets before payment, in order to keep the data inserted by the customer
      */
     public Optional<Triple<ValidationResult, Event, Ticket>> preAssignTicket(String eventName,
-                                                                          String reservationId,
-                                                                          String ticketIdentifier,
-                                                                          UpdateTicketOwnerForm updateTicketOwner,
-                                                                          Optional<BindingResult> bindingResult,
-                                                                          Locale fallbackLocale,
-                                                                          Optional<UserDetails> userDetails) {
+                                                                             String reservationId,
+                                                                             String ticketIdentifier,
+                                                                             UpdateTicketOwnerForm updateTicketOwner,
+                                                                             Optional<BindingResult> bindingResult,
+                                                                             Locale fallbackLocale) {
 
         return ticketReservationManager.from(eventName, reservationId, ticketIdentifier)
             .filter(temp -> PENDING_RESERVATION_STATUSES.contains(temp.getMiddle().getStatus()) && temp.getRight().getStatus() == Ticket.TicketStatus.PENDING)
-            .map(result -> assignTicket(updateTicketOwner, bindingResult, fallbackLocale, userDetails, result, "tickets["+ticketIdentifier+"]"));
+            .map(result -> assignTicket(updateTicketOwner, bindingResult, fallbackLocale,Optional.empty(), result,"tickets["+ticketIdentifier+"]"));
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
@@ -230,4 +234,33 @@ public class TicketHelper {
             ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket));
     }
 
+    public void persistFieldsForAdditionalItems(int eventId,
+                                                Map<String, AdditionalServiceLinkForm> additionalServices,
+                                                List<Ticket> tickets) {
+        var ticketIdsByUuid = tickets.stream().collect(Collectors.toMap(Ticket::getUuid, Ticket::getId));
+        int res = ticketFieldRepository.deleteAllValuesForAdditionalItems(ticketIdsByUuid.values(), eventId);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Deleted {} field values", res);
+        }
+        var fields = ticketFieldRepository.findAdditionalFieldsForEvent(eventId)
+            .stream()
+            .filter(c -> c.getContext() == TicketFieldConfiguration.Context.ADDITIONAL_SERVICE)
+            .collect(Collectors.toList());
+
+        var sources = additionalServices.entrySet().stream()
+            .flatMap(entry -> {
+                int ticketId = ticketIdsByUuid.get(entry.getKey());
+                return entry.getValue().getAdditional().entrySet().stream()
+                    .map(e2 -> {
+                        int configurationId = fields.stream().filter(f -> f.getName().equals(e2.getKey()))
+                            .findFirst()
+                            .orElseThrow()
+                            .getId();
+                        return new MapSqlParameterSource("ticketId", ticketId)
+                            .addValue("fieldConfigurationId", configurationId)
+                            .addValue("value", ticketFieldRepository.getFieldValueJson(e2.getValue()));
+                    });
+            }).toArray(MapSqlParameterSource[]::new);
+        jdbcTemplate.batchUpdate(ticketFieldRepository.insertValue(), sources);
+    }
 }

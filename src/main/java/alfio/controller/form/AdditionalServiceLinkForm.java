@@ -16,50 +16,45 @@
  */
 package alfio.controller.form;
 
-import org.apache.commons.collections4.CollectionUtils;
-
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class AdditionalServiceLinkForm implements Serializable {
+public class AdditionalServiceLinkForm implements Serializable, AdditionalFieldsContainer {
 
-    private List<AdditionalServiceLink> links;
+    private Integer additionalServiceItemId;
+    private String ticketUUID;
+    private Map<String, List<String>> additional = new HashMap<>();
 
-    public List<AdditionalServiceLink> getLinks() {
-        return links;
+
+    public boolean isValid() {
+        return additional != null && additionalServiceItemId != null && ticketUUID != null;
     }
 
-    public void setLinks(List<AdditionalServiceLink> links) {
-        this.links = links;
+    public Integer getAdditionalServiceItemId() {
+        return additionalServiceItemId;
     }
 
-    public boolean isValid(int count) {
-        return (count == 0 && CollectionUtils.isEmpty(links))
-            || (links.size() == count && links.stream().allMatch(AdditionalServiceLink::isValid));
+    public void setAdditionalServiceItemId(Integer additionalServiceItemId) {
+        this.additionalServiceItemId = additionalServiceItemId;
     }
 
-    public static class AdditionalServiceLink implements Serializable {
-        private int additionalServiceItemId;
-        private String ticketUUID;
+    public String getTicketUUID() {
+        return ticketUUID;
+    }
 
-        public int getAdditionalServiceItemId() {
-            return additionalServiceItemId;
-        }
+    public void setTicketUUID(String ticketUUID) {
+        this.ticketUUID = ticketUUID;
+    }
 
-        public void setAdditionalServiceItemId(int additionalServiceItemId) {
-            this.additionalServiceItemId = additionalServiceItemId;
-        }
+    @Override
+    public Map<String, List<String>> getAdditional() {
+        return additional;
+    }
 
-        public String getTicketUUID() {
-            return ticketUUID;
-        }
-
-        public void setTicketUUID(String ticketUUID) {
-            this.ticketUUID = ticketUUID;
-        }
-
-        public boolean isValid() {
-            return this.ticketUUID != null;
-        }
+    @Override
+    public void setAdditional(Map<String, List<String>> additionalFields) {
+        this.additional = additionalFields;
     }
 }

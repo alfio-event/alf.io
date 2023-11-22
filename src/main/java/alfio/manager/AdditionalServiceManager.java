@@ -319,16 +319,17 @@ public class AdditionalServiceManager {
         return additionalServiceRepository.loadAllForReservation(reservationId, eventId);
     }
 
-    public void linkItemsToTickets(String reservationId,
-                                   AdditionalServiceLinkForm additionalServiceLinkForm,
+    public boolean linkItemsToTickets(String reservationId,
+                                   Map<String, AdditionalServiceLinkForm> links,
                                    List<Ticket> tickets) {
-        if (additionalServiceLinkForm == null || CollectionUtils.isEmpty(additionalServiceLinkForm.getLinks())) {
-            return;
+        if (links == null || links.isEmpty()) {
+            return false;
         }
-        var parameterSources = additionalServiceLinkForm.getLinks().stream()
-            .map(asl -> {
+        var parameterSources = links.entrySet().stream()
+            .map(entry -> {
+                var asl = entry.getValue();
                 Integer ticketId = tickets.stream()
-                    .filter(t -> StringUtils.isNotEmpty(asl.getTicketUUID()) && t.getUuid().equals(asl.getTicketUUID()))
+                    .filter(t -> StringUtils.isNotEmpty(entry.getKey()) && t.getUuid().equals(asl.getTicketUUID()))
                     .findFirst()
                     .map(Ticket::getId)
                     .orElse(null);
@@ -336,6 +337,7 @@ public class AdditionalServiceManager {
             }).toArray(MapSqlParameterSource[]::new);
         var results = jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), parameterSources);
         Validate.isTrue(Arrays.stream(results).allMatch(i -> i == 1));
+        return true;
     }
 
     private static MapSqlParameterSource batchLinkSource(String reservationId, int itemId, Integer ticketId) {

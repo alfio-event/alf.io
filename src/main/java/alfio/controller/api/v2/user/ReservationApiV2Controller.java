@@ -483,7 +483,9 @@ public class ReservationApiV2Controller {
 
             purchaseContext.event().ifPresent(event -> {
                 var tickets = assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
-                additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets);
+                if (additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets)) {
+                    ticketHelper.persistFieldsForAdditionalItems(event.getId(), contactAndTicketsForm.getAdditionalServices(), tickets);
+                }
             });
 
             if(purchaseContext.ofType(PurchaseContextType.subscription) && contactAndTicketsForm.isDifferentSubscriptionOwner()) {
@@ -554,7 +556,7 @@ public class ReservationApiV2Controller {
             contactAndTicketsForm.getTickets().forEach((ticketId, owner) -> {
                 if (preAssign) {
                     Optional<BindingResult> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
-                    var result = ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, locale, Optional.empty());
+                    var result = ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, locale);
                     tickets.add(result.orElseThrow().getRight());
                 } else {
                     var result = ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), locale, Optional.empty(), true);
