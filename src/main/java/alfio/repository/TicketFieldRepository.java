@@ -63,8 +63,8 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query(INSERT_VALUE)
     int insertValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId, @Bind("value") String value);
 
-    @Query(type = QueryType.TEMPLATE, value = INSERT_VALUE)
-    String insertValue();
+    @Query(type = QueryType.TEMPLATE, value = "insert into additional_service_field_value(additional_service_item_id_fk, ticket_field_configuration_id_fk, field_value) values (:additionalServiceItemId, :fieldConfigurationId, :value)")
+    String batchInsertAdditionalItemsFields();
 
     @Query("delete from ticket_field_value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
     int deleteValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId);
@@ -80,7 +80,14 @@ public interface TicketFieldRepository extends FieldRepository {
                                           @Bind("eventId") int eventId);
 
     @Query("delete from ticket_field_value fv using ticket t where t.id = fv.ticket_id_fk and t.tickets_reservation_id in(:reservationIds)")
-    int deleteAllValuesForReservations(@Bind("reservationIds") List<String> reservationIds);
+    int deleteAllTicketValuesForReservations(@Bind("reservationIds") List<String> reservationIds);
+
+    @Query("delete from additional_service_field_value fv using additional_service_item asi where asi.id = fv.additional_service_item_id_fk and asi.tickets_reservation_uuid in(:reservationIds)")
+    int deleteAllAdditionalItemsValuesForReservations(@Bind("reservationIds") List<String> reservationIds);
+
+    default int deleteAllValuesForReservations(List<String> reservationIds) {
+        return deleteAllTicketValuesForReservations(reservationIds) + deleteAllAdditionalItemsValuesForReservations(reservationIds);
+    }
 
     @Query("select ticket_field_configuration_id_fk, field_locale, description from ticket_field_description  inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId")
     List<TicketFieldDescription> findDescriptions(@Bind("eventId") int eventId, @Bind("locale") String locale);
@@ -96,6 +103,8 @@ public interface TicketFieldRepository extends FieldRepository {
 
     @Query("select ticket_id_fk, ticket_field_configuration_id_fk, field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk in (:ticketIds)")
     List<TicketFieldValue> findAllValuesByTicketIds(@Bind("ticketIds") Collection<Integer> ticketIds);
+
+
 
     default void updateOrInsert(Map<String, List<String>> values, int ticketId, int eventId) {
         Map<String, TicketFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId);
@@ -212,11 +221,14 @@ public interface TicketFieldRepository extends FieldRepository {
 
     }
 
-    @Query("select c2.field_name as field_name, tfv.field_value as field_value, c2.additional_service_id as additional_service_id from ticket_field_value tfv" +
+    @Query("select c2.field_name as field_name, tfv.field_value as field_value, c2.additional_service_id as additional_service_id from additional_item_field_value_with_ticket_id tfv" +
         "  join ticket_field_configuration c2 on tfv.ticket_field_configuration_id_fk = c2.id" +
         "  where tfv.ticket_id_fk = :ticketId" +
         "  and c2.context = 'ADDITIONAL_SERVICE'" +
         "  and c2.additional_service_id in (:additionalServiceIds)")
     List<TicketFieldValueForAdditionalService> loadTicketFieldsForAdditionalService(@Bind("ticketId") int ticketId,
                                                                                     @Bind("additionalServiceIds") List<Integer> additionalServiceIds);
+
+    @Query("select field_name, field_value, ticket_field_configuration_id_fk, ticket_id_fk from additional_item_field_value_with_ticket_id where ticket_id_fk in(:ticketIds)")
+    List<TicketFieldValue> findAdditionalServicesValueByTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
 }

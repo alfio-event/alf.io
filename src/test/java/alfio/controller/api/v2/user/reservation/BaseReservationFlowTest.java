@@ -753,11 +753,11 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var additionalServiceLinkForm = new AdditionalServiceLinkForm();
             additionalServiceLinkForm.setAdditionalServiceItemId(additionalServiceWithData.get(0).getItemId());
             additionalServiceLinkForm.setTicketUUID(ticket2.getUuid());
-            contactForm.getAdditionalServices().put(ticket2.getUuid(), additionalServiceLinkForm);
+            contactForm.getAdditionalServices().put(ticket2.getUuid(), List.of(additionalServiceLinkForm));
             var failure = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatusCode());
             assertNotNull(failure.getBody());
-            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("additionalServices["+ticket2.getUuid()+"].additional[field3][0]")).count()); //<- missing mandatory
+            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("additionalServices["+ticket2.getUuid()+"][0].additional[field3][0]")).count()); //<- missing mandatory
 
             //check billing errors
             assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("billingAddressLine1")).count()); //<- missing mandatory
@@ -775,14 +775,16 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             linkForm.setAdditionalServiceItemId(additionalServiceWithData.get(0).getItemId());
             linkForm.setTicketUUID(ticket2.getUuid());
             linkForm.setAdditional(new HashMap<>(Map.of("field3", Collections.singletonList("value"))));
-            contactForm.getAdditionalServices().put(ticket2.getUuid(), linkForm);
+            contactForm.getAdditionalServices().put(ticket2.getUuid(), List.of(linkForm));
             var success = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.OK, success.getStatusCode());
             var values = ticketFieldRepository.findAllValuesByTicketIds(List.of(ticketRepository.findByUUID(ticket1.getUuid()).getId()));
             assertEquals(1, values.size());
-            values = ticketFieldRepository.findAllValuesByTicketIds(List.of(ticketRepository.findByUUID(ticket2.getUuid()).getId()));
+            var ticket2Id = List.of(ticketRepository.findByUUID(ticket2.getUuid()).getId());
+            values = ticketFieldRepository.findAllValuesByTicketIds(ticket2Id);
+            assertEquals(1, values.size());
             // verify that additional service field was actually saved.
-            assertEquals(2, values.size());
+            values = ticketFieldRepository.findAdditionalServicesValueByTicketIds(ticket2Id);
             assertTrue(values.stream().anyMatch(f -> f.getName().equals("field3") && f.getValue().equals("value")));
             reservationApiV2Controller.cancelPendingReservation(reservationId);
         }

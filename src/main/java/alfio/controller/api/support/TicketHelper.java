@@ -235,7 +235,7 @@ public class TicketHelper {
     }
 
     public void persistFieldsForAdditionalItems(int eventId,
-                                                Map<String, AdditionalServiceLinkForm> additionalServices,
+                                                Map<String, List<AdditionalServiceLinkForm>> additionalServices,
                                                 List<Ticket> tickets) {
         var ticketIdsByUuid = tickets.stream().collect(Collectors.toMap(Ticket::getUuid, Ticket::getId));
         int res = ticketFieldRepository.deleteAllValuesForAdditionalItems(ticketIdsByUuid.values(), eventId);
@@ -248,19 +248,16 @@ public class TicketHelper {
             .collect(Collectors.toList());
 
         var sources = additionalServices.entrySet().stream()
-            .flatMap(entry -> {
-                int ticketId = ticketIdsByUuid.get(entry.getKey());
-                return entry.getValue().getAdditional().entrySet().stream()
-                    .map(e2 -> {
-                        int configurationId = fields.stream().filter(f -> f.getName().equals(e2.getKey()))
-                            .findFirst()
-                            .orElseThrow()
-                            .getId();
-                        return new MapSqlParameterSource("ticketId", ticketId)
-                            .addValue("fieldConfigurationId", configurationId)
-                            .addValue("value", ticketFieldRepository.getFieldValueJson(e2.getValue()));
-                    });
-            }).toArray(MapSqlParameterSource[]::new);
-        jdbcTemplate.batchUpdate(ticketFieldRepository.insertValue(), sources);
+            .flatMap(entry -> entry.getValue().stream().flatMap(form -> form.getAdditional().entrySet().stream()
+                .map(e2 -> {
+                    int configurationId = fields.stream().filter(f -> f.getName().equals(e2.getKey()))
+                        .findFirst()
+                        .orElseThrow()
+                        .getId();
+                    return new MapSqlParameterSource("additionalServiceItemId", form.getAdditionalServiceItemId())
+                        .addValue("fieldConfigurationId", configurationId)
+                        .addValue("value", ticketFieldRepository.getFieldValueJson(e2.getValue()));
+                }))).toArray(MapSqlParameterSource[]::new);
+        jdbcTemplate.batchUpdate(ticketFieldRepository.batchInsertAdditionalItemsFields(), sources);
     }
 }

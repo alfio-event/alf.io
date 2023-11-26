@@ -83,7 +83,7 @@ public class ContactAndTicketsForm implements Serializable {
     private boolean differentSubscriptionOwner;
     private UpdateSubscriptionOwnerForm subscriptionOwner;
 
-    private Map<String, AdditionalServiceLinkForm> additionalServices = new HashMap<>();
+    private Map<String, List<AdditionalServiceLinkForm>> additionalServices = new HashMap<>();
 
     //
 
@@ -145,14 +145,14 @@ public class ContactAndTicketsForm implements Serializable {
         if (!event.supportsLinkedAdditionalServices()) {
             return;
         }
-        Map<String, AdditionalServiceLinkForm> form = Objects.requireNonNullElseGet(additionalServices, Map::of);
+        Map<String, List<AdditionalServiceLinkForm>> form = Objects.requireNonNullElseGet(additionalServices, Map::of);
         if (additionalServiceItemsCount.getAsInt() != form.size()
-            || form.values().stream().anyMatch(Predicate.not(AdditionalServiceLinkForm::isValid))) {
+            || form.values().stream().anyMatch(v -> v.stream().anyMatch(Predicate.not(AdditionalServiceLinkForm::isValid)))) {
             bindingResult.reject(STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED);
         }
-        List<ValidationResult> validationResults = form.entrySet().stream().map(e -> {
-            var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(e.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
-                return Validator.validateFieldsForTicket(e.getValue(), filteredForTicket, bindingResult, "additionalServices["+e.getKey()+"].", vatValidator);
+        List<ValidationResult> validationResults = form.entrySet().stream().flatMap(e -> {
+                var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(e.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
+                return e.getValue().stream().map(v -> Validator.validateFieldsForTicket(v, filteredForTicket, bindingResult, "additionalServices["+e.getKey()+"]", vatValidator));
             }).collect(Collectors.toList());
 
         boolean success = validationResults.stream().allMatch(ValidationResult::isSuccess);

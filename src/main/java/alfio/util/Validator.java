@@ -342,8 +342,9 @@ public final class Validator {
                                                            BindingResult errors,
                                                            String prefix,
                                                            SameCountryValidator vatValidator) {
-        for(TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
-            validateFieldConfiguration(form, vatValidator, errors, prefix, fieldConf);
+        for(int i = 0; i < additionalFieldsForTicket.size(); i++) {
+            var fieldConf = additionalFieldsForTicket.get(i);
+            validateFieldConfiguration(form, vatValidator, errors, prefix+"["+i+"].", fieldConf);
         }
         return evaluateValidationResult(errors);
     }
