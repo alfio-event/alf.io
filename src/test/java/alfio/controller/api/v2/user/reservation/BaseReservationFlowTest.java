@@ -780,12 +780,18 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, success.getStatusCode());
             var values = ticketFieldRepository.findAllValuesByTicketIds(List.of(ticketRepository.findByUUID(ticket1.getUuid()).getId()));
             assertEquals(1, values.size());
-            var ticket2Id = List.of(ticketRepository.findByUUID(ticket2.getUuid()).getId());
-            values = ticketFieldRepository.findAllValuesByTicketIds(ticket2Id);
-            assertEquals(1, values.size());
-            // verify that additional service field was actually saved.
-            values = ticketFieldRepository.findAdditionalServicesValueByTicketIds(ticket2Id);
+            int ticket2Id = ticketRepository.findByUUID(ticket2.getUuid()).getId();
+            var ticket2Ids = List.of(ticket2Id);
+            values = ticketFieldRepository.findAllValuesByTicketIds(ticket2Ids);
+            assertEquals(2, values.size());
             assertTrue(values.stream().anyMatch(f -> f.getName().equals("field3") && f.getValue().equals("value")));
+            // verify that additional service field was actually saved.
+            var asValues = ticketFieldRepository.findAdditionalServicesValueByTicketIds(ticket2Ids);
+            assertTrue(asValues.stream().anyMatch(f -> f.getName().equals("field3") && f.getValue().equals("value")));
+            var valuesForCheckIn = ticketFieldRepository.findValueForTicketId(ticket2Id, Set.of("field3"));
+            assertFalse(valuesForCheckIn.isEmpty());
+            assertEquals("field3", valuesForCheckIn.get(0).getName());
+            assertEquals("value", valuesForCheckIn.get(0).getValue());
             reservationApiV2Controller.cancelPendingReservation(reservationId);
         }
 

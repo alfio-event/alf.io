@@ -32,8 +32,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
@@ -131,19 +131,27 @@ public class BookingInfoTicketLoader {
                                                          boolean onlineEventStarted) {
 
 
-        var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
+        var valuesById = ticketFieldValues.stream()
+            .collect(Collectors.groupingBy(TicketFieldValue::getTicketFieldConfigurationId));
 
 
         var ticketFieldsAdditional = ticketFields.stream()
             // hide additional service related fields
             .filter(ticketFieldConfiguration -> ticketFieldConfiguration.getAdditionalServiceId() != null)
             .sorted(Comparator.comparing(TicketFieldConfiguration::getOrder))
-            .map(tfc -> {
+            .flatMap(tfc -> {
                 var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
-                var fieldValue = valueById.get(tfc.getId());
-                var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue == null ? null : fieldValue.getValue());
-                var descs = fromFieldDescriptions(descriptionsByTicketFieldId.get(t.getTicketFieldConfigurationId()));
-                return toAdditionalField(t, descs);
+                var fieldValues = valuesById.get(tfc.getId());
+                var descs = fromFieldDescriptions(descriptionsByTicketFieldId.get(tfc.getId()));
+                if (fieldValues == null) {
+                    var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), null);
+                    return Stream.of(toAdditionalField(t, descs));
+                }
+                return fieldValues.stream()
+                    .map(fieldValue -> {
+                        var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue.getValue());
+                        return toAdditionalField(t, descs);
+                    });
             }).collect(Collectors.toList());
 
         return new BookingInfoTicket(ticket.getUuid(),

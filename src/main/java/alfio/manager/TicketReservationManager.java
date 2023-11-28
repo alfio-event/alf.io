@@ -1290,7 +1290,9 @@ public class TicketReservationManager {
             return;
         }
 
-        Map<String, String> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+        var ticketFieldValueMapCollector = groupingBy(TicketFieldValue::getName, mapping(TicketFieldValue::getValue, toList()));
+        Map<String, List<String>> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream()
+            .collect(ticketFieldValueMapCollector);
 
         String newEmail = StringUtils.trim(updateTicketOwner.getEmail());
         CustomerName customerName = new CustomerName(updateTicketOwner.getFullName(), updateTicketOwner.getFirstName(), updateTicketOwner.getLastName(), event.mustUseFirstAndLastName(), false);
@@ -1335,7 +1337,8 @@ public class TicketReservationManager {
         }
 
         Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
-        Map<String, String> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+        Map<String, List<String>> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream()
+            .collect(ticketFieldValueMapCollector);
 
         auditingHelper.auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
     }

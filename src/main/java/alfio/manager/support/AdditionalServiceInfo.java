@@ -16,7 +16,7 @@
  */
 package alfio.manager.support;
 
-import alfio.model.TicketFieldValueForAdditionalService;
+import alfio.model.AdditionalServiceFieldValue;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -27,5 +27,5 @@ import java.util.List;
 public class AdditionalServiceInfo {
     private final String name;
     private final int count;
-    private final List<TicketFieldValueForAdditionalService> fields;
+    private final List<AdditionalServiceFieldValue> fields;
 }

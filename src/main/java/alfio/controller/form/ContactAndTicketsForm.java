@@ -146,7 +146,7 @@ public class ContactAndTicketsForm implements Serializable {
             return;
         }
         Map<String, List<AdditionalServiceLinkForm>> form = Objects.requireNonNullElseGet(additionalServices, Map::of);
-        if (additionalServiceItemsCount.getAsInt() != form.size()
+        if (additionalServiceItemsCount.getAsInt() != form.values().stream().mapToInt(List::size).sum()
             || form.values().stream().anyMatch(v -> v.stream().anyMatch(Predicate.not(AdditionalServiceLinkForm::isValid)))) {
             bindingResult.reject(STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED);
         }

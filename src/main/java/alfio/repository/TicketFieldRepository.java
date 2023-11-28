@@ -36,25 +36,20 @@ import java.util.stream.Collectors;
 public interface TicketFieldRepository extends FieldRepository {
 
     String INSERT_VALUE = "insert into ticket_field_value(ticket_id_fk, ticket_field_configuration_id_fk, field_value) values (:ticketId, :fieldConfigurationId, :value)";
+    String FIND_ALL_BY_TICKET_ID = "select a.ticket_id_fk, a.ticket_field_configuration_id_fk, a.field_name, a.field_value from ticket_field_value_w_additional a where a.ticket_id_fk = :ticketId";
+    String ADDITIONAL_SERVICE_FIELD_VALUE_COLS = "field_name, field_value, additional_service_id_fk, ticket_id_fk, ticket_field_configuration_id_fk, additional_service_item_id_fk";
 
-    @Query("select count(*) from ticket_field_value where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
+    @Query("select count(*) from ticket_field_value_w_additional where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
     Integer countFilledOptionalData(@Bind("ticketId") int id);
 
-    @Query("select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value from ticket_field_value a, ticket_field_configuration b where a.ticket_id_fk = :ticketId and a.ticket_field_configuration_id_fk = b.id")
+    @Query(FIND_ALL_BY_TICKET_ID)
     List<TicketFieldValue> findAllByTicketId(@Bind("ticketId") int id);
 
-    @Query("select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value, null as description " +
-        "from ticket_field_value a inner join ticket_field_configuration b on a.ticket_field_configuration_id_fk = b.id " +
-        "where a.ticket_id_fk = :ticketId and b.field_name in (:fieldNames) and b.field_type <> 'select' " +
-        "union all " +
-        "select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value, c.description " +
-        "from ticket_field_value a " +
-        "inner join ticket_field_configuration b on a.ticket_field_configuration_id_fk = b.id " +
-        "inner join ticket on a.ticket_id_fk = ticket.id "+
-        "left join ticket_field_description c on c.ticket_field_configuration_id_fk = a.ticket_field_configuration_id_fk " +
-        "where a.ticket_id_fk = :ticketId and b.field_name in (:fieldNames) " +
-        "and c.field_locale = ticket.user_language " +
-        "and b.field_type = 'select'")
+    @Query(FIND_ALL_BY_TICKET_ID + " and context = :context")
+    List<TicketFieldValue> findAllForContextByTicketId(@Bind("ticketId") int id, @Bind("context") String context);
+
+    @Query("select ticket_id_fk, ticket_field_configuration_id_fk, field_name, field_value, description from all_ticket_field_values " +
+        " where ticket_id_fk = :ticketId and field_name in (:fieldNames)")
     List<TicketFieldValueAndDescription> findValueForTicketId(@Bind("ticketId") int id, @Bind("fieldNames") Set<String> fieldNames);
 
     @Query("update ticket_field_value set field_value = :value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
@@ -63,7 +58,10 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query(INSERT_VALUE)
     int insertValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId, @Bind("value") String value);
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into additional_service_field_value(additional_service_item_id_fk, ticket_field_configuration_id_fk, field_value) values (:additionalServiceItemId, :fieldConfigurationId, :value)")
+    @Query(type = QueryType.TEMPLATE,
+        value = "insert into additional_service_field_value(additional_service_item_id_fk, ticket_field_configuration_id_fk, field_value)" +
+            " values (:additionalServiceItemId, :fieldConfigurationId, :value)" +
+            " on conflict(additional_service_item_id_fk, ticket_field_configuration_id_fk) do update set field_value = EXCLUDED.field_value")
     String batchInsertAdditionalItemsFields();
 
     @Query("delete from ticket_field_value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
@@ -98,13 +96,11 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("SELECT field_name FROM ticket_field_configuration inner join event on event.id = event_id_fk  where short_name = :eventShortName order by field_order asc ")
     List<String> findFieldsForEvent(@Bind("eventShortName") String eventShortName);
 
-    @Query("select field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk = :ticketId")
+    @Query("select field_name, field_value from ticket_field_value_w_additional where ticket_id_fk = :ticketId")
     List<FieldNameAndValue> findNameAndValue(@Bind("ticketId") int ticketId);
 
-    @Query("select ticket_id_fk, ticket_field_configuration_id_fk, field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk in (:ticketIds)")
+    @Query("select ticket_id_fk, ticket_field_configuration_id_fk, field_name, field_value from ticket_field_value_w_additional where ticket_id_fk in (:ticketIds)")
     List<TicketFieldValue> findAllValuesByTicketIds(@Bind("ticketIds") Collection<Integer> ticketIds);
-
-
 
     default void updateOrInsert(Map<String, List<String>> values, int ticketId, int eventId) {
         Map<String, TicketFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId);
@@ -145,7 +141,8 @@ public interface TicketFieldRepository extends FieldRepository {
     }
 
     default Map<String, TicketFieldValue> findAllByTicketIdGroupedByName(int id) {
-        return findAllByTicketId(id).stream().collect(Collectors.toMap(TicketFieldValue::getName, Function.identity()));
+        return findAllForContextByTicketId(id, TicketFieldConfiguration.Context.ATTENDEE.name()).stream()
+            .collect(Collectors.toMap(TicketFieldValue::getName, Function.identity()));
     }
 
     default boolean hasOptionalData(int ticketId) {
@@ -193,7 +190,7 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("delete from ticket_field_configuration where id = :fieldConfigurationId")
 	int deleteField(@Bind("fieldConfigurationId") int ticketFieldConfigurationId);
 
-    @Query("select field_value as name, count(*) as count from ticket_field_value where ticket_field_configuration_id_fk = :configurationId group by field_value")
+    @Query("select field_value as name, count(*) as count from ticket_field_value_w_additional where ticket_field_configuration_id_fk = :configurationId group by field_value")
     List<RestrictedValueStats.RestrictedValueCount> getValueStats(@Bind("configurationId") int configurationId);
 
     default List<RestrictedValueStats> retrieveStats(int configurationId) {
@@ -221,14 +218,16 @@ public interface TicketFieldRepository extends FieldRepository {
 
     }
 
-    @Query("select c2.field_name as field_name, tfv.field_value as field_value, c2.additional_service_id as additional_service_id from additional_item_field_value_with_ticket_id tfv" +
-        "  join ticket_field_configuration c2 on tfv.ticket_field_configuration_id_fk = c2.id" +
-        "  where tfv.ticket_id_fk = :ticketId" +
-        "  and c2.context = 'ADDITIONAL_SERVICE'" +
-        "  and c2.additional_service_id in (:additionalServiceIds)")
-    List<TicketFieldValueForAdditionalService> loadTicketFieldsForAdditionalService(@Bind("ticketId") int ticketId,
-                                                                                    @Bind("additionalServiceIds") List<Integer> additionalServiceIds);
+    @Query("select " + ADDITIONAL_SERVICE_FIELD_VALUE_COLS +
+        " from additional_item_field_value_with_ticket_id" +
+        "  where ticket_id_fk = :ticketId" +
+        "  and additional_service_id_fk in (:additionalServiceIds)")
+    List<AdditionalServiceFieldValue> loadTicketFieldsForAdditionalService(@Bind("ticketId") int ticketId,
+                                                                           @Bind("additionalServiceIds") List<Integer> additionalServiceIds);
 
-    @Query("select field_name, field_value, ticket_field_configuration_id_fk, ticket_id_fk from additional_item_field_value_with_ticket_id where ticket_id_fk in(:ticketIds)")
-    List<TicketFieldValue> findAdditionalServicesValueByTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
+    @Query("select " + ADDITIONAL_SERVICE_FIELD_VALUE_COLS + " from additional_item_field_value_with_ticket_id where ticket_id_fk in(:ticketIds)")
+    List<AdditionalServiceFieldValue> findAdditionalServicesValueByTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
+
+    @Query("select " + ADDITIONAL_SERVICE_FIELD_VALUE_COLS + " from additional_item_field_value_with_ticket_id where additional_service_item_id_fk in (:itemIds)")
+    List<AdditionalServiceFieldValue> findAdditionalServicesValueByItemIds(@Bind("itemIds") List<Integer> itemIds);
 }

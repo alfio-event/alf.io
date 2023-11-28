@@ -52,7 +52,7 @@ public class ReservationAuditingHelper {
             TICKET, Integer.toString(ticketId), changes);
     }
 
-    public void auditUpdateTicket(Ticket preUpdateTicket, Map<String, String> preUpdateTicketFields, Ticket postUpdateTicket, Map<String, String> postUpdateTicketFields, int eventId) {
+    public void auditUpdateTicket(Ticket preUpdateTicket, Map<String, List<String>> preUpdateTicketFields, Ticket postUpdateTicket, Map<String, List<String>> postUpdateTicketFields, int eventId) {
         List<ObjectDiffUtil.Change> diffTicket = ObjectDiffUtil.diff(preUpdateTicket, postUpdateTicket);
         List<ObjectDiffUtil.Change> diffTicketFields = ObjectDiffUtil.diff(preUpdateTicketFields, postUpdateTicketFields);
 
