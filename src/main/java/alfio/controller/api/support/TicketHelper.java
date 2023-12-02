@@ -32,12 +32,12 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import lombok.AllArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -48,6 +48,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
+import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
+import static java.util.Objects.requireNonNullElse;
 
 @Component
 @AllArgsConstructor
@@ -114,16 +118,48 @@ public class TicketHelper {
 
         var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), ticketReservation.getId());
 
+        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(ticketReservation.getId());
         var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf,
-            ticketRepository.findTicketsInReservation(ticketReservation.getId()),
+            ticketsInReservation,
             event.supportsLinkedAdditionalServices(),
             additionalServiceItems);
 
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
-        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid(), EnumSet.allOf(TicketFieldConfiguration.Context.class)), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)
+
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid(), EnumSet.of(ATTENDEE)), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)
+                .or(validateAdditionalItemsFields(event, updateTicketOwner, t.getUuid(), ticketFieldFilterer.getFieldsForTicket(t.getUuid(), EnumSet.of(ADDITIONAL_SERVICE)), bindingResult.orElse(null), sameCountryValidator))
                 .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, fallbackLocale, t, event, ticketReservation, userDetails));
-        return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
+        return Triple.of(validationResult, event, ticketsInReservation.stream().filter(t2 -> t2.getUuid().equals(t.getUuid())).findFirst().orElseThrow());
+    }
+
+    private ValidationResult validateAdditionalItemsFields(Event event,
+                                                           UpdateTicketOwnerForm updateTicketOwner,
+                                                           String ticketUuid,
+                                                           List<TicketFieldConfiguration> fieldsForTicket,
+                                                           BindingResult bindingResult,
+                                                           SameCountryValidator vatValidator) {
+
+        if (!event.supportsLinkedAdditionalServices() || fieldsForTicket.isEmpty()) {
+            return ValidationResult.success();
+        }
+        Map<String, List<AdditionalServiceLinkForm>> map = requireNonNullElse(updateTicketOwner.getAdditionalServices(), Map.of());
+        var fieldForms = Objects.requireNonNullElse(map.get(ticketUuid), List.<AdditionalServiceLinkForm>of());
+        int formFieldsSize = CollectionUtils.size(fieldForms);
+        if (formFieldsSize > 0 && formFieldsSize < fieldsForTicket.size()) {
+            // form contains wrong fields. Reject all values
+            bindingResult.reject(ErrorsCode.EMPTY_FIELD);
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("", ErrorsCode.EMPTY_FIELD));
+        }
+
+        var result = ValidationResult.success();
+
+        for (int i = 0; i < fieldForms.size(); i++) {
+            var form = fieldForms.get(i);
+            result = result.or(Validator.validateAdditionalItemFieldsForTicket(form, fieldsForTicket, bindingResult, "additionalServices["+ticketUuid+"]["+i+"]", vatValidator, fieldForms));
+        }
+
+        return result;
     }
 
     /**
@@ -232,32 +268,5 @@ public class TicketHelper {
             ticketReservation,
             ticketLanguage,
             ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket));
-    }
-
-    public void persistFieldsForAdditionalItems(int eventId,
-                                                Map<String, List<AdditionalServiceLinkForm>> additionalServices,
-                                                List<Ticket> tickets) {
-        var ticketIdsByUuid = tickets.stream().collect(Collectors.toMap(Ticket::getUuid, Ticket::getId));
-        int res = ticketFieldRepository.deleteAllValuesForAdditionalItems(ticketIdsByUuid.values(), eventId);
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Deleted {} field values", res);
-        }
-        var fields = ticketFieldRepository.findAdditionalFieldsForEvent(eventId)
-            .stream()
-            .filter(c -> c.getContext() == TicketFieldConfiguration.Context.ADDITIONAL_SERVICE)
-            .collect(Collectors.toList());
-
-        var sources = additionalServices.entrySet().stream()
-            .flatMap(entry -> entry.getValue().stream().flatMap(form -> form.getAdditional().entrySet().stream()
-                .map(e2 -> {
-                    int configurationId = fields.stream().filter(f -> f.getName().equals(e2.getKey()))
-                        .findFirst()
-                        .orElseThrow()
-                        .getId();
-                    return new MapSqlParameterSource("additionalServiceItemId", form.getAdditionalServiceItemId())
-                        .addValue("fieldConfigurationId", configurationId)
-                        .addValue("value", ticketFieldRepository.getFieldValueJson(e2.getValue()));
-                }))).toArray(MapSqlParameterSource[]::new);
-        jdbcTemplate.batchUpdate(ticketFieldRepository.batchInsertAdditionalItemsFields(), sources);
     }
 }

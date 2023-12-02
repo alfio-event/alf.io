@@ -494,7 +494,7 @@ public class ReservationApiV2Controller {
             purchaseContext.event().ifPresent(event -> {
                 var tickets = assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
                 if (additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets)) {
-                    ticketHelper.persistFieldsForAdditionalItems(event.getId(), contactAndTicketsForm.getAdditionalServices(), tickets);
+                    additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), contactAndTicketsForm.getAdditionalServices(), tickets);
                 }
             });
 

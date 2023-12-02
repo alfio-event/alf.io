@@ -32,6 +32,7 @@ public class UpdateTicketOwnerForm implements Serializable, AdditionalFieldsCont
     private String firstName;
     private String lastName;
     private String userLanguage;
+    private Map<String, List<AdditionalServiceLinkForm>> additionalServices;
 
 
     private Map<String, List<String>> additional;

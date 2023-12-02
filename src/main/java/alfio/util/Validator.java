@@ -337,22 +337,41 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
     
-    public static ValidationResult validateFieldsForTicket(AdditionalServiceLinkForm form,
-                                                           List<TicketFieldConfiguration> additionalFieldsForTicket,
-                                                           BindingResult errors,
-                                                           String prefix,
-                                                           SameCountryValidator vatValidator) {
-        for(int i = 0; i < additionalFieldsForTicket.size(); i++) {
-            var fieldConf = additionalFieldsForTicket.get(i);
-            validateFieldConfiguration(form, vatValidator, errors, prefix+"["+i+"].", fieldConf);
+    public static ValidationResult validateAdditionalItemFieldsForTicket(AdditionalServiceLinkForm form,
+                                                                         List<TicketFieldConfiguration> additionalFieldsForTicket,
+                                                                         BindingResult errors,
+                                                                         String prefix,
+                                                                         SameCountryValidator vatValidator,
+                                                                         List<AdditionalServiceLinkForm> allForms) {
+        // ticket may be linked to different additional items, each one requiring fields
+        var allKeys = allForms.stream().flatMap(f -> f.getAdditional().keySet().stream()).collect(Collectors.toSet());
+        var foundKeys = additionalFieldsForTicket.stream()
+            .map(TicketFieldConfiguration::getName)
+            .filter(allKeys::contains)
+            .collect(Collectors.toSet());
+        for (TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
+            validateFieldConfiguration(form, vatValidator, errors, prefix + ".", fieldConf, foundKeys.contains(fieldConf.getName()));
         }
         return evaluateValidationResult(errors);
     }
 
-    private static void validateFieldConfiguration(AdditionalFieldsContainer form, SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf) {
-        boolean isField = form.getAdditional() != null && form.getAdditional().containsKey(fieldConf.getName());
+    private static void validateFieldConfiguration(AdditionalFieldsContainer form,
+                                                   SameCountryValidator vatValidator,
+                                                   Errors errors,
+                                                   String prefixForLambda,
+                                                   TicketFieldConfiguration fieldConf) {
+        validateFieldConfiguration(form, vatValidator, errors, prefixForLambda, fieldConf, false);
+    }
 
-        if(!isField) {
+    private static void validateFieldConfiguration(AdditionalFieldsContainer form,
+                                                   SameCountryValidator vatValidator,
+                                                   Errors errors,
+                                                   String prefixForLambda,
+                                                   TicketFieldConfiguration fieldConf,
+                                                   boolean skipPresenceCheck) {
+        boolean isFieldPresent = form.getAdditional() != null && form.getAdditional().containsKey(fieldConf.getName());
+
+        if(!skipPresenceCheck && !isFieldPresent) {
             if (fieldConf.isRequired()) { // sometimes the field is not propagated, so, if it's required, we need to do some additional work
                 if (form.getAdditional() == null) {
                     form.setAdditional(new HashMap<>());
@@ -362,8 +381,7 @@ public final class Validator {
             }
             return;
         }
-
-        List<String> values = Optional.ofNullable(form.getAdditional().get(fieldConf.getName())).orElse(Collections.emptyList());
+        var values = form.getAdditional().computeIfAbsent(fieldConf.getName(), k -> List.of());
 
         //handle required for multiple choice (checkbox) where required is interpreted as at least one!
         if (fieldConf.isRequired() && fieldConf.getCount() > 1  && values.stream().allMatch(StringUtils::isBlank)) {

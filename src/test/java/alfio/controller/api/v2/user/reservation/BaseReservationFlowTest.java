@@ -859,7 +859,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING, context);
 
             //add mandatory additional field
-            ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+            ticketForm.setAdditional(new HashMap<>(Collections.singletonMap("field1", Collections.singletonList("value"))));
             var overviewRes = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);
@@ -941,7 +941,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             updateTicketOwnerForm.setFirstName("Test");
             updateTicketOwnerForm.setLastName("Testson");
             updateTicketOwnerForm.setEmail("testmctest@test.com");
-            updateTicketOwnerForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+            updateTicketOwnerForm.setAdditional(new HashMap<>(Collections.singletonMap("field1", Collections.singletonList("value"))));
             var updateTicketRes = ticketApiV2Controller.updateTicketInfo(context.event.getShortName(), ticket.getUuid(), updateTicketOwnerForm, new BeanPropertyBindingResult(updateTicketOwnerForm, "ticket"), context.getPublicAuthentication());
             assertNotNull(updateTicketRes.getBody());
             assertTrue(updateTicketRes.getBody().isSuccess());
@@ -1460,7 +1460,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 ticketForm.setFirstName("ticketfull");
                 ticketForm.setLastName("ticketname");
                 ticketForm.setEmail("tickettest@test.com");
-                ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+                ticketForm.setAdditional(new HashMap<>(Collections.singletonMap("field1", Collections.singletonList("value"))));
                 return Map.entry(t.getUuid(), ticketForm);
             })
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

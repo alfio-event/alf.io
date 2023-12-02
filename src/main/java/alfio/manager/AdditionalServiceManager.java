@@ -23,10 +23,7 @@ import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.EventModification;
-import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.AdditionalServiceRepository;
-import alfio.repository.AdditionalServiceTextRepository;
-import alfio.repository.TicketRepository;
+import alfio.repository.*;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
@@ -63,6 +60,7 @@ public class AdditionalServiceManager {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final TicketRepository ticketRepository;
+    private final TicketFieldRepository ticketFieldRepository;
 
 
     public List<AdditionalService> loadAllForEvent(int eventId) {
@@ -371,6 +369,33 @@ public class AdditionalServiceManager {
         var items = new ArrayList<>(automatic);
         items.addAll(additionalServices);
         reserveAdditionalServicesForReservation(event, reservationId, items, discount.orElse(null), additionalServicesForEvent, ticketIds);
+    }
+
+    public void persistFieldsForAdditionalItems(int eventId,
+                                                Map<String, List<AdditionalServiceLinkForm>> additionalServices,
+                                                List<Ticket> tickets) {
+        var ticketIdsByUuid = tickets.stream().collect(Collectors.toMap(Ticket::getUuid, Ticket::getId));
+        int res = ticketFieldRepository.deleteAllValuesForAdditionalItems(ticketIdsByUuid.values(), eventId);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Deleted {} field values", res);
+        }
+        var fields = ticketFieldRepository.findAdditionalFieldsForEvent(eventId)
+            .stream()
+            .filter(c -> c.getContext() == TicketFieldConfiguration.Context.ADDITIONAL_SERVICE)
+            .collect(Collectors.toList());
+
+        var sources = additionalServices.entrySet().stream()
+            .flatMap(entry -> entry.getValue().stream().flatMap(form -> form.getAdditional().entrySet().stream()
+                .map(e2 -> {
+                    int configurationId = fields.stream().filter(f -> f.getName().equals(e2.getKey()))
+                        .findFirst()
+                        .orElseThrow()
+                        .getId();
+                    return new MapSqlParameterSource("additionalServiceItemId", form.getAdditionalServiceItemId())
+                        .addValue("fieldConfigurationId", configurationId)
+                        .addValue("value", ticketFieldRepository.getFieldValueJson(e2.getValue()));
+                }))).toArray(MapSqlParameterSource[]::new);
+        jdbcTemplate.batchUpdate(ticketFieldRepository.batchInsertAdditionalItemsFields(), sources);
     }
 
     private void reserveAdditionalServicesForReservation(Event event,

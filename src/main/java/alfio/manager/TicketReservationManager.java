@@ -63,6 +63,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -1303,6 +1304,10 @@ public class TicketReservationManager {
 
         ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
         ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId());
+
+        if (MapUtils.isNotEmpty(updateTicketOwner.getAdditionalServices())) {
+            additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), updateTicketOwner.getAdditionalServices(), List.of(ticket));
+        }
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
         boolean sendTicketAllowed = configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();

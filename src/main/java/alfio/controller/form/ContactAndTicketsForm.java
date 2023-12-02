@@ -150,14 +150,18 @@ public class ContactAndTicketsForm implements Serializable {
             || form.values().stream().anyMatch(v -> v.stream().anyMatch(Predicate.not(AdditionalServiceLinkForm::isValid)))) {
             bindingResult.reject(STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED);
         }
-        List<ValidationResult> validationResults = form.entrySet().stream().flatMap(e -> {
-                var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(e.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
-                return e.getValue().stream().map(v -> Validator.validateFieldsForTicket(v, filteredForTicket, bindingResult, "additionalServices["+e.getKey()+"]", vatValidator));
-            }).collect(Collectors.toList());
+        var result = ValidationResult.success();
+        for (var ticketAndFields : form.entrySet()) {
+            var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(ticketAndFields.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
+            var fieldForms = ticketAndFields.getValue();
+            for (int i = 0; i < fieldForms.size(); i++) {
+                result = result.or(Validator.validateAdditionalItemFieldsForTicket(fieldForms.get(i), filteredForTicket, bindingResult, "additionalServices["+ticketAndFields.getKey()+"]["+i+"]", vatValidator, fieldForms));
+            }
+        }
 
-        boolean success = validationResults.stream().allMatch(ValidationResult::isSuccess);
+        boolean success = result.isSuccess();
         if(!success) {
-            String errorCode = containsVatValidationError(validationResults) ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
+            String errorCode = containsVatValidationError(List.of(result)) ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
             bindingResult.reject(errorCode);
         }
     }
