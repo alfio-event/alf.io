@@ -82,6 +82,7 @@ public class AdminWaitingQueueApiController {
 
     @PutMapping("/status")
     public Map<String, Boolean> setStatusForEvent(@PathVariable("eventName") String eventName, @RequestBody SetStatusForm form, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
                 configurationManager.saveAllEventConfiguration(event.getId(), event.getOrganizationId(),
@@ -150,14 +151,16 @@ public class AdminWaitingQueueApiController {
 
     @PutMapping("/subscriber/{subscriberId}/restore")
     public ResponseEntity<Map<String, Object>> restoreSubscriber(@PathVariable("eventName") String eventName,
-                                                                     @PathVariable("subscriberId") int subscriberId,
-                                                                     Principal principal) {
+                                                                 @PathVariable("subscriberId") int subscriberId,
+                                                                 Principal principal) {
         return performStatusModification(eventName, subscriberId, principal, WaitingQueueSubscription.Status.WAITING, WaitingQueueSubscription.Status.CANCELLED);
     }
 
     private ResponseEntity<Map<String, Object>> performStatusModification(String eventName, int subscriberId,
-                                                                               Principal principal, WaitingQueueSubscription.Status newStatus,
-                                                                               WaitingQueueSubscription.Status currentStatus) {
+                                                                          Principal principal, WaitingQueueSubscription.Status newStatus,
+                                                                          WaitingQueueSubscription.Status currentStatus) {
+        accessService.checkWaitingQueueSubscriberInEvent(subscriberId, eventName);
+        accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .flatMap(e -> waitingQueueManager.updateSubscriptionStatus(subscriberId, newStatus, currentStatus).map(s -> Pair.of(s, e)))
             .map(pair -> {

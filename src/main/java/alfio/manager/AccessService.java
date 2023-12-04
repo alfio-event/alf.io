@@ -71,6 +71,7 @@ public class AccessService {
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
     private final OrganizationRepository organizationRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
+    private final WaitingQueueRepository waitingQueueRepository;
 
     public AccessService(UserRepository userRepository,
                          AuthorityRepository authorityRepository,
@@ -84,7 +85,8 @@ public class AccessService {
                          TicketCategoryRepository ticketCategoryRepository,
                          PromoCodeDiscountRepository promoCodeDiscountRepository,
                          OrganizationRepository organizationRepository,
-                         AdditionalServiceRepository additionalServiceRepository) {
+                         AdditionalServiceRepository additionalServiceRepository,
+                         WaitingQueueRepository waitingQueueRepository) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
         this.userOrganizationRepository = userOrganizationRepository;
@@ -98,6 +100,7 @@ public class AccessService {
         this.promoCodeDiscountRepository = promoCodeDiscountRepository;
         this.organizationRepository = organizationRepository;
         this.additionalServiceRepository = additionalServiceRepository;
+        this.waitingQueueRepository = waitingQueueRepository;
     }
 
     public void checkAccessToUser(Principal principal, Integer userId) {
@@ -414,6 +417,15 @@ public class AccessService {
         var eventAndOrgId = canAccessEvent(principal, eventShortName);
         var ticket = ticketRepository.findByUUID(uuid);
         if (ticket.getEventId() != eventAndOrgId.getId()) {
+            throw new AccessDeniedException();
+        }
+    }
+
+    public void checkWaitingQueueSubscriberInEvent(int subscriberId, String eventName) {
+        var eventAndOrgId = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .orElseThrow(AccessDeniedException::new);
+        if (!waitingQueueRepository.exists(subscriberId, eventAndOrgId.getId())) {
+            log.warn("subscriberId {} does not exists in event {}", subscriberId, eventName);
             throw new AccessDeniedException();
         }
     }
