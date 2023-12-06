@@ -35,6 +35,7 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,7 +93,7 @@ public class AdditionalServiceApiController {
 
     @GetMapping("/event/{eventId}/additional-services/count")
     public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable("eventId") int eventId, Principal principal) {
-        accessService.checkOrganizationOwnership(principal, eventId);
+        accessService.checkEventOwnership(principal, eventId);
         return additionalServiceManager.countUsageForEvent(eventId);
     }
 
@@ -122,7 +123,8 @@ public class AdditionalServiceApiController {
 
     @PostMapping(value = "/event/{eventId}/additional-services")
     @Transactional
-    public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
+    public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
         return eventRepository.findOptionalById(eventId)
@@ -133,8 +135,11 @@ public class AdditionalServiceApiController {
     @DeleteMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
     public ResponseEntity<String> remove(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, Principal principal) {
+        var additionalService = additionalServiceManager.getOptionalById(additionalServiceId, eventId);
+        Assert.isTrue(additionalService.isPresent(), "Additional service " + additionalServiceId + " must be inside eventId " + eventId);
+        accessService.checkEventOwnership(principal, eventId);
         return eventRepository.findOptionalById(eventId)
-            .map(event -> additionalServiceManager.getOptionalById(additionalServiceId, eventId)
+            .map(event -> additionalService
                 .map(as -> {
                     log.debug("{} is deleting additional service #{}", principal.getName(), additionalServiceId);
                     int deletedTexts = additionalServiceManager.deleteAdditionalServiceTexts(additionalServiceId);

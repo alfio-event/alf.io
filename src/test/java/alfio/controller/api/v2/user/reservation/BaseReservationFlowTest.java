@@ -191,7 +191,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             AdditionalService.AdditionalServiceType.SUPPLEMENT,
             AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET
         );
-        var addServRes = additionalServiceApiController.insert(context.event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"));
+        var addServRes = additionalServiceApiController.insert(context.event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"), null);
         assertNotNull(addServRes.getBody());
         additionalServiceId = addServRes.getBody().getId();
         //
