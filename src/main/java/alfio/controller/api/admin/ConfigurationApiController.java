@@ -66,6 +66,7 @@ public class ConfigurationApiController {
 
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
+        accessService.ensureAdmin(principal);
         return configurationManager.loadAllSystemConfigurationIncludingMissing(principal.getName());
     }
 
@@ -75,13 +76,15 @@ public class ConfigurationApiController {
     }
 
     @PostMapping(value = "/update")
-    public boolean updateConfiguration(@RequestBody ConfigurationModification configuration) {
+    public boolean updateConfiguration(@RequestBody ConfigurationModification configuration, Principal principal) {
+        accessService.ensureAdmin(principal);
         configurationManager.saveSystemConfiguration(ConfigurationKeys.fromString(configuration.getKey()), configuration.getValue());
         return true;
     }
 
     @PostMapping(value = "/update-bulk")
-    public boolean updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input) {
+    public boolean updateConfiguration(@RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+        accessService.ensureAdmin(principal);
         List<ConfigurationModification> list = Objects.requireNonNull(input).values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         configurationManager.saveAllSystemConfiguration(list);
         return true;
@@ -95,7 +98,7 @@ public class ConfigurationApiController {
 
     @PostMapping(value = "/organizations/{organizationId}/update")
     public boolean updateOrganizationConfiguration(@PathVariable("organizationId") int organizationId,
-                                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+                                                   @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
         configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
         return true;
     }
