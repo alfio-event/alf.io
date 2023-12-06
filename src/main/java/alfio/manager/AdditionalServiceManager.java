@@ -26,6 +26,7 @@ import alfio.repository.AdditionalServiceTextRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -77,8 +78,10 @@ public class AdditionalServiceManager {
             price);
     }
 
-    public void updateText(Integer textId, String locale, AdditionalServiceText.TextType type, String value) {
-        additionalServiceTextRepository.update(textId, locale, type, value);
+    public void updateText(Integer textId, String locale, AdditionalServiceText.TextType type, String value, Integer additionalServiceId) {
+        Assert.isTrue(additionalServiceTextRepository.update(textId, locale, type, value, additionalServiceId) == 1,
+            "Error while updating the text with id " + textId + " and additionalServiceId " + additionalServiceId + ", should have affected 1 row"
+        );
     }
 
     public void insertText(Integer additionalServiceId, String locale, AdditionalServiceText.TextType type, String value) {

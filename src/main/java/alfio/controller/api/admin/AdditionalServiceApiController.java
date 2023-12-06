@@ -99,7 +99,11 @@ public class AdditionalServiceApiController {
 
     @PutMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
-    public ResponseEntity<EventModification.AdditionalService> update(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
+    public ResponseEntity<EventModification.AdditionalService> update(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
+        //
+        accessService.checkEventOwnership(principal, eventId);
+        Assert.isTrue(additionalServiceManager.getOptionalById(additionalServiceId, eventId).isPresent(), "No additional service with id " + additionalServiceId + " present in eventId " + eventId);
+        //
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
         Validate.isTrue(additionalServiceId == additionalService.getId(), "wrong input");
@@ -112,7 +116,7 @@ public class AdditionalServiceApiController {
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
                     forEach(t -> {
                         if(t.getId() != null) {
-                            additionalServiceManager.updateText(t.getId(), t.getLocale(), t.getType(), t.getValue());
+                            additionalServiceManager.updateText(t.getId(), t.getLocale(), t.getType(), t.getValue(), additionalServiceId);
                         } else {
                             additionalServiceManager.insertText(additionalService.getId(), t.getLocale(), t.getType(), t.getValue());
                         }
