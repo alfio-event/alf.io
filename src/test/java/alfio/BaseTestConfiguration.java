@@ -80,6 +80,9 @@ public class BaseTestConfiguration {
         config.setPassword("password");
         config.setDriverClassName(postgres.getDriverClassName());
         config.setMaximumPoolSize(MAX_POOL_SIZE);
+        if ("true".equals(System.getenv().get("TESTCONTAINERS_RYUK_DISABLED"))) {
+            Runtime.getRuntime().addShutdownHook(new Thread(postgres::stop));
+        }
         return new RefreshableDataSource(config);
     }
 
@@ -132,6 +135,9 @@ public class BaseTestConfiguration {
         GenericContainer<?> stripeMock = new GenericContainer<>("stripe/stripe-mock:latest")
             .withExposedPorts(12111, 12112);
         stripeMock.start();
+        if ("true".equals(System.getenv().get("TESTCONTAINERS_RYUK_DISABLED"))) {
+            Runtime.getRuntime().addShutdownHook(new Thread(stripeMock::stop));
+        }
         var httpPort = stripeMock.getMappedPort(12111);
         Stripe.overrideApiBase("http://localhost:" + httpPort);
         Stripe.overrideUploadBase("http://localhost:" + httpPort);

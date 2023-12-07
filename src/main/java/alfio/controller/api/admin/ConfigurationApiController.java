@@ -159,6 +159,7 @@ public class ConfigurationApiController {
 
     @GetMapping(value = "/events/{eventId}/categories/{categoryId}/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfiguration(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
         return configurationManager.loadCategoryConfig(eventId, categoryId, principal.getName());
     }
 
@@ -178,12 +179,14 @@ public class ConfigurationApiController {
 
     @DeleteMapping(value = "/event/{eventId}/category/{categoryId}/key/{key}")
     public boolean deleteCategoryLevelKey(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
         configurationManager.deleteCategoryLevelByKey(key.getValue(), eventId, categoryId, principal.getName());
         return true;
     }
 
     @DeleteMapping(value = "/key/{key}")
-    public boolean deleteKey(@PathVariable("key") String key) {
+    public boolean deleteKey(@PathVariable("key") String key, Principal principal) {
+        accessService.ensureAdmin(principal);
         configurationManager.deleteKey(key);
         return true;
     }
