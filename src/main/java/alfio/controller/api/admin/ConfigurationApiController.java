@@ -99,6 +99,9 @@ public class ConfigurationApiController {
     @PostMapping(value = "/organizations/{organizationId}/update")
     public boolean updateOrganizationConfiguration(@PathVariable("organizationId") int organizationId,
                                                    @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+        // id of input are not used, so not needed to check for consistency
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        //
         configurationManager.saveAllOrganizationConfiguration(organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
         return true;
     }
@@ -145,7 +148,10 @@ public class ConfigurationApiController {
 
     @PostMapping(value = "/organizations/{organizationId}/events/{eventId}/update")
     public boolean updateEventConfiguration(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId,
-                                                    @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+                                            @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+        // id of input are not used, so not needed to check for consistency
+        accessService.checkEventOwnership(principal, eventId, organizationId);
+        //
         configurationManager.saveAllEventConfiguration(eventId, organizationId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
         return true;
     }
@@ -153,6 +159,9 @@ public class ConfigurationApiController {
     @PostMapping(value = "/events/{eventId}/categories/{categoryId}/update")
     public boolean updateCategoryConfiguration(@PathVariable("categoryId") int categoryId, @PathVariable("eventId") int eventId,
                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
+        // id of input are not used, so no needed to check for consistency
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
+        //
         configurationManager.saveCategoryConfiguration(categoryId, eventId, input.values().stream().flatMap(Collection::stream).collect(Collectors.toList()), principal.getName());
         return true;
     }
