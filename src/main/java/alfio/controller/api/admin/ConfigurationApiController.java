@@ -260,6 +260,9 @@ public class ConfigurationApiController {
     public ResponseEntity<Boolean> regenerateInvoices(@PathVariable("eventId") Integer eventId,
                                                       @RequestBody List<Long> documentIds,
                                                       Principal principal) {
+        //
+        accessService.checkBillingDocumentsOwnership(principal, eventId, documentIds);
+        //
         if(!eventManager.eventExistsById(eventId) || documentIds.isEmpty()) {
             // implicit check done by the Row Level Security
             return ResponseEntity.badRequest().build();

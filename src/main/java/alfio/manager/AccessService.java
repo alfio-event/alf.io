@@ -429,4 +429,12 @@ public class AccessService {
             throw new AccessDeniedException();
         }
     }
+
+    public void checkBillingDocumentsOwnership(Principal principal, Integer eventId, List<Long> documentIds) {
+        checkEventOwnership(principal, eventId);
+        if (!new HashSet<>(documentIds).equals(new HashSet<>(billingDocumentRepository.findByIdsAndEvent(documentIds, eventId)))) {
+            log.warn("Some document ids {} are not inside eventId {}", documentIds, eventId);
+            throw new AccessDeniedException();
+        }
+    }
 }

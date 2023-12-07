@@ -243,6 +243,9 @@ class BillingDocumentCreationIntegrationTest extends BaseIntegrationTest {
         assertEquals(2, ticketReservationManager.countBillingDocuments(event.getId()));
         assertTrue(billingDocuments.stream().allMatch(bd -> bd.getStatus() == BillingDocument.Status.VALID));
 
+        //
+        assertEquals(2, billingDocumentRepository.findByIdsAndEvent(billingDocuments.stream().map(BillingDocument::getId).collect(Collectors.toList()), event.getId()).size());
+
         assertEquals(BillingDocument.Type.CREDIT_NOTE, billingDocuments.get(0).getType());
     }
 
