@@ -281,14 +281,15 @@ public class ConfigurationApiController {
         boolean admin = RequestUtils.isAdmin(principal);
         Map<String, Object> jobMetadata = null;
 
-        if(!admin && (organizationId == null || !userManager.isOwnerOfOrganization(principal.getName(), organizationId))) {
+        if (!admin && (organizationId == null || !userManager.isOwnerOfOrganization(principal.getName(), organizationId))) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         if (eventId != null && organizationId != null) {
-            eventManager.checkOwnership(new EventAndOrganizationId(eventId, organizationId), principal.getName(), organizationId);
+            accessService.checkEventOwnership(principal, eventId, organizationId);
             jobMetadata = Map.of(AssignTicketToSubscriberJobExecutor.EVENT_ID, eventId, AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, organizationId);
-        } else if(organizationId != null) {
+        } else if (organizationId != null) {
+            accessService.checkOrganizationOwnership(principal, organizationId);
             jobMetadata = Map.of(AssignTicketToSubscriberJobExecutor.ORGANIZATION_ID, organizationId);
         }
 
