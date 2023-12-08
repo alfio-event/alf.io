@@ -1530,9 +1530,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals(1000, reservation.getSrcPriceCts());
         assertEquals(10, reservation.getVatCts());
         assertEquals(0, reservation.getDiscountCts());
-        assertEquals(1, eventApiController.getPendingPayments(eventName).size());
+        assertEquals(1, eventApiController.getPendingPayments(eventName, principal).size());
         confirmPayment(eventName, reservationIdentifier, principal);
-        assertEquals(0, eventApiController.getPendingPayments(eventName).size());
+        assertEquals(0, eventApiController.getPendingPayments(eventName, principal).size());
         assertEquals(1000, eventRepository.getGrossIncome(context.event.getId()));
     }
 

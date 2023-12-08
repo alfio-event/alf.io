@@ -565,6 +565,7 @@ public class EventApiController {
     
     @DeleteMapping("/events/{eventName}/additional-field/{id}")
     public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, Principal principal) {
+        // TODO: check event access + check if id of additional field is inside the event
         eventManager.getEventAndOrganizationId(eventName, principal.getName());
     	eventManager.deleteAdditionalField(id);
     }
@@ -578,12 +579,14 @@ public class EventApiController {
 
 
     @GetMapping("/events/{eventName}/pending-payments")
-    public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName) {
+    public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return ticketReservationManager.getPendingPayments(eventName);
     }
 
     @GetMapping("/events/{eventName}/pending-payments-count")
     public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.getPendingPaymentsCount(e.getId()))
             .orElse(0);
@@ -647,12 +650,14 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/languages")
-    public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName) {
+    public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return i18nManager.getEventLanguages(eventName);
     }
 
     @GetMapping("/events/{eventName}/invoices/count")
     public Integer countBillingDocumentsForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.countBillingDocuments(e.getId()))
             .orElse(0);
@@ -660,6 +665,8 @@ public class EventApiController {
 
     @GetMapping("/events/{eventName}/all-documents")
     public void getAllInvoices(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
+        accessService.checkEventOwnership(principal, eventName);
+
         Event event = loadEvent(eventName, principal);
 
         response.setContentType("application/zip");
@@ -704,6 +711,8 @@ public class EventApiController {
 
     @GetMapping("/events/{eventName}/all-documents-xls")
     public void getAllDocumentsXls(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
+        accessService.checkEventOwnership(principal, eventName);
+
         Event event = loadEvent(eventName, principal);
         var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         boolean italianEInvoicingEnabled = configurationManager.isItalianEInvoicingEnabled(event);
@@ -847,8 +856,8 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/metadata")
-    public ResponseEntity<AlfioMetadata> loadMetadata(@PathVariable("eventName") String eventName,
-                                                      Principal principal) {
+    public ResponseEntity<AlfioMetadata> loadMetadata(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(eventManager::getMetadataForEvent));
     }
