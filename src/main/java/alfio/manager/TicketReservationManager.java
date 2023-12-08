@@ -1303,7 +1303,7 @@ public class TicketReservationManager {
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(LocaleUtil::forLanguageTag).orElse(locale);
 
         ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
-        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId());
+        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId(), event.supportsLinkedAdditionalServices());
 
         if (MapUtils.isNotEmpty(updateTicketOwner.getAdditionalServices())) {
             additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), updateTicketOwner.getAdditionalServices(), List.of(ticket));

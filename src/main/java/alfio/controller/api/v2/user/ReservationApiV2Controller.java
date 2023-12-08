@@ -156,8 +156,9 @@ public class ReservationApiV2Controller {
                         .stream()
                         .map(e -> {
                             var tc = categories.stream().filter(t -> t.getId() == e.getKey()).findFirst().orElseThrow();
+                            var context = event.supportsLinkedAdditionalServices() ? EnumSet.of(TicketFieldConfiguration.Context.ATTENDEE) : EnumSet.allOf(TicketFieldConfiguration.Context.class);
                             var ts = e.getValue().stream()
-                                .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false, EnumSet.of(TicketFieldConfiguration.Context.ATTENDEE)))
+                                .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false, context))
                                 .collect(Collectors.toList());
                             return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
                         })

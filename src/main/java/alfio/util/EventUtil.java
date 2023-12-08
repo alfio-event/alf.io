@@ -224,7 +224,7 @@ public final class EventUtil {
             var additionalServiceItems = getBookedAdditionalServices(ticketRepository, additionalServiceItemRepository, ticket, event, reservationId);
 
             Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
-            Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId());
+            Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId(), event.supportsLinkedAdditionalServices());
             Function<TicketFieldConfiguration, String> extractor = f -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
             Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toSet());
             return ticketFieldRepository.findAdditionalFieldsForEvent(ticket.getEventId())

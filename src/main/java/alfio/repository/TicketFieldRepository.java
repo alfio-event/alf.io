@@ -102,8 +102,8 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("select ticket_id_fk, ticket_field_configuration_id_fk, field_name, field_value from ticket_field_value_w_additional where ticket_id_fk in (:ticketIds)")
     List<TicketFieldValue> findAllValuesByTicketIds(@Bind("ticketIds") Collection<Integer> ticketIds);
 
-    default void updateOrInsert(Map<String, List<String>> values, int ticketId, int eventId) {
-        Map<String, TicketFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId);
+    default void updateOrInsert(Map<String, List<String>> values, int ticketId, int eventId, boolean eventSupportsLink) {
+        Map<String, TicketFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId, eventSupportsLink);
         values = Optional.ofNullable(values).orElseGet(Collections::emptyMap);
         var additionalFieldsForEvent = findAdditionalFieldsForEvent(eventId);
         var readOnlyFields = additionalFieldsForEvent.stream().filter(TicketFieldConfiguration::isReadOnly).map(TicketFieldConfiguration::getName).collect(Collectors.toSet());
@@ -140,8 +140,14 @@ public interface TicketFieldRepository extends FieldRepository {
         return fieldValue;
     }
 
-    default Map<String, TicketFieldValue> findAllByTicketIdGroupedByName(int id) {
-        return findAllForContextByTicketId(id, TicketFieldConfiguration.Context.ATTENDEE.name()).stream()
+    default Map<String, TicketFieldValue> findAllByTicketIdGroupedByName(int id, boolean eventSupportsLink) {
+        List<TicketFieldValue> values;
+        if (eventSupportsLink) {
+            values = findAllForContextByTicketId(id, TicketFieldConfiguration.Context.ATTENDEE.name());
+        } else {
+            values = findAllByTicketId(id);
+        }
+        return values.stream()
             .collect(Collectors.toMap(TicketFieldValue::getName, Function.identity()));
     }
 
