@@ -848,7 +848,8 @@ public class EventApiController {
     public ResponseEntity<Boolean> updateMetadata(@PathVariable("eventName") String eventName,
                                                  @RequestBody MetadataModification metadataModification,
                                                  Principal principal) {
-        if(!metadataModification.isValid()) {
+        accessService.checkEventOwnership(principal, eventName);
+        if (!metadataModification.isValid()) {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName())
@@ -867,6 +868,7 @@ public class EventApiController {
                                                   @PathVariable("categoryId") int categoryId,
                                                   @RequestBody MetadataModification metadataModification,
                                                   Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventName, categoryId);
         if(!metadataModification.isValid()) {
             return ResponseEntity.badRequest().build();
         }
@@ -879,6 +881,7 @@ public class EventApiController {
     public ResponseEntity<AlfioMetadata> loadCategoryMetadata(@PathVariable("eventName") String eventName,
                                                               @PathVariable("categoryId") int categoryId,
                                                               Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventName, categoryId);
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> eventManager.getMetadataForCategory(event, categoryId)));
     }
