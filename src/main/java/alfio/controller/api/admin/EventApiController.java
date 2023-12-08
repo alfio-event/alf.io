@@ -89,6 +89,7 @@ import static alfio.util.Wrappers.optionally;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.defaultString;
+import static org.apache.commons.lang3.StringUtils.prependIfMissing;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -212,7 +213,10 @@ public class EventApiController {
     }
 
     @PostMapping("/events/check")
-    public ValidationResult validateEventRequest(@RequestBody EventModification eventModification, Errors errors) {
+    public ValidationResult validateEventRequest(@RequestBody EventModification eventModification, Errors errors, Principal principal) {
+        if (eventModification.getId() != null) {
+            accessService.checkEventOwnership(principal, eventModification.getId());
+        }
         int descriptionMaxLength = getDescriptionLength();
         return validateEvent(eventModification, errors, descriptionMaxLength);
     }
@@ -253,6 +257,8 @@ public class EventApiController {
 
     @GetMapping("/events/name-by-ids")
     public Map<Integer, String> getEventNamesByIds(@RequestParam("eventIds") List<Integer> eventIds, Principal principal) {
+        // only used by admin it seems
+        accessService.ensureAdmin(principal);
         return eventManager.getEventNamesByIds(eventIds, principal);
     }
 
@@ -264,6 +270,7 @@ public class EventApiController {
 
     @PostMapping("/events/new")
     public String insertEvent(@RequestBody EventModification eventModification, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, eventModification.getOrganizationId());
         eventManager.createEvent(eventModification, principal.getName());
         return OK;
     }
@@ -311,6 +318,7 @@ public class EventApiController {
 
     @DeleteMapping("/events/{eventName}/category/{categoryId}")
     public String deleteCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventName, categoryId);
         eventManager.deleteCategory(eventName, categoryId, principal.getName());
         return OK;
     }
@@ -333,6 +341,7 @@ public class EventApiController {
 
     @GetMapping("/events/{eventName}/export")
     public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
+        accessService.checkEventOwnership(principal, eventName);
         List<String> fields = Arrays.asList(Optional.ofNullable(request.getParameterValues("fields")).orElse(new String[] {}));
         Event event = loadEvent(eventName, principal);
         Map<Integer, TicketCategory> categoriesMap = eventManager.loadTicketCategories(event).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
@@ -429,6 +438,7 @@ public class EventApiController {
 
     @GetMapping("/events/{eventName}/sponsor-scan/export")
     public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
+        accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
 
@@ -494,6 +504,7 @@ public class EventApiController {
 
     @GetMapping("/events/{eventName}/fields")
     public List<SerializablePair<String, String>> getAllFields(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         var eventAndOrganizationId = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         List<SerializablePair<String, String>> fields = new ArrayList<>(FIXED_PAIRS);
         if(configurationManager.isItalianEInvoicingEnabled(eventAndOrganizationId)) {
@@ -504,7 +515,8 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/additional-field")
-    public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName) {
+    public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
             .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))

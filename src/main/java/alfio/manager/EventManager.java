@@ -196,6 +196,7 @@ public class EventManager {
     }
 
     public void createEvent(EventModification em, String username) {
+        Assert.isNull(em.getId(), "id must be null");
         var organization = organizationRepository.findAllForUser(username)
             .stream()
             .filter(org -> org.getId() == em.getOrganizationId())
