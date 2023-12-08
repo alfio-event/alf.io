@@ -73,7 +73,7 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("delete from ticket_field_value where ticket_id_fk in (:ticketIds)")
     int deleteAllValuesForTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
 
-    @Query("delete from ticket_field_value where ticket_id_fk in (:ticketIds) and ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId and context = 'ADDITIONAL_SERVICE')")
+    @Query("delete from additional_service_field_value fv using ticket t, additional_service_item ai where fv.additional_service_item_id_fk = ai.id and ai.ticket_id_fk = t.id and t.id in (:ticketIds) and t.event_id = :eventId")
     int deleteAllValuesForAdditionalItems(@Bind("ticketIds") Collection<Integer> ticketIds,
                                           @Bind("eventId") int eventId);
 
