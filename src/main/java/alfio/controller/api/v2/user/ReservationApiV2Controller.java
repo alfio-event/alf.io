@@ -491,12 +491,15 @@ public class ReservationApiV2Controller {
                 );
             }
 
-            purchaseContext.event().ifPresent(event -> {
-                var tickets = assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
-                if (additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets)) {
+            if (purchaseContext.ofType(PurchaseContextType.event)) {
+                var event = (Event) purchaseContext;
+                if (event.supportsLinkedAdditionalServices() && contactAndTicketsForm.hasAdditionalServices()) {
+                    var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
+                    additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets);
                     additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), contactAndTicketsForm.getAdditionalServices(), tickets);
                 }
-            });
+                assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
+            }
 
             if(purchaseContext.ofType(PurchaseContextType.subscription) && contactAndTicketsForm.isDifferentSubscriptionOwner()) {
                 var owner = contactAndTicketsForm.getSubscriptionOwner();
@@ -512,7 +515,7 @@ public class ReservationApiV2Controller {
             //
             contactAndTicketsForm.validate(bindingResult, purchaseContext, new SameCountryValidator(configurationManager, extensionManager, purchaseContext, reservationId, vatChecker),
                 formValidationParameters, ticketFieldFilterer, reservationCost.requiresPayment(), extensionManager,
-                () -> additionalServiceManager.countItemsInReservation(purchaseContext, reservationId));
+                () -> additionalServiceManager.findItemsInReservation(purchaseContext, reservationId));
             //
 
             if(!bindingResult.hasErrors()) {
@@ -560,21 +563,17 @@ public class ReservationApiV2Controller {
             contactAndTicketsForm.isItalyEInvoicingSplitPayment());
     }
 
-    private List<Ticket> assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Locale locale, boolean preAssign, boolean skipValidation) {
-        List<Ticket> tickets = new ArrayList<>();
+    private void assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Locale locale, boolean preAssign, boolean skipValidation) {
         if(!contactAndTicketsForm.isPostponeAssignment()) {
             contactAndTicketsForm.getTickets().forEach((ticketId, owner) -> {
                 if (preAssign) {
                     Optional<BindingResult> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
-                    var result = ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, locale);
-                    tickets.add(result.orElseThrow().getRight());
+                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, locale);
                 } else {
-                    var result = ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), locale, Optional.empty(), true);
-                    tickets.add(result.orElseThrow().getRight());
+                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), locale, Optional.empty(), true);
                 }
             });
         }
-        return tickets;
     }
 
     private Optional<Pair<PurchaseContext, TicketReservation>> getReservation(String reservationId) {

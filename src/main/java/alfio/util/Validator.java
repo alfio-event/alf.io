@@ -342,7 +342,8 @@ public final class Validator {
                                                                          BindingResult errors,
                                                                          String prefix,
                                                                          SameCountryValidator vatValidator,
-                                                                         List<AdditionalServiceLinkForm> allForms) {
+                                                                         List<AdditionalServiceLinkForm> allForms,
+                                                                         List<AdditionalServiceItem> additionalServiceItems) {
         // ticket may be linked to different additional items, each one requiring fields
         var allKeys = allForms.stream().flatMap(f -> f.getAdditional().keySet().stream()).collect(Collectors.toSet());
         var foundKeys = additionalFieldsForTicket.stream()

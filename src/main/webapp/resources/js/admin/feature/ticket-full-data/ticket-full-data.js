@@ -22,7 +22,6 @@
         ctrl.$onInit = function() {
             AdminReservationService.getFullTicketData(ctrl.event, ctrl.reservationId, ctrl.ticketId).then(function(res) {
                 ctrl.fullData = res.data;
-                console.log(res.data);
             });
         };
         ctrl.getFieldValue = function(field) {

@@ -32,7 +32,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import lombok.AllArgsConstructor;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -127,7 +126,7 @@ public class TicketHelper {
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
 
         ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid(), EnumSet.of(ATTENDEE)), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)
-                .or(validateAdditionalItemsFields(event, updateTicketOwner, t.getUuid(), ticketFieldFilterer.getFieldsForTicket(t.getUuid(), EnumSet.of(ADDITIONAL_SERVICE)), bindingResult.orElse(null), sameCountryValidator))
+                .or(validateAdditionalItemsFields(event, updateTicketOwner, t.getUuid(), ticketFieldFilterer.getFieldsForTicket(t.getUuid(), EnumSet.of(ADDITIONAL_SERVICE)), additionalServiceItems, bindingResult.orElse(null), sameCountryValidator))
                 .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, fallbackLocale, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketsInReservation.stream().filter(t2 -> t2.getUuid().equals(t.getUuid())).findFirst().orElseThrow());
@@ -137,26 +136,39 @@ public class TicketHelper {
                                                            UpdateTicketOwnerForm updateTicketOwner,
                                                            String ticketUuid,
                                                            List<TicketFieldConfiguration> fieldsForTicket,
+                                                           List<AdditionalServiceItem> additionalServiceItems,
                                                            BindingResult bindingResult,
                                                            SameCountryValidator vatValidator) {
 
-        if (!event.supportsLinkedAdditionalServices() || fieldsForTicket.isEmpty()) {
+        if (!event.supportsLinkedAdditionalServices() || fieldsForTicket.isEmpty() || bindingResult == null) {
             return ValidationResult.success();
         }
         Map<String, List<AdditionalServiceLinkForm>> map = requireNonNullElse(updateTicketOwner.getAdditionalServices(), Map.of());
         var fieldForms = Objects.requireNonNullElse(map.get(ticketUuid), List.<AdditionalServiceLinkForm>of());
-        int formFieldsSize = CollectionUtils.size(fieldForms);
-        if (formFieldsSize > 0 && formFieldsSize < fieldsForTicket.size()) {
+        int formFieldsSize = fieldForms.size();
+        if (formFieldsSize != fieldsForTicket.size()) {
             // form contains wrong fields. Reject all values
             bindingResult.reject(ErrorsCode.EMPTY_FIELD);
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("", ErrorsCode.EMPTY_FIELD));
+        } else if (formFieldsSize == 0) {
+            return ValidationResult.success();
         }
 
-        var result = ValidationResult.success();
+        var bookedItems = fieldForms.stream().map(AdditionalServiceLinkForm::getAdditionalServiceItemId).collect(Collectors.toSet());
 
-        for (int i = 0; i < fieldForms.size(); i++) {
+        // validate that the input form only contains items that are actually linked to the current ticket
+        int count = additionalServiceItemRepository.countMatchingItemsForTicket(ticketUuid, bookedItems);
+        ValidationResult result;
+
+        if (count != bookedItems.size()) {
+            result = ValidationResult.failed(new ValidationResult.ErrorDescriptor("", ErrorsCode.EMPTY_FIELD));
+        } else {
+            result = ValidationResult.success();
+        }
+
+        for (int i = 0; i < formFieldsSize; i++) {
             var form = fieldForms.get(i);
-            result = result.or(Validator.validateAdditionalItemFieldsForTicket(form, fieldsForTicket, bindingResult, "additionalServices["+ticketUuid+"]["+i+"]", vatValidator, fieldForms));
+            result = result.or(Validator.validateAdditionalItemFieldsForTicket(form, fieldsForTicket, bindingResult, "additionalServices["+ticketUuid+"]["+i+"]", vatValidator, fieldForms, additionalServiceItems));
         }
 
         return result;

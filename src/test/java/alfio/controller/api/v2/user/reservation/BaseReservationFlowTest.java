@@ -72,6 +72,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -793,6 +794,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertEquals("field3", valuesForCheckIn.get(0).getName());
             assertEquals("value", valuesForCheckIn.get(0).getValue());
             reservationApiV2Controller.cancelPendingReservation(reservationId);
+            // make sure that there is no pending additional service item anymore
+            assertFalse(requireNonNull(jdbcTemplate.queryForObject("select exists (select id from additional_service_item where status = 'PENDING' and tickets_reservation_uuid = :reservationId) as res", new MapSqlParameterSource("reservationId", reservationId), Boolean.class)));
         }
 
 

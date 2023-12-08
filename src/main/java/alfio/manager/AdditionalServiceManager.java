@@ -294,6 +294,13 @@ public class AdditionalServiceManager {
         return additionalServiceItemRepository.findByReservationUuid(eventId, reservationId);
     }
 
+    public List<AdditionalServiceItem> findItemsInReservation(PurchaseContext purchaseContext, String reservationId) {
+        if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+            return findItemsInReservation(((Event)purchaseContext).getId(), reservationId);
+        }
+        return List.of();
+    }
+
     public int countItemsInReservation(PurchaseContext purchaseContext, String reservationId) {
         if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             return additionalServiceItemRepository.countByReservationUuid(((Event) purchaseContext).getId(), reservationId);
@@ -317,11 +324,11 @@ public class AdditionalServiceManager {
         return additionalServiceRepository.loadAllForReservation(reservationId, eventId);
     }
 
-    public boolean linkItemsToTickets(String reservationId,
+    public void linkItemsToTickets(String reservationId,
                                       Map<String, List<AdditionalServiceLinkForm>> links,
                                       List<Ticket> tickets) {
         if (links == null || links.isEmpty()) {
-            return false;
+            return;
         }
         var parameterSources = links.entrySet().stream()
             .flatMap(entry -> {
@@ -335,7 +342,6 @@ public class AdditionalServiceManager {
             }).toArray(MapSqlParameterSource[]::new);
         var results = jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), parameterSources);
         Validate.isTrue(Arrays.stream(results).allMatch(i -> i == 1));
-        return true;
     }
 
     private static MapSqlParameterSource batchLinkSource(String reservationId, int itemId, Integer ticketId) {
@@ -386,6 +392,7 @@ public class AdditionalServiceManager {
 
         var sources = additionalServices.entrySet().stream()
             .flatMap(entry -> entry.getValue().stream().flatMap(form -> form.getAdditional().entrySet().stream()
+                .filter(e2 -> !e2.getValue().isEmpty())
                 .map(e2 -> {
                     int configurationId = fields.stream().filter(f -> f.getName().equals(e2.getKey()))
                         .findFirst()

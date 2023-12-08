@@ -19,6 +19,7 @@ package alfio.controller.form;
 import alfio.controller.support.CustomBindingResult;
 import alfio.manager.ExtensionManager;
 import alfio.manager.SameCountryValidator;
+import alfio.model.AdditionalServiceItem;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
@@ -30,14 +31,15 @@ import alfio.util.ErrorsCode;
 import alfio.util.ItalianTaxIdValidator;
 import alfio.util.Validator;
 import lombok.Data;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.function.IntSupplier;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
@@ -103,14 +105,14 @@ public class ContactAndTicketsForm implements Serializable {
                          Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer,
                          boolean reservationRequiresPayment,
                          ExtensionManager extensionManager,
-                         IntSupplier additionalServiceItemsCount) {
+                         Supplier<List<AdditionalServiceItem>> additionalServiceItemsSupplier) {
 
 
         formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false), reservationRequiresPayment);
 
         purchaseContext.event().ifPresent(event -> {
             var fieldsFilterer = ticketFieldsFilterer.orElseThrow();
-            checkAdditionalServiceItemsLink(event, bindingResult, additionalServiceItemsCount, vatValidator, fieldsFilterer);
+            checkAdditionalServiceItemsLink(event, bindingResult, additionalServiceItemsSupplier, vatValidator, fieldsFilterer);
             if(!postponeAssignment) {
                 Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                     .filter(m -> !m.isEmpty())
@@ -139,14 +141,15 @@ public class ContactAndTicketsForm implements Serializable {
 
     private void checkAdditionalServiceItemsLink(Event event,
                                                  BindingResult bindingResult,
-                                                 IntSupplier additionalServiceItemsCount,
+                                                 Supplier<List<AdditionalServiceItem>> additionalServiceItemsCount,
                                                  SameCountryValidator vatValidator,
                                                  Validator.TicketFieldsFilterer ticketFieldsFilterer) {
         if (!event.supportsLinkedAdditionalServices()) {
             return;
         }
         Map<String, List<AdditionalServiceLinkForm>> form = Objects.requireNonNullElseGet(additionalServices, Map::of);
-        if (additionalServiceItemsCount.getAsInt() != form.values().stream().mapToInt(List::size).sum()
+        var additionalServiceItems = additionalServiceItemsCount.get();
+        if (additionalServiceItems.size() != form.values().stream().mapToInt(List::size).sum()
             || form.values().stream().anyMatch(v -> v.stream().anyMatch(Predicate.not(AdditionalServiceLinkForm::isValid)))) {
             bindingResult.reject(STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED);
         }
@@ -155,7 +158,7 @@ public class ContactAndTicketsForm implements Serializable {
             var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(ticketAndFields.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
             var fieldForms = ticketAndFields.getValue();
             for (int i = 0; i < fieldForms.size(); i++) {
-                result = result.or(Validator.validateAdditionalItemFieldsForTicket(fieldForms.get(i), filteredForTicket, bindingResult, "additionalServices["+ticketAndFields.getKey()+"]["+i+"]", vatValidator, fieldForms));
+                result = result.or(Validator.validateAdditionalItemFieldsForTicket(fieldForms.get(i), filteredForTicket, bindingResult, "additionalServices["+ticketAndFields.getKey()+"]["+i+"]", vatValidator, fieldForms, additionalServiceItems));
             }
         }
 
@@ -284,5 +287,9 @@ public class ContactAndTicketsForm implements Serializable {
 
     public boolean getAddCompanyBillingDetails() {
         return Boolean.TRUE.equals(addCompanyBillingDetails);
+    }
+
+    public boolean hasAdditionalServices() {
+        return MapUtils.isNotEmpty(additionalServices);
     }
 }

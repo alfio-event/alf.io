@@ -23,6 +23,7 @@ import alfio.model.BookedAdditionalService;
 import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @QueryRepository
@@ -126,4 +127,9 @@ public interface AdditionalServiceItemRepository {
 
     @Query("delete from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationId")
     int deleteAdditionalServiceItemsByReservationId(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
+
+    @Query("select count(*) from additional_service_item asi" +
+        " join ticket t on asi.ticket_id_fk = t.id and asi.event_id_fk = t.event_id" +
+        " where t.uuid = :ticketUUID and asi.id in (:additionalServiceIds)")
+    int countMatchingItemsForTicket(@Bind("ticketUUID") String ticketUuid, @Bind("additionalServiceIds") Collection<Integer> ids);
 }
