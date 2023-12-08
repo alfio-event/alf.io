@@ -18,6 +18,8 @@ package alfio.model.modification;
 
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservationInvoicingAdditionalInfo;
+import alfio.model.transaction.PaymentProxy;
+import alfio.util.ClockProvider;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static java.util.Collections.singletonList;
@@ -234,6 +237,52 @@ public class AdminReservationModification implements Serializable {
 
         public static Notification orEmpty(Notification notification) {
             return notification != null ? notification : EMPTY;
+        }
+    }
+
+    public static class TransactionDetails {
+
+        private final String id;
+        private final BigDecimal paidAmount;
+        private final LocalDateTime timestamp;
+        private final String notes;
+        private final PaymentProxy paymentProvider;
+
+        @JsonCreator
+        public TransactionDetails(@JsonProperty("id") String id,
+                                  @JsonProperty("paidAmount") BigDecimal paidAmount,
+                                  @JsonProperty("timestamp") LocalDateTime timestamp,
+                                  @JsonProperty("notes") String notes,
+                                  @JsonProperty("paymentProvider") PaymentProxy paymentProvider) {
+            this.id = id;
+            this.paidAmount = paidAmount;
+            this.timestamp = timestamp;
+            this.notes = notes;
+            this.paymentProvider = paymentProvider;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public BigDecimal getPaidAmount() {
+            return paidAmount;
+        }
+
+        public LocalDateTime getTimestamp() {
+            return timestamp;
+        }
+
+        public String getNotes() {
+            return notes;
+        }
+
+        public PaymentProxy getPaymentProvider() {
+            return paymentProvider;
+        }
+
+        public static TransactionDetails admin() {
+            return new TransactionDetails(null, null, LocalDateTime.now(ClockProvider.clock()), null, PaymentProxy.ADMIN);
         }
     }
 

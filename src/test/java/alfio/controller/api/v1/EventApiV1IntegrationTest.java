@@ -22,6 +22,7 @@ import alfio.config.Initializer;
 import alfio.controller.api.ControllerConfiguration;
 import alfio.controller.api.v1.admin.EventApiV1Controller;
 import alfio.manager.EventManager;
+import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
@@ -44,15 +45,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -63,6 +65,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 class EventApiV1IntegrationTest extends BaseIntegrationTest {
+
+    public static final int MAX_TICKETS = 10;
 
     @BeforeAll
     public static void initEnv() {
@@ -83,6 +87,9 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private EventManager eventManager;
+
+    @Autowired
+    private EventStatisticsManager eventStatisticsManager;
 
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
@@ -132,7 +139,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
             "https://alf.io/img/tutorials/check-in-app/003.png",
             new EventCreationRequest.TicketRequest(
                 false,
-                10,
+                MAX_TICKETS,
                 "CHF",
                 new BigDecimal("7.7"),
                 true,
@@ -142,7 +149,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                         null, // forces new category
                         "standard",
                         Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
-                        10,
+                        MAX_TICKETS,
                         false,
                         BigDecimal.TEN,
                         LocalDateTime.of(2019, 1, 10, 12, 0),
@@ -209,12 +216,54 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
     void updateTest() {
         controller.create(creationRequest(slug), mockPrincipal);
         String newTitle = "new title";
+        int categoryId = eventManager.loadTicketCategories(eventManager.getSingleEvent(slug, username)).get(0).getId();
+        // decrease number of tickets
         EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null, null,null,null,null,null,null, null,null,
-            new EventCreationRequest.TicketRequest(null,10,null,null,null,null,null,null), null, null
+            new EventCreationRequest.TicketRequest(null, MAX_TICKETS - 1,null,null,null,null,List.of(
+                new EventCreationRequest.CategoryRequest(
+                    categoryId,
+                    "standard",
+                    Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                    MAX_TICKETS - 1,
+                    false,
+                    BigDecimal.TEN,
+                    LocalDateTime.of(2019, 1, 10, 12, 0),
+                    LocalDateTime.of(2019, 1, 30, 18, 0),
+                    null,
+                    null,
+                    null,
+                    null
+                )
+            ),null), null, null
         );
         controller.update(slug, updateRequest, mockPrincipal);
-        Event event = eventManager.getSingleEvent(slug,username);
-        assertEquals(newTitle,event.getDisplayName());
+        var eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(slug,username);
+        assertEquals(newTitle, eventWithAdditionalInfo.getDisplayName());
+        assertEquals(MAX_TICKETS - 1, eventWithAdditionalInfo.getAvailableSeats());
+
+        // increase number of tickets again
+        updateRequest = new EventCreationRequest(newTitle,null,null,null, null,null,null,null,null,null, null,null,
+            new EventCreationRequest.TicketRequest(null, MAX_TICKETS,null,null,null,null,List.of(
+                new EventCreationRequest.CategoryRequest(
+                    categoryId,
+                    "standard",
+                    Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                    MAX_TICKETS,
+                    false,
+                    BigDecimal.TEN,
+                    LocalDateTime.of(2019, 1, 10, 12, 0),
+                    LocalDateTime.of(2019, 1, 30, 18, 0),
+                    null,
+                    null,
+                    null,
+                    null
+                )
+            ),null), null, null
+        );
+        controller.update(slug, updateRequest, mockPrincipal);
+        eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(slug,username);
+        assertEquals(newTitle, eventWithAdditionalInfo.getDisplayName());
+        assertEquals(MAX_TICKETS, eventWithAdditionalInfo.getAvailableSeats());
     }
 
     @Test
@@ -238,7 +287,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 existingCategory.getTicketAccessType()
             )
         );
-        var ticketRequest = new EventCreationRequest.TicketRequest(null,10,null,null,null,null, categoriesRequest,null);
+        var ticketRequest = new EventCreationRequest.TicketRequest(null, MAX_TICKETS,null,null,null,null, categoriesRequest,null);
         EventCreationRequest updateRequest = new EventCreationRequest(null,null,null,null, null,null,null,null,null,null, null,null,
             ticketRequest, null, null
         );
@@ -283,7 +332,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 existingCategory.getTicketAccessType()
             )
         );
-        var ticketRequest = new EventCreationRequest.TicketRequest(null,10,null,null,null,null, categoriesRequest,null);
+        var ticketRequest = new EventCreationRequest.TicketRequest(null, MAX_TICKETS,null,null,null,null, categoriesRequest,null);
         EventCreationRequest updateRequest = new EventCreationRequest(null,null,null,null, null,null,null,null,null,null, null,null,
             ticketRequest, null, null
         );
@@ -316,7 +365,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 existingCategory.getTicketAccessType()
             )
         );
-        var ticketRequest = new EventCreationRequest.TicketRequest(null,10,null,null,null,null, categoriesRequest,null);
+        var ticketRequest = new EventCreationRequest.TicketRequest(null, MAX_TICKETS,null,null,null,null, categoriesRequest,null);
         EventCreationRequest updateRequest = new EventCreationRequest(null,null,null,null, null,null,null,null,null,null, null,null,
             ticketRequest, null, null
         );

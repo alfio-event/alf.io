@@ -25,16 +25,21 @@ import alfio.controller.api.v1.admin.ReservationApiV1Controller;
 import alfio.controller.api.v1.admin.SubscriptionApiV1Controller;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
+import alfio.model.AllocationStatus;
 import alfio.model.Event;
+import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.api.v1.admin.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
+import alfio.model.modification.AdminReservationModification.Notification;
+import alfio.model.modification.AdminReservationModification.TransactionDetails;
 import alfio.model.modification.AttendeeData;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.*;
@@ -53,6 +58,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -93,6 +99,8 @@ class ReservationApiV1ControllerTest {
     private SubscriptionApiV1Controller subscriptionApiV1Controller;
     @Autowired
     private SubscriptionRepository subscriptionRepository;
+    @Autowired
+    private EmailMessageRepository emailMessageRepository;
 
     private Event event;
     private String username;
@@ -357,6 +365,87 @@ class ReservationApiV1ControllerTest {
 
     @Test
     void createSingleTicketWithSubscriptionId() {
+        createAndValidateTicketReservation();
+    }
+
+    @Test
+    void createSubscriptionWithMetadata() {
+        createAndValidateSubscription();
+    }
+
+    @Test
+    void createAndConfirmSubscription() {
+        var reservationId = createAndValidateSubscription();
+        var confirmationRequest = new ReservationConfirmationRequest(
+            new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
+            new Notification(true, true)
+        );
+        var principal = new APITokenAuthentication(username, null, List.of());
+        var response = controller.confirmReservation(reservationId, confirmationRequest, principal);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        var body = response.getBody();
+        assertNotNull(body);
+        assertEquals(1, body.getHolders().size());
+        var subscription = subscriptionRepository.findFirstSubscriptionByReservationIdForUpdate(reservationId).orElseThrow();
+        assertEquals(AllocationStatus.ACQUIRED, subscription.getStatus());
+        var emails = emailMessageRepository.findBySubscriptionDescriptorAndReservationId(subscription.getSubscriptionDescriptorId(), reservationId);
+        assertEquals(1, emails.size());
+    }
+
+    @Test
+    void createAndConfirmTicket() {
+        String reservationId = createAndValidateTicketReservation();
+        var confirmationRequest = new ReservationConfirmationRequest(
+            new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
+            new Notification(true, true)
+        );
+        var principal = new APITokenAuthentication(username, null, List.of());
+        var response = controller.confirmReservation(reservationId, confirmationRequest, principal);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        var body = response.getBody();
+        assertNotNull(body);
+        assertEquals(1, body.getHolders().size());
+        var ticket = ticketRepository.findTicketsInReservation(reservationId).stream().findFirst().orElseThrow();
+        assertEquals(Ticket.TicketStatus.TO_BE_PAID, ticket.getStatus());
+        var emails = emailMessageRepository.findByEventIdAndReservationId(ticket.getEventId(), reservationId);
+        assertEquals(2, emails.size());
+    }
+
+    private String createAndValidateSubscription() {
+        configurationRepository.insert(ConfigurationKeys.STRIPE_PUBLIC_KEY.getValue(), "pk", "");
+        configurationRepository.insert(ConfigurationKeys.STRIPE_SECRET_KEY.getValue(), "sk", "");
+        var principal = new APITokenAuthentication(username, null, List.of());
+        var creationResponse = subscriptionApiV1Controller.create(modificationRequest(SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT, true, clockProvider), principal);
+        assertTrue(creationResponse.getStatusCode().is2xxSuccessful());
+        assertNotNull(creationResponse.getBody());
+        var descriptorId = creationResponse.getBody();
+        var reservationRequest = new SubscriptionReservationCreationRequest(Map.of("key", "value"),
+            new ReservationUser("test@test.org", "Test", "Test1", "test@test.org", null),
+            "en",
+            new ReservationConfiguration(true, false, false),
+            null);
+        var reservationResponse = controller.createSubscriptionReservation(descriptorId, reservationRequest, principal);
+        assertTrue(reservationResponse.getStatusCode().is2xxSuccessful());
+        assertNotNull(reservationResponse.getBody());
+        var body = Objects.requireNonNull(reservationResponse.getBody());
+        assertTrue(body.isSuccess());
+        var reservationId = body.getId();
+        var reservation = ticketReservationRepository.findReservationById(reservationId);
+        assertEquals("Test", reservation.getFirstName());
+        assertEquals("Test1", reservation.getLastName());
+        assertEquals("test@test.org", reservation.getEmail());
+        var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
+        assertEquals(1, subscriptions.size());
+        var subscriptionId = subscriptions.get(0).getId();
+        var subscriptionMetadata = subscriptionRepository.getSubscriptionMetadata(subscriptionId);
+        assertNotNull(subscriptionMetadata);
+        assertNotNull(subscriptionMetadata.getProperties());
+        assertFalse(subscriptionMetadata.getProperties().isEmpty());
+        assertEquals("value", subscriptionMetadata.getProperties().get("key"));
+        return reservationId;
+    }
+
+    private String createAndValidateTicketReservation() {
         var subscriptionId = UUID.randomUUID().toString();
         var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
         var firstTicketProperties = Map.of("property", "value-first");
@@ -406,39 +495,6 @@ class ReservationApiV1ControllerTest {
         });
         var createdUser = userManager.findOptionalEnabledUserByUsername("test@example.org");
         assertFalse(createdUser.isPresent());
-    }
-
-    @Test
-    void createSubscriptionWithMetadata() {
-        configurationRepository.insert(ConfigurationKeys.STRIPE_PUBLIC_KEY.getValue(), "pk", "");
-        configurationRepository.insert(ConfigurationKeys.STRIPE_SECRET_KEY.getValue(), "sk", "");
-        var principal = new APITokenAuthentication(username, null, List.of());
-        var creationResponse = subscriptionApiV1Controller.create(modificationRequest(SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT, true, clockProvider), principal);
-        assertTrue(creationResponse.getStatusCode().is2xxSuccessful());
-        assertNotNull(creationResponse.getBody());
-        var descriptorId = creationResponse.getBody();
-        var reservationRequest = new SubscriptionReservationCreationRequest(Map.of("key", "value"),
-            new ReservationUser("test@test.org", "Test", "Test1", "test@test.org", null),
-            "en",
-            new ReservationConfiguration(true, false, false),
-            null);
-        var reservationResponse = controller.createSubscriptionReservation(descriptorId, reservationRequest, principal);
-        assertTrue(reservationResponse.getStatusCode().is2xxSuccessful());
-        assertNotNull(reservationResponse.getBody());
-        var body = Objects.requireNonNull(reservationResponse.getBody());
-        assertTrue(body.isSuccess());
-        var reservationId = body.getId();
-        var reservation = ticketReservationRepository.findReservationById(reservationId);
-        assertEquals("Test", reservation.getFirstName());
-        assertEquals("Test1", reservation.getLastName());
-        assertEquals("test@test.org", reservation.getEmail());
-        var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);
-        assertEquals(1, subscriptions.size());
-        var subscriptionId = subscriptions.get(0).getId();
-        var subscriptionMetadata = subscriptionRepository.getSubscriptionMetadata(subscriptionId);
-        assertNotNull(subscriptionMetadata);
-        assertNotNull(subscriptionMetadata.getProperties());
-        assertFalse(subscriptionMetadata.getProperties().isEmpty());
-        assertEquals("value", subscriptionMetadata.getProperties().get("key"));
+        return reservationId;
     }
 }

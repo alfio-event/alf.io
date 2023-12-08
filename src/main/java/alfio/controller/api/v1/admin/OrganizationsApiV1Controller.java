@@ -25,14 +25,13 @@ import alfio.model.modification.OrganizationModification;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
-
-import static alfio.config.authentication.support.AuthenticationConstants.API_CLIENT;
 
 @RestController
 @RequestMapping("/api/v1/admin/system/organization")
@@ -72,7 +71,7 @@ public class OrganizationsApiV1Controller {
                                                                           Principal principal) {
         ApiKeyType keyType = ApiKeyType.API_CLIENT;
         String description = CreateApiKeyRequest.DEFAULT_DESCRIPTION;
-        if (createApiKeyRequest != null) {
+        if (createApiKeyRequest != null && StringUtils.isNotBlank(createApiKeyRequest.apiKeyType())) {
             var keyTypeOptional = ApiKeyType.safeValueOf(createApiKeyRequest.apiKeyType());
             if (keyTypeOptional.isEmpty()) {
                 return ResponseEntity.badRequest().build();
@@ -82,6 +81,16 @@ public class OrganizationsApiV1Controller {
         }
         var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName(keyType.roleName()), User.Type.API_KEY, null, description, principal);
         return ResponseEntity.ok(new OrganizationApiKey(organizationId, user.getUsername(), keyType));
+    }
+
+    @DeleteMapping("/{id}/api-key/{apiKey}")
+    public ResponseEntity<Boolean> deleteApiKeyForOrganization(@PathVariable("id") int organizationId,
+                                                               @PathVariable("apiKey") String apiKey,
+                                                               Principal principal) {
+        return ResponseEntity.of(userManager.findUserIdByApiKey(apiKey, organizationId).map(userId -> {
+            userManager.deleteUser(userId, principal);
+            return true;
+        }));
     }
 
     @PostMapping("/{id}")

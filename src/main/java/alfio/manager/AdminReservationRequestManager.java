@@ -19,12 +19,14 @@ package alfio.manager;
 import alfio.model.*;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.CustomerData;
+import alfio.model.modification.AdminReservationModification.TransactionDetails;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.user.User;
 import alfio.repository.AdminReservationRequestRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.ClockProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -62,6 +64,7 @@ public class AdminReservationRequestManager {
     private final AdminReservationRequestRepository adminReservationRequestRepository;
     private final EventRepository eventRepository;
     private final PlatformTransactionManager transactionManager;
+    private final ClockProvider clockProvider;
 
     public Result<AdminReservationRequestStats> getRequestStatus(String requestId, String eventName, String username) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, username)
@@ -143,6 +146,7 @@ public class AdminReservationRequestManager {
                         r.getLeft().getId(),
                         username,
                         orEmpty(requestBody.getNotification()),
+                        TransactionDetails.admin(),
                         requestBody.getLinkedSubscriptionId()))
                     .map(triple -> Triple.of(triple.getLeft(), triple.getMiddle(), (Event) triple.getRight()));
                 if(!result.isSuccess()) {

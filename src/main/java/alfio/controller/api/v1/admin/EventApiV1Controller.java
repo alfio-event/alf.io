@@ -234,13 +234,27 @@ public class EventApiV1Controller {
         EventWithAdditionalInfo original = eventStatisticsManager.getEventWithAdditionalInfo(slug,user.getName());
 
         Event event = original.getEvent();
-
+        int originalSeats = original.getAvailableSeats();
 
         EventModification em = request.toEventModificationUpdate(original, organization, imageRef);
 
         eventManager.updateEventHeader(event, em, user.getName());
 
 
+        if (originalSeats > em.getAvailableSeats()) {
+            // if the caller wants to decrease the number of seats, we have to shrink categories first
+            handleCategoriesUpdate(user, em, original, event);
+            eventManager.updateEventPrices(event, em, user.getName());
+        } else {
+            // in all other cases, we need to modify the event first
+            eventManager.updateEventPrices(event, em, user.getName());
+            handleCategoriesUpdate(user, em, original, event);
+        }
+
+        return eventManager.getOptionalByName(slug,user.getName());
+    }
+
+    private void handleCategoriesUpdate(Principal user, EventModification em, EventWithAdditionalInfo original, Event event) {
         if (em.getTicketCategories() != null && !em.getTicketCategories().isEmpty()) {
             var existingCategories = original.getTicketCategories();
             em.getTicketCategories().forEach(c -> {
@@ -252,13 +266,6 @@ public class EventApiV1Controller {
                 }
             });
         }
-
-        eventManager.updateEventPrices(event, em, user.getName());
-
-
-        // TODO discusson about promocode needed
-
-        return eventManager.getOptionalByName(slug,user.getName());
     }
 
     private Optional<String> insertEvent(EventCreationRequest request, Principal user, String imageRef) {

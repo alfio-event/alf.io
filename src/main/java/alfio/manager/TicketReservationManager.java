@@ -2349,6 +2349,7 @@ public class TicketReservationManager {
         var reservationId = reservation.getId();
         if (ticketReservationRepository.hasSubscriptionApplied(reservationId)) {
             ticketReservationRepository.applySubscription(reservationId, null);
+            ticketRepository.removeSubscriptionFromTicketsInReservation(reservationId);
             return true;
         } else {
             return false;

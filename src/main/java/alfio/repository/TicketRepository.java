@@ -467,6 +467,9 @@ public interface TicketRepository {
                                                 @Bind("subscriptionId") UUID subscriptionId,
                                                 @Bind("limit") int limit);
 
+    @Query("update ticket set subscription_id_fk = null where tickets_reservation_id = :reservationId")
+    int removeSubscriptionFromTicketsInReservation(@Bind("reservationId") String reservationId);
+
     @Query("select count(*) from ticket where subscription_id_fk = :subscriptionId and (:eventId is null or event_id = :eventId)")
     Integer countSubscriptionUsage(@Bind("subscriptionId") UUID subscriptionId, @Bind("eventId") Integer eventId);
 

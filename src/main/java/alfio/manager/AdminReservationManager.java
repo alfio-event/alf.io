@@ -31,16 +31,14 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.AdminReservationModification;
-import alfio.model.modification.AdminReservationModification.Attendee;
-import alfio.model.modification.AdminReservationModification.Category;
-import alfio.model.modification.AdminReservationModification.Notification;
-import alfio.model.modification.AdminReservationModification.TicketsInfo;
+import alfio.model.modification.AdminReservationModification.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.*;
@@ -67,6 +65,8 @@ import org.springframework.validation.MapBindingResult;
 import org.springframework.validation.ObjectError;
 
 import java.math.BigDecimal;
+import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -95,7 +95,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @RequiredArgsConstructor
 public class AdminReservationManager {
 
-    private static final EnumSet<TicketReservationStatus> UPDATE_INVOICE_STATUSES = EnumSet.of(TicketReservationStatus.OFFLINE_PAYMENT, TicketReservationStatus.PENDING);
     private static final ErrorCode ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS = ErrorCode.custom("remove-reservation.failed", "This reservation contains checked-in tickets. Unable to cancel it.");
     private final PurchaseContextManager purchaseContextManager;
     private final EventManager eventManager;
@@ -124,6 +123,7 @@ public class AdminReservationManager {
     private final ClockProvider clockProvider;
     private final SubscriptionRepository subscriptionRepository;
     private final ReservationEmailContentHelper reservationEmailContentHelper;
+    private final TransactionRepository transactionRepository;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,
@@ -131,6 +131,7 @@ public class AdminReservationManager {
                                                                                         String reservationId,
                                                                                         String username,
                                                                                         Notification notification,
+                                                                                        TransactionDetails transactionDetails,
                                                                                         UUID subscriptionId) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
@@ -139,7 +140,7 @@ public class AdminReservationManager {
                 Result<String> confirmationResult = purchaseContextManager.findBy(purchaseContextType, eventName)
                     .map(purchaseContext -> ticketReservationRepository.findOptionalReservationById(reservationId)
                         .filter(r -> r.getStatus() == TicketReservationStatus.PENDING || r.getStatus() == TicketReservationStatus.STUCK)
-                        .map(r -> performConfirmation(reservationId, purchaseContext, r, notification, username, subscriptionId))
+                        .map(r -> performConfirmation(reservationId, purchaseContext, r, notification, transactionDetails, username, subscriptionId))
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
                 if(!confirmationResult.isSuccess()) {
@@ -160,7 +161,23 @@ public class AdminReservationManager {
                                                                                                String reservationId,
                                                                                                String username,
                                                                                                Notification notification) {
-        return confirmReservation(purchaseContextType, eventName, reservationId, username, notification, null);
+        return confirmReservation(purchaseContextType, eventName, reservationId, username, notification, TransactionDetails.admin(), null);
+    }
+
+    public Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(String reservationId,
+                                                                                               Principal principal,
+                                                                                               TransactionDetails transaction,
+                                                                                               Notification notification) {
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
+        TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
+        return template.execute(t -> {
+            var purchaseContextOptional = purchaseContextManager.findByReservationId(reservationId);
+            if (purchaseContextOptional.isEmpty() || !purchaseContextManager.validateAccess(purchaseContextOptional.get(), principal)) {
+                return Result.error(ErrorCode.ReservationError.NOT_FOUND);
+            }
+            var purchaseContext = purchaseContextOptional.get();
+            return confirmReservation(purchaseContext.getType(), purchaseContext.getPublicIdentifier(), reservationId, principal.getName(), notification, transaction, null);
+        });
     }
 
     public Result<Boolean> updateReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, AdminReservationModification adminReservationModification, String username) {
@@ -367,6 +384,7 @@ public class AdminReservationManager {
                                                PurchaseContext purchaseContext,
                                                TicketReservation original,
                                                Notification notification,
+                                               TransactionDetails transactionDetails,
                                                String username,
                                                UUID subscriptionId) {
         try {
@@ -418,11 +436,35 @@ public class AdminReservationManager {
                 false,
                 false);
 
+            if (transactionDetails.getPaymentProvider() != PaymentProxy.ADMIN) {
+                var timestamp = Objects.requireNonNullElseGet(transactionDetails.getTimestamp(), () -> LocalDateTime.now(clockProvider.getClock())).atZone(purchaseContext.getZoneId());
+                if (transactionRepository.transactionExists(reservationId)) {
+                    paymentManager.updateTransactionDetails(reservationId, transactionDetails.getNotes(), timestamp, null);
+                } else {
+                    var paidAmount = Objects.requireNonNullElse(transactionDetails.getPaidAmount(), BigDecimal.ZERO);
+                    transactionRepository.insert(
+                        StringUtils.trimToEmpty(transactionDetails.getId()),
+                        "",
+                        reservationId,
+                        timestamp,
+                        MonetaryUtil.unitToCents(paidAmount, reservation.getCurrencyCode()),
+                        reservation.getCurrencyCode(),
+                        "",
+                        transactionDetails.getPaymentProvider().name(),
+                        0L,
+                        0L,
+                        Transaction.Status.COMPLETE,
+                        Map.of(Transaction.NOTES_KEY, StringUtils.trimToEmpty(transactionDetails.getNotes()))
+                    );
+                }
+            }
+
             ticketReservationManager.completeReservation(spec,
-                PaymentProxy.ADMIN,
+                transactionDetails.getPaymentProvider(),
                 notification.isCustomer(),
                 notification.isAttendees(),
                 username);
+
             return Result.success(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);
