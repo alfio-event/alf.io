@@ -46,7 +46,7 @@
                     <select class="form-control" data-ng-model="ctrl.item.supplementPolicy" ng-options="type.key as type.value for type in ctrl.supplementPolicies" required></select>
                 </label>
             </div>
-            <div class="col-sm-12" ng-if="ctrl.item.supplementPolicy !== 'MANDATORY_ONE_FOR_TICKET'">
+            <div class="col-sm-12" ng-if="ctrl.item.supplementPolicy !== 'MANDATORY_ONE_FOR_TICKET' && ctrl.supportsQuantity">
                 <label>
                     Max available (optional):
                     <input class="form-control" data-ng-model="ctrl.item.availableQuantity">

@@ -16,7 +16,6 @@
  */
 package alfio.model;
 
-import alfio.manager.support.extension.ExtensionCapability;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.StatisticsContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -97,5 +96,9 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
 
     public boolean isContainingUnboundedCategories() {
         return getTicketCategories().stream().anyMatch(t -> !t.isBounded());
+    }
+
+    public boolean isSupportsAdditionalItemsQuantity() {
+        return event.supportsLinkedAdditionalServices();
     }
 }

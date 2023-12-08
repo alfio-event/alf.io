@@ -10,6 +10,7 @@
                     eventShortName: '=',
                     eventStartDate: '=',
                     eventIsFreeOfCharge: '=',
+                    supportsQuantity: '=',
                     title: '@',
                     icon: '@',
                     type: '@'
@@ -31,7 +32,8 @@
                     eventStartDate: '=',
                     selectedLanguages: '=',
                     title:'<',
-                    type:'<'
+                    type:'<',
+                    supportsQuantity: '='
                 },
                 bindToController: true,
                 templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/additional-service/edit-additional-service.html',
@@ -153,13 +155,14 @@
             var parentCtrl = self;
             var modal = $uibModal.open({
                 size:'lg',
-                template:'<edit-additional-service data-type="ctrl.type" data-title="ctrl.title" data-editing-item="ctrl.item" data-titles="ctrl.titles" data-descriptions="ctrl.descriptions" data-on-edit-complete="ctrl.onEditComplete(item)" data-on-dismiss="ctrl.onDismiss()" data-event-start-date="ctrl.eventStartDate"></edit-additional-service>',
+                template:'<edit-additional-service data-type="ctrl.type" data-supports-quantity="ctrl.supportsQuantity" data-title="ctrl.title" data-editing-item="ctrl.item" data-titles="ctrl.titles" data-descriptions="ctrl.descriptions" data-on-edit-complete="ctrl.onEditComplete(item)" data-on-dismiss="ctrl.onDismiss()" data-event-start-date="ctrl.eventStartDate"></edit-additional-service>',
                 backdrop: 'static',
                 controller: function() {
                     var ctrl = this;
                     ctrl.item = angular.copy(item);
                     ctrl.title = parentCtrl.title;
                     ctrl.type = parentCtrl.type;
+                    ctrl.supportsQuantity = parentCtrl.supportsQuantity;
                     ctrl.selectedLanguages = parentCtrl.selectedLanguages;
                     ctrl.titles = _.filter(angular.copy(parentCtrl.titles), function(t) {
                         return (t.localeValue & ctrl.selectedLanguages) === t.localeValue;

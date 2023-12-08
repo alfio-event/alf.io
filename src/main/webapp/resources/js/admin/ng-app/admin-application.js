@@ -185,7 +185,7 @@
             })
             .state('events.single.additionalServices', {
                 url: '/additional-services',
-                template: '<additional-services data-event-short-name="$ctrl.loadEvent.shortName" data-type="SUPPLEMENT" data-title="Additional options" data-icon="fa-money" selected-languages="$ctrl.loadEvent.locales" event-is-free-of-charge="$ctrl.loadEvent.freeOfCharge" event-id="$ctrl.loadEvent.id" event-start-date="$ctrl.loadEvent.formattedBegin"></additional-services>',
+                template: '<additional-services data-supports-quantity="$ctrl.loadEvent.supportsAdditionalItemsQuantity" data-event-short-name="$ctrl.loadEvent.shortName" data-type="SUPPLEMENT" data-title="Additional options" data-icon="fa-money" selected-languages="$ctrl.loadEvent.locales" event-is-free-of-charge="$ctrl.loadEvent.freeOfCharge" event-id="$ctrl.loadEvent.id" event-start-date="$ctrl.loadEvent.formattedBegin"></additional-services>',
                 controller: loadEventCtrl,
                 controllerAs: '$ctrl',
                 resolve: loadEvent
