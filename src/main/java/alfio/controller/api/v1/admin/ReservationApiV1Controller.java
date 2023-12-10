@@ -39,6 +39,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElseGet;
@@ -155,6 +156,39 @@ public class ReservationApiV1Controller {
         } else {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    // delete ticket from event
+    @DeleteMapping("/event/{slug}/reservation/delete-ticket/{ticketUUID}")
+    public ResponseEntity<Boolean> deleteTicket(@PathVariable("slug") String slug,
+                                                @PathVariable("ticketUUID") String ticketUUID,
+                                                Principal user) {
+        return ResponseEntity.of(adminReservationManager.findTicketWithReservationId(ticketUUID, slug, user.getName())
+            .map(ticket -> {
+                // make sure that ticket belongs to the same event
+                var result = adminReservationManager.removeTickets(slug,
+                    ticket.getTicketsReservationId(),
+                    List.of(ticket.getId()),
+                    List.of(),
+                    false,
+                    false,
+                    user.getName());
+                return result.isSuccess();
+            })
+        );
+    }
+
+    // delete subscription
+    @DeleteMapping("/subscription/{id}/reservation/delete-subscription/{subscriptionToDelete}")
+    public ResponseEntity<Boolean> deleteSubscription(@PathVariable("id") String descriptorId,
+                                                      @PathVariable("subscriptionToDelete") UUID subscriptionToDelete,
+                                                      Principal user) {
+        return ResponseEntity.of(adminReservationManager.findReservationIdForSubscription(descriptorId, subscriptionToDelete, user)
+            .map(descriptorAndReservationId -> {
+                var result = adminReservationManager.removeSubscription(descriptorAndReservationId.getKey(), descriptorAndReservationId.getValue(), subscriptionToDelete, user.getName());
+                return result.isSuccess();
+            })
+        );
     }
 
     private CreationResponse postCreate(ReservationAPICreationRequest creationRequest,

@@ -323,6 +323,12 @@ public interface SubscriptionRepository {
     @Query("update subscription set status = 'CANCELLED' where reservation_id_fk = :reservationId")
     int cancelSubscriptions(@Bind("reservationId") String reservationId);
 
+    @Query("update subscription set status = 'CANCELLED' where reservation_id_fk = :reservationId" +
+        " and id = :subscriptionId and subscription_descriptor_fk = :descriptorId")
+    int cancelSubscription(@Bind("reservationId") String reservationId,
+                           @Bind("subscriptionId") UUID subscriptionId,
+                           @Bind("descriptorId") UUID descriptorId);
+
     NamedParameterJdbcTemplate getJdbcTemplate();
 
     default Map<Integer, List<AvailableSubscriptionsByEvent>> loadAvailableSubscriptionsByEvent(@Bind("eventId") Integer eventId,

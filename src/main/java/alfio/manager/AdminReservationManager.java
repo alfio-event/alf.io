@@ -37,6 +37,7 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
@@ -726,6 +727,20 @@ public class AdminReservationManager {
     }
 
     @Transactional
+    public Optional<Ticket> findTicketWithReservationId(String ticketUUID, String eventSlug, String username) {
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventSlug, username)
+            .flatMap(eventAndOrganizationId -> {
+                var ticket = ticketRepository.findByUUID(ticketUUID);
+                // check that ticket belongs to the event
+                if (ticket.getEventId() != eventAndOrganizationId.getId() || StringUtils.isEmpty(ticket.getTicketsReservationId())) {
+                    return Optional.empty();
+                } else {
+                    return Optional.of(ticket);
+                }
+            });
+    }
+
+    @Transactional
     public Result<Boolean> removeTickets(String publicIdentifier, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean creditNoteRequested, String username) {
         return loadReservation(PurchaseContextType.event, publicIdentifier, reservationId, username).map(res -> {
             Event e = res.getRight().event().orElseThrow();
@@ -769,6 +784,27 @@ public class AdminReservationManager {
             }
             return issueCreditNote;
         });
+    }
+
+    @Transactional
+    public Optional<Pair<SubscriptionDescriptor, String>> findReservationIdForSubscription(String subscriptionDescriptorId, UUID subscriptionId, Principal principal) {
+        return purchaseContextManager.findBy(PurchaseContextType.subscription, subscriptionDescriptorId)
+                .filter(purchaseContext -> purchaseContextManager.validateAccess(purchaseContext, principal))
+                .flatMap(purchaseContext -> {
+                    var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+                    var descriptor = (SubscriptionDescriptor) purchaseContext;
+                    if (subscription.getSubscriptionDescriptorId().equals(descriptor.getId()) && StringUtils.isNotBlank(subscription.getReservationId())) {
+                        return Optional.of(Pair.of(descriptor, subscription.getReservationId()));
+                    }
+                    return Optional.empty();
+                });
+    }
+
+    @Transactional
+    public Result<Boolean> removeSubscription(SubscriptionDescriptor descriptor, String reservationId, UUID subscriptionId, String username) {
+        int result = subscriptionRepository.cancelSubscription(reservationId, subscriptionId, descriptor.getId());
+        markAsCancelled(ticketReservationManager.findById(reservationId).orElseThrow(), username, descriptor);
+        return result == 1 ? Result.success(true) : Result.error(ErrorCode.custom("cannot-cancel-subscription", "Cannot cancel subscription"));
     }
 
     @Transactional(readOnly = true)
@@ -999,9 +1035,13 @@ public class AdminReservationManager {
     }
 
     private void markAsCancelled(TicketReservation ticketReservation, String username, PurchaseContext purchaseContext) {
-        ticketReservationRepository.updateReservationStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
-        auditingRepository.insert(ticketReservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null),
-            purchaseContext, Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
+        markAsCancelled(ticketReservation.getId(), username, purchaseContext);
+    }
+
+    private void markAsCancelled(String reservationId, String username, PurchaseContext purchaseContext) {
+        ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CANCELLED.toString());
+        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null),
+            purchaseContext, Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
     private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById, String username) {
