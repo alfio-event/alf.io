@@ -787,6 +787,7 @@ public class EventApiController {
                                                                           @RequestParam(value = "page", required = false) Integer page,
                                                                           @RequestParam(value = "search", required = false) String search,
                                                                           Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventName, categoryId);
         EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         return new PageAndContent<>(eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId, page == null ? 0 : page, search), eventStatisticsManager.countModifiedTicket(event.getId(), categoryId, search));
     }
@@ -796,6 +797,7 @@ public class EventApiController {
                                                                   @RequestParam(value = "from", required = false) String f,
                                                                   @RequestParam(value = "to", required = false) String t,
                                                                   Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
 
         return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName()).map(event -> {
             var eventId = event.getId();
@@ -891,6 +893,7 @@ public class EventApiController {
                                                             @PathVariable("capability") ExtensionCapability capability,
                                                             @RequestBody Map<String, String> params,
                                                             Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         try {
             return ResponseEntity.of(eventManager.executeCapability(eventName, principal.getName(), capability, params));
         } catch (AlfioScriptingException ex) {
