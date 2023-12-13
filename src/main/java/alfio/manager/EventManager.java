@@ -956,6 +956,7 @@ public class EventManager {
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {
         EventAndOrganizationId event = getEventAndOrganizationId(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
+        // FIXME: can search directly by id
         var existingCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst();
         if(existingCategory.isPresent()) {
             Ticket ticket = ticketRepository.findById(ticketId, categoryId);

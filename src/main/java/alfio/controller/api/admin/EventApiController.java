@@ -674,6 +674,7 @@ public class EventApiController {
                                        @PathVariable("categoryId") int categoryId,
                                        @PathVariable("ticketId") int ticketId,
                                        Principal principal) {
+        accessService.checkCategoryOwnershipAndTicket(principal, eventName, categoryId, ticketId);
         return eventManager.toggleTicketLocking(eventName, categoryId, ticketId, principal.getName());
     }
 

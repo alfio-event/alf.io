@@ -455,4 +455,12 @@ public class AccessService {
             throw new AccessDeniedException();
         }
     }
+
+    public void checkCategoryOwnershipAndTicket(Principal principal, String eventName, int categoryId, int ticketId) {
+        checkCategoryOwnership(principal, eventName, categoryId);
+        if (!ticketRepository.isInCategory(ticketId, categoryId)) {
+            log.warn("Ticket with id {} is not in category id {}", ticketId, categoryId);
+            throw new AccessDeniedException();
+        }
+    }
 }
