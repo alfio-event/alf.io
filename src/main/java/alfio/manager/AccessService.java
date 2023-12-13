@@ -126,6 +126,24 @@ public class AccessService {
         }
     }
 
+    public void checkOrganizationMembership(Principal principal, int organizationId) {
+        if (principal == null) {
+            log.trace("No user present, we will allow it");
+            return;
+        }
+        if (isSystemApiUser(principal)) {
+            log.trace("Allowing ownership to Organization {} to System API Key", organizationId);
+            return;
+        }
+        if (isOwnerOrCheckinSupervisorOfOrganization(principal, organizationId)) {
+            log.trace("Allowing ownership to Organization {} to user {}", organizationId, principal.getName());
+            return;
+        }
+
+        log.warn("User {} is NOT an owner or supervisor of organizationId {}", principal.getName(), organizationId);
+        throw new AccessDeniedException();
+    }
+
     public void checkOrganizationOwnership(Principal principal, int organizationId) {
         if (principal == null) {
             log.trace("No user present, we will allow it");
@@ -173,6 +191,13 @@ public class AccessService {
         var eventAndOrgId = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName)
             .orElseThrow(AccessDeniedException::new);
         checkOrganizationOwnership(principal, eventAndOrgId.getOrganizationId());
+        return eventAndOrgId;
+    }
+
+    public EventAndOrganizationId checkEventMembership(Principal principal, String eventShortName) {
+        var eventAndOrgId = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName)
+            .orElseThrow(AccessDeniedException::new);
+        checkOrganizationMembership(principal, eventAndOrgId.getOrganizationId());
         return eventAndOrgId;
     }
 
@@ -238,6 +263,11 @@ public class AccessService {
     private boolean isOwner(Principal principal) {
         return checkRole(principal, EnumSet.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER));
     }
+
+    private boolean isOwnerOrCheckinSupervisor(Principal principal) {
+        return checkRole(principal, EnumSet.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER, Role.SUPERVISOR));
+    }
+
     private boolean checkRole(Principal principal, Set<Role> expectedRoles) {
         return checkRole(principal.getName(), expectedRoles);
     }
@@ -252,6 +282,12 @@ public class AccessService {
             .filter(userId ->
                     isAdmin(principal) ||
                     (isOwner(principal) && userOrganizationRepository.userIsInOrganization(userId, organizationId)))
+            .isPresent();
+    }
+
+    private boolean isOwnerOrCheckinSupervisorOfOrganization(Principal principal, int organizationId) {
+        return userRepository.findIdByUserName(principal.getName())
+            .filter(userId -> isAdmin(principal) || (isOwnerOrCheckinSupervisor(principal) && userOrganizationRepository.userIsInOrganization(userId, organizationId)))
             .isPresent();
     }
 

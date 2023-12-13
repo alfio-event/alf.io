@@ -135,7 +135,7 @@ public class EventApiController {
     @GetMapping("/paymentProxies/{organizationId}")
     @ResponseStatus(HttpStatus.OK)
     public List<PaymentManager.PaymentMethodDTO> getPaymentProxies( @PathVariable("organizationId") int organizationId, Principal principal) {
-        accessService.checkOrganizationOwnership(principal, organizationId);
+        accessService.checkOrganizationMembership(principal, organizationId);
         return userManager.findUserOrganizations(principal.getName())
             .stream()
             .filter(o -> o.getId() == organizationId)
@@ -191,7 +191,7 @@ public class EventApiController {
 
     @GetMapping("/events/{name}")
     public ResponseEntity<EventAndOrganization> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
-        accessService.checkEventOwnership(principal, eventName);
+        accessService.checkEventMembership(principal, eventName);
         final String username = principal.getName();
         return optionally(() -> eventStatisticsManager.getEventWithAdditionalInfo(eventName, username))
             .map(event -> {
@@ -614,7 +614,7 @@ public class EventApiController {
 
     @GetMapping("/events/{eventName}/pending-payments-count")
     public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventOwnership(principal, eventName);
+        accessService.checkEventMembership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.getPendingPaymentsCount(e.getId()))
             .orElse(0);

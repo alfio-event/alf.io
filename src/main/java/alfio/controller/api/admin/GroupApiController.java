@@ -99,7 +99,7 @@ public class GroupApiController {
     @GetMapping("/for/event/{eventName}/all")
     public ResponseEntity<List<LinkedGroup>> findLinked(@PathVariable("eventName") String eventName,
                                                         Principal principal) {
-        accessService.checkEventOwnership(principal, eventName);
+        accessService.checkEventMembership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> ResponseEntity.ok(groupManager.getLinksForEvent(event.getId())))
             .orElseGet(() -> ResponseEntity.notFound().build());
