@@ -24,10 +24,7 @@ import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -194,4 +191,7 @@ public interface TicketCategoryRepository {
 
     @Query("select count(*) from ticket_category where " + CHECK_ACTIVE)
     Integer countActiveByEventId(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and id in (:additionalFieldIds)")
+    int countMatchingAdditionalFieldsWithEventId(@Bind("eventId") int id, @Bind("additionalFieldIds") Set<Integer> additionalFieldIds);
 }

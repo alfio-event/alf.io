@@ -437,4 +437,12 @@ public class AccessService {
             throw new AccessDeniedException();
         }
     }
+
+    public void checkEventOwnershipAndTicketAdditionalFieldIds(Principal principal, String eventName, Set<Integer> additionalFieldIds) {
+        var eventAndOrgId = checkEventOwnership(principal, eventName);
+        if (additionalFieldIds.size() != ticketCategoryRepository.countMatchingAdditionalFieldsWithEventId(eventAndOrgId.getId(), additionalFieldIds)) {
+            log.warn("Some additional field ids {} are not inside eventId {}", additionalFieldIds, eventAndOrgId.getId());
+            throw new AccessDeniedException();
+        }
+    }
 }
