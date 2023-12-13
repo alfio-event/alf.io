@@ -463,4 +463,12 @@ public class AccessService {
             throw new AccessDeniedException();
         }
     }
+
+    public void checkEventAndReservationOwnership(Principal principal, String eventName, Set<String> reservationIds) {
+        var eventAndOrgId = checkEventOwnership(principal, eventName);
+        if (reservationIds.size() != reservationRepository.countReservationsWithEventId(reservationIds, eventAndOrgId.getId())) {
+            log.warn("Some reservation ids {} are not in the event {}", reservationIds, eventName);
+            throw new AccessDeniedException();
+        };
+    }
 }

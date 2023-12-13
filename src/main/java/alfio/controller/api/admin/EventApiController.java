@@ -625,6 +625,7 @@ public class EventApiController {
                                  @PathVariable("reservationId") String reservationId,
                                  @RequestBody TransactionMetadataModification transactionMetadataModification,
                                  Principal principal) {
+        accessService.checkEventAndReservationOwnership(principal, eventName, Set.of(reservationId));
         var event = loadEvent(eventName, principal);
         ticketReservationManager.confirmOfflinePayment(event, reservationId, transactionMetadataModification, principal.getName());
         ticketReservationManager.findById(reservationId)
@@ -642,6 +643,7 @@ public class EventApiController {
                                        @RequestParam(required = false, value = "credit", defaultValue = "false") Boolean creditReservation,
                                        @RequestParam(required = false, value = "notify", defaultValue = "true") Boolean notify,
                                        Principal principal) {
+        accessService.checkEventAndReservationOwnership(principal, eventName, Set.of(reservationId));
         ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId, false, Boolean.TRUE.equals(creditReservation), notify, principal.getName());
         return OK;
     }
@@ -650,14 +652,21 @@ public class EventApiController {
     public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable("eventName") String eventName,
                                                                   Principal principal,
                                                                   @RequestBody UploadBase64FileModification file) throws IOException, CsvException {
-
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8); CSVReader reader = new CSVReader(isr)) {
+            var all = reader.readAll();
+            var reservationIds = all.stream()
+                .map(line -> {
+                    Validate.isTrue(line.length >= 2);
+                    return line[0];
+                })
+                .collect(Collectors.toSet());
+            accessService.checkEventAndReservationOwnership(principal, eventName, reservationIds);
+
             Event event = loadEvent(eventName, principal);
-            return reader.readAll().stream()
+            return all.stream()
                     .map(line -> {
                         String reservationID = null;
                         try {
-                            Validate.isTrue(line.length >= 2);
                             reservationID = line[0];
                             ticketReservationManager.validateAndConfirmOfflinePayment(reservationID, event, new BigDecimal(line[1]), principal.getName());
                             return Triple.of(Boolean.TRUE, reservationID, "");

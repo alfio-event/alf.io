@@ -298,4 +298,7 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set vat_status = :vatStatus where id = :reservationId")
     int updateVatStatus(@Bind("reservationId") String reservationId,
                         @Bind("vatStatus") PriceContainer.VatStatus vatStatus);
+
+    @Query("select count(id) from tickets_reservation where id in (:ids) and event_id_fk = :eventId")
+    int countReservationsWithEventId(@Bind("ids") Set<String> reservationIds, @Bind("eventId") int eventId);
 }
