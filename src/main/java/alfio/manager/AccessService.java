@@ -177,19 +177,29 @@ public class AccessService {
     }
 
     public EventAndOrganizationId checkCategoryOwnership(Principal principal, int eventId, int categoryId) {
+        return checkCategoryOwnership(principal, eventId, Set.of(categoryId));
+    }
+
+    public EventAndOrganizationId checkCategoryOwnership(Principal principal, int eventId, Set<Integer> categoryIds) {
         var eventAndOrganizationId = checkEventOwnership(principal, eventId);
-        if (!Boolean.TRUE.equals(ticketCategoryRepository.checkCategoryExistsForEvent(categoryId, eventAndOrganizationId.getId()))) {
+        if (categoryIds.size() != ticketCategoryRepository.countCategoryForEvent(categoryIds, eventAndOrganizationId.getId())) {
             throw new AccessDeniedException();
         }
         return eventAndOrganizationId;
     }
 
-    public void checkCategoryOwnership(Principal principal, String eventShortName, int categoryId) {
+    public EventAndOrganizationId checkCategoryOwnership(Principal principal, String eventShortName, Set<Integer> categoryIds) {
         var eventAndOrganizationId = checkEventOwnership(principal, eventShortName);
-        if (!Boolean.TRUE.equals(ticketCategoryRepository.checkCategoryExistsForEvent(categoryId, eventAndOrganizationId.getId()))) {
+        if (categoryIds.size() != ticketCategoryRepository.countCategoryForEvent(categoryIds, eventAndOrganizationId.getId())) {
             throw new AccessDeniedException();
         }
+        return eventAndOrganizationId;
     }
+
+    public EventAndOrganizationId checkCategoryOwnership(Principal principal, String eventShortName, int categoryId) {
+        return checkCategoryOwnership(principal, eventShortName, Set.of(categoryId));
+    }
+
 
     public void checkEventReservationCreationRequest(Principal principal,
                                                      String eventShortName,

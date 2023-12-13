@@ -58,6 +58,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -283,34 +284,41 @@ public class EventApiController {
 
     @PostMapping("/events/{id}/header/update")
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
+        accessService.checkEventOwnership(principal, id);
         Event event = eventManager.getSingleEventById(id, principal.getName());
         return validateEventHeader(Optional.of(event), eventModification, getDescriptionLength(), errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{id}/prices/update")
     public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
+        accessService.checkEventOwnership(principal, id);
         Event event = eventManager.getSingleEventById(id, principal.getName());
         return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/{categoryId}/update")
     public ValidationResult updateExistingCategory(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventId, categoryId);
+        Assert.isTrue(categoryId == category.getId().intValue(), "categoryId must be equal to category.getId()");
         return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/new")
     public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
         return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
     
     @PutMapping("/events/reallocate")
-    public String reallocateTickets(@RequestBody TicketAllocationModification form) {
+    public String reallocateTickets(@RequestBody TicketAllocationModification form, Principal principal) {
+        accessService.checkCategoryOwnership(principal, form.getEventId(), Set.of(form.getSrcCategoryId(), form.getTargetCategoryId()));
         eventManager.reallocateTickets(form.getSrcCategoryId(), form.getTargetCategoryId(), form.getEventId());
         return OK;
     }
 
     @PutMapping("/events/{eventName}/category/{categoryId}/unbind-tickets")
     public String unbindTickets(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventName, categoryId);
         eventManager.unbindTickets(eventName, categoryId, principal.getName());
         return OK;
     }
@@ -324,6 +332,7 @@ public class EventApiController {
 
     @PutMapping("/events/{eventName}/rearrange-categories")
     public ResponseEntity<String> rearrangeCategories(@PathVariable("eventName") String eventName, @RequestBody List<CategoryOrdinalModification> categories, Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventName, categories.stream().map(CategoryOrdinalModification::getId).collect(Collectors.toSet()));
         if(CollectionUtils.isEmpty(categories)) {
             return ResponseEntity.badRequest().build();
         }
