@@ -874,8 +874,10 @@ public class EventApiController {
 
     @DeleteMapping("/events/{eventName}/reservation/{reservationId}/transaction/{transactionId}/discard")
     public ResponseEntity<String> discardMatchingPayment(@PathVariable("eventName") String eventName,
-                                                       @PathVariable("reservationId") String reservationId,
-                                                       @PathVariable("transactionId") int transactionId) {
+                                                         @PathVariable("reservationId") String reservationId,
+                                                         @PathVariable("transactionId") int transactionId,
+                                                         Principal principal) {
+        accessService.checkEventAndReservationAndTransactionOwnership(principal, eventName, reservationId, transactionId);
         var result = ticketReservationManager.discardMatchingPayment(eventName, reservationId, transactionId);
         if(result.isSuccess()) {
             return ResponseEntity.ok("OK");

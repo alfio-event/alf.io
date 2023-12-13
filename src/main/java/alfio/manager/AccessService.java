@@ -471,4 +471,12 @@ public class AccessService {
             throw new AccessDeniedException();
         };
     }
+
+    public void checkEventAndReservationAndTransactionOwnership(Principal principal, String eventName, String reservationId, int transactionId) {
+        checkEventAndReservationOwnership(principal, eventName, Set.of(reservationId));
+        if (!reservationRepository.hasReservationWithTransactionId(reservationId, transactionId)) {
+         log.warn("Reservation id {} does not have transaction id {}", reservationId, transactionId);
+            throw new AccessDeniedException();
+        }
+    }
 }
