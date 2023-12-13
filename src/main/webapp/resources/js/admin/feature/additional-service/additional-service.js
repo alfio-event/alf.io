@@ -160,6 +160,9 @@
                 controller: function() {
                     var ctrl = this;
                     ctrl.item = angular.copy(item);
+                    if (ctrl.item.availableQuantity === -1) {
+                        delete ctrl.item.availableQuantity;
+                    }
                     ctrl.title = parentCtrl.title;
                     ctrl.type = parentCtrl.type;
                     ctrl.supportsQuantity = parentCtrl.supportsQuantity;

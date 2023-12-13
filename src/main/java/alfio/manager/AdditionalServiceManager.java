@@ -176,14 +176,18 @@ public class AdditionalServiceManager {
     }
 
     private void preGenerateItems(int serviceId, Event event, EventModification.AdditionalService as) {
+        if (!event.supportsLinkedAdditionalServices()) {
+            LOGGER.trace("Event does not support linked additional services");
+            return;
+        }
         // check how many are already defined
         int count = additionalServiceItemRepository.countItemsForService(serviceId);
-        int requested = as.getAvailableQuantity();
-        if (count >= requested) {
+        int requested = Math.max(0, as.getAvailableQuantity());
+        if (count > requested) {
             LOGGER.debug("Requested {} items, found {}", requested, count);
             int result = additionalServiceItemRepository.invalidateItems(serviceId, count - requested);
             Validate.isTrue(result == count - requested, "Cannot reduce available items to "+requested);
-        } else {
+        } else if(count < requested) {
             var batchReserveParameters = new ArrayList<MapSqlParameterSource>();
             for (int i = 0; i < requested - count; i++) {
                 batchReserveParameters.add(buildInsertItemParameterSource(
