@@ -4,10 +4,10 @@
 <div data-ng-if="event">
 
     <event-header data-ng-if="!editEventHeader">
-        <button type="button" class="btn btn-warning btn-block" data-ng-click="editHeader()">Edit</button>
+        <button type="button" class="btn btn-warning btn-block" data-ng-click="editHeader()" data-ng-if="event.visibleForCurrentUser">Edit</button>
     </event-header>
     <prices>
-        <button type="button" class="btn btn-warning btn-block" data-ng-click="editPrices()">Edit</button>
+        <button type="button" class="btn btn-warning btn-block" data-ng-click="editPrices()" data-ng-if="event.visibleForCurrentUser">Edit</button>
     </prices>
 
     <waiting-queue-status event-name="event.shortName"></waiting-queue-status>
@@ -37,7 +37,7 @@
             <label class="btn btn-sm btn-default" data-ng-model="selection.active" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.active, 'fa-square-o': !selection.active}"></i> Active <span class="badge">{{countActive(event.ticketCategories)}}</span></label>
             <label class="btn btn-sm btn-default" data-ng-model="selection.expired" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"></i> Expired <span class="badge">{{countExpired(event.ticketCategories)}}</span></label>
             <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText" data-ng-change="updateSelectionText(selection.freeText)"></div></label>
-            <label ng-if="event.ticketCategories.length > 1" class="btn btn-sm btn-default pull-right" data-ng-click="toggleRearrange()"><i class="fa fa-random"></i> Rearrange categories</label>
+            <label ng-if="event.ticketCategories.length > 1 && event.visibleForCurrentUser" class="btn btn-sm btn-default pull-right" data-ng-click="toggleRearrange()"><i class="fa fa-random"></i> Rearrange categories</label>
         </div>
         <script type="text/ng-template" id="categoryStats.html">
             <ul class="list-unstyled">
@@ -140,16 +140,16 @@
                             </div>
                         </div>
                         <div data-ng-if="event.format === 'IN_PERSON' || ticketCategory.ticketAccessType === 'IN_PERSON'">
-                            <hr>
+                            <hr data-ng-if="event.visibleForCurrentUser">
                             <div class="row">
                                 <div class="col-md-2 col-md-push-10 col-xs-12">
-                                    <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
+                                    <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)" data-ng-if="event.visibleForCurrentUser">Edit category</button>
                                 </div>
                             </div>
                         </div>
                         <div data-ng-if="event.format === 'ONLINE' || ticketCategory.ticketAccessType === 'ONLINE'">
                             <metadata-viewer event="event" parent-id="ticketCategory.id" metadata="ticketCategory.metadata" available-languages="event.contentLanguages" level="'category'">
-                                <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
+                                <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)" data-ng-if="event.visibleForCurrentUser">Edit category</button>
                             </metadata-viewer>
                         </div>
                     </div>
