@@ -180,7 +180,7 @@ public class CheckInApiController {
                                                @RequestParam(value = "changedSince", required = false) Long changedSince,
                                                HttpServletResponse response,
                                                Principal principal) {
-        accessService.checkEventOwnership(principal, eventId);
+        accessService.checkEventMembership(principal, eventId);
         response.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
         return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
     }

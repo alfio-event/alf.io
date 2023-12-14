@@ -201,6 +201,12 @@ public class AccessService {
         return eventAndOrgId;
     }
 
+    public EventAndOrganizationId checkEventMembership(Principal principal, int eventId) {
+        var eventAndOrgId = eventRepository.findEventAndOrganizationIdById(eventId);
+        checkOrganizationMembership(principal, eventAndOrgId.getOrganizationId());
+        return eventAndOrgId;
+    }
+
     public EventAndOrganizationId checkCategoryOwnership(Principal principal, int eventId, int categoryId) {
         return checkCategoryOwnership(principal, eventId, Set.of(categoryId));
     }
@@ -308,6 +314,22 @@ public class AccessService {
         }
     }
 
+    public void checkReservationMembership(Principal principal,
+                                          PurchaseContext.PurchaseContextType purchaseContextType,
+                                          String publicIdentifier,
+                                          String reservationId) {
+        if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
+            checkReservationMembershipForEvent(principal, publicIdentifier, reservationId);
+        } else {
+            var subscriptionDescriptor = subscriptionRepository.findDescriptorByReservationId(reservationId)
+                .orElseThrow(AccessDeniedException::new);
+            checkOrganizationMembership(principal, subscriptionDescriptor.getOrganizationId());
+            if (!subscriptionDescriptor.getPublicIdentifier().equals(publicIdentifier)) {
+                throw new AccessDeniedException();
+            }
+        }
+    }
+
     public void checkPurchaseContextOwnership(Principal principal,
                                               PurchaseContext.PurchaseContextType purchaseContextType,
                                               String publicIdentifier) {
@@ -352,6 +374,16 @@ public class AccessService {
         var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(publicIdentifier)
             .orElseThrow(AccessDeniedException::new);
         checkOrganizationOwnership(principal, event.getOrganizationId());
+        var reservations = reservationRepository.getReservationIdAndEventId(List.of(reservationId));
+        if (reservations.size() != 1 || reservations.get(0).getEventId() != event.getId()) {
+            throw new AccessDeniedException();
+        }
+    }
+
+    private void checkReservationMembershipForEvent(Principal principal, String publicIdentifier, String reservationId) {
+        var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(publicIdentifier)
+            .orElseThrow(AccessDeniedException::new);
+        checkEventMembership(principal, event.getOrganizationId());
         var reservations = reservationRepository.getReservationIdAndEventId(List.of(reservationId));
         if (reservations.size() != 1 || reservations.get(0).getEventId() != event.getId()) {
             throw new AccessDeniedException();

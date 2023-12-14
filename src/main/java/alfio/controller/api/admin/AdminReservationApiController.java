@@ -193,7 +193,7 @@ public class AdminReservationApiController {
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}")
     public Result<TicketReservationDescriptor> loadReservation(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, Principal principal) {
-        accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
+        accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.loadReservation(purchaseContextType, publicIdentifier, reservationId, principal.getName())
             .map(triple -> toReservationDescriptor(reservationId, triple));
     }
@@ -219,7 +219,7 @@ public class AdminReservationApiController {
         if(purchaseContextType != PurchaseContextType.event) {
             return List.of();
         }
-        accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
+        accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.getTicketIdsWithAdditionalData(purchaseContextType, publicIdentifier, reservationId);
     }
 
