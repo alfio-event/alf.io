@@ -15,6 +15,7 @@ function activeEventsListCtrl(EventService) {
 
     ctrl.supportsOfflinePayments = supportsOfflinePayments;
     ctrl.loading = true;
+    ctrl.isOwner = window.USER_IS_OWNER;
 
     ctrl.$onInit = function() {
         EventService.getAllActiveEvents().success(function(data) {
