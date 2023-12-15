@@ -390,17 +390,6 @@ public class AccessService {
         }
     }
 
-    public void checkTicketOwnership(Principal principal,
-                                     String publicIdentifier,
-                                     String reservationId,
-                                     int ticketId) {
-        checkReservationOwnershipForEvent(principal, publicIdentifier, reservationId);
-        var tickets = ticketRepository.findByIds(List.of(ticketId));
-        if (tickets.size() != 1 || !tickets.get(0).getTicketsReservationId().equals(reservationId)) {
-            throw new AccessDeniedException();
-        }
-    }
-
     public void checkBillingDocumentOwnership(Principal principal,
                                               PurchaseContext.PurchaseContextType purchaseContextType,
                                               String publicIdentifier,
@@ -544,6 +533,14 @@ public class AccessService {
         checkEventAndReservationOwnership(principal, eventName, Set.of(reservationId));
         if (!reservationRepository.hasReservationWithTransactionId(reservationId, transactionId)) {
          log.warn("Reservation id {} does not have transaction id {}", reservationId, transactionId);
+            throw new AccessDeniedException();
+        }
+    }
+
+    public void checkTicketMembership(Principal principal, String publicIdentifier, String reservationId, int ticketId) {
+        checkReservationMembershipForEvent(principal, publicIdentifier, reservationId);
+        var tickets = ticketRepository.findByIds(List.of(ticketId));
+        if (tickets.size() != 1 || !tickets.get(0).getTicketsReservationId().equals(reservationId)) {
             throw new AccessDeniedException();
         }
     }
