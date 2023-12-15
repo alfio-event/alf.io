@@ -383,7 +383,7 @@ public class AccessService {
     private void checkReservationMembershipForEvent(Principal principal, String publicIdentifier, String reservationId) {
         var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(publicIdentifier)
             .orElseThrow(AccessDeniedException::new);
-        checkEventMembership(principal, event.getOrganizationId());
+        checkEventMembership(principal, event.getId());
         var reservations = reservationRepository.getReservationIdAndEventId(List.of(reservationId));
         if (reservations.size() != 1 || reservations.get(0).getEventId() != event.getId()) {
             throw new AccessDeniedException();
