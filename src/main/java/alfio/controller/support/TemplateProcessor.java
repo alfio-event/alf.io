@@ -16,6 +16,7 @@
  */
 package alfio.controller.support;
 
+import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.support.PartialTicketTextGenerator;
@@ -93,12 +94,14 @@ public final class TemplateProcessor {
                                        OutputStream os,
                                        BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                        ExtensionManager extensionManager,
-                                       Map<String, Object> initialModel) throws IOException {
+                                       Map<String, Object> initialModel,
+                                       List<AdditionalServiceWithData> additionalServiceWithData) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
         List<TicketFieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticketWithMetadata.getTicket(), event);
         var model = new HashMap<>(Objects.requireNonNullElse(initialModel, Map.of()));
         model.putAll(TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticketWithMetadata, imageData, reservationID,
-            fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription))));
+            fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription)),
+            additionalServiceWithData));
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language).getTextPart();
         renderToPdf(page, os, extensionManager, event);

@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.CustomMessageManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TemplateGenerator;
@@ -109,7 +110,8 @@ public class NotificationManager {
                                ExtensionManager extensionManager,
                                ClockProvider clockProvider,
                                PurchaseContextManager purchaseContextManager,
-                               SubscriptionRepository subscriptionRepository) {
+                               SubscriptionRepository subscriptionRepository,
+                               AdditionalServiceHelper additionalServiceHelper) {
         this.messageSourceManager = messageSourceManager;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
@@ -133,7 +135,7 @@ public class NotificationManager {
             payload -> TemplateProcessor.buildCreditNotePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passKitManager::getPass);
         var retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository, subscriptionRepository));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository, subscriptionRepository, additionalServiceHelper));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF, generateSubscriptionPDF(organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, extensionManager, subscriptionRepository));
     }
 
@@ -146,7 +148,8 @@ public class NotificationManager {
                                                                            BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                                                            ExtensionManager extensionManager,
                                                                            TicketRepository ticketRepository,
-                                                                           SubscriptionRepository subscriptionRepository) {
+                                                                           SubscriptionRepository subscriptionRepository,
+                                                                           AdditionalServiceHelper additionalServiceHelper) {
         return model -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
@@ -160,7 +163,8 @@ public class NotificationManager {
                 TemplateProcessor.renderPDFTicket(locale, event, reservation,
                     ticketWithMetadata, ticketCategory, organization, templateManager, fileUploadManager,
                     configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager,
-                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionRepository::findDescriptorBySubscriptionId, locale));
+                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionRepository::findDescriptorBySubscriptionId, locale),
+                    additionalServiceHelper.findForTicket(ticket, event));
             } catch (IOException e) {
                 log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
             }

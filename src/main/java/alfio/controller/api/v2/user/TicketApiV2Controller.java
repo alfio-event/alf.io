@@ -27,6 +27,7 @@ import alfio.controller.support.Formatters;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -80,6 +81,7 @@ public class TicketApiV2Controller {
     private final TicketRepository ticketRepository;
     private final SubscriptionManager subscriptionManager;
     private final ConfigurationManager configurationManager;
+    private final AdditionalServiceHelper additionalServiceHelper;
 
 
     @GetMapping(value = {
@@ -130,7 +132,8 @@ public class TicketApiV2Controller {
                     ticketWithMetadata, ticketCategory, organization,
                     templateManager, fileUploadManager,
                     reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager,
-                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionManager::findDescriptorBySubscriptionId, locale)
+                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionManager::findDescriptorBySubscriptionId, locale),
+                    additionalServiceHelper.findForTicket(ticket, event)
                 );
             } catch (IOException ioe) {
                 throw new IllegalStateException(ioe);
@@ -242,8 +245,9 @@ public class TicketApiV2Controller {
             formattedDates.beginDate,
             formattedDates.beginTime,
             formattedDates.endDate,
-            formattedDates.endTime)
-        );
+            formattedDates.endTime,
+            additionalServiceHelper.findForTicket(ticket, event)
+        ));
     }
 
     @PutMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")

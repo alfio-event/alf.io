@@ -16,7 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
-import alfio.controller.api.support.AdditionalField;
+import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.controller.api.support.BookingInfoTicket;
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
@@ -151,15 +151,6 @@ public class ReservationInfo {
         private final String firstName;
         private final String lastName;
         private final String email;
-    }
-
-    @AllArgsConstructor
-    @Getter
-    public static class AdditionalServiceWithData {
-        private final Map<String, String> title;
-        private final int itemId;
-        private final String ticketUUID;
-        private final List<AdditionalField> ticketFieldConfiguration;
     }
 
 }

@@ -39,6 +39,7 @@ public interface AdditionalServiceItemRepository {
         "  and asd.type = 'TITLE'" +
         "  and ai.tickets_reservation_uuid = :reservationId";
     String UPDATE_STATUS = "update additional_service_item set status = :status where event_id_fk = :eventId and tickets_reservation_uuid = :reservationUuid";
+    String FIND_BY_RESERVATION_ID = "select * from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationUuid";
 
     @Query("insert into additional_service_item (uuid, creation, tickets_reservation_uuid, additional_service_id_fk, status, event_id_fk, src_price_cts, final_price_cts, vat_cts, discount_cts, currency_code) " +
         "values(:uuid, :creation, :ticketsReservationUuid, :additionalServiceId, :status, :eventId, :srcPriceCts, :finalPriceCts, :vatCts, :discountCts, :currencyCode)")
@@ -55,8 +56,13 @@ public interface AdditionalServiceItemRepository {
                                            @Bind("discountCts") Integer discountCts,
                                            @Bind("currencyCode") String currencyCode);
 
-    @Query("select * from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationUuid")
+    @Query(FIND_BY_RESERVATION_ID)
     List<AdditionalServiceItem> findByReservationUuid(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid);
+
+    @Query(FIND_BY_RESERVATION_ID + " and ticket_id_fk = :ticketId")
+    List<AdditionalServiceItem> findByTicketId(@Bind("eventId") int eventId,
+                                               @Bind("reservationUuid") String reservationUuid,
+                                               @Bind("ticketId") int ticketId);
 
     @Query(UPDATE_STATUS)
     int updateItemsStatusWithReservationUUID(@Bind("eventId") int eventId, @Bind("reservationUuid") String reservationUuid, @Bind("status") AdditionalServiceItemStatus status);

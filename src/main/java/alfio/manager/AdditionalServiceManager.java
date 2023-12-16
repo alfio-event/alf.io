@@ -298,6 +298,10 @@ public class AdditionalServiceManager {
         return additionalServiceItemRepository.findByReservationUuid(eventId, reservationId);
     }
 
+    public List<AdditionalServiceItem> findItemsForTicket(Ticket ticket) {
+        return additionalServiceItemRepository.findByTicketId(ticket.getEventId(), ticket.getTicketsReservationId(), ticket.getId());
+    }
+
     public List<AdditionalServiceItem> findItemsInReservation(PurchaseContext purchaseContext, String reservationId) {
         if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
             return findItemsInReservation(((Event)purchaseContext).getId(), reservationId);
