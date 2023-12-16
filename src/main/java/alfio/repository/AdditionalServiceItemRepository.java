@@ -128,11 +128,21 @@ public interface AdditionalServiceItemRepository {
     @Query("select id from additional_service_item where additional_service_id_fk = :serviceId and status = 'FREE' limit :count for update skip locked")
     List<Integer> lockExistingItems(@Bind("serviceId") int additionalServiceId, @Bind("count") int count);
 
-    @Query(type = QueryType.TEMPLATE, value = "update additional_service_item set ticket_id_fk = :ticketId where id = :itemId and tickets_reservation_uuid = :reservationId")
+    @Query(type = QueryType.TEMPLATE, value = "update additional_service_item set ticket_id_fk = :ticketId" +
+        " where id = :itemId and tickets_reservation_uuid = :reservationId and status = 'PENDING'")
     String batchLinkToTicket();
 
-    @Query("delete from additional_service_item where event_id_fk = :eventId and tickets_reservation_uuid = :reservationId")
+    @Query("delete from additional_service_item asi" +
+        " using additional_service adds" +
+        " where adds.id = asi.additional_service_id_fk and asi.event_id_fk = :eventId and asi.tickets_reservation_uuid = :reservationId" +
+        " and adds.available_qty = -1")
     int deleteAdditionalServiceItemsByReservationId(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
+
+    @Query("update additional_service_item asi set ticket_id_fk = null, status = 'FREE', tickets_reservation_uuid = null" +
+        " from additional_service adds where adds.id = asi.additional_service_id_fk" +
+        " and asi.event_id_fk = :eventId and asi.tickets_reservation_uuid = :reservationId" +
+        " and adds.available_qty > 0")
+    int revertAdditionalServiceItemsByReservationId(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
 
     @Query("select count(*) from additional_service_item asi" +
         " join ticket t on asi.ticket_id_fk = t.id and asi.event_id_fk = t.event_id" +

@@ -269,14 +269,14 @@ public final class Validator {
                         return false;
                     }
                     boolean included = isAdditionalServiceIncluded(f, additionalServiceIds);
-                    return included && (!eventSupportsAdditionalFieldsLink || checkLinked(ticket, additionalServiceItems));
+                    return included && (!eventSupportsAdditionalFieldsLink || checkLinked(ticket, additionalServiceItems, f));
                 })
                 .collect(Collectors.toList());
         }
 
-        private static boolean checkLinked(Ticket ticket, List<AdditionalServiceItem> additionalServiceItems) {
+        private static boolean checkLinked(Ticket ticket, List<AdditionalServiceItem> additionalServiceItems, TicketFieldConfiguration tfc) {
             return additionalServiceItems.stream()
-                .anyMatch(asi -> asi.getTicketId() != null && asi.getTicketId() == ticket.getId());
+                .anyMatch(asi -> tfc.getAdditionalServiceId() == asi.getAdditionalServiceId() && Objects.equals(ticket.getId(), asi.getTicketId()));
         }
 
         private static boolean isAdditionalServiceIncluded(TicketFieldConfiguration f, Set<Integer> additionalServiceIds) {

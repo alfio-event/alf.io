@@ -1230,10 +1230,13 @@ public class TicketReservationManager {
         specialPriceRepository.resetToFreeAndCleanupForReservation(reservationIdsToRemove);
         groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
-        ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
+        int tfvDeleted = ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
+        log.debug("deleted {} field values", tfvDeleted);
         subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
         purchaseContext.event().ifPresent(event -> {
-            additionalServiceItemRepository.deleteAdditionalServiceItemsByReservationId(event.getId(), reservationId);
+            int deletedItems = additionalServiceItemRepository.deleteAdditionalServiceItemsByReservationId(event.getId(), reservationId);
+            int updatedItems = additionalServiceItemRepository.revertAdditionalServiceItemsByReservationId(event.getId(), reservationId);
+            log.debug("Deleted {} and updated {} additionalServiceItems for reservation {}", deletedItems, updatedItems, reservationId);
             int updatedAS = additionalServiceManager.updateStatusForReservationId(event.getId(), reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
             int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
                 tickedId -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), tickedId, UUID.randomUUID().toString())
