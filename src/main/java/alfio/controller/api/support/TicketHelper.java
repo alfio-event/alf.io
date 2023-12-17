@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.support;
 
+import alfio.controller.form.AdditionalServiceLinkForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
@@ -24,7 +25,9 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
-import alfio.repository.*;
+import alfio.repository.AdditionalServiceItemRepository;
+import alfio.repository.TicketFieldRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import alfio.util.Validator.AdvancedTicketAssignmentValidator;
@@ -32,27 +35,32 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.Errors;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
+import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
+import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
+import static java.util.Objects.requireNonNullElse;
 
 @Component
 @AllArgsConstructor
 public class TicketHelper {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(TicketHelper.class);
     private static final Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
 
     private final TicketReservationManager ticketReservationManager;
     private final OrganizationRepository organizationRepository;
-    private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
     private final TicketFieldRepository ticketFieldRepository;
@@ -61,11 +69,10 @@ public class TicketHelper {
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
-    private final TicketReservationRepository ticketReservationRepository;
-    private final EventManager eventManager;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
 
-    public Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
+    public BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
         return EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
     }
 
@@ -108,31 +115,78 @@ public class TicketHelper {
             new GroupManager.WhitelistValidator(event.getId(), groupManager));
 
 
-        var additionalServiceIds = new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(t.getTicketsReservationId()));
+        var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), ticketReservation.getId());
 
-        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, ticketUUID -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()));
+        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(ticketReservation.getId());
+        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf,
+            ticketsInReservation,
+            event.supportsLinkedAdditionalServices(),
+            additionalServiceItems);
 
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
-        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)
+
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid(), EnumSet.of(ATTENDEE)), bindingResult, event, formPrefix, sameCountryValidator, extensionManager)
+                .or(validateAdditionalItemsFields(event, updateTicketOwner, t.getUuid(), ticketFieldFilterer.getFieldsForTicket(t.getUuid(), EnumSet.of(ADDITIONAL_SERVICE)), additionalServiceItems, bindingResult.orElse(null), sameCountryValidator))
                 .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, fallbackLocale, t, event, ticketReservation, userDetails));
-        return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
+        return Triple.of(validationResult, event, ticketsInReservation.stream().filter(t2 -> t2.getUuid().equals(t.getUuid())).findFirst().orElseThrow());
+    }
+
+    private ValidationResult validateAdditionalItemsFields(Event event,
+                                                           UpdateTicketOwnerForm updateTicketOwner,
+                                                           String ticketUuid,
+                                                           List<TicketFieldConfiguration> fieldsForTicket,
+                                                           List<AdditionalServiceItem> additionalServiceItems,
+                                                           BindingResult bindingResult,
+                                                           SameCountryValidator vatValidator) {
+
+        if (!event.supportsLinkedAdditionalServices() || fieldsForTicket.isEmpty() || bindingResult == null) {
+            return ValidationResult.success();
+        }
+        Map<String, List<AdditionalServiceLinkForm>> map = requireNonNullElse(updateTicketOwner.getAdditionalServices(), Map.of());
+        var fieldForms = Objects.requireNonNullElse(map.get(ticketUuid), List.<AdditionalServiceLinkForm>of());
+        int formFieldsSize = fieldForms.size();
+        if (formFieldsSize != fieldsForTicket.size()) {
+            // form contains wrong fields. Reject all values
+            bindingResult.reject(ErrorsCode.EMPTY_FIELD);
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("", ErrorsCode.EMPTY_FIELD));
+        } else if (formFieldsSize == 0) {
+            return ValidationResult.success();
+        }
+
+        var bookedItems = fieldForms.stream().map(AdditionalServiceLinkForm::getAdditionalServiceItemId).collect(Collectors.toSet());
+
+        // validate that the input form only contains items that are actually linked to the current ticket
+        int count = additionalServiceItemRepository.countMatchingItemsForTicket(ticketUuid, bookedItems);
+        ValidationResult result;
+
+        if (count != bookedItems.size()) {
+            result = ValidationResult.failed(new ValidationResult.ErrorDescriptor("", ErrorsCode.EMPTY_FIELD));
+        } else {
+            result = ValidationResult.success();
+        }
+
+        for (int i = 0; i < formFieldsSize; i++) {
+            var form = fieldForms.get(i);
+            result = result.or(Validator.validateAdditionalItemFieldsForTicket(form, fieldsForTicket, bindingResult, "additionalServices["+ticketUuid+"]["+i+"]", vatValidator, fieldForms, additionalServiceItems));
+        }
+
+        return result;
     }
 
     /**
      * This method has been implemented explicitly for PayPal, since we need to pre-assign tickets before payment, in order to keep the data inserted by the customer
      */
     public Optional<Triple<ValidationResult, Event, Ticket>> preAssignTicket(String eventName,
-                                                                          String reservationId,
-                                                                          String ticketIdentifier,
-                                                                          UpdateTicketOwnerForm updateTicketOwner,
-                                                                          Optional<BindingResult> bindingResult,
-                                                                          Locale fallbackLocale,
-                                                                          Optional<UserDetails> userDetails) {
+                                                                             String reservationId,
+                                                                             String ticketIdentifier,
+                                                                             UpdateTicketOwnerForm updateTicketOwner,
+                                                                             Optional<BindingResult> bindingResult,
+                                                                             Locale fallbackLocale) {
 
         return ticketReservationManager.from(eventName, reservationId, ticketIdentifier)
             .filter(temp -> PENDING_RESERVATION_STATUSES.contains(temp.getMiddle().getStatus()) && temp.getRight().getStatus() == Ticket.TicketStatus.PENDING)
-            .map(result -> assignTicket(updateTicketOwner, bindingResult, fallbackLocale, userDetails, result, "tickets["+ticketIdentifier+"]"));
+            .map(result -> assignTicket(updateTicketOwner, bindingResult, fallbackLocale,Optional.empty(), result,"tickets["+ticketIdentifier+"]"));
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
@@ -202,10 +256,9 @@ public class TicketHelper {
                 .filter(StringUtils::isNotBlank)
                 .map(LocaleUtil::forLanguageTag)
                 .orElse(fallBackLocale);
-        TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
         var ticketLanguage = LocaleUtil.getTicketLanguage(t, fallBackLocale);
         ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
-                getConfirmationTextBuilder(ticketLanguage, event, ticketReservation, t, category),
+                getConfirmationTextBuilder(ticketLanguage, event, ticketReservation, t),
                 getOwnerChangeTextBuilder(ticketLanguage, t, event),
                 userDetails);
         if(t.hasBeenSold() && !groupManager.findLinks(event.getId(), t.getCategoryId()).isEmpty()) {
@@ -222,12 +275,10 @@ public class TicketHelper {
     public PartialTicketTextGenerator getConfirmationTextBuilder(Locale ticketLanguage,
                                                                  Event event,
                                                                  TicketReservation ticketReservation,
-                                                                 Ticket ticket,
-                                                                 TicketCategory ticketCategory) {
+                                                                 Ticket ticket) {
         return ticketReservationManager.getTicketEmailGenerator(event,
             ticketReservation,
             ticketLanguage,
             ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket));
     }
-
 }

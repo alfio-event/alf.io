@@ -27,6 +27,7 @@ import alfio.controller.support.Formatters;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.AdditionalServiceHelper;
 import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -56,6 +57,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -79,6 +81,7 @@ public class TicketApiV2Controller {
     private final TicketRepository ticketRepository;
     private final SubscriptionManager subscriptionManager;
     private final ConfigurationManager configurationManager;
+    private final AdditionalServiceHelper additionalServiceHelper;
 
 
     @GetMapping(value = {
@@ -129,7 +132,8 @@ public class TicketApiV2Controller {
                     ticketWithMetadata, ticketCategory, organization,
                     templateManager, fileUploadManager,
                     reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager,
-                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionManager::findDescriptorBySubscriptionId, locale)
+                    TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionManager::findDescriptorBySubscriptionId, locale),
+                    additionalServiceHelper.findForTicket(ticket, event)
                 );
             } catch (IOException ioe) {
                 throw new IllegalStateException(ioe);
@@ -153,12 +157,11 @@ public class TicketApiV2Controller {
             Ticket ticket = data.getRight();
 
             Locale locale = LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(reservation.getUserLanguage(), event));
-            TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
             notificationManager.sendTicketByEmail(
                 ticket,
                 event,
                 locale,
-                ticketHelper.getConfirmationTextBuilder(locale, event, reservation, ticket, category),
+                ticketHelper.getConfirmationTextBuilder(locale, event, reservation, ticket),
                 reservation,
                 ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()),
                 () -> ticketReservationManager.retrieveAttendeeAdditionalInfoForTicket(ticket)
@@ -190,7 +193,7 @@ public class TicketApiV2Controller {
                 var event = complete.getLeft();
 
                 var category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-                return new ReservationInfo.TicketsByTicketCategory(category.getName(), category.getTicketAccessType(), List.of(bookingInfoTicketLoader.toBookingInfoTicket(ticket, event)));
+                return new ReservationInfo.TicketsByTicketCategory(category.getName(), category.getTicketAccessType(), List.of(bookingInfoTicketLoader.toBookingInfoTicket(ticket, event, EnumSet.allOf(TicketFieldConfiguration.Context.class))));
             });
         return ResponseEntity.of(optionalTicket);
     }
@@ -242,8 +245,9 @@ public class TicketApiV2Controller {
             formattedDates.beginDate,
             formattedDates.beginTime,
             formattedDates.endDate,
-            formattedDates.endTime)
-        );
+            formattedDates.endTime,
+            additionalServiceHelper.findForTicket(ticket, event)
+        ));
     }
 
     @PutMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")

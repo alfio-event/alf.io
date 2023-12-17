@@ -16,6 +16,8 @@
  */
 package alfio.util;
 
+import alfio.controller.form.AdditionalFieldsContainer;
+import alfio.controller.form.AdditionalServiceLinkForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.manager.ExtensionManager;
@@ -29,7 +31,6 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -219,28 +220,70 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    @AllArgsConstructor
     public static class TicketFieldsFilterer {
 
         private final List<TicketFieldConfiguration> additionalFieldsForEvent;
-        private final Function<String, Integer> fromTicketUUIDToTicketCategoryId;
-        private final Set<Integer> additionalServiceIds;
+        private final List<Ticket> ticketsInReservation;
+        private final Set<Integer> additionalFieldsForReservation;
         private final Optional<Ticket> firstTicketInReservation;
+        private final boolean eventSupportsAdditionalFieldsLink;
+        private final List<AdditionalServiceItem> additionalServiceItems;
+
+        public TicketFieldsFilterer(List<TicketFieldConfiguration> additionalFieldsForEvent,
+                                    List<Ticket> ticketsInReservation,
+                                    boolean eventSupportsAdditionalFieldsLink,
+                                    List<AdditionalServiceItem> additionalServiceItems) {
+            this.additionalFieldsForEvent = additionalFieldsForEvent;
+            this.ticketsInReservation = ticketsInReservation;
+            this.additionalFieldsForReservation = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
+            this.firstTicketInReservation = ticketsInReservation.stream().findFirst();
+            this.eventSupportsAdditionalFieldsLink = eventSupportsAdditionalFieldsLink;
+            this.additionalServiceItems = additionalServiceItems;
+        }
 
 
-        public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUUID) {
-            var isFirstTicket = firstTicketInReservation.map(first -> ticketUUID.equals(first.getUuid())).orElse(false);
-            return filterFieldsForTicket(additionalFieldsForEvent, fromTicketUUIDToTicketCategoryId.apply(ticketUUID), additionalServiceIds, isFirstTicket);
+        public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUuid, Set<TicketFieldConfiguration.Context> requestedContexts) {
+            var ticket = ticketsInReservation.stream().filter(t -> t.getUuid().equals(ticketUuid)).findFirst().orElseThrow();
+            var isFirstTicket = firstTicketInReservation.map(first -> ticket.getUuid().equals(first.getUuid())).orElse(false);
+            return filterFieldsForTicket(additionalFieldsForEvent, ticket, additionalFieldsForReservation, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems, requestedContexts);
         }
 
         private static List<TicketFieldConfiguration> filterFieldsForTicket(List<TicketFieldConfiguration> additionalFieldsForEvent,
-                                                                            Integer ticketCategoryId,
+                                                                            Ticket ticket,
                                                                             Set<Integer> additionalServiceIds,
-                                                                            boolean isFirstTicket) {
+                                                                            boolean isFirstTicket,
+                                                                            boolean eventSupportsAdditionalFieldsLink,
+                                                                            List<AdditionalServiceItem> additionalServiceItems,
+                                                                            Set<TicketFieldConfiguration.Context> requestedContexts) {
             return additionalFieldsForEvent.stream()
-                .filter(field -> field.rulesApply(ticketCategoryId))
-                .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ATTENDEE || (isFirstTicket && Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent()))
+                .filter(field -> field.rulesApply(ticket.getCategoryId()))
+                .filter(f -> {
+                    if (!requestedContexts.contains(f.getContext())) {
+                        return false;
+                    }
+                    if (f.getContext() == TicketFieldConfiguration.Context.ATTENDEE) {
+                        return true;
+                    }
+                    // field context is "Additional Service"
+                    if (!isFirstTicket && !eventSupportsAdditionalFieldsLink) {
+                        return false;
+                    }
+                    boolean included = isAdditionalServiceIncluded(f, additionalServiceIds);
+                    return included && (!eventSupportsAdditionalFieldsLink || checkLinked(ticket, additionalServiceItems, f));
+                })
                 .collect(Collectors.toList());
+        }
+
+        private static boolean checkLinked(Ticket ticket, List<AdditionalServiceItem> additionalServiceItems, TicketFieldConfiguration tfc) {
+            return additionalServiceItems.stream()
+                .anyMatch(asi -> tfc.getAdditionalServiceId() == asi.getAdditionalServiceId() && Objects.equals(ticket.getId(), asi.getTicketId()));
+        }
+
+        private static boolean isAdditionalServiceIncluded(TicketFieldConfiguration f, Set<Integer> additionalServiceIds) {
+            if (f.getAdditionalServiceId() == null) {
+                return false;
+            }
+            return additionalServiceIds.contains(f.getAdditionalServiceId());
         }
     }
 
@@ -293,11 +336,43 @@ public final class Validator {
 
         return evaluateValidationResult(errors);
     }
+    
+    public static ValidationResult validateAdditionalItemFieldsForTicket(AdditionalServiceLinkForm form,
+                                                                         List<TicketFieldConfiguration> additionalFieldsForTicket,
+                                                                         BindingResult errors,
+                                                                         String prefix,
+                                                                         SameCountryValidator vatValidator,
+                                                                         List<AdditionalServiceLinkForm> allForms,
+                                                                         List<AdditionalServiceItem> additionalServiceItems) {
+        // ticket may be linked to different additional items, each one requiring fields
+        var allKeys = allForms.stream().flatMap(f -> f.getAdditional().keySet().stream()).collect(Collectors.toSet());
+        var foundKeys = additionalFieldsForTicket.stream()
+            .map(TicketFieldConfiguration::getName)
+            .filter(allKeys::contains)
+            .collect(Collectors.toSet());
+        for (TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
+            validateFieldConfiguration(form, vatValidator, errors, prefix + ".", fieldConf, foundKeys.contains(fieldConf.getName()));
+        }
+        return evaluateValidationResult(errors);
+    }
 
-    private static void validateFieldConfiguration(UpdateTicketOwnerForm form, SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf) {
-        boolean isField = form.getAdditional() != null && form.getAdditional().containsKey(fieldConf.getName());
+    private static void validateFieldConfiguration(AdditionalFieldsContainer form,
+                                                   SameCountryValidator vatValidator,
+                                                   Errors errors,
+                                                   String prefixForLambda,
+                                                   TicketFieldConfiguration fieldConf) {
+        validateFieldConfiguration(form, vatValidator, errors, prefixForLambda, fieldConf, false);
+    }
 
-        if(!isField) {
+    private static void validateFieldConfiguration(AdditionalFieldsContainer form,
+                                                   SameCountryValidator vatValidator,
+                                                   Errors errors,
+                                                   String prefixForLambda,
+                                                   TicketFieldConfiguration fieldConf,
+                                                   boolean skipPresenceCheck) {
+        boolean isFieldPresent = form.getAdditional() != null && form.getAdditional().containsKey(fieldConf.getName());
+
+        if(!skipPresenceCheck && !isFieldPresent) {
             if (fieldConf.isRequired()) { // sometimes the field is not propagated, so, if it's required, we need to do some additional work
                 if (form.getAdditional() == null) {
                     form.setAdditional(new HashMap<>());
@@ -307,8 +382,7 @@ public final class Validator {
             }
             return;
         }
-
-        List<String> values = Optional.ofNullable(form.getAdditional().get(fieldConf.getName())).orElse(Collections.emptyList());
+        var values = form.getAdditional().computeIfAbsent(fieldConf.getName(), k -> List.of());
 
         //handle required for multiple choice (checkbox) where required is interpreted as at least one!
         if (fieldConf.isRequired() && fieldConf.getCount() > 1  && values.stream().allMatch(StringUtils::isBlank)) {
@@ -322,6 +396,19 @@ public final class Validator {
 
     private static void validateFieldValue(SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf, List<String> values, int i) {
         String formValue = values.get(i);
+
+        fieldValueBasicValidation(errors, prefixForLambda, fieldConf, i, formValue);
+
+        try {
+            if (fieldConf.isEuVat() && !vatValidator.test(formValue)) {
+                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.STEP_2_INVALID_VAT);
+            }
+        } catch (IllegalStateException e) {
+            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.VIES_IS_DOWN);
+        }
+    }
+
+    private static void fieldValueBasicValidation(Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf, int i, String formValue) {
         if(fieldConf.isMaxLengthDefined()) {
             validateMaxLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", "error.tooLong", fieldConf.getMaxLength(), errors);
         }
@@ -342,14 +429,6 @@ public final class Validator {
         if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
             errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]",
                 "error.disabledValue", null, null);
-        }
-
-        try {
-            if (fieldConf.isEuVat() && !vatValidator.test(formValue)) {
-                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.STEP_2_INVALID_VAT);
-            }
-        } catch (IllegalStateException e) {
-            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName() + "]["+ i +"]", ErrorsCode.VIES_IS_DOWN);
         }
     }
 

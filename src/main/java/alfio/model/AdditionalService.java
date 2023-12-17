@@ -51,13 +51,13 @@ public class AdditionalService {
         OPTIONAL_MAX_AMOUNT_PER_TICKET {
             @Override
             public boolean isValid(int quantity, AdditionalService as, int ticketsCount) {
-                return quantity <= ticketsCount*as.getMaxQtyPerOrder();
+                return quantity <= ticketsCount * as.getMaxQtyPerOrder();
             }
         },
         OPTIONAL_MAX_AMOUNT_PER_RESERVATION {
             @Override
             public boolean isValid(int quantity, AdditionalService as, int selectionCount) {
-                return quantity < as.getMaxQtyPerOrder();
+                return quantity <= as.getMaxQtyPerOrder();
             }
         };
 
@@ -81,6 +81,7 @@ public class AdditionalService {
 
     private final Integer srcPriceCts;
     private final String currencyCode;
+    private final Integer availableItems;
 
     public AdditionalService(@Column("id") int id,
                              @Column("event_id_fk") int eventId,
@@ -95,7 +96,8 @@ public class AdditionalService {
                              @Column("src_price_cts") Integer srcPriceCts,
                              @Column("service_type") AdditionalServiceType type,
                              @Column("supplement_policy") SupplementPolicy supplementPolicy,
-                             @Column("currency_code") String currencyCode) {
+                             @Column("currency_code") String currencyCode,
+                             @Column("available_count") Integer availableItems) {
         this.id = id;
         this.eventId = eventId;
         this.fixPrice = fixPrice;
@@ -110,6 +112,7 @@ public class AdditionalService {
         this.type = type;
         this.supplementPolicy = supplementPolicy;
         this.currencyCode = currencyCode;
+        this.availableItems = availableItems;
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {

@@ -19,6 +19,8 @@ package alfio.controller.form;
 import alfio.controller.support.CustomBindingResult;
 import alfio.manager.ExtensionManager;
 import alfio.manager.SameCountryValidator;
+import alfio.model.AdditionalServiceItem;
+import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
@@ -29,19 +31,20 @@ import alfio.util.ErrorsCode;
 import alfio.util.ItalianTaxIdValidator;
 import alfio.util.Validator;
 import lombok.Data;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static alfio.util.ErrorsCode.STEP_2_INVALID_VAT;
-import static alfio.util.ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA;
+import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
+import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
+import static alfio.util.ErrorsCode.*;
 
 // step 2 : contact/claim tickets
 //
@@ -82,6 +85,8 @@ public class ContactAndTicketsForm implements Serializable {
     private boolean differentSubscriptionOwner;
     private UpdateSubscriptionOwnerForm subscriptionOwner;
 
+    private Map<String, List<AdditionalServiceLinkForm>> additionalServices = new HashMap<>();
+
     //
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
@@ -93,22 +98,26 @@ public class ContactAndTicketsForm implements Serializable {
 
 
 
-    public void validate(CustomBindingResult bindingResult, PurchaseContext purchaseContext,
+    public void validate(CustomBindingResult bindingResult,
+                         PurchaseContext purchaseContext,
                          SameCountryValidator vatValidator,
                          Map<ConfigurationKeys, Boolean> formValidationParameters,
                          Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer,
                          boolean reservationRequiresPayment,
-                         ExtensionManager extensionManager) {
+                         ExtensionManager extensionManager,
+                         Supplier<List<AdditionalServiceItem>> additionalServiceItemsSupplier) {
 
 
         formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false), reservationRequiresPayment);
 
         purchaseContext.event().ifPresent(event -> {
+            var fieldsFilterer = ticketFieldsFilterer.orElseThrow();
+            checkAdditionalServiceItemsLink(event, bindingResult, additionalServiceItemsSupplier, vatValidator, fieldsFilterer);
             if(!postponeAssignment) {
                 Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                     .filter(m -> !m.isEmpty())
                     .map(m -> m.entrySet().stream().map(e -> {
-                        var filteredForTicket = ticketFieldsFilterer.orElseThrow().getFieldsForTicket(e.getKey());
+                        var filteredForTicket = fieldsFilterer.getFieldsForTicket(e.getKey(), EnumSet.of(ATTENDEE));
                         return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator, extensionManager);
                     }))
                     .map(s -> s.collect(Collectors.toList()));
@@ -127,6 +136,36 @@ public class ContactAndTicketsForm implements Serializable {
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.email", ErrorsCode.STEP_2_EMPTY_EMAIL);
+        }
+    }
+
+    private void checkAdditionalServiceItemsLink(Event event,
+                                                 BindingResult bindingResult,
+                                                 Supplier<List<AdditionalServiceItem>> additionalServiceItemsCount,
+                                                 SameCountryValidator vatValidator,
+                                                 Validator.TicketFieldsFilterer ticketFieldsFilterer) {
+        if (!event.supportsLinkedAdditionalServices()) {
+            return;
+        }
+        Map<String, List<AdditionalServiceLinkForm>> form = Objects.requireNonNullElseGet(additionalServices, Map::of);
+        var additionalServiceItems = additionalServiceItemsCount.get();
+        if (additionalServiceItems.size() != form.values().stream().mapToInt(List::size).sum()
+            || form.values().stream().anyMatch(v -> v.stream().anyMatch(Predicate.not(AdditionalServiceLinkForm::isValid)))) {
+            bindingResult.reject(STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED);
+        }
+        var result = ValidationResult.success();
+        for (var ticketAndFields : form.entrySet()) {
+            var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(ticketAndFields.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
+            var fieldForms = ticketAndFields.getValue();
+            for (int i = 0; i < fieldForms.size(); i++) {
+                result = result.or(Validator.validateAdditionalItemFieldsForTicket(fieldForms.get(i), filteredForTicket, bindingResult, "additionalServices["+ticketAndFields.getKey()+"]["+i+"]", vatValidator, fieldForms, additionalServiceItems));
+            }
+        }
+
+        boolean success = result.isSuccess();
+        if(!success) {
+            String errorCode = containsVatValidationError(List.of(result)) ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
+            bindingResult.reject(errorCode);
         }
     }
 
@@ -248,5 +287,9 @@ public class ContactAndTicketsForm implements Serializable {
 
     public boolean getAddCompanyBillingDetails() {
         return Boolean.TRUE.equals(addCompanyBillingDetails);
+    }
+
+    public boolean hasAdditionalServices() {
+        return MapUtils.isNotEmpty(additionalServices);
     }
 }

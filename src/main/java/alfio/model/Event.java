@@ -259,6 +259,10 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         return EventUtil.supportsCaseInsensitiveQRCode(version);
     }
 
+    @Override
+    public boolean supportsLinkedAdditionalServices() {
+        return EventUtil.supportsLinkedAdditionalServices(version);
+    }
 
     private static boolean mustUseFirstAndLastName(Event event) {
         return event.getVersion() != null

@@ -48,10 +48,6 @@ public class SaleableAdditionalService implements PriceContainer {
         return getUtcExpiration().isBefore(ZonedDateTime.now(clock));
     }
 
-    public boolean isNotExpired() {
-        return !isExpired();
-    }
-
     public boolean getExpired() {
         return isExpired();
     }
@@ -118,9 +114,6 @@ public class SaleableAdditionalService implements PriceContainer {
         switch (getVatType()) {
             case INHERITED:
                 return event.isVatIncluded();
-            case NONE:
-            case CUSTOM_EXCLUDED:
-                return false;
             case CUSTOM_INCLUDED:
                 return true;
             default:
@@ -143,6 +136,10 @@ public class SaleableAdditionalService implements PriceContainer {
 
     public String getCurrency() {
         return event.getCurrency();
+    }
+
+    public boolean isSaleable() {
+        return !isExpired() && additionalService.getAvailableItems() > 0;
     }
 
     private interface Exclusions {

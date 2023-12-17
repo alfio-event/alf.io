@@ -14,27 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.controller.form;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
+import java.util.Map;
 
-import java.time.ZonedDateTime;
+public interface AdditionalFieldsContainer {
+    Map<String, List<String>> getAdditional();
 
-public interface EventCheckInInfo extends TimeZoneInfo {
-
-    String VERSION_FOR_CODE_CASE_INSENSITIVE = "205.2.0.0.50";
-    String VERSION_FOR_LINKED_ADDITIONAL_SERVICE = "205.2.0.0.52";
-
-    int getId();
-    String getPrivateKey();
-    ZonedDateTime getBegin();
-    ZonedDateTime getEnd();
-    Event.EventFormat getFormat();
-
-    @JsonIgnore
-    boolean supportsQRCodeCaseInsensitive();
-
-    @JsonIgnore
-    boolean supportsLinkedAdditionalServices();
-
+    void setAdditional(Map<String, List<String>> additionalFields);
 }

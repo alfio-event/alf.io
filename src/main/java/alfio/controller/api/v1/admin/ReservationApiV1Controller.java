@@ -53,17 +53,20 @@ public class ReservationApiV1Controller {
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
     private final AdminReservationManager adminReservationManager;
+    private final AdditionalServiceManager additionalServiceManager;
 
     @Autowired
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
                                       PurchaseContextManager purchaseContextManager,
                                       PromoCodeRequestManager promoCodeRequestManager,
                                       EventManager eventManager,
+                                      AdditionalServiceManager additionalServiceManager,
                                       AdminReservationManager adminReservationManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.purchaseContextManager = purchaseContextManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
         this.eventManager = eventManager;
+        this.additionalServiceManager = additionalServiceManager;
         this.adminReservationManager = adminReservationManager;
     }
 
@@ -81,7 +84,7 @@ public class ReservationApiV1Controller {
         var event = (Event) optionalEvent.get();
         Optional<String> promoCodeDiscount = ReservationUtil.checkPromoCode(reservationCreationRequest, event, promoCodeRequestManager, bindingResult);
         var locale = Locale.forLanguageTag(requireNonNullElseGet(reservationCreationRequest.getLanguage(), () -> event.getContentLanguages().get(0).getLanguage()));
-        var selected = ReservationUtil.validateCreateRequest(reservationCreationRequest, bindingResult, ticketReservationManager, eventManager, "", event);
+        var selected = ReservationUtil.validateCreateRequest(reservationCreationRequest, bindingResult, ticketReservationManager, eventManager, additionalServiceManager, "", event);
         if(selected.isPresent() && !bindingResult.hasErrors()) {
             var pair = selected.get();
             return ticketReservationManager.createTicketReservation(event, pair.getLeft(), pair.getRight(), promoCodeDiscount, locale, bindingResult, principal)

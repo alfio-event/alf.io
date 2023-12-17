@@ -489,7 +489,7 @@ public interface TicketRepository {
     @Query("select t.id from ticket t" +
            "    join event e on t.event_id = e.id" +
            "    join tickets_reservation tr on t.tickets_reservation_id = tr.id" +
-           "    join ticket_field_value tfv on t.id = tfv.ticket_id_fk" +
+           "    join all_ticket_field_values tfv on t.id = tfv.ticket_id_fk" +
            " where e.short_name = :eventPublicIdentifier and tr.id = :reservationId")
     List<Integer> findTicketsWithAdditionalData(@Bind("reservationId") String reservationId,
                                                 @Bind("eventPublicIdentifier") String eventPublicIdentifier);

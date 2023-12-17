@@ -70,7 +70,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
@@ -122,6 +121,7 @@ public class EventManager {
     private final PaymentManager paymentManager;
     private final ClockProvider clockProvider;
     private final SubscriptionRepository subscriptionRepository;
+    public final AdditionalServiceManager additionalServiceManager;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -204,7 +204,7 @@ public class EventManager {
         Optional<EventAndOrganizationId> srcEvent = getCopiedFrom(em, username);
         Event event = eventRepository.findById(eventId);
         createOrUpdateEventDescription(eventId, em);
-        createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId(), event.getCurrency());
+        additionalServiceManager.createAllAdditionalServices(event, em.getAdditionalServices());
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event, srcEvent);
         createAllTicketsForEvent(event, em);
@@ -259,30 +259,6 @@ public class EventManager {
         Event.Status status = activate ? Event.Status.PUBLIC : Event.Status.DRAFT;
         eventRepository.updateEventStatus(id, status);
         extensionManager.handleEventStatusChange(event, status);
-    }
-
-    private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId, String currencyCode) {
-        Optional.ofNullable(additionalServices)
-            .ifPresent(list -> list.forEach(as -> {
-                AffectedRowCountAndKey<Integer> service = additionalServiceRepository.insert(eventId,
-                    Optional.ofNullable(as.getPrice()).map(p -> MonetaryUtil.unitToCents(p, currencyCode)).orElse(0),
-                    as.isFixPrice(),
-                    as.getOrdinal(),
-                    as.getAvailableQuantity(),
-                    as.getMaxQtyPerOrder(),
-                    as.getInception().toZonedDateTime(zoneId),
-                    as.getExpiration().toZonedDateTime(zoneId),
-                    as.getVat(),
-                    as.getVatType(),
-                    as.getType(),
-                    as.getSupplementPolicy());
-                as.getTitle().forEach(insertAdditionalServiceDescription(service.getKey()));
-                as.getDescription().forEach(insertAdditionalServiceDescription(service.getKey()));
-            }));
-    }
-
-    private Consumer<EventModification.AdditionalServiceText> insertAdditionalServiceDescription(int serviceId) {
-        return t -> additionalServiceTextRepository.insert(serviceId, t.getLocale(), t.getType(), t.getValue());
     }
 
     private void createOrUpdateEventDescription(int eventId, EventModification em) {
@@ -354,7 +330,7 @@ public class EventManager {
             Optional.ofNullable(as.getPrice()).map(p -> MonetaryUtil.unitToCents(p, currencyCode)).orElse(0),
             as.getType(),
             as.getSupplementPolicy(),
-            currencyCode).getChecksum();
+            currencyCode, null).getChecksum();
         return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
@@ -456,31 +432,6 @@ public class EventManager {
             var firstConflict = IterableUtils.get(conflicts, 0);
             throw new IllegalStateException("Conflicting providers found: "+firstConflict.getValue());
         }
-    }
-
-    public EventModification.AdditionalService insertAdditionalService(Event event, EventModification.AdditionalService additionalService) {
-        int eventId = event.getId();
-        AffectedRowCountAndKey<Integer> result = additionalServiceRepository.insert(eventId,
-            Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0),
-            additionalService.isFixPrice(),
-            additionalService.getOrdinal(),
-            additionalService.getAvailableQuantity(),
-            additionalService.getMaxQtyPerOrder(),
-            additionalService.getInception().toZonedDateTime(event.getZoneId()),
-            additionalService.getExpiration().toZonedDateTime(event.getZoneId()),
-            additionalService.getVat(),
-            additionalService.getVatType(),
-            additionalService.getType(),
-            additionalService.getSupplementPolicy());
-        Validate.isTrue(result.getAffectedRowCount() == 1, "too many records updated");
-        int id = result.getKey();
-        Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
-            forEach(t -> additionalServiceTextRepository.insert(id, t.getLocale(), t.getType(), t.getValue()));
-
-        return EventModification.AdditionalService.from(additionalServiceRepository.getById(result.getKey(), eventId))
-            .withText(additionalServiceTextRepository.findAllByAdditionalServiceId(result.getKey()))
-            .withZoneId(event.getZoneId())
-            .build();
     }
 
     /**
@@ -945,10 +896,6 @@ public class EventManager {
 
     public TicketCategory getTicketCategoryById(int id, int eventId) {
         return ticketCategoryRepository.getByIdAndActive(id, eventId);
-    }
-
-    public AdditionalService getAdditionalServiceById(int id, int eventId) {
-        return additionalServiceRepository.getById(id, eventId);
     }
 
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {

@@ -91,11 +91,17 @@ public class CheckInManager {
     private final ClockProvider clockProvider;
 
 
-    private void checkIn(String uuid) {
+    private void checkIn(String uuid, Event event) {
         Ticket ticket = ticketRepository.findByUUID(uuid);
         Validate.isTrue(ticket.getStatus() == TicketStatus.ACQUIRED);
         ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.CHECKED_IN.toString());
         ticketRepository.toggleTicketLocking(ticket.getId(), ticket.getCategoryId(), true);
+        if (event.supportsLinkedAdditionalServices()) {
+            int n = additionalServiceItemRepository.updateItemsStatusWithTicketId(event.getId(), ticket.getTicketsReservationId(), ticket.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CHECKED_IN);
+            if (n > 0) {
+                log.debug("Checked in {} additional services for ticket {}", n, uuid);
+            }
+        }
         extensionManager.handleTicketCheckedIn(ticketRepository.findByUUID(uuid));
     }
 
@@ -192,15 +198,17 @@ public class CheckInManager {
     }
 
     public TicketAndCheckInResult checkIn(int eventId, String ticketIdentifier, Optional<String> ticketCode, String user) {
+        var optionalEvent = eventRepository.findOptionalById(eventId);
         TicketAndCheckInResult descriptor = extractStatus(eventId, ticketRepository.findByUUIDForUpdate(ticketIdentifier), ticketIdentifier, ticketCode);
         var checkInStatus = descriptor.getResult().getStatus();
         if(checkInStatus == OK_READY_TO_BE_CHECKED_IN) {
-            checkIn(ticketIdentifier);
+            var event = optionalEvent.orElseThrow();
+            checkIn(ticketIdentifier, event);
             TicketWithCategory ticket = descriptor.getTicket();
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, SUCCESS, ScanAudit.Operation.SCAN);
             auditingRepository.insert(ticket.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
             // return also additional items, if any
-            return new SuccessfulCheckIn(ticket, getAdditionalServicesForTicket(ticket), loadBoxColor(ticket));
+            return new SuccessfulCheckIn(ticket, getAdditionalServicesForTicket(ticket, event), loadBoxColor(ticket));
         } else if(checkInStatus == BADGE_SCAN_ALREADY_DONE || checkInStatus == OK_READY_FOR_BADGE_SCAN) {
             var auditingStatus = checkInStatus == OK_READY_FOR_BADGE_SCAN ? BADGE_SCAN_SUCCESS : checkInStatus;
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, auditingStatus, ScanAudit.Operation.SCAN);
@@ -211,6 +219,7 @@ public class CheckInManager {
     }
 
     public boolean manualCheckIn(int eventId, String ticketIdentifier, String user) {
+
         Optional<Ticket> ticket = findAndLockTicket(ticketIdentifier);
         return ticket.map(t -> {
 
@@ -218,7 +227,7 @@ public class CheckInManager {
                 acquire(ticketIdentifier);
             }
 
-            checkIn(ticketIdentifier);
+            checkIn(ticketIdentifier, eventRepository.findById(t.getEventId()));
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, SUCCESS, ScanAudit.Operation.SCAN);
             auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.MANUAL_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
             return true;
@@ -229,8 +238,13 @@ public class CheckInManager {
         return findAndLockTicket(ticketIdentifier).map(t -> {
             if(t.getStatus() == TicketStatus.CHECKED_IN) {
                 TicketReservation reservation = ticketReservationRepository.findReservationById(t.getTicketsReservationId());
-                TicketStatus revertedStatus = reservation.getPaymentMethod() == PaymentProxy.ON_SITE ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
+                boolean onSitePayment = reservation.getPaymentMethod() == PaymentProxy.ON_SITE;
+                TicketStatus revertedStatus = onSitePayment ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
                 ticketRepository.updateTicketStatusWithUUID(ticketIdentifier, revertedStatus.toString());
+                var event = eventRepository.findById(eventId);
+                if (event.supportsLinkedAdditionalServices()) {
+                    additionalServiceItemRepository.updateItemsStatusWithTicketId(t.getEventId(), t.getTicketsReservationId(), t.getId(), onSitePayment ? AdditionalServiceItem.AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItem.AdditionalServiceItemStatus.ACQUIRED);
+                }
                 scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(clockProvider.getClock()), user, OK_READY_TO_BE_CHECKED_IN, ScanAudit.Operation.REVERT);
                 auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.REVERT_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
                 extensionManager.handleTicketRevertCheckedIn(ticketRepository.findByUUID(ticketIdentifier));
@@ -467,7 +481,7 @@ public class CheckInManager {
                 info.put("categoryCheckInStrategy", tc.getTicketCheckInStrategy().name());
                 //
 
-                var additionalServicesInfo = getAdditionalServicesForTicket(ticket);
+                var additionalServicesInfo = getAdditionalServicesForTicket(ticket, event);
                 if(!additionalServicesInfo.isEmpty()) {
                     info.put("additionalServicesInfoJson", Json.toJson(additionalServicesInfo));
                 }
@@ -503,21 +517,28 @@ public class CheckInManager {
             .orElse(outputColorConfiguration.getDefaultColorName());
     }
 
-    List<AdditionalServiceInfo> getAdditionalServicesForTicket(TicketInfoContainer ticket) {
+    List<AdditionalServiceInfo> getAdditionalServicesForTicket(TicketInfoContainer ticket, Event event) {
 
-        // temporary: return a result only for the first ticket
         String ticketsReservationId = ticket.getTicketsReservationId();
-        int firstId = ticketRepository.findFirstTicketIdInReservation(ticketsReservationId).orElseThrow();
-        if(ticket.getId() != firstId) {
-            return List.of();
+        if (!event.supportsLinkedAdditionalServices()) {
+            // return a result only for the first ticket if event does not support linked additional service
+            int firstId = ticketRepository.findFirstTicketIdInReservation(ticketsReservationId).orElseThrow();
+            if(ticket.getId() != firstId) {
+                return List.of();
+            }
         }
 
-        List<BookedAdditionalService> additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticketsReservationId, ticket.getUserLanguage(), ticket.getEventId());
+        List<BookedAdditionalService> additionalServices;
+        if (event.supportsLinkedAdditionalServices()) {
+            additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForTicket(ticketsReservationId, ticket.getId(), ticket.getUserLanguage(), ticket.getEventId());
+        } else {
+            additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticketsReservationId, ticket.getUserLanguage(), ticket.getEventId());
+        }
         boolean additionalServicesEmpty = additionalServices.isEmpty();
         if(!additionalServicesEmpty) {
             List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toList());
-            Map<Integer, List<TicketFieldValueForAdditionalService>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
-                .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::getAdditionalServiceId));
+            Map<Integer, List<AdditionalServiceFieldValue>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
+                .stream().collect(Collectors.groupingBy(AdditionalServiceFieldValue::getAdditionalServiceId));
 
             return additionalServices.stream()
                 .map(as -> new AdditionalServiceInfo(as.getAdditionalServiceName(), as.getCount(), fields.get(as.getAdditionalServiceId())))

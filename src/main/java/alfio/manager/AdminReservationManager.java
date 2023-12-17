@@ -636,7 +636,7 @@ public class AdminReservationManager {
                     updateExtRefAndLocking(categoryId, attendee, ticketId);
                 }
                 if(!attendee.getAdditionalInfo().isEmpty()) {
-                    ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
+                    ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId(), event.supportsLinkedAdditionalServices());
                 }
                 if (!attendee.getMetadata().isEmpty()) {
                     var ticketMetadata = new TicketMetadata(null, null, attendee.getMetadata());
@@ -768,14 +768,14 @@ public class AdminReservationManager {
 
             if(removeReservation) {
                 markAsCancelled(reservation, username, e);
-                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
+                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(e.getId(), reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
             } else {
                 // recalculate totals
                 var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
                 var currencyCode = totalPrice.getCurrencyCode();
                 var updatedTickets = ticketRepository.findTicketsInReservation(reservationId);
                 var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
-                List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
+                List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(e.getId(), reservationId);
                 var calculator = new ReservationPriceCalculator(reservation, discount, updatedTickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(e.getId()), e, List.of(), Optional.empty());
                 ticketReservationRepository.updateBillingData(calculator.getVatStatus(),
                     calculator.getSrcPriceCts(), unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode),
@@ -921,9 +921,10 @@ public class AdminReservationManager {
                 List<Ticket> tickets = t.getMiddle();
                 specialPriceRepository.resetToFreeAndCleanupForReservation(List.of(reservation.getId()));
                 if(purchaseContext.ofType(PurchaseContextType.event)) {
-                    removeTicketsFromReservation(reservation, (Event) purchaseContext, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, issueCreditNote);
+                    var event = (Event) purchaseContext;
+                    removeTicketsFromReservation(reservation, event, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, issueCreditNote);
+                    additionalServiceItemRepository.updateItemsStatusWithReservationUUID(event.getId(), reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
                 }
-                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
                 return Pair.of(purchaseContext, reservation);
             });
     }

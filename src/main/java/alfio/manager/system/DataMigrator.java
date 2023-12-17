@@ -166,7 +166,7 @@ public class DataMigrator {
                     var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
                     var promoCodeDiscountId = ticketReservation.getPromoCodeDiscountId();
                     var discount = promoCodeDiscountId != null ? promoCodeDiscountRepository.findById(promoCodeDiscountId) : null;
-                    var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(ticketReservation.getId());
+                    var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), ticketReservation.getId());
                     var calculator = new ReservationPriceCalculator(ticketReservation, discount, tickets, additionalServiceItems, additionalServices, event, List.of(), Optional.empty());
                     var currencyCode = calculator.getCurrencyCode();
                     return new MapSqlParameterSource("reservationId", calculator.reservation.getId())

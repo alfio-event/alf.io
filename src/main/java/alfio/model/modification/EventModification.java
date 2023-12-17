@@ -332,7 +332,7 @@ public class EventModification {
                                  @JsonProperty("price") BigDecimal price,
                                  @JsonProperty("fixPrice") boolean fixPrice,
                                  @JsonProperty("ordinal") int ordinal,
-                                 @JsonProperty("availableQuantity") int availableQuantity,
+                                 @JsonProperty("availableQuantity") Integer availableQuantity,
                                  @JsonProperty("maxQtyPerOrder") int maxQtyPerOrder,
                                  @JsonProperty("inception") DateTimeModification inception,
                                  @JsonProperty("expiration") DateTimeModification expiration,
@@ -350,7 +350,7 @@ public class EventModification {
                                   BigDecimal price,
                                   boolean fixPrice,
                                   int ordinal,
-                                  int availableQuantity,
+                                  Integer availableQuantity,
                                   int maxQtyPerOrder,
                                   DateTimeModification inception,
                                   DateTimeModification expiration,
@@ -367,7 +367,7 @@ public class EventModification {
             this.price = price;
             this.fixPrice = fixPrice;
             this.ordinal = ordinal;
-            this.availableQuantity = availableQuantity;
+            this.availableQuantity = Objects.requireNonNullElse(availableQuantity, -1);
             this.maxQtyPerOrder = maxQtyPerOrder;
             this.inception = inception;
             this.expiration = expiration;
@@ -419,9 +419,9 @@ public class EventModification {
             }
 
             public AdditionalService build() {
-                Optional<PriceContainer> priceContainer = Optional.ofNullable(this.priceContainer);
-                BigDecimal finalPrice = priceContainer.map(PriceContainer::getFinalPrice).orElse(BigDecimal.ZERO);
-                String currencyCode = priceContainer.map(PriceContainer::getCurrencyCode).orElse("");
+                Optional<PriceContainer> optionalPrice = Optional.ofNullable(this.priceContainer);
+                BigDecimal finalPrice = optionalPrice.map(PriceContainer::getFinalPrice).orElse(BigDecimal.ZERO);
+                String currencyCode = optionalPrice.map(PriceContainer::getCurrencyCode).orElse("");
                 return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(p -> MonetaryUtil.centsToUnit(p, src.getCurrencyCode())).orElse(BigDecimal.ZERO),
                     src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
                     DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType(), src.getSupplementPolicy());

@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
@@ -44,6 +45,7 @@ import static alfio.util.ImageUtil.createQRCode;
 import static alfio.util.MustacheCustomTag.SUBSCRIPTION_DESCRIPTOR_ATTRIBUTE;
 import static alfio.util.TemplateManager.ADDITIONAL_FIELDS_KEY;
 import static alfio.util.TemplateManager.METADATA_ATTRIBUTES_KEY;
+import static java.util.Objects.requireNonNullElse;
 import static org.springframework.http.MediaType.APPLICATION_PDF_VALUE;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
@@ -196,7 +198,7 @@ public enum TemplateResource {
             var now = event.now(ClockProvider.clock());
             TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null, TicketCategory.TicketAccessType.INHERIT);
             var ticketWithMetadata = TicketWithMetadataAttributes.build(sampleTicket(event.getZoneId()), null);
-            return buildModelForTicketPDF(organization, event, sampleTicketReservation(event.getZoneId()), ticketCategory, ticketWithMetadata, imageData, "ABCD", Collections.emptyMap());
+            return buildModelForTicketPDF(organization, event, sampleTicketReservation(event.getZoneId()), ticketCategory, ticketWithMetadata, imageData, "ABCD", Collections.emptyMap(), List.of());
         }
     },
     RECEIPT_PDF("/alfio/templates/receipt.ms", APPLICATION_PDF_VALUE, TemplateManager.TemplateOutput.HTML) {
@@ -599,7 +601,8 @@ public enum TemplateResource {
                                                              TicketWithMetadataAttributes ticketWithMetadata,
                                                              Optional<ImageData> imageData,
                                                              String reservationId,
-                                                             Map<String,String> additionalFields) {
+                                                             Map<String,String> additionalFields,
+                                                             List<AdditionalServiceWithData> additionalServicesWithData) {
         String qrCodeText = ticketWithMetadata.getTicket().ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive());
         //
         Map<String, Object> model = new HashMap<>();
@@ -622,7 +625,33 @@ public enum TemplateResource {
         });
 
         model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());
+        fillAdditionalServices(ticketWithMetadata, additionalServicesWithData, model);
         return model;
+    }
+
+    private static void fillAdditionalServices(TicketWithMetadataAttributes ticketWithMetadata, List<AdditionalServiceWithData> additionalServicesWithData, Map<String, Object> model) {
+        model.put("hasAdditionalServices", !additionalServicesWithData.isEmpty());
+        var byServiceId = additionalServicesWithData.stream().collect(Collectors.groupingBy(AdditionalServiceWithData::getServiceId));
+        var additionalServices = byServiceId.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .map(entry -> {
+                var first = entry.getValue().get(0);
+                var userLanguage = ticketWithMetadata.getTicket().getUserLanguage();
+                return new GroupedAdditionalServiceWithData(
+                    entry.getValue().size(),
+                    first.getTitle().get(userLanguage),
+                    entry.getValue().stream()
+                        .flatMap(asw -> asw.getTicketFieldConfiguration().stream()
+                            .filter(tfc -> StringUtils.isNotBlank(tfc.getValue()))
+                            .map(tfc -> {
+                                String value = tfc.getRestrictedValues().stream().filter(rv -> rv.equals(tfc.getValue()))
+                                    .findFirst()
+                                    .orElse(tfc.getValue());
+                            return new FieldNameAndValue(tfc.getDescription().get(userLanguage).getLabel(), value);
+                        })).collect(Collectors.toList())
+                );
+            }).collect(Collectors.toList());
+        model.put("additionalServices", additionalServices);
     }
 
     public static Map<String, Object> buildModelForSubscriptionPDF(Subscription subscription,
@@ -713,6 +742,31 @@ public enum TemplateResource {
 
         public ZonedDateTime getZonedExpiration() {
             return reservation.getValidity().toInstant().atZone(event.getZoneId());
+        }
+    }
+
+    static class GroupedAdditionalServiceWithData {
+
+        private final int count;
+        private final String title;
+        private final List<FieldNameAndValue> fields;
+
+        GroupedAdditionalServiceWithData(int count, String title, List<FieldNameAndValue> fields) {
+            this.count = count;
+            this.title = title;
+            this.fields = List.copyOf(requireNonNullElse(fields, List.of()));
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public List<FieldNameAndValue> getFields() {
+            return fields;
         }
     }
 }

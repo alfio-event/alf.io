@@ -38,7 +38,7 @@ public interface EventDeleterRepository {
 	@Query("delete from email_message where event_id = :eventId")
 	int deleteEmailMessage(@Bind("eventId") int eventId);
 	
-	@Query("delete from ticket_field_value where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId and context = 'ATTENDEE')")
+	@Query("delete from ticket_field_value where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId)")
 	int deleteTicketFieldValue(@Bind("eventId") int eventId);
 	
 	@Query("delete from ticket_field_description where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId)")
@@ -50,7 +50,7 @@ public interface EventDeleterRepository {
     @Query("delete from additional_service_description where additional_service_id_fk in (select id from additional_service where event_id_fk = :eventId)")
     int deleteAdditionalServiceDescriptions(@Bind("eventId") int eventId);
 
-    @Query("delete from additional_service_item where additional_service_id_fk in (select id from additional_service where event_id_fk = :eventId)")
+    @Query("delete from additional_service_item where event_id_fk = :eventId")
     int deleteAdditionalServiceItems(@Bind("eventId") int eventId);
 
     @Query("delete from additional_service where event_id_fk = :eventId")

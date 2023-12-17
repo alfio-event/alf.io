@@ -125,6 +125,7 @@ class TicketReservationManagerUnitTest {
         groupManager = mock(GroupManager.class);
         BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
         json = mock(Json.class);
+        var additionalServiceManager = new AdditionalServiceManager(additionalServiceRepository, additionalServiceTextRepository, additionalServiceItemRepository, mock(NamedParameterJdbcTemplate.class), mock(TicketRepository.class), ticketFieldRepository);
 
         when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
@@ -148,9 +149,7 @@ class TicketReservationManagerUnitTest {
             transactionManager,
             waitingQueueManager,
             ticketFieldRepository,
-            additionalServiceRepository,
-            additionalServiceItemRepository,
-            additionalServiceTextRepository,
+            additionalServiceManager,
             auditingRepository,
             userRepository,
             extensionManager,
@@ -168,7 +167,8 @@ class TicketReservationManagerUnitTest {
             reservationCostCalculator,
             mock(ReservationEmailContentHelper.class),
             mock(ReservationFinalizer.class),
-            mock(OrderSummaryGenerator.class));
+            mock(OrderSummaryGenerator.class),
+            mock(AdditionalServiceItemRepository.class));
     }
 
     @Test
@@ -290,14 +290,14 @@ class TicketReservationManagerUnitTest {
         when(additionalService.getCurrencyCode()).thenReturn("CHF");
         when(additionalService.getId()).thenReturn(1);
 
-        when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(additionalServiceItem));
+        when(additionalServiceItemRepository.findByReservationUuid(anyInt(), eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(additionalServiceItem));
         when(additionalServiceItem.getAdditionalServiceId()).thenReturn(1);
         when(additionalServiceRepository.loadAllForEvent(eq(1))).thenReturn(List.of(additionalService));
         when(additionalServiceRepository.getById(eq(1), eq(1))).thenReturn(additionalService);
         when(additionalServiceItem.getSrcPriceCts()).thenReturn(asSrcPrice);
         when(additionalService.getVatType()).thenReturn(additionalServiceVatType);
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
-        when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
+        when(additionalServiceItemRepository.findByReservationUuid(anyInt(), eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
         AdditionalServiceText text = mock(AdditionalServiceText.class);
         when(text.getId()).thenReturn(1);
         when(text.getLocale()).thenReturn("en");

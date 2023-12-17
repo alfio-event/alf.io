@@ -37,26 +37,25 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.EventCheckInInfo.VERSION_FOR_CODE_CASE_INSENSITIVE;
+import static alfio.model.EventCheckInInfo.VERSION_FOR_LINKED_ADDITIONAL_SERVICE;
 import static alfio.test.util.IntegrationTestUtil.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -81,6 +80,11 @@ class CheckInManagerIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private TicketRepository ticketRepository;
+    @Autowired
+    private AdditionalServiceManager additionalServiceManager;
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
+
 
     @Test
     void testReturnOnlyOnce() {
@@ -111,10 +115,10 @@ class CheckInManagerIntegrationTest {
             AdditionalService.AdditionalServiceType.SUPPLEMENT,
             AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT
         );
-        var additionalService = eventManager.insertAdditionalService(event, additionalServiceRequest);
+        var additionalService = additionalServiceManager.insertAdditionalService(event, additionalServiceRequest);
         var category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         TicketReservationModification tr = new TicketReservationModification();
-        tr.setAmount(AVAILABLE_SEATS);
+        tr.setQuantity(AVAILABLE_SEATS);
         tr.setTicketCategoryId(category.getId());
 
         var tickets = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
@@ -134,13 +138,39 @@ class CheckInManagerIntegrationTest {
         assertTrue(result.isSuccessful());
         ticketReservationManager.confirmOfflinePayment(event, reservationId, null, eventAndUser.getRight());
 
-        var returnedAdditionalServices = ticketReservationManager.findTicketsInReservation(reservationId).stream()
-            .filter(ticket -> !checkInManager.getAdditionalServicesForTicket(ticket).isEmpty())
-            .collect(Collectors.toList());
+        var ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, event);
         //
-        assertEquals(1, returnedAdditionalServices.size());
-        assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), returnedAdditionalServices.get(0).getId());
+        assertEquals(1, ticketsWithAdditionalServices.size());
+        var firstTicket = ticketsWithAdditionalServices.get(0);
+        assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), firstTicket.getId());
 
+        // disable link support
+        jdbcTemplate.update("update event set version = :version where id = :id", new MapSqlParameterSource("id", event.getId()).addValue("version", VERSION_FOR_CODE_CASE_INSENSITIVE));
+        ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
+        firstTicket = ticketsWithAdditionalServices.get(0);
+        //
+        assertEquals(1, ticketsWithAdditionalServices.size());
+        assertEquals((int) ticketRepository.findFirstTicketIdInReservation(reservationId).orElseThrow(), firstTicket.getId());
+
+        // re-enable support
+        jdbcTemplate.update("update event set version = :version where id = :id", new MapSqlParameterSource("id", event.getId()).addValue("version", VERSION_FOR_LINKED_ADDITIONAL_SERVICE));
+        var ticketId = jdbcTemplate.queryForObject("select min(id) from ticket where tickets_reservation_id = :reservationId and id <> :ticketId", Map.of("reservationId", reservationId, "ticketId", firstTicket.getId()), Integer.class);
+        assertNotNull(ticketId);
+        jdbcTemplate.update("update additional_service_item set ticket_id_fk = :ticketId where tickets_reservation_uuid = :reservationId", Map.of("ticketId", ticketId, "reservationId", reservationId));
+
+        // verify link works
+        ticketsWithAdditionalServices = ticketsWithAdditionalServices(reservationId, eventRepository.findById(event.getId()));
+        firstTicket = ticketsWithAdditionalServices.get(0);
+        assertEquals(1, ticketsWithAdditionalServices.size());
+        assertEquals(ticketId, firstTicket.getId());
+    }
+
+    @NotNull
+    private List<Ticket> ticketsWithAdditionalServices(String reservationId, Event event) {
+        var returnedAdditionalServices = ticketReservationManager.findTicketsInReservation(reservationId).stream()
+            .filter(ticket -> !checkInManager.getAdditionalServicesForTicket(ticket, event).isEmpty())
+            .collect(Collectors.toList());
+        return returnedAdditionalServices;
     }
 
 }

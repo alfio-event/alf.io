@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.support;
 
+import alfio.model.TicketFieldConfiguration;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -36,4 +37,22 @@ public class AdditionalField {
     private final List<Field> fields;
     private final boolean beforeStandardFields;
     private final Map<String, Description> description;
+
+    public static AdditionalField fromFieldConfiguration(TicketFieldConfiguration tfc,
+                                                         String value,
+                                                         List<Field> fields,
+                                                         boolean isBeforeStandardFields,
+                                                         Map<String, Description> description) {
+        return new AdditionalField(tfc.getName(),
+            value,
+            tfc.getType(),
+            tfc.isRequired(),
+            tfc.isEditable(),
+            tfc.getMinLength(),
+            tfc.getMaxLength(),
+            tfc.getRestrictedValues(),
+            fields,
+            isBeforeStandardFields,
+            description);
+    }
 }

@@ -37,13 +37,15 @@ import alfio.model.SummaryRow.SummaryType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.checkin.CheckInFullInfo;
-import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.group.LinkedGroup;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
-import alfio.model.modification.*;
+import alfio.model.modification.ASReservationWithOptionalCodeModification;
+import alfio.model.modification.AttendeeData;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.modification.TransactionMetadataModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.WarningMessage;
@@ -61,6 +63,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -93,7 +96,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
@@ -150,9 +152,6 @@ public class TicketReservationManager {
     private final TransactionTemplate nestedTransactionTemplate;
     private final WaitingQueueManager waitingQueueManager;
     private final TicketFieldRepository ticketFieldRepository;
-    private final AdditionalServiceRepository additionalServiceRepository;
-    private final AdditionalServiceItemRepository additionalServiceItemRepository;
-    private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
@@ -172,6 +171,8 @@ public class TicketReservationManager {
     private final OrderSummaryGenerator orderSummaryGenerator;
     private final ReservationAuditingHelper auditingHelper;
     private final ReservationFinalizer reservationFinalizer;
+    private final AdditionalServiceManager additionalServiceManager;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
@@ -190,9 +191,7 @@ public class TicketReservationManager {
                                     PlatformTransactionManager transactionManager,
                                     WaitingQueueManager waitingQueueManager,
                                     TicketFieldRepository ticketFieldRepository,
-                                    AdditionalServiceRepository additionalServiceRepository,
-                                    AdditionalServiceItemRepository additionalServiceItemRepository,
-                                    AdditionalServiceTextRepository additionalServiceTextRepository,
+                                    AdditionalServiceManager additionalServiceManager,
                                     AuditingRepository auditingRepository,
                                     UserRepository userRepository,
                                     ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
@@ -209,7 +208,8 @@ public class TicketReservationManager {
                                     ReservationCostCalculator reservationCostCalculator,
                                     ReservationEmailContentHelper reservationHelper,
                                     ReservationFinalizer reservationFinalizer,
-                                    OrderSummaryGenerator orderSummaryGenerator) {
+                                    OrderSummaryGenerator orderSummaryGenerator,
+                                    AdditionalServiceItemRepository additionalServiceItemRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -226,14 +226,13 @@ public class TicketReservationManager {
         this.templateManager = templateManager;
         this.waitingQueueManager = waitingQueueManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
         DefaultTransactionDefinition serialized = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         serialized.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
         this.serializedTransactionTemplate = new TransactionTemplate(transactionManager, serialized);
         this.nestedTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED));
         this.ticketFieldRepository = ticketFieldRepository;
-        this.additionalServiceRepository = additionalServiceRepository;
-        this.additionalServiceItemRepository = additionalServiceItemRepository;
-        this.additionalServiceTextRepository = additionalServiceTextRepository;
+        this.additionalServiceManager = additionalServiceManager;
         this.auditingRepository = auditingRepository;
         this.userRepository = userRepository;
         this.extensionManager = extensionManager;
@@ -338,23 +337,9 @@ public class TicketReservationManager {
 
         list.forEach(t -> reserveTicketsForCategory(event, reservationId, t, locale, forWaitingQueue, discount.orElse(null), dynamicDiscount.orElse(null)));
 
-        int ticketCount = list
-            .stream()
-            .map(TicketReservationWithOptionalCodeModification::getQuantity)
-            .mapToInt(Integer::intValue).sum();
+        // add all additional services
+        additionalServiceManager.bookAdditionalServicesForReservation(event, reservationId, additionalServices, discount);
 
-        // apply valid additional service with supplement policy mandatory one for ticket
-        additionalServiceRepository.findAllInEventWithPolicy(event.getId(), AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET)
-            .stream()
-            .filter(AdditionalService::getSaleable)
-            .forEach(as -> {
-                AdditionalServiceReservationModification asrm = new AdditionalServiceReservationModification();
-                asrm.setAdditionalServiceId(as.getId());
-                asrm.setQuantity(ticketCount);
-                reserveAdditionalServicesForReservation(event.getId(), reservationId, new ASReservationWithOptionalCodeModification(asrm, Optional.empty()), discount.orElse(null));
-        });
-
-        additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));
         var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = event.getVatStatus();
         ticketReservationRepository.updateBillingData(event.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), event.getCurrency(), null, null, false, reservationId);
@@ -546,34 +531,6 @@ public class TicketReservationManager {
             }
             throw new TooManyTicketsForDiscountCodeException();
         }
-    }
-
-    private void reserveAdditionalServicesForReservation(int eventId, String transactionId, ASReservationWithOptionalCodeModification additionalServiceReservation, PromoCodeDiscount discount) {
-        Optional.ofNullable(additionalServiceReservation.getAdditionalServiceId())
-            .flatMap(id -> additionalServiceRepository.getOptionalById(id, eventId))
-            .filter(as -> additionalServiceReservation.getQuantity() > 0 && (as.isFixPrice() || Optional.ofNullable(additionalServiceReservation.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
-            .map(as -> Pair.of(eventRepository.findById(eventId), as))
-            .ifPresent(pair -> {
-                Event e = pair.getKey();
-                AdditionalService as = pair.getValue();
-                IntStream.range(0, additionalServiceReservation.getQuantity())
-                    .forEach(i -> {
-                        AdditionalServicePriceContainer pc = AdditionalServicePriceContainer.from(additionalServiceReservation.getAmount(), as, e, discount);
-                        var currencyCode = pc.getCurrencyCode();
-                        additionalServiceItemRepository.insert(UUID.randomUUID().toString(),
-                            ZonedDateTime.now(clockProvider.getClock()),
-                            transactionId,
-                            as.getId(),
-                            AdditionalServiceItemStatus.PENDING,
-                            eventId,
-                            pc.getSrcPriceCts(),
-                            unitToCents(pc.getFinalPrice(), currencyCode),
-                            unitToCents(pc.getVAT(), currencyCode),
-                            unitToCents(pc.getAppliedDiscount(), currencyCode),
-                            as.getCurrencyCode());
-                    });
-            });
-
     }
 
     List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, List<TicketStatus> requiredStatuses) {
@@ -1273,10 +1230,14 @@ public class TicketReservationManager {
         specialPriceRepository.resetToFreeAndCleanupForReservation(reservationIdsToRemove);
         groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
-        ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
+        int tfvDeleted = ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
+        log.debug("deleted {} field values", tfvDeleted);
         subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
-        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
         purchaseContext.event().ifPresent(event -> {
+            int deletedItems = additionalServiceItemRepository.deleteAdditionalServiceItemsByReservationId(event.getId(), reservationId);
+            int updatedItems = additionalServiceItemRepository.revertAdditionalServiceItemsByReservationId(event.getId(), reservationId);
+            log.debug("Deleted {} and updated {} additionalServiceItems for reservation {}", deletedItems, updatedItems, reservationId);
+            int updatedAS = additionalServiceManager.updateStatusForReservationId(event.getId(), reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
             int updatedTickets = ticketRepository.findTicketIdsInReservation(reservationId).stream().mapToInt(
                 tickedId -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), tickedId, UUID.randomUUID().toString())
             ).sum();
@@ -1333,7 +1294,9 @@ public class TicketReservationManager {
             return;
         }
 
-        Map<String, String> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+        var ticketFieldValueMapCollector = groupingBy(TicketFieldValue::getName, mapping(TicketFieldValue::getValue, toList()));
+        Map<String, List<String>> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream()
+            .collect(ticketFieldValueMapCollector);
 
         String newEmail = StringUtils.trim(updateTicketOwner.getEmail());
         CustomerName customerName = new CustomerName(updateTicketOwner.getFullName(), updateTicketOwner.getFirstName(), updateTicketOwner.getLastName(), event.mustUseFirstAndLastName(), false);
@@ -1343,7 +1306,11 @@ public class TicketReservationManager {
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(LocaleUtil::forLanguageTag).orElse(locale);
 
         ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
-        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId());
+        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId(), event.supportsLinkedAdditionalServices());
+
+        if (MapUtils.isNotEmpty(updateTicketOwner.getAdditionalServices())) {
+            additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), updateTicketOwner.getAdditionalServices(), List.of(ticket));
+        }
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
         boolean sendTicketAllowed = configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault();
@@ -1378,7 +1345,8 @@ public class TicketReservationManager {
         }
 
         Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
-        Map<String, String> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+        Map<String, List<String>> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream()
+            .collect(ticketFieldValueMapCollector);
 
         auditingHelper.auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
     }
@@ -1603,9 +1571,9 @@ public class TicketReservationManager {
 
         String ticketCategoryDescription = ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
 
-        List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
+        List<AdditionalServiceItem> additionalServiceItems = additionalServiceManager.findItemsInReservation(event.getId(), reservationId);
         Map<String, Object> adminModel = TemplateResource.buildModelForTicketHasBeenCancelledAdmin(organization, event, ticket,
-            ticketCategoryDescription, additionalServiceItems, asi -> additionalServiceTextRepository.findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE));
+            ticketCategoryDescription, additionalServiceItems, asi -> additionalServiceManager.loadItemTitle(asi, locale));
         notificationManager.sendSimpleEmail(event, null, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
         		() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
 
@@ -1676,8 +1644,8 @@ public class TicketReservationManager {
     }
 
 
-    public boolean hasPaidSupplements(String reservationId) {
-        return additionalServiceItemRepository.hasPaidSupplements(reservationId);
+    public boolean hasPaidSupplements(int eventId, String reservationId) {
+        return additionalServiceManager.hasPaidSupplements(eventId, reservationId);
     }
 
     public int revertTicketsToFreeIfAccessRestricted(int eventId) {
@@ -2101,7 +2069,7 @@ public class TicketReservationManager {
                 false,
                 principal);
             return Optional.of(reservationId);
-        } catch (NotEnoughTicketsException nete) {
+        } catch (NotEnoughTicketsException | NotEnoughItemsException nete) {
             bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
         } catch (MissingSpecialPriceTokenException missing) {
             bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);

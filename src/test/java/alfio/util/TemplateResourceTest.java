@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -66,7 +67,7 @@ class TemplateResourceTest {
         Pair<ZonedDateTime, ZonedDateTime> dates = getDates();
         when(ticket.ticketCode(anyString(), anyBoolean())).thenReturn("abcd");
         when(event.getPrivateKey()).thenReturn("key");
-        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticketWithMetadata, Optional.empty(), "abcd", Collections.emptyMap());
+        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticketWithMetadata, Optional.empty(), "abcd", Collections.emptyMap(), List.of());
         assertEquals(dates.getLeft(), model.get("validityStart"));
         assertEquals(dates.getRight(), model.get("validityEnd"));
     }

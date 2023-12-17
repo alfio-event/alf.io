@@ -223,6 +223,7 @@ class TicketReservationManagerTest {
         reservationHelper = mock(ReservationEmailContentHelper.class);
         reservationCostCalculator = mock(ReservationCostCalculator.class);
         var osm = mock(OrderSummaryGenerator.class);
+        var additionalServiceManager = new AdditionalServiceManager(additionalServiceRepository, additionalServiceTextRepository, additionalServiceItemRepository, mock(NamedParameterJdbcTemplate.class), mock(TicketRepository.class), ticketFieldRepository);
         reservationFinalizer = new ReservationFinalizer(transactionManager,
             ticketReservationRepository, userRepository, extensionManager, auditingRepository, TestUtil.clockProvider(),
             configurationManager, null, ticketRepository, reservationHelper, specialPriceRepository,
@@ -245,9 +246,7 @@ class TicketReservationManagerTest {
             transactionManager,
             waitingQueueManager,
             ticketFieldRepository,
-            additionalServiceRepository,
-            additionalServiceItemRepository,
-            additionalServiceTextRepository,
+            additionalServiceManager,
             auditingRepository,
             userRepository,
             extensionManager,
@@ -265,7 +264,8 @@ class TicketReservationManagerTest {
             reservationCostCalculator,
             reservationHelper,
             reservationFinalizer,
-            osm);
+            osm,
+            additionalServiceItemRepository);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

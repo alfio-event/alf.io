@@ -32,8 +32,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
@@ -51,7 +51,7 @@ public class BookingInfoTicketLoader {
     private final ClockProvider clockProvider;
 
 
-    public BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event) {
+    public BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event, Set<TicketFieldConfiguration.Context> contexts) {
         var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
             .stream()
             .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
@@ -60,7 +60,7 @@ public class BookingInfoTicketLoader {
             .stream()
             .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
 
-        boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(ticket.getTicketsReservationId());
+        boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(ticket.getEventId(), ticket.getTicketsReservationId());
         Map<String, String> formattedDates = Map.of();
         boolean onlineEventStarted = false;
         if(event.isOnline()) {
@@ -81,7 +81,8 @@ public class BookingInfoTicketLoader {
             descriptionsByTicketFieldId,
             valuesByTicketIds,
             formattedDates,
-            onlineEventStarted);
+            onlineEventStarted,
+            contexts);
     }
 
     public BookingInfoTicket toBookingInfoTicket(Ticket t,
@@ -91,7 +92,8 @@ public class BookingInfoTicketLoader {
                                                  Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
                                                  Map<Integer, List<TicketFieldValue>> valuesByTicketIds,
                                                  Map<String, String> formattedOnlineCheckInDate,
-                                                 boolean onlineEventStarted) {
+                                                 boolean onlineEventStarted,
+                                                 Set<TicketFieldConfiguration.Context> contexts) {
         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
         var configuration = configurationManager.getFor(EnumSet.of(ALLOW_FREE_TICKETS_CANCELLATION, SEND_TICKETS_AUTOMATICALLY, ALLOW_TICKET_DOWNLOAD), ConfigurationLevel.ticketCategory(event, t.getCategoryId()));
         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
@@ -103,18 +105,19 @@ public class BookingInfoTicketLoader {
             cancellationEnabled,
             configuration.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault(),
             configuration.get(ALLOW_TICKET_DOWNLOAD).getValueAsBooleanOrDefault(),
-            ticketFieldsFilterer.getFieldsForTicket(t.getUuid()),
+            ticketFieldsFilterer.getFieldsForTicket(t.getUuid(), contexts),
             descriptionsByTicketFieldId,
             valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()),
             formattedOnlineCheckInDate,
             onlineEventStarted);
     }
 
-    public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, EventAndOrganizationId event) {
+    public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, Event event) {
         var fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        return new Validator.TicketFieldsFilterer(fields, ticketHelper.getTicketUUIDToCategoryId(),
-            new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(reservationId)),
-            ticketReservationManager.findFirstInReservation(reservationId));
+        return new Validator.TicketFieldsFilterer(fields,
+            ticketReservationManager.findTicketsInReservation(reservationId),
+            event.supportsLinkedAdditionalServices(),
+            additionalServiceItemRepository.findByReservationUuid(event.getId(), reservationId));
     }
 
     private static BookingInfoTicket toBookingInfoTicket(Ticket ticket,
@@ -128,17 +131,27 @@ public class BookingInfoTicketLoader {
                                                          boolean onlineEventStarted) {
 
 
-        var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
+        var valuesById = ticketFieldValues.stream()
+            .collect(Collectors.groupingBy(TicketFieldValue::getTicketFieldConfigurationId));
 
 
         var ticketFieldsAdditional = ticketFields.stream()
+            // hide additional service related fields
+            .filter(ticketFieldConfiguration -> ticketFieldConfiguration.getAdditionalServiceId() != null)
             .sorted(Comparator.comparing(TicketFieldConfiguration::getOrder))
-            .map(tfc -> {
+            .flatMap(tfc -> {
                 var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
-                var fieldValue = valueById.get(tfc.getId());
-                var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue == null ? null : fieldValue.getValue());
-                var descs = fromFieldDescriptions(descriptionsByTicketFieldId.get(t.getTicketFieldConfigurationId()));
-                return toAdditionalField(t, descs);
+                var fieldValues = valuesById.get(tfc.getId());
+                var descs = fromFieldDescriptions(descriptionsByTicketFieldId.get(tfc.getId()));
+                if (fieldValues == null) {
+                    var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), null);
+                    return Stream.of(toAdditionalField(t, descs));
+                }
+                return fieldValues.stream()
+                    .map(fieldValue -> {
+                        var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue.getValue());
+                        return toAdditionalField(t, descs);
+                    });
             }).collect(Collectors.toList());
 
         return new BookingInfoTicket(ticket.getUuid(),
@@ -168,7 +181,7 @@ public class BookingInfoTicketLoader {
             fields, t.isBeforeStandardFields(), description);
     }
 
-    private static Map<String, Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
+    public static Map<String, Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
         return descs.stream().collect(Collectors.toMap(TicketFieldDescription::getLocale,
             d -> new Description(d.getLabelDescription(), d.getPlaceholderDescription(), d.getRestrictedValuesDescription())));
     }
