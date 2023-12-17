@@ -18,7 +18,7 @@
     function TicketsFullDataCtrl(AdminReservationService) {
         var ctrl = this;
         var defaultLang = ctrl.event.contentLanguages[0].locale;
-        var textFields = ['input:text', 'input:tel', 'textarea', 'vat:eu'];
+        var textFields = ['input:text', 'input:tel', 'textarea', 'vat:eu', 'input:dateOfBirth'];
         ctrl.$onInit = function() {
             AdminReservationService.getFullTicketData(ctrl.event, ctrl.reservationId, ctrl.ticketId).then(function(res) {
                 ctrl.fullData = res.data;

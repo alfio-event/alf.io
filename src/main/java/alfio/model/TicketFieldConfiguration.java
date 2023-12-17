@@ -113,6 +113,10 @@ public class TicketFieldConfiguration {
         return "vat:eu".equals(type);
     }
 
+    public boolean isDateOfBirth() {
+        return "dateOfBirth".equals(type);
+    }
+
     public String getInputType() {
         String[] split = COLON_SPLITTER.split(type);
         return split.length == 2 ? split[1] : "text";

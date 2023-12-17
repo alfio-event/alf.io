@@ -9,7 +9,8 @@
         'checkbox': 'Multiple choice (checkbox)',
         'radio': 'One choice list (radio button)',
         'country': 'Country',
-        'vat:eu': 'EU VAT'
+        'vat:eu': 'EU VAT',
+        'input:dateOfBirth': 'Date of Birth'
     };
 
     angular.module('adminApplication')

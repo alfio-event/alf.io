@@ -4,7 +4,7 @@
     var BASE_STATIC_URL = window.ALFIO_CONTEXT_PATH + "/resources/angular-templates/admin/partials";
 
     //
-    var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+    var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country', 'input:dateOfBirth'];
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
     
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',

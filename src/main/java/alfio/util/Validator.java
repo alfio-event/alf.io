@@ -40,6 +40,9 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -409,12 +412,15 @@ public final class Validator {
     }
 
     private static void fieldValueBasicValidation(Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf, int i, String formValue) {
+
+        boolean isDateOfBirth = fieldConf.isDateOfBirth();
+
         if(fieldConf.isMaxLengthDefined()) {
-            validateMaxLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", "error.tooLong", fieldConf.getMaxLength(), errors);
+            validateMaxLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", isDateOfBirth ? "error.tooOld" : "error.tooLong", fieldConf, errors);
         }
 
-        if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
-            errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", "error.tooShort", new Object[] { fieldConf.getMinLength() }, null);
+        if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined()) {
+            validateMinLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", isDateOfBirth ? "error.tooYoung" : "error.tooShort", fieldConf, errors);
         }
 
         if(!fieldConf.getRestrictedValues().isEmpty()) {
@@ -429,6 +435,14 @@ public final class Validator {
         if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
             errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]",
                 "error.disabledValue", null, null);
+        }
+
+        if (!errors.hasFieldErrors() && StringUtils.isNotBlank(formValue) && isDateOfBirth) {
+            int age = calculateAge(formValue, true);
+            if (age < 0) {
+                // age was not provided in the right format
+                errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", ErrorsCode.EMPTY_FIELD);
+            }
         }
     }
 
@@ -448,6 +462,51 @@ public final class Validator {
 
     public static boolean isCanonicalMailAddress(String email) {
         return StringUtils.isNotEmpty(email) && CANONICAL_MAIL_VALIDATOR.matcher(email).matches();
+    }
+
+    private static void validateMinLength(String value, String fieldName, String errorCode, TicketFieldConfiguration fieldConfiguration, Errors errors) {
+        if (fieldConfiguration.isDateOfBirth()) {
+            validateMinAge(value, fieldName, errorCode, fieldConfiguration, errors);
+        } else if (StringUtils.length(value) < fieldConfiguration.getMinLength()) {
+            errors.rejectValue(fieldName, errorCode, new Object[] { fieldConfiguration.getMinLength() }, null);
+        }
+    }
+
+    static void validateMinAge(String value, String fieldName, String errorCode, TicketFieldConfiguration fieldConfiguration, Errors errors) {
+        int minAge = fieldConfiguration.getMinLength();
+        int age = calculateAge(value, false);
+        if (age >= 0 && age < minAge) {
+            errors.rejectValue(fieldName, errorCode, new Object[] { minAge }, null);
+        }
+    }
+
+    private static void validateMaxLength(String value, String fieldName, String errorCode, TicketFieldConfiguration fieldConfiguration, Errors errors) {
+        if (fieldConfiguration.isDateOfBirth()) {
+            validateMaxAge(value, fieldName, errorCode, fieldConfiguration, errors);
+        } else {
+            validateMaxLength(value, fieldName, errorCode, fieldConfiguration.getMaxLength(), errors);
+        }
+    }
+
+    static void validateMaxAge(String value, String fieldName, String errorCode, TicketFieldConfiguration fieldConfiguration, Errors errors) {
+        int maxAge = fieldConfiguration.getMaxLength();
+        int age = calculateAge(value, true);
+        if (age > maxAge) {
+            errors.rejectValue(fieldName, errorCode, new Object[] { maxAge }, null);
+        }
+    }
+
+    private static int calculateAge(String value, boolean addRemainder) {
+        try {
+            var period = Period.between(LocalDate.parse(value), LocalDate.now(ClockProvider.clock()));
+            int years = period.getYears();
+            if (addRemainder && (period.getMonths() > 0 || period.getDays() > 0)) {
+                years += 1;
+            }
+            return years;
+        } catch (DateTimeException ex) {
+            return -1;
+        }
     }
 
     private static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {

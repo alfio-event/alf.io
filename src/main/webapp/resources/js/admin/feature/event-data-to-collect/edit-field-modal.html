@@ -115,16 +115,16 @@
                     </div>
                 </div>
             </div>
-            <div class="form-horizontal" data-ng-if="field.type === 'input:text' || field.type === 'input:tel' || field.type === 'textarea'">
+            <div class="form-horizontal" data-ng-if="field.type === 'input:text' || field.type === 'input:tel' || field.type === 'textarea' || field.type === 'input:dateOfBirth'">
                 <div class="form-group">
-                    <label class="col-xs-2 control-label">Min length</label>
+                    <label class="col-xs-2 control-label">Min {{ field.type === 'input:dateOfBirth' ? 'age (years)' : 'length'}}</label>
                     <div class="col-xs-10">
                         <input type="number" ng-model="field.minLength" class="form-control" data-ng-if="addNewField">
                         <pre class="form-control-static" data-ng-if="!addNewField">{{field.minLength}}</pre>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-xs-2 control-label">Max length</label>
+                    <label class="col-xs-2 control-label">Max {{ field.type === 'input:dateOfBirth' ? 'age (years)' : 'length'}}</label>
                     <div class="col-xs-10">
                         <input type="number" ng-model="field.maxLength" class="form-control" data-ng-if="addNewField">
                         <pre class="form-control-static" data-ng-if="!addNewField">{{field.maxLength}}</pre>

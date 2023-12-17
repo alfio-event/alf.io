@@ -333,9 +333,9 @@ public class EventCreationRequest{
             String code = type != null ? type.code : AdditionalInfoType.GENERIC_TEXT.code;
             Integer minLength = contentLength != null ? contentLength.min : null;
             Integer maxLength = contentLength != null ? contentLength.max : null;
-            List<EventModification.RestrictedValue> restrictedValues = null;
+            List<EventModification.RestrictedValue> restrictedValueList = null;
             if(!isEmpty(this.restrictedValues)) {
-                restrictedValues = this.restrictedValues.stream().map(rv -> new EventModification.RestrictedValue(rv.value, rv.enabled)).collect(Collectors.toList());
+                restrictedValueList = this.restrictedValues.stream().map(rv -> new EventModification.RestrictedValue(rv.value, rv.enabled)).collect(Collectors.toList());
             }
 
             return new EventModification.AdditionalField(
@@ -347,10 +347,10 @@ public class EventCreationRequest{
                 false,
                 minLength,
                 maxLength,
-                restrictedValues,
+                restrictedValueList,
                 toDescriptionMap(orEmpty(label), orEmpty(placeholder), orEmpty(this.restrictedValues)),
-                null,//TODO: linkedAdditionalService
-                null);//TODO: linkedCategoryIds
+                null,
+                null);
         }
     }
 
@@ -398,7 +398,8 @@ public class EventCreationRequest{
         COUNTRY("country"),
         EU_VAT_NR("vat:eu"),
         CHECKBOX("checkbox"),
-        RADIO("radio");
+        RADIO("radio"),
+        DATE_OF_BIRTH("input:dateOfBirth");
 
         private final String code;
 

@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 @AllArgsConstructor
 public class TicketFieldConfigurationDescriptionAndValue {
@@ -49,7 +48,8 @@ public class TicketFieldConfigurationDescriptionAndValue {
         "text",
         "tel",
         "textarea",
-        "vat:eu"
+        "vat:eu",
+        "dateOfBirth"
     );
     private static final Pattern CHECKBOX_VALUES_PATTERN = Pattern.compile("\"(.*?)\",?");
 
