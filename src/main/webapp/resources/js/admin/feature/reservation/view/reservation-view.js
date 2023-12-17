@@ -18,6 +18,7 @@
     function ReservationViewCtrl(AdminReservationService, EventService, ReservationCancelService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal, ConfigurationService) {
         var ctrl = this;
         ctrl.displayPotentialMatch = false;
+        ctrl.isOwner = window.USER_IS_OWNER; // check if user is owner _or_ admin
 
         ctrl.notification = {
             customer: {
