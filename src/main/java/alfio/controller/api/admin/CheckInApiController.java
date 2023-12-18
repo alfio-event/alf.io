@@ -73,11 +73,13 @@ public class CheckInApiController {
     
     @GetMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
     public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier);
         return checkInManager.evaluateTicketStatus(eventId, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
     @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
     public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier);
         return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
@@ -86,6 +88,7 @@ public class CheckInApiController {
                                           @PathVariable("ticketIdentifier") String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
                                           Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier);
         return checkInManager.checkIn(eventId, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), principal.getName());
     }
 
@@ -95,6 +98,7 @@ public class CheckInApiController {
                                           @RequestBody TicketCode ticketCode,
                                           @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                           Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier);
         String username = principal.getName();
         String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
         return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
@@ -124,6 +128,7 @@ public class CheckInApiController {
     public boolean manualCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier);
         log.warn("for event id : {} and ticket : {}, a manual check in has been done by {}", eventId, ticketIdentifier, principal.getName());
         return checkInManager.manualCheckIn(eventId, ticketIdentifier, principal.getName());
     }
@@ -132,6 +137,7 @@ public class CheckInApiController {
     public ResponseEntity<Boolean> manualCheckIn(@PathVariable("eventName") String eventName,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier);
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(ev -> manualCheckIn(ev.getId(), ticketIdentifier, principal)));
     }
@@ -140,6 +146,7 @@ public class CheckInApiController {
     public boolean revertCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier);
         log.warn("for event id : {} and ticket : {}, a revert of the check in has been done by {}", eventId, ticketIdentifier, principal.getName());
         return checkInManager.revertCheckIn(eventId, ticketIdentifier, principal.getName());
     }
@@ -148,6 +155,7 @@ public class CheckInApiController {
     public ResponseEntity<Boolean> revertCheckIn(@PathVariable("eventName") String eventName,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier);
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(ev -> revertCheckIn(ev.getId(), ticketIdentifier, principal)));
     }
@@ -158,6 +166,7 @@ public class CheckInApiController {
                                                        @RequestBody TicketCode ticketCode,
                                                        @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                                        Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier);
         String username = principal.getName();
         String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
         return checkInManager.confirmOnSitePayment(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
@@ -170,7 +179,8 @@ public class CheckInApiController {
     }
     
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment")
-    public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
+    public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier);
         return checkInManager.confirmOnSitePayment(ticketIdentifier)
             .map(s -> new OnSitePaymentConfirmation(true, "ok"))
             .orElseGet(() -> new OnSitePaymentConfirmation(false, "Ticket with uuid " + ticketIdentifier + " not found"));

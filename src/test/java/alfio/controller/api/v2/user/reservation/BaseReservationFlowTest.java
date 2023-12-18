@@ -76,7 +76,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -1001,7 +1000,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
                 CheckInApiController.TicketCode tc = new CheckInApiController.TicketCode();
                 tc.setCode(ticketCode);
-                assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc, new TestingAuthenticationToken(context.userId + "_api", "")).getResult().getStatus());
+                assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc, principal).getResult().getStatus());
                 List<ScanAudit> audits = scanAuditRepository.findAllForEvent(context.event.getId());
                 assertFalse(audits.isEmpty());
                 assertTrue(audits.stream().anyMatch(sa -> sa.getTicketUuid().equals(ticketIdentifier)));
@@ -1078,7 +1077,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
                 CheckInApiController.TicketCode tc2 = new CheckInApiController.TicketCode();
                 tc2.setCode(ticketCode);
-                TicketAndCheckInResult ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc2, new TestingAuthenticationToken("ciccio", "ciccio"));
+                TicketAndCheckInResult ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc2, principal);
                 assertEquals(CheckInStatus.SUCCESS, ticketAndcheckInResult.getResult().getStatus());
 
                 extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
@@ -1182,7 +1181,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     // since on the badge we don't have the full ticket info, we will pass in "null" as scanned code
                     CheckInApiController.TicketCode badgeScan = new CheckInApiController.TicketCode();
                     badgeScan.setCode(null);
-                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, principal);
                     // ONCE_PER_DAY is disabled by default, therefore we get an error
                     assertEquals(CheckInStatus.EMPTY_TICKET_CODE, ticketAndcheckInResult.getResult().getStatus());
                     // enable ONCE_PER_DAYFalse
@@ -1192,7 +1191,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                         TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY,
                         category.getTicketAccessType()
                     );
-                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, principal);
                     // the event start date is in one week, so we expect an error here
                     assertEquals(CheckInStatus.INVALID_TICKET_CATEGORY_CHECK_IN_DATE, ticketAndcheckInResult.getResult().getStatus());
 
@@ -1200,7 +1199,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                         context.event.getFileBlobId(), context.event.getLocation(), context.event.getLatitude(), context.event.getLongitude(), context.event.now(clockProvider).minusSeconds(1), context.event.getEnd(), context.event.getTimeZone(),
                         context.event.getOrganizationId(), context.event.getLocales(), context.event.getFormat());
 
-                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, principal);
                     // we have already scanned the ticket today, so we expect to receive a warning
                     assertEquals(CheckInStatus.BADGE_SCAN_ALREADY_DONE, ticketAndcheckInResult.getResult().getStatus());
                     assertEquals(1, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));
@@ -1212,7 +1211,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     // 1 badge scan
                     assertEquals(3, jdbcTemplate.update("update auditing set event_time = event_time - interval '1 day' where reservation_id = :reservationId and event_type in ('BADGE_SCAN', 'CHECK_IN')", Map.of("reservationId", reservationId)));
 
-                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                    ticketAndcheckInResult = checkInApiController.checkIn(context.event.getId(), ticketIdentifier, badgeScan, principal);
                     // we now expect to receive a successful message
                     assertEquals(CheckInStatus.BADGE_SCAN_SUCCESS, ticketAndcheckInResult.getResult().getStatus());
                     assertEquals(2, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));

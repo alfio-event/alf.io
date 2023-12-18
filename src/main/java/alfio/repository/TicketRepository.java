@@ -494,4 +494,6 @@ public interface TicketRepository {
     List<Integer> findTicketsWithAdditionalData(@Bind("reservationId") String reservationId,
                                                 @Bind("eventPublicIdentifier") String eventPublicIdentifier);
 
+    @Query("select exists ( select id from ticket where uuid = :uuid and event_id = :eventId)")
+    boolean isTicketInEvent(@Bind("eventId") int eventId, @Bind("uuid") String uuid);
 }

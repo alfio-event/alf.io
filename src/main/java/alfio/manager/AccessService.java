@@ -550,4 +550,20 @@ public class AccessService {
             throw new AccessDeniedException();
         }
     }
+
+    public void checkEventTicketIdentifierMembership(Principal principal, int eventId, String ticketIdentifier) {
+        checkEventMembership(principal, eventId);
+        if (!ticketRepository.isTicketInEvent(eventId, ticketIdentifier)) {
+            log.warn("ticket {} is not in eventId {}", ticketIdentifier, eventId);
+            throw new AccessDeniedException();
+        }
+    }
+
+    public void checkEventTicketIdentifierMembership(Principal principal, String eventName, String ticketIdentifier) {
+        var eventAndOrgId = checkEventMembership(principal, eventName);
+        if (!ticketRepository.isTicketInEvent(eventAndOrgId.getId(), ticketIdentifier)) {
+            log.warn("ticket {} is not in eventId {}", ticketIdentifier, eventAndOrgId.getId());
+            throw new AccessDeniedException();
+        }
+    }
 }
