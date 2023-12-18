@@ -997,7 +997,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 }
 
                 String ticketCode = fullTicketInfo.ticketCode(context.event.getPrivateKey(), context.event.supportsQRCodeCaseInsensitive());
-                TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode);
+                TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode, principal);
                 assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
                 CheckInApiController.TicketCode tc = new CheckInApiController.TicketCode();
                 tc.setCode(ticketCode);
@@ -1011,7 +1011,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
                 validateCheckInData(context);
 
-                TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode);
+                TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode, principal);
                 assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
 
                 // check stats after check in one ticket
@@ -1051,7 +1051,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 assertTrue(checkInApiController.revertCheckIn(context.event.getId(), ticketIdentifier, principal));
 
                 assertFalse(checkInApiController.revertCheckIn(context.event.getId(), ticketIdentifier, principal));
-                TicketAndCheckInResult ticketAndCheckInResult2 = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode);
+                TicketAndCheckInResult ticketAndCheckInResult2 = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode, principal);
                 assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult2.getResult().getStatus());
 
                 UsersApiController.UserWithPasswordAndQRCode sponsorUser = usersApiController.insertUser(new UserModification(null, context.event.getOrganizationId(), "SPONSOR", "sponsor", "first", "last", "email@email.com", User.Type.INTERNAL, null, null), "http://localhost:8080", principal);

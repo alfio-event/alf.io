@@ -72,12 +72,12 @@ public class CheckInApiController {
     }
     
     @GetMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
         return checkInManager.evaluateTicketStatus(eventId, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
     @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
         return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
@@ -106,6 +106,7 @@ public class CheckInApiController {
                                                            @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                                            @RequestParam(value = "forceCheckInPaymentOnSite", required = false, defaultValue = "false") boolean forceCheckInPaymentOnSite,
                                                            Principal principal) {
+        accessService.checkEventMembership(principal, eventName);
         String username = principal.getName();
         String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
         return ticketIdentifierCodes.stream()
@@ -164,7 +165,7 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/event/{eventName}/statistics")
     public CheckInStatistics getStatistics(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventOwnership(principal, eventName);
+        accessService.checkEventMembership(principal, eventName);
         return checkInManager.getStatistics(eventName, principal.getName());
     }
     
@@ -190,6 +191,7 @@ public class CheckInApiController {
                                                                  @RequestParam(value = "query", required = false) String query,
                                                                  @RequestParam(value = "page", required = false, defaultValue = "0") int page,
                                                                  Principal principal) {
+        accessService.checkEventMembership(principal, publicIdentifier);
         if (StringUtils.isBlank(query) || StringUtils.isBlank(publicIdentifier)) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
@@ -203,13 +205,14 @@ public class CheckInApiController {
     public List<FullTicketInfo> findAllTicketsForAdminCheckIn(@PathVariable("eventId") int eventId,
                                                               @RequestBody List<Integer> ids,
                                                               Principal principal) {
+        accessService.checkEventMembership(principal, eventId);
         validateIdList(ids);
         return checkInManager.getAttendeesInformation(eventId, ids, principal.getName());
     }
 
     @GetMapping("/check-in/{eventName}/label-layout")
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventOwnership(principal, eventName);
+        accessService.checkEventMembership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
             .map(this::parseLabelLayout)
@@ -221,7 +224,7 @@ public class CheckInApiController {
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
-        accessService.checkEventOwnership(principal, eventName);
+        accessService.checkEventMembership(principal, eventName);
         Date since = changedSince == null ? new Date(0) : DateUtils.addSeconds(new Date(changedSince), -1);
         Optional<List<Integer>> ids = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInEnabled())
@@ -236,6 +239,7 @@ public class CheckInApiController {
                                                        @RequestParam(value = "additionalField", required = false) List<String> additionalFields,
                                                        @RequestBody List<Integer> ids,
                                                        Principal principal) {
+        accessService.checkEventMembership(principal, eventName);
 
         validateIdList(ids);
         return eventManager.getOptionalByName(eventName, principal.getName())

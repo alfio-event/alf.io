@@ -194,6 +194,12 @@ public class AccessService {
         return eventAndOrgId;
     }
 
+    /**
+     * Access for admin, owner and supervisor (and API_CONSUMER, SYSTEM_API_CLIENT)
+     * @param principal
+     * @param eventShortName
+     * @return
+     */
     public EventAndOrganizationId checkEventMembership(Principal principal, String eventShortName) {
         var eventAndOrgId = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName)
             .orElseThrow(AccessDeniedException::new);
