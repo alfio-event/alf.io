@@ -59,7 +59,7 @@ public class AdminWaitingQueueApiController {
 
     @GetMapping("/status")
     public Map<String, Boolean> getStatusForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventMembership(principal, eventName);
+        accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(this::loadStatus)
             .orElse(Collections.emptyMap());
@@ -94,7 +94,7 @@ public class AdminWaitingQueueApiController {
 
     @GetMapping("/count")
     public Integer countWaitingPeople(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
-        accessService.checkEventMembership(principal, eventName);
+        accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         Optional<Integer> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.countSubscribers(e.getId()));
         if(count.isPresent()) {

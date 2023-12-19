@@ -103,6 +103,10 @@ public class AccessService {
         this.waitingQueueRepository = waitingQueueRepository;
     }
 
+    public static final Set<Role> MEMBERSHIP_ROLES = Set.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER, Role.SUPERVISOR);
+
+    public static final Set<Role> CHECKIN_ROLES = Set.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER, Role.SUPERVISOR, Role.OPERATOR);
+
     public void checkAccessToUser(Principal principal, Integer userId) {
         if (userId == null || principal == null) {
             throw new AccessDeniedException();
@@ -126,7 +130,7 @@ public class AccessService {
         }
     }
 
-    public void checkOrganizationMembership(Principal principal, int organizationId) {
+    public void checkOrganizationMembership(Principal principal, int organizationId, Set<Role> roles) {
         if (principal == null) {
             log.trace("No user present, we will allow it");
             return;
@@ -135,7 +139,7 @@ public class AccessService {
             log.trace("Allowing ownership to Organization {} to System API Key", organizationId);
             return;
         }
-        if (isOwnerOrCheckinSupervisorOfOrganization(principal, organizationId)) {
+        if (hasRole(principal, organizationId, roles)) {
             log.trace("Allowing ownership to Organization {} to user {}", organizationId, principal.getName());
             return;
         }
@@ -200,16 +204,16 @@ public class AccessService {
      * @param eventShortName
      * @return
      */
-    public EventAndOrganizationId checkEventMembership(Principal principal, String eventShortName) {
+    public EventAndOrganizationId checkEventMembership(Principal principal, String eventShortName, Set<Role> roles) {
         var eventAndOrgId = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName)
             .orElseThrow(AccessDeniedException::new);
-        checkOrganizationMembership(principal, eventAndOrgId.getOrganizationId());
+        checkOrganizationMembership(principal, eventAndOrgId.getOrganizationId(), roles);
         return eventAndOrgId;
     }
 
-    public EventAndOrganizationId checkEventMembership(Principal principal, int eventId) {
+    public EventAndOrganizationId checkEventMembership(Principal principal, int eventId, Set<Role> roles) {
         var eventAndOrgId = eventRepository.findEventAndOrganizationIdById(eventId);
-        checkOrganizationMembership(principal, eventAndOrgId.getOrganizationId());
+        checkOrganizationMembership(principal, eventAndOrgId.getOrganizationId(), roles);
         return eventAndOrgId;
     }
 
@@ -275,11 +279,6 @@ public class AccessService {
     private boolean isOwner(Principal principal) {
         return checkRole(principal, EnumSet.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER));
     }
-
-    private boolean isOwnerOrCheckinSupervisor(Principal principal) {
-        return checkRole(principal, EnumSet.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER, Role.SUPERVISOR));
-    }
-
     private boolean checkRole(Principal principal, Set<Role> expectedRoles) {
         return checkRole(principal.getName(), expectedRoles);
     }
@@ -297,9 +296,9 @@ public class AccessService {
             .isPresent();
     }
 
-    private boolean isOwnerOrCheckinSupervisorOfOrganization(Principal principal, int organizationId) {
+    private boolean hasRole(Principal principal, int organizationId, Set<Role> roles) {
         return userRepository.findIdByUserName(principal.getName())
-            .filter(userId -> isAdmin(principal) || (isOwnerOrCheckinSupervisor(principal) && userOrganizationRepository.userIsInOrganization(userId, organizationId)))
+            .filter(userId -> isAdmin(principal) || (checkRole(principal, roles) && userOrganizationRepository.userIsInOrganization(userId, organizationId)))
             .isPresent();
     }
 
@@ -325,11 +324,11 @@ public class AccessService {
                                           String publicIdentifier,
                                           String reservationId) {
         if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
-            checkReservationMembershipForEvent(principal, publicIdentifier, reservationId);
+            checkReservationMembershipForEvent(principal, publicIdentifier, reservationId, MEMBERSHIP_ROLES);
         } else {
             var subscriptionDescriptor = subscriptionRepository.findDescriptorByReservationId(reservationId)
                 .orElseThrow(AccessDeniedException::new);
-            checkOrganizationMembership(principal, subscriptionDescriptor.getOrganizationId());
+            checkOrganizationMembership(principal, subscriptionDescriptor.getOrganizationId(), MEMBERSHIP_ROLES);
             if (!subscriptionDescriptor.getPublicIdentifier().equals(publicIdentifier)) {
                 throw new AccessDeniedException();
             }
@@ -386,10 +385,10 @@ public class AccessService {
         }
     }
 
-    private void checkReservationMembershipForEvent(Principal principal, String publicIdentifier, String reservationId) {
+    private void checkReservationMembershipForEvent(Principal principal, String publicIdentifier, String reservationId, Set<Role> roles) {
         var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(publicIdentifier)
             .orElseThrow(AccessDeniedException::new);
-        checkEventMembership(principal, event.getId());
+        checkEventMembership(principal, event.getId(), roles);
         var reservations = reservationRepository.getReservationIdAndEventId(List.of(reservationId));
         if (reservations.size() != 1 || reservations.get(0).getEventId() != event.getId()) {
             throw new AccessDeniedException();
@@ -544,23 +543,23 @@ public class AccessService {
     }
 
     public void checkTicketMembership(Principal principal, String publicIdentifier, String reservationId, int ticketId) {
-        checkReservationMembershipForEvent(principal, publicIdentifier, reservationId);
+        checkReservationMembershipForEvent(principal, publicIdentifier, reservationId, AccessService.MEMBERSHIP_ROLES);
         var tickets = ticketRepository.findByIds(List.of(ticketId));
         if (tickets.size() != 1 || !tickets.get(0).getTicketsReservationId().equals(reservationId)) {
             throw new AccessDeniedException();
         }
     }
 
-    public void checkEventTicketIdentifierMembership(Principal principal, int eventId, String ticketIdentifier) {
-        checkEventMembership(principal, eventId);
+    public void checkEventTicketIdentifierMembership(Principal principal, int eventId, String ticketIdentifier, Set<Role> roles) {
+        checkEventMembership(principal, eventId, roles);
         if (!ticketRepository.isTicketInEvent(eventId, ticketIdentifier)) {
             log.warn("ticket {} is not in eventId {}", ticketIdentifier, eventId);
             throw new AccessDeniedException();
         }
     }
 
-    public void checkEventTicketIdentifierMembership(Principal principal, String eventName, String ticketIdentifier) {
-        var eventAndOrgId = checkEventMembership(principal, eventName);
+    public void checkEventTicketIdentifierMembership(Principal principal, String eventName, String ticketIdentifier, Set<Role> roles) {
+        var eventAndOrgId = checkEventMembership(principal, eventName, roles);
         if (!ticketRepository.isTicketInEvent(eventAndOrgId.getId(), ticketIdentifier)) {
             log.warn("ticket {} is not in eventId {}", ticketIdentifier, eventAndOrgId.getId());
             throw new AccessDeniedException();

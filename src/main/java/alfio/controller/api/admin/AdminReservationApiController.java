@@ -65,7 +65,7 @@ public class AdminReservationApiController {
         if(purchaseContextType != PurchaseContextType.event) {
             return Result.error(ErrorCode.EventError.NOT_FOUND);
         }
-        accessService.checkEventMembership(principal, publicIdentifier); // ADMIN, OWNER _and_ SUPERVISOR can create a new reservation
+        accessService.checkEventMembership(principal, publicIdentifier, AccessService.MEMBERSHIP_ROLES); // ADMIN, OWNER _and_ SUPERVISOR can create a new reservation
         return adminReservationManager.createReservation(reservation, publicIdentifier, principal.getName()).map(r -> r.getLeft().getId());
     }
 
