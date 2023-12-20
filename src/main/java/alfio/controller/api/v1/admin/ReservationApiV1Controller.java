@@ -133,7 +133,6 @@ public class ReservationApiV1Controller {
                                                                               @RequestBody ReservationConfirmationRequest reservationConfirmationRequest,
                                                                               Principal principal) {
 
-
         if (!reservationConfirmationRequest.isValid()) {
             return ResponseEntity.badRequest().build();
         }
