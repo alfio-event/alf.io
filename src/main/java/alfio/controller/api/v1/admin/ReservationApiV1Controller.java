@@ -26,6 +26,7 @@ import alfio.model.api.v1.admin.ReservationConfirmationResponse.HolderDetail;
 import alfio.model.modification.AdminReservationModification.Notification;
 import alfio.model.result.ErrorCode;
 import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.user.Role;
 import alfio.util.ReservationUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,10 +37,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElseGet;
@@ -170,6 +168,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<Boolean> deleteTicket(@PathVariable("slug") String slug,
                                                 @PathVariable("ticketUUID") String ticketUUID,
                                                 Principal user) {
+        accessService.checkEventTicketIdentifierMembership(user, slug, ticketUUID, EnumSet.of(Role.OWNER));
         return ResponseEntity.of(adminReservationManager.findTicketWithReservationId(ticketUUID, slug, user.getName())
             .map(ticket -> {
                 // make sure that ticket belongs to the same event
@@ -190,6 +189,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<Boolean> deleteSubscription(@PathVariable("id") String descriptorId,
                                                       @PathVariable("subscriptionToDelete") UUID subscriptionToDelete,
                                                       Principal user) {
+        accessService.checkSubscriptionDescriptorOwnership(user, descriptorId);
         return ResponseEntity.of(adminReservationManager.findReservationIdForSubscription(descriptorId, subscriptionToDelete, user)
             .map(descriptorAndReservationId -> {
                 var result = adminReservationManager.removeSubscription(descriptorAndReservationId.getKey(), descriptorAndReservationId.getValue(), subscriptionToDelete, user.getName());

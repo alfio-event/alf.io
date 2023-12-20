@@ -95,6 +95,7 @@ public class OrganizationsApiV1Controller {
     public ResponseEntity<Boolean> deleteApiKeyForOrganization(@PathVariable("id") int organizationId,
                                                                @PathVariable("apiKey") String apiKey,
                                                                Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.of(userManager.findUserIdByApiKey(apiKey, organizationId).map(userId -> {
             userManager.deleteUser(userId, principal);
             return true;
@@ -105,6 +106,7 @@ public class OrganizationsApiV1Controller {
     public ResponseEntity<Organization> update(@PathVariable("id") int organizationId,
                                                @RequestBody OrganizationModification om,
                                                Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         if (om == null || !om.isValid(false) || organizationId != om.getId()) {
             return ResponseEntity.badRequest().build();
         }
