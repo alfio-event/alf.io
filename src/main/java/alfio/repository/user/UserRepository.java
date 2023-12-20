@@ -42,6 +42,9 @@ public interface UserRepository {
     @Query("select * from ba_user left join j_user_organization on ba_user.id = j_user_organization.user_id where j_user_organization.org_id = :orgId and ba_user.user_type = 'API_KEY'")
     List<User> findAllApiKeysForOrganization(@Bind("orgId") int organizationId);
 
+    @Query("select id from ba_user join j_user_organization on ba_user.id = j_user_organization.user_id where j_user_organization.org_id = :orgId and ba_user.username = :apiKey and ba_user.user_type = 'API_KEY'")
+    Optional<Integer> findUserIdForApiKey(@Bind("orgId") int organizationId, @Bind("apiKey") String apiKey);
+
     @Query("select * from ba_user where username = :username")
     User getByUsername(@Bind("username") String username);
 

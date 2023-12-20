@@ -16,9 +16,11 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.controller.api.support.AdditionalServiceWithData;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -44,4 +46,5 @@ public class TicketInfo implements DateValidity {
     private final Map<String, String> formattedEndDate;
     private final Map<String, String> formattedEndTime;
     //
+    private final List<AdditionalServiceWithData> additionalServiceWithData;
 }

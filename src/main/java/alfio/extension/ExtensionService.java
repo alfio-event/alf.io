@@ -325,12 +325,12 @@ public class ExtensionService {
 
     public void retryFailedAsyncScript(String path, String name, Map<String, Object> payload) {
         var extensionEvent = (String) payload.get(EXTENSION_EVENT);
-        var activePath = getActiveScriptsForEvent(extensionEvent, path, true).stream()
+        var activePathOptional = getActiveScriptsForEvent(extensionEvent, path, true).stream()
             .filter(nh -> nh.getName().equals(name))
-            .findFirst()
-            .orElseThrow();
+            .findFirst();
+        activePathOptional.ifPresent(scriptPathNameHash ->
+            internalExecuteScript(scriptPathNameHash, payload, path, false, EXECUTE_SCRIPT + "\nvar res = null;", Void.class, true));
 
-        internalExecuteScript(activePath, payload, path, false, EXECUTE_SCRIPT+"\nvar res = null;", Void.class, true);
     }
 
     private <T> Map<String, Object> internalExecuteScript(ScriptPathNameHash activePath,

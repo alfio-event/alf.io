@@ -77,10 +77,7 @@ public class EventApiV2Controller {
     private final ConfigurationManager configurationManager;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
-    private final PaymentManager paymentManager;
     private final MessageSourceManager messageSourceManager;
-    private final AdditionalServiceRepository additionalServiceRepository;
-    private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final WaitingQueueManager waitingQueueManager;
     private final I18nManager i18nManager;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -93,6 +90,7 @@ public class EventApiV2Controller {
     private final EventLoader eventLoader;
     private final ExtensionManager extensionManager;
     private final ClockProvider clockProvider;
+    private final AdditionalServiceManager additionalServiceManager;
 
 
     @GetMapping("events")
@@ -199,16 +197,16 @@ public class EventApiV2Controller {
                 .flatMap(Pair::getRight);
 
             //
-            var saleableAdditionalServices = additionalServiceRepository.loadAllForEvent(event.getId())
+            var saleableAdditionalServices = additionalServiceManager.loadAllForEvent(event.getId())
                 .stream()
                 .map(as -> new SaleableAdditionalService(event, as, promoCode.orElse(null)))
-                .filter(SaleableAdditionalService::isNotExpired)
+                .filter(Predicate.not(SaleableAdditionalService::isExpired))
                 .collect(Collectors.toList());
 
             // will be used for fetching descriptions and titles for all the languages
             var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::getId).collect(Collectors.toList());
 
-            var additionalServiceTexts = additionalServiceTextRepository.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
+            var additionalServiceTexts = additionalServiceManager.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
 
             var additionalServicesRes = saleableAdditionalServices.stream().map(as -> {
                 var expiration = Formatters.getFormattedDate(event, as.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
@@ -216,7 +214,7 @@ public class EventApiV2Controller {
                 var title = additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
                 var description = Formatters.applyCommonMark(additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()), messageSource);
                 return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(),
-                    as.isFixPrice(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(),
+                    as.isFixPrice(), as.getAvailableItems(), as.getMaxQtyPerOrder(),
                     as.getFree(), as.getFormattedFinalPrice(), as.getSupportsDiscount(), as.getDiscountedPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage().toString(),
                     as.isExpired(), as.getSaleInFuture(),
                     inception, expiration, title, description);
@@ -331,7 +329,7 @@ public class EventApiV2Controller {
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount,
                                                      Principal principal) {
-        return ReservationUtil.validateCreateRequest(reservation, bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
+        return ReservationUtil.validateCreateRequest(reservation, bindingResult, ticketReservationManager, eventManager, additionalServiceManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult, principal));
     }
 

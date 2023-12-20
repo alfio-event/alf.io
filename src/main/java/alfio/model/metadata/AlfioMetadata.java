@@ -25,22 +25,25 @@ import java.util.Map;
 
 @Getter
 public class AlfioMetadata {
-    private static final AlfioMetadata EMPTY = new AlfioMetadata(null, Map.of(), List.of(), null);
+    private static final AlfioMetadata EMPTY = new AlfioMetadata(null, Map.of(), List.of(), null, Map.of());
     private final OnlineConfiguration onlineConfiguration;
     // list of requirements for participants, e.g. software
     private final Map<String, String> requirementsDescriptions;
     private final List<ConditionsLink> conditionsToBeAccepted;
     private final String copiedFrom;
+    private final Map<String, String> applicationData;
 
     @JsonCreator
     public AlfioMetadata(@JsonProperty("onlineConfiguration") OnlineConfiguration onlineConfiguration,
                          @JsonProperty("requirementsDescriptions") Map<String, String> requirementsDescriptions,
                          @JsonProperty("conditionsToBeAccepted") List<ConditionsLink> conditionsToBeAccepted,
-                         @JsonProperty("copiedFrom") String copiedFrom) {
+                         @JsonProperty("copiedFrom") String copiedFrom,
+                         @JsonProperty("applicationData") Map<String, String> applicationData) {
         this.onlineConfiguration = onlineConfiguration;
         this.requirementsDescriptions = requirementsDescriptions;
         this.conditionsToBeAccepted = conditionsToBeAccepted;
         this.copiedFrom = copiedFrom;
+        this.applicationData = applicationData;
     }
 
     public static AlfioMetadata empty() {
@@ -58,6 +61,6 @@ public class AlfioMetadata {
             other.onlineConfiguration,
             other.requirementsDescriptions,
             other.conditionsToBeAccepted,
-            copiedFrom);
+            copiedFrom, applicationData);
     }
 }

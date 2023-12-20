@@ -28,17 +28,18 @@ import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.metadata.TicketMetadata;
+import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.AdminReservationModification;
-import alfio.model.modification.AdminReservationModification.Attendee;
-import alfio.model.modification.AdminReservationModification.Category;
-import alfio.model.modification.AdminReservationModification.Notification;
-import alfio.model.modification.AdminReservationModification.TicketsInfo;
+import alfio.model.modification.AdminReservationModification.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.*;
@@ -65,6 +66,8 @@ import org.springframework.validation.MapBindingResult;
 import org.springframework.validation.ObjectError;
 
 import java.math.BigDecimal;
+import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -93,7 +96,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @RequiredArgsConstructor
 public class AdminReservationManager {
 
-    private static final EnumSet<TicketReservationStatus> UPDATE_INVOICE_STATUSES = EnumSet.of(TicketReservationStatus.OFFLINE_PAYMENT, TicketReservationStatus.PENDING);
     private static final ErrorCode ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS = ErrorCode.custom("remove-reservation.failed", "This reservation contains checked-in tickets. Unable to cancel it.");
     private final PurchaseContextManager purchaseContextManager;
     private final EventManager eventManager;
@@ -122,6 +124,7 @@ public class AdminReservationManager {
     private final ClockProvider clockProvider;
     private final SubscriptionRepository subscriptionRepository;
     private final ReservationEmailContentHelper reservationEmailContentHelper;
+    private final TransactionRepository transactionRepository;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,
@@ -129,6 +132,7 @@ public class AdminReservationManager {
                                                                                         String reservationId,
                                                                                         String username,
                                                                                         Notification notification,
+                                                                                        TransactionDetails transactionDetails,
                                                                                         UUID subscriptionId) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
@@ -137,7 +141,7 @@ public class AdminReservationManager {
                 Result<String> confirmationResult = purchaseContextManager.findBy(purchaseContextType, eventName)
                     .map(purchaseContext -> ticketReservationRepository.findOptionalReservationById(reservationId)
                         .filter(r -> r.getStatus() == TicketReservationStatus.PENDING || r.getStatus() == TicketReservationStatus.STUCK)
-                        .map(r -> performConfirmation(reservationId, purchaseContext, r, notification, username, subscriptionId))
+                        .map(r -> performConfirmation(reservationId, purchaseContext, r, notification, transactionDetails, username, subscriptionId))
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
                 if(!confirmationResult.isSuccess()) {
@@ -158,7 +162,23 @@ public class AdminReservationManager {
                                                                                                String reservationId,
                                                                                                String username,
                                                                                                Notification notification) {
-        return confirmReservation(purchaseContextType, eventName, reservationId, username, notification, null);
+        return confirmReservation(purchaseContextType, eventName, reservationId, username, notification, TransactionDetails.admin(), null);
+    }
+
+    public Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(String reservationId,
+                                                                                               Principal principal,
+                                                                                               TransactionDetails transaction,
+                                                                                               Notification notification) {
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
+        TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
+        return template.execute(t -> {
+            var purchaseContextOptional = purchaseContextManager.findByReservationId(reservationId);
+            if (purchaseContextOptional.isEmpty() || !purchaseContextManager.validateAccess(purchaseContextOptional.get(), principal)) {
+                return Result.error(ErrorCode.ReservationError.NOT_FOUND);
+            }
+            var purchaseContext = purchaseContextOptional.get();
+            return confirmReservation(purchaseContext.getType(), purchaseContext.getPublicIdentifier(), reservationId, principal.getName(), notification, transaction, null);
+        });
     }
 
     public Result<Boolean> updateReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, AdminReservationModification adminReservationModification, String username) {
@@ -365,6 +385,7 @@ public class AdminReservationManager {
                                                PurchaseContext purchaseContext,
                                                TicketReservation original,
                                                Notification notification,
+                                               TransactionDetails transactionDetails,
                                                String username,
                                                UUID subscriptionId) {
         try {
@@ -416,11 +437,35 @@ public class AdminReservationManager {
                 false,
                 false);
 
+            if (transactionDetails.getPaymentProvider() != PaymentProxy.ADMIN) {
+                var timestamp = Objects.requireNonNullElseGet(transactionDetails.getTimestamp(), () -> LocalDateTime.now(clockProvider.getClock())).atZone(purchaseContext.getZoneId());
+                if (transactionRepository.transactionExists(reservationId)) {
+                    paymentManager.updateTransactionDetails(reservationId, transactionDetails.getNotes(), timestamp, null);
+                } else {
+                    var paidAmount = Objects.requireNonNullElse(transactionDetails.getPaidAmount(), BigDecimal.ZERO);
+                    transactionRepository.insert(
+                        StringUtils.trimToEmpty(transactionDetails.getId()),
+                        "",
+                        reservationId,
+                        timestamp,
+                        MonetaryUtil.unitToCents(paidAmount, reservation.getCurrencyCode()),
+                        reservation.getCurrencyCode(),
+                        "",
+                        transactionDetails.getPaymentProvider().name(),
+                        0L,
+                        0L,
+                        Transaction.Status.COMPLETE,
+                        Map.of(Transaction.NOTES_KEY, StringUtils.trimToEmpty(transactionDetails.getNotes()))
+                    );
+                }
+            }
+
             ticketReservationManager.completeReservation(spec,
-                PaymentProxy.ADMIN,
+                transactionDetails.getPaymentProvider(),
                 notification.isCustomer(),
                 notification.isAttendees(),
                 username);
+
             return Result.success(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);
@@ -591,7 +636,11 @@ public class AdminReservationManager {
                     updateExtRefAndLocking(categoryId, attendee, ticketId);
                 }
                 if(!attendee.getAdditionalInfo().isEmpty()) {
-                    ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
+                    ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId(), event.supportsLinkedAdditionalServices());
+                }
+                if (!attendee.getMetadata().isEmpty()) {
+                    var ticketMetadata = new TicketMetadata(null, null, attendee.getMetadata());
+                    ticketRepository.updateTicketMetadata(ticketId, TicketMetadataContainer.fromMetadata(ticketMetadata));
                 }
             }
             specialPriceIterator.map(Iterator::next)
@@ -678,6 +727,20 @@ public class AdminReservationManager {
     }
 
     @Transactional
+    public Optional<Ticket> findTicketWithReservationId(String ticketUUID, String eventSlug, String username) {
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventSlug, username)
+            .flatMap(eventAndOrganizationId -> {
+                var ticket = ticketRepository.findByUUID(ticketUUID);
+                // check that ticket belongs to the event
+                if (ticket.getEventId() != eventAndOrganizationId.getId() || StringUtils.isEmpty(ticket.getTicketsReservationId())) {
+                    return Optional.empty();
+                } else {
+                    return Optional.of(ticket);
+                }
+            });
+    }
+
+    @Transactional
     public Result<Boolean> removeTickets(String publicIdentifier, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean creditNoteRequested, String username) {
         return loadReservation(PurchaseContextType.event, publicIdentifier, reservationId, username).map(res -> {
             Event e = res.getRight().event().orElseThrow();
@@ -705,14 +768,14 @@ public class AdminReservationManager {
 
             if(removeReservation) {
                 markAsCancelled(reservation, username, e);
-                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
+                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(e.getId(), reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
             } else {
                 // recalculate totals
                 var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
                 var currencyCode = totalPrice.getCurrencyCode();
                 var updatedTickets = ticketRepository.findTicketsInReservation(reservationId);
                 var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
-                List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
+                List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(e.getId(), reservationId);
                 var calculator = new ReservationPriceCalculator(reservation, discount, updatedTickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(e.getId()), e, List.of(), Optional.empty());
                 ticketReservationRepository.updateBillingData(calculator.getVatStatus(),
                     calculator.getSrcPriceCts(), unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode),
@@ -721,6 +784,27 @@ public class AdminReservationManager {
             }
             return issueCreditNote;
         });
+    }
+
+    @Transactional
+    public Optional<Pair<SubscriptionDescriptor, String>> findReservationIdForSubscription(String subscriptionDescriptorId, UUID subscriptionId, Principal principal) {
+        return purchaseContextManager.findBy(PurchaseContextType.subscription, subscriptionDescriptorId)
+                .filter(purchaseContext -> purchaseContextManager.validateAccess(purchaseContext, principal))
+                .flatMap(purchaseContext -> {
+                    var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
+                    var descriptor = (SubscriptionDescriptor) purchaseContext;
+                    if (subscription.getSubscriptionDescriptorId().equals(descriptor.getId()) && StringUtils.isNotBlank(subscription.getReservationId())) {
+                        return Optional.of(Pair.of(descriptor, subscription.getReservationId()));
+                    }
+                    return Optional.empty();
+                });
+    }
+
+    @Transactional
+    public Result<Boolean> removeSubscription(SubscriptionDescriptor descriptor, String reservationId, UUID subscriptionId, String username) {
+        int result = subscriptionRepository.cancelSubscription(reservationId, subscriptionId, descriptor.getId());
+        markAsCancelled(ticketReservationManager.findById(reservationId).orElseThrow(), username, descriptor);
+        return result == 1 ? Result.success(true) : Result.error(ErrorCode.custom("cannot-cancel-subscription", "Cannot cancel subscription"));
     }
 
     @Transactional(readOnly = true)
@@ -837,9 +921,10 @@ public class AdminReservationManager {
                 List<Ticket> tickets = t.getMiddle();
                 specialPriceRepository.resetToFreeAndCleanupForReservation(List.of(reservation.getId()));
                 if(purchaseContext.ofType(PurchaseContextType.event)) {
-                    removeTicketsFromReservation(reservation, (Event) purchaseContext, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, issueCreditNote);
+                    var event = (Event) purchaseContext;
+                    removeTicketsFromReservation(reservation, event, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, issueCreditNote);
+                    additionalServiceItemRepository.updateItemsStatusWithReservationUUID(event.getId(), reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
                 }
-                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
                 return Pair.of(purchaseContext, reservation);
             });
     }
@@ -951,9 +1036,13 @@ public class AdminReservationManager {
     }
 
     private void markAsCancelled(TicketReservation ticketReservation, String username, PurchaseContext purchaseContext) {
-        ticketReservationRepository.updateReservationStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
-        auditingRepository.insert(ticketReservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null),
-            purchaseContext, Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
+        markAsCancelled(ticketReservation.getId(), username, purchaseContext);
+    }
+
+    private void markAsCancelled(String reservationId, String username, PurchaseContext purchaseContext) {
+        ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CANCELLED.toString());
+        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null),
+            purchaseContext, Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
     private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById, String username) {

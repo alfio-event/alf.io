@@ -26,10 +26,8 @@ import alfio.test.util.AlfioIntegrationTest;
 import alfio.util.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -57,7 +55,7 @@ class I18nManagerIntegrationTest extends BaseIntegrationTest {
      * Check for all the patterns
      */
     @Test
-    public void testDateFormattingCorrectness() {
+    void testDateFormattingCorrectness() {
 
         for (ContentLanguage cl : i18nManager.getAvailableLanguages()) {
             formatDateWith(cl); //<- will launch an exception if the format is not valid
@@ -70,7 +68,7 @@ class I18nManagerIntegrationTest extends BaseIntegrationTest {
      *       the keys, so we can imagine that we can override automatically given the country (but let the user override).
      */
     @Test
-    public void testFormatSpecifically() {
+    void testFormatSpecifically() {
         assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ITALIAN));
         assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ENGLISH));
         assertEquals("03.02.1999 04:05", formatDateWith(ContentLanguage.GERMAN));
@@ -83,6 +81,7 @@ class I18nManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.POLISH));
         assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.DANISH));
         assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.BULGARIAN));
+        assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.CZECH));
     }
 
     private String formatDateWith(ContentLanguage cl) {

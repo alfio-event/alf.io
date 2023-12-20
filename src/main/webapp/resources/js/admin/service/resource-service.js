@@ -10,17 +10,29 @@ angular.module('adminApplication').service('ResourceService', function($http, $q
         getTemplateBody: function(name, locale) {
             return $http.get('/admin/api/overridable-template/'+name+'/'+locale);
         },
+        getMetadataForSystemResource: function(name) {
+            return $http.get('/admin/api/resource/'+name+'/metadata');
+        },
         getMetadataForOrganizationResource: function(orgId, name) {
             return $http.get('/admin/api/resource-organization/'+orgId+'/'+name+'/metadata');
         },
         getOrganizationResource: function(orgId, name) {
             return $http.get('/admin/api/resource-organization/'+orgId+'/'+name);
         },
+        getSystemResource: function(name) {
+            return $http.get('/admin/api/resource/'+name);
+        },
         uploadOrganizationFile: function(orgId, file) {
             return $http.post('/admin/api/resource-organization/'+orgId+'/', file);
         },
+        uploadSystemFile: function(file) {
+            return $http.post('/admin/api/resource/', file);
+        },
         deleteOrganizationFile: function(orgId, name) {
             return $http.delete('/admin/api/resource-organization/'+orgId+'/'+name);
+        },
+        deleteSystemFile: function(name) {
+            return $http.delete('/admin/api/resource/'+name);
         },
         /**/
         getMetadataForEventResource: function(orgId, eventId, name) {

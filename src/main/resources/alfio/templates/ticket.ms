@@ -99,6 +99,20 @@
 				<td>{{#i18n}}ticket.order-information-values [{{reservationId}}] [{{reservation.fullName}}]{{/i18n}}</td>
 			</tr>
 		</table>
+		{{#hasAdditionalServices}}
+		<h2>{{#i18n}}show-event.additional-services{{/i18n}}</h2>
+            {{#additionalServices}}
+                <h4>{{count}} x {{title}}</h4>
+                <table>
+                {{#fields}}
+                    <tr>
+                        <td style="width:180px">{{name}}</td>
+                        <td>{{value}}</td>
+                    </tr>
+                {{/fields}}
+                </table>
+            {{/additionalServices}}
+		{{/hasAdditionalServices}}
 		{{#deskPaymentRequired}}
 			<h3 style="text-align:center"><strong>{{#i18n}}ticket.payment-required{{/i18n}}</strong></h3>
 		{{/deskPaymentRequired}}

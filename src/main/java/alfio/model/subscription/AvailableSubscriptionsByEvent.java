@@ -28,6 +28,7 @@ public class AvailableSubscriptionsByEvent {
     private final String firstName;
     private final String lastName;
     private final String userLanguage;
+    private final String reservationEmail;
 
     public AvailableSubscriptionsByEvent(@Column("event_id") int eventId,
                                          @Column("organization_id") int organizationId,
@@ -35,7 +36,8 @@ public class AvailableSubscriptionsByEvent {
                                          @Column("email_address") String emailAddress,
                                          @Column("first_name") String firstName,
                                          @Column("last_name") String lastName,
-                                         @Column("user_language") String userLanguage) {
+                                         @Column("user_language") String userLanguage,
+                                         @Column("reservation_email") String reservationEmail) {
         this.eventId = eventId;
         this.organizationId = organizationId;
         this.subscriptionId = subscriptionId;
@@ -43,6 +45,7 @@ public class AvailableSubscriptionsByEvent {
         this.firstName = firstName;
         this.lastName = lastName;
         this.userLanguage = userLanguage;
+        this.reservationEmail = reservationEmail;
     }
 
     public int getEventId() {
@@ -71,5 +74,9 @@ public class AvailableSubscriptionsByEvent {
 
     public int getOrganizationId() {
         return organizationId;
+    }
+
+    public String getReservationEmail() {
+        return reservationEmail;
     }
 }

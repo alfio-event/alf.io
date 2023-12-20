@@ -31,7 +31,7 @@ import java.util.stream.Stream;
  */
 public class ObjectDiffUtil {
 
-    public static List<Change> diff(Map<String, String> before, Map<String, String> after) {
+    public static <T> List<Change> diff(Map<String, T> before, Map<String, T> after) {
         return diffUntyped(before, after, "/{", "}");
     }
 

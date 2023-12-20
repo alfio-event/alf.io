@@ -19,11 +19,13 @@ package alfio.manager;
 
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import alfio.controller.form.ContactAndTicketsForm;
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.extension.ExtensionService;
 import alfio.extension.exception.AlfioScriptingException;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.extension.ExtensionCapability;
 import alfio.manager.support.extension.ExtensionEvent;
+import alfio.manager.support.extension.ValidationErrorNotifier;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -79,6 +81,8 @@ public class ExtensionManager {
     private static final String ORGANIZATION_ID = "organizationId";
     private static final String RESERVATION_ID = "reservationId";
     private static final String EVENT = "event";
+    private static final String CAPABILITY_REQUEST = "request";
+    private static final String METADATA = "metadata";
     public static final String TICKET_METADATA = "ticketMetadata";
     private final ExtensionService extensionService;
     private final EventRepository eventRepository;
@@ -112,7 +116,7 @@ public class ExtensionManager {
 
     AlfioMetadata handleMetadataUpdate(Event event, Organization organization, AlfioMetadata metadata) {
         Map<String, Object> payload = buildMetadataUpdatePayload(organization, metadata);
-        return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
+        return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class, false);
     }
 
 
@@ -121,13 +125,22 @@ public class ExtensionManager {
                                                                 AlfioMetadata existingMetadata,
                                                                 Map<String, String> requestParams) {
         Map<String, Object> context = buildMetadataUpdatePayload(organization, existingMetadata);
-        context.put("request", requestParams);
+        context.put(CAPABILITY_REQUEST, requestParams);
         return internalExecuteCapability(ExtensionCapability.GENERATE_MEETING_LINK, context, event, AlfioMetadata.class);
+    }
+
+    Optional<String> handleGenerateLinkCapability(Event event,
+                                                  AlfioMetadata existingMetadata,
+                                                  Map<String, String> requestParams) {
+        Map<String, Object> context = new HashMap<>();
+        context.put(METADATA, existingMetadata);
+        context.put(CAPABILITY_REQUEST, requestParams);
+        return internalExecuteCapability(ExtensionCapability.LINK_EXTERNAL_APPLICATION, context, event, String.class);
     }
 
     private Map<String, Object> buildMetadataUpdatePayload(Organization organization, AlfioMetadata metadata) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("metadata", metadata);
+        payload.put(METADATA, metadata);
         payload.put(ORGANIZATION, organization);
         payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organization.getId())).getRequiredValue());
         return payload;
@@ -323,6 +336,15 @@ public class ExtensionManager {
         syncCall(ExtensionEvent.RESERVATION_VALIDATION, purchaseContext, payload, Void.class);
     }
 
+    public void handleTicketUpdateValidation(PurchaseContext purchaseContext, UpdateTicketOwnerForm form, BindingResult bindingResult, String keyPrefix) {
+        Map<String, Object> payload = Map.of(
+            "form", form,
+            "validationErrorNotifier", new ValidationErrorNotifier(bindingResult, keyPrefix)
+        );
+
+        syncCall(TICKET_UPDATE_VALIDATION, purchaseContext, payload, Void.class);
+    }
+
     public void handleUserProfileValidation(Object clientForm, BindingResult bindingResult) {
         Map<String, Object> payload = Map.of(
             "form", clientForm,
@@ -412,7 +434,8 @@ public class ExtensionManager {
     public Optional<PromoCodeDiscount> handleDynamicDiscount(Event event, Map<Integer, Long> quantityByCategory, String reservationId) {
         try {
             var values = new HashMap<String, Object>();
-            values.put("quantityByCategory", quantityByCategory);
+            values.put("quantityByCategory", quantityByCategory.entrySet().stream()
+                .map(entry -> new QuantityByCategoryId(entry.getKey(), entry.getValue().intValue())).collect(Collectors.toList()));
             values.put(RESERVATION_ID, reservationId);
             var dynamicDiscountResult = syncCall(ExtensionEvent.DYNAMIC_DISCOUNT_APPLICATION, event,
                 values, DynamicDiscount.class);
@@ -477,7 +500,7 @@ public class ExtensionManager {
                                              PurchaseContext purchaseContext,
                                              Class<T> resultType) {
         var contextParams = new HashMap<String, Object>();
-        contextParams.put("request", params);
+        contextParams.put(CAPABILITY_REQUEST, params);
         return internalExecuteCapability(capability, contextParams, purchaseContext, resultType);
     }
 
@@ -534,7 +557,7 @@ public class ExtensionManager {
                                                                                SubscriptionMetadata subscriptionMetadata) {
         var context = new HashMap<String, Object>();
         context.put("subscription", subscription);
-        context.put("metadata", Objects.requireNonNullElseGet(subscriptionMetadata, SubscriptionMetadata::empty));
+        context.put(METADATA, Objects.requireNonNullElseGet(subscriptionMetadata, SubscriptionMetadata::empty));
         context.put("subscriptionDescriptor", descriptor);
         return Optional.ofNullable(syncCall(ExtensionEvent.SUBSCRIPTION_ASSIGNED_GENERATE_METADATA, descriptor, context, SubscriptionMetadata.class, false));
     }

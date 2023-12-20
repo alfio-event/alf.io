@@ -3,6 +3,7 @@
 
     angular.module('adminApplication').component('resourcesShow', {
         bindings: {
+            system: '<',
             event:'<',
             forOrganization:'<',
             organizationId: '<'

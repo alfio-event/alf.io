@@ -32,6 +32,7 @@ import alfio.util.EventUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -58,7 +59,8 @@ public class AttendeeManager {
                                                       String notes,
                                                       SponsorScan.LeadStatus leadStatus,
                                                       String username,
-                                                      String operatorId) {
+                                                      String operatorId,
+                                                      Long timestamp) {
         int userId = userRepository.getByUsername(username).getId();
         Optional<EventAndOrganizationId> maybeEvent = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName);
         if(maybeEvent.isEmpty()) {
@@ -77,7 +79,8 @@ public class AttendeeManager {
         Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(userId, event.getId(), ticket.getId(), operator);
         if(existingRegistration.isEmpty()) {
             ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
-            sponsorScanRepository.insert(userId, ZonedDateTime.now(clockProvider.withZone(eventZoneId)), event.getId(), ticket.getId(), notes, leadStatus, operator);
+            var creation = timestamp != null ? Instant.ofEpochMilli(timestamp).atZone(eventZoneId) : ZonedDateTime.now(clockProvider.withZone(eventZoneId));
+            sponsorScanRepository.insert(userId, creation, event.getId(), ticket.getId(), notes, leadStatus, operator);
         } else {
             sponsorScanRepository.updateNotesAndLeadStatus(userId, event.getId(), ticket.getId(), notes, leadStatus, operator);
         }
@@ -99,7 +102,7 @@ public class AttendeeManager {
             .checkPrecondition(maybeTicket::isPresent, ErrorCode.custom("ticket_not_found", "ticket not found"))
             .build(() -> {
                 var ticket = maybeTicket.orElseThrow();
-                var descriptionAndValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository).apply(ticket);
+                var descriptionAndValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository).apply(ticket, event);
                 return new TicketWithAdditionalFields(ticket, descriptionAndValues);
             });
     }

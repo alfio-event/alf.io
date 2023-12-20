@@ -90,7 +90,7 @@ class ReservationCostCalculatorTest {
         when(ticket.getSrcPriceCts()).thenReturn(10);
         when(ticketRepository.findTicketsInReservation(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
-        when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
+        when(additionalServiceItemRepository.findByReservationUuid(anyInt(), eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
 
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED);
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = calculator.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
@@ -176,14 +176,14 @@ class ReservationCostCalculatorTest {
         when(additionalService.getCurrencyCode()).thenReturn("CHF");
         when(additionalService.getId()).thenReturn(1);
 
-        when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(additionalServiceItem));
+        when(additionalServiceItemRepository.findByReservationUuid(anyInt(), eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(additionalServiceItem));
         when(additionalServiceItem.getAdditionalServiceId()).thenReturn(1);
         when(additionalServiceRepository.loadAllForEvent(eq(1))).thenReturn(List.of(additionalService));
         when(additionalServiceRepository.getById(eq(1), eq(1))).thenReturn(additionalService);
         when(additionalServiceItem.getSrcPriceCts()).thenReturn(asSrcPrice);
         when(additionalService.getVatType()).thenReturn(additionalServiceVatType);
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
-        when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
+        when(additionalServiceItemRepository.findByReservationUuid(anyInt(), eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
         AdditionalServiceText text = mock(AdditionalServiceText.class);
         when(text.getId()).thenReturn(1);
         when(text.getLocale()).thenReturn("en");

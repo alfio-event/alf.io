@@ -418,7 +418,7 @@ Expected result type: [`PromoCodeDiscount`](https://github.com/alfio-event/alf.i
         <tbody>
             <tr>
                 <td>`quantityByCategory`</td>
-                <td>Map<Integer, Long></td>
+                <td>`List<`[`QuantityByCategoryId`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/QuantityByCategoryId.java)`>`</td>
                 <td>How many tickets are being purchased for each category</td>
             </tr>
             <tr>

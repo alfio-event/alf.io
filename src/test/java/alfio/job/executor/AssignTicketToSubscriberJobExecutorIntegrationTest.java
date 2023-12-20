@@ -46,11 +46,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -248,5 +246,7 @@ class AssignTicketToSubscriberJobExecutorIntegrationTest {
         var messagesPair = notificationManager.loadAllMessagesForPurchaseContext(event, null, null);
         assertEquals(1, messagesPair.getLeft());
         assertTrue(messagesPair.getRight().stream().allMatch(m -> m.getStatus() == EmailMessage.Status.SENT));
+        assertTrue(messagesPair.getRight().stream()
+            .allMatch(m -> m.getRecipient().equals("subscription+owner@test.com") && m.getCc().contains("subscription+buyer@test.com")));
     }
 }

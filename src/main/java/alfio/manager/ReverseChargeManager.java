@@ -21,6 +21,7 @@ import alfio.controller.support.CustomBindingResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
+import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.extension.CustomTaxPolicy;
 import alfio.repository.*;
@@ -44,7 +45,6 @@ import java.util.stream.Collectors;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.PriceContainer.VatStatus.*;
-import static alfio.model.PriceContainer.VatStatus.NOT_INCLUDED_NOT_CHARGED;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.unitToCents;
 import static java.util.stream.Collectors.toMap;
@@ -84,7 +84,7 @@ public class ReverseChargeManager {
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
         }
 
-        boolean isEvent = purchaseContext.ofType(PurchaseContext.PurchaseContextType.event);
+        boolean isEvent = purchaseContext.ofType(PurchaseContextType.event);
         // we must take into account specific configuration only if the purchase context is an Event.
         // Otherwise, specific settings do not apply
         boolean reverseChargeInPerson = !isEvent || reverseChargeConfiguration.get(ENABLE_REVERSE_CHARGE_IN_PERSON).getValueAsBooleanOrDefault();
@@ -123,7 +123,7 @@ public class ReverseChargeManager {
     private Optional<VatDetail> performReverseChargeCheck(PurchaseContext purchaseContext, ContactAndTicketsForm contactAndTicketsForm, String country, boolean reverseChargeInPerson, boolean reverseChargeOnline, Optional<TicketReservation> optionalReservation, List<TicketCategory> categoriesList) {
         return optionalReservation
             .filter(e -> {
-                if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) && (!reverseChargeInPerson || !reverseChargeOnline)) {
+                if (purchaseContext.ofType(PurchaseContextType.event) && (!reverseChargeInPerson || !reverseChargeOnline)) {
                     var eventFormat = purchaseContext.event().orElseThrow().getFormat();
                     // if we find at least one category matching the criteria, then we can proceed
                     return categoriesList.stream().anyMatch(findReverseChargeCategory(reverseChargeInPerson, reverseChargeOnline, eventFormat));
@@ -140,7 +140,7 @@ public class ReverseChargeManager {
                                                TicketReservation reservation,
                                                List<TicketCategory> categoriesList,
                                                List<Integer> noTaxCategories) {
-        if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+        if (purchaseContext.ofType(PurchaseContextType.event)) {
             var currencyCode = reservation.getCurrencyCode();
             var event = purchaseContext.event().orElseThrow();
             var priceContainers = mapPriceContainersByCategoryId(categoriesList,
@@ -216,7 +216,7 @@ public class ReverseChargeManager {
                                      ContactAndTicketsForm contactAndTicketsForm,
                                      CustomBindingResult bindingResult) {
 
-        if (!purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+        if (!purchaseContext.ofType(PurchaseContextType.event)) {
             throw new IllegalStateException("Custom tax policy is only supported for events");
         }
 
@@ -256,7 +256,7 @@ public class ReverseChargeManager {
     }
 
     public void resetVat(PurchaseContext purchaseContext, String reservationId) {
-        if(purchaseContext.ofType(PurchaseContext.PurchaseContextType.event)) {
+        if(purchaseContext.ofType(PurchaseContextType.event)) {
             var reservation = ticketReservationRepository.findReservationById(reservationId);
             var categoriesList = ticketCategoryRepository.findCategoriesInReservation(reservationId);
             var discount = getDiscountOrNull(reservation);
@@ -342,7 +342,9 @@ public class ReverseChargeManager {
     private void updateBillingData(ContactAndTicketsForm contactAndTicketsForm, PurchaseContext purchaseContext, String country, String vatNr, TicketReservation reservation, PriceContainer.VatStatus vatStatus) {
         var reservationId = reservation.getId();
         var discount = getDiscountOrNull(reservation);
-        var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservation.getId());
+        List<AdditionalServiceItem> additionalServiceItems = purchaseContext.ofType(PurchaseContextType.event) ?
+            additionalServiceItemRepository.findByReservationUuid(purchaseContext.event().orElseThrow().getId(), reservation.getId())
+            : List.of();
         var tickets = ticketReservationManager.findTicketsInReservation(reservation.getId());
         var additionalServices = purchaseContext.event().map(event -> additionalServiceRepository.loadAllForEvent(event.getId())).orElse(List.of());
         var subscriptions = subscriptionRepository.findSubscriptionsByReservationId(reservationId);

@@ -5,14 +5,14 @@
 # - https://august.nagro.us/small-java.html
 #
 
-FROM azul/zulu-openjdk-alpine:15.0.7 as zulu
+FROM azul/zulu-openjdk-alpine:15.0.7 AS zulu
 
 RUN $JAVA_HOME/bin/jlink --compress=1 --strip-java-debug-attributes --no-header-files --no-man-pages \
     --module-path $JAVA_HOME/jmods \
     # see https://github.com/ben-manes/caffeine/issues/273
     # see https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html#GUID-9224B90B-7B2F-41F9-BB96-C0A1B6A0FEAA
     --add-modules java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported,jdk.crypto.ec,java.net.http,jdk.localedata \
-    --include-locales en,it,es,nl,fr,de,ro,pt,tr,pl,da,bg,sv \
+    --include-locales en,it,es,nl,fr,de,ro,pt,tr,pl,da,bg,sv,cs \
     --output /jlinked
 
 FROM alpine:3.15

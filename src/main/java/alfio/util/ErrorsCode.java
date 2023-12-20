@@ -61,6 +61,7 @@ public interface ErrorsCode {
     String STEP_2_EMPTY_LASTNAME = "error.STEP_2_EMPTY_LASTNAME";
 
     String STEP_2_MISSING_ATTENDEE_DATA = "error.STEP_2_MISSING_ATTENDEE_DATA";
+    String STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED = "error.STEP_2_ADDITIONAL_ITEMS_NOT_ASSIGNED";
 
 
     String VIES_IS_DOWN = "error.vatVIESDown";

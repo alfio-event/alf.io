@@ -26,6 +26,7 @@ import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ClockProvider;
 import alfio.util.LocaleUtil;
+import alfio.util.MonetaryUtil;
 import alfio.util.MustacheCustomTag;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -256,6 +257,10 @@ public class SubscriptionDescriptor implements PurchaseContext {
         return original.entrySet().stream()
             .map(entry -> Map.entry(entry.getKey(), MustacheCustomTag.renderToTextCommonmark(entry.getValue())))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public String getFormattedPrice() {
+        return MonetaryUtil.formatCents(price, currency);
     }
 
 }

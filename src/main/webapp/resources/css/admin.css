@@ -851,3 +851,7 @@ table.table.transparent {
 table.usage-details.tbody:not(:first-of-type) {
     margin-top: 15px;
 }
+
+.border-bottom {
+    border-bottom: 1px solid #eee;
+}

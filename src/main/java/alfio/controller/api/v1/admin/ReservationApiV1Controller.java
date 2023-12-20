@@ -21,9 +21,9 @@ import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.ReservationMetadata;
-import alfio.model.api.v1.admin.ReservationAPICreationRequest;
-import alfio.model.api.v1.admin.SubscriptionReservationCreationRequest;
-import alfio.model.api.v1.admin.TicketReservationCreationRequest;
+import alfio.model.api.v1.admin.*;
+import alfio.model.api.v1.admin.ReservationConfirmationResponse.HolderDetail;
+import alfio.model.modification.AdminReservationModification.Notification;
 import alfio.model.result.ErrorCode;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.util.ReservationUtil;
@@ -39,6 +39,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElseGet;
@@ -51,6 +52,8 @@ public class ReservationApiV1Controller {
     private final PurchaseContextManager purchaseContextManager;
     private final EventManager eventManager;
     private final PromoCodeRequestManager promoCodeRequestManager;
+    private final AdminReservationManager adminReservationManager;
+    private final AdditionalServiceManager additionalServiceManager;
     private final AccessService accessService;
 
     @Autowired
@@ -58,12 +61,16 @@ public class ReservationApiV1Controller {
                                       PurchaseContextManager purchaseContextManager,
                                       PromoCodeRequestManager promoCodeRequestManager,
                                       EventManager eventManager,
-                                      AccessService accessService) {
+                                      AccessService accessService,
+                                      AdditionalServiceManager additionalServiceManager,
+                                      AdminReservationManager adminReservationManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.purchaseContextManager = purchaseContextManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
         this.eventManager = eventManager;
         this.accessService = accessService;
+        this.additionalServiceManager = additionalServiceManager;
+        this.adminReservationManager = adminReservationManager;
     }
 
     @PostMapping("/event/{slug}/reservation")
@@ -81,7 +88,7 @@ public class ReservationApiV1Controller {
         var event = (Event) optionalEvent.get();
         Optional<String> promoCodeDiscount = ReservationUtil.checkPromoCode(reservationCreationRequest, event, promoCodeRequestManager, bindingResult);
         var locale = Locale.forLanguageTag(requireNonNullElseGet(reservationCreationRequest.getLanguage(), () -> event.getContentLanguages().get(0).getLanguage()));
-        var selected = ReservationUtil.validateCreateRequest(reservationCreationRequest, bindingResult, ticketReservationManager, eventManager, "", event);
+        var selected = ReservationUtil.validateCreateRequest(reservationCreationRequest, bindingResult, ticketReservationManager, eventManager, additionalServiceManager, "", event);
         if(selected.isPresent() && !bindingResult.hasErrors()) {
             var pair = selected.get();
             return ticketReservationManager.createTicketReservation(event, pair.getLeft(), pair.getRight(), promoCodeDiscount, locale, bindingResult, principal)
@@ -119,6 +126,77 @@ public class ReservationApiV1Controller {
                 }
                 return ResponseEntity.badRequest().build();
             });
+    }
+
+    @PutMapping("/reservation/{reservationId}/confirm")
+    public ResponseEntity<ReservationConfirmationResponse> confirmReservation(@PathVariable("reservationId") String reservationId,
+                                                                              @RequestBody ReservationConfirmationRequest reservationConfirmationRequest,
+                                                                              Principal principal) {
+
+
+        if (!reservationConfirmationRequest.isValid()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        var result = adminReservationManager.confirmReservation(reservationId,
+            principal,
+            reservationConfirmationRequest.getTransaction(),
+            Notification.orEmpty(reservationConfirmationRequest.getNotification()));
+
+        if (result.isSuccess()) {
+            var data = result.getData();
+            var purchaseContext = data.getRight();
+            if (purchaseContext.ofType(PurchaseContextType.event)) {
+                return ResponseEntity.ok(new ReservationConfirmationResponse(
+                    data.getMiddle().stream().map(t -> new HolderDetail(t.getUuid(), t.getFirstName(), t.getLastName(), t.getEmail())).collect(Collectors.toList())
+                ));
+            } else {
+                var subscriptions = ticketReservationManager.findSubscriptionDetails(data.getLeft())
+                    .map(List::of)
+                    .orElseGet(List::of);
+                return ResponseEntity.ok(new ReservationConfirmationResponse(
+                    subscriptions.stream().map(s -> {
+                        var subscription = s.getSubscription();
+                        return new HolderDetail(subscription.getId().toString(), subscription.getFirstName(), subscription.getLastName(), subscription.getEmail());
+                    }).collect(Collectors.toList()))
+                );
+            }
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // delete ticket from event
+    @DeleteMapping("/event/{slug}/reservation/delete-ticket/{ticketUUID}")
+    public ResponseEntity<Boolean> deleteTicket(@PathVariable("slug") String slug,
+                                                @PathVariable("ticketUUID") String ticketUUID,
+                                                Principal user) {
+        return ResponseEntity.of(adminReservationManager.findTicketWithReservationId(ticketUUID, slug, user.getName())
+            .map(ticket -> {
+                // make sure that ticket belongs to the same event
+                var result = adminReservationManager.removeTickets(slug,
+                    ticket.getTicketsReservationId(),
+                    List.of(ticket.getId()),
+                    List.of(),
+                    false,
+                    false,
+                    user.getName());
+                return result.isSuccess();
+            })
+        );
+    }
+
+    // delete subscription
+    @DeleteMapping("/subscription/{id}/reservation/delete-subscription/{subscriptionToDelete}")
+    public ResponseEntity<Boolean> deleteSubscription(@PathVariable("id") String descriptorId,
+                                                      @PathVariable("subscriptionToDelete") UUID subscriptionToDelete,
+                                                      Principal user) {
+        return ResponseEntity.of(adminReservationManager.findReservationIdForSubscription(descriptorId, subscriptionToDelete, user)
+            .map(descriptorAndReservationId -> {
+                var result = adminReservationManager.removeSubscription(descriptorAndReservationId.getKey(), descriptorAndReservationId.getValue(), subscriptionToDelete, user.getName());
+                return result.isSuccess();
+            })
+        );
     }
 
     private CreationResponse postCreate(ReservationAPICreationRequest creationRequest,

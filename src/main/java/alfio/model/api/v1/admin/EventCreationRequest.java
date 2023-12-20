@@ -139,7 +139,7 @@ public class EventCreationRequest{
             first(websiteUrl,original.getWebsiteUrl()),
             null,
             first(termsAndConditionsUrl,original.getWebsiteUrl()),
-            null,
+            first(privacyPolicyUrl,original.getPrivacyPolicyUrl()),
             null,
             first(imageRef,original.getFileBlobId()),
             original.getShortName(),
@@ -273,7 +273,8 @@ public class EventCreationRequest{
                 ordinal,
                 null,
                 null,
-                AlfioMetadata.empty());
+                AlfioMetadata.empty(),
+                true);
         }
     }
 

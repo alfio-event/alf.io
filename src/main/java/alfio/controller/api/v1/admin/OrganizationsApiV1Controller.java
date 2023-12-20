@@ -19,10 +19,14 @@ package alfio.controller.api.v1.admin;
 import alfio.manager.AccessService;
 import alfio.manager.OrganizationDeleter;
 import alfio.manager.user.UserManager;
+import alfio.model.api.v1.admin.ApiKeyType;
+import alfio.model.api.v1.admin.CreateApiKeyRequest;
+import alfio.model.api.v1.admin.OrganizationApiKey;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -69,10 +73,32 @@ public class OrganizationsApiV1Controller {
     }
 
     @PutMapping("/{id}/api-key")
-    public OrganizationApiKey createApiKeyForOrganization(@PathVariable("id") int organizationId, Principal principal) {
+    public ResponseEntity<OrganizationApiKey> createApiKeyForOrganization(@PathVariable("id") int organizationId,
+                                                                          @RequestBody(required = false) CreateApiKeyRequest createApiKeyRequest,
+                                                                          Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
-        var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName("ROLE_API_CLIENT"), User.Type.API_KEY, null, "Auto-generated API Key", principal);
-        return new OrganizationApiKey(organizationId, user.getUsername());
+        ApiKeyType keyType = ApiKeyType.API_CLIENT;
+        String description = CreateApiKeyRequest.DEFAULT_DESCRIPTION;
+        if (createApiKeyRequest != null && StringUtils.isNotBlank(createApiKeyRequest.apiKeyType())) {
+            var keyTypeOptional = ApiKeyType.safeValueOf(createApiKeyRequest.apiKeyType());
+            if (keyTypeOptional.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            keyType = keyTypeOptional.get();
+            description = createApiKeyRequest.description();
+        }
+        var user = userManager.insertUser(organizationId, null, null, null, null, Role.fromRoleName(keyType.roleName()), User.Type.API_KEY, null, description, principal);
+        return ResponseEntity.ok(new OrganizationApiKey(organizationId, user.getUsername(), keyType));
+    }
+
+    @DeleteMapping("/{id}/api-key/{apiKey}")
+    public ResponseEntity<Boolean> deleteApiKeyForOrganization(@PathVariable("id") int organizationId,
+                                                               @PathVariable("apiKey") String apiKey,
+                                                               Principal principal) {
+        return ResponseEntity.of(userManager.findUserIdByApiKey(apiKey, organizationId).map(userId -> {
+            userManager.deleteUser(userId, principal);
+            return true;
+        }));
     }
 
     @PostMapping("/{id}")
@@ -97,21 +123,4 @@ public class OrganizationsApiV1Controller {
         }
     }
 
-    static class OrganizationApiKey {
-        private final int organizationId;
-        private final String apiKey;
-
-        OrganizationApiKey(int organizationId, String apiKey) {
-            this.organizationId = organizationId;
-            this.apiKey = apiKey;
-        }
-
-        public int getOrganizationId() {
-            return organizationId;
-        }
-
-        public String getApiKey() {
-            return apiKey;
-        }
-    }
 }

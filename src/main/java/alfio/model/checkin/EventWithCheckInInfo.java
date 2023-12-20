@@ -103,4 +103,9 @@ public class EventWithCheckInInfo extends EventAndOrganizationId implements Even
     public boolean supportsQRCodeCaseInsensitive() {
         return EventUtil.supportsCaseInsensitiveQRCode(version);
     }
+
+    @Override
+    public boolean supportsLinkedAdditionalServices() {
+        return EventUtil.supportsLinkedAdditionalServices(version);
+    }
 }

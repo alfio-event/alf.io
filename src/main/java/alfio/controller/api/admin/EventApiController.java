@@ -929,7 +929,7 @@ public class EventApiController {
     }
 
     @PostMapping("/events/{eventName}/capability/{capability}")
-    public ResponseEntity<String> generateUrlForOnlineEvent(@PathVariable("eventName") String eventName,
+    public ResponseEntity<String> executeCapabilityForEvent(@PathVariable("eventName") String eventName,
                                                             @PathVariable("capability") ExtensionCapability capability,
                                                             @RequestBody Map<String, String> params,
                                                             Principal principal) {

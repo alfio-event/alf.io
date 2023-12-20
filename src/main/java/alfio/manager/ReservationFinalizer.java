@@ -28,6 +28,7 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.TransactionMetadataModification;
@@ -52,13 +53,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.function.Function;
 
@@ -223,6 +224,10 @@ public class ReservationFinalizer {
         var reservationId = spec.getReservationId();
         var purchaseContext = spec.getPurchaseContext();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        if (reservation.getStatus() == COMPLETE) {
+            log.warn("Ignoring completeReservation for reservation {} with status COMPLETE", reservationId);
+            return;
+        }
         if (reservation.getStatus() != FINALIZING && reservation.getStatus() != OFFLINE_FINALIZING) {
             throw new IncompatibleStateException("Status " + reservation.getStatus() + " is not compatible with finalization.");
         }
@@ -291,8 +296,12 @@ public class ReservationFinalizer {
             reservationOperationHelper.sendConfirmationEmail(purchaseContext, ticketReservation, locale, username);
         }
     }
-
+    @Transactional
     public void acquireSpecialPriceTokens(String reservationId) {
+        internalAcquireSpecialPriceTokens(reservationId);
+    }
+
+    private void internalAcquireSpecialPriceTokens(String reservationId) {
         specialPriceRepository.updateStatusForReservation(singletonList(reservationId), SpecialPrice.Status.TAKEN.toString());
     }
 
@@ -310,7 +319,7 @@ public class ReservationFinalizer {
             default: throw new IllegalStateException("not supported purchase context");
         }
 
-        acquireSpecialPriceTokens(reservationId);
+        internalAcquireSpecialPriceTokens(reservationId);
         ZonedDateTime timestamp = ZonedDateTime.now(clockProvider.getClock());
         int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, COMPLETE.toString(), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
@@ -336,7 +345,7 @@ public class ReservationFinalizer {
     }
 
     private void acquireSubscription(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, CustomerName customerName, String email) {
-        var status = paymentProxy.isDeskPaymentRequired() ? AllocationStatus.TO_BE_PAID : AllocationStatus.ACQUIRED;
+        log.debug("Acquiring subscriptions for reservation {}; payment method: {}", reservationId, paymentProxy);
         var subscriptionDescriptor = (SubscriptionDescriptor) purchaseContext;
         ZonedDateTime validityFrom = null;
         ZonedDateTime validityTo = null;
@@ -348,13 +357,13 @@ public class ReservationFinalizer {
             validityFrom = confirmationTimestamp;
             var temporalUnit = requireNonNullElse(subscriptionDescriptor.getValidityTimeUnit(), SubscriptionDescriptor.SubscriptionTimeUnit.DAYS).getTemporalUnit();
             validityTo = confirmationTimestamp.plus(subscriptionDescriptor.getValidityUnits(), temporalUnit)
-                .with(ChronoField.HOUR_OF_DAY, 23)
-                .with(ChronoField.MINUTE_OF_HOUR, 59)
-                .with(ChronoField.SECOND_OF_MINUTE, 59);
+                .withHour(23)
+                .withMinute(59)
+                .withSecond(59);
         }
         var subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).stream().findFirst().orElseThrow();
         var updatedSubscriptions = subscriptionRepository.confirmSubscription(reservationId,
-            status,
+            AllocationStatus.ACQUIRED,
             requireNonNullElse(subscription.getFirstName(), customerName.getFirstName()),
             requireNonNullElse(subscription.getLastName(), customerName.getLastName()),
             requireNonNullElse(subscription.getEmail(), email),
@@ -367,8 +376,17 @@ public class ReservationFinalizer {
         subscription = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0); // at the moment it's safe because there can be only one subscription per reservation
         var subscriptionId = subscription.getId();
         auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString());
-        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, subscriptionRepository.getSubscriptionMetadata(subscriptionId))
-            .ifPresent(metadata -> subscriptionRepository.setMetadataForSubscription(subscriptionId, metadata));
+        var originalMetadata = subscriptionRepository.getSubscriptionMetadata(subscriptionId);
+        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, originalMetadata)
+            .ifPresent(metadata -> {
+                var metadataToSave = metadata;
+                if (originalMetadata != null) {
+                    var properties = new HashMap<>(originalMetadata.getProperties());
+                    properties.putAll(metadata.getProperties());
+                    metadataToSave = new SubscriptionMetadata(properties, originalMetadata.getConfiguration());
+                }
+                subscriptionRepository.setMetadataForSubscription(subscriptionId, metadataToSave);
+            });
     }
 
     private void acquireEventTickets(PaymentProxy paymentProxy, String reservationId, PurchaseContext purchaseContext, Event event) {
@@ -400,7 +418,7 @@ public class ReservationFinalizer {
             });
             auditingHelper.auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticketWithMetadata.getTicket(), Collections.emptyMap(), event.getId());
         });
-        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
+        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(event.getId(), reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
     }
 

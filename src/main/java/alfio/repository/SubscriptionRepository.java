@@ -330,6 +330,12 @@ public interface SubscriptionRepository {
     @Query("update subscription set status = 'CANCELLED' where reservation_id_fk = :reservationId")
     int cancelSubscriptions(@Bind("reservationId") String reservationId);
 
+    @Query("update subscription set status = 'CANCELLED' where reservation_id_fk = :reservationId" +
+        " and id = :subscriptionId and subscription_descriptor_fk = :descriptorId")
+    int cancelSubscription(@Bind("reservationId") String reservationId,
+                           @Bind("subscriptionId") UUID subscriptionId,
+                           @Bind("descriptorId") UUID descriptorId);
+
     NamedParameterJdbcTemplate getJdbcTemplate();
 
     default Map<Integer, List<AvailableSubscriptionsByEvent>> loadAvailableSubscriptionsByEvent(@Bind("eventId") Integer eventId,
@@ -355,7 +361,8 @@ public interface SubscriptionRepository {
             "           s.email_address as email_address, " +
             "           s.first_name as first_name, " +
             "           s.last_name as last_name, " +
-            "           r.user_language as user_language " +
+            "           r.user_language as user_language," +
+            "           r.email_address as reservation_email " +
             "    from event e " +
             "             join subscription_event se on se.event_id_fk = e.id " +
             "             join subscription_descriptor sd on se.subscription_descriptor_id_fk = sd.id " +
@@ -385,7 +392,8 @@ public interface SubscriptionRepository {
                 rse.getString("email_address"),
                 rse.getString("first_name"),
                 rse.getString("last_name"),
-                rse.getString("user_language")
+                rse.getString("user_language"),
+                rse.getString("reservation_email")
             ));
         });
         return result;

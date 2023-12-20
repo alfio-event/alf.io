@@ -90,7 +90,7 @@ public interface TicketSearchRepository {
                                                                  @Bind("categoryId") int categoryId,
                                                                  @Bind("search") String search);
 
-    @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity limit :pageSize offset :page")
+    @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_registration_ts desc nulls last, tr_validity limit :pageSize offset :page")
     List<TicketReservation> findReservationsForEvent(@Bind("eventId") int eventId,
                                                      @Bind("page") int page,
                                                      @Bind("pageSize") int pageSize,
@@ -126,7 +126,7 @@ public interface TicketSearchRepository {
     @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_id in (:reservationIds) and tr_status = 'OFFLINE_PAYMENT' and bt_reservation_id is not null")
     List<TicketReservationWithTransaction> findOfflineReservationsWithTransaction(@Bind("reservationIds") List<String> reservationIds);
 
-    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status in('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT')")
+    @Query("select * from (select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status in('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT')) d order by tr_registration_ts desc")
     List<TicketReservationWithTransaction> findOfflineReservationsWithOptionalTransaction(@Bind("eventId") int eventId);
 
     @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_id in (:reservationIds)")

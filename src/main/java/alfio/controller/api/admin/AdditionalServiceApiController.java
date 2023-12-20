@@ -109,9 +109,7 @@ public class AdditionalServiceApiController {
         Validate.isTrue(additionalServiceId == additionalService.getId(), "wrong input");
         return eventRepository.findOptionalById(eventId)
             .map(event -> {
-                int result = additionalServiceManager.update(additionalServiceId, additionalService.isFixPrice(),
-                    additionalService.getOrdinal(), additionalService.getAvailableQuantity(), additionalService.getMaxQtyPerOrder(), additionalService.getInception().toZonedDateTime(event.getZoneId()),
-                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0));
+                int result = additionalServiceManager.update(additionalServiceId, event, additionalService);
                 Validate.isTrue(result <= 1, "too many records updated");
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
                     forEach(t -> {
@@ -132,7 +130,7 @@ public class AdditionalServiceApiController {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
         return eventRepository.findOptionalById(eventId)
-            .map(event -> ResponseEntity.ok(eventManager.insertAdditionalService(event, additionalService)))
+            .map(event -> ResponseEntity.ok(additionalServiceManager.insertAdditionalService(event, additionalService)))
             .orElseThrow(IllegalArgumentException::new);
     }
 

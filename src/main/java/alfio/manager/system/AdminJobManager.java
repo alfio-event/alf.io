@@ -16,12 +16,14 @@
  */
 package alfio.manager.system;
 
+import alfio.manager.support.RetryFinalizeReservation;
 import alfio.manager.system.AdminJobExecutor.JobName;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.system.AdminJobSchedule;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.util.ClockProvider;
+import alfio.util.Json;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -174,13 +176,18 @@ public class AdminJobManager {
     }
 
     private static void logReschedule(ZonedDateTime nextExecution, Map<String, Object> metadata, JobName jobName) {
-        String name;
-        boolean isExtension = jobName == JobName.EXECUTE_EXTENSION;
-        if (isExtension) {
-            name = String.valueOf(metadata.get("extensionName"));
-        } else {
-            name = String.valueOf(metadata.get("reservationId"));
+        try {
+            String name;
+            boolean isExtension = jobName == JobName.EXECUTE_EXTENSION;
+            if (isExtension) {
+                name = String.valueOf(metadata.get("extensionName"));
+            } else {
+                var payload = Json.fromJson((String) metadata.get("payload"), RetryFinalizeReservation.class);
+                name = payload.getReservationId();
+            }
+            log.debug("scheduling failed {} {} to be executed at {}", isExtension ? "extension" : "reservation", name, nextExecution);
+        } catch (Exception e) {
+            log.warn("Cannot log reschedule", e);
         }
-        log.debug("scheduling failed {} {} to be executed at {}", isExtension ? "extension" : "reservation", name, nextExecution);
     }
 }

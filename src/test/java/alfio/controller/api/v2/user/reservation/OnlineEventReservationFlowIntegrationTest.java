@@ -165,7 +165,7 @@ class OnlineEventReservationFlowIntegrationTest extends BaseReservationFlowTest 
     }
 
     @Test
-    public void onlineEvent() throws Exception {
+    void onlineEvent() throws Exception {
         super.testBasicFlow(this::createContext);
     }
 

@@ -72,6 +72,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -178,18 +179,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
 
         // add additional service
-        var addServ = new EventModification.AdditionalService(null, new BigDecimal("40.00"), true, 0, 1, 1,
-
-            new DateTimeModification(ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalDate(), ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalTime()),
-            new DateTimeModification(context.event.getEnd().plusDays(2).toLocalDate(), context.event.getEnd().plusDays(2).toLocalTime()),
-            context.event.getVat(), AdditionalService.VatType.INHERITED,
-            null,
-            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional title", AdditionalServiceText.TextType.TITLE)),
-            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional desc", AdditionalServiceText.TextType.DESCRIPTION)),
-
-            AdditionalService.AdditionalServiceType.SUPPLEMENT,
-            AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET
-        );
+        var addServ = buildAdditionalService(context);
         var addServRes = additionalServiceApiController.insert(context.event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"), null);
         assertNotNull(addServRes.getBody());
         additionalServiceId = addServRes.getBody().getId();
@@ -206,6 +196,21 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         //
 
         specialPriceTokenGenerator.generatePendingCodes();
+    }
+
+    protected EventModification.AdditionalService buildAdditionalService(ReservationFlowContext context) {
+        return new EventModification.AdditionalService(null, new BigDecimal("40.00"), true, 0, -1, 1,
+
+            new DateTimeModification(ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalDate(), ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalTime()),
+            new DateTimeModification(context.event.getEnd().plusDays(2).toLocalDate(), context.event.getEnd().plusDays(2).toLocalTime()),
+            context.event.getVat(), AdditionalService.VatType.INHERITED,
+            null,
+            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional title", AdditionalServiceText.TextType.TITLE)),
+            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional desc", AdditionalServiceText.TextType.DESCRIPTION)),
+
+            AdditionalService.AdditionalServiceType.SUPPLEMENT,
+            AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET
+        );
     }
 
     protected Stream<String> getExtensionEventsToRegister() {
@@ -711,12 +716,16 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
             var ticket1 = ticketsByCat.get(0).getTickets().get(0);
             assertEquals(1, ticket1.getTicketFieldConfigurationBeforeStandard().size()); // 1
-            assertEquals(2, ticket1.getTicketFieldConfigurationAfterStandard().size()); // 1 + 1 additional service related field (appear only on first ticket)
+            assertEquals(1, ticket1.getTicketFieldConfigurationAfterStandard().size()); // 1 + 1 additional service related field (appear only on first ticket)
+            assertEquals(1, resInfoRes.getBody().getAdditionalServiceWithData().size());
 
             var ticket2 = ticketsByCat.get(0).getTickets().get(1);
             assertEquals(1, ticket2.getTicketFieldConfigurationBeforeStandard().size()); // 1
             assertEquals(1, ticket2.getTicketFieldConfigurationAfterStandard().size()); // 1
 
+            var additionalServiceWithData = resInfoRes.getBody().getAdditionalServiceWithData();
+            assertEquals(1, additionalServiceWithData.size());
+            assertEquals(1, additionalServiceWithData.get(0).getTicketFieldConfiguration().size());
 
             var contactForm = new ContactAndTicketsForm();
 
@@ -737,14 +746,18 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             ticketForm2.setFirstName("ticketfull");
             ticketForm2.setLastName("ticketname");
             ticketForm2.setEmail("tickettest@test.com");
-            ticketForm2.setAdditional(Map.of("field1", Collections.singletonList("value")));
+            ticketForm2.setAdditional(new HashMap<>(Map.of("field1", Collections.singletonList("value"))));
 
             contactForm.setTickets(Map.of(ticket1.getUuid(), ticketForm1, ticket2.getUuid(), ticketForm2));
 
+            var additionalServiceLinkForm = new AdditionalServiceLinkForm();
+            additionalServiceLinkForm.setAdditionalServiceItemId(additionalServiceWithData.get(0).getItemId());
+            additionalServiceLinkForm.setTicketUUID(ticket2.getUuid());
+            contactForm.getAdditionalServices().put(ticket2.getUuid(), List.of(additionalServiceLinkForm));
             var failure = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatusCode());
             assertNotNull(failure.getBody());
-            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("tickets["+ticket1.getUuid()+"].additional[field3][0]")).count()); //<- missing mandatory
+            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("additionalServices["+ticket2.getUuid()+"][0].additional[field3][0]")).count()); //<- missing mandatory
 
             //check billing errors
             assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("billingAddressLine1")).count()); //<- missing mandatory
@@ -758,12 +771,30 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             contactForm.setBillingAddressLine1("LINE 1");
             contactForm.setBillingAddressCity("CITY");
             contactForm.setBillingAddressZip("ZIP");
-
-            ticketForm1.getAdditional().put("field3", Collections.singletonList("missing value"));
+            var linkForm = new AdditionalServiceLinkForm();
+            linkForm.setAdditionalServiceItemId(additionalServiceWithData.get(0).getItemId());
+            linkForm.setTicketUUID(ticket2.getUuid());
+            linkForm.setAdditional(new HashMap<>(Map.of("field3", Collections.singletonList("value"))));
+            contactForm.getAdditionalServices().put(ticket2.getUuid(), List.of(linkForm));
             var success = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.OK, success.getStatusCode());
-
+            var values = ticketFieldRepository.findAllValuesByTicketIds(List.of(ticketRepository.findByUUID(ticket1.getUuid()).getId()));
+            assertEquals(1, values.size());
+            int ticket2Id = ticketRepository.findByUUID(ticket2.getUuid()).getId();
+            var ticket2Ids = List.of(ticket2Id);
+            values = ticketFieldRepository.findAllValuesByTicketIds(ticket2Ids);
+            assertEquals(2, values.size());
+            assertTrue(values.stream().anyMatch(f -> f.getName().equals("field3") && f.getValue().equals("value")));
+            // verify that additional service field was actually saved.
+            var asValues = ticketFieldRepository.findAdditionalServicesValueByTicketIds(ticket2Ids);
+            assertTrue(asValues.stream().anyMatch(f -> f.getName().equals("field3") && f.getValue().equals("value")));
+            var valuesForCheckIn = ticketFieldRepository.findValueForTicketId(ticket2Id, Set.of("field3"));
+            assertFalse(valuesForCheckIn.isEmpty());
+            assertEquals("field3", valuesForCheckIn.get(0).getName());
+            assertEquals("value", valuesForCheckIn.get(0).getValue());
             reservationApiV2Controller.cancelPendingReservation(reservationId);
+            // make sure that there is no pending additional service item anymore
+            assertFalse(requireNonNull(jdbcTemplate.queryForObject("select exists (select id from additional_service_item where status = 'PENDING' and tickets_reservation_uuid = :reservationId) as res", new MapSqlParameterSource("reservationId", reservationId), Boolean.class)));
         }
 
 
@@ -830,7 +861,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING, context);
 
             //add mandatory additional field
-            ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+            ticketForm.setAdditional(new HashMap<>(Collections.singletonMap("field1", Collections.singletonList("value"))));
             var overviewRes = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING, context);
@@ -912,7 +943,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             updateTicketOwnerForm.setFirstName("Test");
             updateTicketOwnerForm.setLastName("Testson");
             updateTicketOwnerForm.setEmail("testmctest@test.com");
-            updateTicketOwnerForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+            updateTicketOwnerForm.setAdditional(new HashMap<>(Collections.singletonMap("field1", Collections.singletonList("value"))));
             var updateTicketRes = ticketApiV2Controller.updateTicketInfo(context.event.getShortName(), ticket.getUuid(), updateTicketOwnerForm, new BeanPropertyBindingResult(updateTicketOwnerForm, "ticket"), context.getPublicAuthentication());
             assertNotNull(updateTicketRes.getBody());
             assertTrue(updateTicketRes.getBody().isSuccess());
@@ -1058,9 +1089,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
 
                 // check failures
-                assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
-                assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket", null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
-                assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket", null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier, null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
                 //
 
 
@@ -1117,8 +1148,8 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
                     // check register sponsor scan success flow
                     assertTrue(attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null, null), sponsorPrincipal, null).getBody().getResult().getStatus());
                     // scanned badges returns only unique values for a limited subset of columns
                     assertEquals(1, attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
 
@@ -1138,10 +1169,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     //
 
                     // check update notes
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT", null), sponsorPrincipal, null).getBody().getResult().getStatus());
                     var scannedBadges = attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody();
                     assertEquals(1, requireNonNull(scannedBadges).size());
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal, null).getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT", null), sponsorPrincipal, null).getBody().getResult().getStatus());
                     scannedBadges = attendeeApiController.getScannedBadges(context.event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody();
                     assertEquals(1, requireNonNull(scannedBadges).size());
                     response = new MockHttpServletResponse();
@@ -1158,7 +1189,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
                     // scan from a different operator
                     response = new MockHttpServletResponse();
-                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal, "OP2").getBody().getResult().getStatus());
+                    assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null, null), sponsorPrincipal, "OP2").getBody().getResult().getStatus());
                     eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
                     csvReader = new CSVReader(new StringReader(response.getContentAsString()));
                     csvSponsorScan = csvReader.readAll();
@@ -1431,7 +1462,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 ticketForm.setFirstName("ticketfull");
                 ticketForm.setLastName("ticketname");
                 ticketForm.setEmail("tickettest@test.com");
-                ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
+                ticketForm.setAdditional(new HashMap<>(Collections.singletonMap("field1", Collections.singletonList("value"))));
                 return Map.entry(t.getUuid(), ticketForm);
             })
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

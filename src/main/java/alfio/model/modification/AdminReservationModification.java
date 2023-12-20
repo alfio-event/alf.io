@@ -18,6 +18,8 @@ package alfio.model.modification;
 
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservationInvoicingAdditionalInfo;
+import alfio.model.transaction.PaymentProxy;
+import alfio.util.ClockProvider;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static java.util.Collections.singletonList;
@@ -171,6 +174,7 @@ public class AdminReservationModification implements Serializable {
         private final String reference;
         private final UUID subscriptionId;
         private final Map<String, List<String>> additionalInfo;
+        private final Map<String, String> metadata;
 
         @JsonCreator
         public Attendee(@JsonProperty("ticketId") Integer ticketId,
@@ -181,16 +185,18 @@ public class AdminReservationModification implements Serializable {
                         @JsonProperty("forbidReassignment") Boolean reassignmentForbidden,
                         @JsonProperty("reference") String reference,
                         @JsonProperty("subscriptionId") UUID subscriptionId,
-                        @JsonProperty("additionalInfo") Map<String, List<String>> additionalInfo) {
+                        @JsonProperty("additionalInfo") Map<String, List<String>> additionalInfo,
+                        @JsonProperty("metadata") Map<String, String> metadata) {
             this.ticketId = ticketId;
             this.firstName = trimToEmpty(firstName);
             this.lastName = trimToEmpty(lastName);
             this.emailAddress = trimToEmpty(emailAddress);
             this.language = language;
-            this.reassignmentForbidden = Optional.ofNullable(reassignmentForbidden).orElse(false);
+            this.reassignmentForbidden = Objects.requireNonNullElse(reassignmentForbidden, false);
             this.reference = reference;
             this.subscriptionId = subscriptionId;
-            this.additionalInfo = Optional.ofNullable(additionalInfo).orElse(Collections.emptyMap());
+            this.additionalInfo = Objects.requireNonNullElse(additionalInfo, Map.of());
+            this.metadata = Objects.requireNonNullElse(metadata, Map.of());
         }
 
         public boolean isEmpty() {
@@ -234,6 +240,52 @@ public class AdminReservationModification implements Serializable {
         }
     }
 
+    public static class TransactionDetails {
+
+        private final String id;
+        private final BigDecimal paidAmount;
+        private final LocalDateTime timestamp;
+        private final String notes;
+        private final PaymentProxy paymentProvider;
+
+        @JsonCreator
+        public TransactionDetails(@JsonProperty("id") String id,
+                                  @JsonProperty("paidAmount") BigDecimal paidAmount,
+                                  @JsonProperty("timestamp") LocalDateTime timestamp,
+                                  @JsonProperty("notes") String notes,
+                                  @JsonProperty("paymentProvider") PaymentProxy paymentProvider) {
+            this.id = id;
+            this.paidAmount = paidAmount;
+            this.timestamp = timestamp;
+            this.notes = notes;
+            this.paymentProvider = paymentProvider;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public BigDecimal getPaidAmount() {
+            return paidAmount;
+        }
+
+        public LocalDateTime getTimestamp() {
+            return timestamp;
+        }
+
+        public String getNotes() {
+            return notes;
+        }
+
+        public PaymentProxy getPaymentProvider() {
+            return paymentProvider;
+        }
+
+        public static TransactionDetails admin() {
+            return new TransactionDetails(null, null, LocalDateTime.now(ClockProvider.clock()), null, PaymentProxy.ADMIN);
+        }
+    }
+
     @Getter
     public static class SubscriptionDetails {
         private final String firstName;
@@ -271,7 +323,8 @@ public class AdminReservationModification implements Serializable {
                         a.reassignmentForbidden,
                         a.reference,
                         a.subscriptionId,
-                        singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))))).collect(toList());
+                        singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))),
+                        Map.of())).collect(toList());
                 return new TicketsInfo(ti.getCategory(), attendees, ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees());
             }).collect(toList());
             return Json.toJson(new AdminReservationModification(src.expiration,

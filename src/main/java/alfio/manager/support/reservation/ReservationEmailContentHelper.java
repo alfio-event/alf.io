@@ -48,6 +48,7 @@ import static alfio.model.BillingDocument.Type.INVOICE;
 import static alfio.model.BillingDocument.Type.RECEIPT;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.ReservationUtil.reservationUrl;
+import static alfio.util.TemplateManager.METADATA_ATTRIBUTES_KEY;
 import static java.util.stream.Collectors.*;
 import static org.springframework.http.MediaType.APPLICATION_PDF;
 
@@ -124,11 +125,13 @@ public class ReservationEmailContentHelper {
                 "pin", firstSubscription.getPin(),
                 "subscriptionId", firstSubscription.getId(),
                 "includePin", metadata.getConfiguration().isDisplayPin(),
-                "fullName", firstSubscription.getFirstName() + " " + firstSubscription.getLastName());
+                "fullName", firstSubscription.getFirstName() + " " + firstSubscription.getLastName(),
+                METADATA_ATTRIBUTES_KEY, metadata.getProperties());
             var model = prepareModelForReservationEmail(purchaseContext, ticketReservation, vat, summary, List.of(), initialModel);
             var subscriptionAttachments = new ArrayList<>(attachments);
-            subscriptionAttachments.add(generateSubscriptionAttachment(firstSubscription));
-            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of() : subscriptionAttachments));
+            var subscriptionAttachment = generateSubscriptionAttachment(firstSubscription);
+            subscriptionAttachments.add(subscriptionAttachment);
+            configurations.add(new ConfirmationEmailConfiguration(TemplateResource.CONFIRMATION_EMAIL_SUBSCRIPTION, firstSubscription.getEmail(), model, sendSeparateEmailToOwner ? List.of(subscriptionAttachment) : subscriptionAttachments));
             if(sendSeparateEmailToOwner) {
                 var separateModel = new HashMap<>(model);
                 separateModel.put("includePin", false);

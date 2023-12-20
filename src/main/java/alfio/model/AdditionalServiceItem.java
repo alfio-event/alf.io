@@ -26,11 +26,11 @@ public class AdditionalServiceItem {
 
     // are considered "Confirmed": ACQUIRED, CHECKED_IN and TO_BE_PAID
     public enum AdditionalServiceItemStatus {
-        FREE, // <- unused
+        FREE,
         PENDING, TO_BE_PAID, ACQUIRED, CANCELLED,
         CHECKED_IN, // <- unused
         EXPIRED,
-        INVALIDATED, RELEASED // <- both unused
+        INVALIDATED, RELEASED
     }
 
     private final int id;
@@ -41,6 +41,7 @@ public class AdditionalServiceItem {
     private final int additionalServiceId;
     private final AdditionalServiceItemStatus status;
     private final int eventId;
+    private final Integer ticketId;
 
     private final Integer srcPriceCts;
     private final Integer finalPriceCts;
@@ -60,7 +61,8 @@ public class AdditionalServiceItem {
                                  @Column("final_price_cts") Integer finalPriceCts,
                                  @Column("vat_cts") Integer vatCts,
                                  @Column("discount_cts") Integer discountCts,
-                                 @Column("currency_code") String currencyCode) {
+                                 @Column("currency_code") String currencyCode,
+                                 @Column("ticket_id_fk") Integer ticketId) {
         this.id = id;
         this.uuid = uuid;
         this.utcCreation = utcCreation;
@@ -74,5 +76,6 @@ public class AdditionalServiceItem {
         this.vatCts = vatCts;
         this.discountCts = discountCts;
         this.currencyCode = currencyCode;
+        this.ticketId = ticketId;
     }
 }

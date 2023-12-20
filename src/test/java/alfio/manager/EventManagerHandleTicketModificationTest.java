@@ -59,7 +59,7 @@ public class EventManagerHandleTicketModificationTest {
 
         when(event.getId()).thenReturn(eventId);
         when(event.now(any(ClockProvider.class))).thenReturn(ZonedDateTime.now(clockProvider().getClock().withZone(ZoneId.systemDefault())));
-        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, clockProvider(), mock(SubscriptionRepository.class));
+        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, clockProvider(), mock(SubscriptionRepository.class), null);
         when(original.getId()).thenReturn(originalCategoryId);
         when(updated.getId()).thenReturn(updatedCategoryId);
         when(original.getSrcPriceCts()).thenReturn(1000);
