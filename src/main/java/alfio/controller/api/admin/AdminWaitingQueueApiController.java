@@ -17,10 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.decorator.SaleableTicketCategory;
-import alfio.manager.EventManager;
-import alfio.manager.EventStatisticsManager;
-import alfio.manager.TicketReservationManager;
-import alfio.manager.WaitingQueueManager;
+import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
@@ -31,7 +28,6 @@ import alfio.util.EventUtil;
 import alfio.util.ExportUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -58,9 +54,11 @@ public class AdminWaitingQueueApiController {
     private final ConfigurationManager configurationManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final ClockProvider clockProvider;
+    private final AccessService accessService;
 
     @GetMapping("/status")
     public Map<String, Boolean> getStatusForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(this::loadStatus)
             .orElse(Collections.emptyMap());
@@ -83,6 +81,7 @@ public class AdminWaitingQueueApiController {
 
     @PutMapping("/status")
     public Map<String, Boolean> setStatusForEvent(@PathVariable("eventName") String eventName, @RequestBody SetStatusForm form, Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
                 configurationManager.saveAllEventConfiguration(event.getId(), event.getOrganizationId(),
@@ -94,6 +93,7 @@ public class AdminWaitingQueueApiController {
 
     @GetMapping("/count")
     public Integer countWaitingPeople(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
+        accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         Optional<Integer> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.countSubscribers(e.getId()));
         if(count.isPresent()) {
@@ -105,6 +105,7 @@ public class AdminWaitingQueueApiController {
 
     @GetMapping("/load")
     public List<WaitingQueueSubscription> loadAllSubscriptions(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
+        accessService.checkEventOwnership(principal, eventName);
         Optional<List<WaitingQueueSubscription>> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.loadAllSubscriptionsForEvent(e.getId()));
         if(count.isPresent()) {
@@ -118,6 +119,7 @@ public class AdminWaitingQueueApiController {
     public void downloadAllSubscriptions(@PathVariable("eventName") String eventName,
                                          @RequestParam(name = "format", defaultValue = "excel") String format,
                                          Principal principal, HttpServletResponse response) throws IOException {
+        accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         var found = waitingQueueManager.loadAllSubscriptionsForEvent(event.getId());
 
@@ -148,20 +150,20 @@ public class AdminWaitingQueueApiController {
 
     @PutMapping("/subscriber/{subscriberId}/restore")
     public ResponseEntity<Map<String, Object>> restoreSubscriber(@PathVariable("eventName") String eventName,
-                                                                     @PathVariable("subscriberId") int subscriberId,
-                                                                     Principal principal) {
+                                                                 @PathVariable("subscriberId") int subscriberId,
+                                                                 Principal principal) {
         return performStatusModification(eventName, subscriberId, principal, WaitingQueueSubscription.Status.WAITING, WaitingQueueSubscription.Status.CANCELLED);
     }
 
     private ResponseEntity<Map<String, Object>> performStatusModification(String eventName, int subscriberId,
-                                                                               Principal principal, WaitingQueueSubscription.Status newStatus,
-                                                                               WaitingQueueSubscription.Status currentStatus) {
-        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .flatMap(e -> waitingQueueManager.updateSubscriptionStatus(subscriberId, newStatus, currentStatus).map(s -> Pair.of(s, e)))
-            .map(pair -> {
+                                                                          Principal principal, WaitingQueueSubscription.Status newStatus,
+                                                                          WaitingQueueSubscription.Status currentStatus) {
+        var eventAndOrgId = accessService.checkWaitingQueueSubscriberInEvent(principal, subscriberId, eventName);
+        return waitingQueueManager.updateSubscriptionStatus(subscriberId, newStatus, currentStatus)
+            .map(result -> {
                 Map<String, Object> out = new HashMap<>();
-                out.put("modified", pair.getLeft());
-                out.put("list", waitingQueueManager.loadAllSubscriptionsForEvent(pair.getRight().getId()));
+                out.put("modified", result);
+                out.put("list", waitingQueueManager.loadAllSubscriptionsForEvent(eventAndOrgId.getId()));
                 return out;
             })
             .map(ResponseEntity::ok)

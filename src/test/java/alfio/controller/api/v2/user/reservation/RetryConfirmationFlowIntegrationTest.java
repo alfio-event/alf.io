@@ -212,7 +212,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
                 DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
-        return new CustomReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner", invoiceExtensionFailure);
+        return new CustomReservationFlowContext(eventAndUser.getLeft(), owner(eventAndUser.getRight()), invoiceExtensionFailure);
     }
 
     @Test

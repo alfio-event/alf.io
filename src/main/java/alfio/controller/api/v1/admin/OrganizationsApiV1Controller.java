@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v1.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.OrganizationDeleter;
 import alfio.manager.user.UserManager;
 import alfio.model.api.v1.admin.ApiKeyType;
@@ -38,16 +39,20 @@ import java.util.List;
 public class OrganizationsApiV1Controller {
     private final UserManager userManager;
     private final OrganizationDeleter organizationDeleter;
+    private final AccessService accessService;
 
     @Autowired
     public OrganizationsApiV1Controller(UserManager userManager,
-                                        OrganizationDeleter organizationDeleter) {
+                                        OrganizationDeleter organizationDeleter,
+                                        AccessService accessService) {
         this.userManager = userManager;
         this.organizationDeleter = organizationDeleter;
+        this.accessService = accessService;
     }
 
     @PostMapping("/create")
     public ResponseEntity<Organization> createOrganization(@RequestBody OrganizationModification om, Principal principal) {
+        accessService.ensureSystemApiKey(principal);
         if (om == null || !om.isValid(true)) {
             return ResponseEntity.badRequest().build();
         }
@@ -56,12 +61,14 @@ public class OrganizationsApiV1Controller {
     }
 
     @GetMapping("/list")
-    public List<Organization> getAllOrganizations() {
+    public List<Organization> getAllOrganizations(Principal principal) {
+        accessService.ensureSystemApiKey(principal);
         return userManager.findUserOrganizations(UserManager.ADMIN_USERNAME);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Organization> getSingleOrganization(@PathVariable("id") int organizationId) {
+    public ResponseEntity<Organization> getSingleOrganization(@PathVariable("id") int organizationId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.of(userManager.findOptionalOrganizationById(organizationId, UserManager.ADMIN_USERNAME));
     }
 
@@ -69,6 +76,7 @@ public class OrganizationsApiV1Controller {
     public ResponseEntity<OrganizationApiKey> createApiKeyForOrganization(@PathVariable("id") int organizationId,
                                                                           @RequestBody(required = false) CreateApiKeyRequest createApiKeyRequest,
                                                                           Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         ApiKeyType keyType = ApiKeyType.API_CLIENT;
         String description = CreateApiKeyRequest.DEFAULT_DESCRIPTION;
         if (createApiKeyRequest != null && StringUtils.isNotBlank(createApiKeyRequest.apiKeyType())) {
@@ -87,6 +95,7 @@ public class OrganizationsApiV1Controller {
     public ResponseEntity<Boolean> deleteApiKeyForOrganization(@PathVariable("id") int organizationId,
                                                                @PathVariable("apiKey") String apiKey,
                                                                Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.of(userManager.findUserIdByApiKey(apiKey, organizationId).map(userId -> {
             userManager.deleteUser(userId, principal);
             return true;
@@ -97,6 +106,7 @@ public class OrganizationsApiV1Controller {
     public ResponseEntity<Organization> update(@PathVariable("id") int organizationId,
                                                @RequestBody OrganizationModification om,
                                                Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         if (om == null || !om.isValid(false) || organizationId != om.getId()) {
             return ResponseEntity.badRequest().build();
         }
@@ -106,6 +116,7 @@ public class OrganizationsApiV1Controller {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") int organizationId, Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         boolean result = organizationDeleter.deleteOrganization(organizationId, principal);
         if (result) {
             return ResponseEntity.ok().build();

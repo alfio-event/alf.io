@@ -12,6 +12,8 @@ angular.module('adminApplication').component('exportReservationsButton', {
 function exportReservationsButton(EventService, $uibModal) {
     var ctrl = this;
 
+    ctrl.isOwner = window.USER_IS_OWNER;
+
     ctrl.$onInit = function() {
         EventService.getEventsCount().then(function(response) {
             ctrl.eventsCount = response.data;

@@ -24,10 +24,7 @@ import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -59,6 +56,12 @@ public interface TicketCategoryRepository {
 
     @Query("select * from ticket_category_with_currency where id = :id and " + CHECK_ACTIVE)
     TicketCategory getByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
+
+    @Query("select exists(select id from ticket_category where id = :id and " + CHECK_ACTIVE + ")")
+    Boolean checkCategoryExistsForEvent(@Bind("id") int id, @Bind("eventId") int eventId);
+
+    @Query("select count(*) from ticket_category where id in (:ids) and " + CHECK_ACTIVE)
+    Integer countCategoriesBelongingToEvent(@Bind("eventId") int eventId, @Bind("ids") Collection<Integer> categoryIds);
 
     @Query("select * from ticket_category_with_currency where id in (:ids) and " + CHECK_ACTIVE)
     List<TicketCategory> getByIdsAndActive(@Bind("ids") Collection<Integer> ids, @Bind("eventId") int eventId);
@@ -188,4 +191,10 @@ public interface TicketCategoryRepository {
 
     @Query("select count(*) from ticket_category where " + CHECK_ACTIVE)
     Integer countActiveByEventId(@Bind("eventId") int eventId);
+
+    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and id in (:additionalFieldIds)")
+    int countMatchingAdditionalFieldsWithEventId(@Bind("eventId") int eventId, @Bind("additionalFieldIds") Set<Integer> additionalFieldIds);
+
+    @Query("select count(*) from ticket_category where event_id = :eventId and id in (:categoryIds)")
+    int countCategoryForEvent(@Bind("categoryIds") Set<Integer> categoryIds, @Bind("eventId") int eventId);
 }

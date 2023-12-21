@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v1.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -44,13 +45,16 @@ import java.util.stream.Collectors;
 public class ConfigurationApiV1Controller {
 
     private final ConfigurationManager configurationManager;
+    private final AccessService accessService;
     private final PurchaseContextManager purchaseContextManager;
     private final UserManager userManager;
 
     public ConfigurationApiV1Controller(ConfigurationManager configurationManager,
                                         PurchaseContextManager purchaseContextManager,
-                                        UserManager userManager) {
+                                        UserManager userManager,
+                                        AccessService accessService) {
         this.configurationManager = configurationManager;
+        this.accessService = accessService;
         this.purchaseContextManager = purchaseContextManager;
         this.userManager = userManager;
     }
@@ -59,10 +63,11 @@ public class ConfigurationApiV1Controller {
     public ResponseEntity<String> saveConfigurationForOrganization(@PathVariable("organizationId") int organizationId,
                                                                    @RequestBody Map<String, String> configurationKeyValues,
                                                                    Principal principal) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
         var configurationKeys = configurationKeyValues.keySet().stream()
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
-        var validationErrorOptional = validateInput(organizationId, ConfigurationPathLevel.ORGANIZATION, principal, configurationKeyValues, configurationKeys);
+        var validationErrorOptional = validateInput(ConfigurationPathLevel.ORGANIZATION, configurationKeyValues, configurationKeys);
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
         }
@@ -87,7 +92,9 @@ public class ConfigurationApiV1Controller {
             .map(ConfigurationKeys::safeValueOf)
             .collect(Collectors.toSet());
 
-        var validationErrorOptional = validateInput(organizationId, ConfigurationPathLevel.PURCHASE_CONTEXT, principal, configurationKeyValues, configurationKeys);
+        accessService.checkOrganizationOwnership(principal, organizationId);
+
+        var validationErrorOptional = validateInput(ConfigurationPathLevel.PURCHASE_CONTEXT, configurationKeyValues, configurationKeys);
 
         if (validationErrorOptional.isPresent()) {
             return validationErrorOptional.get();
@@ -131,10 +138,6 @@ public class ConfigurationApiV1Controller {
         return ResponseEntity.ok().body("OK");
     }
 
-    private boolean checkUserIsMemberOfOrganization(int organizationId, Principal principal) {
-        return userManager.findUserOrganizations(principal.getName()).stream().noneMatch(o -> o.getId() == organizationId);
-    }
-
     static class ConfigurationKeyValue {
 
         private final ConfigurationKeys key;
@@ -155,15 +158,9 @@ public class ConfigurationApiV1Controller {
         }
     }
 
-    private Optional<ResponseEntity<String>> validateInput(int organizationId,
-                                                           ConfigurationPathLevel configurationPathLevel,
-                                                           Principal principal,
+    private Optional<ResponseEntity<String>> validateInput(ConfigurationPathLevel configurationPathLevel,
                                                            Map<String, String> configurationKeyValues,
                                                            Set<ConfigurationKeys> configurationKeys) {
-        if (checkUserIsMemberOfOrganization(organizationId, principal)) {
-            return Optional.of(ResponseEntity.status(HttpStatus.FORBIDDEN).build());
-        }
-
         if (configurationKeys.size() != configurationKeyValues.size()) {
             return Optional.of(ResponseEntity.badRequest().body("Request contains duplicate keys"));
         }

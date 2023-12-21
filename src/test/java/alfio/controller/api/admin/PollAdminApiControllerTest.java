@@ -41,12 +41,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
@@ -87,6 +86,7 @@ class PollAdminApiControllerTest {
     private AuditingRepository auditingRepository;
 
     private Event event;
+    private Principal principal;
 
     @BeforeEach
     void init() {
@@ -100,6 +100,7 @@ class PollAdminApiControllerTest {
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
         event = eventAndUser.getKey();
+        principal = principal(owner(eventAndUser.getRight()));
     }
 
     @Test
@@ -109,13 +110,13 @@ class PollAdminApiControllerTest {
         var options = List.of(new PollOptionModification(null, Map.of("en", "Homer J. Simpson"), null), new PollOptionModification(null, Map.of("en", "Bender B. Rodriguez"), Map.of()));
         var form = new PollModification(null, Map.of("en", "Best Employee of the Year"), null, null, options, false, Poll.PollStatus.OPEN); // this must not have an impact
         var eventName = event.getShortName();
-        var createResponse = controller.createNewPoll(eventName, form);
+        var createResponse = controller.createNewPoll(eventName, form, principal);
         assertTrue(createResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(createResponse.getBody());
         var pollId = createResponse.getBody();
 
         // retrieve poll and check
-        var getResponse = controller.getPollDetail(eventName, pollId);
+        var getResponse = controller.getPollDetail(eventName, pollId, principal);
         assertTrue(getResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(getResponse.getBody());
         var poll = getResponse.getBody();
@@ -124,7 +125,7 @@ class PollAdminApiControllerTest {
         assertEquals(Poll.PollStatus.DRAFT, poll.getStatus());
 
         // update poll status
-        var updateStatusResponse = controller.updateStatus(eventName, pollId, new PollAdminApiController.UpdatePollStatusForm(Poll.PollStatus.OPEN));
+        var updateStatusResponse = controller.updateStatus(eventName, pollId, new PollAdminApiController.UpdatePollStatusForm(Poll.PollStatus.OPEN), principal);
         assertTrue(updateStatusResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(updateStatusResponse.getBody());
         assertEquals(Poll.PollStatus.OPEN, updateStatusResponse.getBody().getStatus());
@@ -133,7 +134,7 @@ class PollAdminApiControllerTest {
         var newOptionsList = new ArrayList<>(poll.getOptions());
         newOptionsList.addAll(List.of(new PollOptionModification(null, Map.of("en", "Lisa M. Simpson"), null), new PollOptionModification(null, Map.of("en", "Turanga Leela"), Map.of())));
         var updateForm = new PollModification(poll.getId(), poll.getTitle(), poll.getDescription(), poll.getOrder(), newOptionsList, false, Poll.PollStatus.DRAFT);
-        var updatePollResponse = controller.updatePoll(eventName, pollId, updateForm);
+        var updatePollResponse = controller.updatePoll(eventName, pollId, updateForm, principal);
         assertTrue(updatePollResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(updatePollResponse.getBody());
         assertEquals(Poll.PollStatus.OPEN, updatePollResponse.getBody().getStatus());
@@ -146,7 +147,7 @@ class PollAdminApiControllerTest {
         var options = List.of(new PollOptionModification(null, Map.of("en", "Homer J. Simpson"), null), new PollOptionModification(null, Map.of("en", "Bender B. Rodriguez"), Map.of()));
         var form = new PollModification(null, Map.of("en", "Best Employee of the Year"), null, null, options, true, Poll.PollStatus.OPEN); // this must not have an impact
         var eventName = event.getShortName();
-        var createResponse = controller.createNewPoll(eventName, form);
+        var createResponse = controller.createNewPoll(eventName, form, principal);
         assertTrue(createResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(createResponse.getBody());
         var pollId = createResponse.getBody();
@@ -164,7 +165,7 @@ class PollAdminApiControllerTest {
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
 
         // find compatible tickets
-        var res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First");
+        var res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First", principal);
         assertTrue(res.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(res.getBody()));
         assertEquals(1, res.getBody().size());
@@ -174,46 +175,46 @@ class PollAdminApiControllerTest {
         var poll = pollRepository.findSingleForEvent(event.getId(), pollId).orElseThrow();
         assertNotNull(poll);
         var participantForm = new PollAdminApiController.UpdateParticipantsForm(List.of(ticketId));
-        var allowRes = controller.allowAttendees(event.getShortName(), pollId, participantForm);
+        var allowRes = controller.allowAttendees(event.getShortName(), pollId, participantForm, principal);
         assertTrue(allowRes.getStatusCode().is2xxSuccessful());
         assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.TAG_TICKET));
         assertEquals(0, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.UNTAG_TICKET));
 
-        var participantRes = controller.getAllowedAttendees(eventName, pollId);
+        var participantRes = controller.getAllowedAttendees(eventName, pollId, principal);
         assertTrue(participantRes.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isNotEmpty(participantRes.getBody()));
         assertEquals(1, participantRes.getBody().size());
         assertEquals(firstTicket.getId(), participantRes.getBody().get(0).getId());
 
         // now ticket should not be returned anymore
-        res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First");
+        res = controller.findAdditionalAttendees(event.getShortName(), pollId, "First", principal);
         assertTrue(res.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isEmpty(res.getBody()));
 
         // get statistics
-        var statsRes = controller.getStatisticsForEvent(event.getShortName(), pollId);
+        var statsRes = controller.getStatisticsForEvent(event.getShortName(), pollId, principal);
         assertTrue(statsRes.getStatusCode().is2xxSuccessful());
         assertNotNull(statsRes.getBody());
         assertTrue(CollectionUtils.isEmpty(statsRes.getBody().getOptionStatistics()));
         assertEquals("0", statsRes.getBody().getParticipationPercentage());
 
         // forbid access to attendee
-        var forbidRes = controller.forbidAttendees(event.getShortName(), pollId, participantForm);
+        var forbidRes = controller.forbidAttendees(event.getShortName(), pollId, participantForm, principal);
         assertTrue(forbidRes.getStatusCode().is2xxSuccessful());
         assertTrue(CollectionUtils.isEmpty(forbidRes.getBody()));
         assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.TAG_TICKET));
         assertEquals(1, auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.UNTAG_TICKET));
 
         // remove option
-        var pollWithOptions = controller.getPollDetail(event.getShortName(), pollId).getBody();
+        var pollWithOptions = controller.getPollDetail(event.getShortName(), pollId, principal).getBody();
         assertNotNull(pollWithOptions);
         var firstOptionId = pollWithOptions.getOptions().get(0).getId();
-        var removeOptionResponse = controller.removeOption(event.getShortName(), pollId, firstOptionId);
+        var removeOptionResponse = controller.removeOption(event.getShortName(), pollId, firstOptionId, principal);
         assertTrue(removeOptionResponse.getStatusCode().is2xxSuccessful());
         assertTrue(Objects.requireNonNull(removeOptionResponse.getBody()).getOptions().stream().noneMatch(po -> firstOptionId.equals(po.getId())));
 
         // delete poll
-        var deletePollResponse = controller.deletePoll(eventName, pollId);
+        var deletePollResponse = controller.deletePoll(eventName, pollId, principal);
         assertTrue(deletePollResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(deletePollResponse.getBody());
         assertTrue(deletePollResponse.getBody());

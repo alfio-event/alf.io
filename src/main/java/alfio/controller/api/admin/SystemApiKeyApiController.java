@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.system.ConfigurationManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,18 +26,23 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
+
 @RestController
 @RequestMapping("/admin/api/system/api-key")
 public class SystemApiKeyApiController {
     private static final Logger log = LoggerFactory.getLogger(SystemApiKeyApiController.class);
     private final ConfigurationManager configurationManager;
+    private final AccessService accessService;
 
-    public SystemApiKeyApiController(ConfigurationManager configurationManager) {
+    public SystemApiKeyApiController(ConfigurationManager configurationManager, AccessService accessService) {
         this.configurationManager = configurationManager;
+        this.accessService = accessService;
     }
 
     @GetMapping()
-    public ResponseEntity<String> retrieveApiKey() {
+    public ResponseEntity<String> retrieveApiKey(Principal principal) {
+        accessService.ensureAdmin(principal);
         try {
             return ResponseEntity.ok(configurationManager.retrieveSystemApiKey(false));
         } catch(RuntimeException e) {
@@ -46,7 +52,8 @@ public class SystemApiKeyApiController {
     }
 
     @PutMapping()
-    public ResponseEntity<String> rotateApiKey() {
+    public ResponseEntity<String> rotateApiKey(Principal principal) {
+        accessService.ensureAdmin(principal);
         try {
             return ResponseEntity.ok(configurationManager.retrieveSystemApiKey(true));
         } catch(RuntimeException e) {

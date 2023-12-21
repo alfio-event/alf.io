@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.SpecialPriceManager;
 import alfio.model.SpecialPrice;
 import alfio.model.modification.SendCodeModification;
@@ -46,10 +47,13 @@ import static org.apache.commons.lang3.StringUtils.trim;
 public class SpecialPriceApiController {
 
     private final SpecialPriceManager specialPriceManager;
+    private final AccessService accessService;
 
     @Autowired
-    public SpecialPriceApiController(SpecialPriceManager specialPriceManager) {
+    public SpecialPriceApiController(SpecialPriceManager specialPriceManager,
+                                     AccessService accessService) {
         this.specialPriceManager = specialPriceManager;
+        this.accessService = accessService;
     }
 
     @ExceptionHandler
@@ -69,6 +73,7 @@ public class SpecialPriceApiController {
                                                                          Principal principal) throws IOException, CsvException {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
+        accessService.checkCategoryOwnership(principal, eventName, categoryId);
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8); CSVReader reader = new CSVReader(isr)) {
             List<SendCodeModification> content = reader.readAll().stream()
                     .map(line -> {

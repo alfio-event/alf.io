@@ -118,7 +118,7 @@ class CustomTaxPolicyIntegrationTest {
                     DESCRIPTION, new BigDecimal("10.00"), true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
             );
             Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, List.of(), Event.EventFormat.IN_PERSON, vatStatus);
-            return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner");
+            return new ReservationFlowContext(eventAndUser.getLeft(), owner(eventAndUser.getRight()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

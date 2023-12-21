@@ -26,6 +26,7 @@ import alfio.model.api.v1.admin.ReservationConfirmationResponse.HolderDetail;
 import alfio.model.modification.AdminReservationModification.Notification;
 import alfio.model.result.ErrorCode;
 import alfio.model.subscription.SubscriptionDescriptor;
+import alfio.model.user.Role;
 import alfio.util.ReservationUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,10 +37,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElseGet;
@@ -54,18 +52,21 @@ public class ReservationApiV1Controller {
     private final PromoCodeRequestManager promoCodeRequestManager;
     private final AdminReservationManager adminReservationManager;
     private final AdditionalServiceManager additionalServiceManager;
+    private final AccessService accessService;
 
     @Autowired
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
                                       PurchaseContextManager purchaseContextManager,
                                       PromoCodeRequestManager promoCodeRequestManager,
                                       EventManager eventManager,
+                                      AccessService accessService,
                                       AdditionalServiceManager additionalServiceManager,
                                       AdminReservationManager adminReservationManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.purchaseContextManager = purchaseContextManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
         this.eventManager = eventManager;
+        this.accessService = accessService;
         this.additionalServiceManager = additionalServiceManager;
         this.adminReservationManager = adminReservationManager;
     }
@@ -75,6 +76,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<CreationResponse> createTicketsReservation(@PathVariable("slug") String eventSlug,
                                                                      @RequestBody TicketReservationCreationRequest reservationCreationRequest,
                                                                      Principal principal) {
+        accessService.checkEventReservationCreationRequest(principal, eventSlug, reservationCreationRequest);
         var bindingResult = new BeanPropertyBindingResult(reservationCreationRequest, "reservation");
 
         var optionalEvent = purchaseContextManager.findBy(PurchaseContextType.event, eventSlug);
@@ -101,6 +103,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<CreationResponse> createSubscriptionReservation(@PathVariable("id") String subscriptionId,
                                                                           @RequestBody SubscriptionReservationCreationRequest creationRequest,
                                                                           Principal principal) {
+        accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId);
         var bindingResult = new BeanPropertyBindingResult(creationRequest, "reservation");
 
         var optionalDescriptor = purchaseContextManager.findBy(PurchaseContextType.subscription, subscriptionId);
@@ -127,7 +130,6 @@ public class ReservationApiV1Controller {
     public ResponseEntity<ReservationConfirmationResponse> confirmReservation(@PathVariable("reservationId") String reservationId,
                                                                               @RequestBody ReservationConfirmationRequest reservationConfirmationRequest,
                                                                               Principal principal) {
-
 
         if (!reservationConfirmationRequest.isValid()) {
             return ResponseEntity.badRequest().build();
@@ -166,6 +168,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<Boolean> deleteTicket(@PathVariable("slug") String slug,
                                                 @PathVariable("ticketUUID") String ticketUUID,
                                                 Principal user) {
+        accessService.checkEventTicketIdentifierMembership(user, slug, ticketUUID, EnumSet.of(Role.OWNER));
         return ResponseEntity.of(adminReservationManager.findTicketWithReservationId(ticketUUID, slug, user.getName())
             .map(ticket -> {
                 // make sure that ticket belongs to the same event
@@ -186,6 +189,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<Boolean> deleteSubscription(@PathVariable("id") String descriptorId,
                                                       @PathVariable("subscriptionToDelete") UUID subscriptionToDelete,
                                                       Principal user) {
+        accessService.checkSubscriptionDescriptorOwnership(user, descriptorId);
         return ResponseEntity.of(adminReservationManager.findReservationIdForSubscription(descriptorId, subscriptionToDelete, user)
             .map(descriptorAndReservationId -> {
                 var result = adminReservationManager.removeSubscription(descriptorAndReservationId.getKey(), descriptorAndReservationId.getValue(), subscriptionToDelete, user.getName());

@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.api.support.PageAndContent;
+import alfio.manager.AccessService;
 import alfio.manager.PaymentManager;
 import alfio.manager.PurchaseContextManager;
 import alfio.manager.PurchaseContextSearchManager;
@@ -60,15 +61,18 @@ public class AdminPaymentsApiController {
     private final PurchaseContextManager purchaseContextManager;
     private final PaymentManager paymentManager;
     private final ConfigurationManager configurationManager;
+    private final AccessService accessService;
 
     public AdminPaymentsApiController(PurchaseContextSearchManager purchaseContextSearchManager,
                                       PurchaseContextManager purchaseContextManager,
                                       PaymentManager paymentManager,
-                                      ConfigurationManager configurationManager) {
+                                      ConfigurationManager configurationManager,
+                                      AccessService accessService) {
         this.purchaseContextSearchManager = purchaseContextSearchManager;
         this.purchaseContextManager = purchaseContextManager;
         this.paymentManager = paymentManager;
         this.configurationManager = configurationManager;
+        this.accessService = accessService;
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/list")
@@ -78,8 +82,8 @@ public class AdminPaymentsApiController {
                                                                                  @RequestParam(value = "search", required = false) String search,
                                                                                  Principal principal) {
         return purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
-            .filter(purchaseContext -> purchaseContextManager.validateAccess(purchaseContext, principal))
             .map(purchaseContext -> {
+                accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());
                 var res = purchaseContextSearchManager.findAllPaymentsFor(purchaseContext, page, search);
                 return new PageAndContent<>(res.getLeft(), res.getRight());
             }).orElseGet(() -> new PageAndContent<>(List.of(), 0));
@@ -93,8 +97,8 @@ public class AdminPaymentsApiController {
                                                  Principal principal) {
         try {
             return ResponseEntity.of(purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
-                .filter(purchaseContext -> purchaseContextManager.validateAccess(purchaseContext, principal))
                 .map(purchaseContext -> {
+                    accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());
                     var timestampModification = transactionMetadataModification.getTimestamp();
                     var timestamp = timestampModification != null ? timestampModification.toZonedDateTime(purchaseContext.getZoneId()) : null;
                     paymentManager.updateTransactionDetails(reservationId, transactionMetadataModification.getNotes(), timestamp, principal);
@@ -112,8 +116,9 @@ public class AdminPaymentsApiController {
                         Principal principal,
                         HttpServletResponse response) throws IOException {
         var purchaseContextOptional = purchaseContextManager.findBy(purchaseContextType, publicIdentifier);
-        if (purchaseContextOptional.isPresent() && purchaseContextManager.validateAccess(purchaseContextOptional.get(), principal)) {
+        if (purchaseContextOptional.isPresent()) {
             var purchaseContext = purchaseContextOptional.get();
+            accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());
             boolean useInvoiceNumber = configurationManager.getFor(ConfigurationKeys.USE_INVOICE_NUMBER_AS_ID, purchaseContext.getConfigurationLevel())
                 .getValueAsBooleanOrDefault();
             var data = purchaseContextSearchManager.findAllPaymentsForExport(purchaseContext, search)

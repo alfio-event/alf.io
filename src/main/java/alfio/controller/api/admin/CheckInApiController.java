@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.support.CheckInStatistics;
@@ -57,6 +58,7 @@ public class CheckInApiController {
     private final CheckInManager checkInManager;
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
+    private final AccessService accessService;
 
     @Data
     public static class TicketCode {
@@ -70,12 +72,14 @@ public class CheckInApiController {
     }
     
     @GetMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.evaluateTicketStatus(eventId, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
     @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
@@ -84,6 +88,7 @@ public class CheckInApiController {
                                           @PathVariable("ticketIdentifier") String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
                                           Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.checkIn(eventId, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), principal.getName());
     }
 
@@ -93,6 +98,7 @@ public class CheckInApiController {
                                           @RequestBody TicketCode ticketCode,
                                           @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                           Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
         String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
         return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
@@ -104,6 +110,7 @@ public class CheckInApiController {
                                                            @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                                            @RequestParam(value = "forceCheckInPaymentOnSite", required = false, defaultValue = "false") boolean forceCheckInPaymentOnSite,
                                                            Principal principal) {
+        accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
         String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
         return ticketIdentifierCodes.stream()
@@ -121,6 +128,7 @@ public class CheckInApiController {
     public boolean manualCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         log.warn("for event id : {} and ticket : {}, a manual check in has been done by {}", eventId, ticketIdentifier, principal.getName());
         return checkInManager.manualCheckIn(eventId, ticketIdentifier, principal.getName());
     }
@@ -129,6 +137,7 @@ public class CheckInApiController {
     public ResponseEntity<Boolean> manualCheckIn(@PathVariable("eventName") String eventName,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(ev -> manualCheckIn(ev.getId(), ticketIdentifier, principal)));
     }
@@ -137,6 +146,7 @@ public class CheckInApiController {
     public boolean revertCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         log.warn("for event id : {} and ticket : {}, a revert of the check in has been done by {}", eventId, ticketIdentifier, principal.getName());
         return checkInManager.revertCheckIn(eventId, ticketIdentifier, principal.getName());
     }
@@ -145,8 +155,8 @@ public class CheckInApiController {
     public ResponseEntity<Boolean> revertCheckIn(@PathVariable("eventName") String eventName,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
-        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .map(ev -> revertCheckIn(ev.getId(), ticketIdentifier, principal)));
+        var eventAndOrgId = accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
+        return ResponseEntity.ok(revertCheckIn(eventAndOrgId.getId(), ticketIdentifier, principal));
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment")
@@ -155,6 +165,7 @@ public class CheckInApiController {
                                                        @RequestBody TicketCode ticketCode,
                                                        @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                                        Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
         String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
         return checkInManager.confirmOnSitePayment(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
@@ -162,11 +173,13 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/event/{eventName}/statistics")
     public CheckInStatistics getStatistics(@PathVariable("eventName") String eventName, Principal principal) {
+        accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
         return checkInManager.getStatistics(eventName, principal.getName());
     }
     
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment")
-    public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
+    public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.confirmOnSitePayment(ticketIdentifier)
             .map(s -> new OnSitePaymentConfirmation(true, "ok"))
             .orElseGet(() -> new OnSitePaymentConfirmation(false, "Ticket with uuid " + ticketIdentifier + " not found"));
@@ -177,6 +190,7 @@ public class CheckInApiController {
                                                @RequestParam(value = "changedSince", required = false) Long changedSince,
                                                HttpServletResponse response,
                                                Principal principal) {
+        accessService.checkEventMembership(principal, eventId, AccessService.CHECKIN_ROLES);
         response.setHeader(ALFIO_TIMESTAMP_HEADER, Long.toString(new Date().getTime()));
         return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
     }
@@ -186,6 +200,7 @@ public class CheckInApiController {
                                                                  @RequestParam(value = "query", required = false) String query,
                                                                  @RequestParam(value = "page", required = false, defaultValue = "0") int page,
                                                                  Principal principal) {
+        accessService.checkEventMembership(principal, publicIdentifier, AccessService.CHECKIN_ROLES);
         if (StringUtils.isBlank(query) || StringUtils.isBlank(publicIdentifier)) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
@@ -199,16 +214,19 @@ public class CheckInApiController {
     public List<FullTicketInfo> findAllTicketsForAdminCheckIn(@PathVariable("eventId") int eventId,
                                                               @RequestBody List<Integer> ids,
                                                               Principal principal) {
+        accessService.checkEventMembership(principal, eventId, AccessService.CHECKIN_ROLES);
         validateIdList(ids);
         return checkInManager.getAttendeesInformation(eventId, ids, principal.getName());
     }
 
     @GetMapping("/check-in/{eventName}/label-layout")
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
-            .map(this::parseLabelLayout)
-            .orElseGet(() -> new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED));
+        var event = accessService.canAccessEvent(principal, eventName);
+        if (checkInManager.isOfflineCheckInEnabled().test(event)) {
+            return parseLabelLayout(event);
+        } else {
+            return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+        }
     }
 
     @GetMapping("/check-in/{eventName}/offline-identifiers")
@@ -216,13 +234,17 @@ public class CheckInApiController {
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
+        var event = accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
         Date since = changedSince == null ? new Date(0) : DateUtils.addSeconds(new Date(changedSince), -1);
-        Optional<List<Integer>> ids = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .filter(checkInManager.isOfflineCheckInEnabled())
-            .map(event -> checkInManager.getAttendeesIdentifiers(event, since, principal.getName()));
-
-        resp.setHeader(ALFIO_TIMESTAMP_HEADER, ids.isPresent() ? Long.toString(new Date().getTime()) : "0");
-        return ids.orElse(Collections.emptyList());
+        List<Integer> ids;
+        boolean offlineEnabled = checkInManager.isOfflineCheckInEnabled().test(event);
+        if (offlineEnabled) {
+            ids = checkInManager.getAttendeesIdentifiers(event, since, principal.getName());
+        } else {
+            ids = List.of();
+        }
+        resp.setHeader(ALFIO_TIMESTAMP_HEADER, offlineEnabled ? Long.toString(new Date().getTime()) : "0");
+        return ids;
     }
 
     @PostMapping("/check-in/{eventName}/offline")
@@ -230,6 +252,7 @@ public class CheckInApiController {
                                                        @RequestParam(value = "additionalField", required = false) List<String> additionalFields,
                                                        @RequestBody List<Integer> ids,
                                                        Principal principal) {
+        accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
 
         validateIdList(ids);
         return eventManager.getOptionalByName(eventName, principal.getName())
@@ -271,13 +294,13 @@ public class CheckInApiController {
     }
 
     @Data
-    private static class OnSitePaymentConfirmation {
+    public static class OnSitePaymentConfirmation {
         private final boolean status;
         private final String message;
     }
 
     @Getter
-    private static class LabelLayout {
+    public static class LabelLayout {
 
         private final QRCode qrCode;
         private final Content content;

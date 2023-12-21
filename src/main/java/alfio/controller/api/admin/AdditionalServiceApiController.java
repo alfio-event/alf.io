@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.AdditionalServiceManager;
 import alfio.manager.EventManager;
 import alfio.model.AdditionalService;
@@ -34,6 +35,7 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,6 +62,7 @@ public class AdditionalServiceApiController {
     private final EventManager eventManager;
     private final EventRepository eventRepository;
     private final AdditionalServiceManager additionalServiceManager;
+    private final AccessService accessService;
 
 
     @ExceptionHandler({IllegalArgumentException.class})
@@ -75,7 +78,8 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/event/{eventId}/additional-services")
-    public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId) {
+    public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
         return eventRepository.findOptionalById(eventId)
             .map(event -> additionalServiceManager.loadAllForEvent(eventId)
                             .stream()
@@ -88,13 +92,18 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/event/{eventId}/additional-services/count")
-    public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable("eventId") int eventId) {
+    public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable("eventId") int eventId, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
         return additionalServiceManager.countUsageForEvent(eventId);
     }
 
     @PutMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
-    public ResponseEntity<EventModification.AdditionalService> update(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
+    public ResponseEntity<EventModification.AdditionalService> update(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
+        //
+        accessService.checkEventOwnership(principal, eventId);
+        Assert.isTrue(additionalServiceManager.getOptionalById(additionalServiceId, eventId).isPresent(), "No additional service with id " + additionalServiceId + " present in eventId " + eventId);
+        //
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
         Validate.isTrue(additionalServiceId == additionalService.getId(), "wrong input");
@@ -105,7 +114,7 @@ public class AdditionalServiceApiController {
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
                     forEach(t -> {
                         if(t.getId() != null) {
-                            additionalServiceManager.updateText(t.getId(), t.getLocale(), t.getType(), t.getValue());
+                            additionalServiceManager.updateText(t.getId(), t.getLocale(), t.getType(), t.getValue(), additionalServiceId);
                         } else {
                             additionalServiceManager.insertText(additionalService.getId(), t.getLocale(), t.getType(), t.getValue());
                         }
@@ -116,7 +125,8 @@ public class AdditionalServiceApiController {
 
     @PostMapping(value = "/event/{eventId}/additional-services")
     @Transactional
-    public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
+    public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
+        accessService.checkEventOwnership(principal, eventId);
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
         return eventRepository.findOptionalById(eventId)
@@ -127,8 +137,11 @@ public class AdditionalServiceApiController {
     @DeleteMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
     public ResponseEntity<String> remove(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, Principal principal) {
+        var additionalService = additionalServiceManager.getOptionalById(additionalServiceId, eventId);
+        Assert.isTrue(additionalService.isPresent(), "Additional service " + additionalServiceId + " must be inside eventId " + eventId);
+        accessService.checkEventOwnership(principal, eventId);
         return eventRepository.findOptionalById(eventId)
-            .map(event -> additionalServiceManager.getOptionalById(additionalServiceId, eventId)
+            .map(event -> additionalService
                 .map(as -> {
                     log.debug("{} is deleting additional service #{}", principal.getName(), additionalServiceId);
                     int deletedTexts = additionalServiceManager.deleteAdditionalServiceTexts(additionalServiceId);
@@ -147,6 +160,7 @@ public class AdditionalServiceApiController {
                                          @PathVariable("type") AdditionalService.AdditionalServiceType additionalServiceType,
                                          HttpServletResponse response,
                                          Principal principal) throws IOException {
+        accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getOptionalByName(eventName, principal.getName()).orElseThrow();
         var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         var header = List.of(

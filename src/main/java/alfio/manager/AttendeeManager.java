@@ -72,7 +72,7 @@ public class AttendeeManager {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "ticket not found"));
         }
         Ticket ticket = maybeTicket.get();
-        if(ticket.getStatus() != Ticket.TicketStatus.CHECKED_IN) {
+        if(ticket.getStatus() != Ticket.TicketStatus.CHECKED_IN || ticket.getEventId() != event.getId()) {
             return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.INVALID_TICKET_STATE, "not checked-in"));
         }
         var operator = Objects.requireNonNullElse(operatorId, DEFAULT_OPERATOR_ID);

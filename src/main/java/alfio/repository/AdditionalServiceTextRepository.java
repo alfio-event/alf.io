@@ -41,8 +41,8 @@ public interface AdditionalServiceTextRepository {
     @Query("insert into additional_service_description(additional_service_id_fk, locale, type, value) values(:additionalServiceId, :locale, :type, :value)")
     int insert(@Bind("additionalServiceId") int additionalServiceId, @Bind("locale") String locale, @Bind("type") AdditionalServiceText.TextType type, @Bind("value") String value);
 
-    @Query("update additional_service_description set locale = :locale, type = :type, value = :value where id = :id")
-    int update(@Bind("id") int id, @Bind("locale") String locale, @Bind("type") AdditionalServiceText.TextType type, @Bind("value") String value);
+    @Query("update additional_service_description set locale = :locale, type = :type, value = :value where id = :id and additional_service_id_fk = :additionalServiceId")
+    int update(@Bind("id") int id, @Bind("locale") String locale, @Bind("type") AdditionalServiceText.TextType type, @Bind("value") String value, @Bind("additionalServiceId") int additionalServiceId);
 
 
     @Query("select id, additional_service_id_fk, locale, type, value from additional_service_description where additional_service_id_fk in (:additionalServiceIds)")

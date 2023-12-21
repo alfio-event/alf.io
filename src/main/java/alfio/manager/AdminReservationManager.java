@@ -125,6 +125,7 @@ public class AdminReservationManager {
     private final SubscriptionRepository subscriptionRepository;
     private final ReservationEmailContentHelper reservationEmailContentHelper;
     private final TransactionRepository transactionRepository;
+    private final AccessService accessService;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     Result<Triple<TicketReservation, List<Ticket>, PurchaseContext>> confirmReservation(PurchaseContextType purchaseContextType,
@@ -173,10 +174,11 @@ public class AdminReservationManager {
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
         return template.execute(t -> {
             var purchaseContextOptional = purchaseContextManager.findByReservationId(reservationId);
-            if (purchaseContextOptional.isEmpty() || !purchaseContextManager.validateAccess(purchaseContextOptional.get(), principal)) {
+            if (purchaseContextOptional.isEmpty()) {
                 return Result.error(ErrorCode.ReservationError.NOT_FOUND);
             }
             var purchaseContext = purchaseContextOptional.get();
+            accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());
             return confirmReservation(purchaseContext.getType(), purchaseContext.getPublicIdentifier(), reservationId, principal.getName(), notification, transaction, null);
         });
     }
@@ -789,8 +791,8 @@ public class AdminReservationManager {
     @Transactional
     public Optional<Pair<SubscriptionDescriptor, String>> findReservationIdForSubscription(String subscriptionDescriptorId, UUID subscriptionId, Principal principal) {
         return purchaseContextManager.findBy(PurchaseContextType.subscription, subscriptionDescriptorId)
-                .filter(purchaseContext -> purchaseContextManager.validateAccess(purchaseContext, principal))
                 .flatMap(purchaseContext -> {
+                    accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());
                     var subscription = subscriptionRepository.findSubscriptionById(subscriptionId);
                     var descriptor = (SubscriptionDescriptor) purchaseContext;
                     if (subscription.getSubscriptionDescriptorId().equals(descriptor.getId()) && StringUtils.isNotBlank(subscription.getReservationId())) {
