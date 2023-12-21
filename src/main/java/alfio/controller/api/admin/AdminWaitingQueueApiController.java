@@ -28,7 +28,6 @@ import alfio.util.EventUtil;
 import alfio.util.ExportUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -159,14 +158,12 @@ public class AdminWaitingQueueApiController {
     private ResponseEntity<Map<String, Object>> performStatusModification(String eventName, int subscriberId,
                                                                           Principal principal, WaitingQueueSubscription.Status newStatus,
                                                                           WaitingQueueSubscription.Status currentStatus) {
-        accessService.checkWaitingQueueSubscriberInEvent(subscriberId, eventName);
-        accessService.checkEventOwnership(principal, eventName);
-        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .flatMap(e -> waitingQueueManager.updateSubscriptionStatus(subscriberId, newStatus, currentStatus).map(s -> Pair.of(s, e)))
-            .map(pair -> {
+        var eventAndOrgId = accessService.checkWaitingQueueSubscriberInEvent(principal, subscriberId, eventName);
+        return waitingQueueManager.updateSubscriptionStatus(subscriberId, newStatus, currentStatus)
+            .map(result -> {
                 Map<String, Object> out = new HashMap<>();
-                out.put("modified", pair.getLeft());
-                out.put("list", waitingQueueManager.loadAllSubscriptionsForEvent(pair.getRight().getId()));
+                out.put("modified", result);
+                out.put("list", waitingQueueManager.loadAllSubscriptionsForEvent(eventAndOrgId.getId()));
                 return out;
             })
             .map(ResponseEntity::ok)

@@ -493,13 +493,13 @@ public class AccessService {
         }
     }
 
-    public void checkWaitingQueueSubscriberInEvent(int subscriberId, String eventName) {
-        var eventAndOrgId = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
-            .orElseThrow(AccessDeniedException::new);
+    public EventAndOrganizationId checkWaitingQueueSubscriberInEvent(Principal principal, int subscriberId, String eventName) {
+        var eventAndOrgId = checkEventOwnership(principal, eventName);
         if (!waitingQueueRepository.exists(subscriberId, eventAndOrgId.getId())) {
             log.warn("subscriberId {} does not exists in event {}", subscriberId, eventName);
             throw new AccessDeniedException();
         }
+        return eventAndOrgId;
     }
 
     public void checkBillingDocumentsOwnership(Principal principal, Integer eventId, List<Long> documentIds) {
@@ -558,11 +558,12 @@ public class AccessService {
         }
     }
 
-    public void checkEventTicketIdentifierMembership(Principal principal, String eventName, String ticketIdentifier, Set<Role> roles) {
+    public EventAndOrganizationId checkEventTicketIdentifierMembership(Principal principal, String eventName, String ticketIdentifier, Set<Role> roles) {
         var eventAndOrgId = checkEventMembership(principal, eventName, roles);
         if (!ticketRepository.isTicketInEvent(eventAndOrgId.getId(), ticketIdentifier)) {
             log.warn("ticket {} is not in eventId {}", ticketIdentifier, eventAndOrgId.getId());
             throw new AccessDeniedException();
         }
+        return eventAndOrgId;
     }
 }

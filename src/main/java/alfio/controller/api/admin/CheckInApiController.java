@@ -155,9 +155,8 @@ public class CheckInApiController {
     public ResponseEntity<Boolean> revertCheckIn(@PathVariable("eventName") String eventName,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
-        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
-        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .map(ev -> revertCheckIn(ev.getId(), ticketIdentifier, principal)));
+        var eventAndOrgId = accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
+        return ResponseEntity.ok(revertCheckIn(eventAndOrgId.getId(), ticketIdentifier, principal));
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment")
@@ -222,11 +221,12 @@ public class CheckInApiController {
 
     @GetMapping("/check-in/{eventName}/label-layout")
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.canAccessEvent(principal, eventName);
-        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
-            .map(this::parseLabelLayout)
-            .orElseGet(() -> new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED));
+        var event = accessService.canAccessEvent(principal, eventName);
+        if (checkInManager.isOfflineCheckInEnabled().test(event)) {
+            return parseLabelLayout(event);
+        } else {
+            return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+        }
     }
 
     @GetMapping("/check-in/{eventName}/offline-identifiers")
@@ -234,14 +234,17 @@ public class CheckInApiController {
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
-        accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
+        var event = accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
         Date since = changedSince == null ? new Date(0) : DateUtils.addSeconds(new Date(changedSince), -1);
-        Optional<List<Integer>> ids = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
-            .filter(checkInManager.isOfflineCheckInEnabled())
-            .map(event -> checkInManager.getAttendeesIdentifiers(event, since, principal.getName()));
-
-        resp.setHeader(ALFIO_TIMESTAMP_HEADER, ids.isPresent() ? Long.toString(new Date().getTime()) : "0");
-        return ids.orElse(Collections.emptyList());
+        List<Integer> ids;
+        boolean offlineEnabled = checkInManager.isOfflineCheckInEnabled().test(event);
+        if (offlineEnabled) {
+            ids = checkInManager.getAttendeesIdentifiers(event, since, principal.getName());
+        } else {
+            ids = List.of();
+        }
+        resp.setHeader(ALFIO_TIMESTAMP_HEADER, offlineEnabled ? Long.toString(new Date().getTime()) : "0");
+        return ids;
     }
 
     @PostMapping("/check-in/{eventName}/offline")
@@ -291,13 +294,13 @@ public class CheckInApiController {
     }
 
     @Data
-    private static class OnSitePaymentConfirmation {
+    public static class OnSitePaymentConfirmation {
         private final boolean status;
         private final String message;
     }
 
     @Getter
-    private static class LabelLayout {
+    public static class LabelLayout {
 
         private final QRCode qrCode;
         private final Content content;
