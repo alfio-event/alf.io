@@ -282,6 +282,9 @@ public interface TicketRepository {
     @Query("select * from ticket where id = :id and category_id = :categoryId")
     Ticket findById(@Bind("id") int ticketId, @Bind("categoryId") int categoryId);
 
+    @Query("select exists(select id from ticket where id = :id and category_id = :categoryId)")
+    boolean isInCategory(@Bind("id") int id, @Bind("categoryId") int categoryId);
+
     @Query("select * from ticket where id in (:ids)")
     List<Ticket> findByIds(@Bind("ids") List<Integer> ticketIds);
 
@@ -494,4 +497,6 @@ public interface TicketRepository {
     List<Integer> findTicketsWithAdditionalData(@Bind("reservationId") String reservationId,
                                                 @Bind("eventPublicIdentifier") String eventPublicIdentifier);
 
+    @Query("select exists ( select id from ticket where uuid = :uuid and event_id = :eventId)")
+    boolean isTicketInEvent(@Bind("eventId") int eventId, @Bind("uuid") String uuid);
 }

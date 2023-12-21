@@ -35,7 +35,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -104,7 +103,7 @@ public class GroupManager {
         if(requiresCleanState(modification, original)) {
             Validate.isTrue(groupRepository.countWhitelistedTicketsForConfiguration(original.getId()) == 0, "Cannot update as there are already confirmed tickets.");
         }
-        groupRepository.updateConfiguration(id, modification.getGroupId(), original.getEventId(), modification.getTicketCategoryId(), modification.getType(), modification.getMatchType(), modification.getMaxAllocation());
+        Validate.isTrue(groupRepository.updateConfiguration(id, modification.getGroupId(), original.getEventId(), modification.getTicketCategoryId(), modification.getType(), modification.getMatchType(), modification.getMaxAllocation()) == 1);
         return groupRepository.getConfiguration(id);
     }
 

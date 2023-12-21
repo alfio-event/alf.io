@@ -50,11 +50,9 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -63,7 +61,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static alfio.test.util.IntegrationTestUtil.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @AlfioIntegrationTest
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ControllerConfiguration.class})
@@ -167,7 +166,7 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
                 DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
-        return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner");
+        return new ReservationFlowContext(eventAndUser.getLeft(), owner(eventAndUser.getRight()));
     }
 
     @Test
@@ -190,6 +189,6 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
         assertNotNull(entry.getAttendeeData());
         assertNotNull(entry.getAttendeeData().getMetadata());
         assertNotNull(entry.getAudit());
-        entry.getAudit().forEach(audit -> assertEquals(context.userId + "_api", audit.getUsername()));
+        entry.getAudit().forEach(audit -> assertEquals(context.userId, audit.getUsername()));
     }
 }

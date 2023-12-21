@@ -36,6 +36,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
@@ -92,8 +93,10 @@ public class AdditionalServiceManager {
         return result;
     }
 
-    public void updateText(Integer textId, String locale, AdditionalServiceText.TextType type, String value) {
-        additionalServiceTextRepository.update(textId, locale, type, value);
+    public void updateText(Integer textId, String locale, AdditionalServiceText.TextType type, String value, Integer additionalServiceId) {
+        Assert.isTrue(additionalServiceTextRepository.update(textId, locale, type, value, additionalServiceId) == 1,
+            "Error while updating the text with id " + textId + " and additionalServiceId " + additionalServiceId + ", should have affected 1 row"
+        );
     }
 
     public void insertText(Integer additionalServiceId, String locale, AdditionalServiceText.TextType type, String value) {

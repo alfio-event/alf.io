@@ -64,16 +64,24 @@ public class BaseTestConfiguration {
         return PlatformProvider.DEFAULT;
     }
 
+    private static PostgreSQLContainer<?> postgres;
+    private static GenericContainer<?> stripeMock;
+
     @Bean
     @Profile("!travis")
     public RefreshableDataSource dataSource() {
         String POSTGRES_DB = "alfio";
         String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "9.6");
         log.debug("Running tests using PostgreSQL v.{}", postgresVersion);
-        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:"+postgresVersion)
-            .withDatabaseName(POSTGRES_DB)
-            .withInitScript("init-db-user.sql");
-        postgres.start();
+        if (postgres == null) {
+            postgres = new PostgreSQLContainer<>("postgres:"+postgresVersion)
+                .withDatabaseName(POSTGRES_DB)
+                .withInitScript("init-db-user.sql");
+            postgres.start();
+            if ("true".equals(System.getenv().get("TESTCONTAINERS_RYUK_DISABLED"))) {
+                Runtime.getRuntime().addShutdownHook(new Thread(postgres::stop));
+            }
+        }
         var config = new HikariConfig();
         config.setJdbcUrl(postgres.getJdbcUrl());
         config.setUsername("alfio_user");
@@ -129,9 +137,14 @@ public class BaseTestConfiguration {
 
     @PostConstruct
     public void initStripeMock() {
-        GenericContainer<?> stripeMock = new GenericContainer<>("stripe/stripe-mock:latest")
-            .withExposedPorts(12111, 12112);
-        stripeMock.start();
+        if (stripeMock == null) {
+            stripeMock = new GenericContainer<>("stripe/stripe-mock:latest")
+                .withExposedPorts(12111, 12112);
+            stripeMock.start();
+            if ("true".equals(System.getenv().get("TESTCONTAINERS_RYUK_DISABLED"))) {
+                Runtime.getRuntime().addShutdownHook(new Thread(stripeMock::stop));
+            }
+        }
         var httpPort = stripeMock.getMappedPort(12111);
         Stripe.overrideApiBase("http://localhost:" + httpPort);
         Stripe.overrideUploadBase("http://localhost:" + httpPort);

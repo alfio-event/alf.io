@@ -16,10 +16,11 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.EventManager;
 import alfio.manager.GroupManager;
 import alfio.manager.GroupManager.DuplicateGroupItemException;
-import alfio.manager.user.UserManager;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.group.Group;
 import alfio.model.group.LinkedGroup;
 import alfio.model.modification.GroupModification;
@@ -43,8 +44,8 @@ import java.util.Optional;
 public class GroupApiController {
 
     private final GroupManager groupManager;
-    private final UserManager userManager;
     private final EventManager eventManager;
+    private final AccessService accessService;
 
     @ExceptionHandler(DuplicateGroupItemException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -54,9 +55,7 @@ public class GroupApiController {
 
     @GetMapping("/for/{organizationId}")
     public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable("organizationId") int organizationId, @RequestParam(name = "showAll", defaultValue = "false", required = false) boolean showAll, Principal principal) {
-        if(notOwner(principal.getName(), organizationId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        accessService.checkOrganizationOwnership(principal, organizationId);
         if (showAll) {
             return ResponseEntity.ok(groupManager.getAllForOrganization(organizationId));
         } else {
@@ -66,9 +65,7 @@ public class GroupApiController {
 
     @GetMapping("/for/{organizationId}/detail/{listId}")
     public ResponseEntity<GroupModification> loadDetail(@PathVariable("organizationId") int organizationId, @PathVariable("listId") int listId, Principal principal) {
-        if(notOwner(principal.getName(), organizationId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        accessService.checkGroupOwnership(principal, listId, organizationId);
         return groupManager.loadComplete(listId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -77,17 +74,13 @@ public class GroupApiController {
                                                          @PathVariable("groupId") int listId,
                                                          @RequestBody GroupModification modification,
                                                          Principal principal) {
-        if(notOwner(principal.getName(), organizationId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        accessService.checkGroupUpdateRequest(principal, listId, organizationId, modification);
         return groupManager.update(listId, modification).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/for/{organizationId}/new")
     public ResponseEntity<String> createNew(@PathVariable("organizationId") int organizationId, @RequestBody GroupModification request, Principal principal) {
-        if(notOwner(principal.getName(), organizationId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        accessService.checkGroupCreateRequest(principal, organizationId, request);
         if(request.getOrganizationId() != organizationId) {
             return ResponseEntity.badRequest().build();
         }
@@ -106,6 +99,7 @@ public class GroupApiController {
     @GetMapping("/for/event/{eventName}/all")
     public ResponseEntity<List<LinkedGroup>> findLinked(@PathVariable("eventName") String eventName,
                                                         Principal principal) {
+        accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> ResponseEntity.ok(groupManager.getLinksForEvent(event.getId())))
             .orElseGet(() -> ResponseEntity.notFound().build());
@@ -114,6 +108,7 @@ public class GroupApiController {
     @GetMapping("/for/event/{eventName}")
     public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable("eventName") String eventName,
                                                        Principal principal) {
+        accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> {
                 Optional<LinkedGroup> configuration = groupManager.getLinksForEvent(event.getId()).stream()
@@ -128,6 +123,7 @@ public class GroupApiController {
     public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable("eventName") String eventName,
                                                        @PathVariable("categoryId") int categoryId,
                                                        Principal principal) {
+        accessService.checkCategoryOwnership(principal, eventName, categoryId);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> {
                 Optional<LinkedGroup> configuration = groupManager.findLinks(event.getId(), categoryId)
@@ -145,30 +141,36 @@ public class GroupApiController {
             return ResponseEntity.badRequest().build();
         }
 
-        return eventManager.getOptionalEventIdAndOrganizationIdById(body.getEventId(), principal.getName())
-            .map(event -> {
-                Optional<LinkedGroup> existing = groupManager.getLinksForEvent(event.getId())
-                    .stream()
-                    .filter(c -> Objects.equals(body.getTicketCategoryId(), c.getTicketCategoryId()))
-                    .findFirst();
-                LinkedGroup link;
-                if(existing.isPresent()) {
-                    link = groupManager.updateLink(existing.get().getId(), body);
-                } else {
-                    link = groupManager.createLink(groupId, event.getId(), body);
-                }
-                return ResponseEntity.ok(link.getId());
-            })
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        EventAndOrganizationId event;
+
+        if (body.getTicketCategoryId() != null) {
+            event = accessService.checkCategoryOwnership(principal, body.getEventId(), body.getTicketCategoryId());
+        } else {
+            event = accessService.checkEventOwnership(principal, body.getEventId());
+        }
+
+        Optional<LinkedGroup> existing = groupManager.getLinksForEvent(event.getId())
+            .stream()
+            .filter(c -> Objects.equals(body.getTicketCategoryId(), c.getTicketCategoryId()))
+            .findFirst();
+        LinkedGroup link;
+        if(existing.isPresent()) {
+            link = groupManager.updateLink(existing.get().getId(), body);
+        } else {
+            link = groupManager.createLink(groupId, event.getId(), body);
+        }
+        return ResponseEntity.ok(link.getId());
     }
 
-    @DeleteMapping("/for/{organizationId}/link/{configurationId}")
-    public ResponseEntity<String> unlinkGroup(@PathVariable("organizationId") int organizationId, @PathVariable("configurationId") int configurationId, Principal principal) {
-        if(userManager.findOptionalEnabledUserByUsername(principal.getName()).filter(u -> userManager.isOwnerOfOrganization(u, organizationId)).isPresent()) {
-            groupManager.disableLink(configurationId);
-            return ResponseEntity.ok("OK");
-        }
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    @DeleteMapping("/for/{organizationId}/event/{eventId}/link/{configurationId}")
+    public ResponseEntity<String> unlinkGroup(@PathVariable("organizationId") int organizationId,
+                                              @PathVariable("configurationId") int configurationId,
+                                              @PathVariable("eventId") int eventId,
+                                              @RequestParam(name = "categoryId", required = false) Integer categoryId,
+                                              Principal principal) {
+        accessService.checkGroupLinkOwnership(principal, configurationId, organizationId, eventId, categoryId);
+        groupManager.disableLink(configurationId);
+        return ResponseEntity.ok("OK");
     }
 
     @DeleteMapping("/for/{organizationId}/id/{groupId}/member/{memberId}")
@@ -176,29 +178,16 @@ public class GroupApiController {
                                                     @PathVariable("memberId") int memberId,
                                                     @PathVariable("organizationId") int organizationId,
                                                     Principal principal) {
-        if(notOwner(principal.getName(), organizationId) || groupManager.findById(groupId, organizationId).isEmpty()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
+        accessService.checkGroupOwnership(principal, groupId, organizationId);
         return ResponseEntity.ok(groupManager.deactivateMembers(Collections.singletonList(memberId), groupId));
-
     }
 
     @DeleteMapping("/for/{organizationId}/id/{groupId}")
     public ResponseEntity<Boolean> deactivateGroup(@PathVariable("groupId") int groupId,
                                                    @PathVariable("organizationId") int organizationId,
                                                    Principal principal) {
-        if(notOwner(principal.getName(), organizationId) || groupManager.findById(groupId, organizationId).isEmpty()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
+        accessService.checkGroupOwnership(principal, groupId, organizationId);
         return ResponseEntity.ok(groupManager.deactivateGroup(groupId));
-    }
-
-    private boolean notOwner(String username, int organizationId) {
-        return userManager.findOptionalEnabledUserByUsername(username)
-            .filter(user -> userManager.isOwnerOfOrganization(user, organizationId))
-            .isEmpty();
     }
 
 }

@@ -63,7 +63,7 @@ public class SpecialPriceManager {
         Validate.isTrue(input.size() <= availableCodes.size(), "Requested codes: "+input.size()+ ", available: "+availableCodes.size()+".");
         List<String> requestedCodes = input.stream().filter(IS_CODE_PRESENT).map(SendCodeModification::getCode).collect(toList());
         Validate.isTrue(requestedCodes.stream().distinct().count() == requestedCodes.size(), "Cannot assign the same code twice. Please fix the input file.");
-        Validate.isTrue(availableCodes.containsAll(requestedCodes), "some requested codes don't exist.");
+        Validate.isTrue(new HashSet<>(availableCodes).containsAll(requestedCodes), "some requested codes don't exist.");
         return availableCodes;
     }
 

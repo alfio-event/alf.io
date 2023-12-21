@@ -37,6 +37,9 @@ public interface WaitingQueueRepository {
     @Query("select * from waiting_queue where id = :id")
     WaitingQueueSubscription loadById(@Bind("id") int id);
 
+    @Query("select exists (select * from waiting_queue where id = :id and event_id = :eventId)")
+    boolean exists(@Bind("id") int id, @Bind("eventId") int eventId);
+
     @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' order by creation, id limit :max for update")
     List<WaitingQueueSubscription> loadWaiting(@Bind("eventId") int eventId, @Bind("max") int maxNumber);
 

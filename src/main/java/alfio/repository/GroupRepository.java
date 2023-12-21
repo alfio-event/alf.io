@@ -44,6 +44,12 @@ public interface GroupRepository {
     @Query("select * from group_active where id = :id")
     Group getById(@Bind("id") int id);
 
+    @Query("select exists (select id from group_active where id = :id and organization_id_fk = :organizationId)")
+    Boolean checkGroupExists(@Bind("id") int id, @Bind("organizationId") int organizationId);
+
+    @Query("select exists (select id from group_link where id = :id and organization_id_fk = :organizationId and event_id_fk = :eventId and (:categoryId is null or ticket_category_id_fk = :categoryId))")
+    Boolean checkGroupLinkExists(@Bind("id") int id, @Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("categoryId") Integer categoryId);
+
     @Query("update a_group set name = :name, description = :description where id = :id")
     int update(@Bind("id") int id, @Bind("name") String name, @Bind("description") String description);
 
@@ -108,7 +114,7 @@ public interface GroupRepository {
     @Query("select count(*) from whitelisted_ticket where group_link_id_fk = :configurationId")
     int countWhitelistedTicketsForConfiguration(@Bind("configurationId") int configurationId);
 
-    @Query("update group_link set a_group_id_fk = :groupId, event_id_fk = :eventId, ticket_category_id_fk = :categoryId, type = :type, match_type = :matchType, max_allocation = :maxAllocation where id = :id")
+    @Query("update group_link set a_group_id_fk = :groupId, ticket_category_id_fk = :categoryId, type = :type, match_type = :matchType, max_allocation = :maxAllocation where id = :id and event_id_fk = :eventId")
     int updateConfiguration(@Bind("id") int configurationId,
                             @Bind("groupId") int groupId,
                             @Bind("eventId") int eventId,

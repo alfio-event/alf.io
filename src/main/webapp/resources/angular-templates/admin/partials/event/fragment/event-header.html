@@ -1,5 +1,5 @@
 <div class="page-header">
-    <h1>{{event.displayName}} <button type="button" class="btn btn-default btn-sm ml-1" data-ng-click="editHeader()" uib-tooltip="Edit"><i class="fa fa-edit"></i></button></h1>
+    <h1>{{event.displayName}} <button type="button" class="btn btn-default btn-sm ml-1" data-ng-click="editHeader()" uib-tooltip="Edit" data-ng-if="event.visibleForCurrentUser"><i class="fa fa-edit"></i></button></h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
 </div>
 <div class="alert alert-warning" data-ng-if="event.status !== 'PUBLIC'">
@@ -73,7 +73,7 @@
                 </uib-tabset>
             </div>
         </div>
-        <hr>
+        <hr data-ng-if="event.visibleForCurrentUser">
         <div class="row">
             <div class="col-md-2 col-md-push-10 col-xs-12">
                 <div data-ng-transclude=""></div>

@@ -26,8 +26,8 @@
 
                 <div class="page-header">
                     <h3>Reservation details
-                        <button type="button" ng-click="$ctrl.cancelReservationModal(false)" ng-if="$ctrl.reservation.showCreditCancel" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
-                        <button type="button" ng-click="$ctrl.cancelReservationModal(true)" ng-if="$ctrl.reservation.showCreditCancel && $ctrl.reservation.status === 'OFFLINE_PAYMENT'" class="btn btn-warning pull-right" style="margin-right:10px;"><i class="fa fa-undo"></i> <span class="hidden-sm hidden-xs">Credit reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(false)" ng-if="$ctrl.isOwner && $ctrl.reservation.showCreditCancel" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(true)" ng-if="$ctrl.isOwner && $ctrl.reservation.showCreditCancel && $ctrl.reservation.status === 'OFFLINE_PAYMENT'" class="btn btn-warning pull-right" style="margin-right:10px;"><i class="fa fa-undo"></i> <span class="hidden-sm hidden-xs">Credit reservation</span></button>
                     </h3>
                 </div>
 
@@ -488,7 +488,7 @@
                 </div>
             </uib-tab>
 
-            <uib-tab>
+            <uib-tab data-ng-if="$ctrl.isOwner">
                 <uib-tab-heading>Billing Documents <span class="badge" ng-bind="$ctrl.billingDocuments.count"></span></uib-tab-heading>
                 <button type="button" class="btn btn-warning btn-block-xs pull-right-md" ng-if="$ctrl.reservationDescriptor.reservation.status !== 'CANCELLED'" ng-click="$ctrl.regenerateBillingDocument()"><i class="fa fa-refresh"></i> Regenerate</button>
                 <div class="page-header">
@@ -555,7 +555,7 @@
                 </div>
             </uib-tab>
 
-            <uib-tab>
+            <uib-tab data-ng-if="$ctrl.isOwner">
                 <uib-tab-heading>Emails sent <span class="badge" ng-bind="$ctrl.emails.length"></span></uib-tab-heading>
                 <div class="table-responsive wMarginTop10px" data-ng-if="$ctrl.emails.length > 0">
                     <table class="table">
@@ -584,7 +584,7 @@
                 </div>
             </uib-tab>
 
-            <uib-tab>
+            <uib-tab data-ng-if="$ctrl.isOwner">
                 <uib-tab-heading>Audit log <span class="badge" ng-bind="$ctrl.audit.length"></span></uib-tab-heading>
                 <div class="table-responsive wMarginTop10px">
                     <table class="table table-striped">

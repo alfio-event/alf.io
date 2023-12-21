@@ -60,14 +60,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -213,7 +211,7 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
         this.subscriptionRepository.linkSubscriptionAndEvent(descriptorId, event.getId(), 0, event.getOrganizationId());
         var linkedSubscriptions = eventManager.getLinkedSubscriptionIds(event.getId(), event.getOrganizationId());
         assertEquals(List.of(descriptorId), linkedSubscriptions);
-        this.context = new ReservationFlowContext(event, eventAndUser.getRight() + "_owner", subscriptionIdAndPin.getLeft(), subscriptionIdAndPin.getRight());
+        this.context = new ReservationFlowContext(event, owner(eventAndUser.getRight()), subscriptionIdAndPin.getLeft(), subscriptionIdAndPin.getRight());
     }
 
     @AfterEach

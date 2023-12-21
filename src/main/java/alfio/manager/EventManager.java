@@ -195,6 +195,7 @@ public class EventManager {
     }
 
     public void createEvent(EventModification em, String username) {
+        Assert.isNull(em.getId(), "id must be null");
         var organization = organizationRepository.findAllForUser(username)
             .stream()
             .filter(org -> org.getId() == em.getOrganizationId())
@@ -901,6 +902,7 @@ public class EventManager {
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {
         EventAndOrganizationId event = getEventAndOrganizationId(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
+        // FIXME: can search directly by id
         var existingCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst();
         if(existingCategory.isPresent()) {
             Ticket ticket = ticketRepository.findById(ticketId, categoryId);

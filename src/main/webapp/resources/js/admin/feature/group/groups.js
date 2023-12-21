@@ -268,8 +268,12 @@
                     return $q.resolve(true);
                 }
             },
-            unlinkFrom: function(organizationId, groupLinkId) {
-                return $http['delete']('/admin/api/group/for/'+organizationId+'/link/'+groupLinkId);
+            unlinkFrom: function(organizationId, groupLinkId, conf) {
+                return $http['delete']('/admin/api/group/for/'+organizationId+'/event/'+conf.event.id+'/link/'+groupLinkId, {
+                    params: {
+                        categoryId: conf.category ? conf.category.id : null
+                    }
+                });
             },
             deactivateGroup: function(organizationId, groupId) {
                 return $http['delete']('/admin/api/group/for/'+organizationId+'/id/'+groupId);

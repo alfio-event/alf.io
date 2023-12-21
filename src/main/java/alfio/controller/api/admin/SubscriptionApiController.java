@@ -16,8 +16,8 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AccessService;
 import alfio.manager.SubscriptionManager;
-import alfio.manager.user.UserManager;
 import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.subscription.EventSubscriptionLink;
 import alfio.model.subscription.SubscriptionDescriptor;
@@ -36,41 +36,32 @@ import java.util.stream.Collectors;
 public class SubscriptionApiController {
 
     private final SubscriptionManager subscriptionManager;
-    private final UserManager userManager;
+    private final AccessService accessService;
 
     public SubscriptionApiController(SubscriptionManager subscriptionManager,
-                                     UserManager userManager) {
+                                     AccessService accessService) {
         this.subscriptionManager = subscriptionManager;
-        this.userManager = userManager;
+        this.accessService = accessService;
     }
 
     @GetMapping("/list")
     ResponseEntity<List<SubscriptionDescriptorWithStatistics>> findAll(@PathVariable("organizationId") int organizationId, Principal principal) {
-        if (userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return ResponseEntity.ok(subscriptionManager.loadSubscriptionsWithStatistics(organizationId));
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        return ResponseEntity.ok(subscriptionManager.loadSubscriptionsWithStatistics(organizationId));
     }
 
     @GetMapping("/active")
     ResponseEntity<List<SubscriptionDescriptor>> findActive(@PathVariable("organizationId") int organizationId, Principal principal) {
-        if (userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return ResponseEntity.ok(subscriptionManager.loadActiveSubscriptionDescriptors(organizationId));
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        return ResponseEntity.ok(subscriptionManager.loadActiveSubscriptionDescriptors(organizationId));
     }
 
     @GetMapping("/{subscriptionId}")
     ResponseEntity<SubscriptionDescriptorModification> getSingle(@PathVariable("organizationId") int organizationId,
                                                                  @PathVariable("subscriptionId") UUID subscriptionId,
                                                                  Principal principal) {
-        if(userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return ResponseEntity.of(subscriptionManager.findOne(subscriptionId, organizationId).map(SubscriptionDescriptorModification::fromModel));
-        }
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        return ResponseEntity.of(subscriptionManager.findOne(subscriptionId, organizationId).map(SubscriptionDescriptorModification::fromModel));
     }
 
     @PostMapping("/")
@@ -78,8 +69,9 @@ public class SubscriptionApiController {
                                 @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
                                 Principal principal) {
 
-        if (organizationId != subscriptionDescriptor.getOrganizationId()
-            || !userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+
+        if (organizationId != subscriptionDescriptor.getOrganizationId()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -96,10 +88,8 @@ public class SubscriptionApiController {
                                 @PathVariable("subscriptionId") UUID subscriptionId,
                                 @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
                                 Principal principal) {
-        if (organizationId == subscriptionDescriptor.getOrganizationId()
-            && userManager.isOwnerOfOrganization(principal.getName(), subscriptionDescriptor.getOrganizationId())
-            && subscriptionId.equals(subscriptionDescriptor.getId())
-        ) {
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        if (organizationId == subscriptionDescriptor.getOrganizationId() && subscriptionId.equals(subscriptionDescriptor.getId())) {
             return ResponseEntity.of(subscriptionManager.updateSubscriptionDescriptor(subscriptionDescriptor));
         } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -111,22 +101,16 @@ public class SubscriptionApiController {
                                            @PathVariable("subscriptionId") UUID subscriptionId,
                                            @RequestParam("status") boolean status,
                                            Principal principal) {
-        if (userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return ResponseEntity.ok(subscriptionManager.setPublicStatus(subscriptionId, organizationId, status));
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        return ResponseEntity.ok(subscriptionManager.setPublicStatus(subscriptionId, organizationId, status));
     }
 
     @GetMapping("/{subscriptionId}/events")
     ResponseEntity<List<EventSubscriptionLink>> getLinkedEvents(@PathVariable("organizationId") int organizationId,
                                                                 @PathVariable("subscriptionId") UUID subscriptionId,
                                                                 Principal principal) {
-        if(userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return ResponseEntity.ok(subscriptionManager.getLinkedEvents(organizationId, subscriptionId));
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        return ResponseEntity.ok(subscriptionManager.getLinkedEvents(organizationId, subscriptionId));
     }
 
     /**
@@ -144,11 +128,8 @@ public class SubscriptionApiController {
     ResponseEntity<Void> deactivate(@PathVariable("organizationId") int organizationId,
                                     @PathVariable("subscriptionId") UUID descriptorId,
                                     Principal principal) {
-        if(userManager.isOwnerOfOrganization(principal.getName(), organizationId)) {
-            return deactivateSubscriptionDescriptor(organizationId, descriptorId, subscriptionManager);
-        }
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        accessService.checkOrganizationOwnership(principal, organizationId);
+        return deactivateSubscriptionDescriptor(organizationId, descriptorId, subscriptionManager);
     }
 
     public static ResponseEntity<Void> deactivateSubscriptionDescriptor(int organizationId,

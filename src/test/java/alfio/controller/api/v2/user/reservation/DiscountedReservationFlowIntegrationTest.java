@@ -51,11 +51,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -170,7 +168,7 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
                     DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
             );
             Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
-            return new ReservationFlowContext(eventAndUser.getLeft(), eventAndUser.getRight() + "_owner", null, null, null, null, true, true);
+            return new ReservationFlowContext(eventAndUser.getLeft(), owner(eventAndUser.getRight()), null, null, null, null, true, true);
         });
     }
 
@@ -191,9 +189,9 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
         assertEquals(1000, reservation.getSrcPriceCts());
         assertEquals(9, reservation.getVatCts());
         assertEquals(100, reservation.getDiscountCts());
-        assertEquals(1, eventApiController.getPendingPayments(eventName).size());
+        assertEquals(1, eventApiController.getPendingPayments(eventName, principal).size());
         assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, null, principal));
-        assertEquals(0, eventApiController.getPendingPayments(eventName).size());
+        assertEquals(0, eventApiController.getPendingPayments(eventName, principal).size());
         assertEquals(900, eventRepository.getGrossIncome(context.event.getId()));
     }
 

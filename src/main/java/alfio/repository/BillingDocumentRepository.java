@@ -87,4 +87,10 @@ public interface BillingDocumentRepository {
 
     @Query("select min(generation_ts) from billing_document where event_id_fk = :eventId and type = 'INVOICE' and status = 'VALID'")
     Optional<ZonedDateTime> findFirstInvoiceGenerationDate(@Bind("eventId") int eventId);
+
+    @Query("select exists(select id from billing_document where id = :id and reservation_id_fk = :reservationId)")
+    Boolean checkBillingDocumentExistsForReservation(@Bind("id") long billingDocumentId, @Bind("reservationId") String reservationId);
+
+    @Query("select id from billing_document where id in (:documentIds) and event_id_fk = :eventId ")
+    List<Long> findByIdsAndEvent(@Bind("documentIds") List<Long> documentIds, @Bind("eventId") int eventId);
 }
