@@ -17,29 +17,30 @@
 package alfio.model;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
-import org.mockito.Mockito;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class TicketFieldConfigurationDescriptionAndValueTest {
+class PurchaseContextFieldConfigurationDescriptionAndValueTest {
 
-    private TicketFieldConfiguration configuration;
-    private TicketFieldDescription description;
+    private PurchaseContextFieldConfiguration configuration;
+    private PurchaseContextFieldDescription description;
 
     @BeforeEach
     void setUp() {
-        configuration = mock(TicketFieldConfiguration.class);
-        description = mock(TicketFieldDescription.class);
+        configuration = mock(PurchaseContextFieldConfiguration.class);
+        description = mock(PurchaseContextFieldDescription.class);
     }
 
     @ParameterizedTest
@@ -48,7 +49,7 @@ class TicketFieldConfigurationDescriptionAndValueTest {
         "textarea",
         "vat:eu"})
     void getValueDescriptionForTextField(String type) {
-        var field = new TicketFieldConfigurationDescriptionAndValue(configuration, description, 1, "simple value");
+        var field = new FieldConfigurationDescriptionAndValue(configuration, description, 1, "simple value");
         when(configuration.getType()).thenReturn(type);
         assertEquals("simple value", field.getValueDescription());
     }
@@ -58,7 +59,7 @@ class TicketFieldConfigurationDescriptionAndValueTest {
     void getValueDescriptionForSingleOptionField(String type) {
         when(description.getRestrictedValuesDescription()).thenReturn(Map.of("value1", "simple value"));
         when(configuration.getRestrictedValues()).thenReturn(List.of("value1", "value2"));
-        var field = new TicketFieldConfigurationDescriptionAndValue(configuration, description, 1, "value1");
+        var field = new FieldConfigurationDescriptionAndValue(configuration, description, 1, "value1");
         when(configuration.getType()).thenReturn(type);
         assertEquals("simple value", field.getValueDescription());
     }
@@ -68,7 +69,7 @@ class TicketFieldConfigurationDescriptionAndValueTest {
     void getValueDescriptionForMultipleOptionsField(String value, String expectedResult) {
         when(description.getRestrictedValuesDescription()).thenReturn(Map.of("value1", "first value", "value2", "second value"));
         when(configuration.getRestrictedValues()).thenReturn(List.of("value1", "value2"));
-        var field = new TicketFieldConfigurationDescriptionAndValue(configuration, description, 1, value);
+        var field = new FieldConfigurationDescriptionAndValue(configuration, description, 1, value);
         when(configuration.getType()).thenReturn("checkbox");
         when(configuration.isCheckboxField()).thenReturn(true);
         assertEquals(expectedResult, field.getValueDescription());

@@ -17,8 +17,8 @@
 package alfio.model.support;
 
 import alfio.model.EventAndOrganizationId;
+import alfio.model.FieldConfigurationDescriptionAndValue;
 import alfio.model.Ticket;
-import alfio.model.TicketFieldConfigurationDescriptionAndValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
@@ -34,7 +34,7 @@ public class TicketWithAdditionalFields {
     @JsonIgnore
     private final Ticket ticket;
     @JsonIgnore
-    private final List<TicketFieldConfigurationDescriptionAndValue> additionalFieldsDescriptionsAndValues;
+    private final List<FieldConfigurationDescriptionAndValue> additionalFieldsDescriptionsAndValues;
 
     public Map<String, String> getAdditionalFields() {
         return additionalFieldsDescriptionsAndValues.stream()

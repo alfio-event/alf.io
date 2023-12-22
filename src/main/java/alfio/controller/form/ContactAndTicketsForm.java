@@ -42,8 +42,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
-import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ADDITIONAL_SERVICE;
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ATTENDEE;
 import static alfio.util.ErrorsCode.*;
 
 // step 2 : contact/claim tickets

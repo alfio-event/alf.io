@@ -33,24 +33,27 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @QueryRepository
-public interface TicketFieldRepository extends FieldRepository {
+public interface PurchaseContextFieldRepository extends FieldRepository {
 
     String INSERT_VALUE = "insert into purchase_context_field_value(ticket_id_fk, organization_id_fk, field_configuration_id_fk, field_value, context) values (:ticketId, :organizationId, :fieldConfigurationId, :value, :context::ADDITIONAL_FIELD_CONTEXT)";
-    String FIND_ALL_BY_TICKET_ID = "select a.ticket_id_fk, a.field_configuration_id_fk, a.field_name, a.field_value from ticket_field_value_w_additional a where a.ticket_id_fk = :ticketId";
     String ADDITIONAL_SERVICE_FIELD_VALUE_COLS = "field_name, field_value, additional_service_id_fk, ticket_id_fk, field_configuration_id_fk, additional_service_item_id_fk";
+    String FIELD_VALUE_COLUMNS = "ticket_id_fk, subscription_id_fk, additional_service_item_id_fk, field_configuration_id_fk, field_name, field_value, context";
+    String FIND_ALL = "select "+ FIELD_VALUE_COLUMNS +" from field_value_w_additional";
+    String FIND_ALL_BY_TICKET_ID = FIND_ALL + " where ticket_id_fk = :ticketId";
 
-    @Query("select count(*) from ticket_field_value_w_additional where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
+    @Query("select count(*) from field_value_w_additional where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
     Integer countFilledOptionalData(@Bind("ticketId") int id);
 
     @Query(FIND_ALL_BY_TICKET_ID)
-    List<TicketFieldValue> findAllByTicketId(@Bind("ticketId") int id);
+    List<PurchaseContextFieldValue> findAllByTicketId(@Bind("ticketId") int id);
 
     @Query(FIND_ALL_BY_TICKET_ID + " and context = :context::ADDITIONAL_FIELD_CONTEXT")
-    List<TicketFieldValue> findAllForContextByTicketId(@Bind("ticketId") int id, @Bind("context") String context);
+    List<PurchaseContextFieldValue> findAllForContextByTicketId(@Bind("ticketId") int id,
+                                                                @Bind("context") PurchaseContextFieldConfiguration.Context context);
 
-    @Query("select ticket_id_fk, field_configuration_id_fk, field_name, field_value, description from all_ticket_field_values " +
+    @Query("select "+FIELD_VALUE_COLUMNS+", description from all_ticket_field_values " +
         " where ticket_id_fk = :ticketId and field_name in (:fieldNames)")
-    List<TicketFieldValueAndDescription> findValueForTicketId(@Bind("ticketId") int id, @Bind("fieldNames") Set<String> fieldNames);
+    List<FieldValueAndDescription> findValueForTicketId(@Bind("ticketId") int id, @Bind("fieldNames") Set<String> fieldNames);
 
     @Query("update purchase_context_field_value set field_value = :value where ticket_id_fk = :ticketId and field_configuration_id_fk = :fieldConfigurationId")
     int updateValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") long fieldConfigurationId, @Bind("value") String value);
@@ -60,7 +63,7 @@ public interface TicketFieldRepository extends FieldRepository {
                     @Bind("organizationId") int organizationId,
                     @Bind("fieldConfigurationId") long fieldConfigurationId,
                     @Bind("value") String value,
-                    @Bind("context") TicketFieldConfiguration.Context context);
+                    @Bind("context") PurchaseContextFieldConfiguration.Context context);
 
     @Query(type = QueryType.TEMPLATE,
         value = "insert into purchase_context_field_value(context, additional_service_item_id_fk, field_configuration_id_fk, field_value, organization_id_fk)" +
@@ -94,31 +97,31 @@ public interface TicketFieldRepository extends FieldRepository {
 
     @Query("select field_configuration_id_fk, field_locale, description from purchase_context_field_description" +
         " inner join purchase_context_field_configuration on field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId")
-    List<TicketFieldDescription> findDescriptions(@Bind("eventId") int eventId, @Bind("locale") String locale);
+    List<PurchaseContextFieldDescription> findDescriptions(@Bind("eventId") int eventId, @Bind("locale") String locale);
 
     @Query("select purchase_context_field_description.* from purchase_context_field_description" +
         " inner join purchase_context_field_configuration on field_configuration_id_fk = id" +
         " inner join event on event.id = event_id_fk" +
         " where short_name = :eventShortName")
-    List<TicketFieldDescription> findDescriptions(@Bind("eventShortName") String eventShortName);
+    List<PurchaseContextFieldDescription> findDescriptions(@Bind("eventShortName") String eventShortName);
 
     @Query("SELECT field_name FROM purchase_context_field_configuration" +
         " inner join event on event.id = event_id_fk" +
         " where short_name = :eventShortName order by field_order asc ")
     List<String> findFieldsForEvent(@Bind("eventShortName") String eventShortName);
 
-    @Query("select field_name, field_value from ticket_field_value_w_additional where ticket_id_fk = :ticketId")
+    @Query("select field_name, field_value from field_value_w_additional where ticket_id_fk = :ticketId")
     List<FieldNameAndValue> findNameAndValue(@Bind("ticketId") int ticketId);
 
-    @Query("select ticket_id_fk, field_configuration_id_fk, field_name, field_value from ticket_field_value_w_additional where ticket_id_fk in (:ticketIds)")
-    List<TicketFieldValue> findAllValuesByTicketIds(@Bind("ticketIds") Collection<Integer> ticketIds);
+    @Query(FIND_ALL + " where ticket_id_fk in (:ticketIds)")
+    List<PurchaseContextFieldValue> findAllValuesByTicketIds(@Bind("ticketIds") Collection<Integer> ticketIds);
 
     default void updateOrInsert(Map<String, List<String>> values, int ticketId, int eventId, int organizationId, boolean eventSupportsLink) {
-        Map<String, TicketFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId, eventSupportsLink);
+        Map<String, PurchaseContextFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId, eventSupportsLink);
         values = Optional.ofNullable(values).orElseGet(Collections::emptyMap);
         var additionalFieldsForEvent = findAdditionalFieldsForEvent(eventId);
-        var readOnlyFields = additionalFieldsForEvent.stream().filter(TicketFieldConfiguration::isReadOnly).map(TicketFieldConfiguration::getName).collect(Collectors.toSet());
-        Map<String, Long> fieldNameToId = additionalFieldsForEvent.stream().collect(Collectors.toMap(TicketFieldConfiguration::getName, TicketFieldConfiguration::getId));
+        var readOnlyFields = additionalFieldsForEvent.stream().filter(PurchaseContextFieldConfiguration::isReadOnly).map(PurchaseContextFieldConfiguration::getName).collect(Collectors.toSet());
+        Map<String, Long> fieldNameToId = additionalFieldsForEvent.stream().collect(Collectors.toMap(PurchaseContextFieldConfiguration::getName, PurchaseContextFieldConfiguration::getId));
 
         values.forEach((fieldName, fieldValues) -> {
             var fieldValue = getFieldValueJson(fieldValues);
@@ -126,7 +129,7 @@ public interface TicketFieldRepository extends FieldRepository {
             boolean isNotBlank = StringUtils.isNotBlank(fieldValue);
             if(toUpdate.containsKey(fieldName)) {
                 if(!readOnlyFields.contains(fieldName)) {
-                    TicketFieldValue field = toUpdate.get(fieldName);
+                    PurchaseContextFieldValue field = toUpdate.get(fieldName);
                     if(isNotBlank) {
                         updateValue(field.getTicketId(), field.getFieldConfigurationId(), fieldValue);
                     } else {
@@ -134,7 +137,7 @@ public interface TicketFieldRepository extends FieldRepository {
                     }
                 }
             } else if(fieldNameToId.containsKey(fieldName) && isNotBlank) {
-                insertValue(ticketId, organizationId, fieldNameToId.get(fieldName), fieldValue, TicketFieldConfiguration.Context.ATTENDEE);
+                insertValue(ticketId, organizationId, fieldNameToId.get(fieldName), fieldValue, PurchaseContextFieldConfiguration.Context.ATTENDEE);
             }
         });
     }
@@ -151,15 +154,15 @@ public interface TicketFieldRepository extends FieldRepository {
         return fieldValue;
     }
 
-    default Map<String, TicketFieldValue> findAllByTicketIdGroupedByName(int id, boolean eventSupportsLink) {
-        List<TicketFieldValue> values;
+    default Map<String, PurchaseContextFieldValue> findAllByTicketIdGroupedByName(int id, boolean eventSupportsLink) {
+        List<PurchaseContextFieldValue> values;
         if (eventSupportsLink) {
-            values = findAllForContextByTicketId(id, TicketFieldConfiguration.Context.ATTENDEE.name());
+            values = findAllForContextByTicketId(id, PurchaseContextFieldConfiguration.Context.ATTENDEE);
         } else {
             values = findAllByTicketId(id);
         }
         return values.stream()
-            .collect(Collectors.toMap(TicketFieldValue::getName, Function.identity()));
+            .collect(Collectors.toMap(PurchaseContextFieldValue::getName, Function.identity()));
     }
 
     default boolean hasOptionalData(int ticketId) {
@@ -168,31 +171,31 @@ public interface TicketFieldRepository extends FieldRepository {
 
 
     @Query("select * from purchase_context_field_configuration where event_id_fk = :eventId order by field_order asc")
-    List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
+    List<PurchaseContextFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
     @Query("select * from purchase_context_field_configuration where event_id_fk = :eventId" +
         " and field_type = :type order by field_order asc")
-    List<TicketFieldConfiguration> findAdditionalFieldsOfTypeForEvent(@Bind("eventId") int eventId, @Bind("type") String type);
-    
+    List<PurchaseContextFieldConfiguration> findAdditionalFieldsOfTypeForEvent(@Bind("eventId") int eventId, @Bind("type") String type);
+
     @Query("select * from purchase_context_field_configuration where id = :id")
-    TicketFieldConfiguration findById(@Bind("id") long id);
-    
+    PurchaseContextFieldConfiguration findById(@Bind("id") long id);
+
     @Query("update purchase_context_field_configuration set field_order = :order where id = :id")
     int updateFieldOrder(@Bind("id") long id, @Bind("order") int order);
 
     @Query("select purchase_context_field_configuration.* from purchase_context_field_configuration" +
         " inner join event on event.id = event_id_fk" +
         " where short_name = :eventShortName order by field_order asc")
-    List<TicketFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
+    List<PurchaseContextFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
 
     @Query("select count(*) from purchase_context_field_configuration where event_id_fk = :eventId")
     Integer countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
-    
+
     @Query("select max(field_order) from purchase_context_field_configuration where event_id_fk = :eventId")
     Integer findMaxOrderValue(@Bind("eventId") int eventId);
 
-    default Map<Long, TicketFieldDescription> findTranslationsFor(Locale locale, int eventId) {
-        return findDescriptions(eventId, locale.getLanguage()).stream().collect(Collectors.toMap(TicketFieldDescription::getFieldConfigurationId, Function.identity()));
+    default Map<Long, PurchaseContextFieldDescription> findTranslationsFor(Locale locale, int eventId) {
+        return findDescriptions(eventId, locale.getLanguage()).stream().collect(Collectors.toMap(PurchaseContextFieldDescription::getFieldConfigurationId, Function.identity()));
     }
 
     default Map<String, String> findAllValuesForTicketId(int ticketId) {
@@ -200,21 +203,21 @@ public interface TicketFieldRepository extends FieldRepository {
     }
 
     // required for deleting a field
-    
+
     @Query("delete from purchase_context_field_value where field_configuration_id_fk = :fieldConfigurationId")
 	int deleteValues(@Bind("fieldConfigurationId") long ticketFieldConfigurationId);
-    
+
     @Query("delete from purchase_context_field_description where field_configuration_id_fk = :fieldConfigurationId")
 	int deleteDescription(@Bind("fieldConfigurationId") long ticketFieldConfigurationId);
 
     @Query("delete from purchase_context_field_configuration where id = :fieldConfigurationId")
 	int deleteField(@Bind("fieldConfigurationId") long ticketFieldConfigurationId);
 
-    @Query("select field_value as name, count(*) as count from ticket_field_value_w_additional where field_configuration_id_fk = :configurationId group by field_value")
+    @Query("select field_value as name, count(*) as count from field_value_w_additional where field_configuration_id_fk = :configurationId group by field_value")
     List<RestrictedValueStats.RestrictedValueCount> getValueStats(@Bind("configurationId") long configurationId);
 
     default List<RestrictedValueStats> retrieveStats(long configurationId) {
-        TicketFieldConfiguration configuration = findById(configurationId);
+        PurchaseContextFieldConfiguration configuration = findById(configurationId);
         Map<String, Integer> valueStats = getValueStats(configurationId).stream().collect(Collectors.toMap(RestrictedValueStats.RestrictedValueCount::getName, RestrictedValueStats.RestrictedValueCount::getCount));
         int total = valueStats.values().stream().mapToInt(i -> i).sum();
         if (configuration.isCountryField()) {

@@ -301,7 +301,7 @@ public class AdminReservationApiController {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         return ResponseEntity.of(
             adminReservationManager.loadFullTicketInfo(reservationId, publicIdentifier, ticketUUID)
-                .map(eventAndTicket -> bookingInfoTicketLoader.toBookingInfoTicket(eventAndTicket.getRight(), eventAndTicket.getLeft(), TicketFieldConfiguration.EVENT_RELATED_CONTEXTS))
+                .map(eventAndTicket -> bookingInfoTicketLoader.toBookingInfoTicket(eventAndTicket.getRight(), eventAndTicket.getLeft(), PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS))
         );
     }
 

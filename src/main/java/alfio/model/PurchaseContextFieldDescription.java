@@ -26,17 +26,17 @@ import java.util.Collections;
 import java.util.Map;
 
 @Getter
-public class TicketFieldDescription {
+public class PurchaseContextFieldDescription {
 
-    public static final TicketFieldDescription MISSING_FIELD = new TicketFieldDescription(-1, "", "{\"label\" : \"MISSING_DESCRIPTION\"}");
+    public static final PurchaseContextFieldDescription MISSING_FIELD = new PurchaseContextFieldDescription(-1, "", "{\"label\" : \"MISSING_DESCRIPTION\"}");
 
     private final long fieldConfigurationId;
     private final String locale;
     private final Map<String, Object> description;
 
-    public TicketFieldDescription(@Column("field_configuration_id_fk") long fieldConfigurationId,
-                                  @Column("field_locale") String locale,
-                                  @Column("description") String description) {
+    public PurchaseContextFieldDescription(@Column("field_configuration_id_fk") long fieldConfigurationId,
+                                           @Column("field_locale") String locale,
+                                           @Column("description") String description) {
         this.locale = locale;
         this.fieldConfigurationId = fieldConfigurationId;
         this.description = Json.GSON.fromJson(description, new TypeToken<Map<String, Object>>(){}.getType());

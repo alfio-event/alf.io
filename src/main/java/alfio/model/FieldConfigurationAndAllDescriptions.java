@@ -25,17 +25,17 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Getter
-public class TicketFieldConfigurationAndAllDescriptions {
+public class FieldConfigurationAndAllDescriptions {
 
     @Delegate
-    private final TicketFieldConfiguration ticketFieldConfiguration;
+    private final PurchaseContextFieldConfiguration purchaseContextFieldConfiguration;
 
-    private final Map<String, TicketFieldDescription> description;
+    private final Map<String, PurchaseContextFieldDescription> description;
 
 
-    public TicketFieldConfigurationAndAllDescriptions(TicketFieldConfiguration ticketFieldConfiguration,
-                                                      List<TicketFieldDescription> descriptions) {
-        this.ticketFieldConfiguration = ticketFieldConfiguration;
-        this.description = descriptions.stream().collect(Collectors.toMap(TicketFieldDescription::getLocale, Function.identity()));
+    public FieldConfigurationAndAllDescriptions(PurchaseContextFieldConfiguration purchaseContextFieldConfiguration,
+                                                List<PurchaseContextFieldDescription> descriptions) {
+        this.purchaseContextFieldConfiguration = purchaseContextFieldConfiguration;
+        this.description = descriptions.stream().collect(Collectors.toMap(PurchaseContextFieldDescription::getLocale, Function.identity()));
     }
 }

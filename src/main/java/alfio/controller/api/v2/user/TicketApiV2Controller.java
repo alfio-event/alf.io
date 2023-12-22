@@ -61,7 +61,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import static alfio.model.TicketFieldConfiguration.EVENT_RELATED_CONTEXTS;
+import static alfio.model.PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.util.EventUtil.firstMatchingCallLink;
 
 @RestController

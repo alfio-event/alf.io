@@ -26,7 +26,7 @@ import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
 import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.TicketFieldRepository;
+import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
@@ -48,8 +48,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
-import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ADDITIONAL_SERVICE;
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ATTENDEE;
 import static java.util.Objects.requireNonNullElse;
 
 @Component
@@ -63,7 +63,7 @@ public class TicketHelper {
     private final OrganizationRepository organizationRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final EuVatChecker vatChecker;
     private final GroupManager groupManager;
@@ -72,8 +72,8 @@ public class TicketHelper {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
 
-    public BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
-        return EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
+    public BiFunction<Ticket, Event, List<FieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
+        return EventUtil.retrieveFieldValues(ticketRepository, purchaseContextFieldRepository, additionalServiceItemRepository);
     }
 
     public Function<String, Integer> getTicketUUIDToCategoryId() {
@@ -109,7 +109,7 @@ public class TicketHelper {
         }
 
         final TicketReservation ticketReservation = result.getMiddle();
-        List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        List<PurchaseContextFieldConfiguration> fieldConf = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
         var sameCountryValidator = new SameCountryValidator(configurationManager, extensionManager, event, ticketReservation.getId(), vatChecker);
         AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(sameCountryValidator,
             new GroupManager.WhitelistValidator(event.getId(), groupManager));
@@ -135,7 +135,7 @@ public class TicketHelper {
     private ValidationResult validateAdditionalItemsFields(Event event,
                                                            UpdateTicketOwnerForm updateTicketOwner,
                                                            String ticketUuid,
-                                                           List<TicketFieldConfiguration> fieldsForTicket,
+                                                           List<PurchaseContextFieldConfiguration> fieldsForTicket,
                                                            List<AdditionalServiceItem> additionalServiceItems,
                                                            BindingResult bindingResult,
                                                            SameCountryValidator vatValidator) {

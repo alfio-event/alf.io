@@ -225,7 +225,7 @@ class ValidatorTest {
         1, 2, 3, 4, 5
     })
     void minAgeValidator(int minAge) {
-        var ticketFieldConfiguration = mock(TicketFieldConfiguration.class);
+        var ticketFieldConfiguration = mock(PurchaseContextFieldConfiguration.class);
         when(ticketFieldConfiguration.getMinLength()).thenReturn(minAge);
         var birth = LocalDate.now(ClockProvider.clock()).minusYears(minAge);
         var date = birth.format(DateTimeFormatter.ISO_LOCAL_DATE);
@@ -241,7 +241,7 @@ class ValidatorTest {
         1, 2, 3, 4, 5
     })
     void maxAgeValidator(int maxAge) {
-        var ticketFieldConfiguration = mock(TicketFieldConfiguration.class);
+        var ticketFieldConfiguration = mock(PurchaseContextFieldConfiguration.class);
         when(ticketFieldConfiguration.getMaxLength()).thenReturn(maxAge);
         var birth = LocalDate.now(ClockProvider.clock()).minusYears(maxAge);
         var date = birth.format(DateTimeFormatter.ISO_LOCAL_DATE);

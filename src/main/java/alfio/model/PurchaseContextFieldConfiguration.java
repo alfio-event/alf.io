@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 @Getter
-public class TicketFieldConfiguration {
+public class PurchaseContextFieldConfiguration {
 
     public static final Set<Context> EVENT_RELATED_CONTEXTS = Set.copyOf(EnumSet.of(Context.ATTENDEE, Context.ADDITIONAL_SERVICE));
     private static final Pattern COLON_SPLITTER = Pattern.compile(":");
@@ -54,20 +54,20 @@ public class TicketFieldConfiguration {
     private final List<String> disabledValues;
 
 
-    public TicketFieldConfiguration(@Column("id") int id,
-                                    @Column("event_id_fk") int eventId,
-                                    @Column("field_name") String name,
-                                    @Column("field_order") int order,
-                                    @Column("field_type") String type,
-                                    @Column("field_maxlength") Integer maxLength,
-                                    @Column("field_minlength") Integer minLength,
-                                    @Column("field_required") boolean required,
-                                    @Column("field_editable") boolean editable,
-                                    @Column("field_restricted_values") String restrictedValues,
-                                    @Column("context") Context context,
-                                    @Column("additional_service_id") Integer additionalServiceId,
-                                    @Column("ticket_category_ids") String ticketCategoryIds,
-                                    @Column("field_disabled_values") String disabledValues) {
+    public PurchaseContextFieldConfiguration(@Column("id") int id,
+                                             @Column("event_id_fk") int eventId,
+                                             @Column("field_name") String name,
+                                             @Column("field_order") int order,
+                                             @Column("field_type") String type,
+                                             @Column("field_maxlength") Integer maxLength,
+                                             @Column("field_minlength") Integer minLength,
+                                             @Column("field_required") boolean required,
+                                             @Column("field_editable") boolean editable,
+                                             @Column("field_restricted_values") String restrictedValues,
+                                             @Column("context") Context context,
+                                             @Column("additional_service_id") Integer additionalServiceId,
+                                             @Column("ticket_category_ids") String ticketCategoryIds,
+                                             @Column("field_disabled_values") String disabledValues) {
         this.id = id;
         this.eventId = eventId;
         this.name = name;

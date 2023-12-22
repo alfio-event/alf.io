@@ -61,7 +61,7 @@ public class AdditionalServiceManager {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final TicketRepository ticketRepository;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
 
 
     public List<AdditionalService> loadAllForEvent(int eventId) {
@@ -393,13 +393,13 @@ public class AdditionalServiceManager {
                                                 Map<String, List<AdditionalServiceLinkForm>> additionalServices,
                                                 List<Ticket> tickets) {
         var ticketIdsByUuid = tickets.stream().collect(Collectors.toMap(Ticket::getUuid, Ticket::getId));
-        int res = ticketFieldRepository.deleteAllValuesForAdditionalItems(ticketIdsByUuid.values(), eventId);
+        int res = purchaseContextFieldRepository.deleteAllValuesForAdditionalItems(ticketIdsByUuid.values(), eventId);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Deleted {} field values", res);
         }
-        var fields = ticketFieldRepository.findAdditionalFieldsForEvent(eventId)
+        var fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(eventId)
             .stream()
-            .filter(c -> c.getContext() == TicketFieldConfiguration.Context.ADDITIONAL_SERVICE)
+            .filter(c -> c.getContext() == PurchaseContextFieldConfiguration.Context.ADDITIONAL_SERVICE)
             .collect(Collectors.toList());
 
         var sources = additionalServices.entrySet().stream()
@@ -412,10 +412,10 @@ public class AdditionalServiceManager {
                         .getId();
                     return new MapSqlParameterSource("additionalServiceItemId", form.getAdditionalServiceItemId())
                         .addValue("fieldConfigurationId", configurationId)
-                        .addValue("value", ticketFieldRepository.getFieldValueJson(e2.getValue()))
+                        .addValue("value", purchaseContextFieldRepository.getFieldValueJson(e2.getValue()))
                         .addValue("organizationId", organizationId);
                 }))).toArray(MapSqlParameterSource[]::new);
-        jdbcTemplate.batchUpdate(ticketFieldRepository.batchInsertAdditionalItemsFields(), sources);
+        jdbcTemplate.batchUpdate(purchaseContextFieldRepository.batchInsertAdditionalItemsFields(), sources);
     }
 
     private void reserveAdditionalServicesForReservation(Event event,

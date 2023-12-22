@@ -116,7 +116,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
     protected final TicketReservationRepository ticketReservationRepository;
     protected final EventApiController eventApiController;
     protected final TicketRepository ticketRepository;
-    protected final TicketFieldRepository ticketFieldRepository;
+    protected final PurchaseContextFieldRepository purchaseContextFieldRepository;
     protected final AdditionalServiceApiController additionalServiceApiController;
     protected final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     protected final SpecialPriceRepository specialPriceRepository;
@@ -168,9 +168,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             Map.of("en", new EventModification.Description("field en", "", null)), null, null);
         eventManager.addAdditionalField(context.event, af);
 
-        var afId = ticketFieldRepository.findAdditionalFieldsForEvent(context.event.getId()).get(0).getId();
+        var afId = purchaseContextFieldRepository.findAdditionalFieldsForEvent(context.event.getId()).get(0).getId();
 
-        ticketFieldRepository.updateFieldOrder(afId, -1);
+        purchaseContextFieldRepository.updateFieldOrder(afId, -1);
 
         var af2 = new EventModification.AdditionalField(1, true, "field2", "text", false, false,null, null, null,
             Map.of("en", new EventModification.Description("field2 en", "", null)), null, null);
@@ -778,17 +778,17 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             contactForm.getAdditionalServices().put(ticket2.getUuid(), List.of(linkForm));
             var success = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
             assertEquals(HttpStatus.OK, success.getStatusCode());
-            var values = ticketFieldRepository.findAllValuesByTicketIds(List.of(ticketRepository.findByUUID(ticket1.getUuid()).getId()));
+            var values = purchaseContextFieldRepository.findAllValuesByTicketIds(List.of(ticketRepository.findByUUID(ticket1.getUuid()).getId()));
             assertEquals(1, values.size());
             int ticket2Id = ticketRepository.findByUUID(ticket2.getUuid()).getId();
             var ticket2Ids = List.of(ticket2Id);
-            values = ticketFieldRepository.findAllValuesByTicketIds(ticket2Ids);
+            values = purchaseContextFieldRepository.findAllValuesByTicketIds(ticket2Ids);
             assertEquals(2, values.size());
             assertTrue(values.stream().anyMatch(f -> f.getName().equals("field3") && f.getValue().equals("value")));
             // verify that additional service field was actually saved.
-            var asValues = ticketFieldRepository.findAdditionalServicesValueByTicketIds(ticket2Ids);
+            var asValues = purchaseContextFieldRepository.findAdditionalServicesValueByTicketIds(ticket2Ids);
             assertTrue(asValues.stream().anyMatch(f -> f.getName().equals("field3") && f.getValue().equals("value")));
-            var valuesForCheckIn = ticketFieldRepository.findValueForTicketId(ticket2Id, Set.of("field3"));
+            var valuesForCheckIn = purchaseContextFieldRepository.findValueForTicketId(ticket2Id, Set.of("field3"));
             assertFalse(valuesForCheckIn.isEmpty());
             assertEquals("field3", valuesForCheckIn.get(0).getName());
             assertEquals("value", valuesForCheckIn.get(0).getValue());

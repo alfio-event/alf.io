@@ -25,9 +25,9 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.Event.EventFormat;
 import alfio.model.PromoCodeDiscount.DiscountType;
+import alfio.model.PurchaseContextFieldConfiguration.Context;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketCategory.TicketAccessType;
-import alfio.model.TicketFieldConfiguration.Context;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
@@ -106,7 +106,7 @@ public class EventManager {
     private final SpecialPriceRepository specialPriceRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final ConfigurationManager configurationManager;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
@@ -300,18 +300,18 @@ public class EventManager {
         Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
         Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as, eventRepository.getEventCurrencyCode(event.getId())))).orElse(-1);
         Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
-        long configurationId = ticketFieldRepository.insertConfiguration(event.getId(), event.getOrganizationId(), f.getName(), order, f.getType(), serializedRestrictedValues,
+        long configurationId = purchaseContextFieldRepository.insertConfiguration(event.getId(), event.getOrganizationId(), f.getName(), order, f.getType(), serializedRestrictedValues,
             f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds())).getKey();
-		f.getDescription().forEach((locale, value) -> ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value), event.getOrganizationId()));
+		f.getDescription().forEach((locale, value) -> purchaseContextFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value), event.getOrganizationId()));
 	}
 
     public void updateAdditionalField(long id, EventModification.UpdateAdditionalField f, int organizationId) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        ticketFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
+        purchaseContextFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
         f.getDescription().forEach((locale, value) -> {
             String val = Json.GSON.toJson(value.getDescription());
-            if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {
-                ticketFieldRepository.insertDescription(id, locale, val, organizationId);
+            if(0 == purchaseContextFieldRepository.updateDescription(id, locale, val)) {
+                purchaseContextFieldRepository.insertDescription(id, locale, val, organizationId);
             }
         });
     }
@@ -1026,8 +1026,8 @@ public class EventManager {
     public void updateTicketFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions, int organizationId) {
         descriptions.forEach((locale, value) -> {
             String description = Json.GSON.toJson(value.getDescription());
-            if(0 == ticketFieldRepository.updateDescription(value.getTicketFieldConfigurationId(), locale, description)) {
-                ticketFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description, organizationId);
+            if(0 == purchaseContextFieldRepository.updateDescription(value.getTicketFieldConfigurationId(), locale, description)) {
+                purchaseContextFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description, organizationId);
             }
         });
     }
@@ -1036,30 +1036,30 @@ public class EventManager {
         if (field.isUseDefinedOrder()) {
             insertAdditionalField(event, field, field.getOrder());
         } else {
-            Integer order = ticketFieldRepository.findMaxOrderValue(event.getId());
+            Integer order = purchaseContextFieldRepository.findMaxOrderValue(event.getId());
             insertAdditionalField(event, field, order == null ? 0 : order + 1);
         }
 	}
 	
 	public void deleteAdditionalField(int ticketFieldConfigurationId) {
-		ticketFieldRepository.deleteValues(ticketFieldConfigurationId);
-		ticketFieldRepository.deleteDescription(ticketFieldConfigurationId);
-		ticketFieldRepository.deleteField(ticketFieldConfigurationId);
+		purchaseContextFieldRepository.deleteValues(ticketFieldConfigurationId);
+		purchaseContextFieldRepository.deleteDescription(ticketFieldConfigurationId);
+		purchaseContextFieldRepository.deleteField(ticketFieldConfigurationId);
 	}
 	
 	public void swapAdditionalFieldPosition(int eventId, int id1, int id2) {
-		TicketFieldConfiguration field1 = ticketFieldRepository.findById(id1);
-		TicketFieldConfiguration field2 = ticketFieldRepository.findById(id2);
+		PurchaseContextFieldConfiguration field1 = purchaseContextFieldRepository.findById(id1);
+		PurchaseContextFieldConfiguration field2 = purchaseContextFieldRepository.findById(id2);
 		Assert.isTrue(eventId == field1.getEventId(), "eventId does not match field1.eventId");
 		Assert.isTrue(eventId == field2.getEventId(), "eventId does not match field2.eventId");
-		ticketFieldRepository.updateFieldOrder(id1, field2.getOrder());
-		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
+		purchaseContextFieldRepository.updateFieldOrder(id1, field2.getOrder());
+		purchaseContextFieldRepository.updateFieldOrder(id2, field1.getOrder());
 	}
 
 	public void setAdditionalFieldPosition(int eventId, int id, int newPosition) {
-        TicketFieldConfiguration field = ticketFieldRepository.findById(id);
+        PurchaseContextFieldConfiguration field = purchaseContextFieldRepository.findById(id);
         Assert.isTrue(eventId == field.getEventId(), "eventId does not match field.eventId");
-        ticketFieldRepository.updateFieldOrder(id, newPosition);
+        purchaseContextFieldRepository.updateFieldOrder(id, newPosition);
     }
 	
 	public void deleteEvent(int eventId, String username) {

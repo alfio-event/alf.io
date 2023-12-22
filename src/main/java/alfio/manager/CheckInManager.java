@@ -77,7 +77,7 @@ public class CheckInManager {
     private final TicketRepository ticketRepository;
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ScanAuditRepository scanAuditRepository;
     private final AuditingRepository auditingRepository;
@@ -443,7 +443,7 @@ public class CheckInManager {
                     Map<String, String> fields = new HashMap<>();
                     fields.put("company", trimToEmpty(ticket.getBillingDetails().getCompanyName()));
                     fields.put("category", ticket.getTicketCategory().getName());
-                    fields.putAll(ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream()
+                    fields.putAll(purchaseContextFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream()
                         .map(vd -> {
                             try {
                                 if(StringUtils.isNotBlank(vd.getDescription())) {
@@ -537,7 +537,7 @@ public class CheckInManager {
         boolean additionalServicesEmpty = additionalServices.isEmpty();
         if(!additionalServicesEmpty) {
             List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toList());
-            Map<Integer, List<AdditionalServiceFieldValue>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
+            Map<Integer, List<AdditionalServiceFieldValue>> fields = purchaseContextFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
                 .stream().collect(Collectors.groupingBy(AdditionalServiceFieldValue::getAdditionalServiceId));
 
             return additionalServices.stream()

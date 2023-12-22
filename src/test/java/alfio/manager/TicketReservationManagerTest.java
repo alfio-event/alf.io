@@ -110,7 +110,7 @@ class TicketReservationManagerTest {
     private MessageSource messageSource;
     private MessageSourceManager messageSourceManager;
     private TicketReservationRepository ticketReservationRepository;
-    private TicketFieldRepository ticketFieldRepository;
+    private PurchaseContextFieldRepository purchaseContextFieldRepository;
     private ConfigurationManager configurationManager;
     private EventRepository eventRepository;
     private OrganizationRepository organizationRepository;
@@ -155,7 +155,7 @@ class TicketReservationManagerTest {
         messageSource = mock(MessageSource.class);
         messageSourceManager = mock(MessageSourceManager.class);
         ticketReservationRepository = mock(TicketReservationRepository.class);
-        ticketFieldRepository = mock(TicketFieldRepository.class);
+        purchaseContextFieldRepository = mock(PurchaseContextFieldRepository.class);
         configurationManager = mock(ConfigurationManager.class);
         eventRepository = mock(EventRepository.class);
         organizationRepository = mock(OrganizationRepository.class);
@@ -223,7 +223,7 @@ class TicketReservationManagerTest {
         reservationHelper = mock(ReservationEmailContentHelper.class);
         reservationCostCalculator = mock(ReservationCostCalculator.class);
         var osm = mock(OrderSummaryGenerator.class);
-        var additionalServiceManager = new AdditionalServiceManager(additionalServiceRepository, additionalServiceTextRepository, additionalServiceItemRepository, mock(NamedParameterJdbcTemplate.class), mock(TicketRepository.class), ticketFieldRepository);
+        var additionalServiceManager = new AdditionalServiceManager(additionalServiceRepository, additionalServiceTextRepository, additionalServiceItemRepository, mock(NamedParameterJdbcTemplate.class), mock(TicketRepository.class), purchaseContextFieldRepository);
         reservationFinalizer = new ReservationFinalizer(transactionManager,
             ticketReservationRepository, userRepository, extensionManager, auditingRepository, TestUtil.clockProvider(),
             configurationManager, null, ticketRepository, reservationHelper, specialPriceRepository,
@@ -245,7 +245,7 @@ class TicketReservationManagerTest {
             templateManager,
             transactionManager,
             waitingQueueManager,
-            ticketFieldRepository,
+                purchaseContextFieldRepository,
             additionalServiceManager,
             auditingRepository,
             userRepository,
@@ -1198,7 +1198,7 @@ class TicketReservationManagerTest {
 
     //sendReminderForOptionalInfo
     private void initReminder() {
-        when(ticketFieldRepository.countAdditionalFieldsForEvent(EVENT_ID)).thenReturn(1);
+        when(purchaseContextFieldRepository.countAdditionalFieldsForEvent(EVENT_ID)).thenReturn(1);
     }
 
 

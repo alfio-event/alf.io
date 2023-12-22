@@ -30,8 +30,10 @@ create or replace view additional_item_field_value_with_ticket_id as (
     where asv.additional_service_item_id_fk is not null and asv.context = 'ADDITIONAL_SERVICE'
 );
 
-create or replace view ticket_field_value_w_additional as (
+create or replace view field_value_w_additional as (
     select a.ticket_id_fk as ticket_id_fk,
+           a.subscription_id_fk as subscription_id_fk,
+           a.additional_service_item_id_fk as additional_service_item_id_fk,
            a.field_configuration_id_fk as field_configuration_id_fk,
            b.field_name as field_name,
            a.field_value as field_value,
@@ -42,6 +44,8 @@ create or replace view ticket_field_value_w_additional as (
         where a.ticket_id_fk is not null and a.context = 'ATTENDEE'
     union all
       select item.ticket_id_fk as ticket_id_fk,
+             asv.subscription_id_fk as subscription_id_fk,
+             asv.additional_service_item_id_fk as additional_service_item_id_fk,
              asv.field_configuration_id_fk as field_configuration_id_fk,
              tfc.field_name as field_name,
              coalesce(asv.field_value, '') as field_value,
@@ -54,12 +58,26 @@ create or replace view ticket_field_value_w_additional as (
 );
 
 create or replace view all_ticket_field_values as (
-      select a.ticket_id_fk, a.field_configuration_id_fk, a.field_name, a.field_value, null as description, a.context as context
-          from ticket_field_value_w_additional a
+      select a.ticket_id_fk,
+             a.subscription_id_fk as subscription_id_fk,
+             a.additional_service_item_id_fk as additional_service_item_id_fk,
+             a.field_configuration_id_fk,
+             a.field_name,
+             a.field_value,
+             null as description,
+             a.context as context
+          from field_value_w_additional a
           where a.field_type <> 'select'
       union all
-      select a.ticket_id_fk, a.field_configuration_id_fk, a.field_name, a.field_value, c.description, a.context as context
-          from ticket_field_value_w_additional a
+      select a.ticket_id_fk,
+             a.subscription_id_fk as subscription_id_fk,
+             a.additional_service_item_id_fk as additional_service_item_id_fk,
+             a.field_configuration_id_fk,
+             a.field_name,
+             a.field_value,
+             c.description,
+             a.context as context
+          from field_value_w_additional a
                inner join ticket on a.ticket_id_fk = ticket.id
                left join purchase_context_field_description c on c.field_configuration_id_fk = a.field_configuration_id_fk
           where c.field_locale = ticket.user_language

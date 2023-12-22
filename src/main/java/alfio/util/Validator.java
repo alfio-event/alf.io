@@ -225,14 +225,14 @@ public final class Validator {
 
     public static class TicketFieldsFilterer {
 
-        private final List<TicketFieldConfiguration> additionalFieldsForEvent;
+        private final List<PurchaseContextFieldConfiguration> additionalFieldsForEvent;
         private final List<Ticket> ticketsInReservation;
         private final Set<Integer> additionalFieldsForReservation;
         private final Optional<Ticket> firstTicketInReservation;
         private final boolean eventSupportsAdditionalFieldsLink;
         private final List<AdditionalServiceItem> additionalServiceItems;
 
-        public TicketFieldsFilterer(List<TicketFieldConfiguration> additionalFieldsForEvent,
+        public TicketFieldsFilterer(List<PurchaseContextFieldConfiguration> additionalFieldsForEvent,
                                     List<Ticket> ticketsInReservation,
                                     boolean eventSupportsAdditionalFieldsLink,
                                     List<AdditionalServiceItem> additionalServiceItems) {
@@ -245,26 +245,26 @@ public final class Validator {
         }
 
 
-        public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUuid, Set<TicketFieldConfiguration.Context> requestedContexts) {
+        public List<PurchaseContextFieldConfiguration> getFieldsForTicket(String ticketUuid, Set<PurchaseContextFieldConfiguration.Context> requestedContexts) {
             var ticket = ticketsInReservation.stream().filter(t -> t.getUuid().equals(ticketUuid)).findFirst().orElseThrow();
             var isFirstTicket = firstTicketInReservation.map(first -> ticket.getUuid().equals(first.getUuid())).orElse(false);
             return filterFieldsForTicket(additionalFieldsForEvent, ticket, additionalFieldsForReservation, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems, requestedContexts);
         }
 
-        private static List<TicketFieldConfiguration> filterFieldsForTicket(List<TicketFieldConfiguration> additionalFieldsForEvent,
-                                                                            Ticket ticket,
-                                                                            Set<Integer> additionalServiceIds,
-                                                                            boolean isFirstTicket,
-                                                                            boolean eventSupportsAdditionalFieldsLink,
-                                                                            List<AdditionalServiceItem> additionalServiceItems,
-                                                                            Set<TicketFieldConfiguration.Context> requestedContexts) {
+        private static List<PurchaseContextFieldConfiguration> filterFieldsForTicket(List<PurchaseContextFieldConfiguration> additionalFieldsForEvent,
+                                                                                     Ticket ticket,
+                                                                                     Set<Integer> additionalServiceIds,
+                                                                                     boolean isFirstTicket,
+                                                                                     boolean eventSupportsAdditionalFieldsLink,
+                                                                                     List<AdditionalServiceItem> additionalServiceItems,
+                                                                                     Set<PurchaseContextFieldConfiguration.Context> requestedContexts) {
             return additionalFieldsForEvent.stream()
                 .filter(field -> field.rulesApply(ticket.getCategoryId()))
                 .filter(f -> {
                     if (!requestedContexts.contains(f.getContext())) {
                         return false;
                     }
-                    if (f.getContext() == TicketFieldConfiguration.Context.ATTENDEE) {
+                    if (f.getContext() == PurchaseContextFieldConfiguration.Context.ATTENDEE) {
                         return true;
                     }
                     // field context is "Additional Service"
@@ -277,12 +277,12 @@ public final class Validator {
                 .collect(Collectors.toList());
         }
 
-        private static boolean checkLinked(Ticket ticket, List<AdditionalServiceItem> additionalServiceItems, TicketFieldConfiguration tfc) {
+        private static boolean checkLinked(Ticket ticket, List<AdditionalServiceItem> additionalServiceItems, PurchaseContextFieldConfiguration tfc) {
             return additionalServiceItems.stream()
                 .anyMatch(asi -> tfc.getAdditionalServiceId() == asi.getAdditionalServiceId() && Objects.equals(ticket.getId(), asi.getTicketId()));
         }
 
-        private static boolean isAdditionalServiceIncluded(TicketFieldConfiguration f, Set<Integer> additionalServiceIds) {
+        private static boolean isAdditionalServiceIncluded(PurchaseContextFieldConfiguration f, Set<Integer> additionalServiceIds) {
             if (f.getAdditionalServiceId() == null) {
                 return false;
             }
@@ -292,7 +292,7 @@ public final class Validator {
 
 
     public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form,
-                                                            List<TicketFieldConfiguration> additionalFieldsForTicket,
+                                                            List<PurchaseContextFieldConfiguration> additionalFieldsForTicket,
                                                             Optional<BindingResult> errorsOptional,
                                                             Event event,
                                                             String baseField,
@@ -329,7 +329,7 @@ public final class Validator {
 
         //
         final String prefixForLambda = prefix;
-        for(TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
+        for(PurchaseContextFieldConfiguration fieldConf : additionalFieldsForTicket) {
             validateFieldConfiguration(form, vatValidator, errors, prefixForLambda, fieldConf);
         }
 
@@ -341,7 +341,7 @@ public final class Validator {
     }
     
     public static ValidationResult validateAdditionalItemFieldsForTicket(AdditionalServiceLinkForm form,
-                                                                         List<TicketFieldConfiguration> additionalFieldsForTicket,
+                                                                         List<PurchaseContextFieldConfiguration> additionalFieldsForTicket,
                                                                          BindingResult errors,
                                                                          String prefix,
                                                                          SameCountryValidator vatValidator,
@@ -350,10 +350,10 @@ public final class Validator {
         // ticket may be linked to different additional items, each one requiring fields
         var allKeys = allForms.stream().flatMap(f -> f.getAdditional().keySet().stream()).collect(Collectors.toSet());
         var foundKeys = additionalFieldsForTicket.stream()
-            .map(TicketFieldConfiguration::getName)
+            .map(PurchaseContextFieldConfiguration::getName)
             .filter(allKeys::contains)
             .collect(Collectors.toSet());
-        for (TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
+        for (PurchaseContextFieldConfiguration fieldConf : additionalFieldsForTicket) {
             validateFieldConfiguration(form, vatValidator, errors, prefix + ".", fieldConf, foundKeys.contains(fieldConf.getName()));
         }
         return evaluateValidationResult(errors);
@@ -363,7 +363,7 @@ public final class Validator {
                                                    SameCountryValidator vatValidator,
                                                    Errors errors,
                                                    String prefixForLambda,
-                                                   TicketFieldConfiguration fieldConf) {
+                                                   PurchaseContextFieldConfiguration fieldConf) {
         validateFieldConfiguration(form, vatValidator, errors, prefixForLambda, fieldConf, false);
     }
 
@@ -371,7 +371,7 @@ public final class Validator {
                                                    SameCountryValidator vatValidator,
                                                    Errors errors,
                                                    String prefixForLambda,
-                                                   TicketFieldConfiguration fieldConf,
+                                                   PurchaseContextFieldConfiguration fieldConf,
                                                    boolean skipPresenceCheck) {
         boolean isFieldPresent = form.getAdditional() != null && form.getAdditional().containsKey(fieldConf.getName());
 
@@ -397,7 +397,7 @@ public final class Validator {
         }
     }
 
-    private static void validateFieldValue(SameCountryValidator vatValidator, Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf, List<String> values, int i) {
+    private static void validateFieldValue(SameCountryValidator vatValidator, Errors errors, String prefixForLambda, PurchaseContextFieldConfiguration fieldConf, List<String> values, int i) {
         String formValue = values.get(i);
 
         fieldValueBasicValidation(errors, prefixForLambda, fieldConf, i, formValue);
@@ -411,7 +411,7 @@ public final class Validator {
         }
     }
 
-    private static void fieldValueBasicValidation(Errors errors, String prefixForLambda, TicketFieldConfiguration fieldConf, int i, String formValue) {
+    private static void fieldValueBasicValidation(Errors errors, String prefixForLambda, PurchaseContextFieldConfiguration fieldConf, int i, String formValue) {
 
         boolean isDateOfBirth = fieldConf.isDateOfBirth();
 
@@ -464,7 +464,7 @@ public final class Validator {
         return StringUtils.isNotEmpty(email) && CANONICAL_MAIL_VALIDATOR.matcher(email).matches();
     }
 
-    private static void validateMinLength(String value, String fieldName, String errorCode, TicketFieldConfiguration fieldConfiguration, Errors errors) {
+    private static void validateMinLength(String value, String fieldName, String errorCode, PurchaseContextFieldConfiguration fieldConfiguration, Errors errors) {
         if (fieldConfiguration.isDateOfBirth()) {
             validateMinAge(value, fieldName, errorCode, fieldConfiguration, errors);
         } else if (StringUtils.length(value) < fieldConfiguration.getMinLength()) {
@@ -472,7 +472,7 @@ public final class Validator {
         }
     }
 
-    static void validateMinAge(String value, String fieldName, String errorCode, TicketFieldConfiguration fieldConfiguration, Errors errors) {
+    static void validateMinAge(String value, String fieldName, String errorCode, PurchaseContextFieldConfiguration fieldConfiguration, Errors errors) {
         int minAge = fieldConfiguration.getMinLength();
         int age = calculateAge(value, false);
         if (age >= 0 && age < minAge) {
@@ -480,7 +480,7 @@ public final class Validator {
         }
     }
 
-    private static void validateMaxLength(String value, String fieldName, String errorCode, TicketFieldConfiguration fieldConfiguration, Errors errors) {
+    private static void validateMaxLength(String value, String fieldName, String errorCode, PurchaseContextFieldConfiguration fieldConfiguration, Errors errors) {
         if (fieldConfiguration.isDateOfBirth()) {
             validateMaxAge(value, fieldName, errorCode, fieldConfiguration, errors);
         } else {
@@ -488,7 +488,7 @@ public final class Validator {
         }
     }
 
-    static void validateMaxAge(String value, String fieldName, String errorCode, TicketFieldConfiguration fieldConfiguration, Errors errors) {
+    static void validateMaxAge(String value, String fieldName, String errorCode, PurchaseContextFieldConfiguration fieldConfiguration, Errors errors) {
         int maxAge = fieldConfiguration.getMaxLength();
         int age = calculateAge(value, true);
         if (age > maxAge) {
@@ -592,8 +592,8 @@ public final class Validator {
         return descriptions.stream().allMatch(t -> StringUtils.isNotBlank(t.getValue()));
     }
 
-    public static ValidationResult validateAdditionalFields(List<TicketFieldConfiguration> fieldConf, EventModification.AdditionalField field, Errors errors){
-        String duplicateName = fieldConf.stream().filter(f->f.getName().equalsIgnoreCase(field.getName())).map(TicketFieldConfiguration::getName).findAny().orElse("");
+    public static ValidationResult validateAdditionalFields(List<PurchaseContextFieldConfiguration> fieldConf, EventModification.AdditionalField field, Errors errors){
+        String duplicateName = fieldConf.stream().filter(f->f.getName().equalsIgnoreCase(field.getName())).map(PurchaseContextFieldConfiguration::getName).findAny().orElse("");
         if(StringUtils.isNotBlank(duplicateName)){
             errors.rejectValue("name", ErrorCode.DUPLICATE);
         }
@@ -610,13 +610,13 @@ public final class Validator {
         @Override
         public Result<Void> apply(AdvancedValidationContext context) {
 
-            Optional<TicketFieldConfiguration> vatField = context.ticketFieldConfigurations.stream()
-                .filter(TicketFieldConfiguration::isEuVat)
+            Optional<PurchaseContextFieldConfiguration> vatField = context.purchaseContextFieldConfigurations.stream()
+                .filter(PurchaseContextFieldConfiguration::isEuVat)
                 .filter(f -> context.updateTicketOwnerForm.getAdditional() !=null && context.updateTicketOwnerForm.getAdditional().containsKey(f.getName()))
                 .findFirst();
 
             Optional<String> vatNr = vatField.map(c -> Objects.requireNonNull(context.updateTicketOwnerForm.getAdditional()).get(c.getName()).get(0));
-            String vatFieldName = vatField.map(TicketFieldConfiguration::getName).orElse("");
+            String vatFieldName = vatField.map(PurchaseContextFieldConfiguration::getName).orElse("");
 
             return new Result.Builder<Void>()
                 .checkPrecondition(() -> vatNr.isEmpty() || vatValidator.test(vatNr.get()), ErrorCode.custom(ErrorsCode.STEP_2_INVALID_VAT, "additional['"+vatFieldName+"']"))
@@ -628,7 +628,7 @@ public final class Validator {
     @RequiredArgsConstructor
     public static class AdvancedValidationContext {
         private final UpdateTicketOwnerForm updateTicketOwnerForm;
-        private final List<TicketFieldConfiguration> ticketFieldConfigurations;
+        private final List<PurchaseContextFieldConfiguration> purchaseContextFieldConfigurations;
         private final int categoryId;
         private final String ticketUuid;
         private final String prefix;

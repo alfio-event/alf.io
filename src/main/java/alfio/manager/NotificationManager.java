@@ -105,7 +105,7 @@ public class NotificationManager {
                                TicketCategoryRepository ticketCategoryRepository,
                                PassKitManager passKitManager,
                                TicketRepository ticketRepository,
-                               TicketFieldRepository ticketFieldRepository,
+                               PurchaseContextFieldRepository purchaseContextFieldRepository,
                                AdditionalServiceItemRepository additionalServiceItemRepository,
                                ExtensionManager extensionManager,
                                ClockProvider clockProvider,
@@ -134,7 +134,7 @@ public class NotificationManager {
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF, receiptOrInvoiceFactory(purchaseContextManager, eventRepository,
             payload -> TemplateProcessor.buildCreditNotePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passKitManager::getPass);
-        var retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
+        var retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, purchaseContextFieldRepository, additionalServiceItemRepository);
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager, ticketRepository, subscriptionRepository, additionalServiceHelper));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.SUBSCRIPTION_PDF, generateSubscriptionPDF(organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, extensionManager, subscriptionRepository));
     }
@@ -145,7 +145,7 @@ public class NotificationManager {
                                                                            FileUploadManager fileUploadManager,
                                                                            TemplateManager templateManager,
                                                                            TicketReservationRepository ticketReservationRepository,
-                                                                           BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
+                                                                           BiFunction<Ticket, Event, List<FieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                                                            ExtensionManager extensionManager,
                                                                            TicketRepository ticketRepository,
                                                                            SubscriptionRepository subscriptionRepository,

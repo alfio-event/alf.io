@@ -16,7 +16,7 @@
  */
 package alfio.repository;
 
-import alfio.model.TicketFieldConfiguration;
+import alfio.model.PurchaseContextFieldConfiguration;
 import ch.digitalfondue.npjt.*;
 
 import java.util.List;
@@ -37,7 +37,7 @@ interface FieldRepository {
                                                      @Bind("maxLength") Integer maxLength,
                                                      @Bind("minLength") Integer minLength,
                                                      @Bind("required") boolean required,
-                                                     @Bind("context") TicketFieldConfiguration.Context context,
+                                                     @Bind("context") PurchaseContextFieldConfiguration.Context context,
                                                      @Bind("additionalServiceId") Integer additionalServiceId,
                                                      @Bind("categoryIds") String categoryIdsJson);
 

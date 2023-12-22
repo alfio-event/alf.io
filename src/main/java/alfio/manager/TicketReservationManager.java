@@ -151,7 +151,7 @@ public class TicketReservationManager {
     private final TransactionTemplate serializedTransactionTemplate;
     private final TransactionTemplate nestedTransactionTemplate;
     private final WaitingQueueManager waitingQueueManager;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
@@ -190,7 +190,7 @@ public class TicketReservationManager {
                                     TemplateManager templateManager,
                                     PlatformTransactionManager transactionManager,
                                     WaitingQueueManager waitingQueueManager,
-                                    TicketFieldRepository ticketFieldRepository,
+                                    PurchaseContextFieldRepository purchaseContextFieldRepository,
                                     AdditionalServiceManager additionalServiceManager,
                                     AuditingRepository auditingRepository,
                                     UserRepository userRepository,
@@ -231,7 +231,7 @@ public class TicketReservationManager {
         serialized.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
         this.serializedTransactionTemplate = new TransactionTemplate(transactionManager, serialized);
         this.nestedTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED));
-        this.ticketFieldRepository = ticketFieldRepository;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
         this.additionalServiceManager = additionalServiceManager;
         this.auditingRepository = auditingRepository;
         this.userRepository = userRepository;
@@ -1005,7 +1005,7 @@ public class TicketReservationManager {
         subscriptionRepository.deleteSubscriptionWithReservationId(toDelete);
         specialPriceRepository.resetToFreeAndCleanupForReservation(toDelete);
         ticketRepository.resetCategoryIdForUnboundedCategories(toDelete);
-        ticketFieldRepository.deleteAllValuesForReservations(toDelete);
+        purchaseContextFieldRepository.deleteAllValuesForReservations(toDelete);
         ticketRepository.freeFromReservation(toDelete);
         waitingQueueManager.cleanExpiredReservations(toDelete);
 
@@ -1230,7 +1230,7 @@ public class TicketReservationManager {
         specialPriceRepository.resetToFreeAndCleanupForReservation(reservationIdsToRemove);
         groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
-        int tfvDeleted = ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
+        int tfvDeleted = purchaseContextFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         log.debug("deleted {} field values", tfvDeleted);
         subscriptionRepository.deleteSubscriptionWithReservationId(List.of(reservationId));
         purchaseContext.event().ifPresent(event -> {
@@ -1294,8 +1294,8 @@ public class TicketReservationManager {
             return;
         }
 
-        var ticketFieldValueMapCollector = groupingBy(TicketFieldValue::getName, mapping(TicketFieldValue::getValue, toList()));
-        Map<String, List<String>> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream()
+        var ticketFieldValueMapCollector = groupingBy(PurchaseContextFieldValue::getName, mapping(PurchaseContextFieldValue::getValue, toList()));
+        Map<String, List<String>> preUpdateTicketFields = purchaseContextFieldRepository.findAllByTicketId(ticket.getId()).stream()
             .collect(ticketFieldValueMapCollector);
 
         String newEmail = StringUtils.trim(updateTicketOwner.getEmail());
@@ -1306,7 +1306,7 @@ public class TicketReservationManager {
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(LocaleUtil::forLanguageTag).orElse(locale);
 
         ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
-        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId(), event.getOrganizationId(), event.supportsLinkedAdditionalServices());
+        purchaseContextFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId(), event.getOrganizationId(), event.supportsLinkedAdditionalServices());
 
         if (MapUtils.isNotEmpty(updateTicketOwner.getAdditionalServices())) {
             additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), event.getOrganizationId(), updateTicketOwner.getAdditionalServices(), List.of(ticket));
@@ -1345,7 +1345,7 @@ public class TicketReservationManager {
         }
 
         Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
-        Map<String, List<String>> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream()
+        Map<String, List<String>> postUpdateTicketFields = purchaseContextFieldRepository.findAllByTicketId(ticket.getId()).stream()
             .collect(ticketFieldValueMapCollector);
 
         auditingHelper.auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
@@ -1457,7 +1457,7 @@ public class TicketReservationManager {
     public void sendReminderForOptionalData() {
         getNotifiableEventsStream()
                 .filter(e -> configurationManager.getFor(OPTIONAL_DATA_REMINDER_ENABLED, ConfigurationLevel.event(e)).getValueAsBooleanOrDefault())
-                .filter(e -> ticketFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
+                .filter(e -> purchaseContextFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
                 .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
                 .forEach(p -> Wrappers.voidTransactionWrapper(this::sendOptionalDataReminder, p));
@@ -1468,7 +1468,7 @@ public class TicketReservationManager {
             Event event = eventAndTickets.getLeft();
             var messageSource = messageSourceManager.getMessageSourceFor(event);
             int daysBeforeStart = configurationManager.getFor(ASSIGNMENT_REMINDER_START, ConfigurationLevel.event(event)).getValueAsIntOrDefault(10);
-            List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
+            List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !purchaseContextFieldRepository.hasOptionalData(t.getId())).collect(toList());
             Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, clockProvider.withZone(event.getZoneId()), daysBeforeStart).isPresent()).collect(toSet());
             tickets.stream()
                     .filter(t -> notYetNotifiedReservations.contains(t.getTicketsReservationId()))
@@ -1577,7 +1577,7 @@ public class TicketReservationManager {
         notificationManager.sendSimpleEmail(event, null, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
         		() -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
 
-        int deletedValues = ticketFieldRepository.deleteAllValuesForTicket(ticket.getId());
+        int deletedValues = purchaseContextFieldRepository.deleteAllValuesForTicket(ticket.getId());
         log.debug("deleting {} field values for ticket {}", deletedValues, ticket.getId());
 
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));

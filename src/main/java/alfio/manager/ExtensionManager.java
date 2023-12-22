@@ -224,7 +224,7 @@ public class ExtensionManager {
         }
     }
 
-    public Optional<CustomEmailText> handleTicketEmailCustomText(Event event, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo, List<TicketFieldValue> fields) {
+    public Optional<CustomEmailText> handleTicketEmailCustomText(Event event, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo, List<PurchaseContextFieldValue> fields) {
         Map<String, Object> payload = Map.of(
             RESERVATION, reservation,
             EVENT, event,
