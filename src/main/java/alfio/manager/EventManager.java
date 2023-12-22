@@ -300,18 +300,18 @@ public class EventManager {
         Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
         Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as, eventRepository.getEventCurrencyCode(event.getId())))).orElse(-1);
         Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
-        int configurationId = ticketFieldRepository.insertConfiguration(event.getId(), f.getName(), order, f.getType(), serializedRestrictedValues,
+        long configurationId = ticketFieldRepository.insertConfiguration(event.getId(), event.getOrganizationId(), f.getName(), order, f.getType(), serializedRestrictedValues,
             f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds())).getKey();
-		f.getDescription().forEach((locale, value) -> ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value)));
+		f.getDescription().forEach((locale, value) -> ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value), event.getOrganizationId()));
 	}
 
-    public void updateAdditionalField(int id, EventModification.UpdateAdditionalField f) {
+    public void updateAdditionalField(long id, EventModification.UpdateAdditionalField f, int organizationId) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
         ticketFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
         f.getDescription().forEach((locale, value) -> {
             String val = Json.GSON.toJson(value.getDescription());
             if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {
-                ticketFieldRepository.insertDescription(id, locale, val);
+                ticketFieldRepository.insertDescription(id, locale, val, organizationId);
             }
         });
     }
@@ -1023,11 +1023,11 @@ public class EventManager {
         }
     }
 
-    public void updateTicketFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions) {
+    public void updateTicketFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions, int organizationId) {
         descriptions.forEach((locale, value) -> {
             String description = Json.GSON.toJson(value.getDescription());
             if(0 == ticketFieldRepository.updateDescription(value.getTicketFieldConfigurationId(), locale, description)) {
-                ticketFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description);
+                ticketFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description, organizationId);
             }
         });
     }

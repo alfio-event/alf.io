@@ -1306,10 +1306,10 @@ public class TicketReservationManager {
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(LocaleUtil::forLanguageTag).orElse(locale);
 
         ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
-        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId(), event.supportsLinkedAdditionalServices());
+        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId(), event.getOrganizationId(), event.supportsLinkedAdditionalServices());
 
         if (MapUtils.isNotEmpty(updateTicketOwner.getAdditionalServices())) {
-            additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), updateTicketOwner.getAdditionalServices(), List.of(ticket));
+            additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), event.getOrganizationId(), updateTicketOwner.getAdditionalServices(), List.of(ticket));
         }
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());

@@ -57,11 +57,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import static alfio.model.TicketFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.util.EventUtil.firstMatchingCallLink;
 
 @RestController
@@ -193,7 +193,7 @@ public class TicketApiV2Controller {
                 var event = complete.getLeft();
 
                 var category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-                return new ReservationInfo.TicketsByTicketCategory(category.getName(), category.getTicketAccessType(), List.of(bookingInfoTicketLoader.toBookingInfoTicket(ticket, event, EnumSet.allOf(TicketFieldConfiguration.Context.class))));
+                return new ReservationInfo.TicketsByTicketCategory(category.getName(), category.getTicketAccessType(), List.of(bookingInfoTicketLoader.toBookingInfoTicket(ticket, event, EVENT_RELATED_CONTEXTS)));
             });
         return ResponseEntity.of(optionalTicket);
     }

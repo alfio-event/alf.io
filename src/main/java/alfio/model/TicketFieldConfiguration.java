@@ -23,19 +23,22 @@ import lombok.Getter;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 @Getter
 public class TicketFieldConfiguration {
 
+    public static final Set<Context> EVENT_RELATED_CONTEXTS = Set.copyOf(EnumSet.of(Context.ATTENDEE, Context.ADDITIONAL_SERVICE));
     private static final Pattern COLON_SPLITTER = Pattern.compile(":");
 
     public enum Context {
-        ATTENDEE, ADDITIONAL_SERVICE
+        ATTENDEE, ADDITIONAL_SERVICE, SUBSCRIPTION
     }
 
-    private final int id;
+    private final long id;
     private final int eventId;
     private final String name;
     private final int order;

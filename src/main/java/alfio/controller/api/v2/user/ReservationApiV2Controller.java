@@ -72,6 +72,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import static alfio.model.TicketFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
 import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION;
 import static java.util.Objects.requireNonNullElse;
@@ -144,7 +145,7 @@ public class ReservationApiV2Controller {
 
                     var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
                         .stream()
-                        .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+                        .collect(Collectors.groupingBy(TicketFieldDescription::getFieldConfigurationId));
 
                     var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
                     var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
@@ -155,7 +156,7 @@ public class ReservationApiV2Controller {
                         .stream()
                         .map(e -> {
                             var tc = categories.stream().filter(t -> t.getId() == e.getKey()).findFirst().orElseThrow();
-                            var context = event.supportsLinkedAdditionalServices() ? EnumSet.of(TicketFieldConfiguration.Context.ATTENDEE) : EnumSet.allOf(TicketFieldConfiguration.Context.class);
+                            var context = event.supportsLinkedAdditionalServices() ? EnumSet.of(TicketFieldConfiguration.Context.ATTENDEE) : EVENT_RELATED_CONTEXTS;
                             var ts = e.getValue().stream()
                                 .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false, context))
                                 .collect(Collectors.toList());
@@ -449,7 +450,7 @@ public class ReservationApiV2Controller {
                 if (event.supportsLinkedAdditionalServices() && contactAndTicketsForm.hasAdditionalServices()) {
                     var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
                     additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets);
-                    additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), contactAndTicketsForm.getAdditionalServices(), tickets);
+                    additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), event.getOrganizationId(), contactAndTicketsForm.getAdditionalServices(), tickets);
                 }
                 assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
             }

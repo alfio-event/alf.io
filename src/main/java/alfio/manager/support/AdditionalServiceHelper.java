@@ -46,7 +46,7 @@ public class AdditionalServiceHelper {
     public List<AdditionalServiceWithData> getAdditionalServicesWithData(PurchaseContext purchaseContext,
                                                                          List<AdditionalServiceItem> additionalServiceItems,
                                                                          Map<Integer, List<AdditionalServiceFieldValue>> valuesByItemId,
-                                                                         Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId, List<Ticket> tickets) {
+                                                                         Map<Long, List<TicketFieldDescription>> descriptionsByTicketFieldId, List<Ticket> tickets) {
         if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) && ((Event)purchaseContext).supportsLinkedAdditionalServices()) {
             var event = ((Event)purchaseContext);
             if (!additionalServiceItems.isEmpty()) {
@@ -66,7 +66,7 @@ public class AdditionalServiceHelper {
                                 Optional<AdditionalServiceFieldValue> value = Optional.empty();
                                 if (itemValues != null) {
                                     value = itemValues.stream()
-                                        .filter(fv -> fv.getTicketId() == ticketId && fv.getTicketFieldConfigurationId() == fieldConfiguration.getId())
+                                        .filter(fv -> fv.getTicketId() == ticketId && fv.getFieldConfigurationId() == fieldConfiguration.getId())
                                         .findFirst();
                                 }
                                 var valueAsString = value.map(AdditionalServiceFieldValue::getValue).orElse("");
@@ -100,7 +100,7 @@ public class AdditionalServiceHelper {
                 .stream().collect(groupingBy(AdditionalServiceFieldValue::getAdditionalServiceItemId));
         var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
             .stream()
-            .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+            .collect(Collectors.groupingBy(TicketFieldDescription::getFieldConfigurationId));
         return getAdditionalServicesWithData(event, additionalServiceItems, additionalServicesByItemId, descriptionsByTicketFieldId, List.of(ticket));
     }
 }

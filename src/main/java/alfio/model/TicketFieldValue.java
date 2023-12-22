@@ -23,16 +23,16 @@ import lombok.Getter;
 public class TicketFieldValue {
 
     private final int ticketId;
-    private final int ticketFieldConfigurationId;
+    private final long fieldConfigurationId;
     private final String name;
     private final String value;
 
     public TicketFieldValue(@Column("ticket_id_fk") int ticketId,
-                            @Column("ticket_field_configuration_id_fk") int ticketFieldConfigurationId,
+                            @Column("field_configuration_id_fk") long fieldConfigurationId,
                             @Column("field_name") String name,
                             @Column("field_value") String value) {
         this.ticketId = ticketId;
-        this.ticketFieldConfigurationId = ticketFieldConfigurationId;
+        this.fieldConfigurationId = fieldConfigurationId;
         this.name = name;
         this.value = value;
     }

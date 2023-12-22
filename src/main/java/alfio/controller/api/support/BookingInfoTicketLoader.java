@@ -44,7 +44,6 @@ public class BookingInfoTicketLoader {
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
     private final TicketFieldRepository ticketFieldRepository;
-    private final TicketHelper ticketHelper;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final TicketReservationManager ticketReservationManager;
     private final MessageSourceManager messageSourceManager;
@@ -54,7 +53,7 @@ public class BookingInfoTicketLoader {
     public BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event, Set<TicketFieldConfiguration.Context> contexts) {
         var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
             .stream()
-            .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+            .collect(Collectors.groupingBy(TicketFieldDescription::getFieldConfigurationId));
 
         var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(List.of(ticket.getId()))
             .stream()
@@ -89,7 +88,7 @@ public class BookingInfoTicketLoader {
                                                  boolean hasPaidSupplement,
                                                  Event event,
                                                  Validator.TicketFieldsFilterer ticketFieldsFilterer,
-                                                 Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
+                                                 Map<Long, List<TicketFieldDescription>> descriptionsByTicketFieldId,
                                                  Map<Integer, List<TicketFieldValue>> valuesByTicketIds,
                                                  Map<String, String> formattedOnlineCheckInDate,
                                                  boolean onlineEventStarted,
@@ -125,14 +124,14 @@ public class BookingInfoTicketLoader {
                                                          boolean sendMailEnabled,
                                                          boolean downloadEnabled,
                                                          List<TicketFieldConfiguration> ticketFields,
-                                                         Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
+                                                         Map<Long, List<TicketFieldDescription>> descriptionsByTicketFieldId,
                                                          List<TicketFieldValue> ticketFieldValues,
                                                          Map<String, String> formattedOnlineCheckInDate,
                                                          boolean onlineEventStarted) {
 
 
         var valuesById = ticketFieldValues.stream()
-            .collect(Collectors.groupingBy(TicketFieldValue::getTicketFieldConfigurationId));
+            .collect(Collectors.groupingBy(TicketFieldValue::getFieldConfigurationId));
 
 
         var ticketFieldsAdditional = ticketFields.stream()

@@ -30,15 +30,15 @@ public class TicketFieldDescription {
 
     public static final TicketFieldDescription MISSING_FIELD = new TicketFieldDescription(-1, "", "{\"label\" : \"MISSING_DESCRIPTION\"}");
 
-    private final int ticketFieldConfigurationId;
+    private final long fieldConfigurationId;
     private final String locale;
     private final Map<String, Object> description;
 
-    public TicketFieldDescription(@Column("ticket_field_configuration_id_fk") int ticketFieldConfigurationId,
+    public TicketFieldDescription(@Column("field_configuration_id_fk") long fieldConfigurationId,
                                   @Column("field_locale") String locale,
                                   @Column("description") String description) {
         this.locale = locale;
-        this.ticketFieldConfigurationId = ticketFieldConfigurationId;
+        this.fieldConfigurationId = fieldConfigurationId;
         this.description = Json.GSON.fromJson(description, new TypeToken<Map<String, Object>>(){}.getType());
     }
 

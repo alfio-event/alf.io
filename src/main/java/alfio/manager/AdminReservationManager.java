@@ -638,7 +638,7 @@ public class AdminReservationManager {
                     updateExtRefAndLocking(categoryId, attendee, ticketId);
                 }
                 if(!attendee.getAdditionalInfo().isEmpty()) {
-                    ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId(), event.supportsLinkedAdditionalServices());
+                    ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId(), event.getOrganizationId(), event.supportsLinkedAdditionalServices());
                 }
                 if (!attendee.getMetadata().isEmpty()) {
                     var ticketMetadata = new TicketMetadata(null, null, attendee.getMetadata());

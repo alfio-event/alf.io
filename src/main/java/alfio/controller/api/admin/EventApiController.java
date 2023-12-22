@@ -525,7 +525,7 @@ public class EventApiController {
     @GetMapping("/events/{eventName}/additional-field")
     public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
-        final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+        final Map<Long, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getFieldConfigurationId));
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
             .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
             .collect(toList());
@@ -552,7 +552,8 @@ public class EventApiController {
         //
         accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, descriptions.values().stream().map(TicketFieldDescriptionModification::getTicketFieldConfigurationId).collect(Collectors.toSet()));
         //
-        eventManager.updateTicketFieldDescriptions(descriptions);
+        var event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
+        eventManager.updateTicketFieldDescriptions(descriptions, event.getOrganizationId());
     }
     
     @PostMapping("/events/{eventName}/additional-field/new")
@@ -600,8 +601,8 @@ public class EventApiController {
         //
         accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id));
         //
-        eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        eventManager.updateAdditionalField(id, field);
+        var event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
+        eventManager.updateAdditionalField(id, field, event.getOrganizationId());
     }
 
 

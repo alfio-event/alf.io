@@ -26,11 +26,11 @@ public class TicketFieldValueAndDescription {
 
 
     public TicketFieldValueAndDescription(@Column("ticket_id_fk") int ticketId,
-                                          @Column("ticket_field_configuration_id_fk") int ticketFieldConfigurationId,
+                                          @Column("field_configuration_id_fk") long fieldConfigurationId,
                                           @Column("field_name") String name,
                                           @Column("field_value") String value,
                                           @Column("description") String description) {
-        ticketFieldValue = new TicketFieldValue(ticketId, ticketFieldConfigurationId, name, value);
+        ticketFieldValue = new TicketFieldValue(ticketId, fieldConfigurationId, name, value);
         this.description = description;
     }
 

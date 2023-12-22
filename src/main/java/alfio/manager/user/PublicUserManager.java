@@ -120,8 +120,8 @@ public class PublicUserManager {
         filteredItemsByKey = filteredItems.map(additionalInfoItems -> additionalInfoItems.stream().collect(toMap(AdditionalInfoItem::getKey, Function.identity())))
             .orElse(null);
         var labels = ticketFieldRepository.findDescriptions(event.getId(), userLanguage).stream()
-            .filter(f -> fieldsById.containsKey(f.getTicketFieldConfigurationId()))
-            .map(f -> Map.entry(fieldsById.get(f.getTicketFieldConfigurationId()).getName(), f))
+            .filter(f -> fieldsById.containsKey(f.getFieldConfigurationId()))
+            .map(f -> Map.entry(fieldsById.get(f.getFieldConfigurationId()).getName(), f))
             .filter(f -> filteredItemsByKey == null || filteredItemsByKey.containsKey(f.getKey()))
             .map(e -> {
                 if(filteredItemsByKey != null) {

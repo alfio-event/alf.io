@@ -389,6 +389,7 @@ public class AdditionalServiceManager {
     }
 
     public void persistFieldsForAdditionalItems(int eventId,
+                                                int organizationId,
                                                 Map<String, List<AdditionalServiceLinkForm>> additionalServices,
                                                 List<Ticket> tickets) {
         var ticketIdsByUuid = tickets.stream().collect(Collectors.toMap(Ticket::getUuid, Ticket::getId));
@@ -405,13 +406,14 @@ public class AdditionalServiceManager {
             .flatMap(entry -> entry.getValue().stream().flatMap(form -> form.getAdditional().entrySet().stream()
                 .filter(e2 -> !e2.getValue().isEmpty())
                 .map(e2 -> {
-                    int configurationId = fields.stream().filter(f -> f.getName().equals(e2.getKey()))
+                    long configurationId = fields.stream().filter(f -> f.getName().equals(e2.getKey()))
                         .findFirst()
                         .orElseThrow()
                         .getId();
                     return new MapSqlParameterSource("additionalServiceItemId", form.getAdditionalServiceItemId())
                         .addValue("fieldConfigurationId", configurationId)
-                        .addValue("value", ticketFieldRepository.getFieldValueJson(e2.getValue()));
+                        .addValue("value", ticketFieldRepository.getFieldValueJson(e2.getValue()))
+                        .addValue("organizationId", organizationId);
                 }))).toArray(MapSqlParameterSource[]::new);
         jdbcTemplate.batchUpdate(ticketFieldRepository.batchInsertAdditionalItemsFields(), sources);
     }
