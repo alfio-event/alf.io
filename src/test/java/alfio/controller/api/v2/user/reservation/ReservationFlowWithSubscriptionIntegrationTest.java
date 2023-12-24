@@ -136,7 +136,8 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
                                                           OrganizationDeleter organizationDeleter,
                                                           PromoCodeDiscountRepository promoCodeDiscountRepository,
                                                           PromoCodeRequestManager promoCodeRequestManager,
-                                                          ExportManager exportManager) {
+                                                          ExportManager exportManager,
+                                                          PurchaseContextFieldManager purchaseContextFieldManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -145,7 +146,7 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
             ticketReservationRepository,
             eventApiController,
             ticketRepository,
-                purchaseContextFieldRepository,
+            purchaseContextFieldRepository,
             additionalServiceApiController,
             specialPriceTokenGenerator,
             specialPriceRepository,
@@ -172,7 +173,8 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
             organizationDeleter,
             promoCodeDiscountRepository,
             promoCodeRequestManager,
-            exportManager);
+            exportManager,
+            purchaseContextFieldManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.subscriptionManager = subscriptionManager;

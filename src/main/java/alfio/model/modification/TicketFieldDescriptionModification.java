@@ -26,7 +26,7 @@ import java.util.Map;
 @Setter
 public class TicketFieldDescriptionModification {
 
-    private int ticketFieldConfigurationId;
+    private long ticketFieldConfigurationId;
     private String locale;
     private Map<String, Object> description;
 }

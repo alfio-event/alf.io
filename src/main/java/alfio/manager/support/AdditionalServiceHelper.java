@@ -20,6 +20,7 @@ import alfio.controller.api.support.AdditionalField;
 import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.controller.api.support.Field;
 import alfio.manager.AdditionalServiceManager;
+import alfio.manager.PurchaseContextFieldManager;
 import alfio.model.*;
 import alfio.repository.PurchaseContextFieldRepository;
 import org.springframework.stereotype.Component;
@@ -36,11 +37,14 @@ public class AdditionalServiceHelper {
 
     private final AdditionalServiceManager additionalServiceManager;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
 
     public AdditionalServiceHelper(AdditionalServiceManager additionalServiceManager,
-                                   PurchaseContextFieldRepository purchaseContextFieldRepository) {
+                                   PurchaseContextFieldRepository purchaseContextFieldRepository,
+                                   PurchaseContextFieldManager purchaseContextFieldManager) {
         this.additionalServiceManager = additionalServiceManager;
         this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
     }
 
     public List<AdditionalServiceWithData> getAdditionalServicesWithData(PurchaseContext purchaseContext,
@@ -98,9 +102,7 @@ public class AdditionalServiceHelper {
         Map<Integer, List<AdditionalServiceFieldValue>> additionalServicesByItemId = additionalServiceItems.isEmpty() ? Map.of() :
             purchaseContextFieldRepository.findAdditionalServicesValueByItemIds(additionalServiceItems.stream().map(AdditionalServiceItem::getId).collect(Collectors.toList()))
                 .stream().collect(groupingBy(AdditionalServiceFieldValue::getAdditionalServiceItemId));
-        var descriptionsByTicketFieldId = purchaseContextFieldRepository.findDescriptions(event.getShortName())
-            .stream()
-            .collect(Collectors.groupingBy(PurchaseContextFieldDescription::getFieldConfigurationId));
+        var descriptionsByTicketFieldId = purchaseContextFieldManager.findDescriptionsGroupedByFieldId(event);
         return getAdditionalServicesWithData(event, additionalServiceItems, additionalServicesByItemId, descriptionsByTicketFieldId, List.of(ticket));
     }
 }

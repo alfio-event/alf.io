@@ -18,13 +18,13 @@ package alfio.controller.api.support;
 
 import alfio.controller.support.Formatters;
 import alfio.manager.EventManager;
+import alfio.manager.PurchaseContextFieldManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.PurchaseContextFieldRepository;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
 import alfio.util.Validator;
@@ -43,7 +43,7 @@ public class BookingInfoTicketLoader {
 
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
-    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final TicketReservationManager ticketReservationManager;
     private final MessageSourceManager messageSourceManager;
@@ -51,13 +51,9 @@ public class BookingInfoTicketLoader {
 
 
     public BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event, Set<PurchaseContextFieldConfiguration.Context> contexts) {
-        var descriptionsByTicketFieldId = purchaseContextFieldRepository.findDescriptions(event.getShortName())
-            .stream()
-            .collect(Collectors.groupingBy(PurchaseContextFieldDescription::getFieldConfigurationId));
+        var descriptionsByTicketFieldId = purchaseContextFieldManager.findDescriptionsGroupedByFieldId(event);
 
-        var valuesByTicketIds = purchaseContextFieldRepository.findAllValuesByTicketIds(List.of(ticket.getId()))
-            .stream()
-            .collect(Collectors.groupingBy(PurchaseContextFieldValue::getTicketId));
+        var valuesByTicketIds = purchaseContextFieldManager.findAllValuesByTicketId(ticket.getId());
 
         boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(ticket.getEventId(), ticket.getTicketsReservationId());
         Map<String, String> formattedDates = Map.of();
@@ -112,7 +108,7 @@ public class BookingInfoTicketLoader {
     }
 
     public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, Event event) {
-        var fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        var fields = purchaseContextFieldManager.findAdditionalFields(event);
         return new Validator.TicketFieldsFilterer(fields,
             ticketReservationManager.findTicketsInReservation(reservationId),
             event.supportsLinkedAdditionalServices(),

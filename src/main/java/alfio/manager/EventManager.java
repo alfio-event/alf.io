@@ -25,13 +25,13 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.Event.EventFormat;
 import alfio.model.PromoCodeDiscount.DiscountType;
-import alfio.model.PurchaseContextFieldConfiguration.Context;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketCategory.TicketAccessType;
-import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.metadata.AlfioMetadata;
-import alfio.model.modification.*;
-import alfio.model.modification.EventModification.AdditionalField;
+import alfio.model.modification.CategoryOrdinalModification;
+import alfio.model.modification.EventModification;
+import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.support.CheckInOutputColorConfiguration;
@@ -108,8 +108,7 @@ public class EventManager {
     private final ConfigurationManager configurationManager;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
-    private final AdditionalServiceRepository additionalServiceRepository;
-    private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final Flyway flyway;
     private final Environment environment;
     private final OrganizationRepository organizationRepository;
@@ -277,62 +276,10 @@ public class EventManager {
         }));
     }
 
-    private void createAdditionalFields(EventAndOrganizationId event, EventModification em) {
+    private void createAdditionalFields(Event event, EventModification em) {
         if (!CollectionUtils.isEmpty(em.getTicketFields())) {
-            em.getTicketFields().forEach(f -> insertAdditionalField(event, f, f.getOrder()));
+            em.getTicketFields().forEach(f -> purchaseContextFieldManager.insertAdditionalField(event, f, f.getOrder()));
         }
-    }
-
-    private static String toSerializedRestrictedValues(EventModification.WithRestrictedValues f) {
-        return EventCreationRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getRestrictedValuesAsString()) : null;
-    }
-
-    private static String toSerializedDisabledValues(EventModification.WithRestrictedValues f) {
-        return EventCreationRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getDisabledValuesAsString()) : null;
-    }
-
-    private static String generateJsonForList(Collection<?> values) {
-        return CollectionUtils.isNotEmpty(values) ? Json.GSON.toJson(values) : null;
-    }
-
-	private void insertAdditionalField(EventAndOrganizationId event, AdditionalField f, int order) {
-        String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
-        Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as, eventRepository.getEventCurrencyCode(event.getId())))).orElse(-1);
-        Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
-        long configurationId = purchaseContextFieldRepository.insertConfiguration(event.getId(), event.getOrganizationId(), f.getName(), order, f.getType(), serializedRestrictedValues,
-            f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds())).getKey();
-		f.getDescription().forEach((locale, value) -> purchaseContextFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value), event.getOrganizationId()));
-	}
-
-    public void updateAdditionalField(long id, EventModification.UpdateAdditionalField f, int organizationId) {
-        String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        purchaseContextFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
-        f.getDescription().forEach((locale, value) -> {
-            String val = Json.GSON.toJson(value.getDescription());
-            if(0 == purchaseContextFieldRepository.updateDescription(id, locale, val)) {
-                purchaseContextFieldRepository.insertDescription(id, locale, val, organizationId);
-            }
-        });
-    }
-
-    private Integer findAdditionalService(EventAndOrganizationId event, EventModification.AdditionalService as, String currencyCode) {
-        ZoneId utc = ZoneId.of("UTC");
-        int eventId = event.getId();
-
-        ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
-
-        String checksum = new AdditionalService(0, eventId, as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(),
-            as.getMaxQtyPerOrder(),
-            as.getInception().toZonedDateTime(eventZoneId).withZoneSameInstant(utc),
-            as.getExpiration().toZonedDateTime(eventZoneId).withZoneSameInstant(utc),
-            as.getVat(),
-            as.getVatType(),
-            Optional.ofNullable(as.getPrice()).map(p -> MonetaryUtil.unitToCents(p, currencyCode)).orElse(0),
-            as.getType(),
-            as.getSupplementPolicy(),
-            currencyCode, null).getChecksum();
-        return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
     public void updateEventHeader(Event original, EventModification em, String username) {
@@ -1023,45 +970,6 @@ public class EventManager {
         }
     }
 
-    public void updateTicketFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions, int organizationId) {
-        descriptions.forEach((locale, value) -> {
-            String description = Json.GSON.toJson(value.getDescription());
-            if(0 == purchaseContextFieldRepository.updateDescription(value.getTicketFieldConfigurationId(), locale, description)) {
-                purchaseContextFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description, organizationId);
-            }
-        });
-    }
-    
-	public void addAdditionalField(EventAndOrganizationId event, AdditionalField field) {
-        if (field.isUseDefinedOrder()) {
-            insertAdditionalField(event, field, field.getOrder());
-        } else {
-            Integer order = purchaseContextFieldRepository.findMaxOrderValue(event.getId());
-            insertAdditionalField(event, field, order == null ? 0 : order + 1);
-        }
-	}
-	
-	public void deleteAdditionalField(int ticketFieldConfigurationId) {
-		purchaseContextFieldRepository.deleteValues(ticketFieldConfigurationId);
-		purchaseContextFieldRepository.deleteDescription(ticketFieldConfigurationId);
-		purchaseContextFieldRepository.deleteField(ticketFieldConfigurationId);
-	}
-	
-	public void swapAdditionalFieldPosition(int eventId, int id1, int id2) {
-		PurchaseContextFieldConfiguration field1 = purchaseContextFieldRepository.findById(id1);
-		PurchaseContextFieldConfiguration field2 = purchaseContextFieldRepository.findById(id2);
-		Assert.isTrue(eventId == field1.getEventId(), "eventId does not match field1.eventId");
-		Assert.isTrue(eventId == field2.getEventId(), "eventId does not match field2.eventId");
-		purchaseContextFieldRepository.updateFieldOrder(id1, field2.getOrder());
-		purchaseContextFieldRepository.updateFieldOrder(id2, field1.getOrder());
-	}
-
-	public void setAdditionalFieldPosition(int eventId, int id, int newPosition) {
-        PurchaseContextFieldConfiguration field = purchaseContextFieldRepository.findById(id);
-        Assert.isTrue(eventId == field.getEventId(), "eventId does not match field.eventId");
-        purchaseContextFieldRepository.updateFieldOrder(id, newPosition);
-    }
-	
 	public void deleteEvent(int eventId, String username) {
 		final Event event = eventRepository.findById(eventId);
 		checkOwnership(event, username, event.getOrganizationId());

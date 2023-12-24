@@ -72,6 +72,7 @@ public class AccessService {
     private final OrganizationRepository organizationRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final WaitingQueueRepository waitingQueueRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
 
     public AccessService(UserRepository userRepository,
                          AuthorityRepository authorityRepository,
@@ -86,7 +87,8 @@ public class AccessService {
                          PromoCodeDiscountRepository promoCodeDiscountRepository,
                          OrganizationRepository organizationRepository,
                          AdditionalServiceRepository additionalServiceRepository,
-                         WaitingQueueRepository waitingQueueRepository) {
+                         WaitingQueueRepository waitingQueueRepository,
+                         PurchaseContextFieldRepository purchaseContextFieldRepository) {
         this.userRepository = userRepository;
         this.authorityRepository = authorityRepository;
         this.userOrganizationRepository = userOrganizationRepository;
@@ -101,6 +103,7 @@ public class AccessService {
         this.organizationRepository = organizationRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.waitingQueueRepository = waitingQueueRepository;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
     }
 
     public static final Set<Role> MEMBERSHIP_ROLES = Set.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER, Role.SUPERVISOR);
@@ -252,7 +255,7 @@ public class AccessService {
             throw new AccessDeniedException();
         }
         var additionalServicesIds = createRequest.getAdditionalServices().stream().map(AdditionalServiceReservationModification::getAdditionalServiceId).collect(Collectors.toSet());
-        if (additionalServicesIds.size() > 0 && additionalServicesIds.size() != additionalServiceRepository.countAdditionalServicesBelongingToEvent(eventId, additionalServicesIds)) {
+        if (!additionalServicesIds.isEmpty() && additionalServicesIds.size() != additionalServiceRepository.countAdditionalServicesBelongingToEvent(eventId, additionalServicesIds)) {
             throw new AccessDeniedException();
         }
     }
@@ -510,10 +513,20 @@ public class AccessService {
         }
     }
 
-    public void checkEventOwnershipAndTicketAdditionalFieldIds(Principal principal, String eventName, Set<Integer> additionalFieldIds) {
-        var eventAndOrgId = checkEventOwnership(principal, eventName);
-        if (additionalFieldIds.size() != ticketCategoryRepository.countMatchingAdditionalFieldsWithEventId(eventAndOrgId.getId(), additionalFieldIds)) {
-            log.warn("Some additional field ids {} are not inside eventId {}", additionalFieldIds, eventAndOrgId.getId());
+    public void checkPurchaseContextOwnershipAndTicketAdditionalFieldIds(Principal principal,
+                                                                         PurchaseContext.PurchaseContextType purchaseContextType,
+                                                                         String publicIdentifier,
+                                                                         Set<Long> additionalFieldIds) {
+        checkPurchaseContextOwnership(principal, purchaseContextType, publicIdentifier);
+        UUID subscriptionUuid = null;
+        Integer eventId = null;
+        if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
+            eventId = eventRepository.findOptionalEventAndOrganizationIdByShortName(publicIdentifier).orElseThrow().getId();
+        } else {
+            subscriptionUuid = UUID.fromString(publicIdentifier);
+        }
+        if (additionalFieldIds.size() != purchaseContextFieldRepository.countMatchingAdditionalFieldsForPurchaseContext(eventId, subscriptionUuid, additionalFieldIds)) {
+            log.warn("Some additional field ids {} are not inside purchaseContext {}", additionalFieldIds, publicIdentifier);
             throw new AccessDeniedException();
         }
     }

@@ -110,6 +110,7 @@ public class ReservationApiV2Controller {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final AdditionalServiceManager additionalServiceManager;
     private final AdditionalServiceHelper additionalServiceHelper;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -132,6 +133,7 @@ public class ReservationApiV2Controller {
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
             boolean containsCategoriesLinkedToGroups = false;
             List<AdditionalServiceWithData> additionalServices = null;
+            var descriptionsByFieldId = purchaseContextFieldManager.findDescriptionsGroupedByFieldId(purchaseContext);
             if (purchaseContext.ofType(PurchaseContextType.event)) {
                 var event = (Event) purchaseContext;
                 var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
@@ -142,10 +144,6 @@ public class ReservationApiV2Controller {
                     var valuesByTicketIds = purchaseContextFieldRepository.findAllValuesByTicketIds(ticketIds)
                         .stream()
                         .collect(Collectors.groupingBy(PurchaseContextFieldValue::getTicketId));
-
-                    var descriptionsByTicketFieldId = purchaseContextFieldRepository.findDescriptions(event.getShortName())
-                        .stream()
-                        .collect(Collectors.groupingBy(PurchaseContextFieldDescription::getFieldConfigurationId));
 
                     var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
                     var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
@@ -158,7 +156,7 @@ public class ReservationApiV2Controller {
                             var tc = categories.stream().filter(t -> t.getId() == e.getKey()).findFirst().orElseThrow();
                             var context = event.supportsLinkedAdditionalServices() ? EnumSet.of(PurchaseContextFieldConfiguration.Context.ATTENDEE) : EVENT_RELATED_CONTEXTS;
                             var ts = e.getValue().stream()
-                                .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false, context))
+                                .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByFieldId, valuesByTicketIds, Map.of(), false, context))
                                 .collect(Collectors.toList());
                             return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
                         })
@@ -172,11 +170,9 @@ public class ReservationApiV2Controller {
                     additionalServices = additionalServiceHelper.getAdditionalServicesWithData(event,
                         additionalServiceItems,
                         additionalServicesByItemId,
-                        descriptionsByTicketFieldId,
+                        descriptionsByFieldId,
                         tickets);
                 }
-
-
             }
 
 

@@ -118,7 +118,8 @@ class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReservationFlo
                                                            OrganizationDeleter organizationDeleter,
                                                            PromoCodeDiscountRepository promoCodeDiscountRepository,
                                                            PromoCodeRequestManager promoCodeRequestManager,
-                                                           ExportManager exportManager) {
+                                                           ExportManager exportManager,
+                                                           PurchaseContextFieldManager purchaseContextFieldManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -127,7 +128,7 @@ class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReservationFlo
             ticketReservationRepository,
             eventApiController,
             ticketRepository,
-                purchaseContextFieldRepository,
+            purchaseContextFieldRepository,
             additionalServiceApiController,
             specialPriceTokenGenerator,
             specialPriceRepository,
@@ -154,7 +155,8 @@ class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReservationFlo
             organizationDeleter,
             promoCodeDiscountRepository,
             promoCodeRequestManager,
-            exportManager);
+            exportManager,
+            purchaseContextFieldManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.publicUserApiController = publicUserApiController;

@@ -119,7 +119,7 @@ public class PublicUserManager {
         final Map<String, AdditionalInfoItem> filteredItemsByKey;
         filteredItemsByKey = filteredItems.map(additionalInfoItems -> additionalInfoItems.stream().collect(toMap(AdditionalInfoItem::getKey, Function.identity())))
             .orElse(null);
-        var labels = purchaseContextFieldRepository.findDescriptions(event.getId(), userLanguage).stream()
+        var labels = purchaseContextFieldRepository.findDescriptionsForLocale(event.getId(), userLanguage).stream()
             .filter(f -> fieldsById.containsKey(f.getFieldConfigurationId()))
             .map(f -> Map.entry(fieldsById.get(f.getFieldConfigurationId()).getName(), f))
             .filter(f -> filteredItemsByKey == null || filteredItemsByKey.containsKey(f.getKey()))

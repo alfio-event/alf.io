@@ -40,6 +40,7 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     String FIELD_VALUE_COLUMNS = "ticket_id_fk, subscription_id_fk, additional_service_item_id_fk, field_configuration_id_fk, field_name, field_value, context";
     String FIND_ALL = "select "+ FIELD_VALUE_COLUMNS +" from field_value_w_additional";
     String FIND_ALL_BY_TICKET_ID = FIND_ALL + " where ticket_id_fk = :ticketId";
+    String PURCHASE_CONTEXT_MATCHER = "(:eventId is null or event_id_fk = :eventId) and (:subscriptionId::uuid is null or subscription_descriptor_id_fk = :subscriptionId::uuid)";
 
     @Query("select count(*) from field_value_w_additional where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
     Integer countFilledOptionalData(@Bind("ticketId") int id);
@@ -97,13 +98,12 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
 
     @Query("select field_configuration_id_fk, field_locale, description from purchase_context_field_description" +
         " inner join purchase_context_field_configuration on field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId")
-    List<PurchaseContextFieldDescription> findDescriptions(@Bind("eventId") int eventId, @Bind("locale") String locale);
+    List<PurchaseContextFieldDescription> findDescriptionsForLocale(@Bind("eventId") int eventId, @Bind("locale") String locale);
 
     @Query("select purchase_context_field_description.* from purchase_context_field_description" +
         " inner join purchase_context_field_configuration on field_configuration_id_fk = id" +
-        " inner join event on event.id = event_id_fk" +
-        " where short_name = :eventShortName")
-    List<PurchaseContextFieldDescription> findDescriptions(@Bind("eventShortName") String eventShortName);
+        " where "+ PURCHASE_CONTEXT_MATCHER)
+    List<PurchaseContextFieldDescription> findAllDescriptions(@Bind("eventId") Integer eventId, @Bind("subscriptionId") UUID subscriptionDescriptorId);
 
     @Query("SELECT field_name FROM purchase_context_field_configuration" +
         " inner join event on event.id = event_id_fk" +
@@ -173,6 +173,9 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("select * from purchase_context_field_configuration where event_id_fk = :eventId order by field_order asc")
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
+    @Query("select * from purchase_context_field_configuration where subscription_descriptor_id_fk = :subscriptionId order by field_order asc")
+    List<PurchaseContextFieldConfiguration> findAdditionalFieldsForSubscriptionDescriptor(@Bind("subscriptionId") UUID subscriptionDescriptorId);
+
     @Query("select * from purchase_context_field_configuration where event_id_fk = :eventId" +
         " and field_type = :type order by field_order asc")
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsOfTypeForEvent(@Bind("eventId") int eventId, @Bind("type") String type);
@@ -191,11 +194,11 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("select count(*) from purchase_context_field_configuration where event_id_fk = :eventId")
     Integer countAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
-    @Query("select max(field_order) from purchase_context_field_configuration where event_id_fk = :eventId")
-    Integer findMaxOrderValue(@Bind("eventId") int eventId);
+    @Query("select max(field_order) from purchase_context_field_configuration where " + PURCHASE_CONTEXT_MATCHER)
+    Integer findMaxOrderValue(@Bind("eventId") Integer eventId, @Bind("subscriptionId") UUID subscriptionId);
 
     default Map<Long, PurchaseContextFieldDescription> findTranslationsFor(Locale locale, int eventId) {
-        return findDescriptions(eventId, locale.getLanguage()).stream().collect(Collectors.toMap(PurchaseContextFieldDescription::getFieldConfigurationId, Function.identity()));
+        return findDescriptionsForLocale(eventId, locale.getLanguage()).stream().collect(Collectors.toMap(PurchaseContextFieldDescription::getFieldConfigurationId, Function.identity()));
     }
 
     default Map<String, String> findAllValuesForTicketId(int ticketId) {
@@ -253,4 +256,10 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
 
     @Query("select " + ADDITIONAL_SERVICE_FIELD_VALUE_COLS + " from additional_item_field_value_with_ticket_id where additional_service_item_id_fk in (:itemIds)")
     List<AdditionalServiceFieldValue> findAdditionalServicesValueByItemIds(@Bind("itemIds") List<Integer> itemIds);
+
+    @Query("select count(*) from ticket_field_configuration where id in (:additionalFieldIds) and "+PURCHASE_CONTEXT_MATCHER)
+    int countMatchingAdditionalFieldsForPurchaseContext(@Bind("eventId") Integer eventId,
+                                                        @Bind("subscriptionId") UUID subscriptionDescriptorId,
+                                                        @Bind("additionalFieldIds") Set<Long> additionalFieldIds);
+
 }

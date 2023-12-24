@@ -58,7 +58,7 @@ public class EventManagerCategoriesTest {
         EventRepository eventRepository = mock(EventRepository.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(eventId);
-        eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, clockProvider(), mock(SubscriptionRepository.class), null);
+        eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, clockProvider(), mock(SubscriptionRepository.class), null);
         when(eventRepository.countExistingTickets(0)).thenReturn(availableSeats);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
     }

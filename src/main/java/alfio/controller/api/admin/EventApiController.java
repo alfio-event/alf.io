@@ -38,7 +38,6 @@ import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
-import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.SponsorScanRepository;
@@ -106,7 +105,6 @@ public class EventApiController {
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketHelper ticketHelper;
-    private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
     private final UserManager userManager;
     private final SponsorScanRepository sponsorScanRepository;
     private final PaymentManager paymentManager;
@@ -521,91 +519,6 @@ public class EventApiController {
         fields.addAll(purchaseContextFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
         return fields;
     }
-
-    @GetMapping("/events/{eventName}/additional-field")
-    public List<FieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventOwnership(principal, eventName);
-        final Map<Long, List<PurchaseContextFieldDescription>> descById = purchaseContextFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(PurchaseContextFieldDescription::getFieldConfigurationId));
-        return purchaseContextFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
-            .map(field -> new FieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
-            .collect(toList());
-    }
-
-    @GetMapping("/events/{eventName}/additional-field/{id}/stats")
-    public List<RestrictedValueStats> getStats(@PathVariable("eventName") String eventName, @PathVariable("id") Integer id, Principal principal) {
-        //
-        accessService.checkEventOwnership(principal, eventName);
-        //
-        if(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName()).filter(event -> purchaseContextFieldRepository.findById(id).getEventId() == event.getId()).isEmpty()) {
-            return Collections.emptyList();
-        }
-        return purchaseContextFieldRepository.retrieveStats(id);
-    }
-
-    @GetMapping("/event/additional-field/templates")
-    public List<DynamicFieldTemplate> loadTemplates() {
-        return dynamicFieldTemplateRepository.loadAll();
-    }
-
-    @PostMapping("/events/{eventName}/additional-field/descriptions")
-    public void saveAdditionalFieldDescriptions(@PathVariable("eventName") String eventName, @RequestBody Map<String, TicketFieldDescriptionModification> descriptions, Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, descriptions.values().stream().map(TicketFieldDescriptionModification::getTicketFieldConfigurationId).collect(Collectors.toSet()));
-        //
-        var event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        eventManager.updateTicketFieldDescriptions(descriptions, event.getOrganizationId());
-    }
-    
-    @PostMapping("/events/{eventName}/additional-field/new")
-    public ValidationResult addAdditionalField(@PathVariable("eventName") String eventName, @RequestBody EventModification.AdditionalField field, Principal principal, Errors errors) {
-        //
-        accessService.checkEventOwnership(principal, eventName);
-        //
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        List<PurchaseContextFieldConfiguration> fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        return validateAdditionalFields(fields, field, errors).ifSuccess(() -> eventManager.addAdditionalField(event, field));
-    }
-    
-    @PostMapping("/events/{eventName}/additional-field/swap-position/{id1}/{id2}")
-    public void swapAdditionalFieldPosition(@PathVariable("eventName") String eventName, @PathVariable("id1") int id1, @PathVariable("id2") int id2, Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id1, id2));
-        //
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-    	eventManager.swapAdditionalFieldPosition(event.getId(), id1, id2);
-    }
-
-    @PostMapping("/events/{eventName}/additional-field/set-position/{id}")
-    public void setAdditionalFieldPosition(@PathVariable("eventName") String eventName,
-                                           @PathVariable("id") int id,
-                                           @RequestParam("newPosition") int newPosition,
-                                           Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id));
-        //
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        eventManager.setAdditionalFieldPosition(event.getId(), id, newPosition);
-    }
-    
-    @DeleteMapping("/events/{eventName}/additional-field/{id}")
-    public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id));
-        //
-        eventManager.getEventAndOrganizationId(eventName, principal.getName());
-    	eventManager.deleteAdditionalField(id);
-    }
-
-    @PostMapping("/events/{eventName}/additional-field/{id}")
-    public void updateAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, @RequestBody EventModification.UpdateAdditionalField field, Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id));
-        //
-        var event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        eventManager.updateAdditionalField(id, field, event.getOrganizationId());
-    }
-
-
 
     @GetMapping("/events/{eventName}/pending-payments")
     public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
