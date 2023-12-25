@@ -63,7 +63,7 @@
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/active-events-list/active-events-list.js"></script>
 
-    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.js"></script>
+    <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/additional-fields-to-collect/additional-fields-to-collect.js"></script>
 
     <script nonce="{{nonce}}" src="{{contextPath}}/resources/js/admin/feature/promo-codes/promo-codes.js"></script>
 

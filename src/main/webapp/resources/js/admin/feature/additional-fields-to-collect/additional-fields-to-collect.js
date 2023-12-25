@@ -14,19 +14,21 @@
     };
 
     angular.module('adminApplication')
-        .component('eventDataToCollect', {
-            controller: ['$uibModal', '$q', 'EventService', 'AdditionalServiceManager', EventDataToCollectCtrl],
-            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.html',
+        .component('additionalFields', {
+            controller: ['$uibModal', '$q', 'EventService', 'AdditionalServiceManager', 'AdditionalFieldsService', EventDataToCollectCtrl],
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/additional-fields-to-collect/additional-fields-to-collect.html',
             bindings: {
-                event: '<'
+                event: '<',
+                subscriptionDescriptor: '<'
             }
         }).component('restrictedValuesStatistics', {
-            controller: ['EventService', RestrictedValuesStatisticsCtrl],
-            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/event-data-to-collect/restricted-values-statistics.html',
+            controller: ['EventService', 'AdditionalFieldsService', RestrictedValuesStatisticsCtrl],
+            templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/additional-fields-to-collect/restricted-values-statistics.html',
             bindings: {
                 field: '<',
                 closeWindow: '&',
-                eventName: '<'
+                purchaseContextType: '<',
+                publicIdentifier: '<'
             }
         }).component('standardFields', {
             template: '' +
@@ -44,7 +46,7 @@
             return function(field) {
                 return FIELD_TYPES[field.type] || field.type;
             }
-        });
+        }).service('AdditionalFieldsService', ['$http', 'HttpErrorHandler', AdditionalFieldsService]);
 
 
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
@@ -62,7 +64,7 @@
     }
 
 
-    function EventDataToCollectCtrl($uibModal, $q, EventService, AdditionalServiceManager) {
+    function EventDataToCollectCtrl($uibModal, $q, EventService, AdditionalServiceManager, AdditionalFieldsService) {
         var ctrl = this;
 
         ctrl.$onInit = function() {
@@ -114,6 +116,8 @@
             });
 
         };
+        ctrl.purchaseContextType = ctrl.event ? 'event' : 'subscription';
+        ctrl.publicIdentifier = ctrl.event ? ctrl.event.shortName : ctrl.subscription.id;
 
         ctrl.fieldUp = fieldUp;
         ctrl.fieldDown = fieldDown;
@@ -125,7 +129,7 @@
         ctrl.openStats = openStats;
 
         function loadAll() {
-            return EventService.getAdditionalFields(ctrl.event.shortName).then(function(result) {
+            return AdditionalFieldsService.getAdditionalFields(ctrl.purchaseContextType, ctrl.publicIdentifier).then(function(result) {
                 ctrl.additionalFields = result.data;
                 ctrl.standardFieldsIndex = findStandardFieldsIndex(ctrl.additionalFields);
             });
@@ -146,9 +150,9 @@
             var promise = null;
             if(index > 0) {
                 var prevTargetId = ctrl.additionalFields[index-1].id;
-                promise = EventService.swapFieldPosition(ctrl.event.shortName, targetId, prevTargetId)
+                promise = AdditionalFieldsService.swapFieldPosition(ctrl.purchaseContextType, ctrl.publicIdentifier, targetId, prevTargetId)
             } else {
-                promise = EventService.moveField(ctrl.event.shortName, targetId, targetPosition - 1);
+                promise = AdditionalFieldsService.moveField(ctrl.purchaseContextType, ctrl.publicIdentifier, targetId, targetPosition - 1);
             }
             promise.then(function() {
                 loadAll();
@@ -162,9 +166,9 @@
             var nextTargetId = other.id;
             var promise;
             if(field.order < 0 && other.order >= 0) {
-                promise = EventService.moveField(ctrl.event.shortName, targetId, 0);
+                promise = AdditionalFieldsService.moveField(ctrl.purchaseContextType, ctrl.publicIdentifier, targetId, 0);
             } else {
-                promise = EventService.swapFieldPosition(ctrl.event.shortName, targetId, nextTargetId);
+                promise = AdditionalFieldsService.swapFieldPosition(ctrl.purchaseContextType, ctrl.publicIdentifier, targetId, nextTargetId);
             }
             promise.then(function() {
                 loadAll();
@@ -174,11 +178,11 @@
         function deleteFieldModal(field) {
             $uibModal.open({
                 size: 'lg',
-                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/event-data-to-collect/delete-field-modal.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/additional-fields-to-collect/delete-field-modal.html',
                 controller: function($scope) {
                     $scope.field = field;
                     $scope.deleteField = function(id) {
-                        EventService.deleteField(ctrl.event.shortName, id).then(function() {
+                        AdditionalFieldsService.deleteField(ctrl.purchaseContextType, ctrl.publicIdentifier, id).then(function() {
                             loadAll();
                             $scope.$close(true);
                         });
@@ -190,10 +194,11 @@
         function openStats(field) {
             $uibModal.open({
                 size: 'md',
-                template: '<restricted-values-statistics field="field" close-window="closeFn()" event-name="eventName"></restricted-values-statistics>',
+                template: '<restricted-values-statistics field="field" close-window="closeFn()" purchase-context-type="purchaseContextType" public-identifier="publicIdentifier"></restricted-values-statistics>',
                 controller: function($scope) {
                     $scope.field = field;
-                    $scope.eventName = ctrl.event.shortName;
+                    $scope.purchaseContextType = ctrl.purchaseContextType;
+                    $scope.publicIdentifier = ctrl.publicIdentifier;
                     $scope.closeFn = function() {
                         $scope.$close(true);
                     };
@@ -205,7 +210,7 @@
         function editField (event, addNew, field) {
             $uibModal.open({
                 size:'lg',
-                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/event-data-to-collect/edit-field-modal.html',
+                templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/additional-fields-to-collect/edit-field-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.event = event;
@@ -222,7 +227,7 @@
                         $scope.$dismiss();
                     };
 
-                    EventService.getDynamicFieldTemplates().success(function(result) {
+                    AdditionalFieldsService.getDynamicFieldTemplates(ctrl.purchaseContextType, ctrl.publicIdentifier).success(function(result) {
                         $scope.dynamicFieldTemplates = result;
                     });
 
@@ -297,7 +302,7 @@
 
                     $scope.editField = function (form, field) {
                         if (angular.isDefined(field.id)) {
-                            EventService.updateField(ctrl.event.shortName, field).then(function () {
+                            AdditionalFieldsService.updateField(ctrl.purchaseContextType, ctrl.publicIdentifier, field).then(function () {
                                 return loadAll();
                             }).then(function () {
                                 $scope.$close(true);
@@ -312,7 +317,7 @@
                                 }
                             })
                             if (!duplicate) {
-                                EventService.addField(ctrl.event.shortName, field).then(function (result) {
+                                AdditionalFieldsService.addField(ctrl.purchaseContextType, ctrl.publicIdentifier, field).then(function (result) {
                                     validationErrorHandler(result, form, form).then(function () {
                                         $scope.$close(true);
                                     });
@@ -360,11 +365,11 @@
         }
     }
 
-    function RestrictedValuesStatisticsCtrl(EventService) {
+    function RestrictedValuesStatisticsCtrl(EventService, AdditionalFieldsService) {
         var ctrl = this;
 
         function getData() {
-            EventService.getRestrictedValuesStats(ctrl.eventName, ctrl.field.id)
+            AdditionalFieldsService.getRestrictedValuesStats(ctrl.purchaseContextType, ctrl.publicIdentifier, ctrl.field.id)
                 .then(function (res) {
                     ctrl.field.stats = res.data;
                     ctrl.loading = false;
@@ -382,5 +387,52 @@
             ctrl.loading = true;
             getData();
         };
+    }
+
+    function AdditionalFieldsService($http, HttpErrorHandler) {
+        return {
+            getAdditionalFields: function(purchaseContextType, publicIdentifier) {
+                return $http.get('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field').error(HttpErrorHandler.handle);
+            },
+            getRestrictedValuesStats: function(purchaseContextType, publicIdentifier, id) {
+                return $http.get('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/'+id+'/stats').error(HttpErrorHandler.handle);
+            },
+            saveFieldDescription: function(purchaseContextType, publicIdentifier, fieldDescription) {
+                return $http.post('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/descriptions', fieldDescription);
+            },
+            addField: function(purchaseContextType, publicIdentifier, field) {
+                return $http.post('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/new', field).error(HttpErrorHandler.handle);
+            },
+            updateField: function(purchaseContextType, publicIdentifier, toUpdate) {
+
+                //new restrictedValues are complex objects, already present restrictedValues are plain string
+                if(toUpdate && toUpdate.restrictedValues && toUpdate.restrictedValues.length > 0) {
+                    var res = [];
+                    for(var i = 0; i < toUpdate.restrictedValues.length; i++) {
+                        res.push(toUpdate.restrictedValues[i].isNew ? toUpdate.restrictedValues[i].value: toUpdate.restrictedValues[i]);
+                    }
+                    toUpdate.restrictedValues = res;
+                }
+                //
+
+                return $http['post']('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/'+toUpdate.id, toUpdate);
+            },
+            deleteField: function(purchaseContextType, publicIdentifier, id) {
+                return $http['delete']('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/'+id);
+            },
+            swapFieldPosition: function(purchaseContextType, publicIdentifier, id1, id2) {
+                return $http.post('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/swap-position/'+id1+'/'+id2, null);
+            },
+            moveField: function(purchaseContextType, publicIdentifier, id, position) {
+                return $http.post('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/set-position/'+id, null, {
+                    params: {
+                        newPosition: position
+                    }
+                });
+            },
+            getDynamicFieldTemplates: function(purchaseContextType, publicIdentifier) {
+                return $http['get']('/admin/api/'+purchaseContextType+'/'+publicIdentifier+'/additional-field/templates').error(HttpErrorHandler.handle);
+            },
+        }
     }
 })();

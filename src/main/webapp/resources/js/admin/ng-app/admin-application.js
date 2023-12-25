@@ -171,7 +171,7 @@
             })
             .state('events.single.dataToCollect', {
                 url:'/attendee-data-to-collect',
-                template:'<event-data-to-collect event="$ctrl.loadEvent"></event-data-to-collect>',
+                template:'<additional-fields event="$ctrl.loadEvent"></additional-fields>',
                 controller: loadEventCtrl,
                 controllerAs: '$ctrl',
                 resolve: loadEvent
@@ -569,10 +569,6 @@
             $scope.event.locales = 0;
         }
 
-        EventService.getDynamicFieldTemplates().success(function(result) {
-            $scope.dynamicFieldTemplates = result;
-        });
-
         OrganizationService.getAllOrganizations().success(function(result) {
             $scope.organizations = result;
             if(result.length === 1) {
@@ -673,7 +669,8 @@
 
     admin.controller('CreateEventController', function($scope, $state, $rootScope, $uibModal,
                                                        $q, OrganizationService, PaymentProxyService,
-                                                       EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS, TicketCategoryEditorService,
+                                                       EventService, AdditionalFieldsService, LocationService,
+                                                       PAYMENT_PROXY_DESCRIPTIONS, TicketCategoryEditorService,
                                                        NotificationHandler) {
 
         var eventType = $state.$current.data.eventType;
@@ -810,7 +807,7 @@
                                     categoryIds: af.categoryIds.map(function(name) {return createdEvent.data.event.ticketCategories.filter(function(tc) {return tc.name === name})[0].id})
                                 };
 
-                                return EventService.addField(event.shortName, newAdditionalField);
+                                return AdditionalFieldsService.addField('event', event.shortName, newAdditionalField);
                             }));
                         }).then(function(res) {
                             if(window.sessionStorage) {

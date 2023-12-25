@@ -257,7 +257,7 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("select " + ADDITIONAL_SERVICE_FIELD_VALUE_COLS + " from additional_item_field_value_with_ticket_id where additional_service_item_id_fk in (:itemIds)")
     List<AdditionalServiceFieldValue> findAdditionalServicesValueByItemIds(@Bind("itemIds") List<Integer> itemIds);
 
-    @Query("select count(*) from ticket_field_configuration where id in (:additionalFieldIds) and "+PURCHASE_CONTEXT_MATCHER)
+    @Query("select count(*) from purchase_context_field_configuration where id in (:additionalFieldIds) and "+PURCHASE_CONTEXT_MATCHER)
     int countMatchingAdditionalFieldsForPurchaseContext(@Bind("eventId") Integer eventId,
                                                         @Bind("subscriptionId") UUID subscriptionDescriptorId,
                                                         @Bind("additionalFieldIds") Set<Long> additionalFieldIds);

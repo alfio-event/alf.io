@@ -129,7 +129,10 @@ create policy purchase_context_field_value_access_policy on purchase_context_fie
     with check (alfio_check_row_access(organization_id_fk));
 
 -- table additional_service_field_value was added in the same release so it can be safely dropped
-drop table additional_service_field_value;
+drop view if exists all_ticket_field_values;
+drop view if exists ticket_field_value_w_additional;
+drop view if exists additional_item_field_value_with_ticket_id;
+drop table if exists additional_service_field_value;
 
 -- replace function propagate_event_organization_change() to take into account new field tables
 -- this function propagates organization id change to event's descendant resources
