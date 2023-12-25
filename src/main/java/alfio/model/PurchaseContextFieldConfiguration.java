@@ -22,10 +22,7 @@ import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import org.apache.commons.collections.CollectionUtils;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Getter
@@ -39,7 +36,8 @@ public class PurchaseContextFieldConfiguration {
     }
 
     private final long id;
-    private final int eventId;
+    private final Integer eventId;
+    private final UUID subscriptionDescriptorId;
     private final String name;
     private final int order;
     private final String type;
@@ -55,7 +53,8 @@ public class PurchaseContextFieldConfiguration {
 
 
     public PurchaseContextFieldConfiguration(@Column("id") int id,
-                                             @Column("event_id_fk") int eventId,
+                                             @Column("event_id_fk") Integer eventId,
+                                             @Column("subscription_descriptor_id_fk") UUID subscriptionDescriptorId,
                                              @Column("field_name") String name,
                                              @Column("field_order") int order,
                                              @Column("field_type") String type,
@@ -70,6 +69,7 @@ public class PurchaseContextFieldConfiguration {
                                              @Column("field_disabled_values") String disabledValues) {
         this.id = id;
         this.eventId = eventId;
+        this.subscriptionDescriptorId = subscriptionDescriptorId;
         this.name = name;
         this.order = order;
         this.type = type;

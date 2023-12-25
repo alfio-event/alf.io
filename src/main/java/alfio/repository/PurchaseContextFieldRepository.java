@@ -173,7 +173,7 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("select * from purchase_context_field_configuration where event_id_fk = :eventId order by field_order asc")
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
-    @Query("select * from purchase_context_field_configuration where subscription_descriptor_id_fk = :subscriptionId order by field_order asc")
+    @Query("select * from purchase_context_field_configuration where subscription_descriptor_id_fk = :subscriptionId::uuid order by field_order asc")
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsForSubscriptionDescriptor(@Bind("subscriptionId") UUID subscriptionDescriptorId);
 
     @Query("select * from purchase_context_field_configuration where event_id_fk = :eventId" +

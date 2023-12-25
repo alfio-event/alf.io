@@ -70,54 +70,29 @@
         ctrl.$onInit = function() {
             loadAll();
 
-            $q.all([EventService.getSupportedLanguages(), AdditionalServiceManager.loadAll(ctrl.event.id)]).then(function(results) {
-                var result = results[0].data;
-                ctrl.allLanguages = result;
-                ctrl.allLanguagesMapping = {};
-                var locales = 0;
-                angular.forEach(result, function(r) {
-                    ctrl.allLanguagesMapping[r.value] = r;
-                    locales |= r.value;
-                });
-                if(ctrl.event && !angular.isDefined(ctrl.event.locales)) {
-                    ctrl.event.locales = locales;
-                }
-
-                var languages = _.filter(results[0].data, function(l) {return (l.value & ctrl.event.locales) === l.value});
-                var titles = _.map(languages, function(l) {
-                    return {
-                        localeValue: l.value,
-                        locale: l.locale,
-                        type: 'TITLE',
-                        value: '',
-                        displayLanguage: l.displayLanguage
-                    }
-                });
-                var descriptions = _.map(languages, function(l) {
-                    return {
-                        localeValue: l.value,
-                        locale: l.locale,
-                        type: 'DESCRIPTION',
-                        value: '',
-                        displayLanguage: l.displayLanguage
-                    }
-                });
-
-                //-----------
-
-                var result = results[1].data;
-                var list = _.map(result, function(item) {
-                    item.title = _.map(angular.copy(titles), fillExistingTexts(item.title));
-                    item.description = _.map(angular.copy(descriptions), fillExistingTexts(item.description));
-                    return item;
-                });
-                //ugly
-                ctrl.event.additionalServices = list;
-            });
+            if (ctrl.event) {
+                loadEventLanguages();
+            } else {
+                EventService.getSupportedLanguages().then(function (result) {
+                    ctrl.allLanguages = result.data;
+                    ctrl.allLanguagesMapping = {};
+                    ctrl.selectedLanguages = Object.keys(ctrl.subscriptionDescriptor.title).map(function(key) {
+                        return _.find(ctrl.allLanguages, function(lang) {
+                            return lang.locale === key;
+                        });
+                    });
+                    var locales = 0;
+                    angular.forEach(ctrl.selectedLanguages, function(r) {
+                        ctrl.allLanguagesMapping[r.value] = r;
+                        locales |= r.value;
+                    });
+                    ctrl.selectedLocales = locales;
+                })
+            }
 
         };
         ctrl.purchaseContextType = ctrl.event ? 'event' : 'subscription';
-        ctrl.publicIdentifier = ctrl.event ? ctrl.event.shortName : ctrl.subscription.id;
+        ctrl.publicIdentifier = ctrl.event ? ctrl.event.shortName : ctrl.subscriptionDescriptor.id;
 
         ctrl.fieldUp = fieldUp;
         ctrl.fieldDown = fieldDown;
@@ -207,13 +182,62 @@
             });
         }
 
-        function editField (event, addNew, field) {
+        function loadEventLanguages() {
+            $q.all([EventService.getSupportedLanguages(), AdditionalServiceManager.loadAll(ctrl.event.id)]).then(function(results) {
+                var result = results[0].data;
+                ctrl.allLanguages = result;
+                ctrl.allLanguagesMapping = {};
+                var locales = 0;
+                angular.forEach(result, function(r) {
+                    ctrl.allLanguagesMapping[r.value] = r;
+                    locales |= r.value;
+                });
+                if(ctrl.event && !angular.isDefined(ctrl.event.locales)) {
+                    ctrl.event.locales = locales;
+                }
+                ctrl.selectedLocales = ctrl.event.locales;
+                var languages = _.filter(results[0].data, function(l) {return (l.value & ctrl.event.locales) === l.value});
+                var titles = _.map(languages, function(l) {
+                    return {
+                        localeValue: l.value,
+                        locale: l.locale,
+                        type: 'TITLE',
+                        value: '',
+                        displayLanguage: l.displayLanguage
+                    }
+                });
+                var descriptions = _.map(languages, function(l) {
+                    return {
+                        localeValue: l.value,
+                        locale: l.locale,
+                        type: 'DESCRIPTION',
+                        value: '',
+                        displayLanguage: l.displayLanguage
+                    }
+                });
+
+                //-----------
+
+                var result = results[1].data;
+                var list = _.map(result, function(item) {
+                    item.title = _.map(angular.copy(titles), fillExistingTexts(item.title));
+                    item.description = _.map(angular.copy(descriptions), fillExistingTexts(item.description));
+                    return item;
+                });
+                //ugly
+                ctrl.event.additionalServices = list;
+            });
+        }
+
+        function editField (addNew, field) {
             $uibModal.open({
                 size:'lg',
                 templateUrl: window.ALFIO_CONTEXT_PATH + '/resources/js/admin/feature/additional-fields-to-collect/edit-field-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
-                    $scope.event = event;
+                    $scope.event = ctrl.event;
+                    $scope.subscriptionDescriptor = ctrl.subscriptionDescriptor;
+                    $scope.locales = ctrl.selectedLocales;
                     $scope.addNewField = addNew;
                     $scope.field = addNew ? {} : angular.copy(field);
                     if(!$scope.field.categoryIds) {
@@ -270,14 +294,8 @@
                     }
 
                     //
-                    EventService.getSupportedLanguages().then(function(res) {
-                        var result = res.data;
-                        $scope.allLanguages = result;
-                        $scope.allLanguagesMapping = {};
-                        angular.forEach(result, function(r) {
-                            $scope.allLanguagesMapping[r.value] = r;
-                        });
-                    });
+                    $scope.allLanguages = ctrl.allLanguages;
+                    $scope.allLanguagesMapping = ctrl.allLanguagesMapping;
 
                     //
 

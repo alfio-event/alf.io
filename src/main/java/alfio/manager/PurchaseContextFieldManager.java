@@ -74,7 +74,7 @@ public class PurchaseContextFieldManager {
 
     public void insertAdditionalField(PurchaseContext purchaseContext, EventModification.AdditionalField f, int order) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        Integer additionalServiceId = null;
+        int additionalServiceId = -1;
         Context context;
         if (purchaseContext.ofType(PurchaseContextType.event)) {
             var event = (Event) purchaseContext;

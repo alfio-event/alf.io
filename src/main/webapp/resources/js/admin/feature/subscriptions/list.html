@@ -85,10 +85,13 @@
         </div>
         <div class="panel-footer bg-white">
             <div class="row">
-                <div class="col-md-2 col-md-offset-8 col-xs-12" data-ng-if="subscription.reservationsCount > 0">
+                <div class="col-md-2 col-xs-12" data-ng-class="{'col-md-offset-8': subscription.reservationsCount === 0, 'col-md-offset-6': subscription.reservationsCount > 0}">
+                    <a class="btn btn-default btn-block" data-ui-sref="^.single.additional-fields({ organizationId: subscription.descriptor.organizationId, subscriptionId: subscription.descriptor.id})"><i class="fa fa-info-circle"></i> Data to collect</a>
+                </div>
+                <div class="col-md-2 col-xs-12" data-ng-if="subscription.reservationsCount > 0">
                     <a class="btn btn-default btn-block" data-ui-sref="^.single.reservationsList({ organizationId: subscription.descriptor.organizationId, subscriptionId: subscription.descriptor.id})">Reservations</a>
                 </div>
-                <div class="col-md-2 col-xs-12" data-ng-class="{'col-md-offset-10': subscription.reservationsCount === 0 }">
+                <div class="col-md-2 col-xs-12">
                     <a type="button" class="btn btn-warning btn-block" ui-sref="^.edit({ organizationId: subscription.descriptor.organizationId, subscriptionId: subscription.descriptor.id})" >Edit</a>
                 </div>
             </div>
