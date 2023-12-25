@@ -183,6 +183,10 @@ public class AdditionalServiceManager {
             LOGGER.trace("Event does not support linked additional services");
             return;
         }
+        if (as.getAvailableQuantity() == -1) {
+            // nothing to do here
+            return;
+        }
         // check how many are already defined
         int count = additionalServiceItemRepository.countItemsForService(serviceId);
         int requested = Math.max(0, as.getAvailableQuantity());
