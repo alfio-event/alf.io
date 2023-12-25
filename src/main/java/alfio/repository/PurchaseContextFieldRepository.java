@@ -17,6 +17,8 @@
 package alfio.repository;
 
 import alfio.model.*;
+import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.Bind;
@@ -35,12 +37,13 @@ import java.util.stream.Collectors;
 @QueryRepository
 public interface PurchaseContextFieldRepository extends FieldRepository {
 
-    String INSERT_VALUE = "insert into purchase_context_field_value(ticket_id_fk, organization_id_fk, field_configuration_id_fk, field_value, context) values (:ticketId, :organizationId, :fieldConfigurationId, :value, :context::ADDITIONAL_FIELD_CONTEXT)";
+    String INSERT_VALUE = "insert into purchase_context_field_value(ticket_id_fk, subscription_id_fk, organization_id_fk, field_configuration_id_fk, field_value, context) values (:ticketId, :subscriptionId::uuid, :organizationId, :fieldConfigurationId, :value, :context::ADDITIONAL_FIELD_CONTEXT)";
     String ADDITIONAL_SERVICE_FIELD_VALUE_COLS = "field_name, field_value, additional_service_id_fk, ticket_id_fk, field_configuration_id_fk, additional_service_item_id_fk";
     String FIELD_VALUE_COLUMNS = "ticket_id_fk, subscription_id_fk, additional_service_item_id_fk, field_configuration_id_fk, field_name, field_value, context";
     String FIND_ALL = "select "+ FIELD_VALUE_COLUMNS +" from field_value_w_additional";
     String FIND_ALL_BY_TICKET_ID = FIND_ALL + " where ticket_id_fk = :ticketId";
     String PURCHASE_CONTEXT_MATCHER = "(:eventId is null or event_id_fk = :eventId) and (:subscriptionId::uuid is null or subscription_descriptor_id_fk = :subscriptionId::uuid)";
+    String TICKET_ID_OR_SUBSCRIPTION_ID = "((:ticketId::integer is not null or :subscriptionId::uuid is not null) and (:ticketId::integer is null or ticket_id_fk = :ticketId) and (:subscriptionId::uuid is null or subscription_id_fk = :subscriptionId::uuid))";
 
     @Query("select count(*) from field_value_w_additional where ticket_id_fk = :ticketId and field_value is not null and field_value <> ''")
     Integer countFilledOptionalData(@Bind("ticketId") int id);
@@ -56,11 +59,16 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
         " where ticket_id_fk = :ticketId and field_name in (:fieldNames)")
     List<FieldValueAndDescription> findValueForTicketId(@Bind("ticketId") int id, @Bind("fieldNames") Set<String> fieldNames);
 
-    @Query("update purchase_context_field_value set field_value = :value where ticket_id_fk = :ticketId and field_configuration_id_fk = :fieldConfigurationId")
-    int updateValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") long fieldConfigurationId, @Bind("value") String value);
+    @Query("update purchase_context_field_value set field_value = :value where " + TICKET_ID_OR_SUBSCRIPTION_ID +
+        " and field_configuration_id_fk = :fieldConfigurationId")
+    int updateValue(@Bind("ticketId") Integer ticketId,
+                    @Bind("subscriptionId") UUID subscriptionId,
+                    @Bind("fieldConfigurationId") long fieldConfigurationId,
+                    @Bind("value") String value);
 
     @Query(INSERT_VALUE)
-    int insertValue(@Bind("ticketId") int ticketId,
+    int insertValue(@Bind("ticketId") Integer ticketId,
+                    @Bind("subscriptionId") UUID subscriptionId,
                     @Bind("organizationId") int organizationId,
                     @Bind("fieldConfigurationId") long fieldConfigurationId,
                     @Bind("value") String value,
@@ -71,14 +79,17 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
             " values ('ADDITIONAL_SERVICE'::ADDITIONAL_FIELD_CONTEXT, :additionalServiceItemId, :fieldConfigurationId, :value, :organizationId)")
     String batchInsertAdditionalItemsFields();
 
-    @Query("delete from purchase_context_field_value where ticket_id_fk = :ticketId and field_configuration_id_fk = :fieldConfigurationId")
-    int deleteValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") long fieldConfigurationId);
+    @Query("delete from purchase_context_field_value where " + TICKET_ID_OR_SUBSCRIPTION_ID +" and field_configuration_id_fk = :fieldConfigurationId")
+    int deleteValue(@Bind("ticketId") Integer ticketId, @Bind("subscriptionId") UUID subscriptionId, @Bind("fieldConfigurationId") long fieldConfigurationId);
 
     @Query("delete from purchase_context_field_value where ticket_id_fk = :ticketId")
     int deleteAllValuesForTicket(@Bind("ticketId") int ticketId);
 
     @Query("delete from purchase_context_field_value where ticket_id_fk in (:ticketIds)")
     int deleteAllValuesForTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
+
+    @Query("delete from purchase_context_field_value where subscription_id_fk = :subscriptionId")
+    int deleteAllValuesForSubscriptionId(@Bind("subscriptionId") UUID subscriptionId);
 
     @Query("delete from purchase_context_field_value fv using ticket t, additional_service_item ai" +
         " where fv.context = 'ADDITIONAL_SERVICE' and fv.additional_service_item_id_fk = ai.id" +
@@ -116,12 +127,23 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query(FIND_ALL + " where ticket_id_fk in (:ticketIds)")
     List<PurchaseContextFieldValue> findAllValuesByTicketIds(@Bind("ticketIds") Collection<Integer> ticketIds);
 
-    default void updateOrInsert(Map<String, List<String>> values, int ticketId, int eventId, int organizationId, boolean eventSupportsLink) {
-        Map<String, PurchaseContextFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId, eventSupportsLink);
+    @Query(FIND_ALL + " where subscription_id_fk in (:subscriptionIds)")
+    List<PurchaseContextFieldValue> findAllValuesBySubscriptionIds(@Bind("subscriptionIds") Collection<UUID> subscriptionIds);
+
+    default void updateOrInsert(Map<String, List<String>> values, PurchaseContext purchaseContext, Integer ticketId, UUID subscriptionId) {
+        Map<String, PurchaseContextFieldValue> toUpdate;
         values = Optional.ofNullable(values).orElseGet(Collections::emptyMap);
-        var additionalFieldsForEvent = findAdditionalFieldsForEvent(eventId);
-        var readOnlyFields = additionalFieldsForEvent.stream().filter(PurchaseContextFieldConfiguration::isReadOnly).map(PurchaseContextFieldConfiguration::getName).collect(Collectors.toSet());
-        Map<String, Long> fieldNameToId = additionalFieldsForEvent.stream().collect(Collectors.toMap(PurchaseContextFieldConfiguration::getName, PurchaseContextFieldConfiguration::getId));
+        List<PurchaseContextFieldConfiguration> additionalFields;
+        if (purchaseContext.ofType(PurchaseContextType.event)) {
+            Event event = (Event) purchaseContext;
+            additionalFields = findAdditionalFieldsForEvent(event.getId());
+            toUpdate = findAllByTicketIdGroupedByName(ticketId, event.supportsLinkedAdditionalServices());
+        } else {
+            additionalFields = findAdditionalFieldsForSubscriptionDescriptor(((SubscriptionDescriptor)purchaseContext).getId());
+            toUpdate = collectByName(findAllValuesBySubscriptionIds(List.of(subscriptionId)));
+        }
+        var readOnlyFields = additionalFields.stream().filter(PurchaseContextFieldConfiguration::isReadOnly).map(PurchaseContextFieldConfiguration::getName).collect(Collectors.toSet());
+        Map<String, Long> fieldNameToId = additionalFields.stream().collect(Collectors.toMap(PurchaseContextFieldConfiguration::getName, PurchaseContextFieldConfiguration::getId));
 
         values.forEach((fieldName, fieldValues) -> {
             var fieldValue = getFieldValueJson(fieldValues);
@@ -131,13 +153,13 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
                 if(!readOnlyFields.contains(fieldName)) {
                     PurchaseContextFieldValue field = toUpdate.get(fieldName);
                     if(isNotBlank) {
-                        updateValue(field.getTicketId(), field.getFieldConfigurationId(), fieldValue);
+                        updateValue(field.getTicketId(), field.getSubscriptionId(), field.getFieldConfigurationId(), fieldValue);
                     } else {
-                        deleteValue(field.getTicketId(), field.getFieldConfigurationId());
+                        deleteValue(field.getTicketId(), field.getSubscriptionId(), field.getFieldConfigurationId());
                     }
                 }
             } else if(fieldNameToId.containsKey(fieldName) && isNotBlank) {
-                insertValue(ticketId, organizationId, fieldNameToId.get(fieldName), fieldValue, PurchaseContextFieldConfiguration.Context.ATTENDEE);
+                insertValue(ticketId, subscriptionId, purchaseContext.getOrganizationId(), fieldNameToId.get(fieldName), fieldValue, PurchaseContextFieldConfiguration.Context.ATTENDEE);
             }
         });
     }
@@ -154,13 +176,17 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
         return fieldValue;
     }
 
-    default Map<String, PurchaseContextFieldValue> findAllByTicketIdGroupedByName(int id, boolean eventSupportsLink) {
+    default Map<String, PurchaseContextFieldValue> findAllByTicketIdGroupedByName(Integer id, boolean eventSupportsLink) {
         List<PurchaseContextFieldValue> values;
         if (eventSupportsLink) {
             values = findAllForContextByTicketId(id, PurchaseContextFieldConfiguration.Context.ATTENDEE);
         } else {
             values = findAllByTicketId(id);
         }
+        return collectByName(values);
+    }
+
+    private Map<String, PurchaseContextFieldValue> collectByName(List<PurchaseContextFieldValue> values) {
         return values.stream()
             .collect(Collectors.toMap(PurchaseContextFieldValue::getName, Function.identity()));
     }

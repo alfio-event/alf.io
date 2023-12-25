@@ -19,14 +19,17 @@ package alfio.controller.form;
 import lombok.Getter;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Getter
-public class UpdateSubscriptionOwnerForm implements Serializable {
+public class UpdateSubscriptionOwnerForm implements Serializable, AdditionalFieldsContainer {
     private String email;
     private String firstName;
     private String lastName;
+    private Map<String, List<String>> additional;
 
     public void setEmail(String email) {
         this.email = trimToNull(email);
@@ -38,6 +41,14 @@ public class UpdateSubscriptionOwnerForm implements Serializable {
 
     public void setLastName(String lastName) {
         this.lastName = trimToNull(lastName);
+    }
+
+    public Map<String, List<String>> getAdditional() {
+        return additional;
+    }
+
+    public void setAdditional(Map<String, List<String>> additional) {
+        this.additional = additional;
     }
 
     public boolean validate() {

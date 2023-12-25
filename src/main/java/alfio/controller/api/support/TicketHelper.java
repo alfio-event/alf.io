@@ -118,7 +118,7 @@ public class TicketHelper {
         var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), ticketReservation.getId());
 
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(ticketReservation.getId());
-        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf,
+        var ticketFieldFilterer = new Validator.AdditionalFieldsFilterer(fieldConf,
             ticketsInReservation,
             event.supportsLinkedAdditionalServices(),
             additionalServiceItems);

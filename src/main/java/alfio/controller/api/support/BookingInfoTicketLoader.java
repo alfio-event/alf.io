@@ -24,6 +24,7 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
@@ -83,7 +84,7 @@ public class BookingInfoTicketLoader {
     public BookingInfoTicket toBookingInfoTicket(Ticket t,
                                                  boolean hasPaidSupplement,
                                                  Event event,
-                                                 Validator.TicketFieldsFilterer ticketFieldsFilterer,
+                                                 Validator.AdditionalFieldsFilterer additionalFieldsFilterer,
                                                  Map<Long, List<PurchaseContextFieldDescription>> descriptionsByTicketFieldId,
                                                  Map<Integer, List<PurchaseContextFieldValue>> valuesByTicketIds,
                                                  Map<String, String> formattedOnlineCheckInDate,
@@ -100,16 +101,23 @@ public class BookingInfoTicketLoader {
             cancellationEnabled,
             configuration.get(SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault(),
             configuration.get(ALLOW_TICKET_DOWNLOAD).getValueAsBooleanOrDefault(),
-            ticketFieldsFilterer.getFieldsForTicket(t.getUuid(), contexts),
+            additionalFieldsFilterer.getFieldsForTicket(t.getUuid(), contexts),
             descriptionsByTicketFieldId,
             valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()),
             formattedOnlineCheckInDate,
             onlineEventStarted);
     }
 
-    public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, Event event) {
+    public Validator.AdditionalFieldsFilterer getSubscriptionFieldsFilterer(String reservationId, SubscriptionDescriptor descriptor) {
+        var fields = purchaseContextFieldManager.findAdditionalFields(descriptor);
+        return new Validator.AdditionalFieldsFilterer(fields,
+            List.of(),
+            false,
+            List.of());
+    }
+    public Validator.AdditionalFieldsFilterer getTicketFieldsFilterer(String reservationId, Event event) {
         var fields = purchaseContextFieldManager.findAdditionalFields(event);
-        return new Validator.TicketFieldsFilterer(fields,
+        return new Validator.AdditionalFieldsFilterer(fields,
             ticketReservationManager.findTicketsInReservation(reservationId),
             event.supportsLinkedAdditionalServices(),
             additionalServiceItemRepository.findByReservationUuid(event.getId(), reservationId));
@@ -134,20 +142,8 @@ public class BookingInfoTicketLoader {
             // hide additional service related fields
             .filter(ticketFieldConfiguration -> ticketFieldConfiguration.getAdditionalServiceId() != null)
             .sorted(Comparator.comparing(PurchaseContextFieldConfiguration::getOrder))
-            .flatMap(tfc -> {
-                var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
-                var fieldValues = valuesById.get(tfc.getId());
-                var descs = fromFieldDescriptions(descriptionsByTicketFieldId.get(tfc.getId()));
-                if (fieldValues == null) {
-                    var t = new FieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), null);
-                    return Stream.of(toAdditionalField(t, descs));
-                }
-                return fieldValues.stream()
-                    .map(fieldValue -> {
-                        var t = new FieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue.getValue());
-                        return toAdditionalField(t, descs);
-                    });
-            }).collect(Collectors.toList());
+            .flatMap(tfc -> toAdditionalFieldsStream(descriptionsByTicketFieldId, tfc, valuesById))
+            .collect(Collectors.toList());
 
         return new BookingInfoTicket(ticket.getUuid(),
             ticket.getFirstName(),
@@ -166,7 +162,22 @@ public class BookingInfoTicketLoader {
             onlineEventStarted);
     }
 
-    private static AdditionalField toAdditionalField(FieldConfigurationDescriptionAndValue t, Map<String, Description> description) {
+    public static Stream<AdditionalField> toAdditionalFieldsStream(Map<Long, List<PurchaseContextFieldDescription>> descriptionsByTicketFieldId, PurchaseContextFieldConfiguration tfc, Map<Long, List<PurchaseContextFieldValue>> valuesById) {
+        var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
+        var fieldValues = valuesById.get(tfc.getId());
+        var descriptions = fromFieldDescriptions(descriptionsByTicketFieldId.get(tfc.getId()));
+        if (fieldValues == null) {
+            var t = new FieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), null);
+            return Stream.of(toAdditionalField(t, descriptions));
+        }
+        return fieldValues.stream()
+            .map(fieldValue -> {
+                var t = new FieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue.getValue());
+                return toAdditionalField(t, descriptions);
+            });
+    }
+
+    public static AdditionalField toAdditionalField(FieldConfigurationDescriptionAndValue t, Map<String, Description> description) {
         var fields = t.getFields().stream().map(f -> new Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
         var restrictedValues = t.getRestrictedValues().stream()
             .filter(rv -> Objects.equals(t.getValue(), rv) || !t.getDisabledValues().contains(rv))

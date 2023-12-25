@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.controller.api.support.AdditionalField;
 import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.controller.api.support.BookingInfoTicket;
 import alfio.model.BillingDetails;
@@ -143,6 +144,7 @@ public class ReservationInfo {
         private final UsageDetails usageDetails;
         private final SubscriptionOwner owner;
         private final SubscriptionConfiguration configuration;
+        private final List<AdditionalField> additionalFields;
     }
 
     @AllArgsConstructor

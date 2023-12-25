@@ -223,20 +223,20 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    public static class TicketFieldsFilterer {
+    public static class AdditionalFieldsFilterer {
 
-        private final List<PurchaseContextFieldConfiguration> additionalFieldsForEvent;
+        private final List<PurchaseContextFieldConfiguration> purchaseContextFields;
         private final List<Ticket> ticketsInReservation;
         private final Set<Integer> additionalFieldsForReservation;
         private final Optional<Ticket> firstTicketInReservation;
         private final boolean eventSupportsAdditionalFieldsLink;
         private final List<AdditionalServiceItem> additionalServiceItems;
 
-        public TicketFieldsFilterer(List<PurchaseContextFieldConfiguration> additionalFieldsForEvent,
-                                    List<Ticket> ticketsInReservation,
-                                    boolean eventSupportsAdditionalFieldsLink,
-                                    List<AdditionalServiceItem> additionalServiceItems) {
-            this.additionalFieldsForEvent = additionalFieldsForEvent;
+        public AdditionalFieldsFilterer(List<PurchaseContextFieldConfiguration> purchaseContextFields,
+                                        List<Ticket> ticketsInReservation,
+                                        boolean eventSupportsAdditionalFieldsLink,
+                                        List<AdditionalServiceItem> additionalServiceItems) {
+            this.purchaseContextFields = purchaseContextFields;
             this.ticketsInReservation = ticketsInReservation;
             this.additionalFieldsForReservation = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
             this.firstTicketInReservation = ticketsInReservation.stream().findFirst();
@@ -248,7 +248,11 @@ public final class Validator {
         public List<PurchaseContextFieldConfiguration> getFieldsForTicket(String ticketUuid, Set<PurchaseContextFieldConfiguration.Context> requestedContexts) {
             var ticket = ticketsInReservation.stream().filter(t -> t.getUuid().equals(ticketUuid)).findFirst().orElseThrow();
             var isFirstTicket = firstTicketInReservation.map(first -> ticket.getUuid().equals(first.getUuid())).orElse(false);
-            return filterFieldsForTicket(additionalFieldsForEvent, ticket, additionalFieldsForReservation, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems, requestedContexts);
+            return filterFieldsForTicket(purchaseContextFields, ticket, additionalFieldsForReservation, isFirstTicket, eventSupportsAdditionalFieldsLink, additionalServiceItems, requestedContexts);
+        }
+
+        public List<PurchaseContextFieldConfiguration> getFieldsForSubscription() {
+            return purchaseContextFields;
         }
 
         private static List<PurchaseContextFieldConfiguration> filterFieldsForTicket(List<PurchaseContextFieldConfiguration> additionalFieldsForEvent,
@@ -359,11 +363,11 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    private static void validateFieldConfiguration(AdditionalFieldsContainer form,
-                                                   SameCountryValidator vatValidator,
-                                                   Errors errors,
-                                                   String prefixForLambda,
-                                                   PurchaseContextFieldConfiguration fieldConf) {
+    public static void validateFieldConfiguration(AdditionalFieldsContainer form,
+                                                  SameCountryValidator vatValidator,
+                                                  Errors errors,
+                                                  String prefixForLambda,
+                                                  PurchaseContextFieldConfiguration fieldConf) {
         validateFieldConfiguration(form, vatValidator, errors, prefixForLambda, fieldConf, false);
     }
 

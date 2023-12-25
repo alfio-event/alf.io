@@ -42,6 +42,7 @@ import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.metadata.SubscriptionMetadata;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -49,6 +50,7 @@ import alfio.repository.*;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -72,6 +74,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import static alfio.controller.api.support.BookingInfoTicketLoader.toAdditionalFieldsStream;
 import static alfio.model.PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
 import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION;
@@ -195,12 +198,22 @@ public class ReservationApiV2Controller {
                     .map(s -> {
                         int usageCount = ticketRepository.countSubscriptionUsage(s.getId(), null);
                         var metadata = requireNonNullElseGet(subscriptionRepository.getSubscriptionMetadata(s.getId()), SubscriptionMetadata::empty);
+                        var fields = purchaseContextFieldManager.findAdditionalFields(purchaseContext);
+                        var valuesById = purchaseContextFieldRepository.findAllValuesBySubscriptionIds(List.of(s.getId()))
+                            .stream()
+                            .collect(Collectors.groupingBy(PurchaseContextFieldValue::getFieldConfigurationId));
+                        var ticketFieldsAdditional = fields.stream()
+                            .sorted(Comparator.comparing(PurchaseContextFieldConfiguration::getOrder))
+                            .flatMap(tfc -> toAdditionalFieldsStream(descriptionsByFieldId, tfc, valuesById))
+                            .collect(Collectors.toList());
                         return new ReservationInfo.SubscriptionInfo(
                             s.getStatus() == AllocationStatus.ACQUIRED ? s.getId() : null,
                             s.getStatus() == AllocationStatus.ACQUIRED ? s.getPin() : null,
                             UsageDetails.fromSubscription(s, usageCount),
                             new ReservationInfo.SubscriptionOwner(s.getFirstName(), s.getLastName(), s.getEmail()),
-                            metadata.getConfiguration());
+                            metadata.getConfiguration(),
+                            ticketFieldsAdditional
+                        );
                     })
                     .collect(Collectors.toList());
             }
@@ -451,20 +464,26 @@ public class ReservationApiV2Controller {
                 assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
             }
 
-            if(purchaseContext.ofType(PurchaseContextType.subscription) && contactAndTicketsForm.isDifferentSubscriptionOwner()) {
+            if(purchaseContext.ofType(PurchaseContextType.subscription)) {
                 var owner = contactAndTicketsForm.getSubscriptionOwner();
-                Validate.isTrue(subscriptionRepository.assignSubscription(reservationId, owner.getFirstName(), owner.getLastName(), owner.getEmail()) == 1);
+                if (contactAndTicketsForm.isDifferentSubscriptionOwner()) {
+                    Validate.isTrue(subscriptionRepository.assignSubscription(reservationId, owner.getFirstName(), owner.getLastName(), owner.getEmail()) == 1);
+                }
+                if (MapUtils.isNotEmpty(owner.getAdditional())) {
+                    purchaseContextFieldManager.updateFieldsForReservation(owner, purchaseContext, null, subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0).getId());
+                }
             }
             //
 
             Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
 
-            var ticketFieldFilterer = purchaseContext.event()
-                .map(event -> bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event));
+            var fieldsFilterer = purchaseContext.event()
+                .map(event -> bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event))
+                .or(() -> Optional.of(bookingInfoTicketLoader.getSubscriptionFieldsFilterer(reservationId, (SubscriptionDescriptor) purchaseContext)));
 
             //
             contactAndTicketsForm.validate(bindingResult, purchaseContext, new SameCountryValidator(configurationManager, extensionManager, purchaseContext, reservationId, vatChecker),
-                formValidationParameters, ticketFieldFilterer, reservationCost.requiresPayment(), extensionManager,
+                formValidationParameters, fieldsFilterer, reservationCost.requiresPayment(), extensionManager,
                 () -> additionalServiceManager.findItemsInReservation(purchaseContext, reservationId));
             //
 

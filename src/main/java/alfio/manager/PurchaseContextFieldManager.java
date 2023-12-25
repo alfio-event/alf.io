@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.controller.form.AdditionalFieldsContainer;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.PurchaseContextFieldConfiguration.Context;
@@ -190,5 +191,13 @@ public class PurchaseContextFieldManager {
 
     public List<RestrictedValueStats> retrieveStats(long id) {
         return purchaseContextFieldRepository.retrieveStats(id);
+    }
+
+    // reservation-related methods
+    public void updateFieldsForReservation(AdditionalFieldsContainer form,
+                                           PurchaseContext purchaseContext,
+                                           Integer ticketId,
+                                           UUID subscriptionId) {
+        purchaseContextFieldRepository.updateOrInsert(form.getAdditional(), purchaseContext, ticketId, subscriptionId);
     }
 }
