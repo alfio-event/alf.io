@@ -41,7 +41,8 @@ create or replace view field_value_w_additional as (
            b.context as context
         from purchase_context_field_value a
         join purchase_context_field_configuration b on a.field_configuration_id_fk = b.id
-        where a.ticket_id_fk is not null and a.context = 'ATTENDEE'
+        where (a.ticket_id_fk is not null and a.context = 'ATTENDEE')
+              or (a.subscription_id_fk is not null and a.context = 'SUBSCRIPTION')
     union all
       select item.ticket_id_fk as ticket_id_fk,
              asv.subscription_id_fk as subscription_id_fk,

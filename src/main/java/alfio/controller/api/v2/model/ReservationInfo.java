@@ -34,6 +34,7 @@ import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -136,7 +137,6 @@ public class ReservationInfo {
         private final String taxPercentage;
     }
 
-    @AllArgsConstructor
     @Getter
     public static class SubscriptionInfo {
         private final UUID id;
@@ -145,6 +145,23 @@ public class ReservationInfo {
         private final SubscriptionOwner owner;
         private final SubscriptionConfiguration configuration;
         private final List<AdditionalField> additionalFields;
+
+        public SubscriptionInfo(UUID id, String pin, UsageDetails usageDetails, SubscriptionOwner owner, SubscriptionConfiguration configuration, List<AdditionalField> additionalFields) {
+            this.id = id;
+            this.pin = pin;
+            this.usageDetails = usageDetails;
+            this.owner = owner;
+            this.configuration = configuration;
+            this.additionalFields = Objects.requireNonNullElse(additionalFields, List.of());
+        }
+
+        public List<AdditionalField> getFieldConfigurationBeforeStandard() {
+            return additionalFields.stream().filter(AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
+        }
+
+        public List<AdditionalField> getFieldConfigurationAfterStandard() {
+            return additionalFields.stream().filter(tv -> !tv.isBeforeStandardFields()).collect(Collectors.toList());
+        }
     }
 
     @AllArgsConstructor

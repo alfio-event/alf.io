@@ -103,8 +103,11 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("delete from purchase_context_field_value fv using additional_service_item asi where asi.id = fv.additional_service_item_id_fk and asi.tickets_reservation_uuid in(:reservationIds)")
     int deleteAllAdditionalItemsValuesForReservations(@Bind("reservationIds") List<String> reservationIds);
 
+    @Query("delete from purchase_context_field_value fv using subscription s where s.id = fv.subscription_id_fk and s.reservation_id_fk in(:reservationIds)")
+    int deleteAllSubscriptionValuesForReservations(@Bind("reservationIds") List<String> reservationIds);
+
     default int deleteAllValuesForReservations(List<String> reservationIds) {
-        return deleteAllTicketValuesForReservations(reservationIds) + deleteAllAdditionalItemsValuesForReservations(reservationIds);
+        return deleteAllTicketValuesForReservations(reservationIds) + deleteAllAdditionalItemsValuesForReservations(reservationIds) + deleteAllSubscriptionValuesForReservations(reservationIds);
     }
 
     @Query("select field_configuration_id_fk, field_locale, description from purchase_context_field_description" +
@@ -159,7 +162,8 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
                     }
                 }
             } else if(fieldNameToId.containsKey(fieldName) && isNotBlank) {
-                insertValue(ticketId, subscriptionId, purchaseContext.getOrganizationId(), fieldNameToId.get(fieldName), fieldValue, PurchaseContextFieldConfiguration.Context.ATTENDEE);
+                var context = ticketId != null ? PurchaseContextFieldConfiguration.Context.ATTENDEE : PurchaseContextFieldConfiguration.Context.SUBSCRIPTION;
+                insertValue(ticketId, subscriptionId, purchaseContext.getOrganizationId(), fieldNameToId.get(fieldName), fieldValue, context);
             }
         });
     }
