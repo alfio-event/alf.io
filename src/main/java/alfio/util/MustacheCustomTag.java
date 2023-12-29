@@ -17,7 +17,6 @@
 package alfio.util;
 
 import alfio.controller.api.support.TicketHelper;
-import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.subscription.SubscriptionDescriptor;
 import com.samskivert.mustache.Mustache;
 import lombok.extern.log4j.Log4j2;
@@ -36,11 +35,14 @@ import org.commonmark.renderer.text.TextContentRenderer;
 import org.springframework.context.MessageSource;
 import org.springframework.security.web.util.UrlUtils;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -74,12 +76,19 @@ public class MustacheCustomTag {
 
     static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
         String execution = frag.execute().trim();
-        ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(' ')));
+        TemporalAccessor date;
+        var dateAsString = substring(execution, 0, execution.indexOf(' ')).trim();
+        boolean isDateTime = dateAsString.length() > 10; // we assume date to be in YYYY-MM-DD format
+        if (isDateTime) {
+            date = ZonedDateTime.parse(dateAsString);
+        } else {
+            date = LocalDate.parse(dateAsString);
+        }
         Pair<String, Optional<Locale>> p = parseParams(execution);
         if (p.getRight().isPresent()) {
-            out.write(DateTimeFormatter.ofPattern(p.getLeft(), p.getRight().get()).format(d));
+            out.write(DateTimeFormatter.ofPattern(p.getLeft(), p.getRight().get()).format(date));
         } else {
-            out.write(DateTimeFormatter.ofPattern(p.getLeft()).format(d));
+            out.write(DateTimeFormatter.ofPattern(p.getLeft()).format(date));
         }
     };
 
@@ -144,6 +153,37 @@ public class MustacheCustomTag {
         if(fieldNamesAndValues.containsKey(name)) {
             out.write(prefix + fieldNamesAndValues.get(name) + suffix);
         }
+    };
+
+    /**
+     * Prints additional field values using the provided template.
+     * Example code:
+     * {{#print-additional-fields}}
+     * 	<tr>
+     * 	    <td style="width:180px">{{fieldName}}:</td>
+     *      <td>{{fieldValue}}</td>
+     *  </tr>
+     * {{/print-additional-fields}}
+     *
+     */
+    static final BiFunction<Object, Supplier<Map<String, String>>, Mustache.Lambda> PRINT_ADDITIONAL_FIELDS = (obj, descriptionSupplier) -> (frag, out) -> {
+        if( !(obj instanceof Map) || ((Map<?,?>)obj).isEmpty()) {
+            log.warn("map not found or empty. Skipping additionalFieldValue tag");
+            return;
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, String> originalContext = (Map<String, String>)frag.context();
+        var descriptionsByFieldName = descriptionSupplier.get();
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) obj).entrySet()) {
+            Map<String, String> context = new HashMap<>(originalContext);
+            var key = String.valueOf(entry.getKey());
+            var label = StringUtils.defaultIfBlank(descriptionsByFieldName.get(key), key);
+            context.put("fieldName", label);
+            context.put("fieldValue", String.valueOf(entry.getValue()));
+            out.write(frag.execute(context));
+        }
+        ((Map<?, ?>) obj).forEach((key, value) -> {
+        });
     };
 
     static Mustache.Lambda subscriptionDescriptionGenerator(MessageSource messageSource, Map<String, Object> model, Locale locale) {

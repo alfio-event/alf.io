@@ -117,7 +117,7 @@ public class PurchaseContextFieldConfiguration {
     }
 
     public boolean isDateOfBirth() {
-        return "dateOfBirth".equals(type);
+        return "input:dateOfBirth".equals(type);
     }
 
     public String getInputType() {
@@ -143,5 +143,9 @@ public class PurchaseContextFieldConfiguration {
 
     public boolean isReadOnly() {
         return !editable;
+    }
+
+    public boolean isTextField() {
+        return isInputField() || isTextareaField();
     }
 }

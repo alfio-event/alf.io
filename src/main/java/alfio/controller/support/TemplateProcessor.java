@@ -19,6 +19,7 @@ package alfio.controller.support;
 import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
+import alfio.manager.PurchaseContextFieldManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.metadata.SubscriptionMetadata;
@@ -130,9 +131,11 @@ public final class TemplateProcessor {
                                              FileUploadManager fileUploadManager,
                                              String reservationId,
                                              ByteArrayOutputStream os,
-                                             ExtensionManager extensionManager) throws IOException {
+                                             ExtensionManager extensionManager,
+                                             PurchaseContextFieldManager purchaseContextFieldManager) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(subscriptionDescriptor, fileUploadManager);
-        Map<String, Object> model = TemplateResource.buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, metadata, imageData, reservationId, locale, reservation);
+        var additionalFields = purchaseContextFieldManager.getFieldDescriptionAndValues(subscriptionDescriptor, null, subscription, List.of(), locale.getLanguage(), true);
+        Map<String, Object> model = TemplateResource.buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, metadata, imageData, reservationId, locale, reservation, additionalFields);
         String page = templateManager.renderTemplate(subscriptionDescriptor, TemplateResource.SUBSCRIPTION_PDF, model, locale).getTextPart();
         renderToPdf(page, os, extensionManager, subscriptionDescriptor);
     }

@@ -25,7 +25,10 @@ import alfio.model.*;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.support.TicketWithAdditionalFields;
-import alfio.repository.*;
+import alfio.repository.AdditionalServiceItemRepository;
+import alfio.repository.EventRepository;
+import alfio.repository.SponsorScanRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.ClockProvider;
 import alfio.util.EventUtil;
@@ -50,7 +53,7 @@ public class AttendeeManager {
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final UserManager userManager;
-    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final ClockProvider clockProvider;
 
@@ -102,7 +105,7 @@ public class AttendeeManager {
             .checkPrecondition(maybeTicket::isPresent, ErrorCode.custom("ticket_not_found", "ticket not found"))
             .build(() -> {
                 var ticket = maybeTicket.orElseThrow();
-                var descriptionAndValues = EventUtil.retrieveFieldValues(ticketRepository, purchaseContextFieldRepository, additionalServiceItemRepository).apply(ticket, event);
+                var descriptionAndValues = EventUtil.retrieveFieldValues(ticketRepository, purchaseContextFieldManager, additionalServiceItemRepository, true).apply(ticket, event);
                 return new TicketWithAdditionalFields(ticket, descriptionAndValues);
             });
     }

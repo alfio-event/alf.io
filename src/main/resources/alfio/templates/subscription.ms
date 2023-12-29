@@ -41,6 +41,17 @@
 				<td style="width:180px">{{#i18n}}reservation-page-complete.subscription.owner{{/i18n}}:</td>
 				<td>{{subscription.firstName}} {{subscription.lastName}} &lt;{{subscription.email}}&gt;</td>
 			</tr>
+			{{#print-additional-fields}}
+			<tr>
+			    <td style="width:180px">{{additionalFieldName}}:</td>
+                <td>{{additionalFieldValue}}</td>
+			</tr>
+			{{/print-additional-fields}}
+			<tr>
+                <td style="width:180px">{{:</td>
+                <td>{{subscription.firstName}} {{subscription.lastName}} &lt;{{subscription.email}}&gt;</td>
+            </tr>
+			{{/additional-fields}}
 		</table>
 		<h4>{{#subscriptionDescription}}{{/subscriptionDescription}}</h4>
 

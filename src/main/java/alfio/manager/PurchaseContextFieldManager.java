@@ -17,28 +17,37 @@
 package alfio.manager;
 
 import alfio.controller.form.AdditionalFieldsContainer;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.PurchaseContextFieldConfiguration.Context;
-import alfio.model.api.v1.admin.EventCreationRequest;
+import alfio.model.api.v1.admin.AdditionalInfoRequest;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketFieldDescriptionModification;
 import alfio.model.result.ValidationResult;
+import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.repository.AdditionalServiceRepository;
 import alfio.repository.PurchaseContextFieldRepository;
 import alfio.util.Json;
+import alfio.util.LocaleUtil;
 import alfio.util.MonetaryUtil;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.Errors;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ATTENDEE;
 import static alfio.util.Validator.validateAdditionalFields;
 
 @Component
@@ -46,15 +55,22 @@ import static alfio.util.Validator.validateAdditionalFields;
 public class PurchaseContextFieldManager {
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
+    private final MessageSourceManager messageSourceManager;
 
     public PurchaseContextFieldManager(PurchaseContextFieldRepository purchaseContextFieldRepository,
-                                       AdditionalServiceRepository additionalServiceRepository) {
+                                       AdditionalServiceRepository additionalServiceRepository,
+                                       MessageSourceManager messageSourceManager) {
         this.purchaseContextFieldRepository = purchaseContextFieldRepository;
         this.additionalServiceRepository = additionalServiceRepository;
+        this.messageSourceManager = messageSourceManager;
+    }
+
+    public List<PurchaseContextFieldDescription> findDescriptions(PurchaseContext purchaseContext) {
+        return purchaseContextFieldRepository.findAllDescriptions(eventIdOrNull(purchaseContext), descriptorIdOrNull(purchaseContext));
     }
 
     public Map<Long, List<PurchaseContextFieldDescription>> findDescriptionsGroupedByFieldId(PurchaseContext purchaseContext) {
-        return purchaseContextFieldRepository.findAllDescriptions(eventIdOrNull(purchaseContext), descriptorIdOrNull(purchaseContext))
+        return findDescriptions(purchaseContext)
             .stream()
             .collect(Collectors.groupingBy(PurchaseContextFieldDescription::getFieldConfigurationId));
     }
@@ -170,11 +186,11 @@ public class PurchaseContextFieldManager {
     }
 
     private static String toSerializedRestrictedValues(EventModification.WithRestrictedValues f) {
-        return EventCreationRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getRestrictedValuesAsString()) : null;
+        return AdditionalInfoRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getRestrictedValuesAsString()) : null;
     }
 
     private static String toSerializedDisabledValues(EventModification.WithRestrictedValues f) {
-        return EventCreationRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getDisabledValuesAsString()) : null;
+        return AdditionalInfoRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getDisabledValuesAsString()) : null;
     }
 
     private static String generateJsonForList(Collection<?> values) {
@@ -199,5 +215,68 @@ public class PurchaseContextFieldManager {
                                            Integer ticketId,
                                            UUID subscriptionId) {
         purchaseContextFieldRepository.updateOrInsert(form.getAdditional(), purchaseContext, ticketId, subscriptionId);
+    }
+
+    public List<FieldConfigurationDescriptionAndValue> getFieldDescriptionAndValues(PurchaseContext purchaseContext,
+                                                                                    Ticket ticket,
+                                                                                    Subscription subscription,
+                                                                                    List<BookedAdditionalService> additionalServiceItems,
+                                                                                    String userLanguage,
+                                                                                    boolean formatValues) {
+        if (purchaseContext.ofType(PurchaseContextType.event)) {
+            return getFieldDescriptionAndValuesForTicket(ticket, additionalServiceItems, (Event) purchaseContext, formatValues);
+        } else {
+            return getFieldDescriptionAndValuesForSubscription(subscription, (SubscriptionDescriptor) purchaseContext, userLanguage, formatValues);
+        }
+    }
+
+    private String extractValue(Map<String, PurchaseContextFieldValue> values,
+                                PurchaseContextFieldConfiguration fieldConfiguration,
+                                boolean transformValue,
+                                MessageSource messageSource,
+                                Locale locale) {
+        return Optional.ofNullable(values.get(fieldConfiguration.getName()))
+            .map(pc -> {
+                var value = StringUtils.trimToEmpty(pc.getValue());
+                if (transformValue && fieldConfiguration.isDateOfBirth() && !value.isEmpty()) {
+                    return LocalDate.parse(value)
+                        .format(DateTimeFormatter.ofPattern(messageSource.getMessage("common.date-format", null, locale), locale));
+                }
+                return value;
+            })
+            .orElse("");
+    }
+
+    private List<FieldConfigurationDescriptionAndValue> getFieldDescriptionAndValuesForTicket(Ticket ticket, List<BookedAdditionalService> additionalServiceItems, Event event, boolean formatValues) {
+        Map<Long, PurchaseContextFieldDescription> descriptions = purchaseContextFieldRepository.findTranslationsFor(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
+        Map<String, PurchaseContextFieldValue> values = purchaseContextFieldRepository.findAllByTicketIdGroupedByName(ticket.getId(), event.supportsLinkedAdditionalServices());
+        Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toSet());
+        var messageSource = messageSourceManager.getMessageSourceFor(event.getOrganizationId(), event.getId());
+        var locale = Locale.forLanguageTag(ticket.getUserLanguage());
+        return purchaseContextFieldRepository.findAdditionalFieldsForEvent(ticket.getEventId())
+            .stream()
+            .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
+            .filter(f -> CollectionUtils.isEmpty(f.getCategoryIds()) || f.getCategoryIds().contains(ticket.getCategoryId()))
+            .map(f-> {
+                int count = Math.max(1, Optional.ofNullable(f.getAdditionalServiceId()).map(id -> (int) additionalServiceItems.stream().filter(i -> i.getAdditionalServiceId() == id).count()).orElse(f.getCount()));
+                return new FieldConfigurationDescriptionAndValue(f, descriptions.getOrDefault(f.getId(), PurchaseContextFieldDescription.MISSING_FIELD), count, extractValue(values, f, formatValues, messageSource, locale));
+            })
+            .collect(Collectors.toList());
+    }
+
+    private List<FieldConfigurationDescriptionAndValue> getFieldDescriptionAndValuesForSubscription(Subscription subscription, SubscriptionDescriptor descriptor, String userLanguage, boolean formatValues) {
+        var descriptions = findDescriptionsGroupedByFieldId(descriptor);
+        Map<String, PurchaseContextFieldValue> values = purchaseContextFieldRepository.findAllValuesBySubscriptionIds(List.of(subscription.getId())).stream()
+            .collect(Collectors.toMap(PurchaseContextFieldValue::getName, Function.identity()));
+        var messageSource = messageSourceManager.getMessageSourceFor(descriptor);
+        var locale = Locale.forLanguageTag(userLanguage);
+        return purchaseContextFieldRepository.findAdditionalFieldsForSubscriptionDescriptor(descriptor.getId())
+            .stream()
+            .map(f-> {
+                var description = descriptions.getOrDefault(f.getId(), List.of()).stream().filter(d -> userLanguage.equals(d.getLocale())).findFirst();
+                return new FieldConfigurationDescriptionAndValue(f, description.orElse(PurchaseContextFieldDescription.MISSING_FIELD), 1,
+                    extractValue(values, f, formatValues, messageSource, locale));
+            })
+            .collect(Collectors.toList());
     }
 }

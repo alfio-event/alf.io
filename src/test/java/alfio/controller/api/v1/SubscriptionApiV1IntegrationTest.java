@@ -24,14 +24,10 @@ import alfio.controller.api.v1.admin.EventApiV1Controller;
 import alfio.controller.api.v1.admin.SubscriptionApiV1Controller;
 import alfio.manager.user.UserManager;
 import alfio.model.PriceContainer;
-import alfio.model.TicketCategory;
-import alfio.model.api.v1.admin.EventCreationRequest;
+import alfio.model.api.v1.admin.DescriptionRequest;
 import alfio.model.api.v1.admin.SubscriptionDescriptorModificationRequest;
 import alfio.model.api.v1.admin.subscription.StandardPeriodTerm;
-import alfio.model.metadata.AlfioMetadata;
-import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.OrganizationModification;
-import alfio.model.modification.TicketCategoryModification;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType;
 import alfio.model.transaction.PaymentProxy;
@@ -43,30 +39,21 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.AlfioIntegrationTest;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.ClockProvider;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.security.Principal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 import static alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType.ONCE_PER_EVENT;
 import static alfio.model.subscription.SubscriptionDescriptor.SubscriptionUsageType.UNLIMITED;
-import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
-import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -170,8 +157,8 @@ class SubscriptionApiV1IntegrationTest {
             usageType,
             SubscriptionDescriptorModificationRequest.TERM_STANDARD,
             new StandardPeriodTerm(SubscriptionDescriptor.SubscriptionTimeUnit.MONTHS, 1),
-            List.of(new EventCreationRequest.DescriptionRequest("en", "this is the title")),
-            List.of(new EventCreationRequest.DescriptionRequest("en", "this is the description")),
+            List.of(new DescriptionRequest("en", "this is the title")),
+            List.of(new DescriptionRequest("en", "this is the description")),
             null,
             LocalDateTime.now(clockProvider.getClock()),
             LocalDateTime.now(clockProvider.getClock()).plusMonths(5),
@@ -185,7 +172,8 @@ class SubscriptionApiV1IntegrationTest {
             "https://alf.io",
             "Europe/Zurich",
             false,
-            List.of(PaymentProxy.STRIPE)
+            List.of(PaymentProxy.STRIPE),
+            List.of()
         );
     }
 

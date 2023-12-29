@@ -35,9 +35,6 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -56,7 +53,6 @@ import static java.util.Objects.requireNonNullElse;
 @AllArgsConstructor
 public class TicketHelper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TicketHelper.class);
     private static final Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
 
     private final TicketReservationManager ticketReservationManager;
@@ -64,16 +60,16 @@ public class TicketHelper {
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
     private final PurchaseContextFieldRepository purchaseContextFieldRepository;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final EuVatChecker vatChecker;
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
-    private final NamedParameterJdbcTemplate jdbcTemplate;
 
 
-    public BiFunction<Ticket, Event, List<FieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
-        return EventUtil.retrieveFieldValues(ticketRepository, purchaseContextFieldRepository, additionalServiceItemRepository);
+    public BiFunction<Ticket, Event, List<FieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction(boolean formatValues) {
+        return EventUtil.retrieveFieldValues(ticketRepository, purchaseContextFieldManager, additionalServiceItemRepository, formatValues);
     }
 
     public Function<String, Integer> getTicketUUIDToCategoryId() {

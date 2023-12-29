@@ -202,7 +202,7 @@ public class ReservationApiV2Controller {
                         var valuesById = purchaseContextFieldRepository.findAllValuesBySubscriptionIds(List.of(s.getId()))
                             .stream()
                             .collect(Collectors.groupingBy(PurchaseContextFieldValue::getFieldConfigurationId));
-                        var ticketFieldsAdditional = fields.stream()
+                        var additionalFields = fields.stream()
                             .sorted(Comparator.comparing(PurchaseContextFieldConfiguration::getOrder))
                             .flatMap(tfc -> toAdditionalFieldsStream(descriptionsByFieldId, tfc, valuesById))
                             .collect(Collectors.toList());
@@ -212,7 +212,7 @@ public class ReservationApiV2Controller {
                             UsageDetails.fromSubscription(s, usageCount),
                             new ReservationInfo.SubscriptionOwner(s.getFirstName(), s.getLastName(), s.getEmail()),
                             metadata.getConfiguration(),
-                            ticketFieldsAdditional
+                            additionalFields
                         );
                     })
                     .collect(Collectors.toList());

@@ -83,7 +83,8 @@ public class FieldConfigurationDescriptionAndValue {
     }
 
     private boolean isText() {
-        return TEXT_FIELD_TYPES.contains(getType());
+        return purchaseContextFieldConfiguration.isTextField()
+            || TEXT_FIELD_TYPES.contains(purchaseContextFieldConfiguration.getType());
     }
 
     public String getValueDescription() {

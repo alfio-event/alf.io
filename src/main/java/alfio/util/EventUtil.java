@@ -17,6 +17,7 @@
 package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
+import alfio.manager.PurchaseContextFieldManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.metadata.JoinLink;
@@ -24,7 +25,6 @@ import alfio.model.metadata.OnlineConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.TicketRepository;
 import biweekly.ICalVersion;
 import biweekly.ICalendar;
@@ -34,7 +34,6 @@ import biweekly.property.Method;
 import biweekly.property.Organizer;
 import biweekly.property.Status;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.flywaydb.core.api.MigrationVersion;
@@ -51,14 +50,11 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.model.EventCheckInInfo.VERSION_FOR_CODE_CASE_INSENSITIVE;
 import static alfio.model.EventCheckInInfo.VERSION_FOR_LINKED_ADDITIONAL_SERVICE;
-import static alfio.model.PurchaseContextFieldConfiguration.Context.ATTENDEE;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
 
@@ -217,25 +213,13 @@ public final class EventUtil {
     }
 
     public static BiFunction<Ticket, Event, List<FieldConfigurationDescriptionAndValue>> retrieveFieldValues(TicketRepository ticketRepository,
-                                                                                                             PurchaseContextFieldRepository purchaseContextFieldRepository,
-                                                                                                             AdditionalServiceItemRepository additionalServiceItemRepository) {
+                                                                                                             PurchaseContextFieldManager purchaseContextFieldManager,
+                                                                                                             AdditionalServiceItemRepository additionalServiceItemRepository,
+                                                                                                             boolean formatValues) {
         return (ticket, event) -> {
             String reservationId = ticket.getTicketsReservationId();
             var additionalServiceItems = getBookedAdditionalServices(ticketRepository, additionalServiceItemRepository, ticket, event, reservationId);
-
-            Map<Long, PurchaseContextFieldDescription> descriptions = purchaseContextFieldRepository.findTranslationsFor(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
-            Map<String, PurchaseContextFieldValue> values = purchaseContextFieldRepository.findAllByTicketIdGroupedByName(ticket.getId(), event.supportsLinkedAdditionalServices());
-            Function<PurchaseContextFieldConfiguration, String> extractor = f -> Optional.ofNullable(values.get(f.getName())).map(PurchaseContextFieldValue::getValue).orElse("");
-            Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toSet());
-            return purchaseContextFieldRepository.findAdditionalFieldsForEvent(ticket.getEventId())
-                .stream()
-                .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
-                .filter(f -> CollectionUtils.isEmpty(f.getCategoryIds()) || f.getCategoryIds().contains(ticket.getCategoryId()))
-                .map(f-> {
-                    int count = Math.max(1, Optional.ofNullable(f.getAdditionalServiceId()).map(id -> (int) additionalServiceItems.stream().filter(i -> i.getAdditionalServiceId() == id).count()).orElse(f.getCount()));
-                    return new FieldConfigurationDescriptionAndValue(f, descriptions.getOrDefault(f.getId(), PurchaseContextFieldDescription.MISSING_FIELD), count, extractor.apply(f));
-                })
-                .collect(Collectors.toList());
+            return purchaseContextFieldManager.getFieldDescriptionAndValues(event, ticket, null, additionalServiceItems, ticket.getUserLanguage(), formatValues);
         };
     }
 

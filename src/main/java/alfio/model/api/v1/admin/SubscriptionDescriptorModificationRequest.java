@@ -56,8 +56,8 @@ public class SubscriptionDescriptorModificationRequest {
     private final SubscriptionUsageType usageType;
     private final SubscriptionTerm term;
 
-    private final List<EventCreationRequest.DescriptionRequest> title;
-    private final List<EventCreationRequest.DescriptionRequest> description;
+    private final List<DescriptionRequest> title;
+    private final List<DescriptionRequest> description;
     private final Integer maxAvailable;
     private final LocalDateTime onSaleFrom;
     private final LocalDateTime onSaleTo;
@@ -74,6 +74,8 @@ public class SubscriptionDescriptorModificationRequest {
     private final String timezone;
     private final Boolean supportsTicketsGeneration;
     private final List<PaymentProxy> paymentMethods;
+    private final List<AdditionalInfoRequest> additionalInfo;
+
 
 
 
@@ -90,8 +92,8 @@ public class SubscriptionDescriptorModificationRequest {
                                                          @JsonSubTypes.Type(value = CustomPeriodTerm.class, name = TERM_CUSTOM)
                                                      })
                                                      @JsonProperty("term") SubscriptionTerm term,
-                                                     @JsonProperty("title") List<EventCreationRequest.DescriptionRequest> title,
-                                                     @JsonProperty("description") List<EventCreationRequest.DescriptionRequest> description,
+                                                     @JsonProperty("title") List<DescriptionRequest> title,
+                                                     @JsonProperty("description") List<DescriptionRequest> description,
                                                      @JsonProperty("maxAvailable") Integer maxAvailable,
                                                      @JsonProperty("onSaleFrom") LocalDateTime onSaleFrom,
                                                      @JsonProperty("onSaleTo") LocalDateTime onSaleTo,
@@ -105,7 +107,8 @@ public class SubscriptionDescriptorModificationRequest {
                                                      @JsonProperty("privacyPolicyUrl") String privacyPolicyUrl,
                                                      @JsonProperty("timezone") String timezone,
                                                      @JsonProperty("supportsTicketsGeneration") Boolean supportsTicketsGeneration,
-                                                     @JsonProperty("paymentMethods") List<PaymentProxy> paymentMethods) {
+                                                     @JsonProperty("paymentMethods") List<PaymentProxy> paymentMethods,
+                                                     @JsonProperty("additionalInfo") List<AdditionalInfoRequest> additionalInfo) {
         this.usageType = usageType;
         this.termType = termType;
         this.term = term;
@@ -125,6 +128,7 @@ public class SubscriptionDescriptorModificationRequest {
         this.timezone = timezone;
         this.supportsTicketsGeneration = supportsTicketsGeneration;
         this.paymentMethods = requireNonNullElse(paymentMethods, List.of());
+        this.additionalInfo = requireNonNullElse(additionalInfo, List.of());
     }
 
     public Result<SubscriptionDescriptorModification> toDescriptorModification(UUID id, int organizationId, String fileBlobId) {
@@ -137,8 +141,8 @@ public class SubscriptionDescriptorModificationRequest {
                 var zoneId = zoneIdOptional.orElseThrow();
                 return new SubscriptionDescriptorModification(
                     id,
-                    title.stream().collect(Collectors.toMap(EventCreationRequest.DescriptionRequest::getLang, EventCreationRequest.DescriptionRequest::getBody)),
-                    description.stream().collect(Collectors.toMap(EventCreationRequest.DescriptionRequest::getLang, EventCreationRequest.DescriptionRequest::getBody)),
+                    title.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody)),
+                    description.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody)),
                     requireNonNullElse(maxAvailable, -1),
                     atZone(onSaleFrom, zoneId),
                     atZone(onSaleTo, zoneId),
@@ -160,7 +164,8 @@ public class SubscriptionDescriptorModificationRequest {
                     fileBlobId,
                     paymentMethods,
                     zoneId,
-                    Boolean.TRUE.equals(supportsTicketsGeneration)
+                    Boolean.TRUE.equals(supportsTicketsGeneration)//,
+                    // additionalInfo
                 );
             });
     }

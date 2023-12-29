@@ -110,11 +110,11 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
         return deleteAllTicketValuesForReservations(reservationIds) + deleteAllAdditionalItemsValuesForReservations(reservationIds) + deleteAllSubscriptionValuesForReservations(reservationIds);
     }
 
-    @Query("select field_configuration_id_fk, field_locale, description from purchase_context_field_description" +
+    @Query("select field_configuration_id_fk, field_locale, description, purchase_context_field_configuration.field_name as field_name from purchase_context_field_description" +
         " inner join purchase_context_field_configuration on field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId")
     List<PurchaseContextFieldDescription> findDescriptionsForLocale(@Bind("eventId") int eventId, @Bind("locale") String locale);
 
-    @Query("select purchase_context_field_description.* from purchase_context_field_description" +
+    @Query("select field_configuration_id_fk, field_locale, description, purchase_context_field_configuration.field_name as field_name from purchase_context_field_description" +
         " inner join purchase_context_field_configuration on field_configuration_id_fk = id" +
         " where "+ PURCHASE_CONTEXT_MATCHER)
     List<PurchaseContextFieldDescription> findAllDescriptions(@Bind("eventId") Integer eventId, @Bind("subscriptionId") UUID subscriptionDescriptorId);

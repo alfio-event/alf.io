@@ -117,7 +117,11 @@ public class ResourceController {
 
         if (organizationId != null) {
             PurchaseContext purchaseContext = getPurchaseContext(organizationId, eventId, subscriptionDescriptorId, principal, name);
-            accessService.checkPurchaseContextOwnership(principal, organizationId, eventId, subscriptionDescriptorId);
+            if (eventId != null || subscriptionDescriptorId != null) {
+                accessService.checkPurchaseContextOwnership(principal, organizationId, eventId, subscriptionDescriptorId);
+            } else {
+                accessService.checkOrganizationOwnership(principal, organizationId);
+            }
             Organization organization = organizationRepository.getById(organizationId);
             Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(purchaseContext, fileUploadManager);
             Map<String, Object> model = name.prepareSampleModel(organization, purchaseContext, image);

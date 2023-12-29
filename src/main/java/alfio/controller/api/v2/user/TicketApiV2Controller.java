@@ -131,7 +131,7 @@ public class TicketApiV2Controller {
                     locale, event, ticketReservation,
                     ticketWithMetadata, ticketCategory, organization,
                     templateManager, fileUploadManager,
-                    reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager,
+                    reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(true), extensionManager,
                     TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionManager::findDescriptorBySubscriptionId, locale),
                     additionalServiceHelper.findForTicket(ticket, event)
                 );
