@@ -19,6 +19,7 @@ package alfio.model.api.v1.admin;
 import alfio.model.*;
 import alfio.model.group.LinkedGroup;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.modification.AdditionalFieldRequest;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -313,7 +314,7 @@ public class EventCreationRequest{
     }
 
 
-    private static List<EventModification.AdditionalField> toAdditionalFields(List<AdditionalInfoRequest> additionalInfoRequests) {
+    private static List<AdditionalFieldRequest> toAdditionalFields(List<AdditionalInfoRequest> additionalInfoRequests) {
         if(isEmpty(additionalInfoRequests)) {
             return emptyList();
         }

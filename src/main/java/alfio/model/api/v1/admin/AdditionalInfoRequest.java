@@ -16,9 +16,12 @@
  */
 package alfio.model.api.v1.admin;
 
+import alfio.model.modification.AdditionalFieldRequest;
 import alfio.model.modification.EventModification;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -44,8 +47,15 @@ public class AdditionalInfoRequest {
     private List<RestrictedValueRequest> restrictedValues;
     private ContentLengthRequest contentLength;
 
+    public boolean isValid() {
+        return StringUtils.isNotBlank(name)
+            && type != null
+            && CollectionUtils.isNotEmpty(label)
+            && label.stream().allMatch(DescriptionRequest::isValid);
+    }
 
-    public EventModification.AdditionalField toAdditionalField(int ordinal) {
+
+    public AdditionalFieldRequest toAdditionalField(int ordinal) {
         int position = this.ordinal != null ? this.ordinal : ordinal;
         String code = type != null ? type.code : AdditionalInfoType.GENERIC_TEXT.code;
         Integer minLength = contentLength != null ? contentLength.min : null;
@@ -55,7 +65,7 @@ public class AdditionalInfoRequest {
             restrictedValueList = this.restrictedValues.stream().map(rv -> new EventModification.RestrictedValue(rv.getValue(), rv.getEnabled())).collect(Collectors.toList());
         }
 
-        return new EventModification.AdditionalField(
+        return new AdditionalFieldRequest(
             position,
             null,
             name,

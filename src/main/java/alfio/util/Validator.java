@@ -24,6 +24,7 @@ import alfio.manager.ExtensionManager;
 import alfio.manager.GroupManager;
 import alfio.manager.SameCountryValidator;
 import alfio.model.*;
+import alfio.model.modification.AdditionalFieldRequest;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -596,7 +597,7 @@ public final class Validator {
         return descriptions.stream().allMatch(t -> StringUtils.isNotBlank(t.getValue()));
     }
 
-    public static ValidationResult validateAdditionalFields(List<PurchaseContextFieldConfiguration> fieldConf, EventModification.AdditionalField field, Errors errors){
+    public static ValidationResult validateAdditionalFields(List<PurchaseContextFieldConfiguration> fieldConf, AdditionalFieldRequest field, Errors errors){
         String duplicateName = fieldConf.stream().filter(f->f.getName().equalsIgnoreCase(field.getName())).map(PurchaseContextFieldConfiguration::getName).findAny().orElse("");
         if(StringUtils.isNotBlank(duplicateName)){
             errors.rejectValue("name", ErrorCode.DUPLICATE);

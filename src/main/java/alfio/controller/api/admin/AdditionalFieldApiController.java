@@ -20,6 +20,7 @@ import alfio.manager.AccessService;
 import alfio.manager.PurchaseContextFieldManager;
 import alfio.manager.PurchaseContextManager;
 import alfio.model.*;
+import alfio.model.modification.AdditionalFieldRequest;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketFieldDescriptionModification;
 import alfio.model.result.ValidationResult;
@@ -94,7 +95,7 @@ public class AdditionalFieldApiController {
     )
     public ValidationResult addAdditionalField(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
                                                @PathVariable("publicIdentifier") String publicIdentifier,
-                                               @RequestBody EventModification.AdditionalField field,
+                                               @RequestBody AdditionalFieldRequest field,
                                                Principal principal,
                                                Errors errors) {
         //

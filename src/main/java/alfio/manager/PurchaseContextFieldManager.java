@@ -22,6 +22,7 @@ import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.PurchaseContextFieldConfiguration.Context;
 import alfio.model.api.v1.admin.AdditionalInfoRequest;
+import alfio.model.modification.AdditionalFieldRequest;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketFieldDescriptionModification;
 import alfio.model.result.ValidationResult;
@@ -89,7 +90,7 @@ public class PurchaseContextFieldManager {
         }
     }
 
-    public void insertAdditionalField(PurchaseContext purchaseContext, EventModification.AdditionalField f, int order) {
+    public void insertAdditionalField(PurchaseContext purchaseContext, AdditionalFieldRequest f, int order) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
         int additionalServiceId = -1;
         Context context;
@@ -119,7 +120,7 @@ public class PurchaseContextFieldManager {
     }
 
     public ValidationResult validateAndAddField(PurchaseContext purchaseContext,
-                                                EventModification.AdditionalField field,
+                                                AdditionalFieldRequest field,
                                                 Errors errors) {
         List<PurchaseContextFieldConfiguration> fields;
         if (purchaseContext.ofType(PurchaseContextType.event)) {
@@ -131,7 +132,11 @@ public class PurchaseContextFieldManager {
             .ifSuccess(() -> addAdditionalField(purchaseContext, field));
     }
 
-    public void addAdditionalField(PurchaseContext purchaseContext, EventModification.AdditionalField field) {
+    public void addAdditionalFields(PurchaseContext purchaseContext, List<AdditionalFieldRequest> fields) {
+        fields.forEach(field -> addAdditionalField(purchaseContext, field));
+    }
+
+    public void addAdditionalField(PurchaseContext purchaseContext, AdditionalFieldRequest field) {
         if (field.isUseDefinedOrder()) {
             insertAdditionalField(purchaseContext, field, field.getOrder());
         } else {

@@ -238,7 +238,7 @@ public class EventApiController {
     }
 
 
-    private static ValidationResult validateAdditionalTicketFields(List<EventModification.AdditionalField> ticketFields, Errors errors) {
+    private static ValidationResult validateAdditionalTicketFields(List<AdditionalFieldRequest> ticketFields, Errors errors) {
         //meh
         AtomicInteger cnt = new AtomicInteger();
         return Optional.ofNullable(ticketFields).orElseGet(Collections::emptyList).stream().map(field -> {

@@ -21,6 +21,7 @@ import alfio.model.api.v1.admin.subscription.CustomPeriodTerm;
 import alfio.model.api.v1.admin.subscription.EntryBasedTerm;
 import alfio.model.api.v1.admin.subscription.StandardPeriodTerm;
 import alfio.model.api.v1.admin.subscription.SubscriptionTerm;
+import alfio.model.modification.AdditionalFieldRequest;
 import alfio.model.modification.SubscriptionDescriptorModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static alfio.util.LocaleUtil.atZone;
 import static java.util.Objects.requireNonNullElse;
@@ -164,10 +166,17 @@ public class SubscriptionDescriptorModificationRequest {
                     fileBlobId,
                     paymentMethods,
                     zoneId,
-                    Boolean.TRUE.equals(supportsTicketsGeneration)//,
-                    // additionalInfo
+                    Boolean.TRUE.equals(supportsTicketsGeneration)
                 );
             });
+    }
+
+    public Result<List<AdditionalFieldRequest>> toAdditionalFieldsRequest() {
+        return new Result.Builder<List<AdditionalFieldRequest>>()
+            .checkPrecondition(() -> additionalInfo.isEmpty() || additionalInfo.stream().allMatch(AdditionalInfoRequest::isValid), ErrorCode.custom("additionalInfo", "Additional info not valid"))
+            .build(() -> IntStream.range(0, additionalInfo.size())
+                    .mapToObj(i -> additionalInfo.get(i).toAdditionalField(i+1))
+                    .collect(Collectors.toList()));
     }
 
     private Optional<ZoneId> getZoneId() {

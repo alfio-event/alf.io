@@ -18,10 +18,16 @@ package alfio.model.api.v1.admin;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 @AllArgsConstructor
 public class DescriptionRequest {
     private String lang;
     private String body;
+
+    public boolean isValid() {
+        return StringUtils.isNotEmpty(lang)
+            && StringUtils.isNotEmpty(body);
+    }
 }
