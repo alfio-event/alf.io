@@ -4,7 +4,7 @@
 
   <div class="alert alert-warning mt-2 mb-2 text-center">
     <h2 *ngIf="reservationFinalized"><fa-icon [icon]="['fas', 'exclamation-triangle']" a11yRole="presentation"></fa-icon>{{' '}}<span [innerHTML]="'reservation-page-waiting.title' | translate: {'0': reservationInfo.formattedExpirationDate[translate.currentLang]}"></span></h2>
-
+    <h2 *ngIf="!reservationFinalized" translate="reservation-page-complete.reservation.finalization-in-progress"></h2>
   </div>
 
   <div class="page-header">

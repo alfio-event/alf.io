@@ -1,4 +1,4 @@
-import {Ticket} from './ticket';
+import {AdditionalField, Ticket} from './ticket';
 import {PaymentMethod, PaymentProxy, PaymentProxyWithParameters} from './event';
 import {TicketAccessType} from './ticket-category';
 
@@ -43,6 +43,15 @@ export class ReservationInfo {
     activePaymentMethods: {[key in PaymentMethod]?: PaymentProxyWithParameters};
     subscriptionInfos?: Array<ReservationSubscriptionInfo>;
     metadata: ReservationMetadata;
+    additionalServiceWithData?: Array<AdditionalServiceWithData>;
+}
+
+export interface AdditionalServiceWithData {
+  title: {[lang: string]: string};
+  itemId: number;
+  serviceId: number;
+  ticketUUID: string | null;
+  ticketFieldConfiguration: Array<AdditionalField>;
 }
 
 export interface ReservationMetadata {
@@ -59,6 +68,9 @@ export class ReservationSubscriptionInfo {
   usageDetails?: SubscriptionUsageDetails;
   owner?: SubscriptionOwner;
   configuration?: SubscriptionConfiguration;
+  fieldConfigurationBeforeStandard: AdditionalField[];
+  fieldConfigurationAfterStandard: AdditionalField[];
+  additionalFields: AdditionalField[];
 }
 
 export class SubscriptionOwner {

@@ -4,6 +4,7 @@ import {TranslateService} from '@ngx-translate/core';
 import {getLocalizedContent} from '../shared/subscription.service';
 import {SubscriptionOwner} from '../model/reservation-info';
 import {Params} from '@angular/router';
+import {AdditionalField} from '../model/ticket';
 
 @Component({
   selector: 'app-basic-subscription-info',
@@ -15,6 +16,10 @@ export class BasicSubscriptionInfoComponent {
   subscription: BasicSubscriptionInfo;
   @Input()
   owner?: SubscriptionOwner;
+  @Input()
+  fieldConfigurationBeforeStandard: AdditionalField[] = [];
+  @Input()
+  fieldConfigurationAfterStandard: AdditionalField[] = [];
   @Input()
   params: Params;
 

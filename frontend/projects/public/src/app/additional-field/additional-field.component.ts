@@ -20,7 +20,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   form: UntypedFormGroup;
 
   @Input()
-  ticketUUID: string;
+  elementUUID: string;
 
   @Input()
   ticketAcquired: boolean;
@@ -31,6 +31,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   isMobile = mobile;
 
   private langChangeSub: Subscription;
+  yesterday: string;
 
   constructor(private translate: TranslateService, private i18nService: I18nService) { }
 
@@ -41,6 +42,8 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
         this.getCountries();
       });
     }
+    const now = new Date().getTime();
+    this.yesterday = new Date(now - 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
   }
 
   ngOnDestroy(): void {
@@ -89,7 +92,7 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   }
 
   get labelId(): string {
-    return this.ticketUUID + '-' + this.field.name.replace(/[^a-zA-Z0-9]/g, '+') + '-label';
+    return this.elementUUID + '-' + this.field.name.replace(/[^a-zA-Z0-9]/g, '+') + '-label';
   }
 
   get hideLabelForAssistiveTechnologies(): boolean {

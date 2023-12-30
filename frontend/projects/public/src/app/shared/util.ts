@@ -1,10 +1,11 @@
 import {ReservationStatusChanged} from '../model/embedding-configuration';
 import {PurchaseContext} from '../model/purchase-context';
-import {ReservationInfo, ReservationStatus} from '../model/reservation-info';
+import {AdditionalServiceWithData, ReservationInfo, ReservationStatus} from '../model/reservation-info';
 import {HttpErrorResponse} from '@angular/common/http';
 import {ReservationService} from './reservation.service';
 import {interval} from 'rxjs';
 import {filter, mergeMap} from 'rxjs/operators';
+import {Ticket} from '../model/ticket';
 
 export const DELETE_ACCOUNT_CONFIRMATION = 'alfio.delete-account.confirmation';
 
@@ -66,4 +67,33 @@ function errorMessage(err: Error): string {
     return `${err.message} (${err.status})`;
   }
   return err.message;
+}
+
+export function groupAdditionalData(data: AdditionalServiceWithData[]): GroupedAdditionalServiceWithData[] {
+  if (data == null || data.length === 0) {
+    return [];
+  }
+  const byServiceId = data.map(d => {
+    return {
+      count: 1,
+      ...d
+    };
+  }).reduce((accumulator, currentValue) => {
+    const existing = accumulator[currentValue.serviceId];
+    if (existing != null) {
+      existing.count += 1;
+      existing.ticketFieldConfiguration.push(...currentValue.ticketFieldConfiguration);
+    } else {
+      accumulator[currentValue.serviceId] = {
+        count: currentValue.count,
+        ...currentValue
+      };
+    }
+    return accumulator;
+  }, <{[k: number]: GroupedAdditionalServiceWithData}>{});
+  return Object.values(byServiceId);
+}
+
+export interface GroupedAdditionalServiceWithData extends AdditionalServiceWithData {
+  count: number;
 }

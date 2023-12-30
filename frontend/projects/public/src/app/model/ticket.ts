@@ -1,3 +1,18 @@
+export interface TicketIdentifier {
+  index: number;
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  categoryName: string;
+}
+
+export interface MoveAdditionalServiceRequest {
+  index: number;
+  itemId: number;
+  currentTicketUuid: string;
+  newTicketUuid: string;
+}
+
 export class Ticket {
     uuid: string;
     firstName: string;
@@ -41,4 +56,4 @@ export class Field {
     fieldValue: string;
 }
 
-export type AdditionalFieldType = 'input:text' | 'input:tel' | 'vat:eu' | 'textarea' | 'country' | 'select' | 'checkbox' | 'radio';
+export type AdditionalFieldType = 'input:text' | 'input:tel' | 'vat:eu' | 'textarea' | 'country' | 'select' | 'checkbox' | 'radio' | 'input:dateOfBirth';

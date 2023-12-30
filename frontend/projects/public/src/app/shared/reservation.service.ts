@@ -15,30 +15,30 @@ import {PurchaseContextType} from './purchase-context.service';
 })
 export class ReservationService {
 
-    constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) { }
 
-    reserveTickets(eventShortName: string, reservation: ReservationRequest, lang: string): Observable<ValidatedResponse<string>> {
-        return this.http.post<ValidatedResponse<string>>(`/api/v2/public/event/${eventShortName}/reserve-tickets`, reservation, {params: {lang: lang}});
-    }
+  reserveTickets(eventShortName: string, reservation: ReservationRequest, lang: string): Observable<ValidatedResponse<string>> {
+      return this.http.post<ValidatedResponse<string>>(`/api/v2/public/event/${eventShortName}/reserve-tickets`, reservation, {params: {lang: lang}});
+  }
 
-    getReservationInfo(reservationId: string): Observable<ReservationInfo> {
-        return this.http.get<ReservationInfo>(`/api/v2/public/reservation/${reservationId}`);
-    }
+  getReservationInfo(reservationId: string): Observable<ReservationInfo> {
+      return this.http.get<ReservationInfo>(`/api/v2/public/reservation/${reservationId}`);
+  }
 
-    getReservationStatusInfo(reservationId: string): Observable<ReservationStatusInfo> {
-        return this.http.get<ReservationStatusInfo>(`/api/v2/public/reservation/${reservationId}/status`);
-    }
+  getReservationStatusInfo(reservationId: string): Observable<ReservationStatusInfo> {
+      return this.http.get<ReservationStatusInfo>(`/api/v2/public/reservation/${reservationId}/status`);
+  }
 
-    cancelPendingReservation(reservationId: string): Observable<boolean> {
-        return this.http.delete<boolean>(`/api/v2/public/reservation/${reservationId}`);
-    }
+  cancelPendingReservation(reservationId: string): Observable<boolean> {
+      return this.http.delete<boolean>(`/api/v2/public/reservation/${reservationId}`);
+  }
 
-    validateToOverview(reservationId: string, contactsAndTicket: any, lang: string, ignoreWarnings: boolean): Observable<ValidatedResponse<boolean>> {
-        const url = `/api/v2/public/reservation/${reservationId}/validate-to-overview`;
-        return this.http.post<ValidatedResponse<boolean>>(url, contactsAndTicket, {params: {lang: lang, ignoreWarnings: '' + ignoreWarnings}});
-    }
+  validateToOverview(reservationId: string, contactsAndTicket: any, lang: string, ignoreWarnings: boolean): Observable<ValidatedResponse<boolean>> {
+      const url = `/api/v2/public/reservation/${reservationId}/validate-to-overview`;
+      return this.http.post<ValidatedResponse<boolean>>(url, contactsAndTicket, {params: {lang: lang, ignoreWarnings: '' + ignoreWarnings}});
+  }
 
-    confirmOverview(reservationId: string, overviewForm: OverviewConfirmation, lang: string): Observable<ValidatedResponse<ReservationPaymentResult>> {
+  confirmOverview(reservationId: string, overviewForm: OverviewConfirmation, lang: string): Observable<ValidatedResponse<ReservationPaymentResult>> {
         const url = `/api/v2/public/reservation/${reservationId}`;
         return this.http.post<ValidatedResponse<ReservationPaymentResult>>(url, overviewForm, {params: {lang: lang}});
     }

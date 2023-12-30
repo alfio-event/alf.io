@@ -1,13 +1,13 @@
 import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ReservationService} from '../../shared/reservation.service';
 import {ActivatedRoute, Router} from '@angular/router';
-import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
+import {UntypedFormBuilder, UntypedFormGroup, FormArray, Validators} from '@angular/forms';
 import {TicketService} from '../../shared/ticket.service';
-import {BillingDetails, ItalianEInvoicing, ReservationInfo, ReservationSubscriptionInfo, TicketsByTicketCategory} from '../../model/reservation-info';
+import {AdditionalServiceWithData, BillingDetails, ItalianEInvoicing, ReservationInfo, ReservationSubscriptionInfo, TicketsByTicketCategory} from '../../model/reservation-info';
 import {Observable, of, Subject, zip} from 'rxjs';
 import {getErrorObject, handleServerSideValidationError} from '../../shared/validation-helper';
 import {I18nService} from '../../shared/i18n.service';
-import {Ticket} from '../../model/ticket';
+import {MoveAdditionalServiceRequest, Ticket, TicketIdentifier} from '../../model/ticket';
 import {TranslateService} from '@ngx-translate/core';
 import {AnalyticsService} from '../../shared/analytics.service';
 import {ErrorDescriptor} from '../../model/validated-response';
@@ -24,6 +24,7 @@ import {first} from 'rxjs/operators';
 import {FeedbackService} from '../../shared/feedback/feedback.service';
 import {ReservationStatusChanged} from '../../model/embedding-configuration';
 import {embedded} from '../../shared/util';
+import {AdditionalFieldService} from '../../shared/additional-field.service';
 
 @Component({
   selector: 'app-booking',
@@ -47,6 +48,9 @@ export class BookingComponent implements OnInit, AfterViewInit {
 
   enableAttendeeAutocomplete: boolean;
   displayLoginSuggestion: boolean;
+
+  private additionalServicesWithData: {[uuid: string]: AdditionalServiceWithData[]} = {};
+  additionalServicesCount = 0;
 
   public static optionalGet<T>(billingDetails: BillingDetails, consumer: (b: ItalianEInvoicing) => T, userBillingDetails?: BillingDetails): T | null {
     const italianEInvoicing = billingDetails.invoicingAdditionalInfo.italianEInvoicing;
@@ -77,7 +81,8 @@ export class BookingComponent implements OnInit, AfterViewInit {
     private analytics: AnalyticsService,
     private modalService: NgbModal,
     private userService: UserService,
-    private feedbackService: FeedbackService) { }
+    private feedbackService: FeedbackService,
+    private additionalFieldService: AdditionalFieldService) { }
 
   public ngOnInit(): void {
     zip(this.route.data, this.route.params, this.userService.authenticationStatus.pipe(first())).subscribe(([data, params, authStatus]) => {
@@ -118,6 +123,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
         const billingDetails = this.reservationInfo.billingDetails;
         const userBillingDetails = user?.profile?.billingDetails;
 
+        const additionalServices = reservationInfo.additionalServiceWithData ?? [];
         this.contactAndTicketsForm = this.formBuilder.group({
           firstName: this.formBuilder.control(this.reservationInfo.firstName || user?.firstName, [Validators.required, Validators.maxLength(255)]),
           lastName: this.formBuilder.control(this.reservationInfo.lastName || user?.lastName, [Validators.required, Validators.maxLength(255)]),
@@ -142,8 +148,18 @@ export class BookingComponent implements OnInit, AfterViewInit {
           italyEInvoicingSplitPayment: BookingComponent.optionalGet(billingDetails, (i) => i.splitPayment, userBillingDetails),
           postponeAssignment: false,
           differentSubscriptionOwner: false,
-          subscriptionOwner: this.buildSubscriptionOwnerFormGroup(this.reservationInfo.subscriptionInfos, user)
+          subscriptionOwner: this.buildSubscriptionOwnerFormGroup(this.reservationInfo.subscriptionInfos, user),
+          additionalServices: this.ticketService.buildAdditionalServicesFormGroup(additionalServices, this.i18nService.getCurrentLang())
         });
+
+        additionalServices.forEach(asd => {
+          if (this.additionalServicesWithData[asd.ticketUUID] != null) {
+            this.additionalServicesWithData[asd.ticketUUID].push(asd);
+          } else {
+            this.additionalServicesWithData[asd.ticketUUID] = [asd];
+          }
+        });
+        this.additionalServicesCount = additionalServices.length;
 
         setTimeout(() => this.doScroll.next(this.invoiceElement != null));
 
@@ -163,14 +179,18 @@ export class BookingComponent implements OnInit, AfterViewInit {
       });
   }
 
-  private buildSubscriptionOwnerFormGroup(subscriptionInfos: Array<ReservationSubscriptionInfo> | undefined, user?: User): UntypedFormGroup {
+  private buildSubscriptionOwnerFormGroup(subscriptionInfos: Array<ReservationSubscriptionInfo> | undefined, user?: User): FormGroup {
     if (subscriptionInfos != null) {
       const subscriptionInfo = subscriptionInfos[0];
       const email = subscriptionInfo.owner?.email || (this.emailEditForbidden ? this.reservationInfo.email : null) || user?.emailAddress;
       return this.formBuilder.group({
         firstName: subscriptionInfo.owner?.firstName || user?.firstName,
         lastName: subscriptionInfo.owner?.lastName || user?.lastName,
-        email
+        email,
+        additional: this.additionalFieldService.buildAdditionalFields(subscriptionInfo.fieldConfigurationBeforeStandard,
+          subscriptionInfo.fieldConfigurationAfterStandard,
+          this.translate.currentLang,
+          user?.profile?.additionalData)
       });
     } else {
       return null;
@@ -224,7 +244,18 @@ export class BookingComponent implements OnInit, AfterViewInit {
         modalRef.result.then(() => this.validateToOverview(true));
       }
     }, (err) => {
-      this.globalErrors = handleServerSideValidationError(err, this.contactAndTicketsForm);
+      this.globalErrors = handleServerSideValidationError(err, this.contactAndTicketsForm, key => {
+        const additionalRegex = /tickets\.([a-f0-9-]+)\.additional\.([^.]+)\.(\d+)/;
+        const result = additionalRegex.exec(key);
+        if (result != null) {
+          const uuid = result[1];
+          const fieldName = result[2];
+          const links = this.contactAndTicketsForm.value.additionalServices.links[uuid];
+          const index = links.findIndex(link => link.fields[fieldName] != null);
+          return `additionalServices.links.${uuid}.${index}.fields.${fieldName}.${result[3]}`;
+        }
+        return key;
+      });
     });
   }
 
@@ -323,5 +354,74 @@ export class BookingComponent implements OnInit, AfterViewInit {
 
   get emailEditForbidden(): boolean {
     return this.reservationInfo.metadata.lockEmailEdit;
+  }
+
+  getAdditionalDataForm(ticket: Ticket): FormArray | null {
+    const linksGroup = <FormGroup>(<FormGroup>this.contactAndTicketsForm.get('additionalServices'));
+    return linksGroup.contains(ticket.uuid) ? <FormArray>linksGroup.get(ticket.uuid) : null;
+  }
+
+  getAdditionalData(ticket: Ticket): AdditionalServiceWithData[] {
+    return this.additionalServicesWithData[ticket.uuid] ?? [];
+  }
+
+  getOtherTickets(ticket: Ticket): TicketIdentifier[] | null {
+    if (this.ticketCounts === 1) {
+      return null;
+    }
+    const result: TicketIdentifier[] = [];
+    let index = 1;
+    this.reservationInfo.ticketsByCategory.forEach(twc => {
+      twc.tickets.forEach(t => {
+        if (t.uuid !== ticket.uuid) {
+          result.push({
+            index,
+            firstName: t.firstName,
+            lastName: t.lastName,
+            uuid: t.uuid,
+            categoryName: twc.name
+          });
+        }
+        index++;
+      });
+    });
+    return result;
+  }
+
+  get subscriptionInfo(): ReservationSubscriptionInfo {
+    return this.reservationInfo.subscriptionInfos[0];
+  }
+
+  get subscriptionAdditionalForm(): FormGroup {
+    return this.contactAndTicketsForm.get('subscriptionOwner').get('additional') as FormGroup;
+  }
+
+  moveAdditionalService($event: MoveAdditionalServiceRequest) {
+    const element = Object.assign({}, this.additionalServicesWithData[$event.currentTicketUuid][$event.index], {ticketUUID: $event.newTicketUuid});
+    const additionalFormGroup = (this.contactAndTicketsForm.get('additionalServices') as FormGroup);
+    const services = (additionalFormGroup.get($event.currentTicketUuid) as FormArray);
+    if (services.length === 1) {
+      // if there is only one service, we remove the complete item
+      additionalFormGroup.removeControl($event.currentTicketUuid);
+    } else {
+      services.removeAt($event.index);
+    }
+
+    if (additionalFormGroup.get($event.newTicketUuid) == null) {
+      additionalFormGroup.addControl($event.newTicketUuid, this.formBuilder.array([this.ticketService.buildAdditionalServiceGroup(element, this.i18nService.getCurrentLang())]));
+    } else {
+      const formArray = (<FormArray>additionalFormGroup.get($event.newTicketUuid));
+      formArray.push(this.ticketService.buildAdditionalServiceGroup(element, this.i18nService.getCurrentLang()));
+      additionalFormGroup.setControl($event.newTicketUuid, formArray);
+    }
+
+    this.additionalServicesWithData[$event.currentTicketUuid] = this.additionalServicesWithData[$event.currentTicketUuid]
+      .filter(a => a.itemId !== $event.itemId);
+    if (this.additionalServicesWithData[$event.newTicketUuid] == null) {
+      this.additionalServicesWithData[$event.newTicketUuid] = [];
+    }
+    const currentArray = this.additionalServicesWithData[$event.newTicketUuid];
+    currentArray.push(element);
+    this.additionalServicesWithData[$event.newTicketUuid] = currentArray;
   }
 }

@@ -2,7 +2,9 @@ import {AbstractControl} from '@angular/forms';
 import {ErrorDescriptor, ValidatedResponse} from '../model/validated-response';
 import {HttpErrorResponse} from '@angular/common/http';
 
-function applyValidationErrors(form: AbstractControl, response: ValidatedResponse<any>): ErrorDescriptor[] {
+function applyValidationErrors(form: AbstractControl,
+                               response: ValidatedResponse<any>,
+                               keyNotFoundHandler?: (key: string) => string): ErrorDescriptor[] {
 
     if (response.errorCount === 0) {
         return [];
@@ -14,9 +16,14 @@ function applyValidationErrors(form: AbstractControl, response: ValidatedRespons
 
         // form.get('tickets[207f224c-1df6-4994-9cb2-fa12eb36882d].email') -> not ok
         // form.get('tickets.207f224c-1df6-4994-9cb2-fa12eb36882d.email')  -> ok
-        const transformedFieldName = err.fieldName.replace(/\[/g, '.').replace(/\]/g, '');
+        const transformedFieldName = err.fieldName.replace(/\[/g, '.').replace(/]/g, '');
 
-        const formControl = form.get(transformedFieldName);
+        let formControl = form.get(transformedFieldName);
+
+        if (!formControl && keyNotFoundHandler) {
+          const backupKey = keyNotFoundHandler(transformedFieldName);
+          formControl = form.get(backupKey);
+        }
 
         if (formControl) {
             const formControlErr = formControl.getError('serverError');
@@ -60,10 +67,12 @@ function containsWithKey(errors: ErrorDescriptor[], key: string) {
     return false;
 }
 
-export function handleServerSideValidationError(err: any, form: AbstractControl): ErrorDescriptor[] {
+export function handleServerSideValidationError(err: any,
+                                                form: AbstractControl,
+                                                keyNotFoundHandler?: (key: string) => string): ErrorDescriptor[] {
   const errorObject = getErrorObject(err);
   if (errorObject != null) {
-    return applyValidationErrors(form, errorObject);
+    return applyValidationErrors(form, errorObject, keyNotFoundHandler);
   }
   return [];
 }
