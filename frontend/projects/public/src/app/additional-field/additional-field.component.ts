@@ -25,31 +25,44 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
   @Input()
   ticketAcquired: boolean;
 
-
   countries: LocalizedCountry[];
 
   isMobile = mobile;
 
-  private langChangeSub: Subscription;
+  private subscriptions: Subscription[] = [];
+  private dateFormat: Intl.DateTimeFormat;
   yesterday: string;
+  selectedDateDescription: string;
 
   constructor(private translate: TranslateService, private i18nService: I18nService) { }
 
   ngOnInit(): void {
+    this.initFieldSpecificValues(true);
+    this.subscriptions.push(this.translate.onLangChange.subscribe(() => {
+      this.initFieldSpecificValues(false);
+    }));
+  }
+
+  private initFieldSpecificValues(firstInit: boolean): void {
     if (this.field.type === 'country') {
       this.getCountries();
-      this.langChangeSub = this.translate.onLangChange.subscribe(() => {
-        this.getCountries();
-      });
+    } else if (this.field.type === 'input:dateOfBirth') {
+      if (firstInit) {
+        this.yesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
+          .toISOString()
+          .substring(0, 10);
+        this.subscriptions.push(this.form.get(this.field.name).valueChanges
+          .subscribe(() => this.selectedDateDescription = this.localizedSelectedDate()));
+      }
+      this.dateFormat = new Intl.DateTimeFormat(this.translate.currentLang, {
+        dateStyle: 'full'
+      } as any);
+      this.selectedDateDescription = this.localizedSelectedDate();
     }
-    const now = new Date().getTime();
-    this.yesterday = new Date(now - 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
   }
 
   ngOnDestroy(): void {
-    if (this.langChangeSub) {
-      this.langChangeSub.unsubscribe();
-    }
+    this.subscriptions.forEach(s => s.unsubscribe());
   }
 
   get labelValue(): string {
@@ -97,5 +110,17 @@ export class AdditionalFieldComponent implements OnInit, OnDestroy {
 
   get hideLabelForAssistiveTechnologies(): boolean {
     return this.field.type === 'checkbox';
+  }
+
+  private localizedSelectedDate(): string {
+    try {
+      const value = (this.form.get(this.field.name) as UntypedFormArray).at(0)?.value;
+      if (value != null && value.trim() !== '') {
+        return this.dateFormat.format(Date.parse(value));
+      }
+    } catch (err) {
+      return '';
+    }
+    return '';
   }
 }

@@ -5,7 +5,10 @@
       <input *ngSwitchCase="'input:text'" [attr.id]="elementUUID + '-' + field.name" type="text" [attr.placeholder]="placeholder" class="form-control" formControlName="0" appInvalidFeedback>
       <input *ngSwitchCase="'input:tel'" [attr.id]="elementUUID + '-' + field.name" type="tel" [attr.placeholder]="placeholder" class="form-control" formControlName="0" appInvalidFeedback>
       <input *ngSwitchCase="'vat:eu'" [attr.id]="elementUUID + '-' + field.name" type="text" [attr.placeholder]="placeholder" class="form-control" formControlName="0" appInvalidFeedback>
-      <input *ngSwitchCase="'input:dateOfBirth'" [attr.id]="elementUUID + '-' + field.name" type="date" [max]="yesterday" [attr.placeholder]="placeholder" class="form-control" formControlName="0" appInvalidFeedback>
+      <ng-container *ngSwitchCase="'input:dateOfBirth'">
+        <input [attr.id]="elementUUID + '-' + field.name" type="date" [max]="yesterday" [attr.placeholder]="placeholder" class="form-control" formControlName="0" appInvalidFeedback>
+        <small class="form-text text-muted" *ngIf="selectedDateDescription">{{selectedDateDescription}}</small>
+      </ng-container>
       <textarea *ngSwitchCase="'textarea'" [attr.id]="elementUUID + '-' + field.name" class="form-control" [attr.placeholder]="placeholder" formControlName="0" appInvalidFeedback></textarea>
       <ng-container *ngSwitchCase="'country'">
         <ng-select *ngIf="!isMobile" [attr.id]="elementUUID + '-' + field.name" formControlName="0" appInvalidFeedback [items]="countries" bindLabel="name" bindValue="isoCode" [inputAttrs]="{autocomplete: 'nope'}">
