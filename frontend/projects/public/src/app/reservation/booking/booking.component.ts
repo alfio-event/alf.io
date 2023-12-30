@@ -179,7 +179,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
       });
   }
 
-  private buildSubscriptionOwnerFormGroup(subscriptionInfos: Array<ReservationSubscriptionInfo> | undefined, user?: User): FormGroup {
+  private buildSubscriptionOwnerFormGroup(subscriptionInfos: Array<ReservationSubscriptionInfo> | undefined, user?: User): UntypedFormGroup {
     if (subscriptionInfos != null) {
       const subscriptionInfo = subscriptionInfos[0];
       const email = subscriptionInfo.owner?.email || (this.emailEditForbidden ? this.reservationInfo.email : null) || user?.emailAddress;
@@ -357,7 +357,7 @@ export class BookingComponent implements OnInit, AfterViewInit {
   }
 
   getAdditionalDataForm(ticket: Ticket): FormArray | null {
-    const linksGroup = <FormGroup>(<FormGroup>this.contactAndTicketsForm.get('additionalServices'));
+    const linksGroup = <UntypedFormGroup>(<UntypedFormGroup>this.contactAndTicketsForm.get('additionalServices'));
     return linksGroup.contains(ticket.uuid) ? <FormArray>linksGroup.get(ticket.uuid) : null;
   }
 
@@ -392,13 +392,13 @@ export class BookingComponent implements OnInit, AfterViewInit {
     return this.reservationInfo.subscriptionInfos[0];
   }
 
-  get subscriptionAdditionalForm(): FormGroup {
-    return this.contactAndTicketsForm.get('subscriptionOwner').get('additional') as FormGroup;
+  get subscriptionAdditionalForm(): UntypedFormGroup {
+    return this.contactAndTicketsForm.get('subscriptionOwner').get('additional') as UntypedFormGroup;
   }
 
   moveAdditionalService($event: MoveAdditionalServiceRequest) {
     const element = Object.assign({}, this.additionalServicesWithData[$event.currentTicketUuid][$event.index], {ticketUUID: $event.newTicketUuid});
-    const additionalFormGroup = (this.contactAndTicketsForm.get('additionalServices') as FormGroup);
+    const additionalFormGroup = (this.contactAndTicketsForm.get('additionalServices') as UntypedFormGroup);
     const services = (additionalFormGroup.get($event.currentTicketUuid) as FormArray);
     if (services.length === 1) {
       // if there is only one service, we remove the complete item

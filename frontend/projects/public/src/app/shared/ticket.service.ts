@@ -13,6 +13,7 @@ import {User} from '../model/user';
 import {DateValidity} from '../model/date-validity';
 import {DownloadTicketComponent} from '../reservation/download-ticket/download-ticket.component';
 import {WalletConfiguration} from '../model/info';
+import {AdditionalFieldService} from "./additional-field.service";
 
 @Injectable({
     providedIn: 'root'
@@ -49,8 +50,8 @@ export class TicketService {
         return this.formBuilder.group(this.buildTicket(ticket, user, additionalServicesWithData));
     }
 
-    buildAdditionalServicesFormGroup(additionalServices: AdditionalServiceWithData[], lang: string): FormGroup {
-      const byTicketUuid: {[k: string]: FormArray} = {};
+    buildAdditionalServicesFormGroup(additionalServices: AdditionalServiceWithData[], lang: string): UntypedFormGroup {
+      const byTicketUuid: {[k: string]: UntypedFormArray} = {};
       additionalServices.forEach(asw => {
         if (byTicketUuid[asw.ticketUUID] == null) {
           byTicketUuid[asw.ticketUUID] = this.formBuilder.array([]);
@@ -61,7 +62,7 @@ export class TicketService {
       return this.formBuilder.group(byTicketUuid);
     }
 
-    buildAdditionalServiceGroup(asw: AdditionalServiceWithData, lang: string): FormGroup {
+    buildAdditionalServiceGroup(asw: AdditionalServiceWithData, lang: string): UntypedFormGroup {
       return this.formBuilder.group({
         additionalServiceItemId: this.formBuilder.control(asw.itemId),
         additionalServiceTitle: asw.title,

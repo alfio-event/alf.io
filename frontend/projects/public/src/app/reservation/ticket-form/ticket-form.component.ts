@@ -1,8 +1,8 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {UntypedFormGroup} from '@angular/forms';
-import {Ticket} from 'src/app/model/ticket';
-import {PurchaseContext} from 'src/app/model/purchase-context';
 import {ReservationMetadata} from '../../model/reservation-info';
+import {Ticket} from "../../model/ticket";
+import {PurchaseContext} from "../../model/purchase-context";
 
 @Component({
   selector: 'app-ticket-form',
