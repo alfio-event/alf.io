@@ -116,7 +116,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
                                                 TicketReservationRepository ticketReservationRepository,
                                                 EventApiController eventApiController,
                                                 TicketRepository ticketRepository,
-                                                TicketFieldRepository ticketFieldRepository,
+                                                PurchaseContextFieldRepository purchaseContextFieldRepository,
                                                 AdditionalServiceApiController additionalServiceApiController,
                                                 SpecialPriceTokenGenerator specialPriceTokenGenerator,
                                                 SpecialPriceRepository specialPriceRepository,
@@ -148,7 +148,8 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
                                                 UserManager userManager,
                                                 AdminJobQueueRepository adminJobQueueRepository,
                                                 AdminJobManager adminJobManager,
-                                                StripePaymentWebhookController stripePaymentWebhookController) {
+                                                StripePaymentWebhookController stripePaymentWebhookController,
+                                                PurchaseContextFieldManager purchaseContextFieldManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -157,7 +158,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
             ticketReservationRepository,
             eventApiController,
             ticketRepository,
-            ticketFieldRepository,
+            purchaseContextFieldRepository,
             additionalServiceApiController,
             specialPriceTokenGenerator,
             specialPriceRepository,
@@ -184,7 +185,8 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
             organizationDeleter,
             promoCodeDiscountRepository,
             promoCodeRequestManager,
-            exportManager);
+            exportManager,
+            purchaseContextFieldManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.adminJobQueueRepository = adminJobQueueRepository;

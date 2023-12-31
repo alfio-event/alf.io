@@ -84,7 +84,7 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                                     TicketReservationRepository ticketReservationRepository,
                                                     EventApiController eventApiController,
                                                     TicketRepository ticketRepository,
-                                                    TicketFieldRepository ticketFieldRepository,
+                                                    PurchaseContextFieldRepository purchaseContextFieldRepository,
                                                     AdditionalServiceApiController additionalServiceApiController,
                                                     SpecialPriceTokenGenerator specialPriceTokenGenerator,
                                                     SpecialPriceRepository specialPriceRepository,
@@ -113,7 +113,8 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                                     PromoCodeRequestManager promoCodeRequestManager,
                                                     OrganizationRepository organizationRepository,
                                                     UserManager userManager,
-                                                    ExportManager exportManager) {
+                                                    ExportManager exportManager,
+                                                    PurchaseContextFieldManager purchaseContextFieldManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -122,7 +123,7 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
             ticketReservationRepository,
             eventApiController,
             ticketRepository,
-            ticketFieldRepository,
+            purchaseContextFieldRepository,
             additionalServiceApiController,
             specialPriceTokenGenerator,
             specialPriceRepository,
@@ -149,7 +150,8 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
             organizationDeleter,
             promoCodeDiscountRepository,
             promoCodeRequestManager,
-            exportManager);
+            exportManager,
+            purchaseContextFieldManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
     }

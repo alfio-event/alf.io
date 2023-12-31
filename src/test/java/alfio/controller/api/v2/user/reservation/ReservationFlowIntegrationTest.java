@@ -85,7 +85,7 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                           TicketReservationRepository ticketReservationRepository,
                                           EventApiController eventApiController,
                                           TicketRepository ticketRepository,
-                                          TicketFieldRepository ticketFieldRepository,
+                                          PurchaseContextFieldRepository purchaseContextFieldRepository,
                                           AdditionalServiceApiController additionalServiceApiController,
                                           SpecialPriceTokenGenerator specialPriceTokenGenerator,
                                           SpecialPriceRepository specialPriceRepository,
@@ -112,7 +112,8 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                           PromoCodeDiscountRepository promoCodeDiscountRepository,
                                           PromoCodeRequestManager promoCodeRequestManager,
                                           CheckInManager checkInManager,
-                                          ExportManager exportManager) {
+                                          ExportManager exportManager,
+                                          PurchaseContextFieldManager purchaseContextFieldManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -121,7 +122,7 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
             ticketReservationRepository,
             eventApiController,
             ticketRepository,
-            ticketFieldRepository,
+            purchaseContextFieldRepository,
             additionalServiceApiController,
             specialPriceTokenGenerator,
             specialPriceRepository,
@@ -148,7 +149,8 @@ class ReservationFlowIntegrationTest extends BaseReservationFlowTest {
             organizationDeleter,
             promoCodeDiscountRepository,
             promoCodeRequestManager,
-            exportManager);
+            exportManager,
+            purchaseContextFieldManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.checkInManager = checkInManager;

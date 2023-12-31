@@ -192,9 +192,6 @@ public interface TicketCategoryRepository {
     @Query("select count(*) from ticket_category where " + CHECK_ACTIVE)
     Integer countActiveByEventId(@Bind("eventId") int eventId);
 
-    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and id in (:additionalFieldIds)")
-    int countMatchingAdditionalFieldsWithEventId(@Bind("eventId") int eventId, @Bind("additionalFieldIds") Set<Integer> additionalFieldIds);
-
     @Query("select count(*) from ticket_category where event_id = :eventId and id in (:categoryIds)")
     int countCategoryForEvent(@Bind("categoryIds") Set<Integer> categoryIds, @Bind("eventId") int eventId);
 }

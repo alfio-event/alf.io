@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,19 +49,22 @@ public class SubscriptionApiV1Controller {
     private final UserManager userManager;
     private final EventManager eventManager;
     private final AccessService accessService;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
 
     public SubscriptionApiV1Controller(SubscriptionManager subscriptionManager,
                                        FileUploadManager fileUploadManager,
                                        FileDownloadManager fileDownloadManager,
                                        UserManager userManager,
                                        EventManager eventManager,
-                                       AccessService accessService) {
+                                       AccessService accessService,
+                                       PurchaseContextFieldManager purchaseContextFieldManager) {
         this.subscriptionManager = subscriptionManager;
         this.fileUploadManager = fileUploadManager;
         this.fileDownloadManager = fileDownloadManager;
         this.userManager = userManager;
         this.eventManager = eventManager;
         this.accessService = accessService;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
     }
 
     @PostMapping("/create")
@@ -72,14 +76,20 @@ public class SubscriptionApiV1Controller {
         }
         var modification = request.toDescriptorModification(null, organization.getId(), imageRef)
             .flatMap(SubscriptionDescriptorModification::validate);
-        if (modification.isSuccess()) {
+        var additionalFields = request.toAdditionalFieldsRequest();
+        if (modification.isSuccess() && additionalFields.isSuccess()) {
             // request is valid
             var optionalId = subscriptionManager.createSubscriptionDescriptor(modification.getData());
+            if (optionalId.isPresent()) {
+                var id = optionalId.get();
+                purchaseContextFieldManager.addAdditionalFields(subscriptionManager.getSubscriptionById(id).orElseThrow(), additionalFields.getData());
+            }
             return optionalId.map(uuid -> ResponseEntity.ok(uuid.toString()))
                 .orElseGet(() -> ResponseEntity.internalServerError().build());
         }
-        return ResponseEntity.badRequest().body(Json.toJson(modification.getErrors()));
-
+        var errors = new ArrayList<>(modification.getErrors());
+        errors.addAll(additionalFields.getErrors());
+        return ResponseEntity.badRequest().body(Json.toJson(errors));
     }
 
     @PostMapping("/{subscriptionId}/update")

@@ -42,6 +42,7 @@ import alfio.manager.user.PublicUserManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.metadata.SubscriptionMetadata;
+import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.subscription.UsageDetails;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -49,6 +50,7 @@ import alfio.repository.*;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -72,6 +74,8 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import static alfio.controller.api.support.BookingInfoTicketLoader.toAdditionalFieldsStream;
+import static alfio.model.PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
 import static alfio.model.system.ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION;
 import static java.util.Objects.requireNonNullElse;
@@ -89,7 +93,7 @@ public class ReservationApiV2Controller {
     private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
     private final TicketReservationRepository ticketReservationRepository;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final MessageSourceManager messageSourceManager;
     private final ConfigurationManager configurationManager;
     private final PaymentManager paymentManager;
@@ -109,6 +113,7 @@ public class ReservationApiV2Controller {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final AdditionalServiceManager additionalServiceManager;
     private final AdditionalServiceHelper additionalServiceHelper;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -131,6 +136,7 @@ public class ReservationApiV2Controller {
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
             boolean containsCategoriesLinkedToGroups = false;
             List<AdditionalServiceWithData> additionalServices = null;
+            var descriptionsByFieldId = purchaseContextFieldManager.findDescriptionsGroupedByFieldId(purchaseContext);
             if (purchaseContext.ofType(PurchaseContextType.event)) {
                 var event = (Event) purchaseContext;
                 var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
@@ -138,13 +144,9 @@ public class ReservationApiV2Controller {
 
                 // check if the user can cancel ticket
                 if (!ticketIds.isEmpty()) {
-                    var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
+                    var valuesByTicketIds = purchaseContextFieldRepository.findAllValuesByTicketIds(ticketIds)
                         .stream()
-                        .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
-
-                    var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
-                        .stream()
-                        .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+                        .collect(Collectors.groupingBy(PurchaseContextFieldValue::getTicketId));
 
                     var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
                     var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
@@ -155,9 +157,9 @@ public class ReservationApiV2Controller {
                         .stream()
                         .map(e -> {
                             var tc = categories.stream().filter(t -> t.getId() == e.getKey()).findFirst().orElseThrow();
-                            var context = event.supportsLinkedAdditionalServices() ? EnumSet.of(TicketFieldConfiguration.Context.ATTENDEE) : EnumSet.allOf(TicketFieldConfiguration.Context.class);
+                            var context = event.supportsLinkedAdditionalServices() ? EnumSet.of(PurchaseContextFieldConfiguration.Context.ATTENDEE) : EVENT_RELATED_CONTEXTS;
                             var ts = e.getValue().stream()
-                                .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds, Map.of(), false, context))
+                                .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByFieldId, valuesByTicketIds, Map.of(), false, context))
                                 .collect(Collectors.toList());
                             return new TicketsByTicketCategory(tc.getName(), tc.getTicketAccessType(), ts);
                         })
@@ -166,16 +168,14 @@ public class ReservationApiV2Controller {
                     categoryIds = ticketsByCategory.keySet();
                     var additionalServiceItems = additionalServiceManager.findItemsInReservation(event.getId(), reservationId);
                     Map<Integer, List<AdditionalServiceFieldValue>> additionalServicesByItemId = additionalServiceItems.isEmpty() ? Map.of() :
-                        ticketFieldRepository.findAdditionalServicesValueByItemIds(additionalServiceItems.stream().map(AdditionalServiceItem::getId).collect(Collectors.toList()))
+                        purchaseContextFieldRepository.findAdditionalServicesValueByItemIds(additionalServiceItems.stream().map(AdditionalServiceItem::getId).collect(Collectors.toList()))
                             .stream().collect(groupingBy(AdditionalServiceFieldValue::getAdditionalServiceItemId));
                     additionalServices = additionalServiceHelper.getAdditionalServicesWithData(event,
                         additionalServiceItems,
                         additionalServicesByItemId,
-                        descriptionsByTicketFieldId,
+                        descriptionsByFieldId,
                         tickets);
                 }
-
-
             }
 
 
@@ -198,12 +198,22 @@ public class ReservationApiV2Controller {
                     .map(s -> {
                         int usageCount = ticketRepository.countSubscriptionUsage(s.getId(), null);
                         var metadata = requireNonNullElseGet(subscriptionRepository.getSubscriptionMetadata(s.getId()), SubscriptionMetadata::empty);
+                        var fields = purchaseContextFieldManager.findAdditionalFields(purchaseContext);
+                        var valuesById = purchaseContextFieldRepository.findAllValuesBySubscriptionIds(List.of(s.getId()))
+                            .stream()
+                            .collect(Collectors.groupingBy(PurchaseContextFieldValue::getFieldConfigurationId));
+                        var additionalFields = fields.stream()
+                            .sorted(Comparator.comparing(PurchaseContextFieldConfiguration::getOrder))
+                            .flatMap(tfc -> toAdditionalFieldsStream(descriptionsByFieldId, tfc, valuesById))
+                            .collect(Collectors.toList());
                         return new ReservationInfo.SubscriptionInfo(
                             s.getStatus() == AllocationStatus.ACQUIRED ? s.getId() : null,
                             s.getStatus() == AllocationStatus.ACQUIRED ? s.getPin() : null,
                             UsageDetails.fromSubscription(s, usageCount),
                             new ReservationInfo.SubscriptionOwner(s.getFirstName(), s.getLastName(), s.getEmail()),
-                            metadata.getConfiguration());
+                            metadata.getConfiguration(),
+                            additionalFields
+                        );
                     })
                     .collect(Collectors.toList());
             }
@@ -449,25 +459,31 @@ public class ReservationApiV2Controller {
                 if (event.supportsLinkedAdditionalServices() && contactAndTicketsForm.hasAdditionalServices()) {
                     var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
                     additionalServiceManager.linkItemsToTickets(reservationId, contactAndTicketsForm.getAdditionalServices(), tickets);
-                    additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), contactAndTicketsForm.getAdditionalServices(), tickets);
+                    additionalServiceManager.persistFieldsForAdditionalItems(event.getId(), event.getOrganizationId(), contactAndTicketsForm.getAdditionalServices(), tickets);
                 }
                 assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
             }
 
-            if(purchaseContext.ofType(PurchaseContextType.subscription) && contactAndTicketsForm.isDifferentSubscriptionOwner()) {
+            if(purchaseContext.ofType(PurchaseContextType.subscription)) {
                 var owner = contactAndTicketsForm.getSubscriptionOwner();
-                Validate.isTrue(subscriptionRepository.assignSubscription(reservationId, owner.getFirstName(), owner.getLastName(), owner.getEmail()) == 1);
+                if (contactAndTicketsForm.isDifferentSubscriptionOwner()) {
+                    Validate.isTrue(subscriptionRepository.assignSubscription(reservationId, owner.getFirstName(), owner.getLastName(), owner.getEmail()) == 1);
+                }
+                if (MapUtils.isNotEmpty(owner.getAdditional())) {
+                    purchaseContextFieldManager.updateFieldsForReservation(owner, purchaseContext, null, subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0).getId());
+                }
             }
             //
 
             Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
 
-            var ticketFieldFilterer = purchaseContext.event()
-                .map(event -> bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event));
+            var fieldsFilterer = purchaseContext.event()
+                .map(event -> bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event))
+                .or(() -> Optional.of(bookingInfoTicketLoader.getSubscriptionFieldsFilterer(reservationId, (SubscriptionDescriptor) purchaseContext)));
 
             //
             contactAndTicketsForm.validate(bindingResult, purchaseContext, new SameCountryValidator(configurationManager, extensionManager, purchaseContext, reservationId, vatChecker),
-                formValidationParameters, ticketFieldFilterer, reservationCost.requiresPayment(), extensionManager,
+                formValidationParameters, fieldsFilterer, reservationCost.requiresPayment(), extensionManager,
                 () -> additionalServiceManager.findItemsInReservation(purchaseContext, reservationId));
             //
 

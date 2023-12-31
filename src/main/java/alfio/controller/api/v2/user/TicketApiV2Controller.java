@@ -57,11 +57,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import static alfio.model.PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.util.EventUtil.firstMatchingCallLink;
 
 @RestController
@@ -131,7 +131,7 @@ public class TicketApiV2Controller {
                     locale, event, ticketReservation,
                     ticketWithMetadata, ticketCategory, organization,
                     templateManager, fileUploadManager,
-                    reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager,
+                    reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(true), extensionManager,
                     TemplateProcessor.getSubscriptionDetailsModelForTicket(ticket, subscriptionManager::findDescriptorBySubscriptionId, locale),
                     additionalServiceHelper.findForTicket(ticket, event)
                 );
@@ -193,7 +193,7 @@ public class TicketApiV2Controller {
                 var event = complete.getLeft();
 
                 var category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-                return new ReservationInfo.TicketsByTicketCategory(category.getName(), category.getTicketAccessType(), List.of(bookingInfoTicketLoader.toBookingInfoTicket(ticket, event, EnumSet.allOf(TicketFieldConfiguration.Context.class))));
+                return new ReservationInfo.TicketsByTicketCategory(category.getName(), category.getTicketAccessType(), List.of(bookingInfoTicketLoader.toBookingInfoTicket(ticket, event, EVENT_RELATED_CONTEXTS)));
             });
         return ResponseEntity.of(optionalTicket);
     }

@@ -20,41 +20,45 @@ import alfio.controller.api.support.AdditionalField;
 import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.controller.api.support.Field;
 import alfio.manager.AdditionalServiceManager;
+import alfio.manager.PurchaseContextFieldManager;
 import alfio.model.*;
-import alfio.repository.TicketFieldRepository;
+import alfio.repository.PurchaseContextFieldRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.controller.api.support.BookingInfoTicketLoader.fromFieldDescriptions;
-import static alfio.model.TicketFieldConfigurationDescriptionAndValue.isBeforeStandardFields;
+import static alfio.model.FieldConfigurationDescriptionAndValue.isBeforeStandardFields;
 import static java.util.stream.Collectors.groupingBy;
 
 @Component
 public class AdditionalServiceHelper {
 
     private final AdditionalServiceManager additionalServiceManager;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
 
     public AdditionalServiceHelper(AdditionalServiceManager additionalServiceManager,
-                                   TicketFieldRepository ticketFieldRepository) {
+                                   PurchaseContextFieldRepository purchaseContextFieldRepository,
+                                   PurchaseContextFieldManager purchaseContextFieldManager) {
         this.additionalServiceManager = additionalServiceManager;
-        this.ticketFieldRepository = ticketFieldRepository;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
     }
 
     public List<AdditionalServiceWithData> getAdditionalServicesWithData(PurchaseContext purchaseContext,
                                                                          List<AdditionalServiceItem> additionalServiceItems,
                                                                          Map<Integer, List<AdditionalServiceFieldValue>> valuesByItemId,
-                                                                         Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId, List<Ticket> tickets) {
+                                                                         Map<Long, List<PurchaseContextFieldDescription>> descriptionsByTicketFieldId, List<Ticket> tickets) {
         if (purchaseContext.ofType(PurchaseContext.PurchaseContextType.event) && ((Event)purchaseContext).supportsLinkedAdditionalServices()) {
             var event = ((Event)purchaseContext);
             if (!additionalServiceItems.isEmpty()) {
                 var additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toList());
                 var additionalItemDescriptionsById = additionalServiceManager.getDescriptionsByAdditionalServiceIds(additionalServiceIds);
-                var additionalFieldsById = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()).stream()
-                    .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ADDITIONAL_SERVICE && additionalServiceIds.contains(f.getAdditionalServiceId()))
-                    .collect(Collectors.groupingBy(TicketFieldConfiguration::getAdditionalServiceId));
+                var additionalFieldsById = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId()).stream()
+                    .filter(f -> f.getContext() == PurchaseContextFieldConfiguration.Context.ADDITIONAL_SERVICE && additionalServiceIds.contains(f.getAdditionalServiceId()))
+                    .collect(Collectors.groupingBy(PurchaseContextFieldConfiguration::getAdditionalServiceId));
                 return additionalServiceItems.stream()
                     .map(as -> {
                         var additionalItemTitle = additionalItemDescriptionsById.getOrDefault(as.getAdditionalServiceId(), Map.of())
@@ -66,7 +70,7 @@ public class AdditionalServiceHelper {
                                 Optional<AdditionalServiceFieldValue> value = Optional.empty();
                                 if (itemValues != null) {
                                     value = itemValues.stream()
-                                        .filter(fv -> fv.getTicketId() == ticketId && fv.getTicketFieldConfigurationId() == fieldConfiguration.getId())
+                                        .filter(fv -> fv.getTicketId() == ticketId && fv.getFieldConfigurationId() == fieldConfiguration.getId())
                                         .findFirst();
                                 }
                                 var valueAsString = value.map(AdditionalServiceFieldValue::getValue).orElse("");
@@ -96,11 +100,9 @@ public class AdditionalServiceHelper {
         }
         var additionalServiceItems = additionalServiceManager.findItemsForTicket(ticket);
         Map<Integer, List<AdditionalServiceFieldValue>> additionalServicesByItemId = additionalServiceItems.isEmpty() ? Map.of() :
-            ticketFieldRepository.findAdditionalServicesValueByItemIds(additionalServiceItems.stream().map(AdditionalServiceItem::getId).collect(Collectors.toList()))
+            purchaseContextFieldRepository.findAdditionalServicesValueByItemIds(additionalServiceItems.stream().map(AdditionalServiceItem::getId).collect(Collectors.toList()))
                 .stream().collect(groupingBy(AdditionalServiceFieldValue::getAdditionalServiceItemId));
-        var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
-            .stream()
-            .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+        var descriptionsByTicketFieldId = purchaseContextFieldManager.findDescriptionsGroupedByFieldId(event);
         return getAdditionalServicesWithData(event, additionalServiceItems, additionalServicesByItemId, descriptionsByTicketFieldId, List.of(ticket));
     }
 }

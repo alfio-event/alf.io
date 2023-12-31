@@ -103,9 +103,9 @@ create or replace view count_resources_assigned_to_event_org as (
         join ticket_category tc on tt.ticket_category_id_fk = tc.id
         group by 3, 2
 
+    -- checks if there is any leftovers from the migration
     union all
     select count(*) cnt, organization_id_fk org, event_id_fk ev, 'ticket_field_configuration' entity from ticket_field_configuration group by 3, 2
-
 
     union all
     select count(*) cnt, tfd.organization_id_fk org, event_id_fk ev, 'ticket_field_description' entity from ticket_field_description tfd
@@ -115,6 +115,21 @@ create or replace view count_resources_assigned_to_event_org as (
     union all
     select count(*) cnt, tfv.organization_id_fk org, event_id_fk ev, 'ticket_field_value' entity from ticket_field_value tfv
         join ticket_field_configuration tfc on tfv.ticket_field_configuration_id_fk = tfc.id
+        group by 3, 2
+
+    -- purchaseContext fields
+
+    union all
+    select count(*) cnt, organization_id_fk org, event_id_fk ev, 'purchase_context_field_configuration' entity from purchase_context_field_configuration group by 3, 2
+
+    union all
+    select count(*) cnt, tfd.organization_id_fk org, event_id_fk ev, 'purchase_context_field_description' entity from purchase_context_field_description tfd
+        join purchase_context_field_configuration tfc on tfd.field_configuration_id_fk = tfc.id
+        group by 3, 2
+
+    union all
+    select count(*) cnt, tfv.organization_id_fk org, event_id_fk ev, 'purchase_context_field_value' entity from purchase_context_field_value tfv
+        join purchase_context_field_configuration tfc on tfv.field_configuration_id_fk = tfc.id
         group by 3, 2
 
     union all

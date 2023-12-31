@@ -27,6 +27,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.model.TicketCategoryWithAdditionalInfo;
+import alfio.model.api.v1.admin.DescriptionRequest;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.transaction.PaymentProxy;
@@ -124,7 +125,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         return new EventCreationRequest(
             "Title",
             shortName,
-            Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
+            Collections.singletonList(new DescriptionRequest("en", "desc")),
             null,
             new EventCreationRequest.LocationRequest(
                 "Pollegio 6742 Switzerland",
@@ -148,7 +149,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                     new EventCreationRequest.CategoryRequest(
                         null, // forces new category
                         "standard",
-                        Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                        Collections.singletonList(new DescriptionRequest("en", "desc")),
                         MAX_TICKETS,
                         false,
                         BigDecimal.TEN,
@@ -223,7 +224,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 new EventCreationRequest.CategoryRequest(
                     categoryId,
                     "standard",
-                    Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                    Collections.singletonList(new DescriptionRequest("en", "desc")),
                     MAX_TICKETS - 1,
                     false,
                     BigDecimal.TEN,
@@ -247,7 +248,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 new EventCreationRequest.CategoryRequest(
                     categoryId,
                     "standard",
-                    Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                    Collections.singletonList(new DescriptionRequest("en", "desc")),
                     MAX_TICKETS,
                     false,
                     BigDecimal.TEN,
@@ -275,7 +276,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
             new EventCreationRequest.CategoryRequest(
                 existingCategory.getId(),
                 existingCategory.getName() + "_1",
-                List.of(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                List.of(new DescriptionRequest("en", "desc")),
                 existingCategory.getMaxTickets(),
                 existingCategory.isAccessRestricted(),
                 existingCategory.getPrice(),
@@ -306,7 +307,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
             new EventCreationRequest.CategoryRequest(
                 existingCategory.getId(),
                 existingCategory.getName() + "_1",
-                List.of(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                List.of(new DescriptionRequest("en", "desc")),
                 existingCategory.getMaxTickets() - 5,
                 existingCategory.isAccessRestricted(),
                 existingCategory.getPrice(),
@@ -320,7 +321,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
             new EventCreationRequest.CategoryRequest(
                 null,
                 existingCategory.getName() + "_2",
-                List.of(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                List.of(new DescriptionRequest("en", "desc")),
                 existingCategory.getMaxTickets() - 5,
                 existingCategory.isAccessRestricted(),
                 existingCategory.getPrice(),
@@ -353,7 +354,7 @@ class EventApiV1IntegrationTest extends BaseIntegrationTest {
         var categoriesRequest = List.of(
             new EventCreationRequest.CategoryRequest(null,
                 existingCategory.getName(),
-                List.of(new EventCreationRequest.DescriptionRequest("en", "desc")),
+                List.of(new DescriptionRequest("en", "desc")),
                 existingCategory.getMaxTickets() - 1,
                 existingCategory.isAccessRestricted(),
                 existingCategory.getPrice(),

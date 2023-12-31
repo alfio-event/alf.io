@@ -74,7 +74,7 @@ class TicketReservationManagerUnitTest {
     private TemplateManager templateManager;
     private PlatformTransactionManager transactionManager;
     private WaitingQueueManager waitingQueueManager;
-    private TicketFieldRepository ticketFieldRepository;
+    private PurchaseContextFieldRepository purchaseContextFieldRepository;
     private AdditionalServiceRepository additionalServiceRepository;
     private AdditionalServiceItemRepository additionalServiceItemRepository;
     private AdditionalServiceTextRepository additionalServiceTextRepository;
@@ -114,7 +114,7 @@ class TicketReservationManagerUnitTest {
         templateManager = mock(TemplateManager.class);
         transactionManager = mock(PlatformTransactionManager.class);
         waitingQueueManager = mock(WaitingQueueManager.class);
-        ticketFieldRepository = mock(TicketFieldRepository.class);
+        purchaseContextFieldRepository = mock(PurchaseContextFieldRepository.class);
         additionalServiceRepository = mock(AdditionalServiceRepository.class);
         additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
         additionalServiceTextRepository = mock(AdditionalServiceTextRepository.class);
@@ -125,7 +125,7 @@ class TicketReservationManagerUnitTest {
         groupManager = mock(GroupManager.class);
         BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
         json = mock(Json.class);
-        var additionalServiceManager = new AdditionalServiceManager(additionalServiceRepository, additionalServiceTextRepository, additionalServiceItemRepository, mock(NamedParameterJdbcTemplate.class), mock(TicketRepository.class), ticketFieldRepository);
+        var additionalServiceManager = new AdditionalServiceManager(additionalServiceRepository, additionalServiceTextRepository, additionalServiceItemRepository, mock(NamedParameterJdbcTemplate.class), mock(TicketRepository.class), purchaseContextFieldRepository);
 
         when(messageSourceManager.getMessageSourceFor(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
@@ -148,7 +148,7 @@ class TicketReservationManagerUnitTest {
             templateManager,
             transactionManager,
             waitingQueueManager,
-            ticketFieldRepository,
+                purchaseContextFieldRepository,
             additionalServiceManager,
             auditingRepository,
             userRepository,

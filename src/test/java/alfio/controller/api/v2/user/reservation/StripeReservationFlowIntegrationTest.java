@@ -107,7 +107,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                                 TicketReservationRepository ticketReservationRepository,
                                                 EventApiController eventApiController,
                                                 TicketRepository ticketRepository,
-                                                TicketFieldRepository ticketFieldRepository,
+                                                PurchaseContextFieldRepository purchaseContextFieldRepository,
                                                 AdditionalServiceApiController additionalServiceApiController,
                                                 SpecialPriceTokenGenerator specialPriceTokenGenerator,
                                                 SpecialPriceRepository specialPriceRepository,
@@ -134,7 +134,8 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
                                                 PromoCodeDiscountRepository promoCodeDiscountRepository,
                                                 PromoCodeRequestManager promoCodeRequestManager,
                                                 StripePaymentWebhookController stripePaymentWebhookController,
-                                                ExportManager exportManager) {
+                                                ExportManager exportManager,
+                                                PurchaseContextFieldManager purchaseContextFieldManager) {
         super(configurationRepository,
             eventManager,
             eventRepository,
@@ -143,7 +144,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
             ticketReservationRepository,
             eventApiController,
             ticketRepository,
-            ticketFieldRepository,
+            purchaseContextFieldRepository,
             additionalServiceApiController,
             specialPriceTokenGenerator,
             specialPriceRepository,
@@ -170,7 +171,8 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
             organizationDeleter,
             promoCodeDiscountRepository,
             promoCodeRequestManager,
-            exportManager);
+            exportManager,
+            purchaseContextFieldManager);
         this.organizationRepository = organizationRepository;
         this.userManager = userManager;
         this.stripePaymentWebhookController = stripePaymentWebhookController;

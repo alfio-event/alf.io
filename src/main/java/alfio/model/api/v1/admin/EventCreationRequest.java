@@ -19,6 +19,7 @@ package alfio.model.api.v1.admin;
 import alfio.model.*;
 import alfio.model.group.LinkedGroup;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.modification.AdditionalFieldRequest;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -28,12 +29,13 @@ import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -58,7 +60,7 @@ public class EventCreationRequest{
     private String imageUrl;
     private TicketRequest tickets;
     private List<ExtensionSetting> extensionSettings;
-    private List<AttendeeAdditionalInfoRequest> additionalInfo;
+    private List<AdditionalInfoRequest> additionalInfo;
 
     public EventModification toEventModification(Organization organization, UnaryOperator<String> slugGenerator, String imageRef) {
         String slug = this.slug;
@@ -67,7 +69,7 @@ public class EventCreationRequest{
         }
 
         int locales = description.stream()
-            .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l-> l.getLanguage().equals(x.lang)).findFirst())
+            .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l-> l.getLanguage().equals(x.getLang())).findFirst())
             .filter(Optional::isPresent)
             .map(Optional::get)
             .mapToInt(ContentLanguage::getValue).reduce(0,(x,y) -> x | y);
@@ -126,7 +128,7 @@ public class EventCreationRequest{
         int locales = original.getLocales();
         if(description != null){
             locales = description.stream()
-                .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getLanguage().equals(x.lang)).findFirst())
+                .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getLanguage().equals(x.getLang())).findFirst())
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .mapToInt(ContentLanguage::getValue).reduce(0, (x, y) -> x | y);
@@ -193,13 +195,6 @@ public class EventCreationRequest{
             .findFirst();
     }
 
-
-    @Getter
-    @AllArgsConstructor
-    public static class DescriptionRequest {
-        private String lang;
-        private String body;
-    }
 
     @Getter
     @AllArgsConstructor
@@ -314,118 +309,17 @@ public class EventCreationRequest{
         private Integer maxAllocation;
     }
 
-    @Getter
-    @AllArgsConstructor
-    public static class AttendeeAdditionalInfoRequest {
-
-        private Integer ordinal;
-        private String name;
-        private AdditionalInfoType type;
-        private Boolean required;
-        private List<DescriptionRequest> label;
-        private List<DescriptionRequest> placeholder;
-        private List<RestrictedValueRequest> restrictedValues;
-        private ContentLengthRequest contentLength;
-
-
-        private EventModification.AdditionalField toAdditionalField(int ordinal) {
-            int position = this.ordinal != null ? this.ordinal : ordinal;
-            String code = type != null ? type.code : AdditionalInfoType.GENERIC_TEXT.code;
-            Integer minLength = contentLength != null ? contentLength.min : null;
-            Integer maxLength = contentLength != null ? contentLength.max : null;
-            List<EventModification.RestrictedValue> restrictedValues = null;
-            if(!isEmpty(this.restrictedValues)) {
-                restrictedValues = this.restrictedValues.stream().map(rv -> new EventModification.RestrictedValue(rv.value, rv.enabled)).collect(Collectors.toList());
-            }
-
-            return new EventModification.AdditionalField(
-                position,
-                null,
-                name,
-                code,
-                Boolean.TRUE.equals(required),
-                false,
-                minLength,
-                maxLength,
-                restrictedValues,
-                toDescriptionMap(orEmpty(label), orEmpty(placeholder), orEmpty(this.restrictedValues)),
-                null,//TODO: linkedAdditionalService
-                null);//TODO: linkedCategoryIds
-        }
-    }
-
-    private static <T> List<T> orEmpty(List<T> input) {
+    public static <T> List<T> orEmpty(List<T> input) {
         return isEmpty(input) ? emptyList() : input;
     }
 
-    private static Map<String, EventModification.Description> toDescriptionMap(List<DescriptionRequest> label,
-                                                                               List<DescriptionRequest> placeholder,
-                                                                               List<RestrictedValueRequest> restrictedValues) {
-        Map<String, String> labelsByLang = label.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody));
-        Map<String, String> placeholdersByLang = placeholder.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody));
-        Map<String, List<Triple<String, String, String>>> valuesByLang = restrictedValues.stream()
-            .flatMap(rv -> rv.descriptions.stream().map(rvd -> Triple.of(rvd.lang, rv.value, rvd.body)))
-            .collect(Collectors.groupingBy(Triple::getLeft));
 
-
-        Set<String> keys = new HashSet<>(labelsByLang.keySet());
-        keys.addAll(placeholdersByLang.keySet());
-        keys.addAll(valuesByLang.keySet());
-
-        return keys.stream()
-            .map(lang -> {
-                Map<String, String> rvsMap = valuesByLang.getOrDefault(lang, emptyList()).stream().collect(Collectors.toMap(Triple::getMiddle, Triple::getRight));
-                return Pair.of(lang, new EventModification.Description(labelsByLang.get(lang), placeholdersByLang.get(lang), rvsMap));
-            }).collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
-    }
-
-
-    private static List<EventModification.AdditionalField> toAdditionalFields(List<AttendeeAdditionalInfoRequest> additionalInfoRequests) {
+    private static List<AdditionalFieldRequest> toAdditionalFields(List<AdditionalInfoRequest> additionalInfoRequests) {
         if(isEmpty(additionalInfoRequests)) {
             return emptyList();
         }
         AtomicInteger counter = new AtomicInteger(1);
         return additionalInfoRequests.stream().map(air -> air.toAdditionalField(counter.getAndIncrement())).collect(Collectors.toList());
     }
-
-    @Getter
-    enum AdditionalInfoType {
-
-        GENERIC_TEXT("input:text"),
-        PHONE_NUMBER("input:tel"),
-        MULTI_LINE_TEXT("textarea"),
-        LIST_BOX("select"),
-        COUNTRY("country"),
-        EU_VAT_NR("vat:eu"),
-        CHECKBOX("checkbox"),
-        RADIO("radio");
-
-        private final String code;
-
-        AdditionalInfoType(String code) {
-            this.code = code;
-        }
-
-    }
-
-    public static final Set<String> WITH_RESTRICTED_VALUES = Set.of(AdditionalInfoType.LIST_BOX.code, AdditionalInfoType.CHECKBOX.code, AdditionalInfoType.RADIO.code);
-
-    @Getter
-    @AllArgsConstructor
-    public static class ContentLengthRequest {
-        private Integer min;
-        private Integer max;
-    }
-
-    @Getter
-    @AllArgsConstructor
-    public static class RestrictedValueRequest {
-
-        private String value;
-        private Boolean enabled;
-        private List<DescriptionRequest> descriptions;
-
-    }
-
 
 }

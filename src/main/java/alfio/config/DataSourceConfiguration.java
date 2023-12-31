@@ -205,8 +205,11 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    public TemplateManager getTemplateManager(MessageSourceManager messageSourceManager, UploadedResourceManager uploadedResourceManager, ConfigurationManager configurationManager) {
-        return new TemplateManager(messageSourceManager, uploadedResourceManager, configurationManager);
+    public TemplateManager getTemplateManager(MessageSourceManager messageSourceManager,
+                                              UploadedResourceManager uploadedResourceManager,
+                                              ConfigurationManager configurationManager,
+                                              PurchaseContextFieldManager purchaseContextFieldManager) {
+        return new TemplateManager(messageSourceManager, uploadedResourceManager, configurationManager, purchaseContextFieldManager);
     }
 
     @Bean

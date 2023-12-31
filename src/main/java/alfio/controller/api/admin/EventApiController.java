@@ -38,10 +38,9 @@ import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
-import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.EventDescriptionRepository;
+import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.SponsorScanRepository;
-import alfio.repository.TicketFieldRepository;
 import alfio.util.*;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
@@ -103,10 +102,9 @@ public class EventApiController {
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketHelper ticketHelper;
-    private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
     private final UserManager userManager;
     private final SponsorScanRepository sponsorScanRepository;
     private final PaymentManager paymentManager;
@@ -240,7 +238,7 @@ public class EventApiController {
     }
 
 
-    private static ValidationResult validateAdditionalTicketFields(List<EventModification.AdditionalField> ticketFields, Errors errors) {
+    private static ValidationResult validateAdditionalTicketFields(List<AdditionalFieldRequest> ticketFields, Errors errors) {
         //meh
         AtomicInteger cnt = new AtomicInteger();
         return Optional.ofNullable(ticketFields).orElseGet(Collections::emptyList).stream().map(field -> {
@@ -431,7 +429,7 @@ public class EventApiController {
             }
 
             //obviously not optimized
-            Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
+            Map<String, String> additionalValues = purchaseContextFieldRepository.findAllValuesForTicketId(t.getId());
 
             Predicate<String> contains = FIXED_FIELDS::contains;
 
@@ -448,7 +446,7 @@ public class EventApiController {
     public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
         accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getSingleEvent(eventName, principal.getName());
-        List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        List<PurchaseContextFieldConfiguration> fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
 
         List<String> header = new ArrayList<>();
         header.add("Username/Api Key");
@@ -456,7 +454,7 @@ public class EventApiController {
         header.add("Timestamp");
         header.add("Full name");
         header.add("Email");
-        header.addAll(fields.stream().map(TicketFieldConfiguration::getName).collect(toList()));
+        header.addAll(fields.stream().map(PurchaseContextFieldConfiguration::getName).collect(toList()));
         header.add("Sponsor notes");
         header.add("Lead Status");
         header.add("Operator");
@@ -466,7 +464,7 @@ public class EventApiController {
             .filter(p -> p.getRight() == Role.SPONSOR)
             .flatMap(p -> sponsorScanRepository.loadSponsorData(event.getId(), p.getKey().getId(), SponsorScanRepository.DEFAULT_TIMESTAMP)
                 .stream()
-                .map(v -> Pair.of(v, ticketFieldRepository.findAllValuesForTicketId(v.getTicket().getId()))))
+                .map(v -> Pair.of(v, purchaseContextFieldRepository.findAllValuesForTicketId(v.getTicket().getId()))))
             .map(p -> {
                 DetailedScanData data = p.getLeft();
                 Map<String, String> descriptions = p.getRight();
@@ -518,93 +516,9 @@ public class EventApiController {
         if(configurationManager.isItalianEInvoicingEnabled(eventAndOrganizationId)) {
             fields.addAll(ITALIAN_E_INVOICING_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList()));
         }
-        fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
+        fields.addAll(purchaseContextFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
         return fields;
     }
-
-    @GetMapping("/events/{eventName}/additional-field")
-    public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName, Principal principal) {
-        accessService.checkEventOwnership(principal, eventName);
-        final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
-        return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
-            .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
-            .collect(toList());
-    }
-
-    @GetMapping("/events/{eventName}/additional-field/{id}/stats")
-    public List<RestrictedValueStats> getStats(@PathVariable("eventName") String eventName, @PathVariable("id") Integer id, Principal principal) {
-        //
-        accessService.checkEventOwnership(principal, eventName);
-        //
-        if(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName()).filter(event -> ticketFieldRepository.findById(id).getEventId() == event.getId()).isEmpty()) {
-            return Collections.emptyList();
-        }
-        return ticketFieldRepository.retrieveStats(id);
-    }
-
-    @GetMapping("/event/additional-field/templates")
-    public List<DynamicFieldTemplate> loadTemplates() {
-        return dynamicFieldTemplateRepository.loadAll();
-    }
-
-    @PostMapping("/events/{eventName}/additional-field/descriptions")
-    public void saveAdditionalFieldDescriptions(@PathVariable("eventName") String eventName, @RequestBody Map<String, TicketFieldDescriptionModification> descriptions, Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, descriptions.values().stream().map(TicketFieldDescriptionModification::getTicketFieldConfigurationId).collect(Collectors.toSet()));
-        //
-        eventManager.updateTicketFieldDescriptions(descriptions);
-    }
-    
-    @PostMapping("/events/{eventName}/additional-field/new")
-    public ValidationResult addAdditionalField(@PathVariable("eventName") String eventName, @RequestBody EventModification.AdditionalField field, Principal principal, Errors errors) {
-        //
-        accessService.checkEventOwnership(principal, eventName);
-        //
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        return validateAdditionalFields(fields, field, errors).ifSuccess(() -> eventManager.addAdditionalField(event, field));
-    }
-    
-    @PostMapping("/events/{eventName}/additional-field/swap-position/{id1}/{id2}")
-    public void swapAdditionalFieldPosition(@PathVariable("eventName") String eventName, @PathVariable("id1") int id1, @PathVariable("id2") int id2, Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id1, id2));
-        //
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-    	eventManager.swapAdditionalFieldPosition(event.getId(), id1, id2);
-    }
-
-    @PostMapping("/events/{eventName}/additional-field/set-position/{id}")
-    public void setAdditionalFieldPosition(@PathVariable("eventName") String eventName,
-                                           @PathVariable("id") int id,
-                                           @RequestParam("newPosition") int newPosition,
-                                           Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id));
-        //
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        eventManager.setAdditionalFieldPosition(event.getId(), id, newPosition);
-    }
-    
-    @DeleteMapping("/events/{eventName}/additional-field/{id}")
-    public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id));
-        //
-        eventManager.getEventAndOrganizationId(eventName, principal.getName());
-    	eventManager.deleteAdditionalField(id);
-    }
-
-    @PostMapping("/events/{eventName}/additional-field/{id}")
-    public void updateAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, @RequestBody EventModification.UpdateAdditionalField field, Principal principal) {
-        //
-        accessService.checkEventOwnershipAndTicketAdditionalFieldIds(principal, eventName, Set.of(id));
-        //
-        eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        eventManager.updateAdditionalField(id, field);
-    }
-
-
 
     @GetMapping("/events/{eventName}/pending-payments")
     public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {

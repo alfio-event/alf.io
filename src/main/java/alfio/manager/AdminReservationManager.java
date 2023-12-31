@@ -107,7 +107,7 @@ public class AdminReservationManager {
     private final EventRepository eventRepository;
     private final PlatformTransactionManager transactionManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final PaymentManager paymentManager;
     private final NotificationManager notificationManager;
     private final MessageSourceManager messageSourceManager;
@@ -485,7 +485,7 @@ public class AdminReservationManager {
             return Result.success(Pair.of(event, input));
         }
 
-        List<String> existing = ticketFieldRepository.getExistingFields(event.getId(), keys);
+        List<String> existing = purchaseContextFieldRepository.getExistingFields(event.getId(), keys);
         if(existing.size() == keys.size()) {
             return Result.success(Pair.of(event, input));
         }
@@ -638,7 +638,7 @@ public class AdminReservationManager {
                     updateExtRefAndLocking(categoryId, attendee, ticketId);
                 }
                 if(!attendee.getAdditionalInfo().isEmpty()) {
-                    ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId(), event.supportsLinkedAdditionalServices());
+                    purchaseContextFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), event, ticketId, null);
                 }
                 if (!attendee.getMetadata().isEmpty()) {
                     var ticketMetadata = new TicketMetadata(null, null, attendee.getMetadata());
@@ -1014,7 +1014,7 @@ public class AdminReservationManager {
         ticketIds.forEach(id -> auditingRepository.insert(reservationId, userId, purchaseContext.getId(), CANCEL_TICKET, date, TICKET, id.toString()));
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
-        ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
+        purchaseContextFieldRepository.deleteAllValuesForTicketIds(ticketIds);
         specialPriceRepository.resetToFreeAndCleanupForTickets(ticketIds);
 
         List<String> reservationIds = ticketRepository.findReservationIds(ticketIds);

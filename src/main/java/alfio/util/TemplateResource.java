@@ -246,7 +246,7 @@ public enum TemplateResource {
                 subscriptionDescriptor.getTimeZone()
             );
             var subscriptionMetadata = new SubscriptionMetadata(Map.of("key", "value"), SubscriptionConfiguration.defaultConfiguration());
-            return buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, subscriptionMetadata, imageData, RESERVATION_ID_VALUE, Locale.ENGLISH, sampleTicketReservation(zoneId));
+            return buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, subscriptionMetadata, imageData, RESERVATION_ID_VALUE, Locale.ENGLISH, sampleTicketReservation(zoneId), List.of());
         }
     },
 
@@ -601,7 +601,7 @@ public enum TemplateResource {
                                                              TicketWithMetadataAttributes ticketWithMetadata,
                                                              Optional<ImageData> imageData,
                                                              String reservationId,
-                                                             Map<String,String> additionalFields,
+                                                             Map<String, String> additionalFields,
                                                              List<AdditionalServiceWithData> additionalServicesWithData) {
         String qrCodeText = ticketWithMetadata.getTicket().ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive());
         //
@@ -661,7 +661,8 @@ public enum TemplateResource {
                                                                    Optional<ImageData> imageData,
                                                                    String reservationId,
                                                                    Locale locale,
-                                                                   TicketReservation reservation) {
+                                                                   TicketReservation reservation,
+                                                                   List<FieldConfigurationDescriptionAndValue> fields) {
         Map<String, Object> model = new HashMap<>();
         model.put("title", subscriptionDescriptor.getLocalizedTitle(locale));
         model.put("validityTypeNotSet", subscriptionDescriptor.getValidityType() == SubscriptionValidityType.NOT_SET);
@@ -679,6 +680,7 @@ public enum TemplateResource {
             model.put("imageWidth", iData.getImageWidth());
             model.put("imageHeight", iData.getImageHeight());
         });
+        model.put(ADDITIONAL_FIELDS_KEY, fields.stream().collect(Collectors.toMap(FieldConfigurationDescriptionAndValue::getName, FieldConfigurationDescriptionAndValue::getValueDescription)));
         return model;
     }
 

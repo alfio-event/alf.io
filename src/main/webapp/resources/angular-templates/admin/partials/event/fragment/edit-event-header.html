@@ -86,7 +86,7 @@
                     <span class="input-group-addon">
                         <span>{{baseUrl}}/event/</span>
                     </span>
-                    <input type="text" id="shortName" data-ng-model="obj.shortName" class="form-control" required pattern="^[A-Za-z0-9]{1,}([-_]*[A-Za-z0-9]+)+$" name="shortName" data-validate-short-name="isUpdate" data-ng-model-options="{updateOn:'blur'}"/>
+                    <input type="text" id="shortName" data-ng-model="obj.shortName" class="form-control" required pattern="^[A-Za-z0-9]{1,}([\-_]*[A-Za-z0-9]+)+$" name="shortName" data-validate-short-name="isUpdate" data-ng-model-options="{updateOn:'blur'}"/>
                     <span class="form-control-feedback" data-ng-if="loading"><i class="fa fa-circle-o-notch fa-spin"></i></span>
                     <span class="input-group-addon">
                         <span>/</span>

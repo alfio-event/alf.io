@@ -16,10 +16,7 @@
  */
 package alfio.util;
 
-import alfio.model.AdditionalService;
-import alfio.model.AdditionalServiceText;
-import alfio.model.Event;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -33,7 +30,9 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -219,5 +218,37 @@ class ValidatorTest {
     })
     void invalidEmails(String address) {
         assertFalse(Validator.isEmailValid(address));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {
+        1, 2, 3, 4, 5
+    })
+    void minAgeValidator(int minAge) {
+        var ticketFieldConfiguration = mock(PurchaseContextFieldConfiguration.class);
+        when(ticketFieldConfiguration.getMinLength()).thenReturn(minAge);
+        var birth = LocalDate.now(ClockProvider.clock()).minusYears(minAge);
+        var date = birth.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        Validator.validateMinAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
+        assertFalse(errors.hasFieldErrors());
+        date = birth.plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        Validator.validateMinAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
+        assertTrue(errors.hasFieldErrors());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {
+        1, 2, 3, 4, 5
+    })
+    void maxAgeValidator(int maxAge) {
+        var ticketFieldConfiguration = mock(PurchaseContextFieldConfiguration.class);
+        when(ticketFieldConfiguration.getMaxLength()).thenReturn(maxAge);
+        var birth = LocalDate.now(ClockProvider.clock()).minusYears(maxAge);
+        var date = birth.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        Validator.validateMaxAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
+        assertFalse(errors.hasFieldErrors());
+        date = birth.minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        Validator.validateMaxAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
+        assertTrue(errors.hasFieldErrors());
     }
 }

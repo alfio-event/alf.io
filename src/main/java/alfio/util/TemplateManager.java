@@ -16,12 +16,14 @@
  */
 package alfio.util;
 
+import alfio.manager.PurchaseContextFieldManager;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
+import alfio.model.PurchaseContextFieldDescription;
 import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
@@ -42,8 +44,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static alfio.util.MustacheCustomTag.*;
 
@@ -59,25 +63,25 @@ public class TemplateManager {
     public static final String VAT_TRANSLATION_TEMPLATE_KEY = "vatTranslation";
     public static final String MAIL_FOOTER = "mailFooter";
 
-    private final MessageSourceManager messageSourceManager;
-
     public enum TemplateOutput {
         TEXT, HTML
     }
 
+    private final MessageSourceManager messageSourceManager;
     private final Map<TemplateOutput, Compiler> compilers;
-
     private final UploadedResourceManager uploadedResourceManager;
-    
     private final ConfigurationManager configurationManager;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
 
 
     public TemplateManager(MessageSourceManager messageSourceManager,
                            UploadedResourceManager uploadedResourceManager,
-                           ConfigurationManager configurationManager) {
+                           ConfigurationManager configurationManager,
+                           PurchaseContextFieldManager purchaseContextFieldManager) {
         this.messageSourceManager = messageSourceManager;
         this.uploadedResourceManager = uploadedResourceManager;
         this.configurationManager = configurationManager;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
 
         this.compilers = new EnumMap<>(TemplateOutput.class);
         this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
@@ -158,12 +162,17 @@ public class TemplateManager {
             var configuration = configurationManager.getFor(EnumSet.of(ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ConfigurationKeys.ENABLE_WALLET, ConfigurationKeys.ENABLE_PASS), ConfigurationLevel.purchaseContext(purchaseContext));
             boolean usePartnerCode = Objects.requireNonNull(configuration.get(ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
                 .getValueAsBooleanOrDefault();
+            Supplier<Map<String, String>> descriptionSupplier =
+                () -> purchaseContextFieldManager.findDescriptions(purchaseContext).stream()
+                    .filter(d -> d.getLocale().equals(locale.getLanguage()))
+                    .collect(Collectors.toMap(PurchaseContextFieldDescription::getFieldName, d -> String.valueOf(d.getDescription().getOrDefault("label", d.getFieldName()))));
             ModelAndView mv = new ModelAndView();
             mv.getModelMap().addAllAttributes(model);
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
             mv.addObject("country-name", COUNTRY_NAME);
             mv.addObject("render-markdown", RENDER_MARKDOWN);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get(ADDITIONAL_FIELDS_KEY)));
+            mv.addObject("print-additional-fields", MustacheCustomTag.PRINT_ADDITIONAL_FIELDS.apply(model.get(ADDITIONAL_FIELDS_KEY), descriptionSupplier));
             mv.addObject("metadata-value", ADDITIONAL_FIELD_VALUE.apply(model.get(METADATA_ATTRIBUTES_KEY)));
             mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
             mv.addObject("discountCodeDescription", messageSource.getMessage("show-event.promo-code-type." + (usePartnerCode ? "partner" : "promotional"), null, locale));

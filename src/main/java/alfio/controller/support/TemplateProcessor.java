@@ -19,6 +19,7 @@ package alfio.controller.support;
 import alfio.controller.api.support.AdditionalServiceWithData;
 import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
+import alfio.manager.PurchaseContextFieldManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.metadata.SubscriptionMetadata;
@@ -92,15 +93,15 @@ public final class TemplateProcessor {
                                        FileUploadManager fileUploadManager,
                                        String reservationID,
                                        OutputStream os,
-                                       BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
+                                       BiFunction<Ticket, Event, List<FieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                        ExtensionManager extensionManager,
                                        Map<String, Object> initialModel,
                                        List<AdditionalServiceWithData> additionalServiceWithData) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
-        List<TicketFieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticketWithMetadata.getTicket(), event);
+        List<FieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticketWithMetadata.getTicket(), event);
         var model = new HashMap<>(Objects.requireNonNullElse(initialModel, Map.of()));
         model.putAll(TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticketWithMetadata, imageData, reservationID,
-            fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription)),
+            fields.stream().collect(Collectors.toMap(FieldConfigurationDescriptionAndValue::getName, FieldConfigurationDescriptionAndValue::getValueDescription)),
             additionalServiceWithData));
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language).getTextPart();
@@ -130,9 +131,11 @@ public final class TemplateProcessor {
                                              FileUploadManager fileUploadManager,
                                              String reservationId,
                                              ByteArrayOutputStream os,
-                                             ExtensionManager extensionManager) throws IOException {
+                                             ExtensionManager extensionManager,
+                                             PurchaseContextFieldManager purchaseContextFieldManager) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(subscriptionDescriptor, fileUploadManager);
-        Map<String, Object> model = TemplateResource.buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, metadata, imageData, reservationId, locale, reservation);
+        var additionalFields = purchaseContextFieldManager.getFieldDescriptionAndValues(subscriptionDescriptor, null, subscription, List.of(), locale.getLanguage(), true);
+        Map<String, Object> model = TemplateResource.buildModelForSubscriptionPDF(subscription, subscriptionDescriptor, organization, metadata, imageData, reservationId, locale, reservation, additionalFields);
         String page = templateManager.renderTemplate(subscriptionDescriptor, TemplateResource.SUBSCRIPTION_PDF, model, locale).getTextPart();
         renderToPdf(page, os, extensionManager, subscriptionDescriptor);
     }

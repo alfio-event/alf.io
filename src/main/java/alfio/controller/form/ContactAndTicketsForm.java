@@ -23,6 +23,7 @@ import alfio.model.AdditionalServiceItem;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.PurchaseContextFieldConfiguration;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.result.WarningMessage;
@@ -42,9 +43,10 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
-import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ADDITIONAL_SERVICE;
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ATTENDEE;
 import static alfio.util.ErrorsCode.*;
+import static alfio.util.Validator.validateFieldConfiguration;
 
 // step 2 : contact/claim tickets
 //
@@ -102,7 +104,7 @@ public class ContactAndTicketsForm implements Serializable {
                          PurchaseContext purchaseContext,
                          SameCountryValidator vatValidator,
                          Map<ConfigurationKeys, Boolean> formValidationParameters,
-                         Optional<Validator.TicketFieldsFilterer> ticketFieldsFilterer,
+                         Optional<Validator.AdditionalFieldsFilterer> additionalFieldsFilterer,
                          boolean reservationRequiresPayment,
                          ExtensionManager extensionManager,
                          Supplier<List<AdditionalServiceItem>> additionalServiceItemsSupplier) {
@@ -110,8 +112,8 @@ public class ContactAndTicketsForm implements Serializable {
 
         formalValidation(bindingResult, formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false), reservationRequiresPayment);
 
+        var fieldsFilterer = additionalFieldsFilterer.orElseThrow();
         purchaseContext.event().ifPresent(event -> {
-            var fieldsFilterer = ticketFieldsFilterer.orElseThrow();
             checkAdditionalServiceItemsLink(event, bindingResult, additionalServiceItemsSupplier, vatValidator, fieldsFilterer);
             if(!postponeAssignment) {
                 Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
@@ -132,18 +134,25 @@ public class ContactAndTicketsForm implements Serializable {
             }
         });
 
-        if(purchaseContext.ofType(PurchaseContextType.subscription) && differentSubscriptionOwner) {
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.email", ErrorsCode.STEP_2_EMPTY_EMAIL);
+        if (purchaseContext.ofType(PurchaseContextType.subscription)) {
+            if (differentSubscriptionOwner) {
+                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
+                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
+                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "subscriptionOwner.email", ErrorsCode.STEP_2_EMPTY_EMAIL);
+            }
+
+            for(PurchaseContextFieldConfiguration fieldConf : fieldsFilterer.getFieldsForSubscription()) {
+                validateFieldConfiguration(subscriptionOwner, vatValidator, bindingResult, "subscriptionOwner.", fieldConf);
+            }
         }
+
     }
 
     private void checkAdditionalServiceItemsLink(Event event,
                                                  BindingResult bindingResult,
                                                  Supplier<List<AdditionalServiceItem>> additionalServiceItemsCount,
                                                  SameCountryValidator vatValidator,
-                                                 Validator.TicketFieldsFilterer ticketFieldsFilterer) {
+                                                 Validator.AdditionalFieldsFilterer additionalFieldsFilterer) {
         if (!event.supportsLinkedAdditionalServices()) {
             return;
         }
@@ -155,7 +164,7 @@ public class ContactAndTicketsForm implements Serializable {
         }
         var result = ValidationResult.success();
         for (var ticketAndFields : form.entrySet()) {
-            var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(ticketAndFields.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
+            var filteredForTicket = additionalFieldsFilterer.getFieldsForTicket(ticketAndFields.getKey(), EnumSet.of(ADDITIONAL_SERVICE));
             var fieldForms = ticketAndFields.getValue();
             for (int i = 0; i < fieldForms.size(); i++) {
                 result = result.or(Validator.validateAdditionalItemFieldsForTicket(fieldForms.get(i), filteredForTicket, bindingResult, "additionalServices["+ticketAndFields.getKey()+"]["+i+"]", vatValidator, fieldForms, additionalServiceItems));

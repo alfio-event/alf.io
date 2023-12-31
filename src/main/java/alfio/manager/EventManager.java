@@ -27,11 +27,11 @@ import alfio.model.Event.EventFormat;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketCategory.TicketAccessType;
-import alfio.model.TicketFieldConfiguration.Context;
-import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.metadata.AlfioMetadata;
-import alfio.model.modification.*;
-import alfio.model.modification.EventModification.AdditionalField;
+import alfio.model.modification.CategoryOrdinalModification;
+import alfio.model.modification.EventModification;
+import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.support.CheckInOutputColorConfiguration;
@@ -106,10 +106,9 @@ public class EventManager {
     private final SpecialPriceRepository specialPriceRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final ConfigurationManager configurationManager;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
-    private final AdditionalServiceRepository additionalServiceRepository;
-    private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final Flyway flyway;
     private final Environment environment;
     private final OrganizationRepository organizationRepository;
@@ -277,62 +276,10 @@ public class EventManager {
         }));
     }
 
-    private void createAdditionalFields(EventAndOrganizationId event, EventModification em) {
+    private void createAdditionalFields(Event event, EventModification em) {
         if (!CollectionUtils.isEmpty(em.getTicketFields())) {
-            em.getTicketFields().forEach(f -> insertAdditionalField(event, f, f.getOrder()));
+            em.getTicketFields().forEach(f -> purchaseContextFieldManager.insertAdditionalField(event, f, f.getOrder()));
         }
-    }
-
-    private static String toSerializedRestrictedValues(EventModification.WithRestrictedValues f) {
-        return EventCreationRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getRestrictedValuesAsString()) : null;
-    }
-
-    private static String toSerializedDisabledValues(EventModification.WithRestrictedValues f) {
-        return EventCreationRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getDisabledValuesAsString()) : null;
-    }
-
-    private static String generateJsonForList(Collection<?> values) {
-        return CollectionUtils.isNotEmpty(values) ? Json.GSON.toJson(values) : null;
-    }
-
-	private void insertAdditionalField(EventAndOrganizationId event, AdditionalField f, int order) {
-        String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
-        Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as, eventRepository.getEventCurrencyCode(event.getId())))).orElse(-1);
-        Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
-        int configurationId = ticketFieldRepository.insertConfiguration(event.getId(), f.getName(), order, f.getType(), serializedRestrictedValues,
-            f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds())).getKey();
-		f.getDescription().forEach((locale, value) -> ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value)));
-	}
-
-    public void updateAdditionalField(int id, EventModification.UpdateAdditionalField f) {
-        String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        ticketFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
-        f.getDescription().forEach((locale, value) -> {
-            String val = Json.GSON.toJson(value.getDescription());
-            if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {
-                ticketFieldRepository.insertDescription(id, locale, val);
-            }
-        });
-    }
-
-    private Integer findAdditionalService(EventAndOrganizationId event, EventModification.AdditionalService as, String currencyCode) {
-        ZoneId utc = ZoneId.of("UTC");
-        int eventId = event.getId();
-
-        ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
-
-        String checksum = new AdditionalService(0, eventId, as.isFixPrice(), as.getOrdinal(), as.getAvailableQuantity(),
-            as.getMaxQtyPerOrder(),
-            as.getInception().toZonedDateTime(eventZoneId).withZoneSameInstant(utc),
-            as.getExpiration().toZonedDateTime(eventZoneId).withZoneSameInstant(utc),
-            as.getVat(),
-            as.getVatType(),
-            Optional.ofNullable(as.getPrice()).map(p -> MonetaryUtil.unitToCents(p, currencyCode)).orElse(0),
-            as.getType(),
-            as.getSupplementPolicy(),
-            currencyCode, null).getChecksum();
-        return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
     public void updateEventHeader(Event original, EventModification em, String username) {
@@ -1023,45 +970,6 @@ public class EventManager {
         }
     }
 
-    public void updateTicketFieldDescriptions(Map<String, TicketFieldDescriptionModification> descriptions) {
-        descriptions.forEach((locale, value) -> {
-            String description = Json.GSON.toJson(value.getDescription());
-            if(0 == ticketFieldRepository.updateDescription(value.getTicketFieldConfigurationId(), locale, description)) {
-                ticketFieldRepository.insertDescription(value.getTicketFieldConfigurationId(), locale, description);
-            }
-        });
-    }
-    
-	public void addAdditionalField(EventAndOrganizationId event, AdditionalField field) {
-        if (field.isUseDefinedOrder()) {
-            insertAdditionalField(event, field, field.getOrder());
-        } else {
-            Integer order = ticketFieldRepository.findMaxOrderValue(event.getId());
-            insertAdditionalField(event, field, order == null ? 0 : order + 1);
-        }
-	}
-	
-	public void deleteAdditionalField(int ticketFieldConfigurationId) {
-		ticketFieldRepository.deleteValues(ticketFieldConfigurationId);
-		ticketFieldRepository.deleteDescription(ticketFieldConfigurationId);
-		ticketFieldRepository.deleteField(ticketFieldConfigurationId);
-	}
-	
-	public void swapAdditionalFieldPosition(int eventId, int id1, int id2) {
-		TicketFieldConfiguration field1 = ticketFieldRepository.findById(id1);
-		TicketFieldConfiguration field2 = ticketFieldRepository.findById(id2);
-		Assert.isTrue(eventId == field1.getEventId(), "eventId does not match field1.eventId");
-		Assert.isTrue(eventId == field2.getEventId(), "eventId does not match field2.eventId");
-		ticketFieldRepository.updateFieldOrder(id1, field2.getOrder());
-		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
-	}
-
-	public void setAdditionalFieldPosition(int eventId, int id, int newPosition) {
-        TicketFieldConfiguration field = ticketFieldRepository.findById(id);
-        Assert.isTrue(eventId == field.getEventId(), "eventId does not match field.eventId");
-        ticketFieldRepository.updateFieldOrder(id, newPosition);
-    }
-	
 	public void deleteEvent(int eventId, String username) {
 		final Event event = eventRepository.findById(eventId);
 		checkOwnership(event, username, event.getOrganizationId());

@@ -63,7 +63,7 @@ public class ReservationEmailContentHelper {
     private final OrderSummaryGenerator orderSummaryGenerator;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final OrganizationRepository organizationRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
@@ -79,7 +79,7 @@ public class ReservationEmailContentHelper {
                                          OrderSummaryGenerator orderSummaryGenerator,
                                          TicketReservationRepository ticketReservationRepository,
                                          TicketCategoryRepository ticketCategoryRepository,
-                                         TicketFieldRepository ticketFieldRepository,
+                                         PurchaseContextFieldRepository purchaseContextFieldRepository,
                                          OrganizationRepository organizationRepository,
                                          TicketRepository ticketRepository,
                                          TemplateManager templateManager,
@@ -93,7 +93,7 @@ public class ReservationEmailContentHelper {
         this.orderSummaryGenerator = orderSummaryGenerator;
         this.ticketReservationRepository = ticketReservationRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
-        this.ticketFieldRepository = ticketFieldRepository;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
         this.templateManager = templateManager;
@@ -293,7 +293,7 @@ public class ReservationEmailContentHelper {
     }
 
     public Map<String, List<String>> retrieveAttendeeAdditionalInfoForTicket(Ticket ticket) {
-        return ticketFieldRepository.findNameAndValue(ticket.getId())
+        return purchaseContextFieldRepository.findNameAndValue(ticket.getId())
             .stream()
             .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
     }
@@ -307,7 +307,7 @@ public class ReservationEmailContentHelper {
             String ticketUrl = ReservationUtil.ticketUpdateUrl(event, ticket, configurationManager);
             var ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
 
-            var initialModel = new HashMap<>(extensionManager.handleTicketEmailCustomText(event, ticketReservation, ticketReservationRepository.getAdditionalInfo(ticketReservation.getId()), ticketFieldRepository.findAllByTicketId(ticket.getId()))
+            var initialModel = new HashMap<>(extensionManager.handleTicketEmailCustomText(event, ticketReservation, ticketReservationRepository.getAdditionalInfo(ticketReservation.getId()), purchaseContextFieldRepository.findAllByTicketId(ticket.getId()))
                 .map(CustomEmailText::toMap)
                 .orElse(Map.of()));
             if(EventUtil.isAccessOnline(ticketCategory, event)) {

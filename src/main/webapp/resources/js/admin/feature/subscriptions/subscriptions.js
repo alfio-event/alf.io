@@ -82,6 +82,14 @@
                 this.subscriptionId = $stateParams.subscriptionId;
             }]
         })
+        .state('subscriptions.single.additional-fields', {
+            url:'/additional-fields',
+            template: '<additional-fields subscription-descriptor="ctrl.subscriptionDescriptor"></additional-fields>',
+            controller: function(loadSubscription) {
+                this.subscriptionDescriptor = loadSubscription.data;
+            },
+            controllerAs: 'ctrl'
+        })
     }])
     .component('subscriptionsContainer', {
         controller: ['$stateParams', '$state', '$scope', ContainerCtrl],

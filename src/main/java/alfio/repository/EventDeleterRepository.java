@@ -19,9 +19,13 @@ package alfio.repository;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @QueryRepository
 public interface EventDeleterRepository {
+
+    Logger LOGGER = LoggerFactory.getLogger(EventDeleterRepository.class);
 
 	@Query("delete from waiting_queue where event_id = :eventId")
 	int deleteWaitingQueue(@Bind("eventId") int eventId);
@@ -38,14 +42,11 @@ public interface EventDeleterRepository {
 	@Query("delete from email_message where event_id = :eventId")
 	int deleteEmailMessage(@Bind("eventId") int eventId);
 	
-	@Query("delete from ticket_field_value where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId)")
-	int deleteTicketFieldValue(@Bind("eventId") int eventId);
+	@Query("delete from purchase_context_field_value fv using purchase_context_field_configuration fc where fv.field_configuration_id_fk = fc.id and fc.event_id_fk = :eventId")
+	int deleteFieldValues(@Bind("eventId") int eventId);
 	
-	@Query("delete from ticket_field_description where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId)")
+	@Query("delete from purchase_context_field_description d using purchase_context_field_configuration c where d.field_configuration_id_fk = c.id and c.event_id_fk = :eventId")
 	int deleteFieldDescription(@Bind("eventId") int eventId);
-
-    @Query("delete from additional_service_field_value where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId and context = 'ADDITIONAL_SERVICE')")
-    int deleteAdditionalServiceFieldValue(@Bind("eventId") int eventId);
 
     @Query("delete from additional_service_description where additional_service_id_fk in (select id from additional_service where event_id_fk = :eventId)")
     int deleteAdditionalServiceDescriptions(@Bind("eventId") int eventId);
@@ -56,8 +57,8 @@ public interface EventDeleterRepository {
     @Query("delete from additional_service where event_id_fk = :eventId")
     int deleteAdditionalServices(@Bind("eventId") int eventId);
 
-	@Query("delete from ticket_field_configuration where event_id_fk= :eventId")
-	int deleteTicketFieldConfiguration(@Bind("eventId") int eventId);
+	@Query("delete from purchase_context_field_configuration where event_id_fk = :eventId")
+	int deleteFieldConfigurations(@Bind("eventId") int eventId);
 	
 	@Query("delete from event_migration where event_id = :eventId")
 	int deleteEventMigration(@Bind("eventId") int eventId);
@@ -122,12 +123,14 @@ public interface EventDeleterRepository {
         deleteConfigurationPurchaseContext(eventId);
         deleteConfigurationTicketCategory(eventId);
         deleteEmailMessage(eventId);
-        deleteTicketFieldValue(eventId);
-        deleteFieldDescription(eventId);
-        deleteAdditionalServiceFieldValue(eventId);
+        int deletedFieldValues = deleteFieldValues(eventId);
+        LOGGER.info("deleted {} field values", deletedFieldValues);
+        int deletedDescriptions = deleteFieldDescription(eventId);
+        LOGGER.info("deleted {} field descriptions", deletedDescriptions);
         deleteAdditionalServiceDescriptions(eventId);
         deleteAdditionalServiceItems(eventId);
-        deleteTicketFieldConfiguration(eventId);
+        int deletedConfigurations = deleteFieldConfigurations(eventId);
+        LOGGER.info("deleted {} field configurations", deletedConfigurations);
         deleteAdditionalServices(eventId);
         deleteEventMigration(eventId);
         deleteSponsorScan(eventId);

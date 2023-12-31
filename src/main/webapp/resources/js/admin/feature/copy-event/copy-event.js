@@ -15,7 +15,7 @@ angular.module('adminApplication').component('copyEvent', {
 });
 
 
-function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
+function copyEventCtrl(EventService, AdditionalFieldsService, $q, $templateCache, $filter, $http) {
 
     $templateCache.put('copy-event-typeahead-event.html', '<a>{{match.label.displayName}} - {{match.label.formattedBegin | formatDate}} / {{match.label.formattedEnd | formatDate}}</a>');
 
@@ -85,7 +85,7 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
             });
         });
 
-        EventService.getAdditionalFields(ctrl.selectedEvent.shortName).then(function(res) {
+        AdditionalFieldsService.getAdditionalFields('event', ctrl.selectedEvent.shortName).then(function(res) {
             ctrl.additionalFields = res.data;
             ctrl.selectedAdditionalFields = {};
             angular.forEach(res.data, function(r) {
@@ -95,6 +95,6 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
     }
 }
 
-copyEventCtrl.$inject = ['EventService', '$q', '$templateCache', '$filter', '$http'];
+copyEventCtrl.$inject = ['EventService', 'AdditionalFieldsService', '$q', '$templateCache', '$filter', '$http'];
 
 })();

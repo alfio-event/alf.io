@@ -33,15 +33,14 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 @AllArgsConstructor
-public class TicketFieldConfigurationDescriptionAndValue {
+public class FieldConfigurationDescriptionAndValue {
 
     @Delegate
-    private final TicketFieldConfiguration ticketFieldConfiguration;
+    private final PurchaseContextFieldConfiguration purchaseContextFieldConfiguration;
     @Delegate
-    private final TicketFieldDescription ticketFieldDescription;
+    private final PurchaseContextFieldDescription purchaseContextFieldDescription;
     private final int count;
     private final String value;
 
@@ -49,7 +48,8 @@ public class TicketFieldConfigurationDescriptionAndValue {
         "text",
         "tel",
         "textarea",
-        "vat:eu"
+        "vat:eu",
+        "dateOfBirth"
     );
     private static final Pattern CHECKBOX_VALUES_PATTERN = Pattern.compile("\"(.*?)\",?");
 
@@ -58,16 +58,16 @@ public class TicketFieldConfigurationDescriptionAndValue {
             return value;
         }
         if(isSelectField()) {
-            return ticketFieldDescription.getRestrictedValuesDescription().getOrDefault(value, "MISSING_DESCRIPTION");
+            return purchaseContextFieldDescription.getRestrictedValuesDescription().getOrDefault(value, "MISSING_DESCRIPTION");
         }
         return value;
     }
 
     public List<Triple<String, String, Boolean>> getTranslatedRestrictedValue() {
-        Map<String, String> description = ticketFieldDescription.getRestrictedValuesDescription();
-        return ticketFieldConfiguration.getRestrictedValues()
+        Map<String, String> description = purchaseContextFieldDescription.getRestrictedValuesDescription();
+        return purchaseContextFieldConfiguration.getRestrictedValues()
             .stream()
-            .map(val -> Triple.of(val, description.getOrDefault(val, "MISSING_DESCRIPTION"), isFieldValueEnabled(ticketFieldConfiguration, val)))
+            .map(val -> Triple.of(val, description.getOrDefault(val, "MISSING_DESCRIPTION"), isFieldValueEnabled(purchaseContextFieldConfiguration, val)))
             .collect(Collectors.toList());
     }
 
@@ -83,7 +83,8 @@ public class TicketFieldConfigurationDescriptionAndValue {
     }
 
     private boolean isText() {
-        return TEXT_FIELD_TYPES.contains(getType());
+        return purchaseContextFieldConfiguration.isTextField()
+            || TEXT_FIELD_TYPES.contains(purchaseContextFieldConfiguration.getType());
     }
 
     public String getValueDescription() {
@@ -123,13 +124,13 @@ public class TicketFieldConfigurationDescriptionAndValue {
     }
 
     public boolean isBeforeStandardFields() {
-        return isBeforeStandardFields(ticketFieldConfiguration);
+        return isBeforeStandardFields(purchaseContextFieldConfiguration);
     }
 
-    private static boolean isFieldValueEnabled(TicketFieldConfiguration ticketFieldConfiguration, String value) {
-        return !ticketFieldConfiguration.isSelectField()
-            || CollectionUtils.isEmpty(ticketFieldConfiguration.getDisabledValues())
-            || !ticketFieldConfiguration.getDisabledValues().contains(value);
+    private static boolean isFieldValueEnabled(PurchaseContextFieldConfiguration purchaseContextFieldConfiguration, String value) {
+        return !purchaseContextFieldConfiguration.isSelectField()
+            || CollectionUtils.isEmpty(purchaseContextFieldConfiguration.getDisabledValues())
+            || !purchaseContextFieldConfiguration.getDisabledValues().contains(value);
     }
 
     @RequiredArgsConstructor
@@ -141,8 +142,8 @@ public class TicketFieldConfigurationDescriptionAndValue {
         private final Boolean editable;
     }
 
-    public static boolean isBeforeStandardFields(TicketFieldConfiguration ticketFieldConfiguration) {
-        return ticketFieldConfiguration.getOrder() < 0;
+    public static boolean isBeforeStandardFields(PurchaseContextFieldConfiguration purchaseContextFieldConfiguration) {
+        return purchaseContextFieldConfiguration.getOrder() < 0;
     }
 
 }

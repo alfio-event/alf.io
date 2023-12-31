@@ -16,30 +16,36 @@
  */
 package alfio.model;
 
+import alfio.model.PurchaseContextFieldConfiguration.Context;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
-@Getter
-public class AdditionalServiceFieldValue {
+import java.util.UUID;
 
-    private final int additionalServiceItemId;
-    private final int additionalServiceId;
+@Getter
+public class PurchaseContextFieldValue {
+
+    private final Integer ticketId;
+    private final UUID subscriptionId;
+    private final Integer additionalServiceItemId;
     private final long fieldConfigurationId;
-    private final int ticketId;
     private final String name;
     private final String value;
+    private final Context context;
 
-    public AdditionalServiceFieldValue(@Column("additional_service_item_id_fk") int additionalServiceItemId,
-                                       @Column("additional_service_id_fk") int additionalServiceId,
-                                       @Column("field_configuration_id_fk") long fieldConfigurationId,
-                                       @Column("field_name") String name,
-                                       @Column("field_value") String value,
-                                       @Column("ticket_id_fk") int ticketId) {
-        this.additionalServiceItemId = additionalServiceItemId;
-        this.additionalServiceId = additionalServiceId;
-        this.fieldConfigurationId = fieldConfigurationId;
+    public PurchaseContextFieldValue(@Column("ticket_id_fk") Integer ticketId,
+                                     @Column("subscription_id_fk") UUID subscriptionId,
+                                     @Column("additional_service_item_id_fk") Integer additionalServiceItemId,
+                                     @Column("field_configuration_id_fk") long fieldConfigurationId,
+                                     @Column("field_name") String name,
+                                     @Column("field_value") String value,
+                                     @Column("context") Context context) {
         this.ticketId = ticketId;
+        this.subscriptionId = subscriptionId;
+        this.additionalServiceItemId = additionalServiceItemId;
+        this.fieldConfigurationId = fieldConfigurationId;
         this.name = name;
         this.value = value;
+        this.context = context;
     }
 }

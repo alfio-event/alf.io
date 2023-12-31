@@ -102,7 +102,10 @@ public class AdditionalServiceApiController {
     public ResponseEntity<EventModification.AdditionalService> update(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
         //
         accessService.checkEventOwnership(principal, eventId);
-        Assert.isTrue(additionalServiceManager.getOptionalById(additionalServiceId, eventId).isPresent(), "No additional service with id " + additionalServiceId + " present in eventId " + eventId);
+        Optional<AdditionalService> optional = additionalServiceManager.getOptionalById(additionalServiceId, eventId);
+        Assert.isTrue(optional.isPresent(), "No additional service with id " + additionalServiceId + " present in eventId " + eventId);
+        var existing = optional.get();
+        Assert.isTrue(existing.getAvailableQuantity() == -1 || additionalService.getAvailableQuantity() > 0, "Missing available quantity");
         //
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");

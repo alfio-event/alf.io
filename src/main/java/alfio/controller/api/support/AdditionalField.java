@@ -16,7 +16,7 @@
  */
 package alfio.controller.api.support;
 
-import alfio.model.TicketFieldConfiguration;
+import alfio.model.PurchaseContextFieldConfiguration;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -38,7 +38,7 @@ public class AdditionalField {
     private final boolean beforeStandardFields;
     private final Map<String, Description> description;
 
-    public static AdditionalField fromFieldConfiguration(TicketFieldConfiguration tfc,
+    public static AdditionalField fromFieldConfiguration(PurchaseContextFieldConfiguration tfc,
                                                          String value,
                                                          List<Field> fields,
                                                          boolean isBeforeStandardFields,

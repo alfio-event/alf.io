@@ -93,4 +93,12 @@ public class PurchaseContextManager {
         return findByReservationId(reservationId)
             .map(event -> Pair.of(event, ticketReservationRepository.findReservationById(reservationId)));
     }
+
+    public int getOrganizationId(PurchaseContext.PurchaseContextType purchaseContextType, String publicIdentifier) {
+        if (purchaseContextType == PurchaseContext.PurchaseContextType.event) {
+            return eventRepository.findOrganizationIdByShortName(publicIdentifier);
+        } else {
+            return subscriptionRepository.findOrganizationIdForDescriptor(UUID.fromString(publicIdentifier)).orElseThrow();
+        }
+    }
 }

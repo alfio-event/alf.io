@@ -65,7 +65,7 @@ public class EventModification {
     private final LocationDescriptor locationDescriptor;
     private final int locales;
 
-    private final List<AdditionalField> ticketFields;
+    private final List<AdditionalFieldRequest> ticketFields;
     private final List<AdditionalService> additionalServices;
 
     private final AlfioMetadata metadata;
@@ -101,7 +101,7 @@ public class EventModification {
                              @JsonProperty("freeOfCharge") boolean freeOfCharge,
                              @JsonProperty("geolocation") LocationDescriptor locationDescriptor,
                              @JsonProperty("locales") int locales,
-                             @JsonProperty("ticketFields") List<AdditionalField> ticketFields,
+                             @JsonProperty("ticketFields") List<AdditionalFieldRequest> ticketFields,
                              @JsonProperty("additionalServices") List<AdditionalService> additionalServices,
                              @JsonProperty("metadata") AlfioMetadata metadata,
                              @JsonProperty("linkedSubscriptions") List<UUID> linkedSubscriptions) {
@@ -170,68 +170,6 @@ public class EventModification {
 
     public interface WithLinkedCategories extends WithType {
         List<Integer> getLinkedCategoriesIds();
-    }
-
-    @Getter
-    public static class AdditionalField implements WithRestrictedValues, WithLinkedCategories {
-        private final int order;
-        private final boolean useDefinedOrder;
-        private final String name;
-        private final String type;
-        private final boolean required;
-        private final boolean readOnly;
-
-        private final Integer minLength;
-        private final Integer maxLength;
-        private final List<RestrictedValue> restrictedValues;
-
-        // locale -> description
-        private final Map<String, Description> description;
-        private final AdditionalService linkedAdditionalService;
-        private final List<Integer> linkedCategoryIds;
-
-
-        @JsonCreator
-        public AdditionalField(@JsonProperty("order") int order,
-                               @JsonProperty("useDefinedOrder") Boolean useDefinedOrder,
-                               @JsonProperty("name") String name,
-                               @JsonProperty("type") String type,
-                               @JsonProperty("required") boolean required,
-                               @JsonProperty("readOnly") boolean readOnly,
-                               @JsonProperty("minLength") Integer minLength,
-                               @JsonProperty("maxLength") Integer maxLength,
-                               @JsonProperty("restrictedValues") List<RestrictedValue> restrictedValues,
-                               @JsonProperty("description") Map<String, Description> description,
-                               @JsonProperty("forAdditionalService") AdditionalService linkedAdditionalService,
-                               @JsonProperty("categoryIds") List<Integer> linkedCategoryIds) {
-            this.order = order;
-            this.useDefinedOrder = Boolean.TRUE.equals(useDefinedOrder);
-            this.name = name;
-            this.type = type;
-            this.required = required;
-            this.readOnly = readOnly;
-            this.minLength = minLength;
-            this.maxLength = maxLength;
-            this.restrictedValues = restrictedValues;
-            this.description = description;
-            this.linkedAdditionalService = linkedAdditionalService;
-            this.linkedCategoryIds = linkedCategoryIds;
-        }
-
-        @Override
-        public List<String> getRestrictedValuesAsString() {
-            return restrictedValues == null ? Collections.emptyList() : restrictedValues.stream().map(RestrictedValue::getValue).collect(Collectors.toList());
-        }
-
-        @Override
-        public List<String> getDisabledValuesAsString() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Integer> getLinkedCategoriesIds() {
-            return linkedCategoryIds == null ? Collections.emptyList() : linkedCategoryIds;
-        }
     }
 
     @Getter
@@ -319,7 +257,7 @@ public class EventModification {
         private final DateTimeModification expiration;
         private final BigDecimal vat;
         private final alfio.model.AdditionalService.VatType vatType;
-        private final List<AdditionalField> additionalServiceFields;
+        private final List<AdditionalFieldRequest> additionalServiceFields;
         private final List<AdditionalServiceText> title;
         private final List<AdditionalServiceText> description;
         private final BigDecimal finalPrice;
@@ -338,7 +276,7 @@ public class EventModification {
                                  @JsonProperty("expiration") DateTimeModification expiration,
                                  @JsonProperty("vat") BigDecimal vat,
                                  @JsonProperty("vatType") alfio.model.AdditionalService.VatType vatType,
-                                 @JsonProperty("additionalServiceFields") List<AdditionalField> additionalServiceFields,
+                                 @JsonProperty("additionalServiceFields") List<AdditionalFieldRequest> additionalServiceFields,
                                  @JsonProperty("title") List<AdditionalServiceText> title,
                                  @JsonProperty("description") List<AdditionalServiceText> description,
                                  @JsonProperty("type")alfio.model.AdditionalService.AdditionalServiceType type,
@@ -356,7 +294,7 @@ public class EventModification {
                                   DateTimeModification expiration,
                                   BigDecimal vat,
                                   alfio.model.AdditionalService.VatType vatType,
-                                  List<AdditionalField> additionalServiceFields,
+                                  List<AdditionalFieldRequest> additionalServiceFields,
                                   List<AdditionalServiceText> title,
                                   List<AdditionalServiceText> description,
                                   BigDecimal finalPrice,
@@ -390,7 +328,7 @@ public class EventModification {
 
             private final alfio.model.AdditionalService src;
             private ZoneId zoneId;
-            private List<AdditionalField> additionalServiceFields = new ArrayList<>();
+            private List<AdditionalFieldRequest> additionalServiceFields = new ArrayList<>();
             private List<AdditionalServiceText> title = new ArrayList<>();
             private List<AdditionalServiceText> description = new ArrayList<>();
             private PriceContainer priceContainer;

@@ -26,7 +26,7 @@ import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
 import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.TicketFieldRepository;
+import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
@@ -35,9 +35,6 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
@@ -48,32 +45,31 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static alfio.model.TicketFieldConfiguration.Context.ADDITIONAL_SERVICE;
-import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ADDITIONAL_SERVICE;
+import static alfio.model.PurchaseContextFieldConfiguration.Context.ATTENDEE;
 import static java.util.Objects.requireNonNullElse;
 
 @Component
 @AllArgsConstructor
 public class TicketHelper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TicketHelper.class);
     private static final Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
 
     private final TicketReservationManager ticketReservationManager;
     private final OrganizationRepository organizationRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final EuVatChecker vatChecker;
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
-    private final NamedParameterJdbcTemplate jdbcTemplate;
 
 
-    public BiFunction<Ticket, Event, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
-        return EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
+    public BiFunction<Ticket, Event, List<FieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction(boolean formatValues) {
+        return EventUtil.retrieveFieldValues(ticketRepository, purchaseContextFieldManager, additionalServiceItemRepository, formatValues);
     }
 
     public Function<String, Integer> getTicketUUIDToCategoryId() {
@@ -109,7 +105,7 @@ public class TicketHelper {
         }
 
         final TicketReservation ticketReservation = result.getMiddle();
-        List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        List<PurchaseContextFieldConfiguration> fieldConf = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
         var sameCountryValidator = new SameCountryValidator(configurationManager, extensionManager, event, ticketReservation.getId(), vatChecker);
         AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(sameCountryValidator,
             new GroupManager.WhitelistValidator(event.getId(), groupManager));
@@ -118,7 +114,7 @@ public class TicketHelper {
         var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), ticketReservation.getId());
 
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(ticketReservation.getId());
-        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf,
+        var ticketFieldFilterer = new Validator.AdditionalFieldsFilterer(fieldConf,
             ticketsInReservation,
             event.supportsLinkedAdditionalServices(),
             additionalServiceItems);
@@ -135,7 +131,7 @@ public class TicketHelper {
     private ValidationResult validateAdditionalItemsFields(Event event,
                                                            UpdateTicketOwnerForm updateTicketOwner,
                                                            String ticketUuid,
-                                                           List<TicketFieldConfiguration> fieldsForTicket,
+                                                           List<PurchaseContextFieldConfiguration> fieldsForTicket,
                                                            List<AdditionalServiceItem> additionalServiceItems,
                                                            BindingResult bindingResult,
                                                            SameCountryValidator vatValidator) {

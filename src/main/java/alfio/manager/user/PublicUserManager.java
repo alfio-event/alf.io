@@ -23,14 +23,14 @@ import alfio.controller.form.UpdateProfileForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.ExtensionManager;
 import alfio.model.PurchaseContext;
-import alfio.model.TicketFieldConfiguration;
+import alfio.model.PurchaseContextFieldConfiguration;
 import alfio.model.TicketReservationAdditionalInfo;
 import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.model.extension.AdditionalInfoItem;
 import alfio.model.user.AdditionalInfoWithLabel;
 import alfio.model.user.PublicUserProfile;
 import alfio.model.user.User;
-import alfio.repository.TicketFieldRepository;
+import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.user.UserRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
@@ -54,7 +54,7 @@ public class PublicUserManager {
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
     private final UserManager userManager;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
 
     public boolean deleteUserProfile(OpenIdAlfioAuthentication authentication) {
         return userManager.findOptionalEnabledUserByUsername(authentication.getName())
@@ -112,16 +112,16 @@ public class PublicUserManager {
 
     private Map<String, AdditionalInfoWithLabel> buildAdditionalInfoWithLabels(PublicUserProfile existingProfile, PurchaseContext purchaseContext, UpdateTicketOwnerForm form) {
         var event = purchaseContext.event().orElseThrow();
-        var fields = ticketFieldRepository.findAdditionalFieldsOfTypeForEvent(event.getId(), "input:text");
-        var fieldsById = fields.stream().collect(toMap(TicketFieldConfiguration::getId, Function.identity()));
+        var fields = purchaseContextFieldRepository.findAdditionalFieldsOfTypeForEvent(event.getId(), "input:text");
+        var fieldsById = fields.stream().collect(toMap(PurchaseContextFieldConfiguration::getId, Function.identity()));
         var userLanguage = form.getUserLanguage();
         var filteredItems = extensionManager.filterAdditionalInfoToSave(purchaseContext, form.getAdditional(), existingProfile);
         final Map<String, AdditionalInfoItem> filteredItemsByKey;
         filteredItemsByKey = filteredItems.map(additionalInfoItems -> additionalInfoItems.stream().collect(toMap(AdditionalInfoItem::getKey, Function.identity())))
             .orElse(null);
-        var labels = ticketFieldRepository.findDescriptions(event.getId(), userLanguage).stream()
-            .filter(f -> fieldsById.containsKey(f.getTicketFieldConfigurationId()))
-            .map(f -> Map.entry(fieldsById.get(f.getTicketFieldConfigurationId()).getName(), f))
+        var labels = purchaseContextFieldRepository.findDescriptionsForLocale(event.getId(), userLanguage).stream()
+            .filter(f -> fieldsById.containsKey(f.getFieldConfigurationId()))
+            .map(f -> Map.entry(fieldsById.get(f.getFieldConfigurationId()).getName(), f))
             .filter(f -> filteredItemsByKey == null || filteredItemsByKey.containsKey(f.getKey()))
             .map(e -> {
                 if(filteredItemsByKey != null) {

@@ -38,7 +38,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -302,7 +301,7 @@ public class AdminReservationApiController {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         return ResponseEntity.of(
             adminReservationManager.loadFullTicketInfo(reservationId, publicIdentifier, ticketUUID)
-                .map(eventAndTicket -> bookingInfoTicketLoader.toBookingInfoTicket(eventAndTicket.getRight(), eventAndTicket.getLeft(), EnumSet.allOf(TicketFieldConfiguration.Context.class)))
+                .map(eventAndTicket -> bookingInfoTicketLoader.toBookingInfoTicket(eventAndTicket.getRight(), eventAndTicket.getLeft(), PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS))
         );
     }
 

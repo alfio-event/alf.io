@@ -282,9 +282,6 @@
             getSupportedLanguages: function() {
                 return $http['get']('/admin/api/events-supported-languages').error(HttpErrorHandler.handle);
             },
-            getDynamicFieldTemplates: function() {
-                return $http['get']('/admin/api/event/additional-field/templates').error(HttpErrorHandler.handle);
-            },
             getMessagesPreview: function(eventName, categoryId, messages) {
                 var queryString = angular.isNumber(categoryId) ? '?categoryId='+categoryId : '';
                 return $http['post']('/admin/api/events/'+eventName+'/messages/preview'+queryString, messages).error(HttpErrorHandler.handle);
@@ -295,45 +292,6 @@
             },
             getFields : function(eventName) {
                 return $http['get']('/admin/api/events/'+eventName+'/fields');
-            },
-            getAdditionalFields: function(eventName) {
-                return $http.get('/admin/api/events/'+eventName+'/additional-field').error(HttpErrorHandler.handle);
-            },
-            getRestrictedValuesStats: function(eventName, id) {
-                return $http.get('/admin/api/events/'+eventName+'/additional-field/'+id+'/stats').error(HttpErrorHandler.handle);
-            },
-            saveFieldDescription: function(eventName, fieldDescription) {
-                return $http.post('/admin/api/events/'+eventName+'/additional-field/descriptions', fieldDescription);
-            },
-            addField: function(eventName, field) {
-            	return $http.post('/admin/api/events/'+eventName+'/additional-field/new', field).error(HttpErrorHandler.handle);
-            },
-            updateField: function(eventName, toUpdate) {
-
-                //new restrictedValues are complex objects, already present restrictedValues are plain string
-                if(toUpdate && toUpdate.restrictedValues && toUpdate.restrictedValues.length > 0) {
-                    var res = [];
-                    for(var i = 0; i < toUpdate.restrictedValues.length; i++) {
-                        res.push(toUpdate.restrictedValues[i].isNew ? toUpdate.restrictedValues[i].value: toUpdate.restrictedValues[i]);
-                    }
-                    toUpdate.restrictedValues = res;
-                }
-                //
-
-                return $http['post']('/admin/api/events/'+eventName+'/additional-field/'+toUpdate.id, toUpdate);
-            },
-            deleteField: function(eventName, id) {
-            	return $http['delete']('/admin/api/events/'+eventName+'/additional-field/'+id);
-            },
-            swapFieldPosition: function(eventName, id1, id2) {
-            	return $http.post('/admin/api/events/'+eventName+'/additional-field/swap-position/'+id1+'/'+id2, null);
-            },
-            moveField: function(eventName, id, position) {
-                return $http.post('/admin/api/events/'+eventName+'/additional-field/set-position/'+id, null, {
-                    params: {
-                        newPosition: position
-                    }
-                });
             },
             getAllReservationStatus : function(eventName) {
                 return $http.get('/admin/api/reservation/event/'+eventName+'/reservations/all-status');

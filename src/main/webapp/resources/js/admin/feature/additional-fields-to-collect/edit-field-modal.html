@@ -58,7 +58,7 @@
         </div>
     </div>
 
-    <div class="form-horizontal" data-ng-if="event.ticketCategories.length > 0">
+    <div class="form-horizontal" data-ng-if="event && event.ticketCategories.length > 0">
         <div class="form-group">
             <label class="col-xs-2 control-label">Collect for</label>
             <div class="col-xs-10">
@@ -100,7 +100,7 @@
                             <pre class="form-control-static" data-ng-if="!addNewField && !restrictedValue.isNew">{{restrictedValue}}</pre>
                         </div>
                     </div>
-                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group" ng-class="{'text-muted disabled-value': !isRestrictedValueEnabled(restrictedValue, field)}">
+                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, locales)" class="form-group" ng-class="{'text-muted disabled-value': !isRestrictedValueEnabled(restrictedValue, field)}">
                         <label class="col-xs-2 control-label">Text ({{lang.displayLanguage}})</label>
                         <div class="col-xs-10">
                             <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]" class="form-control" required data-ng-if="addNewField">
@@ -115,16 +115,16 @@
                     </div>
                 </div>
             </div>
-            <div class="form-horizontal" data-ng-if="field.type === 'input:text' || field.type === 'input:tel' || field.type === 'textarea'">
+            <div class="form-horizontal" data-ng-if="field.type === 'input:text' || field.type === 'input:tel' || field.type === 'textarea' || field.type === 'input:dateOfBirth'">
                 <div class="form-group">
-                    <label class="col-xs-2 control-label">Min length</label>
+                    <label class="col-xs-2 control-label">Min {{ field.type === 'input:dateOfBirth' ? 'age (years)' : 'length'}}</label>
                     <div class="col-xs-10">
                         <input type="number" ng-model="field.minLength" class="form-control" data-ng-if="addNewField">
                         <pre class="form-control-static" data-ng-if="!addNewField">{{field.minLength}}</pre>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-xs-2 control-label">Max length</label>
+                    <label class="col-xs-2 control-label">Max {{ field.type === 'input:dateOfBirth' ? 'age (years)' : 'length'}}</label>
                     <div class="col-xs-10">
                         <input type="number" ng-model="field.maxLength" class="form-control" data-ng-if="addNewField">
                         <pre class="form-control-static" data-ng-if="!addNewField">{{field.maxLength}}</pre>
@@ -152,7 +152,7 @@
         <small>Configure how to describe the field in the reservation page</small>
     </div>
 
-    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
+    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, locales)">
         <h4>{{lang.displayLanguage}}</h4>
         <div class="form-horizontal">
             <div class="form-group">

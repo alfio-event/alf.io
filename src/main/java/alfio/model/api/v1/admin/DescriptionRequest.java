@@ -14,19 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.modification;
+package alfio.model.api.v1.admin;
 
-
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
-
-import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
-@Setter
-public class TicketFieldDescriptionModification {
+@AllArgsConstructor
+public class DescriptionRequest {
+    private String lang;
+    private String body;
 
-    private long ticketFieldConfigurationId;
-    private String locale;
-    private Map<String, Object> description;
+    public boolean isValid() {
+        return StringUtils.isNotEmpty(lang)
+            && StringUtils.isNotEmpty(body);
+    }
 }
