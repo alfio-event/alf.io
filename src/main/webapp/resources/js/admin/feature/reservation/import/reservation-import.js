@@ -79,7 +79,7 @@
             ctrl.languages = ctrl.event.contentLanguages;
             init();
 
-            $q.all([ConfigurationService.loadSingleConfigForEvent(ctrl.event.shortName, 'SEND_TICKETS_AFTER_IMPORT_ATTENDEE'), ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE')])
+            $q.all([ConfigurationService.loadSingleConfigForEvent(ctrl.event.shortName, 'SEND_TICKETS_AFTER_IMPORT_ATTENDEE'), ConfigurationService.loadSingleConfigForEvent(ctrl.event.shortName, 'CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE')])
                 .then(function(result) {
                     ctrl.reservation.notification.attendees = ('true' === result[0].data); //default is false
                     ctrl.createSingleReservations = ('true' === result[1].data); //default is false

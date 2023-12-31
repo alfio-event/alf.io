@@ -99,11 +99,11 @@
             loadEventConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/load').error(HttpErrorHandler.handle)
             },
-            loadSingleConfigForEvent: function(eventId, key) {
+            loadSingleConfigForEvent: function(eventName, key) {
                 if (!window.USER_IS_OWNER) {
                     return $q.reject('not authorized');
                 }
-                return $http.get('/admin/api/configuration/events/'+eventId+'/single/'+key).error(HttpErrorHandler.handle)
+                return $http.get('/admin/api/configuration/events/'+eventName+'/single/'+key).error(HttpErrorHandler.handle)
             },
             loadSingleConfigForOrganization: function(organizationId, key) {
                 if (!window.USER_IS_OWNER) {
