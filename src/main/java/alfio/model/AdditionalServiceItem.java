@@ -28,7 +28,7 @@ public class AdditionalServiceItem {
     public enum AdditionalServiceItemStatus {
         FREE,
         PENDING, TO_BE_PAID, ACQUIRED, CANCELLED,
-        CHECKED_IN, // <- unused
+        CHECKED_IN,
         EXPIRED,
         INVALIDATED, RELEASED
     }

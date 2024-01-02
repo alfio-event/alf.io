@@ -32,7 +32,7 @@ public interface AdditionalServiceItemRepository {
     String SELECT_BOOKED_ADDITIONAL_SERVICES = "select asd.value as as_name, ads.id as_id, count(ads.id) as qty from additional_service_item ai" +
         "  join additional_service ads on additional_service_id_fk = ads.id" +
         "  join additional_service_description asd on ads.id = asd.additional_service_id_fk" +
-        "  where ai.event_id_fk = :eventId and ai.status = 'ACQUIRED'" +
+        "  where ai.event_id_fk = :eventId and ai.status in ('ACQUIRED', 'CHECKED_IN', 'TO_BE_PAID')" +
         "  and ads.service_type <> 'DONATION'" +
         "  and ads.supplement_policy <> 'MANDATORY_ONE_FOR_TICKET'" +
         "  and asd.locale = :language" +
