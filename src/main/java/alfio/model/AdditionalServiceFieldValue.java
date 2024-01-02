@@ -42,4 +42,13 @@ public class AdditionalServiceFieldValue {
         this.name = name;
         this.value = value;
     }
+
+    // add getters for backwards compatibility
+    public String getFieldName() {
+        return name;
+    }
+
+    public String getFieldValue() {
+        return value;
+    }
 }
