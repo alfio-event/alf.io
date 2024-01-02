@@ -1002,10 +1002,10 @@ public class TicketReservationManager {
             .filter(id -> !reservationsToIgnore.contains(id))
             .collect(toList());
 
-        subscriptionRepository.deleteSubscriptionWithReservationId(toDelete);
         specialPriceRepository.resetToFreeAndCleanupForReservation(toDelete);
         ticketRepository.resetCategoryIdForUnboundedCategories(toDelete);
         purchaseContextFieldRepository.deleteAllValuesForReservations(toDelete);
+        subscriptionRepository.deleteSubscriptionWithReservationId(toDelete);
         ticketRepository.freeFromReservation(toDelete);
         waitingQueueManager.cleanExpiredReservations(toDelete);
 
