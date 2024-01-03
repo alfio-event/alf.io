@@ -544,21 +544,25 @@ public class ExtensionManager {
     }
 
     public Optional<TicketMetadata> handleTicketAssignmentMetadata(TicketWithMetadataAttributes ticketWithMetadata,
-                                                                   Event event) {
+                                                                   Event event,
+                                                                   Map<String, List<String>> additionalInfo) {
 
         var context = new HashMap<String, Object>();
         context.put(TICKET, ticketWithMetadata.getTicket());
         context.put(TICKET_METADATA, ticketWithMetadata.getMetadata().getMetadataForKey(TicketMetadataContainer.GENERAL).orElseGet(TicketMetadata::empty));
+        context.put(ADDITIONAL_INFO, Objects.requireNonNullElse(additionalInfo, Map.of()));
         return Optional.ofNullable(syncCall(ExtensionEvent.TICKET_ASSIGNED_GENERATE_METADATA, event, context, TicketMetadata.class, false));
     }
 
     public Optional<SubscriptionMetadata> handleSubscriptionAssignmentMetadata(Subscription subscription,
                                                                                SubscriptionDescriptor descriptor,
-                                                                               SubscriptionMetadata subscriptionMetadata) {
+                                                                               SubscriptionMetadata subscriptionMetadata,
+                                                                               Map<String, List<String>> additionalInfo) {
         var context = new HashMap<String, Object>();
         context.put("subscription", subscription);
         context.put(METADATA, Objects.requireNonNullElseGet(subscriptionMetadata, SubscriptionMetadata::empty));
         context.put("subscriptionDescriptor", descriptor);
+        context.put(ADDITIONAL_INFO, additionalInfo);
         return Optional.ofNullable(syncCall(ExtensionEvent.SUBSCRIPTION_ASSIGNED_GENERATE_METADATA, descriptor, context, SubscriptionMetadata.class, false));
     }
 

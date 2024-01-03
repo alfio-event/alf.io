@@ -377,7 +377,7 @@ public class ReservationFinalizer {
         var subscriptionId = subscription.getId();
         auditingRepository.insert(reservationId, null, purchaseContext, SUBSCRIPTION_ACQUIRED, new Date(), Audit.EntityType.SUBSCRIPTION, subscriptionId.toString());
         var originalMetadata = subscriptionRepository.getSubscriptionMetadata(subscriptionId);
-        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, originalMetadata)
+        extensionManager.handleSubscriptionAssignmentMetadata(subscription, subscriptionDescriptor, originalMetadata, reservationOperationHelper.retrieveAttendeeAdditionalInfoForSubscription(subscriptionId))
             .ifPresent(metadata -> {
                 var metadataToSave = metadata;
                 if (originalMetadata != null) {
@@ -406,7 +406,7 @@ public class ReservationFinalizer {
         var ticketsWithMetadataById = ticketRepository.findTicketsInReservationWithMetadata(reservationId)
             .stream().collect(toMap(twm -> twm.getTicket().getId(), Function.identity()));
         ticketsWithMetadataById.forEach((id, ticketWithMetadata) -> {
-            var newMetadataOptional = extensionManager.handleTicketAssignmentMetadata(ticketWithMetadata, event);
+            var newMetadataOptional = extensionManager.handleTicketAssignmentMetadata(ticketWithMetadata, event, reservationOperationHelper.retrieveAttendeeAdditionalInfoForTicket(ticketWithMetadata.getTicket()));
             newMetadataOptional.ifPresent(metadata -> {
                 var existingContainer = TicketMetadataContainer.copyOf(ticketWithMetadata.getMetadata());
                 var general = new HashMap<>(existingContainer.getMetadataForKey(TicketMetadataContainer.GENERAL)
