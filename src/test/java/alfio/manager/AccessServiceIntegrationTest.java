@@ -79,10 +79,9 @@ class AccessServiceIntegrationTest {
             super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, publicOpenIdAuthenticationManager, sessionRegistry);
         }
 
-        @Override
         @Bean
-        public AuthenticationManager authenticationManagerBean () throws Exception {
-            return super.authenticationManagerBean();
+        public AuthenticationManager authenticationManagerBean() {
+            return super.createAuthenticationManager();
         }
     }
 

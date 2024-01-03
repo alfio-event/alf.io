@@ -29,7 +29,6 @@ import alfio.util.oauth2.AuthorizationRequestDetails;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi20;
-import com.github.scribejava.core.model.OAuthConfig;
 import com.github.scribejava.core.oauth.OAuth20Service;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
@@ -63,13 +62,12 @@ public class StripeConnectManager implements OAuthPaymentProviderConnector {
 
     @Override
     public AuthorizationRequestDetails getConnectURL(int organizationId) {
-        var options = configurationManager.getFor(Set.of(STRIPE_SECRET_KEY, STRIPE_CONNECT_CLIENT_ID, STRIPE_CONNECT_CALLBACK, BASE_URL), ConfigurationLevel.organization(organizationId));
-        String secret = options.get(STRIPE_SECRET_KEY).getRequiredValue();
+        var options = configurationManager.getFor(Set.of(STRIPE_CONNECT_CLIENT_ID, STRIPE_CONNECT_CALLBACK, BASE_URL), ConfigurationLevel.organization(organizationId));
         String clientId = options.get(STRIPE_CONNECT_CLIENT_ID).getRequiredValue();
         String callbackURL = options.get(STRIPE_CONNECT_CALLBACK).getValueOrDefault(options.get(BASE_URL).getRequiredValue() + STRIPE_CONNECT_REDIRECT_PATH);
         String state = extensionManager.generateOAuth2StateParam(organizationId).orElse(UUID.randomUUID().toString());
-        OAuthConfig config = new OAuthConfig(clientId, secret, callbackURL, "read_write", null, state, "code", null, null, null);
-        return new AuthorizationRequestDetails(new StripeConnectApi().getAuthorizationUrl(config, Collections.emptyMap()), state);
+        return new AuthorizationRequestDetails(new StripeConnectApi()
+            .getAuthorizationUrl("code", clientId, callbackURL, "read_write", state, Collections.emptyMap()), state);
     }
 
     @Override

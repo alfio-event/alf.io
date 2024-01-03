@@ -16,21 +16,17 @@
  */
 package alfio.e2e;
 
-import alfio.BaseTestConfiguration;
 import alfio.config.Initializer;
-import alfio.test.util.AlfioIntegrationTest;
-import alfio.util.BaseIntegrationTest;
+import alfio.test.util.TestUtil;
+import alfio.util.ActiveTravisProfileResolver;
 import alfio.util.ClockProvider;
 import alfio.util.HttpUtils;
-import lombok.SneakyThrows;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -53,7 +49,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -62,21 +60,19 @@ import static java.util.Objects.requireNonNull;
 import static org.openqa.selenium.support.ui.ExpectedConditions.presenceOfElementLocated;
 
 /**
- * For testing with browserstack you need:
- * Enable the profiles e2e and travis
- *  -Dspring.profiles.active=e2e,travis
+ * For testing with browserstack you need to set the following VM run options:
+ * -Dspring.profiles.active=e2e,travis
+ * -De2e.server.url=https://master.test.alf.io
+ * -De2e.server.apikey=
+ * -De2e.browser=safari|firefox|chrome
+ * -Dbrowserstack.username=
+ * -Dbrowserstack.access.key=
  *
- * And pass the following env var:
- *  - browserstack.username=
- *  - browserstack.access.key=
- *  - e2e.server.url=
- *  - e2e.server.apikey=
- *  - e2e.browser=ie11|safari|firefox|chrome
  */
-@ContextConfiguration(classes = { BaseTestConfiguration.class, NormalFlowE2ETest.E2EConfiguration.class })
-@ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-@AlfioIntegrationTest
-class NormalFlowE2ETest extends BaseIntegrationTest {
+@ContextConfiguration(classes = { NormalFlowE2ETest.E2EConfiguration.class })
+@ActiveProfiles(value = {Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST}, resolver = ActiveTravisProfileResolver.class)
+@SpringBootTest
+class NormalFlowE2ETest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NormalFlowE2ETest.class);
     private static final String JSON_BODY;
@@ -99,11 +95,10 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
 
     @Autowired
     public NormalFlowE2ETest(List<BrowserWebDriver> webDrivers,
-                             Environment environment,
-                             ClockProvider clockProvider) {
+                             Environment environment) {
         this.webDrivers = webDrivers;
         this.environment = environment;
-        this.clockProvider = clockProvider;
+        this.clockProvider = TestUtil.clockProvider();
     }
 
     @BeforeEach
@@ -151,14 +146,18 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
         }
     }
 
+    private static void clickWithJs(WebDriver driver, WebElement element) {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+    }
+
     @Test
     @Timeout(value = 15L, unit = TimeUnit.MINUTES)
-    public void testFlow() {
+    void testFlow() throws InterruptedException {
         for(var browserWebDriver : webDrivers) {
             var driver = browserWebDriver.driver;
             try {
                 driver.navigate().to(eventUrl);
-                WebDriverWait wait = new WebDriverWait(driver, 10);
+                WebDriverWait wait = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS));
                 wait.until(presenceOfElementLocated(By.cssSelector("div.markdown-content")));
                 page1TicketSelection(browserWebDriver);
                 //wait until page is loaded
@@ -169,7 +168,7 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
                 wait.until(presenceOfElementLocated(By.cssSelector("h2[translate='reservation-page.title']")));
                 //
                 page3Payment(browserWebDriver, wait);
-                WebElement fourthPageElem = new WebDriverWait(driver, 30).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
+                WebElement fourthPageElem = new WebDriverWait(driver, Duration.of(30, ChronoUnit.SECONDS)).until(presenceOfElementLocated(By.cssSelector("div.attendees-data")));
                 Assertions.assertNotNull(fourthPageElem);
             } finally {
                 driver.quit();
@@ -187,6 +186,13 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
 
     }
 
+    private static WebElement scrollTo(WebDriver driver, WebElement element) {
+        if (driver instanceof JavascriptExecutor js) {
+            js.executeScript("arguments[0].scrollIntoView();", element);
+        }
+        return element;
+    }
+
     private void page2ContactDetails(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
         var driver = browserWebDriver.driver;
         driver.findElement(By.id("first-name")).sendKeys("Test");
@@ -199,13 +205,16 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
             selectElement(invoiceRequested.get(0), browserWebDriver);
         }
 
-        driver.findElement(By.cssSelector("label[for=invoiceTypePrivate]")).click();
+        scrollTo(driver, driver.findElement(By.id("invoiceTypePrivate"))).click();
         driver.findElement(By.id("billingAddressLine1")).sendKeys("Bahnhofstrasse 1");
         driver.findElement(By.id("billingAddressZip")).sendKeys("8000");
         driver.findElement(By.id("billingAddressCity")).sendKeys("Zürich");
 
 
-        driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode']")).click();
+        Actions actions = new Actions(driver);
+        actions.moveToElement(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode']")));
+        clickWithJs(driver, driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode']")));
+
         driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] input[id=vatCountry]")).sendKeys("switzerland");
         wait.until(presenceOfElementLocated(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")));
         selectElement(driver.findElement(By.cssSelector("ng-select[formcontrolname='vatCountryCode'] ng-dropdown-panel div[role=option]")), browserWebDriver, Keys.TAB);
@@ -224,8 +233,8 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
         driver.findElement(By.cssSelector("button[type=submit][translate='reservation-page.continue']")).sendKeys(Keys.RETURN);
     }
 
-    @SneakyThrows
-    private void page3Payment(BrowserWebDriver browserWebDriver, WebDriverWait wait) {
+
+    private void page3Payment(BrowserWebDriver browserWebDriver, WebDriverWait wait) throws InterruptedException {
         var driver = browserWebDriver.driver;
         selectElement(driver.findElement(By.id("CREDIT_CARD-label")), browserWebDriver);
         wait.until(presenceOfElementLocated(By.cssSelector("#card-element iframe")));
@@ -245,8 +254,8 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
         driver.findElement(By.cssSelector(".btn-success")).sendKeys(Keys.RETURN);
     }
 
-    @SneakyThrows
-    private void sendSlowInput(WebElement element, BrowserWebDriver browserWebDriver, CharSequence... strings) {
+
+    private void sendSlowInput(WebElement element, BrowserWebDriver browserWebDriver, CharSequence... strings) throws InterruptedException {
         if(browserWebDriver.browser == BrowserWebDriver.Browser.SAFARI || browserWebDriver.browser == BrowserWebDriver.Browser.IE) {
             for (var str : strings) {
                 element.sendKeys(str);
@@ -266,7 +275,8 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
         if(driver.browser == BrowserWebDriver.Browser.SAFARI) {
             element.sendKeys(keyToSend);
         } else {
-            element.click();
+            // click with js...
+            clickWithJs(driver.driver, element);
         }
     }
 
@@ -306,13 +316,15 @@ class NormalFlowE2ETest extends BaseIntegrationTest {
 
 
         private BrowserWebDriver build(String browser, URL url, String githubBuildNumber) {
-            switch (browser) {
-                case "ie11": return new BrowserWebDriver(BrowserWebDriver.Browser.IE, buildRemoteDriver(url,"Windows", "10", "IE", "11", "testFlowIE11"+githubBuildNumber));
-                case "chrome": return new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, buildRemoteDriver(url,"Windows", "10", "Chrome", "latest", "testFlowChrome"+githubBuildNumber));
-                case "firefox": return new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url,"Windows", "10", "Firefox", "latest", "testFlowFirefox"+githubBuildNumber));
-                case "safari": return new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url,"OS X", "Catalina", "Safari", "13.1", "testFlowSafari"+githubBuildNumber));
-                default: throw new IllegalStateException("unknown browser" + browser);
-            }
+            return switch (browser) {
+                case "chrome" ->
+                        new BrowserWebDriver(BrowserWebDriver.Browser.CHROME, buildRemoteDriver(url, "Windows", "10", "Chrome", "latest", "testFlowChrome" + githubBuildNumber));
+                case "firefox" ->
+                        new BrowserWebDriver(BrowserWebDriver.Browser.FIREFOX, buildRemoteDriver(url, "Windows", "10", "Firefox", "latest", "testFlowFirefox" + githubBuildNumber));
+                case "safari" ->
+                        new BrowserWebDriver(BrowserWebDriver.Browser.SAFARI, buildRemoteDriver(url, "OS X", "Catalina", "Safari", "13.1", "testFlowSafari" + githubBuildNumber));
+                default -> throw new IllegalStateException("unknown browser" + browser);
+            };
         }
 
         @Bean

@@ -64,7 +64,7 @@ class IndexControllerTest {
         session = mock(HttpSession.class);
         json = mock(Json.class);
         messageSourceManager = mock(MessageSourceManager.class);
-        when(messageSourceManager.getBundleAsMap(anyString(), anyBoolean(), anyString())).thenReturn(Map.of());
+        when(messageSourceManager.getBundleAsMap(anyString(), anyBoolean(), anyString(), same(MessageSourceManager.PUBLIC_FRONTEND))).thenReturn(Map.of());
         when(eventLoader.loadEventInfo(anyString(), eq(session))).thenReturn(Optional.of(event));
         when(index.getElementsByTagName("html")).thenReturn(List.of(html));
         when(json.asJsonString(any())).thenReturn("{}");
@@ -78,16 +78,16 @@ class IndexControllerTest {
         void singleLanguage() {
             when(event.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
             IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
-            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"));
+            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "it");
-            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("en")); //for non en language we preload also the fallback
+            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("en"), same(MessageSourceManager.PUBLIC_FRONTEND)); //for non en language we preload also the fallback
         }
 
         @Test
         void singleLanguageWithWrongParam() {
             when(event.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
             IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
-            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"));
+            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "it");
         }
 
@@ -95,7 +95,7 @@ class IndexControllerTest {
         void singleLanguageWithParam() {
             when(event.getContentLanguages()).thenReturn(List.of(new Language("de", "")));
             IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
-            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("de"));
+            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("de"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "de");
         }
 
@@ -103,7 +103,7 @@ class IndexControllerTest {
         void multipleLanguages() {
             when(event.getContentLanguages()).thenReturn(List.of(new Language("de", ""), new Language("it", "")));
             IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
-            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("de"));
+            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("de"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "de");
         }
 
@@ -112,7 +112,7 @@ class IndexControllerTest {
         void multipleLanguagesWithParam(String param) {
             when(event.getContentLanguages()).thenReturn(List.of(new Language("de", ""), new Language("it", "")));
             IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, param);
-            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq(param));
+            verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq(param), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", param);
         }
 
@@ -122,11 +122,11 @@ class IndexControllerTest {
     @Test
     void preloadTranslationsEventNotPresent() {
         IndexController.preloadTranslations(null, request, session, eventLoader, head, messageSourceManager, index, json, null);
-        verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("en"));
+        verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("en"), same(MessageSourceManager.PUBLIC_FRONTEND));
         verify(html).setAttribute("lang", "en");
 
         IndexController.preloadTranslations(null, request, session, eventLoader, head, messageSourceManager, index, json, "it");
-        verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"));
+        verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
         verify(html).setAttribute("lang", "it");
     }
 }

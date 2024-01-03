@@ -27,7 +27,6 @@ import alfio.util.oauth2.AuthorizationRequestDetails;
 import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi20;
 import com.github.scribejava.core.model.OAuth2AccessToken;
-import com.github.scribejava.core.model.OAuthConfig;
 import com.github.scribejava.core.oauth.OAuth20Service;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -56,8 +55,8 @@ public class MollieConnectManager implements OAuthPaymentProviderConnector {
         var options = configurationManager.getFor(Set.of(MOLLIE_API_KEY, MOLLIE_CONNECT_CLIENT_ID, MOLLIE_CONNECT_CALLBACK, BASE_URL), ConfigurationLevel.organization(organizationId));
         String callbackURL = options.get(MOLLIE_CONNECT_CALLBACK).getValueOrDefault(options.get(BASE_URL).getRequiredValue() + MOLLIE_CONNECT_REDIRECT_PATH);
         String state = extensionManager.generateOAuth2StateParam(organizationId).orElse(UUID.randomUUID().toString());
-        OAuthConfig config = new OAuthConfig(options.get(MOLLIE_CONNECT_CLIENT_ID).getRequiredValue(), options.get(MOLLIE_API_KEY).getRequiredValue(), callbackURL, SCOPES, null, state, "code", null, null, null);
-        return new AuthorizationRequestDetails(new MollieConnectApi().getAuthorizationUrl(config, Collections.emptyMap()), state);
+        return new AuthorizationRequestDetails(new MollieConnectApi()
+            .getAuthorizationUrl("code", options.get(MOLLIE_CONNECT_CLIENT_ID).getRequiredValue(), callbackURL, SCOPES, state, Collections.emptyMap()), state);
     }
 
     @Override

@@ -24,8 +24,8 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import alfio.util.RefreshableDataSource;
-import com.stripe.Stripe;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stripe.Stripe;
 import com.zaxxer.hikari.HikariConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +71,7 @@ public class BaseTestConfiguration {
     @Profile("!travis")
     public RefreshableDataSource dataSource() {
         String POSTGRES_DB = "alfio";
-        String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "9.6");
+        String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "10");
         log.debug("Running tests using PostgreSQL v.{}", postgresVersion);
         if (postgres == null) {
             postgres = new PostgreSQLContainer<>("postgres:"+postgresVersion)

@@ -168,7 +168,7 @@ abstract class AbstractFormBasedWebSecurity {
         return userDetailsManager;
     }
 
-    private AuthenticationManager createAuthenticationManager() {
+    protected final AuthenticationManager createAuthenticationManager() {
         var userDetailsManager = createUserDetailsManager();
         var daoAuthenticationProvider = new DaoAuthenticationProvider();
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
