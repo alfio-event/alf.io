@@ -4,11 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build common && ng build public && ng build admin",
+    "build": "ng build public",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "postinstall": "(cd projects/common && npm install) && (cd projects/public && npm install) && (cd projects/admin && npm install)",
-    "prebuild": "npm --prefix projects/admin run svg"
+    "postinstall": "(cd projects/public && npm install)"
   },
   "private": true,
   "dependencies": {

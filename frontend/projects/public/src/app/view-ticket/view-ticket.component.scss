@@ -1,6 +1,6 @@
-@import "~bootstrap/scss/mixins";
-@import "~bootstrap/scss/functions";
-@import "~bootstrap/scss/variables";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
 
 img.wallet-link {
   @include media-breakpoint-up(md) {

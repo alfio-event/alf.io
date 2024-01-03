@@ -1,5 +1,4 @@
 import {BrowserModule} from '@angular/platform-browser';
-import {AlfioCommonModule} from 'common';
 import {APP_INITIALIZER, NgModule} from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 
@@ -130,7 +129,6 @@ import {MyProfileComponent} from './my-profile/my-profile.component';
 import {WaitingRoomComponent} from './waiting-room/waiting-room.component';
 import {MyProfileDeleteWarningComponent} from './my-profile/my-profile-delete-warning.component';
 import {TranslateDescriptionPipe} from './shared/translate-description.pipe';
-// import { AuthTokenInterceptor, DOMGidExtractor, DOMXsrfTokenExtractor } from 'common'; // FIXME: check why importing from common fail
 import {AuthTokenInterceptor, DOMGidExtractor, DOMXsrfTokenExtractor} from './xsrf';
 import {DownloadTicketComponent} from './reservation/download-ticket/download-ticket.component';
 import {AdditionalServiceFormComponent} from './additional-service-form/additional-service-form.component';
@@ -229,7 +227,6 @@ export function InitUserService(userService: UserService): () => Promise<boolean
         NgbModalModule,
         NgbDropdownModule,
         SharedModule,
-        AlfioCommonModule,
     ],
     providers: [
       { provide: APP_INITIALIZER, useFactory: InitUserService, deps: [UserService], multi: true },
