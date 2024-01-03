@@ -35,7 +35,7 @@ We currently support Raspbian Stretch (Debian 9).
 
 - download the image from [this link](https://downloads.raspberrypi.org/raspbian/images/raspbian-2019-04-09/2019-04-08-raspbian-stretch.zip) or [use bittorrent](https://downloads.raspberrypi.org/raspbian/images/raspbian-2019-04-09/2019-04-08-raspbian-stretch.zip.torrent)
 - install the image on a clean SD card by following [the official guide](https://www.raspberrypi.org/documentation/installation/installing-images/)
-
+- make sure that all settings dtoverlay= are commented out in config.txt, and add dtoverlay=rpi-ft5406 at the end of the file
 
 ## Assembling the entire thing
 
