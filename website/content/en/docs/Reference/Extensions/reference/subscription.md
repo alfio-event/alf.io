@@ -38,6 +38,11 @@ A result of type [`SubscriptionMetadata`](https://github.com/alfio-event/alf.io/
                 <td>[`SubscriptionMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/SubscriptionMetadata.java)</td>
                 <td>Existing metadata for subscription.</td>
             </tr>
+            <tr>
+                <td>`additionalInfo`</td>
+                <td>`Map<String, List<String>>`</td>
+                <td>Additional information provided by the subscription holder</td>
+            </tr>
         </tbody>
     </table>
 </div>

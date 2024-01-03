@@ -212,11 +212,11 @@ public class ReservationEmailContentHelper {
         model.put("reservationEmailModel", Json.toJson(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
         switch (documentType) {
             case INVOICE:
-                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.INVOICE_PDF));
             case RECEIPT:
-                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
             case CREDIT_NOTE:
-                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
+                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, APPLICATION_PDF.getType(), model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
             default:
                 throw new IllegalStateException(documentType+" is not supported");
         }
@@ -294,6 +294,12 @@ public class ReservationEmailContentHelper {
 
     public Map<String, List<String>> retrieveAttendeeAdditionalInfoForTicket(Ticket ticket) {
         return purchaseContextFieldRepository.findNameAndValue(ticket.getId())
+            .stream()
+            .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
+    }
+
+    public Map<String, List<String>> retrieveAttendeeAdditionalInfoForSubscription(UUID subscriptionId) {
+        return purchaseContextFieldRepository.findNameAndValue(subscriptionId)
             .stream()
             .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
     }
