@@ -23,11 +23,13 @@ import alfio.manager.openid.AdminOpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -40,9 +42,9 @@ import javax.sql.DataSource;
 @Profile("openid")
 @Configuration(proxyBeanMethods = false)
 @Order(1)
-@Log4j2
 public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
 
+    private static final Logger log = LoggerFactory.getLogger(OpenIdAdminWebSecurity.class);
     private final AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager;
 
     public OpenIdAdminWebSecurity(Environment environment,
@@ -68,10 +70,10 @@ public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
     }
 
     @Override
-    protected void addAdditionalFilters(HttpSecurity http) throws Exception {
+    protected void addAdditionalFilters(HttpSecurity http, AuthenticationManager jdbcAuthenticationManager) {
         var callbackLoginFilter = new OpenIdCallbackLoginFilter(adminOpenIdAuthenticationManager,
             new AntPathRequestMatcher("/callback", "GET"),
-            authenticationManager());
+            jdbcAuthenticationManager);
         http.addFilterBefore(callbackLoginFilter, UsernamePasswordAuthenticationFilter.class);
         log.trace("adding openid filter");
         http.addFilterAfter(new OpenIdAuthenticationFilter("/authentication", adminOpenIdAuthenticationManager, "/", false), OpenIdCallbackLoginFilter.class);
