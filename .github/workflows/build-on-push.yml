@@ -22,21 +22,21 @@ jobs:
                   key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
                   restore-keys: |
                       ${{ runner.os }}-gradlew-
-            - name: Set up JDK 11
+            - name: Set up JDK
               uses: actions/setup-java@v3
               with:
-                  java-version: 11
+                  java-version: 17
                   distribution: temurin
             - name: Build with Gradle
               run: ./gradlew build distribution jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
             - name: upload to sonarcloud
-              if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '14'}}
+              if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '15'}}
               run: ./gradlew sonarqube
               env:
                   SONARCLOUD_TOKEN: ${{ secrets.SONAR_TOKEN }}
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             -   name: 'Upload Build'
-                if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '9.6'}}
+                if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '10'}}
                 uses: actions/upload-artifact@v3
                 with:
                     name: dist
