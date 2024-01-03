@@ -1,0 +1,16 @@
+<div class="mt-3" [ngClass]="cardLayout ? 'card card-light home-card' : ''">
+  <div class="card-header bg-white event-header" *ngIf="cardLayout">
+    <img [src]="'/file/'+subscription.fileBlobId" class="mx-auto img-responsive" alt="" aria-hidden="true" role="presentation">
+  </div>
+  <div [class.card-body]="cardLayout">
+    <h2 [class.card-title]="cardLayout">{{title}}</h2>
+    <div class="mt-3">
+      <app-subscription-summary [subscription]="subscription" [owner]="owner" [fieldConfigurationBeforeStandard]="fieldConfigurationBeforeStandard" [fieldConfigurationAfterStandard]="fieldConfigurationAfterStandard"></app-subscription-summary>
+    </div>
+  </div>
+  <div class="card-footer border-top-0 bg-white" *ngIf="cardLayout">
+    <div class="d-flex justify-content-end">
+      <a [routerLink]="['/subscription', subscription.id]" [queryParams]="params" class="btn btn-success stretched-link">{{'subscription-list.link' | translate}}<span class="sr-only"> {{title}}</span></a>
+    </div>
+  </div>
+</div>

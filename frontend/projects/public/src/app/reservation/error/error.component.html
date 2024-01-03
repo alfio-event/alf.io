@@ -1,0 +1,5 @@
+<app-reservation>
+    <h4 class="mt-5 text-center" translate="reservation-page-error-status.title"></h4>
+    <p class="mt-5 text-center" *ngIf="purchaseContext" [innerHTML]="'reservation-page-error-status.contact-text' | translate: {'0': purchaseContext.organizationEmail, '1': reservationId, '2': purchaseContext.organizationEmail}"></p>
+    <p class="mt-5 text-center">{{'reservation-page-error-status.your-reservation-identifier' | translate: {'0': reservationId} }}</p>
+</app-reservation>

@@ -1,0 +1,8 @@
+<div class="container mt-2">
+  <div class="application-container p-md-4">
+    <ng-content></ng-content>
+    <div class="mt-5" *ngIf="displayFooterLinks">
+      <app-footer-links [marginClass]="'mb-2'" [linksContainer]="purchaseContext"></app-footer-links>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,9 @@
+<app-topbar [contentLanguages]="purchaseContext.contentLanguages" [displayLoginButton]="displayTopLoginButton"></app-topbar>
+<div class="row">
+  <div class="col-12" [ngClass]="{'col-sm-7 col-md-4': isEvent}">
+    <img class="img-responsive" alt="" aria-hidden="true" [src]="'/file/'+purchaseContext.fileBlobId" role="presentation">
+  </div>
+  <div class="col-12 col-sm-5 col-md-8 text-center" *ngIf="isEvent">
+    <h1>{{ title }}</h1>
+  </div>
+</div>

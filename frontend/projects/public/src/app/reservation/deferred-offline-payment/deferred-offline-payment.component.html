@@ -1,0 +1,22 @@
+<app-reservation>
+    <div *ngIf="purchaseContext && reservationInfo">
+        <div class="alert alert-success mt-5">
+            <h2 class="text-center" [innerHTML]="'reservation-page.offline.deferred.success.title' | translate"></h2>
+            <h4 class="text-center" translate="reservation-page.offline.deferred.success.message"></h4>
+        </div>
+        <div class="page-header">
+            <h2 translate="reservation-page.title"></h2>
+        </div>
+        <app-summary-table [purchaseContext]="purchaseContext" [reservationInfo]="reservationInfo"></app-summary-table>
+    
+        <div class="text-center text-muted mt-5">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
+        <hr>
+        <div class="row d-flex justify-content-between mt-2 mobile-add-margin-bottom mt-4">
+            <div class="col-md-5 col-12 order-md-1" *ngIf="purchaseContext.invoicingConfiguration.userCanDownloadReceiptOrInvoice && reservationInfo.invoiceNumber !== null">
+                <a [href]="'/api/v2/public/' + purchaseContextType + '/' + publicIdentifier + '/reservation/' + reservationInfo.id + '/invoice'" class="btn btn-success block-button" target="_blank" translate="reservation-page-complete.download-your-invoice"></a>
+            </div>
+            <div class="col-md-5 col-12 order-md-1 text-center" *ngIf="!purchaseContext.invoicingConfiguration.userCanDownloadReceiptOrInvoice"><p translate="reservation-page-waiting.invoice-will-be-sent"></p></div>
+            <div class="col-md-5 col-12 order-md-0"><a [href]="purchaseContext.websiteUrl" class="btn btn-light block-button" translate="to-event-site"></a></div>
+        </div>
+    </div>
+</app-reservation>

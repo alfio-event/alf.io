@@ -1,0 +1,5 @@
+<div class="alert text-center" [ngClass]="'alert-'+alertType" [class.sticky]="displaySticky">
+    <fa-icon [icon]="['far', 'clock']" a11yRole="presentation"></fa-icon>{{' '}}
+    <span *ngIf="!isExpired" [innerHTML]="message"></span>
+    <strong *ngIf="isExpired" translate="error.STEP_2_ORDER_HAS_EXPIRED"></strong>
+</div>

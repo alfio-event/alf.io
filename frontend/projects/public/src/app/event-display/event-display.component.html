@@ -1,0 +1,216 @@
+<app-purchase-context-container [purchaseContext]="event">
+  <div *ngIf="event" class="add-margin-bottom">
+    <header><app-purchase-context-header [purchaseContext]="event" type="event"></app-purchase-context-header></header>
+    <main>
+
+    <hr>
+
+    <div class="row">
+        <div [ngClass]="{'col-md-7': displayMap, 'col-md-12': !displayMap}">
+          <app-event-summary [event]="event" [dateValidityProvider]="event"></app-event-summary>
+        </div>
+        <div class="col-md-5" *ngIf="displayMap"><img [src]="event.mapUrl" class="img-responsive margin-auto" role="presentation" alt=""></div>
+    </div>
+
+    <hr>
+
+    <div class="markdown-content" [innerHTML]="event.description[translate.currentLang]"></div>
+
+    <div #tickets></div>
+    <h2 class="mt-4 mb-4">{{'show-event.tickets' | translate}} <span *ngIf="ticketsLeftCountVisible()" class="badge badge-warning ms-2">{{"show-event.tickets.left" | translate: {'0': event.availableTicketsCount} }}</span></h2>
+
+    <div class="alert alert-danger" role="alert" *ngIf="globalErrors && globalErrors.length > 0">
+      <div *ngFor="let err of globalErrors"><strong>{{err.code | translate: err.arguments}}</strong></div>
+    </div>
+
+    <div class="alert alert-success" role="alert" *ngIf="dynamicDiscountMessage">
+        <span [innerHTML]="dynamicDiscountMessage"></span>
+    </div>
+
+    <!-- begin waiting list -->
+    <div *ngIf="waitingList && !waitingListRequestSubmitted" class="alert alert-warning" role="alert">
+      <ng-container *ngIf="preSales">
+          <h3 class="wMarginBottom" translate="show-event.pre-sales.header"></h3>
+          <h4 translate="show-event.pre-sales.message"></h4>
+      </ng-container>
+      <ng-container *ngIf="!preSales">
+          <h3 class="wMarginBottom" translate="show-event.sold-out.header"></h3>
+          <h4 translate="show-event.sold-out.message"></h4>
+      </ng-container>
+      <hr/>
+      <form [formGroup]="waitingListForm" (submit)="submitWaitingListRequest(event.shortName, waitingListForm.value)">
+          <div class="form-group">
+            <label class="form-label" for="firstName" translate="common.first-name"></label>
+            <input type="text" id="firstName" class="form-control" name="firstName" formControlName="firstName" required="required" aria-required="true" [attr.maxlength]="255" appInvalidFeedback>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lastName" translate="common.last-name"></label>
+            <input type="text" id="lastName" class="form-control" name="lastName" formControlName="lastName" required="required" aria-required="true" [attr.maxlength]="255" appInvalidFeedback>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email" translate="common.email"></label>
+            <input type="email" id="email" class="form-control" name="email" formControlName="email" required="required" aria-required="true" [attr.maxlength]="255" appInvalidFeedback>
+          </div>
+          <div class="form-group" *ngIf="ticketCategoriesForWaitingList && ticketCategoriesForWaitingList.length > 1">
+            <label class="form-label" for="selectedCategory" translate="reservation-page.category"></label>
+            <select name="selectedCategory" id="selectedCategory" formControlName="selectedCategory" class="form-select" appInvalidFeedback>
+              <option value=""></option>
+              <option *ngFor="let tc of ticketCategoriesForWaitingList" [ngValue]="tc.id">{{tc.name}}</option>
+            </select>
+          </div>
+          <div class="form-group">
+              <label class="form-label" for="userLanguage" translate="reservation-page-complete.language"></label>
+              <select name="userLanguage" formControlName="userLanguage" id="userLanguage" class="form-select" required="required" aria-required="true" appInvalidFeedback>
+                <option value=""></option>
+                <option *ngFor="let l of event.contentLanguages" [ngValue]="l.locale">{{l.displayLanguage}}</option>
+              </select>
+          </div>
+          <div class="form-check mt-2 wMarginBottom" *ngIf="event.privacyPolicyUrl">
+              <input class="form-check-input" id="privacyPolicyAccepted" type="checkbox" required name="privacyPolicyAccepted" formControlName="privacyPolicyAccepted" value="true" appInvalidFeedback [invalidFeedbackInLabel]="true">
+              <label class="form-check-label" for="privacyPolicyAccepted">
+                {{'reservation-page.privacy.prefix'|translate}}{{' '}}<a [href]="event.privacyPolicyUrl" target="_blank" rel="noopener" translate="reservation-page.privacy.link.text"></a>{{' '}}{{'reservation-page.privacy.suffix'|translate}}
+              </label>
+          </div>
+          <div class="form-check">
+              <input class="form-check-input" id="termsAndConditionsAccepted" type="checkbox" required name="termAndConditionsAccepted" formControlName="termAndConditionsAccepted" aria-required="true" appInvalidFeedback [invalidFeedbackInLabel]="true">
+              <label class="form-check-label" for="termsAndConditionsAccepted">
+                  {{'reservation-page.tc.prefix'|translate}}{{' '}}<a [href]="event.termsAndConditionsUrl" target="_blank" rel="noopener" translate="reservation-page.tc.link.text"></a>{{' '}}{{'reservation-page.tc.suffix'|translate}}
+              </label>
+          </div>
+          <div class="row justify-content-end">
+              <div class="col-md-4 col-12">
+                <button type="submit" id="waiting-queue-subscribe" class="btn btn-success block-button " translate="show-event.sold-out.subscribe"></button>
+              </div>
+          </div>
+      </form>
+    </div>
+    <div *ngIf="waitingListRequestSubmitted">
+      <div class="alert alert-danger" role="alert" *ngIf="!waitingListRequestResult">
+        <h4 translate="show-event.sold-out.subscription-error"></h4>
+      </div>
+      <div class="alert alert-success" role="alert" *ngIf="waitingListRequestResult">
+        <h4 translate="show-event.sold-out.subscription-complete"></h4>
+      </div>
+    </div>
+    <!-- end waiting list -->
+
+    <form [formGroup]="reservationForm" (submit)="submitForm(event.shortName, reservationForm.value)" *ngIf="ticketCategories">
+      <div class="alert alert-warning text-center" role="alert" *ngIf="ticketCategories.length == 0">
+        <h3 translate="show-event.sold-out.header"></h3>
+      </div>
+      <div *ngFor="let category of ticketCategories;let counter = index" formArrayName="reservation">
+        <app-item-card [currentLang]="translate.currentLang" [item]="category" [formGroupName]="''+counter" [parentFormGroup]="reservationFormItem(reservationForm, counter)" [additionalClass]="category.accessRestricted ? 'ticket-category-restricted border-warning shadow-sm ': ''">
+          <span class="item-title">
+            {{category.name}}
+          </span>
+          <div class="item-badges mb-2">
+            <span *ngIf="displayOnlineTicketTag(category)" class="badge badge-success">{{'event.online.badge' | translate}}</span>
+            <span class="badge badge-warning" [class.ms-2]="displayOnlineTicketTag(category)" *ngIf="ticketsLeftCountVisibleForCategory(category)">{{"show-event.tickets.left" | translate: {'0': category.availableTickets} }}</span>
+          </div>
+          <div class="item-price">
+            <span *ngIf="category.free" translate="common.free"></span>
+            <span *ngIf="!category.free">
+              <app-price-tag [purchaseContext]="event" [formattedPrice]="category.formattedFinalPrice" [showTaxDetails]="category.displayTaxInformation" [discountedPrice]="category.formattedDiscountedPrice" [showDiscount]="category.hasDiscount"></app-price-tag>
+            </span>
+          </div>
+          <div class="item-qty-selector">
+              <app-ticket-quantity-selector [parentGroup]="reservationFormItem(reservationForm, counter)"
+                [category]="category"
+                [quantityRange]="ticketCategoryAmount[category.id]"
+                (valueChange)="selectionChange()"></app-ticket-quantity-selector>
+          </div>
+        </app-item-card>
+      </div>
+
+      <div class="mt-4 text-muted" *ngIf="expiredCategories.length > 0">
+        <div class="text-center">
+          <button type="button" (click)="expiredCategoriesExpanded = !expiredCategoriesExpanded" class="btn btn-link"><fa-icon [icon]="expiredCategoriesExpanded ? ['fas', 'angle-up'] : ['fas', 'angle-down']" a11yRole="presentation"></fa-icon>&nbsp;{{ 'show-event.expired-categories' | translate }}</button>
+        </div>
+        <ul class="list-group list-group-flush text-muted mt-2" *ngIf="expiredCategoriesExpanded">
+          <li *ngFor="let category of expiredCategories;" class="list-group-item">
+            <div class="d-flex flex-grow-1 justify-content-between">
+              <div>
+                <div class="h6 pe-1">
+                    {{category.name}}
+                </div>
+              </div>
+              <div>
+                <div class="h6">{{'show-event.sales-ended'|translate: {'0': category.formattedExpiration[translate.currentLang]} }}</div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+
+
+      <div *ngIf="supplementCategories && supplementCategories.length > 0" class="mt-5">
+        <h2 translate="show-event.additional-services"></h2>
+        <app-additional-service *ngFor="let supplement of supplementCategories" [form]="reservationForm" [additionalService]="supplement" [event]="event"></app-additional-service>
+      </div>
+
+      <div *ngIf="donationCategories && donationCategories.length > 0" class="mt-5">
+          <h2 translate="show-event.donations"></h2>
+          <app-additional-service *ngFor="let donation of donationCategories" [form]="reservationForm" [additionalService]="donation" [event]="event"></app-additional-service>
+      </div>
+
+      <div class="alert alert-light mt-4" *ngIf="eventCode">
+        <div class="d-flex justify-content-between">
+          <div class="h-100">
+            <h5 class="alert-heading"><fa-icon [icon]="event.promotionsConfiguration.usePartnerCode ? ['far', 'handshake'] : ['fas', 'gift']" a11yRole="presentation"></fa-icon>{{' '}}{{'show-event.promo-code-applied' | translate: {'0': (event.promotionsConfiguration.usePartnerCode ? 'show-event.promo-code-type.partner' : 'show-event.promo-code-type.promotional') | translate} }} {{eventCode.code}}</h5>
+            <p *ngIf="eventCode.type === 'DISCOUNT'">
+              <span *ngIf="eventCode.discountType === 'FIXED_AMOUNT'">
+                {{'show-event.promo-code-fixed-amount-discount'|translate: {'0': eventCode.discountAmount + ' ' + event.currency} }}
+              </span>
+              <span *ngIf="eventCode.discountType === 'FIXED_AMOUNT_RESERVATION'">
+                {{'show-event.promo-code-percentage-discount'|translate: {'0': eventCode.discountAmount + ' ' + event.currency} }}
+              </span>
+              <span *ngIf="eventCode.discountType === 'PERCENTAGE'">
+                  {{'show-event.promo-code-percentage-discount'|translate: {'0': eventCode.discountAmount + '%'} }}
+              </span>
+            </p>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-light" type="button" (click)="removePromoCode()" translate="reservation-page.cancel"></button>
+          </div>
+        </div>
+      </div>
+
+
+      <div *ngIf="event.promotionsConfiguration.hasAccessPromotions" [ngClass]="{'alert alert-info': displayPromoCodeForm}" class="mt-4">
+        <div class="d-flex justify-content-center justify-content-md-end" *ngIf="!displayPromoCodeForm && eventCode == null">
+          <button type="button" class="btn btn-link" (click)="togglePromoCodeVisible()">
+            <fa-icon [icon]="event.promotionsConfiguration.usePartnerCode ? ['far', 'handshake'] : ['fas', 'gift']" a11yRole="presentation"></fa-icon>{{' '}}
+            <span>{{'show-event.promo-code'|translate: {'0': (event.promotionsConfiguration.usePartnerCode ? 'show-event.promo-code-type.partner' : 'show-event.promo-code-type.promotional') | translate } }}</span>
+          </button>
+        </div>
+        <div *ngIf="displayPromoCodeForm" class="mt-2">
+          <div class="row" [formGroup]="promoCodeForm">
+            <div class="col-12 col-md-6 offset-md-1">
+              <div class="form-group">
+                <label for="promo-code" class="sr-only">{{'show-event.promo-code-insert' | translate: {'0': (event.promotionsConfiguration.usePartnerCode ? 'show-event.promo-code-type.partner' : 'show-event.promo-code-type.promotional') | translate } }}</label>
+                <input (keydown.enter)="promoCodeOnEnter($event)" required formControlName="promoCode" [placeholder]="'show-event.promo-code-insert' | translate: {'0': (event.promotionsConfiguration.usePartnerCode ? 'show-event.promo-code-type.partner' : 'show-event.promo-code-type.promotional') | translate }" autocomplete="off" class="form-control" id="promo-code" appInvalidFeedback #promoCode>
+                <div class="invalid-feedback"></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4 text-center">
+              <button class="btn btn-success" translate="show-event.promo-code.apply" type="button" [disabled]="promoCodeForm.invalid" (click)="applyPromoCode()"></button>
+              <button class="btn btn-light ms-2" translate="reservation-page-complete.cancel" type="button" (click)="togglePromoCodeVisible()"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <app-recaptcha [apiKey]="event.captchaConfiguration.recaptchaApiKey" (recaptchaResponse)="handleRecaptchaResponse($event)" *ngIf="event.captchaConfiguration.captchaForTicketSelection && event.captchaConfiguration.recaptchaApiKey"></app-recaptcha>
+
+      <hr class="mt-5">
+
+      <div class="row d-flex justify-content-between mobile-add-margin-bottom">
+        <div class="col-md-5 order-md-1 col-12"><button type="submit" class="block-button btn btn-success" translate="show-event.continue"></button></div>
+        <div class="col-md-5 order-md-0 col-12 "><a [href]="event.websiteUrl" class="block-button btn btn-light" translate="to-event-site"></a></div>
+      </div>
+    </form>
+
+    </main>
+  </div>
+</app-purchase-context-container>

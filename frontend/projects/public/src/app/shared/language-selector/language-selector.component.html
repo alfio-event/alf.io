@@ -1,0 +1,8 @@
+<div class="text-end" ngbDropdown *ngIf="filteredLanguages && filteredLanguages.length > 0">
+  <button class="btn btn-link text-muted" id="languageDropdown" ngbDropdownToggle>
+      <fa-icon [icon]="['fas', 'globe']" aria-hidden="true" [title]="'reservation-page-complete.language' | translate"></fa-icon> {{currentLanguage}}
+  </button>
+  <div ngbDropdownMenu aria-labelledby="languageDropdown">
+    <button ngbDropdownItem *ngFor="let lang of filteredLanguages" (click)="changeLanguage(lang.locale)" class="btn btn-link">{{lang.displayLanguage}}</button>
+  </div>
+</div>

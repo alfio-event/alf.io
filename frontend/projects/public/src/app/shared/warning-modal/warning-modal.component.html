@@ -1,0 +1,17 @@
+<div class="modal-body text-center">
+  <div class="text-warning mb-3">
+    <fa-icon [icon]="['fas', 'exclamation-triangle']" [size]="'3x'" a11yRole="presentation"></fa-icon>
+  </div>
+  <h4 class="modal-title text-center">
+    {{ message | translate:parameters}}
+  </h4>
+  <hr/>
+  <div class="row">
+    <div class="col-6">
+      <button type="button" class="btn btn-success block-button" (click)="activeModal.dismiss()" translate="warning.check"></button>
+    </div>
+    <div class="col-6">
+      <button type="button" class="btn btn-light block-button" (click)="activeModal.close()" translate="warning.proceed"></button>
+    </div>
+  </div>
+</div>

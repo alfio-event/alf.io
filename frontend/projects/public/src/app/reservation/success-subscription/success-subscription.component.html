@@ -1,0 +1,102 @@
+<app-reservation>
+  <div *ngIf="reservationInfo && purchaseContext">
+    <div class="alert alert-success mb-5">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="h3" *ngIf="reservationFinalized" [innerHTML]="'reservation-page-complete.info-subscription' | translate"></div>
+          <div class="h3" *ngIf="!reservationFinalized" translate="reservation-page-complete.reservation.finalization-in-progress"></div>
+        </div>
+      </div>
+      <div class="row mt-2" *ngIf="reservationFinalized">
+        <div class="col-sm-12" [innerHTML]="'reservation-page-complete.info-subscription-email' | translate: {'0':reservationInfo.email}"></div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-12 col-md-5 mb-1 mb-md-0" *ngIf="reservationFinalized" [class.offset-md-2]="downloadBillingDocumentVisible" [class.offset-md-7]="!downloadBillingDocumentVisible">
+          <button type="button" (click)="reSendReservationEmail()" class="btn btn-default block-button"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.resend-reservation-email'|translate}}</button>
+        </div>
+        <div class="col-12 col-md-5 mb-md-0" *ngIf="downloadBillingDocumentVisible">
+          <ng-container>
+            {{' '}}
+            <a *ngIf="reservationInfo.invoiceNumber !== null"
+               class="btn btn-default block-button"
+               [href]="'/api/v2/public/event/'+purchaseContext.shortName+'/reservation/'+reservationInfo.id+'/invoice'"
+               target="_blank">
+              <fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-your-invoice'|translate}}
+            </a>
+            <a *ngIf="reservationInfo.invoiceNumber === null"
+               class="btn btn-default block-button"
+               [href]="'/api/v2/public/event/'+purchaseContext.shortName+'/reservation/'+reservationInfo.id+'/receipt'"
+               target="_blank">
+              <fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-your-receipt'|translate}}
+            </a>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <h1 translate="reservation-page-complete.subscription"></h1>
+
+    <div class="row mt-5">
+      <div class="col-12 col-lg-6">
+        <app-basic-subscription-info [cardLayout]="false" [subscription]="subscription" [owner]="subscriptionInfo.owner" [fieldConfigurationBeforeStandard]="subscriptionInfo.fieldConfigurationBeforeStandard" [fieldConfigurationAfterStandard]="subscriptionInfo.fieldConfigurationAfterStandard"></app-basic-subscription-info>
+        <p class="lead">
+          <span *ngIf="subscriptionInfo.usageDetails.used > 0">{{ 'reservation-page-complete.subscription.usage' | translate:{'0': subscriptionInfo.usageDetails.used} }}</span>
+          <span *ngIf="subscriptionInfo.usageDetails.available">&nbsp;{{ 'reservation-page-complete.subscription.usage.available' | translate: {'0': subscriptionInfo.usageDetails.available} }}</span>
+        </p>
+      </div>
+      <div class="col-12 col-lg-6 text-center d-lg-flex flex-lg-column justify-content-lg-between" *ngIf="displayPin">
+        <div class="mt-5 mt-lg-0">
+          <p class="lead" translate="reservation-page-complete.subscription.pin-description"></p>
+        </div>
+        <div class="h3 text-center text-success">
+          {{subscriptionInfo.pin}}
+          <button class="btn btn-light btn-xs" [ngbTooltip]="'reservation-page-complete.subscription.copy-pin'|translate"
+                  type="button" [appClipboardCopy]="subscriptionInfo.pin" (copied)="copied($event)">
+            <fa-icon [icon]="['far', 'copy']" a11yRole="presentation"></fa-icon>
+            <span class="sr-only" translate="reservation-page-complete.subscription.copy-pin"></span>
+          </button>
+        </div>
+        <div class="mt-5 mt-lg-0">
+          <p class="lead" translate="reservation-page-complete.subscription.id-description"></p>
+          <div class="h6 text-center">
+            {{subscriptionInfo.id}}
+            <button class="btn btn-light btn-xs" [ngbTooltip]="'reservation-page-complete.subscription.copy-id'|translate"
+                    type="button" [appClipboardCopy]="subscriptionInfo.id" (copied)="copied($event)">
+              <fa-icon [icon]="['far', 'copy']" a11yRole="presentation"></fa-icon>
+              <span class="sr-only" translate="reservation-page-complete.subscription.copy-id"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="showReservationButtons">
+      <hr class="mt-5">
+
+      <div class="mt-5" *ngIf="compatibleEvents.length > 0">
+        <div class="h3">{{ 'reservation-page-complete.subscription.buy-tickets' | translate }}</div>
+        <div class="card-deck mt-5">
+          <app-basic-event-info [event]="event" class="mb-4" *ngFor="let event of compatibleEvents" [params]="{subscription: subscriptionInfo.id}"></app-basic-event-info>
+        </div>
+      </div>
+
+      <hr class="mt-5" *ngIf="compatibleEvents.length > 0">
+
+      <div class="mt-5">
+        <div class="row d-flex justify-content-md-between">
+          <div class="col-md-5 order-md-1 col-12 mb-2">
+            <a class="block-button btn btn-success" [routerLink]="['/events-all']" [queryParams]="{ subscription: subscriptionInfo.id }" translate="reservation-page-complete.buy-tickets"></a>
+          </div>
+          <div class="col-md-5 order-md-0 col-12 mt-2 mt-md-0 mb-2">
+            <a class="block-button btn btn-light" [routerLink]="['/']" translate="to-home"></a>
+          </div>
+        </div>
+      </div>
+      <div class="text-center text-muted mt-5">{{'reservation-page-complete.order-information' | translate: {'0': reservationId, '1': reservationInfo.firstName + ' ' + reservationInfo.lastName} }}</div>
+      <div class="text-center mt-1">
+        <a href="https://alf.io" [attr.title]="'alfio.credits' | translate" target="_blank" rel="noreferrer noopener" translate="alfio.credits"></a>
+      </div>
+    </ng-container>
+  </div>
+
+</app-reservation>

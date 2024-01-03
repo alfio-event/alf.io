@@ -1,0 +1,9 @@
+<div *ngIf="matchProxyAndMethod" class="row mb-2 mt-2">
+    <div class="col-12">
+        <div class="text-muted" *ngIf="!deferred">{{'reservation-page.offline.description'|translate: {'0': parameters? parameters['delayForOfflinePayment'] : '-'} }}</div>
+        <div class="text-muted" *ngIf="deferred" translate="reservation-page.offline.deferred.description"></div>
+    </div>
+    <div class="col-12 mt-2" *ngIf="parameters && parameters.captchaRequestedForOffline && parameters.recaptchaApiKey">
+        <app-recaptcha [apiKey]="parameters.recaptchaApiKey" (recaptchaResponse)="handleRecaptchaResponse($event)"></app-recaptcha>
+    </div>
+</div>

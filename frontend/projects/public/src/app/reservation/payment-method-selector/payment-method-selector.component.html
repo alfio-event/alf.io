@@ -1,0 +1,71 @@
+<div class="row" [formGroup]="overviewForm">
+    <div class="col-12" [class.col-md-5]="verticalLayout" *ngIf="activePaymentsCount > 1">
+        <div *ngIf="verticalLayout" class="mb-md-4">
+            <div *ngFor="let method of sortedAvailablePaymentMethods" class="form-check pt-3 pb-3"
+                [ngClass]="{ 'font-weight-bold border-top border-bottom': selectedPaymentMethod == method, 'text-muted border-right-md': selectedPaymentMethod != null && selectedPaymentMethod != method }">
+                <input class="form-check-input" [attr.id]="method" type="radio" [value]="method" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" role="radiogroup" [attr.aria-labelledby]="method + '-label'">
+                <label class="form-check-label ms-2 w-100 h-100" [attr.for]="method" [id]="method + '-label'"><fa-icon [icon]="getPaymentMethodDetails(method).icon" a11yRole="presentation" class="ms-2 me-3"></fa-icon> {{ getPaymentMethodDetails(method).labelKey | translate }}</label>
+            </div>
+        </div>
+        <div class="row align-items-center mb-3" *ngIf="!verticalLayout">
+            <div class="col-12 col-md-auto mb-2 mb-md-0 me-0 me-md-3" *ngFor="let method of sortedAvailablePaymentMethods" [class.active]="selectedPaymentMethod == method">
+                <div class="form-check me-sm-2">
+                    <input class="form-check-input" [attr.id]="method" type="radio" [value]="method" name="selectedPaymentMethod" formControlName="selectedPaymentMethod" [attr.aria-labelledby]="method + '-label'">
+                    <label class="form-check-label ms-2 w-100 h-100" [attr.for]="method" [id]="method + '-label'" [ngClass]="{ 'font-weight-bold': selectedPaymentMethod == method, 'text-muted': selectedPaymentMethod != null && selectedPaymentMethod != method }">
+                        <fa-icon [icon]="getPaymentMethodDetails(method).icon" class="ms-2 me-3" a11yRole="presentation"></fa-icon> {{ getPaymentMethodDetails(method).labelKey | translate }}
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12" *ngIf="activePaymentsCount == 1">
+        <h4 class="mt-2">
+            <fa-icon [icon]="getPaymentMethodDetails(selectedPaymentMethod).icon" class="ms-2 me-3" a11yRole="presentation"></fa-icon> {{ getPaymentMethodDetails(selectedPaymentMethod).labelKey | translate }}
+        </h4>
+    </div>
+
+    <div class="col-12" [class.col-md-7]="verticalLayout" [class.mb-5]="!verticalLayout">
+        <div *ngIf="!selectedPaymentMethod" class="text-muted" [ngClass]="{'h-100 text-center d-flex flex-md-column justify-content-center': verticalLayout }" translate="reservation-page.payment.select-method"></div>
+        <div *ngIf="selectedPaymentMethod" [ngClass]="{'h-100 d-flex flex-md-column justify-content-center': verticalLayout }">
+            <app-offline-payment-proxy
+                [proxy]="selectedPaymentProxy"
+                [method]="selectedPaymentMethod"
+                [parameters]="activePaymentMethods[selectedPaymentMethod].parameters"
+                [overviewForm]="overviewForm"
+                (paymentProvider)="registerCurrentPaymentProvider($event)">
+            </app-offline-payment-proxy>
+            <app-onsite-payment-proxy
+                [proxy]="selectedPaymentProxy"
+                [method]="selectedPaymentMethod"
+                [parameters]="activePaymentMethods[selectedPaymentMethod].parameters"
+                [overviewForm]="overviewForm"
+                (paymentProvider)="registerCurrentPaymentProvider($event)">
+            </app-onsite-payment-proxy>
+            <app-stripe-payment-proxy
+                [purchaseContext]="purchaseContext"
+                [reservation]="reservationInfo"
+                [proxy]="selectedPaymentProxy"
+                [method]="selectedPaymentMethod"
+                [parameters]="activePaymentMethods[selectedPaymentMethod].parameters"
+                (paymentProvider)="registerCurrentPaymentProvider($event)">
+            </app-stripe-payment-proxy>
+            <app-paypal-payment-proxy
+                [proxy]="selectedPaymentProxy"
+                [method]="selectedPaymentMethod"
+                [reservation]="reservationInfo"
+                (paymentProvider)="registerCurrentPaymentProvider($event)">
+            </app-paypal-payment-proxy>
+            <app-mollie-payment-proxy
+                [proxy]="selectedPaymentProxy"
+                [method]="selectedPaymentMethod"
+                (paymentProvider)="registerCurrentPaymentProvider($event)">
+            </app-mollie-payment-proxy>
+            <app-saferpay-payment-proxy
+              [proxy]="selectedPaymentProxy"
+              [method]="selectedPaymentMethod"
+              (paymentProvider)="registerCurrentPaymentProvider($event)">
+            </app-saferpay-payment-proxy>
+        </div>
+
+    </div>
+</div>

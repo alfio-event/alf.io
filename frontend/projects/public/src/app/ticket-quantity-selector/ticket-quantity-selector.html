@@ -1,0 +1,10 @@
+<div [formGroup]="parentGroup">
+  <ng-container *ngIf="category.saleableAndLimitNotReached">
+    <label class="sr-only" [for]="'category-'+category.id+'-qty'" translate="show-event.category.quantity"></label>
+    <select [id]="'category-'+category.id+'-qty'" formControlName="amount" class="form-select" (change)="selectionChanged()">
+      <option *ngFor="let qty of quantityRange" [ngValue]="qty">{{qty}}</option>
+    </select>
+  </ng-container>
+  <span class="font-weight-bold" *ngIf="!category.saleableAndLimitNotReached && category.soldOutOrLimitReached" translate="show-event.sold-out"></span>
+  <span class="font-weight-bold" *ngIf="!category.saleableAndLimitNotReached && !category.soldOutOrLimitReached" translate="show-event.not-available"></span>
+</div>

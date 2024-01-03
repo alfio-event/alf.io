@@ -1,0 +1,86 @@
+<div *ngIf="event && ticketInfo" class="container mt-2">
+  <div class="application-container add-margin-bottom p-md-4">
+
+    <header>
+      <app-purchase-context-header [purchaseContext]="event" type="event"></app-purchase-context-header>
+    </header>
+    <main>
+      <hr>
+      <div class="ticket">
+        <div class="row">
+          <div class="col-md-8 col-12">
+            <app-event-summary [event]="event" [dateValidityProvider]="ticketInfo"></app-event-summary>
+          </div>
+          <div class="col-md-4 col-12">
+            <img src="/api/v2/public/event/{{event.shortName}}/ticket/{{ticketInfo.uuid}}/code.png"
+                 class="img-responsive img-center">
+          </div>
+        </div>
+
+        <div class="mt-3 mb-3">
+          <h2 translate="ticket.ticket"></h2>
+          <dl class="row">
+            <dt class="col-sm-3 align-right-mobile-aware" translate="ticket.holder"></dt>
+            <dd class="col-sm-9">{{ticketInfo.fullName}} &lt;{{ticketInfo.email}}&gt;</dd>
+            <dt class="col-sm-3 align-right-mobile-aware" translate="ticket.type"></dt>
+            <dd class="col-sm-9">{{ticketInfo.ticketCategoryName}}</dd>
+            <dt class="col-sm-3 align-right-mobile-aware" translate="ticket.reference-number"></dt>
+            <dd class="col-sm-9">{{ticketInfo.uuid}}</dd>
+            <dt class="col-sm-3 align-right-mobile-aware" translate="ticket.order-information"></dt>
+            <dd class="col-sm-9">{{'ticket.order-information-values' | translate:  {
+              '0': ticketInfo.reservationId,
+              '1': ticketInfo.reservationFullName
+            } }}</dd>
+          </dl>
+        </div>
+
+        <div class="mt-3 mb-3" *ngIf="groupedAdditionalServices.length > 0">
+          <h2 translate="show-event.additional-services"></h2>
+          <div *ngFor="let asw of groupedAdditionalServices; let first = first" [class.mt-3]="first">
+            <h5 class="pl-4">{{ asw.count }} x {{ asw.title | translateDescription }}</h5>
+            <dl class="row" *ngIf="asw.ticketFieldConfiguration.length > 0">
+              <ng-container *ngFor="let field of asw.ticketFieldConfiguration">
+                <dt class="col-sm-3 align-right-mobile-aware">{{ (field.description | translateDescription).label}}</dt>
+                <dd class="col-sm-9">{{ getValue(field) }}</dd>
+              </ng-container>
+            </dl>
+          </div>
+        </div>
+
+
+        <div *ngIf="ticketInfo.deskPaymentRequired" class="text-center mt-3 mb-3">
+          <h3 translate="ticket.payment-required"></h3>
+        </div>
+
+        <hr  *ngIf="event.format !== 'ONLINE'" />
+
+        <div class="row mt-5 mb-5" *ngIf="event.format !== 'ONLINE'">
+          <div class="col-12 col-md-4 align-self-center mb-5 mb-md-0" *ngIf="gWalletEnabled">
+            <a target="_blank" rel="noopener" [attr.href]="'/api/wallet/event/' + event.shortName + '/v1/version/passes/' + ticketInfo.uuid">
+              <img src="/resources/images/email/enUS_add_to_google_wallet_add-wallet-badge.svg" class="img-responsive mx-auto wallet-link" alt="Add to Google Wallet">
+            </a>
+          </div>
+
+          <div class="col-12 col-md-4 align-self-center mb-5 mb-md-0" *ngIf="passEnabled">
+            <a target="_blank" rel="noopener" [attr.href]="'/api/pass/event/' + event.shortName + '/v1/version/passes/' + ticketInfo.uuid">
+              <img src="/resources/images/email/add-to-apple-wallet-button.png" class="img-responsive mx-auto wallet-link" alt="Add to Apple Wallet">
+            </a>
+          </div>
+
+          <div [ngClass]="{'offset-md-8': !walletIntegrationEnabled}" class="col-md-4 col-12">
+            <a target="_blank" rel="noopener" [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticketInfo.uuid + '/download-ticket'" class="btn btn-link block-button d-flex justify-content-center align-items-center h-100">
+              <div class="mr-3"><fa-icon size="2x" [icon]="['fas', 'file-pdf']" a11yRole="presentation"></fa-icon></div>
+              <div>{{'reservation-page-complete.download-ticket'|translate}} PDF</div>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </main>
+    <footer>
+      <div class="text-center mt-5">
+        <a href="https://alf.io" [attr.title]="'alfio.credits' | translate" target="_blank" rel="noreferrer noopener" translate="alfio.credits"></a>
+      </div>
+    </footer>
+  </div>
+</div>

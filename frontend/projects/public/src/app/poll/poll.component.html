@@ -1,0 +1,9 @@
+<div class="container">
+  <div *ngIf="event" class="mb-2 application-container p-md-4 mt-2">
+      <header><app-purchase-context-header [purchaseContext]="event" type="event"></app-purchase-context-header></header>
+      <main>
+          <hr>
+          <router-outlet></router-outlet>
+      </main>
+  </div>
+</div>

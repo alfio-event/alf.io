@@ -1,0 +1,26 @@
+<div class="modal-body text-center">
+  <div class="text-danger mb-3">
+    <fa-icon [icon]="['fas', 'exclamation-triangle']" [size]="'3x'" a11yRole="presentation"></fa-icon>
+  </div>
+  <h4 class="modal-title text-center">
+    {{ 'my-profile.delete-profile' | translate}}
+  </h4>
+  <p class="mt-5 mb-5">{{ 'my-profile.delete-profile.description' | translate }}</p>
+  <form [formGroup]="form" (ngSubmit)="confirm()">
+    <div class="form-check mb-4">
+      <input class="form-check-input" id="acknowledge" type="checkbox" required name="acknowledge" formControlName="acknowledge" value="true" appInvalidFeedback [invalidFeedbackInLabel]="true">
+      <label class="form-check-label" for="acknowledge">
+        {{'my-profile.delete-profile.confirm' | translate}}
+      </label>
+    </div>
+    <hr/>
+    <div class="row">
+      <div class="col-6">
+        <button type="button" class="btn btn-light block-button" (click)="activeModal.dismiss()" translate="reservation-page.cancel"></button>
+      </div>
+      <div class="col-6">
+        <button class="btn btn-danger block-button" translate="my-profile.delete-profile" [disabled]="!form.valid"></button>
+      </div>
+    </div>
+  </form>
+</div>

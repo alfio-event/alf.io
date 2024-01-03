@@ -1,0 +1,9 @@
+<div class="modal-body text-center">
+    <h4 class="modal-title text-danger text-center"><fa-icon [icon]="['far', 'clock']" a11yRole="presentation"></fa-icon>{{' '}}{{'session-expired.header.title' | translate}}</h4>
+    <hr/>
+    <div class="row">
+        <div class="col-6 offset-3">
+            <button type="button" class="btn btn-light block-button" (click)="activeModal.close('to-event-site')" translate="to-home"></button>
+        </div>
+    </div>
+</div>

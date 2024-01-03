@@ -1,0 +1,37 @@
+<div *ngIf="poll">
+  <h2 class="text-center">{{poll.poll.title[translate.currentLang]}}</h2>
+  <p class="text-center">{{poll.poll.description[translate.currentLang]}}</p>
+  <ng-container *ngIf="pollSubmittedWithSuccess">
+    <div class="alert alert-success text-center mt-4" translate="poll.thank-you-for-the-vote"></div>
+    <div class="row">
+      <div class="col-md-6 offset-md-3 col-12 mt-4">
+        <a class="btn btn-default block-button" routerLink="../" queryParamsHandling="merge" translate="common.back"></a>
+      </div>
+    </div>
+  </ng-container>
+  <form [formGroup]="pollForm" (submit)="submitChoice()" *ngIf="!pollSubmittedWithSuccess">
+    <div class="row mt-2">
+      <div class="col-12 col-md-6 offset-md-3">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item" *ngFor="let option of poll.options"
+                [ngClass]="{'bg-success text-dark bg-opacity-25': pollForm.value.optionId === option.id}">
+              <div class="form-check">
+                <input type="radio" formControlName="optionId" [value]="option.id" class="form-check-input" id="option-{{option.id}}">
+                <label class="form-check-label" for="option-{{option.id}}">
+                  <span class="poll-text">
+                      <span class="poll-title">{{option.title[translate.currentLang]}}</span>
+                      <span class="poll-description" *ngIf="option.description[translate.currentLang]">{{option.description[translate.currentLang]}}</span>
+                  </span>
+                </label>
+              </div>
+            </li>
+          </ul>
+      </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 offset-md-3 col-12 mt-4">
+            <button class="btn btn-success block-button" type="submit" translate="poll.vote-button"></button>
+        </div>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,13 @@
+<ng-container *ngIf="info">
+  <div class="banner alert alert-info alert-dismissible" *ngIf="info.devModeEnabled && !hideAlertInfo">
+    You are running alf.io in development mode
+    <button type="button" class="btn-close" (click)="hideAlertInfo = true"><span class="sr-only">Dismiss</span></button>
+  </div>
+  <div class="banner alert alert-danger" *ngIf="info.prodModeEnabled && !secure">
+    You are running alf.io in production mode not over https. This is not a recommended configuration.
+  </div>
+  <div class="banner alert alert-light alert-dismissible" *ngIf="!hideAnnouncementBanner && info.announcementBannerContentHTML">
+    <div [innerHTML]="info.announcementBannerContentHTML"></div>
+    <button type="button" class="btn-close" (click)="dismissAnnouncementBanner()"><span class="sr-only">Dismiss</span></button>
+  </div>
+</ng-container>

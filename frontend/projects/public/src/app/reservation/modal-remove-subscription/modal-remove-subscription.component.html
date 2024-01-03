@@ -1,0 +1,12 @@
+<div class="modal-body text-center">
+    <h4 class="modal-title text-danger text-center"><fa-icon [icon]="['fas', 'exclamation-triangle']" a11yRole="presentation"></fa-icon>{{' '}}{{'reservation-page.overview.modal.remove-subscription' | translate}}</h4>
+    <hr/>
+    <div class="row">
+        <div class="col-6">
+            <button type="button" class="btn btn-light block-button" (click)="activeModal.close(false)" translate="reservation-page-complete.confirm-cancellation.button.no"></button>
+        </div>
+        <div class="col-6">
+            <button type="button" class="btn btn-danger block-button" (click)="activeModal.close(true)" translate="reservation-page-complete.confirm-cancellation.button.yes"></button>
+        </div>
+    </div>
+</div>

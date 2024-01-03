@@ -1,0 +1,12 @@
+@import "~bootstrap/scss/mixins";
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+
+img.wallet-link {
+  @include media-breakpoint-up(md) {
+    max-height: 56px;
+  }
+  @include media-breakpoint-down(md) {
+    max-width: 250px;
+  }
+}

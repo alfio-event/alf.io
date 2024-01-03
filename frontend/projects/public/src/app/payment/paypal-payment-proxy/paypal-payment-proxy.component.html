@@ -1,0 +1,13 @@
+<div *ngIf="matchProxyAndMethod" class="row mb-2 mt-2">
+  <div class="col-12">
+      <div class="text-muted">
+        <div translate="reservation-page.paypal.description"></div>
+      </div>
+  </div>
+
+  <div class="col-12"  *ngIf="reservation && reservation.tokenAcquired">
+    <div class="alert alert-success mb-2 mt-2">
+      <h3><fa-icon [icon]="['fas', 'check']" a11yRole="presentation"></fa-icon>{{' '}}<span translate="reservation-page.paypal.confirm"></span></h3>
+    </div>
+  </div>
+</div>

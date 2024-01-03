@@ -1,0 +1,32 @@
+<div class="wizard2 center text-muted">
+    <div [ngClass]="{'wizard2-current': currentStep === 1}" [attr.aria-hidden]="currentStep !== 1">
+        <div>
+          <span class="badge" [ngClass]="{'badge-success':  currentStep > 1 }"><fa-icon [icon]="['fas', 'check']" a11yRole="presentation"></fa-icon></span>
+          <span translate="breadcrumb.step1"></span>
+        </div>
+        <div class="wizard2-line"></div>
+    </div>
+    <div [ngClass]="{'wizard2-current': currentStep === 2}" [attr.aria-hidden]="currentStep !== 2">
+        <div>
+          <span class="badge" [ngClass]="{'badge-success':  currentStep > 2 }"><fa-icon [icon]="currentStep > 2 ? ['fas', 'check'] : ['fas', 'address-card']" a11yRole="presentation"></fa-icon></span>
+          <span translate="breadcrumb.step2"></span>
+        </div>
+        <div class="wizard2-line"></div>
+    </div>
+    <div [ngClass]="{'wizard2-current': currentStep === 3}" [attr.aria-hidden]="currentStep !== 3">
+        <div>
+          <span class="badge" [ngClass]="{'badge-success':  currentStep > 3 }">
+            <fa-icon *ngIf="free && !inProgress" [icon]="currentStep > 3 ? ['fas', 'check'] : ['fas', 'file-alt']" a11yRole="presentation"></fa-icon>
+            <fa-icon *ngIf="!free && !inProgress" [icon]="currentStep > 3 ? ['fas', 'check'] : ['fas', 'money-bill']" a11yRole="presentation"></fa-icon>
+            <fa-icon *ngIf="inProgress" [icon]="['fas', 'cog']" [spin]="true" a11yRole="presentation"></fa-icon>
+          </span>
+          <span [translate]="'breadcrumb.step3'+(free ? '.free' : '')"></span></div>
+        <div class="wizard2-line"></div>
+    </div>
+    <div [ngClass]="{'wizard2-current': currentStep === 4}" [attr.aria-hidden]="currentStep !== 4">
+        <div>
+          <span class="badge" [ngClass]="{'badge-success':  currentStep > 4 }"><fa-icon [icon]="['fas', 'thumbs-up']" a11yRole="presentation"></fa-icon></span>
+          <span translate="breadcrumb.step4"></span>
+        </div>
+    </div>
+</div>

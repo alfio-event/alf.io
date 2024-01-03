@@ -1,0 +1,15 @@
+<div [formGroup]="additionalServiceFormGroup">
+  <app-item-card [currentLang]="translate.currentLang" [item]="additionalService" [parentFormGroup]="additionalServiceFormGroup">
+    <span class="item-title">{{additionalService.title[translate.currentLang]}}</span>
+    <div class="item-price">
+      <span *ngIf="additionalService.free" translate="common.free"></span>
+      <span *ngIf="!additionalService.free && additionalService.fixPrice">
+        <app-price-tag [purchaseContext]="event" [formattedPrice]="additionalService.formattedFinalPrice" [discountedPrice]="additionalService.formattedDiscountedPrice" [showTaxDetails]="additionalService.vatApplies"></app-price-tag>
+      </span>
+    </div>
+    <div class="item-qty-selector">
+      <div class="text-center" translate="show-event.not-available" *ngIf="!availableForSale"></div>
+      <app-additional-service-quantity-selector *ngIf="availableForSale" [parentGroup]="additionalServiceFormGroup" [event]="event" [additionalService]="additionalService" [validSelectionValues]="validSelectionValues"></app-additional-service-quantity-selector>
+    </div>
+  </app-item-card>
+</div>

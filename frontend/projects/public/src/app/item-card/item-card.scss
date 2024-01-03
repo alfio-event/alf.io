@@ -1,0 +1,48 @@
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/variables";
+
+
+.item-content-except-desc {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+@include media-breakpoint-up(md) {
+
+  /* desktop here */
+  .card-title {
+    order: 0;
+    max-width: 65%;
+  }
+
+  .card-sale-period {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .card-item-price {
+    order: 1;
+    padding-right: 3rem!important;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+  }
+
+  .card-qty-container {
+    order: 2;
+    @include make-col(2);
+  }
+}
+
+@include media-breakpoint-down(sm) {
+
+  /* mobile here */
+  .item-content-except-desc {
+    flex-direction: column;
+  }
+
+  .card-qty-container {
+    margin-top: 1rem;
+  }
+}

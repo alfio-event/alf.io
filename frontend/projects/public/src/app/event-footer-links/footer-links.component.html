@@ -1,0 +1,9 @@
+<div [ngClass]="marginClass" class="d-md-flex text-center text-md-left justify-content-md-center">
+  <div *ngIf="linksContainer?.termsAndConditionsUrl">
+    <a [href]="linksContainer.termsAndConditionsUrl" target="_blank" rel="noopener"
+       [attr.aria-label]="('reservation-page.tc.link.text' | translate) + ('link.new-tab' | translate)">{{'reservation-page.tc.link.text'|translate}}</a></div>
+  <div class="ms-3 me-3 d-none d-md-block" *ngIf="linksContainer?.termsAndConditionsUrl && linksContainer?.privacyPolicyUrl">&ndash;</div>
+  <div *ngIf="linksContainer?.privacyPolicyUrl">
+    <a [href]="linksContainer.privacyPolicyUrl" target="_blank" rel="noopener"
+       [attr.aria-label]="('reservation-page.privacy.link.text'|translate) + ('link.new-tab' | translate)">{{'reservation-page.privacy.link.text'|translate}}</a></div>
+</div>

@@ -1,0 +1,73 @@
+<div *ngIf="event && ticket" class="container mt-2">
+  <div class="application-container add-margin-bottom p-md-4">
+
+    <header>
+        <app-purchase-context-header [purchaseContext]="event" type="event"></app-purchase-context-header>
+    </header>
+    <main class="mt-5">
+        <div class="alert mb-5" [ngClass]="{'alert-info': !ticket.onlineEventStarted, 'alert-success': ticket.onlineEventStarted}" *ngIf="isOnlineTicket && !ticketFormVisible">
+          <div class="font-weight-bold text-center">
+            <span *ngIf="!ticket.onlineEventStarted">{{'event.online.not-started' | translate:{ '0' : ticketOnlineCheckInDate } }}</span>
+            <span *ngIf="ticket.onlineEventStarted">{{'event.online.started' | translate }}</span>
+          </div>
+        </div>
+        <h2>{{'show-ticket.header.title' | translate:{ '0' : title } }}</h2>
+        <div class="card mt-5" [ngClass]="{'border-left-warning': !ticket.assigned}">
+            <div class="card-body">
+              <div class="attendees-data d-md-flex w-100 justify-content-between">
+                <h3 class="card-title flex-md-shrink-1"><fa-icon [icon]="['fas', ticket.assigned ? 'check' : 'exclamation-triangle']" size="xs" [classes]="[ ticket.assigned ? 'text-success' : 'text-warning', 'd-none', 'd-md-inline']" a11yRole="presentation"></fa-icon> <small class="ms-2 text-muted">{{categoryName}}</small></h3>
+                <h3 class="card-title flex-md-shrink-0" *ngIf="ticket.assigned">{{ticket.fullName}}</h3>
+                <h3 class="card-title text-muted" *ngIf="!ticket.assigned">{{'reservation-page-complete.ticket-not-assigned' | translate }}</h3>
+              </div>
+
+              <hr *ngIf="!ticketFormVisible">
+
+              <div class="row justify-content-end" *ngIf="!ticketFormVisible">
+                <div class="col-lg-3 col-sm-6 col-12 mb-2" *ngIf="!isOnlineTicket && ticket.assigned && !ticket.cancellationEnabled" >
+                  <a [routerLink]="['/event', event.shortName, 'ticket', ticket.uuid, 'view']" target="_blank" class="btn btn-default block-button"><fa-icon [icon]="['fas', 'search-plus']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.show-ticket'|translate}}</a>
+                </div>
+                <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" *ngIf="!isOnlineTicket && ticket.assigned">
+                  <a [attr.href]="'/api/v2/public/event/' + event.shortName + '/ticket/' + ticket.uuid + '/download-ticket'" class="btn btn-default block-button"><fa-icon [icon]="['fas', 'download']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.download-ticket'|translate}}</a>
+                </div>
+                <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" *ngIf="ticket.assigned">
+                  <button type="button" class="btn btn-default block-button send-ticket-by-email" (click)="sendEmailForTicket()"><fa-icon [icon]="['far', 'envelope']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.send-ticket-by-email-to'|translate}}</button>
+                </div>
+                <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" [ngClass]="{'offset-lg-9 offset-sm-6': !ticket.assigned}">
+                  <button type="button" class="btn btn-default block-button update-ticket-owner" (click)="ticketFormVisible = true"><fa-icon [icon]="ticket.assigned ? ['far', 'edit'] : ['fas', 'check']" a11yRole="presentation"></fa-icon> {{(ticket.assigned ? 'reservation-page-complete.update-ticket-owner' : 'reservation-page-complete.assign') |translate}}</button>
+                </div>
+                <div class="col-lg-3 col-sm-6 col-12 mt-2 mt-md-0 mb-2" *ngIf="ticket.assigned && ticket.cancellationEnabled">
+                  <button type="button" class="btn btn-danger block-button" (click)="releaseTicket()"><fa-icon [icon]="['fas', 'eraser']" a11yRole="presentation"></fa-icon> {{'reservation-page-complete.release-button.text'|translate}}</button>
+                </div>
+              </div>
+
+              <div class="mt-4" *ngIf="ticketFormVisible">
+                <div class="alert alert-info" translate="reservation-page-complete.info-update" *ngIf="event.assignmentConfiguration.enableTicketTransfer && ticket.assigned && !ticket.locked"></div>
+                <form [formGroup]="formGroup" (submit)="updateTicket()">
+                    <app-ticket-form [ticket]="ticket" [purchaseContext]="event" [form]="formGroup"></app-ticket-form>
+                    <div class="bg-white pb-3 pt-3" [class.sticky]="ticket.ticketFieldConfigurationAfterStandard.length > 0">
+                      <div class="row d-flex justify-content-between">
+                        <div class="col-md-5 order-md-1 col-12">
+                          <button type="submit" class="btn btn-success block-button" *ngIf="canUpdateTicket">{{ (ticket.assigned ? 'reservation-page-complete.update' : 'reservation-page-complete.assign') | translate}}</button>
+                        </div>
+                        <div class="col-md-5 mt-2 mt-md-0 order-md-0 col-12">
+                          <button type="button" (click)="ticketFormVisible = false" translate="reservation-page-complete.cancel" class="btn btn-light block-button"></button>
+                        </div>
+                      </div>
+                    </div>
+                </form>
+              </div>
+
+              <div class="alert alert-success mt-2 mb-2 hidden alert-dismissible" role="alert" *ngIf="emailSent">
+                <button type="button" class="btn-close" (click)="emailSent = false"><span class="sr-only" translate="reservation-page-complete.cancel"></span></button>
+                <strong translate="email.ticket-email-sent"></strong>
+              </div>
+            </div>
+          </div>
+    </main>
+    <footer>
+      <div class="text-center mt-5">
+        <a href="https://alf.io" [attr.title]="'alfio.credits' | translate" target="_blank" rel="noreferrer noopener" translate="alfio.credits"></a>
+      </div>
+    </footer>
+  </div>
+</div>

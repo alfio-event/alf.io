@@ -1,0 +1,18 @@
+<div class="container-xl">
+  <div *ngIf="events && languages" class="application-container p-2 p-md-5">
+    <app-topbar [contentLanguages]="languages"></app-topbar>
+
+    <h1 translate="event-list.title"></h1>
+
+    <div class="event-list-card mb-3" *ngFor="let event of events">
+      <app-basic-event-info [event]="event" [params]="queryParams"></app-basic-event-info>
+    </div>
+
+    <div class="alert text-center" *ngIf="events.length == 0">
+      <h3 translate="event-list.no-events"></h3>
+    </div>
+
+    <hr class="mt-5" *ngIf="linksContainer.termsAndConditionsUrl || linksContainer.privacyPolicyUrl">
+    <app-footer-links [linksContainer]="linksContainer"></app-footer-links>
+  </div>
+</div>
