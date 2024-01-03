@@ -16,11 +16,15 @@ The open source ticket reservation system.
 
 ## Prerequisites
 
-You should have installed Java version **11** (e.g. [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html), [OpenJDK](http://openjdk.java.net/install/), or any other distribution) to build and run alf.io. Please note that for the build process the JDK is required.
+You should have installed Java version **17** (e.g. [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html), [OpenJDK](http://openjdk.java.net/install/), or any other distribution) to build and run alf.io. Please note that for the build process the JDK is required.
 
-Postgresql version 9.6 or later.
+Postgresql version 10 or later.
 
 Additionally, the database user that creates and uses the tables should not be a "SUPERUSER", or else the row security policy checks will not be applied.
+
+> **Note**
+As the work for Alf.io [v2](https://github.com/alfio-event/alf.io/milestones) has started, this branch may contain **unstable** and **untested** code.
+If you want to build and deploy alf.io by yourself, please start from a [Released version](https://github.com/alfio-event/alf.io/releases).
 
 ## Run on your machine
 
@@ -41,7 +45,7 @@ You must specify a project property at the command line, such as
 ```
 The local "bootRun" task has the following prerequisites:
 
-- a PostgreSQL (version 9.6 or later) instance up and running on localhost:5432
+- a PostgreSQL (version 10 or later) instance up and running on localhost:5432
 - a _postgres_ user having a password: _password_
 - a database named _alfio_
 
@@ -49,9 +53,9 @@ once started, alf.io will create all the required tables in the database, and be
 
 The following profiles are supported
 
- * `dev`
- * `dev-pgsql`
- * `docker-test`
+* `dev`
+* `dev-pgsql`
+* `docker-test`
 
 You can get a list of all supported Gradle tasks by running
 ```
@@ -122,12 +126,12 @@ However, if you decide to do so, then you need to make a couple of changes:
 * Remove the `SPRING_PROFILES_ACTIVE: dev` environment variable
 
 ### Test alf.io application
- * Check alfio logs: `docker logs alfio`
- * Copy admin password in a secure place
- * Get IP of your docker container: (only on Mac/Windows, on Linux the proxy will bind directly on your public IP)
+* Check alfio logs: `docker logs alfio`
+* Copy admin password in a secure place
+* Get IP of your docker container: (only on Mac/Windows, on Linux the proxy will bind directly on your public IP)
     * `boot2docker IP` on Mac/Windows
- * Open browser at: `https://DOCKER_IP/admin`
- * Insert user admin and the password you just copied
+* Open browser at: `https://DOCKER_IP/admin`
+* Insert user admin and the password you just copied
 
 ### Generate a new version of the alfio/alf.io docker image
 
@@ -135,13 +139,13 @@ However, if you decide to do so, then you need to make a couple of changes:
  ```
  ./gradlew distribution
  ```
- Alternatively, you can use Docker (*experimental*):
+Alternatively, you can use Docker (*experimental*):
  ```
  docker run --rm -u gradle -v "$PWD":/home/gradle/project -w /home/gradle/project gradle:7.0.0-jdk11 gradle --no-daemon distribution -x test
  ```
- 
- Please note that at the moment the command above performs the build without running the automated tests.
- Use it at your own risk. 
+
+Please note that at the moment the command above performs the build without running the automated tests.
+Use it at your own risk.
 
 #### Create docker image:
  ```
@@ -155,10 +159,10 @@ It will expire the 2030-10-12 (YYYY-MM-DD - as of https://www.apple.com/certific
 
 ## Available spring profiles:
 
- - dev: enable dev mode
- - spring-boot: added when launched by spring-boot
- - demo: enable demo mode, the accounts for the admin will be created on the fly
- - disable-jobs: disable jobs
+- dev: enable dev mode
+- spring-boot: added when launched by spring-boot
+- demo: enable demo mode, the accounts for the admin will be created on the fly
+- disable-jobs: disable jobs
 
 ## Contributors
 
@@ -169,7 +173,7 @@ This project exists thanks to all the people who contribute.
 
 ### Translation Contributors (POEditor)
 
-A big "Thank you" goes also to our translators, who help us on [POEditor](https://poeditor.com/join/project/ttBYTmPYdr):
+A big "Thank you" goes also to our translators, who help us on [POEditor](https://github.com/alfio-event/alf.io/tree/master/src/main/resources/alfio/i18n):
 
 (we show the complete name/profile only if we have received explicit consent to do so)
 
