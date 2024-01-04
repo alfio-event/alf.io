@@ -349,12 +349,12 @@ jacocoTestReport {
 
 tasks.register('dockerize', Copy) {
     from 'src/main/dist/Dockerfile'
-    into "${buildDir}/dockerize"
+    into layout.buildDirectory.dir("dockerize")
     filter(ReplaceTokens, tokens: [ALFIO_VERSION: project.version])
 }
 
 tasks.register('frontendNpmInstall', NpmTask) {
-    args = ['--prefix', "${project.projectDir}/frontend", 'install']
+    args = ['--prefix', "${project.projectDir}/frontend", 'ci']
 }
 
 tasks.register('frontendBuild', NpmTask) {
@@ -382,20 +382,20 @@ tasks.register('publicFrontendIndexTransform', FrontendIndexTransformTask) {
 //}
 
 tasks.register('distribution', Copy) {
-    from zipTree("${project.buildDir}/libs/alfio-${project.version}-boot.war")
-    into "${buildDir}/dockerize"
+    from zipTree(project.layout.buildDirectory.file("libs/alfio-${project.version}-boot.war"))
+    into layout.buildDirectory.dir("dockerize")
     dependsOn publicFrontendIndexTransform, build, dockerize
 }
 
 tasks.register('clever', Copy) {
-    from new File(project.buildDir, "libs/alfio-${project.version}-boot.war")
+    from new File(project.layout.buildDirectory, "libs/alfio-${project.version}-boot.war")
     rename(new Transformer<String, String>() {
         @Override
         String transform(String s) {
             return "alfio-boot.war"
         }
     })
-    into "${project.buildDir}/clevercloud"
+    into project.layout.buildDirectory.dir("clevercloud")
     dependsOn publicFrontendIndexTransform/*, adminFrontendIndexTransform*/, build
 }
 
@@ -429,27 +429,33 @@ bootWar {
 
 // MJML email templates translations to HTML
 
+tasks.register('mjmlNpmInstall', NpmTask) {
+    args = ['--prefix', "${project.projectDir}/etc/mjml", 'ci']
+}
+
 tasks.register('mjmlToHtml', NodeTask) {
-    dependsOn npmInstall
-    script = file('src/main/node/mjmlToHtml.js')
+    dependsOn mjmlNpmInstall
+    args = ['--prefix', "${project.projectDir}/frontend"]
+    script = file("${project.projectDir}/etc/mjml/mjmlToHtml.js")
+    args = ["${layout.projectDirectory}", "${layout.buildDirectory.dir("generated/resources").get()}"]
 }
 
 // We build HTML templates from MJML source files and then save them under "build/generated/resources" in order to be
 // included in the final artifact.
 // TODO should we do the same for plaintext templates? See https://gist.github.com/brasilikum/3cd515bad5541ca6c76873faf10445c2
 processResources.dependsOn(mjmlToHtml)
-sourceSets.main.output.dir file("$buildDir/generated/resources"), builtBy: mjmlToHtml
+sourceSets.main.output.dir layout.buildDirectory.dir("generated/resources"), builtBy: mjmlToHtml
 
 // transform index.html
-abstract class FrontendIndexTransformTask extends org.gradle.api.DefaultTask {
+abstract class FrontendIndexTransformTask extends DefaultTask {
 
-    @org.gradle.api.tasks.InputFile
-    abstract org.gradle.api.file.RegularFileProperty getIndexHtml()
+    @InputFile
+    abstract RegularFileProperty getIndexHtml()
 
-    @org.gradle.api.tasks.OutputFile
-    abstract org.gradle.api.file.RegularFileProperty getIndexHtmlTransformed()
+    @OutputFile
+    abstract RegularFileProperty getIndexHtmlTransformed()
 
-    @org.gradle.api.tasks.Input
+    @Input
     abstract Property<String> getBasePath()
 
     FrontendIndexTransformTask() {
@@ -457,7 +463,7 @@ abstract class FrontendIndexTransformTask extends org.gradle.api.DefaultTask {
     }
 
 
-    @org.gradle.api.tasks.TaskAction
+    @TaskAction
     def doWork() {
         final resource = indexHtml.get().asFile.newInputStream()
         final indexDoc = new Parser().parse(new InputStreamReader(resource, StandardCharsets.UTF_8))
