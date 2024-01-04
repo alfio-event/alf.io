@@ -139,8 +139,8 @@ dependencies {
         exclude module: 'gson'
     }
 
-    implementation "org.apache.commons:commons-lang3:3.12.0"
-    implementation 'com.opencsv:opencsv:5.7.1'
+    implementation "org.apache.commons:commons-lang3:3.13.0"
+    implementation 'com.opencsv:opencsv:5.9'
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'net.sf.biweekly:biweekly:0.6.6'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
@@ -152,17 +152,17 @@ dependencies {
     implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.mozilla:rhino-runtime:1.7.13'
-    implementation 'com.google.auth:google-auth-library-oauth2-http:1.3.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.18.0'
 
     compileOnly "javax.servlet:javax.servlet-api:4.0.1"
     testImplementation "javax.servlet:javax.servlet-api:4.0.1"
-    testImplementation 'org.testcontainers:testcontainers:1.17.6'
-    testImplementation 'org.testcontainers:postgresql:1.17.6'
-    testImplementation 'org.testcontainers:junit-jupiter:1.17.6'
+    testImplementation 'org.testcontainers:testcontainers:1.19.3'
+    testImplementation 'org.testcontainers:postgresql:1.19.3'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
     testImplementation "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }
-    runtimeOnly "commons-fileupload:commons-fileupload:1.4"
+    runtimeOnly "commons-fileupload:commons-fileupload:1.5"
     implementation "org.springframework.boot:spring-boot-starter-web", {
         exclude module : 'spring-boot-starter-logging'
         exclude group: "org.springframework.boot", module: 'spring-boot-starter-tomcat'
@@ -214,7 +214,7 @@ dependencies {
     }
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    testImplementation 'org.seleniumhq.selenium:selenium-java:4.7.2'
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.16.1'
 
     //errorprone('com.google.errorprone:error_prone_core:2.24.0')
 }
@@ -388,7 +388,7 @@ tasks.register('distribution', Copy) {
 }
 
 tasks.register('clever', Copy) {
-    from new File(project.layout.buildDirectory, "libs/alfio-${project.version}-boot.war")
+    from project.layout.buildDirectory.file("libs/alfio-${project.version}-boot.war")
     rename(new Transformer<String, String>() {
         @Override
         String transform(String s) {

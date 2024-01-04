@@ -345,7 +345,7 @@ class NormalFlowE2ETest {
         }
     }
 
-    private static class BrowserWebDriver {
+    static class BrowserWebDriver {
         private enum Browser {
             IE, CHROME, FIREFOX, SAFARI
         }
