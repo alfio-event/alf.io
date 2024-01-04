@@ -141,7 +141,7 @@ public class TicketHelper {
         }
         Map<String, List<AdditionalServiceLinkForm>> map = requireNonNullElse(updateTicketOwner.getAdditionalServices(), Map.of());
         var fieldForms = Objects.requireNonNullElse(map.get(ticketUuid), List.<AdditionalServiceLinkForm>of());
-        int formFieldsSize = fieldForms.size();
+        int formFieldsSize = (int) fieldForms.stream().flatMap(f -> f.getAdditional().keySet().stream()).distinct().count();
         if (formFieldsSize != fieldsForTicket.size()) {
             // form contains wrong fields. Reject all values
             bindingResult.reject(ErrorsCode.EMPTY_FIELD);
