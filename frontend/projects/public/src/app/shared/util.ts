@@ -81,7 +81,7 @@ export function groupAdditionalData(data: AdditionalServiceWithData[]): GroupedA
     const existing = accumulator[currentValue.serviceId];
     if (existing != null) {
       existing.count += 1;
-      existing.ticketFieldConfiguration.push(...currentValue.ticketFieldConfiguration);
+      existing.ticketFieldConfiguration = [...existing.ticketFieldConfiguration, ...currentValue.ticketFieldConfiguration];
     } else {
       accumulator[currentValue.serviceId] = {
         count: currentValue.count,
