@@ -106,8 +106,10 @@
       <div class="page-header">
         <h2 translate="reservation-page.subscription-owner"></h2>
       </div>
-      <div *ngFor="let field of subscriptionInfo.fieldConfigurationBeforeStandard">
-        <app-additional-field [field]="field" [elementUUID]="'subscription'" [form]="subscriptionAdditionalForm" [ticketAcquired]="false"></app-additional-field>
+      <div class="row g-2 mt-1">
+        <div *ngFor="let field of subscriptionInfo.fieldConfigurationBeforeStandard" class="col-12">
+          <app-additional-field [field]="field" [elementUUID]="'subscription'" [form]="subscriptionAdditionalForm" [ticketAcquired]="false"></app-additional-field>
+        </div>
       </div>
       <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" formControlName="differentSubscriptionOwner" id="show-subscription-owner" value="true">
@@ -135,8 +137,10 @@
           </div>
         </div>
       </div>
-      <div *ngFor="let field of subscriptionInfo.fieldConfigurationAfterStandard">
-        <app-additional-field [field]="field" [elementUUID]="'subscription'" [form]="subscriptionAdditionalForm" [ticketAcquired]="false"></app-additional-field>
+      <div class="row g-2 mt-1">
+        <div *ngFor="let field of subscriptionInfo.fieldConfigurationAfterStandard" class="col-12">
+            <app-additional-field [field]="field" [elementUUID]="'subscription'" [form]="subscriptionAdditionalForm" [ticketAcquired]="false"></app-additional-field>
+        </div>
       </div>
     </ng-container>
 
