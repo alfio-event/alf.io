@@ -468,6 +468,9 @@ public class ReservationApiV2Controller {
                 var owner = contactAndTicketsForm.getSubscriptionOwner();
                 if (contactAndTicketsForm.isDifferentSubscriptionOwner()) {
                     Validate.isTrue(subscriptionRepository.assignSubscription(reservationId, owner.getFirstName(), owner.getLastName(), owner.getEmail()) == 1);
+                } else {
+                    // cleanup data
+                    Validate.isTrue(subscriptionRepository.assignSubscription(reservationId, null, null, null) == 1);
                 }
                 if (MapUtils.isNotEmpty(owner.getAdditional())) {
                     purchaseContextFieldManager.updateFieldsForReservation(owner, purchaseContext, null, subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0).getId());
