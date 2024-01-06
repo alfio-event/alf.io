@@ -1,5 +1,5 @@
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
+import {inject, NgModule} from '@angular/core';
+import {CanActivateFn, RouterModule, Routes} from '@angular/router';
 import {HomeComponent} from './home/home.component';
 import {EventDisplayComponent} from './event-display/event-display.component';
 import {BookingComponent} from './reservation/booking/booking.component';
@@ -19,7 +19,7 @@ import {
 import {UpdateTicketComponent} from './update-ticket/update-ticket.component';
 import {EventListAllComponent} from './event-list-all/event-list-all.component';
 import {SubscriptionListAllComponent} from './subscription-list-all/subscription-list-all.component';
-import {RemoveEventCssGuard} from './remove-event-css.guard';
+import {removeEventCss} from './remove-event-css.guard';
 import {SubscriptionDisplayComponent} from './subscription-display/subscription-display.component';
 import {SuccessSubscriptionComponent} from './reservation/success-subscription/success-subscription.component';
 import {MyOrdersComponent} from './my-orders/my-orders.component';
@@ -27,19 +27,36 @@ import {MyProfileComponent} from './my-profile/my-profile.component';
 import {UserLoggedInGuard} from './user-logged-in.guard';
 import {WaitingRoomComponent} from './waiting-room/waiting-room.component';
 
-const eventReservationsGuard = [EventGuard, LanguageGuard, ReservationGuard];
+const detectLanguage: CanActivateFn = (route, state) => {
+  return inject(LanguageGuard).canActivate(route, state);
+};
+
+const userLoggedIn: CanActivateFn = (route, state) => {
+  return inject(UserLoggedInGuard).canActivate(route, state);
+};
+
+const fetchEvent: CanActivateFn = (route, state) => {
+  return inject(EventGuard).canActivate(route, state);
+};
+
+const checkReservationStatus: CanActivateFn = (route, state) => {
+  return inject(ReservationGuard).canActivate(route, state);
+};
+
+
+const eventReservationsGuard = [fetchEvent, detectLanguage, checkReservationStatus];
 const eventData = {type: 'event', publicIdentifierParameter: 'eventShortName'};
-const subscriptionReservationsGuard = [LanguageGuard, ReservationGuard];
+const subscriptionReservationsGuard = [detectLanguage, checkReservationStatus];
 const subscriptionData = {type: 'subscription', publicIdentifierParameter: 'id'};
 
 const routes: Routes = [
-  { path: '', component: HomeComponent, canActivate: [RemoveEventCssGuard, LanguageGuard] },
-  { path: 'o/:organizerSlug', component: HomeComponent, canActivate: [RemoveEventCssGuard, LanguageGuard] },
-  { path: 'o/:organizerSlug/events-all', component: EventListAllComponent, canActivate: [RemoveEventCssGuard, LanguageGuard] },
-  { path: 'events-all', component: EventListAllComponent, canActivate: [RemoveEventCssGuard, LanguageGuard] },
-  { path: 'subscriptions-all', component: SubscriptionListAllComponent, canActivate: [RemoveEventCssGuard, LanguageGuard]},
-  { path: 'o/:organizerSlug/subscriptions-all', component: SubscriptionListAllComponent, canActivate: [RemoveEventCssGuard, LanguageGuard] },
-  { path: 'subscription/:id', component: SubscriptionDisplayComponent, canActivate: [RemoveEventCssGuard, LanguageGuard], data: subscriptionData},
+  { path: '', component: HomeComponent, canActivate: [removeEventCss, detectLanguage] },
+  { path: 'o/:organizerSlug', component: HomeComponent, canActivate: [removeEventCss, detectLanguage] },
+  { path: 'o/:organizerSlug/events-all', component: EventListAllComponent, canActivate: [removeEventCss, detectLanguage] },
+  { path: 'events-all', component: EventListAllComponent, canActivate: [removeEventCss, detectLanguage] },
+  { path: 'subscriptions-all', component: SubscriptionListAllComponent, canActivate: [removeEventCss, detectLanguage]},
+  { path: 'o/:organizerSlug/subscriptions-all', component: SubscriptionListAllComponent, canActivate: [removeEventCss, detectLanguage] },
+  { path: 'subscription/:id', component: SubscriptionDisplayComponent, canActivate: [removeEventCss, detectLanguage], data: subscriptionData},
   { path: 'subscription/:id/reservation/:reservationId', data: subscriptionData, children: [
     { path: 'book', component: BookingComponent, canActivate: subscriptionReservationsGuard },
     { path: 'overview', component: OverviewComponent, canActivate: subscriptionReservationsGuard },
@@ -50,8 +67,8 @@ const routes: Routes = [
     { path: 'not-found', component: NotFoundComponent, canActivate: subscriptionReservationsGuard },
     { path: 'error', component: ErrorComponent, canActivate: subscriptionReservationsGuard },
   ]},
-  { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [EventGuard, LanguageGuard], data: eventData},
-  { path: 'event/:eventShortName/poll', loadChildren: () => import('./poll/poll.module').then(m => m.PollModule), canActivate: [EventGuard, LanguageGuard], data: eventData},
+  { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [fetchEvent, detectLanguage], data: eventData},
+  { path: 'event/:eventShortName/poll', loadChildren: () => import('./poll/poll.module').then(m => m.PollModule), canActivate: [fetchEvent, detectLanguage], data: eventData},
   { path: 'event/:eventShortName/reservation/:reservationId', data: eventData, children: [
     { path: 'book', component: BookingComponent, canActivate: eventReservationsGuard },
     { path: 'overview', component: OverviewComponent, canActivate: eventReservationsGuard },
@@ -64,12 +81,12 @@ const routes: Routes = [
     { path: 'error', component: ErrorComponent, canActivate: eventReservationsGuard },
   ]},
   { path: 'event/:eventShortName/ticket/:ticketId', data: eventData, children: [
-    { path: 'view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] },
-    { path: 'update', component: UpdateTicketComponent, canActivate: [EventGuard, LanguageGuard] },
-    { path: 'check-in/:ticketCodeHash/waiting-room', component: WaitingRoomComponent, canActivate: [EventGuard, LanguageGuard] }
+    { path: 'view', component: ViewTicketComponent, canActivate: [fetchEvent, detectLanguage] },
+    { path: 'update', component: UpdateTicketComponent, canActivate: [fetchEvent, detectLanguage] },
+    { path: 'check-in/:ticketCodeHash/waiting-room', component: WaitingRoomComponent, canActivate: [fetchEvent, detectLanguage] }
   ]},
-  { path: 'my-orders', component: MyOrdersComponent, canActivate: [UserLoggedInGuard, RemoveEventCssGuard, LanguageGuard] },
-  { path: 'my-profile', component: MyProfileComponent, canActivate: [UserLoggedInGuard, RemoveEventCssGuard, LanguageGuard] }
+  { path: 'my-orders', component: MyOrdersComponent, canActivate: [userLoggedIn, removeEventCss, detectLanguage] },
+  { path: 'my-profile', component: MyProfileComponent, canActivate: [userLoggedIn, removeEventCss, detectLanguage] }
 ];
 
 @NgModule({
