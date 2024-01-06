@@ -14,14 +14,10 @@
     </div>
 
     <div class="row">
-      <div class="col-12" [ngClass]="{'col-md-7': !reservationInfo.orderSummary.free && purchaseContext.invoicingConfiguration.invoiceAllowed}">
+      <div class="col-12" [ngClass]="{'col-md-8 pe-md-3': !reservationInfo.orderSummary.free && purchaseContext.invoicingConfiguration.invoiceAllowed}">
         <app-summary-table [purchaseContext]="purchaseContext" [purchaseContextType]="purchaseContextType" [reservationInfo]="reservationInfo" [displayRemoveSubscription]="displayRemoveSubscription" (removeSubscription)="removeSubscription($event)"></app-summary-table>
       </div>
-      <div class="d-none d-md-flex col-md-1 justify-content-md-center" *ngIf="purchaseContext.invoicingConfiguration.invoiceAllowed">
-        <div class="border-left separator"></div>
-      </div>
-
-      <div class="col-12 col-md-4 invoice-details" *ngIf="!reservationInfo.orderSummary.free && purchaseContext.invoicingConfiguration.invoiceAllowed">
+      <div class="col-12 col-md-4 invoice-details ps-md-3 border-start" *ngIf="!reservationInfo.orderSummary.free && purchaseContext.invoicingConfiguration.invoiceAllowed">
         <div class="d-flex flex-column justify-content-center h-100">
           <div class="h5 d-none d-md-block" translate="reservation-page.invoice-details"></div>
           <div class="page-header d-block d-md-none"><h2 translate="reservation-page.invoice-details"></h2></div>

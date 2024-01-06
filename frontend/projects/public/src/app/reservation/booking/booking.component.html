@@ -116,29 +116,29 @@
         <label class="form-check-label" for="show-subscription-owner">{{' '}}{{'reservation-page.subscription.different-owner' | translate}}</label>
       </div>
       <div *ngIf="contactAndTicketsForm.value.differentSubscriptionOwner" [formGroup]="getSubscriptionForm()">
-        <div class="row g-2">
-          <div class="col-12 col-md-6">
+        <div class="row g-2 mb-2">
+          <div class="col-12 col-md-6 mb-2">
             <div class="form-group">
               <label class="form-label" for="subscription-first-name">{{'common.first-name' | translate}} *</label>
               <input id="subscription-first-name" class="form-control" formControlName="firstName" type="text" appInvalidFeedback>
             </div>
           </div>
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-6 mb-2">
             <div class="form-group">
               <label class="form-label" for="subscription-last-name">{{'common.last-name' | translate}} *</label>
               <input class="form-control" id="subscription-last-name" formControlName="lastName" type="text" appInvalidFeedback>
             </div>
           </div>
-          <div class="col-12">
+          <div class="col-12 mb-2">
             <div class="form-group">
-              <label class="form-label" class="form-label" for="subscription-email">{{'common.email' | translate}} *</label>
+              <label class="form-label" for="subscription-email">{{'common.email' | translate}} *</label>
               <input id="subscription-email" formControlName="email" type="email" [ngClass]="{'form-control': !emailEditForbidden, 'form-control-plaintext': emailEditForbidden}" appInvalidFeedback>
             </div>
           </div>
         </div>
       </div>
-      <div class="row g-2 mt-1">
-        <div *ngFor="let field of subscriptionInfo.fieldConfigurationAfterStandard" class="col-12">
+      <div class="row g-2">
+        <div *ngFor="let field of subscriptionInfo.fieldConfigurationAfterStandard" class="col-12 mb-2">
             <app-additional-field [field]="field" [elementUUID]="'subscription'" [form]="subscriptionAdditionalForm" [ticketAcquired]="false"></app-additional-field>
         </div>
       </div>

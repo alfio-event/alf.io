@@ -35,8 +35,8 @@
     </div>
 
     <div class="form-group" *ngIf="purchaseContext && purchaseContext.contentLanguages.length > 1">
-      <label [attr.for]="ticket.uuid + '-userLanguage'" translate="reservation-page-complete.language"></label>
-      <select [attr.id]="ticket.uuid + '-userLanguage'" formControlName="userLanguage" class="custom-select" appInvalidFeedback>
+      <label class="mb-2" [attr.for]="ticket.uuid + '-userLanguage'" translate="reservation-page-complete.language"></label>
+      <select [attr.id]="ticket.uuid + '-userLanguage'" formControlName="userLanguage" class="form-select" appInvalidFeedback>
         <option value=""></option>
         <option *ngFor="let lang of purchaseContext.contentLanguages" [ngValue]="lang.locale">{{lang.displayLanguage}}</option>
       </select>

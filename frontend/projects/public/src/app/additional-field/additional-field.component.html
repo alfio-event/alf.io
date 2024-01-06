@@ -14,7 +14,7 @@
         <ng-select *ngIf="!isMobile" [attr.id]="elementUUID + '-' + field.name" formControlName="0" appInvalidFeedback [items]="countries" bindLabel="name" bindValue="isoCode" [inputAttrs]="{autocomplete: 'nope'}">
           <ng-template ng-notfound-tmp let-searchTerm="searchTerm"></ng-template>
         </ng-select>
-        <select *ngIf="isMobile" [attr.id]="elementUUID + '-' + field.name" class="custom-select" formControlName="0" appInvalidFeedback>
+        <select *ngIf="isMobile" [attr.id]="elementUUID + '-' + field.name" class="form-select" formControlName="0" appInvalidFeedback>
           <option value=""></option>
           <option *ngFor="let c of countries" [ngValue]="c.isoCode">{{c.name}}</option>
         </select>
