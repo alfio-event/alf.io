@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree} from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import {Observable, of} from 'rxjs';
 import {EventService} from './shared/event.service';
 import {catchError, map, tap} from 'rxjs/operators';
@@ -8,7 +8,7 @@ import {handleCustomCss} from './shared/custom-css-helper';
 @Injectable({
   providedIn: 'root'
 })
-export class EventGuard implements CanActivate {
+export class EventGuard  {
 
   constructor(private eventService: EventService, private router: Router) {
   }

@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree} from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import {Observable, of} from 'rxjs';
 import {catchError, map} from 'rxjs/operators';
 import {ReservationService} from '../shared/reservation.service';
@@ -18,7 +18,7 @@ import {SuccessSubscriptionComponent} from './success-subscription/success-subsc
 @Injectable({
     providedIn: 'root'
 })
-export class ReservationGuard implements CanActivate {
+export class ReservationGuard  {
 
     constructor(private reservationService: ReservationService, private router: Router) {
     }

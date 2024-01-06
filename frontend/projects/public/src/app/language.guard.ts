@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot} from '@angular/router';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import {Observable} from 'rxjs';
 import {I18nService} from './shared/i18n.service';
 import {TranslateService} from '@ngx-translate/core';
@@ -9,7 +9,7 @@ import {PurchaseContextService, PurchaseContextType} from './shared/purchase-con
 @Injectable({
   providedIn: 'root'
 })
-export class LanguageGuard implements CanActivate {
+export class LanguageGuard  {
 
   constructor(private i18nService: I18nService, private purchaseContextService: PurchaseContextService, private translate: TranslateService) {
   }
