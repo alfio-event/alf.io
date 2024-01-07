@@ -7,7 +7,7 @@
     "build": "ng build public",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "postinstall": "(cd projects/public && npm install)"
+    "postinstall": "npm --prefix projects/public ci"
   },
   "private": true,
   "dependencies": {
