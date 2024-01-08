@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 import static alfio.manager.user.UserManager.ADMIN_USERNAME;
+import static java.util.Objects.requireNonNullElse;
 
 /**
  * Centralized service for checking if a given Principal can
@@ -254,7 +255,9 @@ public class AccessService {
         if (categoryIds.size() != ticketCategoryRepository.countCategoriesBelongingToEvent(eventId, categoryIds)) {
             throw new AccessDeniedException();
         }
-        var additionalServicesIds = createRequest.getAdditionalServices().stream().map(AdditionalServiceReservationModification::getAdditionalServiceId).collect(Collectors.toSet());
+        var additionalServicesIds = requireNonNullElse(createRequest.getAdditionalServices(), List.<AdditionalServiceReservationModification>of()).stream()
+            .map(AdditionalServiceReservationModification::getAdditionalServiceId)
+            .collect(Collectors.toSet());
         if (!additionalServicesIds.isEmpty() && additionalServicesIds.size() != additionalServiceRepository.countAdditionalServicesBelongingToEvent(eventId, additionalServicesIds)) {
             throw new AccessDeniedException();
         }
