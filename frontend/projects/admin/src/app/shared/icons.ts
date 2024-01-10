@@ -23,6 +23,7 @@ import { insightsIcon } from '../svg/insights';
 import { keyIcon } from '../svg/key';
 import { lockIcon } from '../svg/lock';
 import { lockOpenIcon } from '../svg/lock-open';
+import { mailIcon } from '../svg/mail';
 import { organizationIcon } from '../svg/organization';
 import { outgoingMailIcon } from '../svg/outgoing-mail';
 import { paymentsIcon } from '../svg/payments';
@@ -83,6 +84,7 @@ const ICONS = [
   warningIcon,
   closeIcon,
   infoIcon,
+  mailIcon,
 ];
 export const ICON_CONFIG = {
   sizes: {

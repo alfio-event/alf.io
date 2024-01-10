@@ -5,6 +5,7 @@ import {
   NgbCarouselModule,
   NgbDropdownModule,
   NgbNavModule,
+  NgbPaginationModule,
   NgbTypeaheadModule,
 } from '@ng-bootstrap/ng-bootstrap';
 import { provideSvgIconsConfig, SvgIconComponent } from '@ngneat/svg-icon';
@@ -22,6 +23,9 @@ import { ShowSelectedCategoriesPipe } from './show-selected-categories.pipe';
 import { UiCategoryBuilderPipe } from './ui-category-builder.pipe';
 import { FormsModule } from '@angular/forms';
 import { TicketCategoryDetailComponent } from './ticket-category-detail/ticket-category-detail.component';
+import { MailService } from '../../event/mail.service';
+import { EmailDetailComponent } from './email-detail/email-detail.component';
+import { EventDetailComponent } from './event-detail/event-detail.component';
 
 @NgModule({
   declarations: [
@@ -32,6 +36,8 @@ import { TicketCategoryDetailComponent } from './ticket-category-detail/ticket-c
     ShowSelectedCategoriesPipe,
     UiCategoryBuilderPipe,
     TicketCategoryDetailComponent,
+    EmailDetailComponent,
+    EventDetailComponent,
   ],
   imports: [
     TranslateModule.forChild(),
@@ -43,15 +49,24 @@ import { TicketCategoryDetailComponent } from './ticket-category-detail/ticket-c
     NgbNavModule,
     FormsModule,
     NgbDropdownModule,
+    NgbPaginationModule,
 
     RouterModule.forChild([
-      { path: '', component: EventDashboardComponent },
-      { path: 'email-log', component: EmailLogComponent },
+      {
+        path: '',
+        component: EventDashboardComponent,
+        children: [
+          { path: '', component: EventDetailComponent },
+          { path: 'email-log', component: EmailLogComponent },
+          { path: 'email-log/:emailId', component: EmailDetailComponent },
+        ],
+      },
     ]),
   ],
   providers: [
     OrganizationService,
     EventService,
+    MailService,
     provideSvgIconsConfig(ICON_CONFIG),
   ],
 })

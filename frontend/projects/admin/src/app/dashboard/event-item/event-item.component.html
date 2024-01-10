@@ -30,10 +30,12 @@
         class="btn btn-primary btn-sm hidden-xs hidden-sm mx-1"
         *ngIf="event.visibleForCurrentUser"
       >
-        <svg-icon key="settings" size="md"></svg-icon>Settings
+        <svg-icon key="settings" size="md"></svg-icon>
+        <span translate="admin.event-item.settings"></span>
       </a>
       <a class="btn btn-primary btn-sm mx-1">
-        <svg-icon key="check" size="md"></svg-icon> Check-In
+        <svg-icon key="check" size="md"></svg-icon>
+        <span translate="admin.event-item.check-in"></span>
       </a>
       <a
         class="btn btn-warning btn-sm"
@@ -42,10 +44,9 @@
           event.allowedPaymentProxies.includes('OFFLINE')
         "
       >
-        <svg-icon key="payments" size="md"></svg-icon> Pending payments<span
-          class="badge bg-secondary"
-          >{{ event.shortName }}</span
-        >
+        <svg-icon key="payments" size="md"></svg-icon>
+        <span translate="Pending payments"></span
+        ><span class="badge bg-secondary">{{ event.shortName }}</span>
       </a>
     </div>
   </div>
