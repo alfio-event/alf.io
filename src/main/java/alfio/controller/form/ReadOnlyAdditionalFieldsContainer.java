@@ -19,6 +19,6 @@ package alfio.controller.form;
 import java.util.List;
 import java.util.Map;
 
-public interface AdditionalFieldsContainer extends ReadOnlyAdditionalFieldsContainer {
-    void setAdditional(Map<String, List<String>> additionalFields);
+public interface ReadOnlyAdditionalFieldsContainer {
+    Map<String, List<String>> getAdditional();
 }

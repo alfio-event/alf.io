@@ -17,12 +17,14 @@
 package alfio.model.api.v1.admin;
 
 import alfio.model.api.v1.admin.subscription.SubscriptionConfiguration;
+import alfio.model.api.v1.admin.subscription.Owner;
 import alfio.model.metadata.SubscriptionMetadata;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
-import java.util.Objects;
+
+import static java.util.Objects.requireNonNullElseGet;
 
 public class SubscriptionReservationCreationRequest implements ReservationAPICreationRequest {
     private final Map<String, String> metadata;
@@ -30,18 +32,21 @@ public class SubscriptionReservationCreationRequest implements ReservationAPICre
     private final String language;
     private final ReservationConfiguration reservationConfiguration;
     private final SubscriptionConfiguration subscriptionConfiguration;
+    private final Owner owner;
 
     @JsonCreator
     public SubscriptionReservationCreationRequest(@JsonProperty("metadata") Map<String, String> metadata,
                                                   @JsonProperty("user") ReservationUser user,
                                                   @JsonProperty("language") String language,
                                                   @JsonProperty("configuration") ReservationConfiguration reservationConfiguration,
-                                                  @JsonProperty("subscriptionConfiguration") SubscriptionConfiguration subscriptionConfiguration) {
+                                                  @JsonProperty("subscriptionConfiguration") SubscriptionConfiguration subscriptionConfiguration,
+                                                  @JsonProperty("owner") Owner owner) {
         this.metadata = metadata;
         this.user = user;
         this.language = language;
         this.reservationConfiguration = reservationConfiguration;
-        this.subscriptionConfiguration = Objects.requireNonNullElseGet(subscriptionConfiguration, SubscriptionConfiguration::defaultConfiguration);
+        this.subscriptionConfiguration = requireNonNullElseGet(subscriptionConfiguration, SubscriptionConfiguration::defaultConfiguration);
+        this.owner = requireNonNullElseGet(owner, Owner::empty);
     }
 
     public Map<String, String> getMetadata() {
@@ -72,5 +77,13 @@ public class SubscriptionReservationCreationRequest implements ReservationAPICre
             return new SubscriptionMetadata(metadata, subscriptionConfiguration);
         }
         return null;
+    }
+
+    public Owner getSubscriptionOwner() {
+        return owner;
+    }
+
+    public boolean hasAdditionalInfo() {
+        return getSubscriptionOwner().hasAdditionalInfo();
     }
 }

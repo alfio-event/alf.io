@@ -53,6 +53,7 @@ public class ReservationApiV1Controller {
     private final AdminReservationManager adminReservationManager;
     private final AdditionalServiceManager additionalServiceManager;
     private final AccessService accessService;
+    private final PurchaseContextFieldManager purchaseContextFieldManager;
 
     @Autowired
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
@@ -61,7 +62,8 @@ public class ReservationApiV1Controller {
                                       EventManager eventManager,
                                       AccessService accessService,
                                       AdditionalServiceManager additionalServiceManager,
-                                      AdminReservationManager adminReservationManager) {
+                                      AdminReservationManager adminReservationManager,
+                                      PurchaseContextFieldManager purchaseContextFieldManager) {
         this.ticketReservationManager = ticketReservationManager;
         this.purchaseContextManager = purchaseContextManager;
         this.promoCodeRequestManager = promoCodeRequestManager;
@@ -69,6 +71,7 @@ public class ReservationApiV1Controller {
         this.accessService = accessService;
         this.additionalServiceManager = additionalServiceManager;
         this.adminReservationManager = adminReservationManager;
+        this.purchaseContextFieldManager = purchaseContextFieldManager;
     }
 
     @PostMapping("/event/{slug}/reservation")
@@ -148,7 +151,7 @@ public class ReservationApiV1Controller {
                     data.getMiddle().stream().map(t -> new HolderDetail(t.getUuid(), t.getFirstName(), t.getLastName(), t.getEmail())).collect(Collectors.toList())
                 ));
             } else {
-                var subscriptions = ticketReservationManager.findSubscriptionDetails(data.getLeft())
+                var subscriptions = ticketReservationManager.findSubscriptionDetails(data.getLeft().getId())
                     .map(List::of)
                     .orElseGet(List::of);
                 return ResponseEntity.ok(new ReservationConfirmationResponse(
@@ -215,8 +218,13 @@ public class ReservationApiV1Controller {
                 reservationConfiguration.isLockEmailEdit());
             ticketReservationManager.setReservationMetadata(id, reservationMetadata);
         }
-        var subscriptionId = creationRequest instanceof TicketReservationCreationRequest ? ((TicketReservationCreationRequest) creationRequest).getSubscriptionId() : null;
-        return CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, purchaseContext, locale.getLanguage(), user != null, subscriptionId));
+        var descriptorId = creationRequest instanceof TicketReservationCreationRequest ? ((TicketReservationCreationRequest) creationRequest).getSubscriptionId() : null;
+        if (creationRequest instanceof SubscriptionReservationCreationRequest && ((SubscriptionReservationCreationRequest)creationRequest).hasAdditionalInfo()) {
+            var subscriptionId = ticketReservationManager.findSubscriptionDetails(id).orElseThrow().getSubscription().getId();
+            purchaseContextFieldManager.updateFieldsForReservation(((SubscriptionReservationCreationRequest) creationRequest).getSubscriptionOwner(), purchaseContext,
+                null, subscriptionId);
+        }
+        return CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, purchaseContext, locale.getLanguage(), user != null, descriptorId));
     }
 
     public static class CreationResponse {

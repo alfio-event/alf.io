@@ -63,9 +63,13 @@ public class OrganizationDeleter {
                 log.warn("deleting {} events linked to organization {}", disabledEventIds.size(), organizationId);
                 disabledEventIds.forEach(eventDeleterRepository::deleteAllForEvent);
             }
+            List<Integer> organizationIds = List.of(organizationId);
+            organizationDeleterRepository.deleteFieldValues(organizationIds);
+            organizationDeleterRepository.deleteFieldDescription(organizationIds);
+            organizationDeleterRepository.deleteFieldConfiguration(organizationIds);
             int users = userOrganizationRepository.cleanupOrganization(organizationId);
             log.warn("removed {} user(s) from organization {}", users, organizationId);
-            organizationDeleterRepository.deleteEmptyOrganizations(List.of(organizationId));
+            organizationDeleterRepository.deleteEmptyOrganizations(organizationIds);
             return true;
         }
         return false;

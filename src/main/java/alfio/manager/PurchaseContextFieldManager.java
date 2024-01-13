@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.form.AdditionalFieldsContainer;
+import alfio.controller.form.ReadOnlyAdditionalFieldsContainer;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.*;
 import alfio.model.PurchaseContext.PurchaseContextType;
@@ -215,7 +216,7 @@ public class PurchaseContextFieldManager {
     }
 
     // reservation-related methods
-    public void updateFieldsForReservation(AdditionalFieldsContainer form,
+    public void updateFieldsForReservation(ReadOnlyAdditionalFieldsContainer form,
                                            PurchaseContext purchaseContext,
                                            Integer ticketId,
                                            UUID subscriptionId) {

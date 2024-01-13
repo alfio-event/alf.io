@@ -83,6 +83,15 @@ public interface OrganizationDeleterRepository {
     @Query("delete from b_transaction where organization_id_fk in (:organizationIds)")
     int deleteAllTransactions(@Bind("organizationIds") List<Integer> organizationIds);
 
+    @Query("delete from purchase_context_field_value where organization_id_fk in (:organizationIds)")
+    int deleteFieldValues(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from purchase_context_field_description where organization_id_fk in (:organizationIds)")
+    int deleteFieldDescription(@Bind("organizationIds") List<Integer> organizationIds);
+
+    @Query("delete from purchase_context_field_configuration where organization_id_fk in (:organizationIds)")
+    int deleteFieldConfiguration(@Bind("organizationIds") List<Integer> organizationIds);
+
     default void deleteEmptyOrganizations(List<Integer> organizationIds) {
         // delete invoice sequences
         int deletedSequences = deleteInvoiceSequencesForEmptyOrganizations(organizationIds);
