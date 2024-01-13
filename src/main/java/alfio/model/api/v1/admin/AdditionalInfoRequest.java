@@ -102,7 +102,7 @@ public class AdditionalInfoRequest {
     }
 
     @Getter
-    enum AdditionalInfoType {
+    public enum AdditionalInfoType {
 
         GENERIC_TEXT("input:text"),
         PHONE_NUMBER("input:tel"),

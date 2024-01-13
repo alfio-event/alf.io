@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.List;
 import java.util.Map;
 
 public class AttendeeData {
@@ -27,16 +28,19 @@ public class AttendeeData {
     private final String lastName;
     private final String email;
     private final Map<String, String> metadata;
+    private final Map<String, List<String>> additional;
 
     @JsonCreator
     public AttendeeData(@JsonProperty("firstName") String firstName,
                         @JsonProperty("lastName") String lastName,
                         @JsonProperty("email") String email,
-                        @JsonProperty("metadata") Map<String, String> metadata) {
+                        @JsonProperty("metadata") Map<String, String> metadata,
+                        @JsonProperty("additional") Map<String, List<String>> additional) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.metadata = metadata;
+        this.additional = additional;
     }
 
     public String getFirstName() {
@@ -55,8 +59,16 @@ public class AttendeeData {
         return metadata;
     }
 
+    public Map<String, List<String>> getAdditional() {
+        return additional;
+    }
+
     public boolean hasMetadata() {
         return metadata != null;
+    }
+
+    public boolean hasAdditionalData() {
+        return additional != null;
     }
 
     public boolean hasContactData() {
@@ -66,6 +78,6 @@ public class AttendeeData {
     }
 
     public static AttendeeData empty() {
-        return new AttendeeData(null, null, null, null);
+        return new AttendeeData(null, null, null, null, null);
     }
 }

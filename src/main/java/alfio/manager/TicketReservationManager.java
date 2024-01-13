@@ -466,6 +466,9 @@ public class TicketReservationManager {
                 if (attendee.hasContactData()) {
                     ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmail(), null, attendee.getFirstName(), attendee.getLastName());
                 }
+                if (attendee.hasAdditionalData()) {
+                    purchaseContextFieldRepository.updateOrInsert(attendee.getAdditional(), event, ticketId, null);
+                }
                 specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), null, accessCodeId);
             } else {
                 AtomicInteger counter = new AtomicInteger(0);
@@ -498,6 +501,12 @@ public class TicketReservationManager {
                     specialPrices.stream().map(SpecialPrice::getId).collect(toList()),
                     Status.PENDING,
                     Objects.requireNonNull(accessCodeOrDiscount).getId());
+
+                ticketsAndSpecialPrices.stream()
+                    .filter(tsp -> tsp.getRight().hasAdditionalData())
+                    .forEach(tsp ->
+                        purchaseContextFieldRepository.updateOrInsert(tsp.getRight().getAdditional(), event, tsp.getLeft(), null)
+                    );
             }
         } else {
             int reserved = ticketRepository.reserveTickets(reservationId,
@@ -507,6 +516,12 @@ public class TicketReservationManager {
                 event.getVatStatus(),
                 idx -> getAtIndexOrEmpty(attendees, idx));
             Validate.isTrue(reserved == reservedForUpdate.size(), "Cannot reserve all tickets");
+            for (int i = 0; i < reservedForUpdate.size(); i++) {
+                var attendee = getAtIndexOrEmpty(attendees, i);
+                if (attendee.hasAdditionalData()) {
+                    purchaseContextFieldRepository.updateOrInsert(attendee.getAdditional(), event, reservedForUpdate.get(i), null);
+                }
+            }
         }
     }
 
@@ -2383,8 +2398,8 @@ public class TicketReservationManager {
         return List.of();
     }
 
-    public Optional<SubscriptionWithUsageDetails> findSubscriptionDetails(TicketReservation reservation) {
-        return subscriptionRepository.findSubscriptionsByReservationId(reservation.getId())
+    public Optional<SubscriptionWithUsageDetails> findSubscriptionDetails(String reservationId) {
+        return subscriptionRepository.findSubscriptionsByReservationId(reservationId)
             .stream()
             .findFirst()
             .map(s -> {

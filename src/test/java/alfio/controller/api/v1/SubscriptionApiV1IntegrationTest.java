@@ -24,6 +24,7 @@ import alfio.controller.api.v1.admin.EventApiV1Controller;
 import alfio.controller.api.v1.admin.SubscriptionApiV1Controller;
 import alfio.manager.user.UserManager;
 import alfio.model.PriceContainer;
+import alfio.model.api.v1.admin.AdditionalInfoRequest;
 import alfio.model.api.v1.admin.DescriptionRequest;
 import alfio.model.api.v1.admin.SubscriptionDescriptorModificationRequest;
 import alfio.model.api.v1.admin.subscription.StandardPeriodTerm;
@@ -153,6 +154,12 @@ class SubscriptionApiV1IntegrationTest {
     static SubscriptionDescriptorModificationRequest modificationRequest(SubscriptionUsageType usageType,
                                                                          boolean isPublic,
                                                                          ClockProvider clockProvider) {
+        return modificationRequest(usageType, isPublic, clockProvider, List.of());
+    }
+    static SubscriptionDescriptorModificationRequest modificationRequest(SubscriptionUsageType usageType,
+                                                                         boolean isPublic,
+                                                                         ClockProvider clockProvider,
+                                                                         List<AdditionalInfoRequest> additionalInfoRequest) {
         return new SubscriptionDescriptorModificationRequest(
             usageType,
             SubscriptionDescriptorModificationRequest.TERM_STANDARD,
@@ -173,7 +180,7 @@ class SubscriptionApiV1IntegrationTest {
             "Europe/Zurich",
             false,
             List.of(PaymentProxy.STRIPE),
-            List.of()
+            additionalInfoRequest
         );
     }
 
