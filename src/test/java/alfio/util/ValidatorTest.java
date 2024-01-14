@@ -251,4 +251,30 @@ class ValidatorTest {
         Validator.validateMaxAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
         assertTrue(errors.hasFieldErrors());
     }
+
+    @Test
+    void validateDateInThePast() {
+        var validationResult = new MapBindingResult(new HashMap<>(), "test");
+
+        // valid because date is empty
+        Validator.validateDateInThePast("", "date", validationResult);
+        assertFalse(validationResult.hasErrors());
+
+        var now = LocalDate.now(ClockProvider.clock());
+        // valid because date is yesterday
+        Validator.validateDateInThePast(now.minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE), "date", validationResult);
+        assertFalse(validationResult.hasErrors());
+
+        // not valid because date is today
+        Validator.validateDateInThePast(now.format(DateTimeFormatter.ISO_LOCAL_DATE), "date", validationResult);
+        assertTrue(validationResult.hasErrors());
+
+        // reset validationResult
+        validationResult = new MapBindingResult(new HashMap<>(), "test");
+        assertFalse(validationResult.hasErrors());
+
+        // not valid because date is tomorrow
+        Validator.validateDateInThePast(now.format(DateTimeFormatter.ISO_LOCAL_DATE), "date", validationResult);
+        assertTrue(validationResult.hasErrors());
+    }
 }

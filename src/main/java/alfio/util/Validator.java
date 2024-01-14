@@ -65,6 +65,7 @@ public final class Validator {
     private static final String FULL_NAME = "fullName";
     private static final String ADDITIONAL_PREFIX = "additional[";
     private static final String ADDITIONAL_SERVICES = "additionalServices";
+    private static final String ERROR_RESTRICTED_VALUE = "error.restrictedValue";
 
     private Validator() {
     }
@@ -418,19 +419,11 @@ public final class Validator {
 
     private static void fieldValueBasicValidation(Errors errors, String prefixForLambda, PurchaseContextFieldConfiguration fieldConf, int i, String formValue) {
 
-        boolean isDateOfBirth = fieldConf.isDateOfBirth();
-
-        if(fieldConf.isMaxLengthDefined()) {
-            validateMaxLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", isDateOfBirth ? "error.tooOld" : "error.tooLong", fieldConf, errors);
-        }
-
-        if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined()) {
-            validateMinLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", isDateOfBirth ? "error.tooYoung" : "error.tooShort", fieldConf, errors);
-        }
+        validateLength(errors, prefixForLambda, fieldConf, i, formValue);
 
         if(!fieldConf.getRestrictedValues().isEmpty()) {
             validateRestrictedValue(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]",
-                "error.restrictedValue", fieldConf.getRestrictedValues(), errors);
+                ERROR_RESTRICTED_VALUE, fieldConf.getRestrictedValues(), errors);
         }
 
         if(fieldConf.isRequired() && fieldConf.getCount() == 1 && StringUtils.isBlank(formValue)){
@@ -442,12 +435,34 @@ public final class Validator {
                 "error.disabledValue", null, null);
         }
 
-        if (!errors.hasFieldErrors() && StringUtils.isNotBlank(formValue) && isDateOfBirth) {
+        if (!errors.hasFieldErrors() && StringUtils.isNotBlank(formValue) && fieldConf.isDateOfBirth()) {
             int age = calculateAge(formValue, true);
             if (age < 0) {
                 // age was not provided in the right format
                 errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", ErrorsCode.EMPTY_FIELD);
             }
+        }
+    }
+
+    private static void validateLength(Errors errors,
+                                       String prefixForLambda,
+                                       PurchaseContextFieldConfiguration fieldConf,
+                                       int fieldIndex,
+                                       String formValue) {
+
+        boolean isDateOfBirth = fieldConf.isDateOfBirth();
+
+        if (isDateOfBirth) {
+            // we require date of birth to be in the past
+            validateDateInThePast(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ fieldIndex +"]", errors);
+        }
+
+        if(fieldConf.isMaxLengthDefined()) {
+            validateMaxLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ fieldIndex +"]", isDateOfBirth ? "error.tooOld" : "error.tooLong", fieldConf, errors);
+        }
+
+        if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined()) {
+            validateMinLength(formValue, prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ fieldIndex +"]", isDateOfBirth ? "error.tooYoung" : "error.tooShort", fieldConf, errors);
         }
     }
 
@@ -482,6 +497,21 @@ public final class Validator {
         int age = calculateAge(value, false);
         if (age >= 0 && age < minAge) {
             errors.rejectValue(fieldName, errorCode, new Object[] { minAge }, null);
+        }
+    }
+
+    static void validateDateInThePast(String value, String fieldName, Errors errors) {
+        if (StringUtils.isBlank(value)) {
+            // value is not present. We cannot check it.
+            return;
+        }
+        try {
+            var period = Period.between(LocalDate.parse(value), LocalDate.now(ClockProvider.clock()));
+            if (period.isNegative() || period.isZero()) {
+                errors.rejectValue(fieldName, ERROR_RESTRICTED_VALUE, null, null);
+            }
+        } catch(DateTimeException dex) {
+            errors.rejectValue(fieldName, ERROR_RESTRICTED_VALUE, null, null);
         }
     }
 
