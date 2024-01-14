@@ -12,7 +12,7 @@ The open source ticket reservation system.
 
 [![Financial Contributors on Open Collective](https://opencollective.com/alfio/all/badge.svg?label=financial+contributors)](https://opencollective.com/alfio)
 [![Docker Hub Pulls](https://img.shields.io/docker/pulls/alfio/alf.io.svg)](https://hub.docker.com/r/alfio/alf.io/tags)
-[![Open Source Helpers](https://www.codetriage.com/exteso/alf.io/badges/users.svg)](https://www.codetriage.com/exteso/alf.io)
+[![Open Source Helpers](https://www.codetriage.com/alfio-event/alf.io/badges/users.svg)](https://www.codetriage.com/alfio-event/alf.io)
 
 ## Prerequisites
 
