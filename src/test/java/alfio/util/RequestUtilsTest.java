@@ -27,6 +27,8 @@ public class RequestUtilsTest {
         Assertions.assertTrue(RequestUtils.isSocialMediaShareUA("XING-contenttabreceiver/2.0"));
         Assertions.assertTrue(RequestUtils.isSocialMediaShareUA("LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)"));
         Assertions.assertTrue(RequestUtils.isSocialMediaShareUA("Twitterbot/1.0"));
+        Assertions.assertTrue(RequestUtils.isSocialMediaShareUA("WhatsApp/2.19.81 A"));
+        Assertions.assertTrue(RequestUtils.isSocialMediaShareUA("Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)"));
         Assertions.assertFalse(RequestUtils.isSocialMediaShareUA("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"));
     }
 }
