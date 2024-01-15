@@ -350,7 +350,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         }
 
 
-        assertEquals("redirect:/api/v2/public/event/" + context.event.getShortName() + "/code/MY_CODE", indexController.redirectCode(context.event.getShortName(), "MY_CODE"));
+        assertEquals("redirect:/api/v2/public/event/" + context.event.getShortName() + "/code/MY_CODE", indexController.redirectCode(context.event.getShortName(), "MY_CODE", "Normal user agent"));
+
+        // vv social preview should redirect to event page when linking a code page instead of following and creating a reservation
+        assertEquals("redirect:/event/" + context.event.getShortName(), indexController.redirectCode(context.event.getShortName(), "MY_CODE", "Slackbot"));
 
 
         // check open graph & co
