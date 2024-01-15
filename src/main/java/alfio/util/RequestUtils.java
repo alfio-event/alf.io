@@ -48,7 +48,7 @@ public class RequestUtils {
         }
     }
 
-    private static final Pattern SOCIAL_MEDIA_UA = Pattern.compile("facebookexternalhit/|XING-contenttabreceiver/|LinkedInBot/|Twitterbot/|WhatsApp|Slackbot");
+    private static final Pattern SOCIAL_MEDIA_UA = Pattern.compile("facebookexternalhit/|XING-contenttabreceiver/|LinkedInBot/|Twitterbot/|WhatsApp|Slackbot|TelegramBot");
 
     public static boolean isSocialMediaShareUA(String ua) {
         return ua != null && SOCIAL_MEDIA_UA.matcher(ua).find();
