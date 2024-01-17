@@ -114,6 +114,18 @@ public interface EventDeleterRepository {
     @Query("delete from subscription_event where event_id_fk = :eventId")
     int deleteSubscriptionLinks(@Bind("eventId") int eventId);
 
+    @Deprecated
+    @Query("delete from ticket_field_value where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId and context = 'ATTENDEE')")
+    int deleteLegacyTicketFieldValue(@Bind("eventId") int eventId);
+
+    @Deprecated
+    @Query("delete from ticket_field_description where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId)")
+    int deleteLegacyTicketFieldDescription(@Bind("eventId") int eventId);
+
+    @Deprecated
+    @Query("delete from ticket_field_configuration where event_id_fk= :eventId")
+    int deleteLegacyTicketFieldConfiguration(@Bind("eventId") int eventId);
+
     default void deleteAllForEvent(int eventId) {
         deletePolls(eventId);
         deleteWaitingQueue(eventId);
@@ -123,6 +135,13 @@ public interface EventDeleterRepository {
         deleteConfigurationPurchaseContext(eventId);
         deleteConfigurationTicketCategory(eventId);
         deleteEmailMessage(eventId);
+
+        // legacy, replaced by purchase_context_* tables
+        deleteLegacyTicketFieldValue(eventId);
+        deleteLegacyTicketFieldDescription(eventId);
+        deleteLegacyTicketFieldConfiguration(eventId);
+        //
+
         int deletedFieldValues = deleteFieldValues(eventId);
         LOGGER.info("deleted {} field values", deletedFieldValues);
         int deletedDescriptions = deleteFieldDescription(eventId);
