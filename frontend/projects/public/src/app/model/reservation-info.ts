@@ -52,6 +52,7 @@ export interface AdditionalServiceWithData {
   serviceId: number;
   ticketUUID: string | null;
   ticketFieldConfiguration: Array<AdditionalField>;
+  type: 'DONATION' | 'SUPPLEMENT';
 }
 
 export interface ReservationMetadata {

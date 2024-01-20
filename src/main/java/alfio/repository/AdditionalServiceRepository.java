@@ -83,4 +83,12 @@ public interface AdditionalServiceRepository {
 
     @Query("select count(*) from additional_service where event_id_fk = :eventId and id in(:ids)")
     Integer countAdditionalServicesBelongingToEvent(@Bind("eventId") int eventId, @Bind("ids") Collection<Integer> ids);
+
+    default Map<Integer, AdditionalService.AdditionalServiceType> getTypeByIds(Collection<Integer> additionalServiceIds) {
+        Map<Integer, AdditionalService.AdditionalServiceType> res = new HashMap<>();
+        getJdbcTemplate().query("select id, service_type from additional_service where id in (:additionalServiceIds)", Map.of("additionalServiceIds", additionalServiceIds), row -> {
+            res.put(row.getInt("id"), AdditionalService.AdditionalServiceType.valueOf(row.getString("service_type")));
+        });
+        return res;
+    }
 }

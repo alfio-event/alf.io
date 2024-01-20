@@ -56,6 +56,7 @@ public class AdditionalServiceHelper {
             if (!additionalServiceItems.isEmpty()) {
                 var additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toList());
                 var additionalItemDescriptionsById = additionalServiceManager.getDescriptionsByAdditionalServiceIds(additionalServiceIds);
+                var additionalItemTypeById = additionalServiceManager.getTypeByIds(additionalServiceIds);
                 var additionalFieldsById = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId()).stream()
                     .filter(f -> f.getContext() == PurchaseContextFieldConfiguration.Context.ADDITIONAL_SERVICE && additionalServiceIds.contains(f.getAdditionalServiceId()))
                     .collect(Collectors.groupingBy(PurchaseContextFieldConfiguration::getAdditionalServiceId));
@@ -85,7 +86,7 @@ public class AdditionalServiceHelper {
                             .map(Ticket::getUuid)
                             .findFirst()
                             .orElse(null);
-                        return new AdditionalServiceWithData(additionalItemTitle, as.getId(), as.getAdditionalServiceId(), ticketUUID, fields);
+                        return new AdditionalServiceWithData(additionalItemTitle, as.getId(), as.getAdditionalServiceId(), ticketUUID, fields, additionalItemTypeById.get(as.getAdditionalServiceId()));
                     })
                     .sorted(Comparator.comparing(AdditionalServiceWithData::getServiceId))
                     .collect(Collectors.toList());

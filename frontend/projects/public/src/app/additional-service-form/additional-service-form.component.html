@@ -1,22 +1,24 @@
 <ng-container *ngIf="additionalServices.length > 0">
-  <div [ngClass]="{ 'card-body': cardStyle, 'mt-3 mb-4': !cardStyle }">
+  <div [ngClass]="{ 'card-body': cardStyle, 'mt-3 mb-4': !cardStyle }" *ngIf="hasSupplements">
     <h3 translate="show-event.additional-services" class="card-title"></h3>
   </div>
   <div [ngClass]="{ 'list-group list-group-flush' : cardStyle }">
-    <div [ngClass]="{ 'list-group-item': cardStyle, 'pb-3 mb-4': !cardStyle, 'border-bottom': !cardStyle && !last}" class="list-group-item" *ngFor="let asw of additionalServices; let idx = index; let last = last">
-      <div class="d-flex justify-content-between">
-        <h4 [class.mb-3]="asw.ticketFieldConfiguration.length > 0">{{ asw.title | translateDescription}}</h4>
-        <div ngbDropdown class="d-inline-block" *ngIf="otherTickets">
-          <button type="button" class="btn btn-sm btn-outline-primary" [id]="'switchItem_' + asw.itemId" ngbDropdownToggle>{{'reservation-page.move-additional-service' | translate}}</button>
-          <div ngbDropdownMenu [attr.aria-labelledby]="'switchItem_' + asw.itemId">
-            <button type="button" ngbDropdownItem *ngFor="let tkt of otherTickets" (click)="moveAdditionalServiceItem(idx, asw, tkt)">
-              <span>{{' '}}{{'reservation-page-complete.ticket-nr' | translate}}{{tkt.index}} - {{tkt.categoryName}}</span>
-            </button>
+    <div *ngFor="let asw of additionalServices; let idx = index; let last = last">
+      <div *ngIf="asw.type === 'SUPPLEMENT'" [ngClass]="{ 'list-group-item': cardStyle, 'pb-3 mb-4': !cardStyle, 'border-bottom': !cardStyle && !last}" class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <h4 [class.mb-3]="asw.ticketFieldConfiguration.length > 0">{{ asw.title | translateDescription}}</h4>
+          <div ngbDropdown class="d-inline-block" *ngIf="otherTickets">
+            <button type="button" class="btn btn-sm btn-outline-primary" [id]="'switchItem_' + asw.itemId" ngbDropdownToggle>{{'reservation-page.move-additional-service' | translate}}</button>
+            <div ngbDropdownMenu [attr.aria-labelledby]="'switchItem_' + asw.itemId">
+              <button type="button" ngbDropdownItem *ngFor="let tkt of otherTickets" (click)="moveAdditionalServiceItem(idx, asw, tkt)">
+                <span>{{' '}}{{'reservation-page-complete.ticket-nr' | translate}}{{tkt.index}} - {{tkt.categoryName}}</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      <div *ngFor="let field of asw.ticketFieldConfiguration">
-        <app-additional-field [field]="field" [elementUUID]="ticket.uuid" [form]="getAdditionalServiceForm(idx)" [ticketAcquired]="ticket.acquired"></app-additional-field>
+        <div *ngFor="let field of asw.ticketFieldConfiguration">
+          <app-additional-field [field]="field" [elementUUID]="ticket.uuid" [form]="getAdditionalServiceForm(idx)" [ticketAcquired]="ticket.acquired"></app-additional-field>
+        </div>
       </div>
     </div>
   </div>

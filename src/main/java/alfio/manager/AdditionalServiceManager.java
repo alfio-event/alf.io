@@ -277,6 +277,13 @@ public class AdditionalServiceManager {
         return additionalServiceTextRepository.getDescriptionsByAdditionalServiceIds(additionalServiceIds);
     }
 
+    public Map<Integer, AdditionalService.AdditionalServiceType> getTypeByIds(Collection<Integer> additionalServiceIds) {
+        if (additionalServiceIds.isEmpty()) {
+            return Map.of();
+        }
+        return additionalServiceRepository.getTypeByIds(additionalServiceIds);
+    }
+
     private MapSqlParameterSource buildInsertItemParameterSource(int serviceId,
                                                                  String reservationId,
                                                                  AdditionalServiceItem.AdditionalServiceItemStatus status,
@@ -446,8 +453,9 @@ public class AdditionalServiceManager {
 
         // link additional services to tickets
         var bookedItems = additionalServiceItemRepository.findByReservationUuid(event.getId(), reservationId);
+        //we skip donation as they don't have a supplement policy
         var byPolicy = additionalServicesForEvent.stream()
-            .filter(as -> additionalServiceReservationList.stream().anyMatch(findAdditionalServiceRequest(as)))
+            .filter(as -> as.getSupplementPolicy() != null && additionalServiceReservationList.stream().anyMatch(findAdditionalServiceRequest(as)))
             .collect(Collectors.groupingBy(AdditionalService::getSupplementPolicy));
 
         var parameterSources = byPolicy.entrySet().stream()
@@ -461,6 +469,15 @@ public class AdditionalServiceManager {
             }).toArray(MapSqlParameterSource[]::new);
         var results = jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), parameterSources);
         Validate.isTrue(Arrays.stream(results).allMatch(i -> i == 1));
+
+        // we attach all those without policy to the first ticket (donations)
+        var firstTicketId = ticketIds.stream().findFirst().map(first -> List.of(first)).get();
+        var noPoliciesParameterSources = additionalServicesForEvent.stream()
+            .filter(as -> as.getSupplementPolicy() == null && additionalServiceReservationList.stream().anyMatch(findAdditionalServiceRequest(as)))
+            .flatMap(as -> linkWithEveryTicket(reservationId, additionalServiceReservationList, bookedItems, firstTicketId, as))
+            .toArray(MapSqlParameterSource[]::new);
+        var noPolicyResults = jdbcTemplate.batchUpdate(additionalServiceItemRepository.batchLinkToTicket(), noPoliciesParameterSources);
+        Validate.isTrue(Arrays.stream(noPolicyResults).allMatch(i -> i == 1));
     }
 
     private static Stream<MapSqlParameterSource> linkWithEveryTicket(String reservationId, List<ASReservationWithOptionalCodeModification> additionalServiceReservationList, List<AdditionalServiceItem> bookedItems, List<Integer> ticketIds, AdditionalService m) {

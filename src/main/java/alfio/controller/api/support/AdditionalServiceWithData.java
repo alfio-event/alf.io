@@ -16,6 +16,8 @@
  */
 package alfio.controller.api.support;
 
+import alfio.model.AdditionalService;
+
 import java.util.List;
 import java.util.Map;
 
@@ -27,16 +29,20 @@ public class AdditionalServiceWithData {
     private final String ticketUUID;
     private final List<AdditionalField> ticketFieldConfiguration;
 
+    private final AdditionalService.AdditionalServiceType type;
+
     public AdditionalServiceWithData(Map<String, String> title,
                                      int itemId,
                                      Integer serviceId,
                                      String ticketUUID,
-                                     List<AdditionalField> ticketFieldConfiguration) {
+                                     List<AdditionalField> ticketFieldConfiguration,
+                                     AdditionalService.AdditionalServiceType type) {
         this.title = title;
         this.itemId = itemId;
         this.serviceId = serviceId;
         this.ticketUUID = ticketUUID;
         this.ticketFieldConfiguration = ticketFieldConfiguration;
+        this.type = type;
     }
 
     public Map<String, String> getTitle() {
@@ -57,5 +63,9 @@ public class AdditionalServiceWithData {
 
     public List<AdditionalField> getTicketFieldConfiguration() {
         return ticketFieldConfiguration;
+    }
+
+    public AdditionalService.AdditionalServiceType getType() {
+        return type;
     }
 }
