@@ -115,7 +115,7 @@ public interface EventDeleterRepository {
     int deleteSubscriptionLinks(@Bind("eventId") int eventId);
 
     @Deprecated
-    @Query("delete from ticket_field_value where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId and context = 'ATTENDEE')")
+    @Query("delete from ticket_field_value where ticket_field_configuration_id_fk in (select id from ticket_field_configuration where event_id_fk = :eventId)")
     int deleteLegacyTicketFieldValue(@Bind("eventId") int eventId);
 
     @Deprecated
