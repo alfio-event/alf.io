@@ -106,14 +106,38 @@
       <div class="page-header">
         <h2 translate="reservation-page.subscription-owner"></h2>
       </div>
-      <div class="row g-2 mt-1">
+      <div class="form-check mt-1 mb-5">
+        <input class="form-check-input" type="checkbox" formControlName="differentSubscriptionOwner" id="show-subscription-owner" value="true">
+        <label class="form-check-label" for="show-subscription-owner">{{' '}}{{'reservation-page.subscription.different-owner' | translate}}</label>
+      </div>
+      <div class="row g-2">
         <div *ngFor="let field of subscriptionInfo.fieldConfigurationBeforeStandard" class="col-12">
           <app-additional-field [field]="field" [elementUUID]="'subscription'" [form]="subscriptionAdditionalForm" [ticketAcquired]="false"></app-additional-field>
         </div>
       </div>
-      <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" formControlName="differentSubscriptionOwner" id="show-subscription-owner" value="true">
-        <label class="form-check-label" for="show-subscription-owner">{{' '}}{{'reservation-page.subscription.different-owner' | translate}}</label>
+      <div *ngIf="!contactAndTicketsForm.value.differentSubscriptionOwner">
+        <div class="row g-2 mb-3">
+          <div class="col-12 col-sm-6">
+            <div class="form-group">
+              <label class="form-label" for="first-name-readonly">{{'common.first-name'|translate}}</label>
+              <input id="first-name-readonly" class="form-control-plaintext" type="text" [value]="contactAndTicketsForm.value.firstName">
+            </div>
+          </div>
+          <div class="col-12 col-sm-6">
+            <div class="form-group">
+              <label class="form-label" for="last-name-readonly">{{'common.last-name'|translate}}</label>
+              <input id="last-name-readonly" class="form-control-plaintext" [value]="contactAndTicketsForm.value.lastName" type="text">
+            </div>
+          </div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-12">
+            <div class="form-group">
+              <label class="form-label" for="email-readonly">{{'common.email'|translate}}</label>
+              <input id="email-readonly" class="form-control-plaintext" [value]="contactAndTicketsForm.value.email" type="email">
+            </div>
+          </div>
+        </div>
       </div>
       <div *ngIf="contactAndTicketsForm.value.differentSubscriptionOwner" [formGroup]="getSubscriptionForm()">
         <div class="row g-2 mb-2">
