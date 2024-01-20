@@ -29,6 +29,12 @@ jobs:
                   distribution: temurin
             - name: Build with Gradle
               run: ./gradlew build distribution jacocoTestReport -Dpgsql.version=${{ matrix.postgresql }}
+            - name: Set up JDK 17 for sonarqube
+              if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '14'}}
+              uses: actions/setup-java@v3
+              with:
+                  java-version: 17
+                  distribution: temurin
             - name: upload to sonarcloud
               if: ${{ github.repository == 'alfio-event/alf.io' && matrix.postgresql == '14'}}
               run: ./gradlew sonarqube
