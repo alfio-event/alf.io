@@ -171,7 +171,7 @@ public class ReservationApiV1Controller {
     public ResponseEntity<Boolean> deleteTicket(@PathVariable("slug") String slug,
                                                 @PathVariable("ticketUUID") String ticketUUID,
                                                 Principal user) {
-        accessService.checkEventTicketIdentifierMembership(user, slug, ticketUUID, EnumSet.of(Role.OWNER));
+        accessService.checkEventTicketIdentifierMembership(user, slug, ticketUUID, EnumSet.of(Role.OWNER, Role.API_CONSUMER));
         return ResponseEntity.of(adminReservationManager.findTicketWithReservationId(ticketUUID, slug, user.getName())
             .map(ticket -> {
                 // make sure that ticket belongs to the same event
