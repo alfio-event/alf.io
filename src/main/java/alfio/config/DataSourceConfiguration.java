@@ -281,13 +281,15 @@ public class DataSourceConfiguration {
                                                                             SubscriptionRepository subscriptionRepository,
                                                                             EventRepository eventRepository,
                                                                             ClockProvider clockProvider,
-                                                                            TicketCategoryRepository ticketCategoryRepository) {
+                                                                            TicketCategoryRepository ticketCategoryRepository,
+                                                                            PurchaseContextFieldRepository purchaseContextFieldRepository) {
         return new AssignTicketToSubscriberJobExecutor(requestManager,
             configurationManager,
             subscriptionRepository,
             eventRepository,
             clockProvider,
-            ticketCategoryRepository);
+            ticketCategoryRepository,
+            purchaseContextFieldRepository);
     }
 
     @Bean

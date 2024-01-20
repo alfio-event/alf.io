@@ -16,8 +16,14 @@
  */
 package alfio.model.subscription;
 
+import alfio.model.FieldNameAndValue;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class AvailableSubscriptionsByEvent {
@@ -29,6 +35,7 @@ public class AvailableSubscriptionsByEvent {
     private final String lastName;
     private final String userLanguage;
     private final String reservationEmail;
+    private final List<FieldNameAndValue> additionalFields;
 
     public AvailableSubscriptionsByEvent(@Column("event_id") int eventId,
                                          @Column("organization_id") int organizationId,
@@ -37,7 +44,8 @@ public class AvailableSubscriptionsByEvent {
                                          @Column("first_name") String firstName,
                                          @Column("last_name") String lastName,
                                          @Column("user_language") String userLanguage,
-                                         @Column("reservation_email") String reservationEmail) {
+                                         @Column("reservation_email") String reservationEmail,
+                                         @Column("additional_fields") String additionalFieldsAsString) {
         this.eventId = eventId;
         this.organizationId = organizationId;
         this.subscriptionId = subscriptionId;
@@ -46,6 +54,11 @@ public class AvailableSubscriptionsByEvent {
         this.lastName = lastName;
         this.userLanguage = userLanguage;
         this.reservationEmail = reservationEmail;
+        if (additionalFieldsAsString != null) {
+            this.additionalFields = Json.fromJson(additionalFieldsAsString, new TypeReference<>() {});
+        } else {
+            this.additionalFields = List.of();
+        }
     }
 
     public int getEventId() {
@@ -78,5 +91,9 @@ public class AvailableSubscriptionsByEvent {
 
     public String getReservationEmail() {
         return reservationEmail;
+    }
+
+    public List<FieldNameAndValue> getAdditionalFields() {
+        return additionalFields;
     }
 }

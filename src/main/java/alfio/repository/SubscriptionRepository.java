@@ -354,6 +354,9 @@ public interface SubscriptionRepository {
             "               coalesce(s.validity_from, 'yesterday'::timestamp) inception, " +
             "               coalesce(s.validity_to, 'tomorrow'::timestamp) expiration " +
             "        from subscription s " +
+            "    ), subscription_additional as (" +
+            "       select subscription_id_fk, jsonb_agg(jsonb_build_object('name', field_name, 'value', to_jsonb(field_value))) fields" +
+        "           from field_value_w_additional where context = 'SUBSCRIPTION' group by 1" +
             "    ) " +
             "    select e.id event_id, " +
             "           e.org_id organization_id, " +
@@ -362,7 +365,8 @@ public interface SubscriptionRepository {
             "           s.first_name as first_name, " +
             "           s.last_name as last_name, " +
             "           r.user_language as user_language," +
-            "           r.email_address as reservation_email " +
+            "           r.email_address as reservation_email," +
+            "           fv.fields as additional_fields " +
             "    from event e " +
             "             join subscription_event se on se.event_id_fk = e.id " +
             "             join subscription_descriptor sd on se.subscription_descriptor_id_fk = sd.id " +
@@ -370,6 +374,7 @@ public interface SubscriptionRepository {
             "             join usage_by_subscription_id u on s.id = u.subscription_id " +
             "             join subscription_expiration exp on s.id = exp.id " +
             "             join tickets_reservation r on r.id = s.reservation_id_fk " +
+            "             left join subscription_additional fv on s.id = fv.subscription_id_fk" +
             "    where e.end_ts > now() " + // make sure that the event has not expired
             "      and (:eventId::int is null or e.id = :eventId::int)" +
             "      and (:organizationId::int is null or e.org_id = :organizationId::int)" +
@@ -393,7 +398,8 @@ public interface SubscriptionRepository {
                 rse.getString("first_name"),
                 rse.getString("last_name"),
                 rse.getString("user_language"),
-                rse.getString("reservation_email")
+                rse.getString("reservation_email"),
+                rse.getString("additional_fields")
             ));
         });
         return result;

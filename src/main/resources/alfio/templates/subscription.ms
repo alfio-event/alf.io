@@ -43,15 +43,10 @@
 			</tr>
 			{{#print-additional-fields}}
 			<tr>
-			    <td style="width:180px">{{additionalFieldName}}:</td>
-                <td>{{additionalFieldValue}}</td>
+			    <td style="width:180px">{{fieldName}}:</td>
+                <td>{{fieldValue}}</td>
 			</tr>
 			{{/print-additional-fields}}
-			<tr>
-                <td style="width:180px">{{:</td>
-                <td>{{subscription.firstName}} {{subscription.lastName}} &lt;{{subscription.email}}&gt;</td>
-            </tr>
-			{{/additional-fields}}
 		</table>
 		<h4>{{#subscriptionDescription}}{{/subscriptionDescription}}</h4>
 

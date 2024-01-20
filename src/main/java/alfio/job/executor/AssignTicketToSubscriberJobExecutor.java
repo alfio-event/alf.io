@@ -20,6 +20,7 @@ import alfio.manager.AdminReservationRequestManager;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.FieldNameAndValue;
 import alfio.model.TicketCategory;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.*;
@@ -27,6 +28,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.subscription.AvailableSubscriptionsByEvent;
 import alfio.model.system.AdminJobSchedule;
 import alfio.repository.EventRepository;
+import alfio.repository.PurchaseContextFieldRepository;
 import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.util.ClockProvider;
@@ -60,19 +62,22 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
     private final EventRepository eventRepository;
     private final ClockProvider clockProvider;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
 
     public AssignTicketToSubscriberJobExecutor(AdminReservationRequestManager requestManager,
                                                ConfigurationManager configurationManager,
                                                SubscriptionRepository subscriptionRepository,
                                                EventRepository eventRepository,
                                                ClockProvider clockProvider,
-                                               TicketCategoryRepository ticketCategoryRepository) {
+                                               TicketCategoryRepository ticketCategoryRepository,
+                                               PurchaseContextFieldRepository purchaseContextFieldRepository) {
         this.requestManager = requestManager;
         this.configurationManager = configurationManager;
         this.subscriptionRepository = subscriptionRepository;
         this.eventRepository = eventRepository;
         this.clockProvider = clockProvider;
         this.ticketCategoryRepository = ticketCategoryRepository;
+        this.purchaseContextFieldRepository = purchaseContextFieldRepository;
     }
 
     @Override
@@ -93,7 +98,9 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
         var subscriptionsByEvent = subscriptionRepository.loadAvailableSubscriptionsByEvent((Integer) metadata.get(EVENT_ID), (Integer) metadata.get(ORGANIZATION_ID));
         if (!subscriptionsByEvent.isEmpty()) {
             boolean forceGeneration = Boolean.TRUE.equals(metadata.get(FORCE_GENERATION));
-            eventRepository.findByIds(subscriptionsByEvent.keySet()).forEach(event -> {
+            Set<Integer> ids = subscriptionsByEvent.keySet();
+            var fieldsByEventId = purchaseContextFieldRepository.findAdditionalFieldNamesForEvents(ids);
+            eventRepository.findByIds(ids).forEach(event -> {
                 // 2. for each event check if the flag is active, unless forceGeneration has been specified
                 boolean generationEnabled = forceGeneration || configurationManager.getFor(GENERATE_TICKETS_FOR_SUBSCRIPTIONS, event.getConfigurationLevel())
                     .getValueAsBooleanOrDefault();
@@ -105,7 +112,7 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
                         // 3. create reservation import request for the subscribers. ID is "AUTO_${eventShortName}_${now_ISO}"
                         var requestId = String.format("AUTO_%s_%s", event.getShortName(), LocalDateTime.now(clockProvider.getClock()).format(DateTimeFormatter.ISO_DATE_TIME));
                         requestManager.insertRequest(requestId,
-                            buildBody(event, subscriptions, category),
+                            buildBody(event, subscriptions, category, fieldsByEventId.getOrDefault(event.getId(), Set.of())),
                             event,
                             false,
                             "admin");
@@ -123,14 +130,15 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
 
     private AdminReservationModification buildBody(Event event,
                                                    List<AvailableSubscriptionsByEvent> subscriptions,
-                                                   TicketCategory category) {
+                                                   TicketCategory category,
+                                                   Set<String> fieldsForEvent) {
         var clock = clockProvider.getClock();
         return new AdminReservationModification(
             new DateTimeModification(LocalDate.now(clock), LocalTime.now(clock).plus(5L, ChronoUnit.MINUTES)),
             new CustomerData("", "", "", null, "", null, null, null, null),
             List.of(new TicketsInfo(
                 new Category(category.getId(), category.getName(), category.getPrice(), category.getTicketAccessType()),
-                toAttendees(subscriptions),
+                toAttendees(subscriptions, fieldsForEvent),
                 false,
                 false
             )),
@@ -144,13 +152,15 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
         );
     }
 
-    private List<Attendee> toAttendees(List<AvailableSubscriptionsByEvent> subscriptions) {
+    private List<Attendee> toAttendees(List<AvailableSubscriptionsByEvent> subscriptions,
+                                       Set<String> fieldsForEvent) {
         return subscriptions.stream()
             .map(s -> {
                 Map<String, String> metadata = Map.of();
                 if (!s.getEmailAddress().strip().equalsIgnoreCase(s.getReservationEmail().strip())) {
                     metadata = Map.of(SEND_TICKET_CC, "[\""+s.getReservationEmail()+"\"]");
                 }
+
                 return new Attendee(null,
                         s.getFirstName(),
                         s.getLastName(),
@@ -159,9 +169,15 @@ public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
                         false,
                         s.getSubscriptionId() + "_auto",
                         s.getSubscriptionId(),
-                        Map.of(),
+                        parseExistingFields(s, fieldsForEvent),
                         metadata);
                 }
             ).collect(Collectors.toList());
+    }
+
+    private static Map<String, List<String>> parseExistingFields(AvailableSubscriptionsByEvent s, Set<String> eventFieldNames) {
+        return s.getAdditionalFields().stream()
+            .filter(f -> eventFieldNames.contains(f.getName()))
+            .collect(Collectors.groupingBy(FieldNameAndValue::getName, Collectors.mapping(FieldNameAndValue::getValue, Collectors.toList())));
     }
 }
