@@ -17,6 +17,8 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 /**
@@ -27,8 +29,9 @@ public class FieldNameAndValue {
     private final String name;
     private final String value;
 
-    public FieldNameAndValue(@Column("field_name") String name,
-                             @Column("field_value") String value) {
+    @JsonCreator
+    public FieldNameAndValue(@JsonProperty("name") @Column("field_name") String name,
+                             @JsonProperty("value") @Column("field_value") String value) {
         this.name =name;
         this.value = value;
     }

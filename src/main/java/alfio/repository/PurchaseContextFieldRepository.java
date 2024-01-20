@@ -26,9 +26,15 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -206,6 +212,22 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("select * from purchase_context_field_configuration where event_id_fk = :eventId order by field_order asc")
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventId") int eventId);
 
+    default Map<Integer, Set<String>> findAdditionalFieldNamesForEvents(Collection<Integer> eventIds) {
+        return getJdbcTemplate().query("select event_id_fk, field_name from purchase_context_field_configuration where event_id_fk = :eventIds",
+            new MapSqlParameterSource("eventIds", eventIds),
+            (ResultSet rs) -> {
+                var result = new HashMap<Integer, Set<String>>();
+                while (rs.next()) {
+                    Integer eventId = rs.getInt(1);
+                    if (!result.containsKey(eventId)) {
+                        result.put(eventId, new HashSet<>());
+                    }
+                    result.get(eventId).add(rs.getString(2));
+                }
+                return result;
+            });
+    }
+
     @Query("select * from purchase_context_field_configuration where subscription_descriptor_id_fk = :subscriptionId::uuid order by field_order asc")
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsForSubscriptionDescriptor(@Bind("subscriptionId") UUID subscriptionDescriptorId);
 
@@ -294,5 +316,7 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     int countMatchingAdditionalFieldsForPurchaseContext(@Bind("eventId") Integer eventId,
                                                         @Bind("subscriptionId") UUID subscriptionDescriptorId,
                                                         @Bind("additionalFieldIds") Set<Long> additionalFieldIds);
+
+    NamedParameterJdbcTemplate getJdbcTemplate();
 
 }
