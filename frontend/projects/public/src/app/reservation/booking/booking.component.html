@@ -120,13 +120,13 @@
           <div class="col-12 col-sm-6">
             <div class="form-group">
               <label class="form-label" for="first-name-readonly">{{'common.first-name'|translate}}</label>
-              <input id="first-name-readonly" class="form-control-plaintext" type="text" [value]="contactAndTicketsForm.value.firstName">
+              <input id="first-name-readonly" class="form-control-plaintext" type="text" [value]="contactAndTicketsForm.value.firstName" readonly>
             </div>
           </div>
           <div class="col-12 col-sm-6">
             <div class="form-group">
               <label class="form-label" for="last-name-readonly">{{'common.last-name'|translate}}</label>
-              <input id="last-name-readonly" class="form-control-plaintext" [value]="contactAndTicketsForm.value.lastName" type="text">
+              <input id="last-name-readonly" class="form-control-plaintext" [value]="contactAndTicketsForm.value.lastName" type="text" readonly>
             </div>
           </div>
         </div>
@@ -134,7 +134,7 @@
           <div class="col-12">
             <div class="form-group">
               <label class="form-label" for="email-readonly">{{'common.email'|translate}}</label>
-              <input id="email-readonly" class="form-control-plaintext" [value]="contactAndTicketsForm.value.email" type="email">
+              <input id="email-readonly" class="form-control-plaintext" [value]="contactAndTicketsForm.value.email" type="email" readonly>
             </div>
           </div>
         </div>
@@ -156,7 +156,7 @@
           <div class="col-12 mb-2">
             <div class="form-group">
               <label class="form-label" for="subscription-email">{{'common.email' | translate}} *</label>
-              <input id="subscription-email" formControlName="email" type="email" [ngClass]="{'form-control': !emailEditForbidden, 'form-control-plaintext': emailEditForbidden}" appInvalidFeedback>
+              <input id="subscription-email" formControlName="email" type="email" [readonly]="emailEditForbidden" [ngClass]="{'form-control': !emailEditForbidden, 'form-control-plaintext': emailEditForbidden}" appInvalidFeedback>
             </div>
           </div>
         </div>
