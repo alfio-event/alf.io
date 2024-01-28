@@ -15,6 +15,24 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
+-- This function checks (in a very basic and possibly "naive" way) if a given value is already encoded as a JSON array.
+-- it is supposed to be a "temporary polyfill" until we set PostgreSQL 16 as minimum version
+-- see https://www.postgresql.org/docs/current/functions-json.html#FUNCTIONS-SQLJSON-MISC
+-- params:
+--    value:      the value to be checked
+--    field_type: additional field type
+create or replace function retrieve_field_value_as_json(text, text)
+    returns jsonb
+as
+$$
+select
+    case $2 when 'checkbox' then
+            -- checkbox might be already encoded as JSON Array
+            case $1 like '[%]' when true then $1::jsonb else jsonb_build_array($1) end
+        else jsonb_build_array($1)
+        end;
+$$ language sql;
+
 create view checkin_ticket_event_and_category_info as
 (
     select
@@ -122,7 +140,7 @@ create view checkin_ticket_event_and_category_info as
         e.org_id                            e_org_id,
         e.locales                           e_locales,
         e.version                           e_version,
-        (select jsonb_object_agg(tfc.field_name, case tfc.field_type when 'checkbox' then tfv.field_value::jsonb else jsonb_build_array(tfv.field_value) end) as additional_info
+        (select jsonb_object_agg(tfc.field_name, retrieve_field_value_as_json(tfc.field_type, tfv.field_value)) as additional_info
             from purchase_context_field_value tfv
                 inner join purchase_context_field_configuration tfc on tfv.field_configuration_id_fk = tfc.id
             where event_id_fk = e.id and tfv.ticket_id_fk = t.id)       tai_additional_info,
