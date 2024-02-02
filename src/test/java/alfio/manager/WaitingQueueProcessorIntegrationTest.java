@@ -45,10 +45,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -159,7 +157,7 @@ class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty(), List.of());
-        eventManager.updateEventPrices(event, eventModification, "admin");
+        eventManager.updateEventSeatsAndPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());
@@ -178,7 +176,7 @@ class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty(), List.of());
-        eventManager.updateEventPrices(event, eventModification, "admin");
+        eventManager.updateEventSeatsAndPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket, but it won't be linked to any category, so the following call won't have any effect
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());

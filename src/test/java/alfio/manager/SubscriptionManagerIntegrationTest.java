@@ -44,11 +44,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -195,7 +193,7 @@ class SubscriptionManagerIntegrationTest {
             null, null, null, null, null, null, BigDecimal.TEN, "CHF", 0,
             BigDecimal.ONE, false, List.of(PaymentProxy.OFFLINE), List.of(), false, null, 0, List.of(),
             List.of(), AlfioMetadata.empty(), List.of(subscriptionId));
-        eventManager.updateEventPrices(event, eventModification, username);
+        eventManager.updateEventSeatsAndPrices(event, eventModification, username);
 
         var links = subscriptionManager.getLinkedEvents(orgId, subscriptionId);
         assertFalse(links.isEmpty());
@@ -210,7 +208,7 @@ class SubscriptionManagerIntegrationTest {
             null, null, null, null, null, null, BigDecimal.TEN, "CHF", 0,
             BigDecimal.ONE, false, List.of(PaymentProxy.OFFLINE), List.of(), false, null, 0, List.of(),
             List.of(), AlfioMetadata.empty(), null);
-        eventManager.updateEventPrices(event, eventModification, username);
+        eventManager.updateEventSeatsAndPrices(event, eventModification, username);
 
         links = subscriptionManager.getLinkedEvents(orgId, subscriptionId);
         assertFalse(links.isEmpty());
@@ -225,7 +223,7 @@ class SubscriptionManagerIntegrationTest {
             null, null, null, null, null, null, BigDecimal.TEN, "CHF", 0,
             BigDecimal.ONE, false, List.of(PaymentProxy.OFFLINE), List.of(), false, null, 0, List.of(),
             List.of(), AlfioMetadata.empty(), List.of(subscriptionId, subscriptionId2));
-        eventManager.updateEventPrices(event, eventModification, username);
+        eventManager.updateEventSeatsAndPrices(event, eventModification, username);
 
         var subscriptions = subscriptionRepository.findLinkedSubscriptionIds(event.getId(), event.getOrganizationId());
         assertEquals(2, subscriptions.size());
@@ -238,7 +236,7 @@ class SubscriptionManagerIntegrationTest {
             null, null, null, null, null, null, BigDecimal.TEN, "CHF", 0,
             BigDecimal.ONE, false, List.of(PaymentProxy.OFFLINE), List.of(), false, null, 0, List.of(),
             List.of(), AlfioMetadata.empty(), List.of());
-        eventManager.updateEventPrices(event, eventModification, username);
+        eventManager.updateEventSeatsAndPrices(event, eventModification, username);
 
         subscriptions = subscriptionRepository.findLinkedSubscriptionIds(event.getId(), event.getOrganizationId());
         assertTrue(subscriptions.isEmpty());
