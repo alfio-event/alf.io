@@ -16,6 +16,8 @@
  */
 package alfio.extension.exception;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Base Exception for runtime errors, mostly violations detected in scripts
  */
@@ -27,5 +29,10 @@ public class AlfioScriptingException extends RuntimeException {
 
     public AlfioScriptingException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    @Override
+    public String getMessage() {
+        return StringUtils.removeStart(super.getMessage(), "Error: ");
     }
 }

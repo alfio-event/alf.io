@@ -640,22 +640,22 @@
         var getMessage = function(body, status) {
             switch(status) {
                 case 400:
-                    return 'Malformed Request';
+                    return ['Malformed Request'];
                 case 404:
-                    return 'Resource not found';
+                    return ['Resource not found'];
                 case 403:
-                    return 'Your account is not authorized to perform this operation.';
+                    return ['Your account is not authorized to perform this operation.'];
                 case 500:
-                    return 'Internal Server Error: ' + body;
+                    return [body, 'Internal Server Error: '];
                 default:
-                    return 'Connection Error';
+                    return ['Connection Error'];
             }
         };
         return {
             handle : function(body, status) {
-                var message = getMessage(body, status);
-                $log.warn(message, status, body);
-                NotificationHandler.showError(message);
+                var msg = getMessage(body, status);
+                $log.warn(msg, status, body);
+                NotificationHandler.showError(msg[0], msg[1]);
             }
         };
     }]);
@@ -678,8 +678,8 @@
             showInfo : function (message) {
                 return growl.info(sanitize(message), config);
             },
-            showError : function (message) {
-                return growl.error(sanitize(message), config);
+            showError : function (message, prefix) {
+                return growl.error((prefix || '') + sanitize(message), config);
             }
         }
 

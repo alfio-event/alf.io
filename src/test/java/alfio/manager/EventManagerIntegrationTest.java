@@ -38,12 +38,10 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -269,7 +267,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
             "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty(), List.of());
-        eventManager.updateEventPrices(event, update, pair.getValue());
+        eventManager.updateEventSeatsAndPrices(event, update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -294,7 +292,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
             "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty(), List.of());
-        eventManager.updateEventPrices(event, update, pair.getValue());
+        eventManager.updateEventSeatsAndPrices(event, update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -316,7 +314,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
             "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty(), List.of());
-        eventManager.updateEventPrices(event, update, pair.getValue());
+        eventManager.updateEventSeatsAndPrices(event, update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -337,7 +335,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
             "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty(), List.of());
-        eventManager.updateEventPrices(event, update, pair.getValue());
+        eventManager.updateEventSeatsAndPrices(event, update, pair.getValue());
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -919,7 +917,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         var withOnSite = List.of(PaymentProxy.OFFLINE, PaymentProxy.ON_SITE);
         var onSitePaymentMethodModification = createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.IN_PERSON, withOnSite, event.getLocation());
         var username = eventAndUsername.getRight();
-        eventManager.updateEventPrices(event, onSitePaymentMethodModification, username);
+        eventManager.updateEventSeatsAndPrices(event, onSitePaymentMethodModification, username);
 
         event = eventRepository.findById(event.getId());
         assertEquals(withOnSite, event.getAllowedPaymentProxies());
@@ -933,7 +931,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         event = eventRepository.findById(event.getId());
         // update header and remove ON_SITE
-        eventManager.updateEventPrices(event, createEventModification(AVAILABLE_SEATS, event, event.getFormat(), List.of(PaymentProxy.OFFLINE), event.getLocation()), username);
+        eventManager.updateEventSeatsAndPrices(event, createEventModification(AVAILABLE_SEATS, event, event.getFormat(), List.of(PaymentProxy.OFFLINE), event.getLocation()), username);
         // retry
         event = eventRepository.findById(event.getId());
         eventManager.updateEventHeader(event, createEventModification(AVAILABLE_SEATS, event, Event.EventFormat.ONLINE, event.getAllowedPaymentProxies(), event.getLocation()), username);
@@ -1034,7 +1032,7 @@ class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getKey();
         if(newEventSize != AVAILABLE_SEATS) {
             EventModification update = createEventModification(newEventSize, event);
-            eventManager.updateEventPrices(event, update, pair.getValue());
+            eventManager.updateEventSeatsAndPrices(event, update, pair.getValue());
         }
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);

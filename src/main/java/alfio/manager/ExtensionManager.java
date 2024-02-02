@@ -36,6 +36,7 @@ import alfio.model.metadata.AlfioMetadata;
 import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
+import alfio.model.modification.EventModification;
 import alfio.model.subscription.Subscription;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.system.ConfigurationKeys;
@@ -81,7 +82,7 @@ public class ExtensionManager {
     private static final String ORGANIZATION_ID = "organizationId";
     private static final String RESERVATION_ID = "reservationId";
     private static final String EVENT = "event";
-    private static final String CAPABILITY_REQUEST = "request";
+    private static final String REQUEST = "request";
     private static final String METADATA = "metadata";
     public static final String TICKET_METADATA = "ticketMetadata";
     private final ExtensionService extensionService;
@@ -99,6 +100,16 @@ public class ExtensionManager {
 
     Set<ExtensionCapabilitySummary> getSupportedCapabilities(Set<ExtensionCapability> requested, PurchaseContext purchaseContext) {
         return extensionService.getSupportedCapabilities(requested, purchaseContext);
+    }
+
+    void handleEventValidation(EventModification request) {
+        Map<String, Object> payload = Map.of(REQUEST, request);
+        syncCall(EVENT_VALIDATE_CREATION, null, payload, Boolean.class, false);
+    }
+
+    void handleEventSeatsPricesUpdateValidation(Event event, EventModification request) {
+        Map<String, Object> payload = Map.of(REQUEST, request);
+        syncCall(EVENT_VALIDATE_SEATS_PRICES_UPDATE, event, payload, Boolean.class, false);
     }
 
     void handleEventCreation(Event event) {
@@ -125,7 +136,7 @@ public class ExtensionManager {
                                                                 AlfioMetadata existingMetadata,
                                                                 Map<String, String> requestParams) {
         Map<String, Object> context = buildMetadataUpdatePayload(organization, existingMetadata);
-        context.put(CAPABILITY_REQUEST, requestParams);
+        context.put(REQUEST, requestParams);
         return internalExecuteCapability(ExtensionCapability.GENERATE_MEETING_LINK, context, event, AlfioMetadata.class);
     }
 
@@ -134,7 +145,7 @@ public class ExtensionManager {
                                                   Map<String, String> requestParams) {
         Map<String, Object> context = new HashMap<>();
         context.put(METADATA, existingMetadata);
-        context.put(CAPABILITY_REQUEST, requestParams);
+        context.put(REQUEST, requestParams);
         return internalExecuteCapability(ExtensionCapability.LINK_EXTERNAL_APPLICATION, context, event, String.class);
     }
 
@@ -500,7 +511,7 @@ public class ExtensionManager {
                                              PurchaseContext purchaseContext,
                                              Class<T> resultType) {
         var contextParams = new HashMap<String, Object>();
-        contextParams.put(CAPABILITY_REQUEST, params);
+        contextParams.put(REQUEST, params);
         return internalExecuteCapability(capability, contextParams, purchaseContext, resultType);
     }
 

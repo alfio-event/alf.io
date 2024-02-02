@@ -200,6 +200,8 @@ public class EventManager {
             .filter(org -> org.getId() == em.getOrganizationId())
             .findFirst()
             .orElseThrow();
+        // pre-create request validation
+        extensionManager.handleEventValidation(em);
         int eventId = insertEvent(em);
         Optional<EventAndOrganizationId> srcEvent = getCopiedFrom(em, username);
         Event event = eventRepository.findById(eventId);
@@ -328,9 +330,10 @@ public class EventManager {
         return TicketAccessType.INHERIT;
     }
 
-    public void updateEventPrices(EventAndOrganizationId original, EventModification em, String username) {
+    public void updateEventSeatsAndPrices(Event original, EventModification em, String username) {
         Validate.notNull(em.getAvailableSeats(), "Available Seats cannot be null");
         checkOwnership(original, username, em.getOrganizationId());
+        extensionManager.handleEventSeatsPricesUpdateValidation(original, em);
         int eventId = original.getId();
         int seatsDifference = em.getAvailableSeats() - eventRepository.countExistingTickets(original.getId());
         if(seatsDifference < 0) {

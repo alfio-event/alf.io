@@ -233,8 +233,9 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         // check if EVENT_CREATED was logged
         List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-        assertEventLogged(extLogs, EVENT_METADATA_UPDATE, 8);
-        assertEventLogged(extLogs, EVENT_CREATED, 8);
+        assertEventLogged(extLogs, EVENT_METADATA_UPDATE, 10);
+        assertEventLogged(extLogs, EVENT_CREATED, 10);
+        assertEventLogged(extLogs, EVENT_VALIDATE_CREATION, 10);
 
 
         {

@@ -240,10 +240,10 @@ public class EventApiV1Controller {
         if (originalSeats > em.getAvailableSeats()) {
             // if the caller wants to decrease the number of seats, we have to shrink categories first
             handleCategoriesUpdate(user, em, original, event);
-            eventManager.updateEventPrices(event, em, user.getName());
+            eventManager.updateEventSeatsAndPrices(event, em, user.getName());
         } else {
             // in all other cases, we need to modify the event first
-            eventManager.updateEventPrices(event, em, user.getName());
+            eventManager.updateEventSeatsAndPrices(event, em, user.getName());
             handleCategoriesUpdate(user, em, original, event);
         }
 

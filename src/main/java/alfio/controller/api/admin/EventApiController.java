@@ -98,6 +98,7 @@ public class EventApiController {
 
     private static final String OK = "OK";
     private static final String CUSTOM_FIELDS_PREFIX = "custom:";
+    public static final String UNHANDLED_EXCEPTION = "unhandled exception";
     private final EventManager eventManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
@@ -118,14 +119,24 @@ public class EventApiController {
 
     @ExceptionHandler(DataAccessException.class)
     public String exception(DataAccessException e) {
-        log.warn("unhandled exception", e);
+        log.warn(UNHANDLED_EXCEPTION, e);
         return "unexpected error. More info in the application log";
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String unhandledException(Exception e) {
-        log.warn("unhandled exception", e);
+        log.warn(UNHANDLED_EXCEPTION, e);
+        return e.getMessage();
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String unhandledIllegalStateException(IllegalStateException e) {
+        log.warn(UNHANDLED_EXCEPTION, e);
+        if (e.getCause() instanceof AlfioScriptingException) {
+            return e.getCause().getMessage();
+        }
         return e.getMessage();
     }
 
@@ -291,7 +302,7 @@ public class EventApiController {
     public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         accessService.checkEventOwnership(principal, id);
         Event event = eventManager.getSingleEventById(id, principal.getName());
-        return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
+        return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventSeatsAndPrices(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/{categoryId}/update")
