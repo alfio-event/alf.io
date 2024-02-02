@@ -13,7 +13,7 @@ description: >
 Fired before sending a reservation confirmation email.
 
 This is a **synchronous** call. 
-A result of type [`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CustomEmailText.java) is expected. Return `null` if the generation was not successful. 
+A result of type [`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/CustomEmailText.java) is expected. Return `null` if the generation was not successful. 
 <div class="table-responsive table-hover">
     <table class="table table-sm">
         <thead>
@@ -26,17 +26,17 @@ A result of type [`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/
         <tbody>
             <tr>
                 <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
                 <td>Details about the reservation</td>
             </tr>
             <tr>
                 <td>`purchaseContext`</td>
-                <td>[`PurchaseContext`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PurchaseContext.java)</td>
+                <td>[`PurchaseContext`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PurchaseContext.java)</td>
                 <td>The PurchaseContext (Event or Subscription) for which the reservation has been made</td>
             </tr>
             <tr>
                 <td>`billingData`</td>
-                <td>[`TicketReservationAdditionalInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationAdditionalInfo.java)</td>
+                <td>[`TicketReservationAdditionalInfo`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservationAdditionalInfo.java)</td>
                 <td>Billing info for the reservation</td>
             </tr>
         </tbody>
@@ -50,7 +50,7 @@ A result of type [`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/
 Fired before sending a ticket email.
 
 This is a **synchronous** call. 
-A result of type [`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CustomEmailText.java) is expected. Return `null` if the generation was not successful. 
+A result of type [`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/CustomEmailText.java) is expected. Return `null` if the generation was not successful. 
 <div class="table-responsive table-hover">
     <table class="table table-sm">
         <thead>
@@ -63,22 +63,22 @@ A result of type [`CustomEmailText`](https://github.com/alfio-event/alf.io/blob/
         <tbody>
             <tr>
                 <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
                 <td>Details about the reservation</td>
             </tr>
             <tr>
                 <td>`event`</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
+                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
                 <td>The Event for which the ticket has been confirmeds</td>
             </tr>
             <tr>
                 <td>`billingData`</td>
-                <td>[`TicketReservationAdditionalInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationAdditionalInfo.java)</td>
+                <td>[`TicketReservationAdditionalInfo`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservationAdditionalInfo.java)</td>
                 <td>Billing info for the reservation</td>
             </tr>
             <tr>
                 <td>`additionalFields`</td>
-                <td>`List<`[`TicketFieldValue`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketFieldValue.java)`>`</td>
+                <td>`List<`[`TicketFieldValue`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketFieldValue.java)`>`</td>
                 <td>Additional info provided for the ticket holder</td>
             </tr>
         </tbody>

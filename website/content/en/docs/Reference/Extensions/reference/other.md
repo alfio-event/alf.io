@@ -23,7 +23,7 @@ Fired when someone subscribes to a waiting list
         <tbody>
             <tr>
                 <td>`waitingQueueSubscription`</td>
-                <td>[`WaitingQueueSubscription`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/WaitingQueueSubscription.java)</td>
+                <td>[`WaitingQueueSubscription`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/WaitingQueueSubscription.java)</td>
                 <td>Details about the subscription</td>
             </tr>
         </tbody>
@@ -35,10 +35,10 @@ Fired when someone subscribes to a waiting list
 
 Fired when a PDF needs to be generated. This is useful if you want to delegate the actual PDF generation to a dedicated service.
 
-Script is expected to save the result in a temporary file (e.g. by using the `postBodyAndSaveResponse` method of [SimpleHttpClient](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java#L84))
+Script is expected to save the result in a temporary file (e.g. by using the `postBodyAndSaveResponse` method of [SimpleHttpClient](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/SimpleHttpClient.java#L84))
 
 This is a **synchronous** call. 
-A result of type [`PdfGenerationResult`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/PdfGenerationResult.java) is expected. Return `null` if the generation was not successful. 
+A result of type [`PdfGenerationResult`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/PdfGenerationResult.java) is expected. Return `null` if the generation was not successful. 
 <div class="table-responsive table-hover">
     <table class="table table-sm">
         <thead>
@@ -51,7 +51,7 @@ A result of type [`PdfGenerationResult`](https://github.com/alfio-event/alf.io/b
         <tbody>
             <tr>
                 <td>`event`</td>
-                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
+                <td>[`Event`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
                 <td>The event</td>
             </tr>
             <tr>

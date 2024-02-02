@@ -30,6 +30,6 @@ You can suggest modifications to the translations of certain terms for these lan
 
 #### 3. Add yourself to the contributors' list
 
-After your modification is complete, please provide a Pull Request for adding your name/details under the "contributors" section of the [Project Repo page](https://github.com/alfio-event/alf.io/blob/master/README.md).
+After your modification is complete, please provide a Pull Request for adding your name/details under the "contributors" section of the [Project Repo page](https://github.com/alfio-event/alf.io/blob/main/README.md).
 
 More info on Pull Requests [here](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/about-pull-requests)
