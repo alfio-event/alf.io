@@ -22,7 +22,7 @@ Fired **asynchronously** once a ticket has been assigned
         <tbody>
             <tr>
                 <td>`ticket`</td>
-                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
+                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Ticket.java)</td>
                 <td>Details about the ticket</td>
             </tr>
             <tr>
@@ -50,7 +50,7 @@ Fired **synchronously** once one or more tickets (but not the entire reservation
         <tbody>
             <tr>
                 <td>`ticket`</td>
-                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
+                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Ticket.java)</td>
                 <td>Details about the ticket</td>
             </tr>
             <tr>
@@ -84,7 +84,7 @@ Fired **asynchronously** once a ticket has been checked in.
         <tbody>
             <tr>
                 <td>`ticket`</td>
-                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
+                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Ticket.java)</td>
                 <td>Details about the ticket</td>
             </tr>
         </tbody>
@@ -107,7 +107,7 @@ Fired **asynchronously** once the ticket checked-in status has been reverted.
         <tbody>
             <tr>
                 <td>`ticket`</td>
-                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
+                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Ticket.java)</td>
                 <td>Details about the ticket</td>
             </tr>
         </tbody>
@@ -132,7 +132,7 @@ Script is expected to return an `URL` where the ticket holder will be redirected
         <tbody>
             <tr>
                 <td>`event`</td>
-                <td>[`EventWithCheckInInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/checkin/EventWithCheckInInfo.java)</td>
+                <td>[`EventWithCheckInInfo`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/checkin/EventWithCheckInInfo.java)</td>
                 <td>Details about the event</td>
             </tr>
             <tr>
@@ -160,7 +160,7 @@ Script is expected to return an `URL` where the ticket holder will be redirected
 
 Fired **synchronously** before sending the ticket email. The purpose of this extension is to allow seamless integration with external, invitation-based virtual conference systems.
 
-A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/TicketMetadata.java) is expected. Return `null` to use default settings or throw an error if the link was not successful.
+A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/TicketMetadata.java) is expected. Return `null` to use default settings or throw an error if the link was not successful.
 <div class="table-responsive table-hover">
     <table class="table table-sm">
         <thead>
@@ -173,7 +173,7 @@ A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/m
         <tbody>
             <tr>
                 <td>`ticket`</td>
-                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
+                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Ticket.java)</td>
                 <td>Details about the ticket</td>
             </tr>
             <tr>
@@ -183,7 +183,7 @@ A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/m
             </tr>
             <tr>
                 <td>`ticketMetadata`</td>
-                <td>[`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/TicketMetadata.java)</td>
+                <td>[`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/TicketMetadata.java)</td>
                 <td>Existing metadata for ticket. **Might be undefined**</td>
             </tr>
         </tbody>
@@ -195,7 +195,7 @@ A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/m
 
 Fired **synchronously** before marking a ticket as "acquired". The purpose of this extension is to allow metadata customization.
 
-A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/TicketMetadata.java) is expected. Return `null` if you don't need to modify the current metadata.
+A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/TicketMetadata.java) is expected. Return `null` if you don't need to modify the current metadata.
 <div class="table-responsive table-hover">
     <table class="table table-sm">
         <thead>
@@ -208,12 +208,12 @@ A result of type [`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/m
         <tbody>
             <tr>
                 <td>`ticket`</td>
-                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)</td>
+                <td>[`Ticket`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Ticket.java)</td>
                 <td>Details about the ticket</td>
             </tr>
             <tr>
                 <td>`ticketMetadata`</td>
-                <td>[`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/metadata/TicketMetadata.java)</td>
+                <td>[`TicketMetadata`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/metadata/TicketMetadata.java)</td>
                 <td>Existing metadata for ticket.</td>
             </tr>
             <tr>

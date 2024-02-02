@@ -50,12 +50,12 @@ Alf.io provides some objects and properties to the script in the script scope:
             </tr>
             <tr>
                 <td>`extensionLogger`</td>
-                <td>[`ExtensionLogger`] ( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionLogger.java)</td>
+                <td>[`ExtensionLogger`] ( https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/ExtensionLogger.java)</td>
                 <td>A logger that writes in the extension_log table.</td>
             </tr>
             <tr>
                 <td>`simpleHttpClient`</td>
-                <td>[`SimpleHttpClient`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java)</td>
+                <td>[`SimpleHttpClient`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/SimpleHttpClient.java)</td>
                 <td>A simplified version created by Alf.io for calling external services</td>
             </tr>
             <tr>
@@ -75,7 +75,7 @@ Alf.io provides some objects and properties to the script in the script scope:
             </tr>
             <tr>
                 <td>`event`</td>
-                <td>[`Event`]( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)</td>
+                <td>[`Event`]( https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Event.java)</td>
                 <td>Alf.io's implementation of a general event</td>
             </tr>
             <tr>
@@ -90,7 +90,7 @@ Alf.io provides some objects and properties to the script in the script scope:
             </tr>
             <tr>
                 <td>`Utils`</td>
-                <td>[`ExtensionUtils`]( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionUtils.java)</td>
+                <td>[`ExtensionUtils`]( https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/ExtensionUtils.java)</td>
                 <td>A collection of utilities</td>
             </tr>
             <tr>

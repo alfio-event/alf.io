@@ -70,8 +70,8 @@ the extensions. As mentioned above, `for`, `for/in` or `for/of` loops can be use
 Java methods can be called from the scripts, therefore we limit some harmful usage by applying sandboxing. Access to
 `java.lang.System.exit()` and `getClass()` are disabled. In general, access to Java classes is not possible. However,
 the standard objects (`Object`, `String`, `Number`, `Date`, etc.) can be used. In addition, we enable the use of
-the following classes: `GSON`, [`SimpleHttpClient`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java),
- `HashMap`, [`ExtensionUtils`]( https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionUtils.java) 
+the following classes: `GSON`, [`SimpleHttpClient`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/SimpleHttpClient.java),
+ `HashMap`, [`ExtensionUtils`]( https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/extension/ExtensionUtils.java) 
  and [`Logger`](https://logging.apache.org/log4j/2.x/log4j-api/apidocs/org/apache/logging/log4j/Logger.html).
 
 

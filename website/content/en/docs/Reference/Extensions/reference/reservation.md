@@ -22,12 +22,12 @@ Fired **asynchronously** once a reservation has been confirmed.
         <tbody>
             <tr>
                 <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
                 <td>Details about the reservation</td>
             </tr>
             <tr>
                 <td>`billingDetails`</td>
-                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/BillingDetails.java)</td>
+                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java)</td>
                 <td>Billing info for the reservation</td>
             </tr>
         </tbody>
@@ -55,7 +55,7 @@ Fired **synchronously** once one or more reservations have been cancelled.
             </tr>
             <tr>
                 <td>`reservations`</td>
-                <td>`List<`[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)`>`</td>
+                <td>`List<`[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)`>`</td>
                 <td>Cancelled reservations</td>
             </tr>
         </tbody>
@@ -83,7 +83,7 @@ Fired **synchronously** once one or more reservations have expired.
             </tr>
             <tr>
                 <td>`reservations`</td>
-                <td>`List<`[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)`>`</td>
+                <td>`List<`[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)`>`</td>
                 <td>Cancelled reservations</td>
             </tr>
         </tbody>
@@ -111,17 +111,17 @@ Fired **synchronously** when a reservation needs to be validated. No result expe
             </tr>
             <tr>
                 <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
                 <td>Reservation to validate</td>
             </tr>
             <tr>
                 <td>`form`</td>
-                <td>[`ContactAndTicketsForm`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/controller/form/ContactAndTicketsForm.java) or [`PaymentForm`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/controller/form/PaymentForm.java)</td>
+                <td>[`ContactAndTicketsForm`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/controller/form/ContactAndTicketsForm.java) or [`PaymentForm`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/controller/form/PaymentForm.java)</td>
                 <td>Customer provided input values</td>
             </tr>
             <tr>
                 <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
                 <td>Reservation to validate</td>
             </tr>
             <tr>
@@ -168,7 +168,7 @@ Expected return type is `boolean`
 
 Fired **synchronously** when generating an invoice. This allows for an integration with external billing systems.
 
-Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/InvoiceGeneration.java) or `null`
+Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/InvoiceGeneration.java) or `null`
 <div class="table-responsive table-hover">
     <table class="table table-sm">
         <thead>
@@ -191,7 +191,7 @@ Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/b
             </tr>
             <tr>
                 <td>`customerName`</td>
-                <td>[`CustomerName`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/CustomerName.java)</td>
+                <td>[`CustomerName`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/CustomerName.java)</td>
                 <td>Customer first/last name</td>
             </tr>
             <tr>
@@ -206,7 +206,7 @@ Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/b
             </tr>
             <tr>
                 <td>`billingDetails`</td>
-                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/BillingDetails.java)</td>
+                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java)</td>
                 <td>Billing data</td>
             </tr>
             <tr>
@@ -216,7 +216,7 @@ Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/b
             </tr>
             <tr>
                 <td>`reservationCost`</td>
-                <td>[`TotalPrice`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TotalPrice.java)</td>
+                <td>[`TotalPrice`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TotalPrice.java)</td>
                 <td>Reservation price details</td>
             </tr>
             <tr>
@@ -236,7 +236,7 @@ Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/b
             </tr>
             <tr>
                 <td>`vatStatus`</td>
-                <td>[`PriceContainer.VatStatus`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PriceContainer.java#L36)</td>
+                <td>[`PriceContainer.VatStatus`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PriceContainer.java#L36)</td>
                 <td>Tax application details</td>
             </tr>
         </tbody>
@@ -248,7 +248,7 @@ Expected result is [`InvoiceGeneration`](https://github.com/alfio-event/alf.io/b
 
 Fired **synchronously** when generating a credit note. This allows for an integration with external billing systems.
 
-Expected result is [`CreditNoteGeneration`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/extension/CreditNoteGeneration.java) or `null`
+Expected result is [`CreditNoteGeneration`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/extension/CreditNoteGeneration.java) or `null`
 <div class="table-responsive table-hover">
     <table class="table table-sm">
         <thead>
@@ -271,7 +271,7 @@ Expected result is [`CreditNoteGeneration`](https://github.com/alfio-event/alf.i
             </tr>
             <tr>
                 <td>`organization`</td>
-                <td>[`Organization`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Organization.java)</td>
+                <td>[`Organization`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Organization.java)</td>
                 <td>Organizer details</td>
             </tr>
         </tbody>
@@ -299,17 +299,17 @@ Fired **asynchronously** after generating a credit note. This allows for an inte
             </tr>
             <tr>
                 <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
                 <td>Reservation details</td>
             </tr>
             <tr>
                 <td>`billingDetails`</td>
-                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/BillingDetails.java)</td>
+                <td>[`BillingDetails`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/BillingDetails.java)</td>
                 <td>Billing data</td>
             </tr>
             <tr>
                 <td>`reservationCost`</td>
-                <td>[`TotalPrice`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TotalPrice.java)</td>
+                <td>[`TotalPrice`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TotalPrice.java)</td>
                 <td>Reservation price details</td>
             </tr>
             <tr>
@@ -360,7 +360,7 @@ Fired **asynchronously** when one or more offline payments are going to expire.
         <tbody>
             <tr>
                 <td>`reservations`</td>
-                <td>`List<`[`TicketReservationInfo`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationInfo.java)`>`</td>
+                <td>`List<`[`TicketReservationInfo`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservationInfo.java)`>`</td>
                 <td>Reservation details</td>
             </tr>
         </tbody>
@@ -383,17 +383,17 @@ Fired **asynchronously** after a refund has been issued.
         <tbody>
             <tr>
                 <td>`reservation`</td>
-                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)</td>
+                <td>[`TicketReservation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/TicketReservation.java)</td>
                 <td>Reservation details</td>
             </tr>
             <tr>
                 <td>`transaction`</td>
-                <td>[`Transaction`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Transaction.java)</td>
+                <td>[`Transaction`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/Transaction.java)</td>
                 <td>Transaction details</td>
             </tr>
             <tr>
                 <td>`paymentInfo`</td>
-                <td>[`PaymentInformation`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PaymentInformation.java)</td>
+                <td>[`PaymentInformation`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PaymentInformation.java)</td>
                 <td>Payment information</td>
             </tr>
         </tbody>
@@ -405,7 +405,7 @@ Fired **asynchronously** after a refund has been issued.
 
 Fired **synchronously** when customer selects ticket categories in the event page. This allows you to define different discount policies based on the actual selection. 
 
-Expected result type: [`PromoCodeDiscount`](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/PromoCodeDiscount.java) or `null`
+Expected result type: [`PromoCodeDiscount`](https://github.com/alfio-event/alf.io/blob/main/src/main/java/alfio/model/PromoCodeDiscount.java) or `null`
 <div class="table-responsive table-hover">
     <table class="table table-sm">
         <thead>
