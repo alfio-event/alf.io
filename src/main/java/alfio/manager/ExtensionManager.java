@@ -107,6 +107,43 @@ public class ExtensionManager {
         syncCall(EVENT_VALIDATE_CREATION, null, payload, Boolean.class, false);
     }
 
+    void handleEventSeatsUpdateValidation(Event event, int seatsNumber) {
+        var request = new EventModification(event.getId(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            event.getOrganizationId(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            event.getRegularPrice(),
+            event.getCurrency(),
+            seatsNumber,
+            event.getVat(),
+            event.isVatIncluded(),
+            event.getAllowedPaymentProxies(),
+            null,
+            event.isFreeOfCharge(),
+            null,
+            event.getLocales(),
+            null,
+            null,
+            null,
+            null);
+        Map<String, Object> payload = Map.of(REQUEST, request);
+        syncCall(EVENT_VALIDATE_SEATS_PRICES_UPDATE, event, payload, Boolean.class, false);
+    }
+
     void handleEventSeatsPricesUpdateValidation(Event event, EventModification request) {
         Map<String, Object> payload = Map.of(REQUEST, request);
         syncCall(EVENT_VALIDATE_SEATS_PRICES_UPDATE, event, payload, Boolean.class, false);
