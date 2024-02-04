@@ -684,10 +684,12 @@ public class AdminReservationManager {
 
     private Event increaseSeatsIfNeeded(TicketsInfo ti, Event event, int missingTickets, Event modified) {
         if(missingTickets > 0 && ti.isAddSeatsIfNotAvailable()) {
+            int newTotal = eventRepository.countExistingTickets(event.getId()) + missingTickets;
+            extensionManager.handleEventSeatsUpdateValidation(event, newTotal);
             createMissingTickets(event, missingTickets);
             //update seats and reload event
             log.debug("adding {} extra seats to the event", missingTickets);
-            eventRepository.updateAvailableSeats(event.getId(), eventRepository.countExistingTickets(event.getId()) + missingTickets);
+            eventRepository.updateAvailableSeats(event.getId(), newTotal);
             modified = eventRepository.findById(event.getId());
         }
         return modified;
