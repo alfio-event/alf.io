@@ -20,6 +20,7 @@ import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 public class ReservationPaymentDetail {
     private final String id;
@@ -48,7 +49,7 @@ public class ReservationPaymentDetail {
         this.lastName = lastName;
         this.email = email;
         this.paymentMethod = paymentMethod;
-        this.paidAmount = MonetaryUtil.formatCents(paidAmount, currencyCode);
+        this.paidAmount = MonetaryUtil.formatCents(Objects.requireNonNullElse(paidAmount, 0), currencyCode);
         this.currencyCode = currencyCode;
         this.transactionTimestamp = transactionTimestamp.toString();
         this.transactionNotes = transactionNotes;
