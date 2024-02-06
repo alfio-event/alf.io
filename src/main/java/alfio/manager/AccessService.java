@@ -369,6 +369,10 @@ public class AccessService {
 
     public EventAndOrganizationId checkDescriptorsLinkRequest(Principal principal, String eventSlug, List<UUID> descriptorsToLink) {
         var event = checkEventOwnership(principal, eventSlug);
+        if (descriptorsToLink.isEmpty()) {
+            // user is requesting to remove all subscriptions from event
+            return event;
+        }
         var count = subscriptionRepository.countDescriptorsBelongingToOrganization(descriptorsToLink, event.getOrganizationId());
         if (count == null || descriptorsToLink.size() != count) {
             throw new AccessDeniedException();
