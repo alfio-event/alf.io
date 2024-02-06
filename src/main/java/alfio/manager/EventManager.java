@@ -331,6 +331,10 @@ public class EventManager {
     }
 
     public void updateEventSeatsAndPrices(Event original, EventModification em, String username) {
+        updateEventSeatsAndPrices(original, em, username, true);
+    }
+
+    public void updateEventSeatsAndPrices(Event original, EventModification em, String username, boolean updateSubscriptions) {
         Validate.notNull(em.getAvailableSeats(), "Available Seats cannot be null");
         checkOwnership(original, username, em.getOrganizationId());
         extensionManager.handleEventSeatsPricesUpdateValidation(original, em);
@@ -361,8 +365,9 @@ public class EventManager {
                 Validate.isTrue(ids.size() == invalidatedTickets, String.format("error during ticket invalidation: expected %d, got %d", ids.size(), invalidatedTickets));
             }
         }
-        int organizationId = original.getOrganizationId();
-        updateLinkedSubscriptions(em.getLinkedSubscriptions(), eventId, organizationId);
+        if (updateSubscriptions) {
+            updateLinkedSubscriptions(em.getLinkedSubscriptions(), eventId, original.getOrganizationId());
+        }
     }
 
     public void updateLinkedSubscriptions(List<UUID> linkedSubscriptions, int eventId, int organizationId) {
