@@ -15,7 +15,7 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create view reservation_and_subscription_and_tx as (select
+create or replace view reservation_and_subscription_and_tx as (select
 
     tickets_reservation.id tr_id,
     tickets_reservation.validity tr_validity,

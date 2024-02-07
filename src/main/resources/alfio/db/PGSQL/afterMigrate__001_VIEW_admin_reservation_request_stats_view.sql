@@ -15,7 +15,7 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create view admin_reservation_request_stats as (
+create or replace view admin_reservation_request_stats as (
    select request_id,
        user_id,
        event_id,
