@@ -15,7 +15,7 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create view extension_capabilities as (
+create or replace view extension_capabilities as (
     select es.es_id,
            es.path,
            es.name,

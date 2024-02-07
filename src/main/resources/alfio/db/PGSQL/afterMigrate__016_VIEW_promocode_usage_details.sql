@@ -15,7 +15,7 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create view promocode_usage_details as (
+create or replace view promocode_usage_details as (
 with tickets as (
     select t.tickets_reservation_id, json_agg(jsonb_build_object(
             'id', t.uuid,

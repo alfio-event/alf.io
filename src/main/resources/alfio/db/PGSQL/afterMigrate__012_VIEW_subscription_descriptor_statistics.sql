@@ -15,7 +15,7 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create view subscription_descriptor_statistics as (
+create or replace view subscription_descriptor_statistics as (
       select
             sd.id sd_id,
             sd.title sd_title,
