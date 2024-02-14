@@ -974,10 +974,12 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var ticketPdfMockResp = new MockHttpServletResponse();
             ticketApiV2Controller.generateTicketPdf(context.event.getShortName(), ticket.getUuid(), ticketPdfMockResp);
             assertEquals("application/pdf", ticketPdfMockResp.getContentType());
+            assertTrue(ticketPdfMockResp.containsHeader(ExportUtils.X_ROBOTS_TAG));
 
             var ticketQRCodeResp = new MockHttpServletResponse();
             ticketApiV2Controller.showQrCode(context.event.getShortName(), ticket.getUuid(), ticketQRCodeResp);
             assertEquals("image/png", ticketQRCodeResp.getContentType());
+            assertTrue(ticketQRCodeResp.containsHeader(ExportUtils.X_ROBOTS_TAG));
 
             var fullTicketInfo = ticketRepository.findByUUID(ticket.getUuid());
             var qrCodeReader = new QRCodeReader();

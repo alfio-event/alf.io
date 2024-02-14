@@ -29,6 +29,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
 
+import static alfio.util.ExportUtils.markAsNoIndex;
+
 /**
  * https://developer.apple.com/library/archive/documentation/PassKit/Reference/PassKit_WebService/WebService.html
  */
@@ -77,6 +79,7 @@ public class PassKitApiController {
             response.setContentType("application/vnd.apple.pkpass");
             if (addFilename) {
                 response.setHeader("Content-Disposition", "attachment; filename=Passbook-"+ticket.getUuid().substring(0, 8)+".pkpass");
+                markAsNoIndex(response);
             }
             passKitManager.writePass(ticket, eventAndOrganizationId, os);
         } catch (Exception e) {

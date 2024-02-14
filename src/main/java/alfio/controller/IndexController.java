@@ -27,16 +27,11 @@ import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.Json;
-import alfio.util.MustacheCustomTag;
-import alfio.util.RequestUtils;
-import alfio.util.TemplateManager;
+import alfio.util.*;
 import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +61,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.SecureRandom;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -239,7 +235,7 @@ public class IndexController {
                     style.appendChild(new Text(baseCustomCss));
                     head.appendChild(style);
                 }
-                preloadTranslations(eventShortName, request, session, eventLoader, head, messageSourceManager, idx, json, lang);
+                preloadEventData(eventShortName, request, session, eventLoader, head, messageSourceManager, idx, json, lang);
                 JFiveParse.serialize(idx, osw);
             }
         }
@@ -276,15 +272,15 @@ public class IndexController {
         }
     }
 
-    static void preloadTranslations(String eventShortName,
-                                    ServletWebRequest request,
-                                    HttpSession session,
-                                    EventLoader eventLoader,
-                                    Element head,
-                                    MessageSourceManager messageSourceManager,
-                                    Node idx,
-                                    Json json,
-                                    String lang) {
+    static void preloadEventData(String eventShortName,
+                                 ServletWebRequest request,
+                                 HttpSession session,
+                                 EventLoader eventLoader,
+                                 Element head,
+                                 MessageSourceManager messageSourceManager,
+                                 Node idx,
+                                 Json json,
+                                 String lang) {
         String preloadLang = Objects.requireNonNullElse(lang, "en");
         if (eventShortName != null) {
             var eventInfoOptional = eventLoader.loadEventInfo(eventShortName, session);
@@ -292,6 +288,10 @@ public class IndexController {
                 var ev = eventInfoOptional.get();
                 head.appendChild(buildScripTag(json.asJsonString(ev), APPLICATION_JSON, "preload-event", eventShortName));
                 preloadLang = getMatchingLocale(request, ev.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toList()), lang).getLanguage();
+                if (ZonedDateTime.now(ClockProvider.clock()).isAfter(((Event)ev.purchaseContext()).getEnd())) {
+                    // event is over.
+                    head.appendChild(buildMetaTag(null, "noindex", "robots"));
+                }
             }
         }
         head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, preloadLang)), "application/json", "preload-bundle", preloadLang));
@@ -393,8 +393,17 @@ public class IndexController {
     }
 
     private static Element buildMetaTag(String propertyValue, String contentValue) {
+        return buildMetaTag(propertyValue, contentValue, null);
+    }
+
+    static Element buildMetaTag(String propertyValue, String contentValue, String name) {
         var meta = new Element("meta");
-        meta.setAttribute(PROPERTY, propertyValue);
+        if (propertyValue != null) {
+            meta.setAttribute(PROPERTY, propertyValue);
+        }
+        if (name != null) {
+            meta.setAttribute("name", name);
+        }
         meta.setAttribute(CONTENT, contentValue);
         return meta;
     }
