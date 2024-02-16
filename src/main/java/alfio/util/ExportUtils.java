@@ -36,6 +36,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class ExportUtils {
 
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
+    public static final String X_ROBOTS_TAG = "X-Robots-Tag";
 
     private ExportUtils() {}
 
@@ -48,6 +49,7 @@ public class ExportUtils {
                                    Consumer<StreamingWorkbook> workbookConsumer) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+        markAsNoIndex(response);
 
         try (ServletOutputStream out = response.getOutputStream(); StreamingWorkbook workbook = new StreamingWorkbook(out)) {
             workbookConsumer.accept(workbook);
@@ -89,6 +91,7 @@ public class ExportUtils {
     public static void exportCsv(String fileName, String[] header, Stream<String[]> data, HttpServletResponse response) throws IOException {
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+        markAsNoIndex(response);
 
         try (ServletOutputStream out = response.getOutputStream(); CSVWriter writer = new CSVWriter(new OutputStreamWriter(out, UTF_8))) {
             for (int marker : ExportUtils.BOM_MARKERS) {
@@ -106,5 +109,9 @@ public class ExportUtils {
             writer.flush();
             out.flush();
         }
+    }
+
+    public static void markAsNoIndex(HttpServletResponse response) {
+        response.setHeader(X_ROBOTS_TAG, "noindex");
     }
 }

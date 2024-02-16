@@ -20,12 +20,10 @@ import alfio.controller.api.v2.model.EventWithAdditionalInfo;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.model.Event;
 import alfio.util.Json;
 import ch.digitalfondue.jfiveparse.Element;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -33,10 +31,15 @@ import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -46,7 +49,8 @@ class IndexControllerTest {
     private Element head;
     private Element index;
     private Element html;
-    private EventWithAdditionalInfo event;
+    private EventWithAdditionalInfo eventInfo;
+    private Event event;
     private HttpSession session;
 
     private ServletWebRequest request;
@@ -57,15 +61,18 @@ class IndexControllerTest {
     void setUp() {
         eventLoader = mock(EventLoader.class);
         request = mock(ServletWebRequest.class);
-        head = mock(Element.class);
+        head = new Element("head");
         index = mock(Element.class);
         html = mock(Element.class);
-        event = mock(EventWithAdditionalInfo.class);
+        eventInfo = mock(EventWithAdditionalInfo.class);
+        event = mock(Event.class);
         session = mock(HttpSession.class);
         json = mock(Json.class);
         messageSourceManager = mock(MessageSourceManager.class);
         when(messageSourceManager.getBundleAsMap(anyString(), anyBoolean(), anyString(), same(MessageSourceManager.PUBLIC_FRONTEND))).thenReturn(Map.of());
-        when(eventLoader.loadEventInfo(anyString(), eq(session))).thenReturn(Optional.of(event));
+        when(eventLoader.loadEventInfo(anyString(), eq(session))).thenReturn(Optional.of(eventInfo));
+        when(eventInfo.purchaseContext()).thenReturn(event);
+        when(event.getEnd()).thenReturn(ZonedDateTime.now(FIXED_TIME_CLOCK.getClock()).plusSeconds(1));
         when(index.getElementsByTagName("html")).thenReturn(List.of(html));
         when(json.asJsonString(any())).thenReturn("{}");
         when(request.getNativeRequest(HttpServletRequest.class)).thenReturn(new MockHttpServletRequest());
@@ -76,8 +83,8 @@ class IndexControllerTest {
     class EventIsPresent {
         @Test
         void singleLanguage() {
-            when(event.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
-            IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
+            when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
+            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "it");
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("en"), same(MessageSourceManager.PUBLIC_FRONTEND)); //for non en language we preload also the fallback
@@ -85,24 +92,24 @@ class IndexControllerTest {
 
         @Test
         void singleLanguageWithWrongParam() {
-            when(event.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
-            IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
+            when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
+            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "it");
         }
 
         @Test
         void singleLanguageWithParam() {
-            when(event.getContentLanguages()).thenReturn(List.of(new Language("de", "")));
-            IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
+            when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("de", "")));
+            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, "de");
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("de"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "de");
         }
 
         @Test
         void multipleLanguages() {
-            when(event.getContentLanguages()).thenReturn(List.of(new Language("de", ""), new Language("it", "")));
-            IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
+            when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("de", ""), new Language("it", "")));
+            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("de"), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", "de");
         }
@@ -110,23 +117,37 @@ class IndexControllerTest {
         @ParameterizedTest
         @ValueSource(strings = {"it", "de"})
         void multipleLanguagesWithParam(String param) {
-            when(event.getContentLanguages()).thenReturn(List.of(new Language("de", ""), new Language("it", "")));
-            IndexController.preloadTranslations("shortName", request, session, eventLoader, head, messageSourceManager, index, json, param);
+            when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("de", ""), new Language("it", "")));
+            IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, param);
             verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq(param), same(MessageSourceManager.PUBLIC_FRONTEND));
             verify(html).setAttribute("lang", param);
         }
 
-
+        @AfterEach
+        void tearDown() {
+            head.getElementsByTagName("meta")
+                .forEach(n -> assertNotEquals("robots", n.getAttribute("name")));
+        }
     }
 
     @Test
     void preloadTranslationsEventNotPresent() {
-        IndexController.preloadTranslations(null, request, session, eventLoader, head, messageSourceManager, index, json, null);
+        IndexController.preloadEventData(null, request, session, eventLoader, head, messageSourceManager, index, json, null);
         verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("en"), same(MessageSourceManager.PUBLIC_FRONTEND));
         verify(html).setAttribute("lang", "en");
 
-        IndexController.preloadTranslations(null, request, session, eventLoader, head, messageSourceManager, index, json, "it");
+        IndexController.preloadEventData(null, request, session, eventLoader, head, messageSourceManager, index, json, "it");
         verify(messageSourceManager).getBundleAsMap(anyString(), eq(true), eq("it"), same(MessageSourceManager.PUBLIC_FRONTEND));
         verify(html).setAttribute("lang", "it");
+    }
+
+    @Test
+    void checkMetaNoIndexWhenEventExpired() {
+        when(eventInfo.getContentLanguages()).thenReturn(List.of(new Language("it", "")));
+        when(event.getEnd()).thenReturn(ZonedDateTime.now(FIXED_TIME_CLOCK.getClock()).minusSeconds(1));
+        IndexController.preloadEventData("shortName", request, session, eventLoader, head, messageSourceManager, index, json, null);
+        var robotsNodes = head.getElementsByTagName("meta").stream().filter(n -> "robots".equals(n.getAttribute("name"))).collect(Collectors.toList());
+        assertEquals(1, robotsNodes.size());
+        assertEquals("noindex", robotsNodes.get(0).getAttribute("content"));
     }
 }

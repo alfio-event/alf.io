@@ -25,6 +25,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
+import static alfio.util.ExportUtils.markAsNoIndex;
+
 public class FileUtil {
     public static boolean sendPdf(byte[] res, HttpServletResponse response, String eventName, String reservationId, BillingDocument billingDocument) {
         return Optional.ofNullable(res).map(pdf -> {
@@ -42,6 +44,7 @@ public class FileUtil {
     public static void sendHeaders(HttpServletResponse response, String eventName, String reservationId, BillingDocument billingDocument) {
         response.setHeader("Content-Disposition", "attachment; filename=\"" + getBillingDocumentFileName(eventName, reservationId, billingDocument) + "\"");
         response.setContentType("application/pdf");
+        markAsNoIndex(response);
     }
 
     public static String getBillingDocumentFileName(String eventShortName, String reservationId, BillingDocument document) {

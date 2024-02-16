@@ -24,13 +24,11 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.ContentLanguage;
-import alfio.model.EventDescription;
-import alfio.model.FileBlobMetadata;
-import alfio.model.TicketReservationStatusAndValidation;
+import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.ClockProvider;
 import alfio.util.Json;
 import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
@@ -53,6 +51,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -248,7 +247,7 @@ public class IndexController {
                     style.appendChild(new Text(baseCustomCss));
                     head.appendChild(style);
                 }
-                preloadTranslations(eventShortName, request, session, eventLoader, head, messageSourceManager, idx, json, lang);
+                preloadEventData(eventShortName, request, session, eventLoader, head, messageSourceManager, idx, json, lang);
                 JFiveParse.serialize(idx, osw);
             }
         }
@@ -285,15 +284,15 @@ public class IndexController {
         }
     }
 
-    static void preloadTranslations(String eventShortName,
-                                    ServletWebRequest request,
-                                    HttpSession session,
-                                    EventLoader eventLoader,
-                                    Element head,
-                                    MessageSourceManager messageSourceManager,
-                                    Node idx,
-                                    Json json,
-                                    String lang) {
+    static void preloadEventData(String eventShortName,
+                                 ServletWebRequest request,
+                                 HttpSession session,
+                                 EventLoader eventLoader,
+                                 Element head,
+                                 MessageSourceManager messageSourceManager,
+                                 Node idx,
+                                 Json json,
+                                 String lang) {
         String preloadLang = Objects.requireNonNullElse(lang, "en");
         if (eventShortName != null) {
             var eventInfoOptional = eventLoader.loadEventInfo(eventShortName, session);
@@ -301,6 +300,10 @@ public class IndexController {
                 var ev = eventInfoOptional.get();
                 head.appendChild(buildScripTag(json.asJsonString(ev), APPLICATION_JSON, "preload-event", eventShortName));
                 preloadLang = getMatchingLocale(request, ev.getContentLanguages().stream().map(Language::getLocale).toList(), lang).getLanguage();
+                if (ZonedDateTime.now(ClockProvider.clock()).isAfter(((Event)ev.purchaseContext()).getEnd())) {
+                    // event is over.
+                    head.appendChild(buildMetaTag("robots", "noindex"));
+                }
             }
         }
         head.appendChild(buildScripTag(json.asJsonString(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, preloadLang, MessageSourceManager.PUBLIC_FRONTEND)), "application/json", "preload-bundle", preloadLang));

@@ -63,6 +63,7 @@ import java.util.Optional;
 
 import static alfio.model.PurchaseContextFieldConfiguration.EVENT_RELATED_CONTEXTS;
 import static alfio.util.EventUtil.firstMatchingCallLink;
+import static alfio.util.ExportUtils.markAsNoIndex;
 
 @RestController
 @AllArgsConstructor
@@ -101,6 +102,7 @@ public class TicketApiV2Controller {
         String qrCodeText = ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive());
 
         response.setContentType("image/png");
+        markAsNoIndex(response);
 
         try (var os = response.getOutputStream()) {
             os.write(ImageUtil.createQRCode(qrCodeText));
@@ -121,6 +123,7 @@ public class TicketApiV2Controller {
 
             response.setContentType(MediaType.APPLICATION_PDF_VALUE);
             response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
+            markAsNoIndex(response);
             try (OutputStream os = response.getOutputStream()) {
                 TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
