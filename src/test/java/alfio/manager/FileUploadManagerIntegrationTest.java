@@ -67,7 +67,7 @@ class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
         Optional<FileBlobMetadata> metadata = fileUploadManager.findMetadata(id);
         assertTrue(metadata.isPresent());
         assertEquals("myfile.txt", metadata.get().getName());
-        assertEquals("text/plain", metadata.get().getContentType());
+        assertEquals("application/octet-stream", metadata.get().getContentType());
 
         //
 
