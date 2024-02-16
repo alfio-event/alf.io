@@ -24,6 +24,7 @@ import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 public class FileBlobMetadata {
@@ -50,4 +51,22 @@ public class FileBlobMetadata {
         this.attributes = ObjectUtils.firstNonNull(parsed, Collections.emptyMap());
     }
 
+    private static final Set<String> VALID_TYPE = Set.of(
+        "image/jpeg",
+        "image/png",
+        "image/gif"
+    );
+    // consider adding image/webp , image/avif  ?
+
+    public String getContentType() {
+        // only allow image content type to be propagated. This could be refined to allow:
+        // - fonts
+        // - css
+        // - pdf files etc...
+        if (contentType != null && VALID_TYPE.contains(contentType)) {
+            return contentType;
+        } else {
+            return "application/octet-stream";
+        }
+    }
 }
