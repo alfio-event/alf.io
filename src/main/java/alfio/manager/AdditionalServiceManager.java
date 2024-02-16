@@ -471,7 +471,7 @@ public class AdditionalServiceManager {
         Validate.isTrue(Arrays.stream(results).allMatch(i -> i == 1));
 
         // we attach all those without policy to the first ticket (donations)
-        var firstTicketId = ticketIds.stream().findFirst().map(first -> List.of(first)).get();
+        var firstTicketId = ticketIds.stream().findFirst().map(List::of).orElseThrow();
         var noPoliciesParameterSources = additionalServicesForEvent.stream()
             .filter(as -> as.getSupplementPolicy() == null && additionalServiceReservationList.stream().anyMatch(findAdditionalServiceRequest(as)))
             .flatMap(as -> linkWithEveryTicket(reservationId, additionalServiceReservationList, bookedItems, firstTicketId, as))
