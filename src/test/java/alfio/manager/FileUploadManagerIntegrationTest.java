@@ -32,7 +32,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -67,7 +66,7 @@ class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
         Optional<FileBlobMetadata> metadata = fileUploadManager.findMetadata(id);
         assertTrue(metadata.isPresent());
         assertEquals("myfile.txt", metadata.get().getName());
-        assertEquals("text/plain", metadata.get().getContentType());
+        assertEquals("application/octet-stream", metadata.get().getContentType());
 
         //
 
