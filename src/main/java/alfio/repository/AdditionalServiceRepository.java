@@ -69,11 +69,11 @@ public interface AdditionalServiceRepository {
                                            @Bind("supplementPolicy") AdditionalService.SupplementPolicy supplementPolicy);
 
     @Query("update additional_service set fix_price = :fixPrice, ordinal = :ordinal, available_qty = :availableQty, max_qty_per_order = :maxQtyPerOrder," +
-        " inception_ts = :inceptionTs, expiration_ts = :expirationTs, vat = :vat, vat_type = :vatType, src_price_cts = :srcPriceCts where id = :id")
+        " inception_ts = :inceptionTs, expiration_ts = :expirationTs, vat = :vat, vat_type = :vatType, src_price_cts = :srcPriceCts, supplement_policy = :policy where id = :id")
     int update(@Bind("id") int id, @Bind("fixPrice") boolean fixPrice,
                @Bind("ordinal") int ordinal, @Bind("availableQty") int availableQuantity, @Bind("maxQtyPerOrder") int maxQtyPerOrder,
                @Bind("inceptionTs") ZonedDateTime inception, @Bind("expirationTs") ZonedDateTime expiration, @Bind("vat") BigDecimal vat,
-               @Bind("vatType") AdditionalService.VatType vatType, @Bind("srcPriceCts") int srcPriceCts);
+               @Bind("vatType") AdditionalService.VatType vatType, @Bind("srcPriceCts") int srcPriceCts, @Bind("policy") String policy);
 
     @Query("select * from additional_service_with_currency where event_id_fk = :eventId and supplement_policy = :supplementPolicy order by ordinal")
     List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);

@@ -88,7 +88,8 @@ public class AdditionalServiceManager {
             additionalService.getExpiration().toZonedDateTime(event.getZoneId()),
             additionalService.getVat(),
             additionalService.getVatType(),
-            Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0));
+            Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0),
+            additionalService.getSupplementPolicy().name());
         preGenerateItems(additionalServiceId, event, additionalService);
         return result;
     }
