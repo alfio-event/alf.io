@@ -198,7 +198,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
                 DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, null, Event.EventFormat.IN_PERSON);
-        return new ReservationFlowContext(eventAndUser.getLeft(), owner(eventAndUser.getRight()), null, null, null, null, true, false, Map.of(PAYLOAD_FILENAME, payloadFilename));
+        return new ReservationFlowContext(eventAndUser.getLeft(), owner(eventAndUser.getRight()), null, null, null, null, true, false, Map.of(PAYLOAD_FILENAME, payloadFilename), true);
     }
 
     @ParameterizedTest
@@ -257,7 +257,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
 
         reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
         assertNotNull(reservation);
-        checkOrderSummary(reservation);
+        checkOrderSummary(reservation, context);
 
         var extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
 
@@ -274,7 +274,7 @@ class StripeReservationFlowIntegrationTest extends BaseReservationFlowTest {
     }
 
     @Override
-    protected void checkOrderSummary(ReservationInfo reservation) {
+    protected void checkOrderSummary(ReservationInfo reservation, ReservationFlowContext context) {
         var orderSummary = reservation.getOrderSummary();
         assertFalse(orderSummary.isNotYetPaid());
         assertEquals("10.00", orderSummary.getTotalPrice());

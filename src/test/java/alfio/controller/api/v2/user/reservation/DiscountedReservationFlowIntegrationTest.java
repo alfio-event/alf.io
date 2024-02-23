@@ -175,7 +175,7 @@ class DiscountedReservationFlowIntegrationTest extends BaseReservationFlowTest {
     }
 
     @Override
-    protected void checkOrderSummary(ReservationInfo reservation) {
+    protected void checkOrderSummary(ReservationInfo reservation, ReservationFlowContext context) {
         var orderSummary = reservation.getOrderSummary();
         assertTrue(orderSummary.isNotYetPaid());
         assertEquals("9.00", orderSummary.getTotalPrice());
