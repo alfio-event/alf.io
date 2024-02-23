@@ -152,7 +152,7 @@ public class AccessService {
         throw new AccessDeniedException();
     }
 
-    public void checkOrganizationOwnership(Principal principal, int organizationId) {
+    public void checkOrganizationOwnership(Principal principal, Integer organizationId) {
         if (principal == null) {
             log.trace("No user present, we will allow it");
             return;
@@ -161,7 +161,11 @@ public class AccessService {
             log.trace("Allowing ownership to Organization {} to System API Key", organizationId);
             return;
         }
-        if (isOwnerOfOrganization(principal, organizationId)) {
+        if (organizationId == null && isAdmin(principal)) {
+            log.trace("Allowing Organization create to ADMIN");
+            return;
+        }
+        if (organizationId != null && isOwnerOfOrganization(principal, organizationId)) {
             log.trace("Allowing ownership to Organization {} to user {}", organizationId, principal.getName());
             return;
         }
