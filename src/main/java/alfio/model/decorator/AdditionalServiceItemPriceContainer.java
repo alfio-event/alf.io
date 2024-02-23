@@ -73,7 +73,7 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
         if(getVatStatus() == VatStatus.NONE) {
             return BigDecimal.ZERO;
         }
-        return MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
+        return MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode()).subtract(getAppliedDiscount());
     }
 
     public static AdditionalServiceItemPriceContainer from(AdditionalServiceItem item, AdditionalService additionalService, PurchaseContext purchaseContext, PromoCodeDiscount discount) {

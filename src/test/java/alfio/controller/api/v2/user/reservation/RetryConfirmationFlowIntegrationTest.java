@@ -323,7 +323,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
 
         reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
         assertNotNull(reservation);
-        checkOrderSummary(reservation);
+        checkOrderSummary(reservation, context);
     }
 
     private void processWebHook(String reservationId) {
@@ -382,7 +382,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
     }
 
     @Override
-    protected void checkOrderSummary(ReservationInfo reservation) {
+    protected void checkOrderSummary(ReservationInfo reservation, ReservationFlowContext context) {
         var orderSummary = reservation.getOrderSummary();
         assertFalse(orderSummary.isNotYetPaid());
         assertEquals("10.00", orderSummary.getTotalPrice());

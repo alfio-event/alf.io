@@ -199,7 +199,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         specialPriceTokenGenerator.generatePendingCodes();
     }
 
-    protected EventModification.AdditionalService buildAdditionalService(ReservationFlowContext context) {
+    private EventModification.AdditionalService buildAdditionalService(ReservationFlowContext context, AdditionalService.SupplementPolicy supplementPolicy) {
         return new EventModification.AdditionalService(null, new BigDecimal("40.00"), true, 0, -1, 1,
 
             new DateTimeModification(ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalDate(), ZonedDateTime.now(clockProvider.getClock()).minusDays(2).toLocalTime()),
@@ -210,8 +210,12 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional desc", AdditionalServiceText.TextType.DESCRIPTION)),
 
             AdditionalService.AdditionalServiceType.SUPPLEMENT,
-            AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET
+            supplementPolicy
         );
+    }
+
+    protected EventModification.AdditionalService buildAdditionalService(ReservationFlowContext context) {
+        return buildAdditionalService(context, AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET);
     }
 
     protected Stream<String> getExtensionEventsToRegister() {
@@ -318,7 +322,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertEquals("CHF", selectedEvent.getCurrency());
         assertFalse(selectedEvent.isFree());
         assertEquals(context.event.getSameDay(), selectedEvent.isSameDay());
-        assertTrue(selectedEvent.isVatIncluded());
+        assertEquals(context.vatIncluded, selectedEvent.isVatIncluded());
         assertEquals(context.event.getShortName(), selectedEvent.getShortName());
         assertEquals(context.event.getDisplayName(), selectedEvent.getDisplayName());
         assertEquals(context.event.getFileBlobId(), selectedEvent.getFileBlobId());
@@ -512,7 +516,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             var reservationInfo = reservationApiV2Controller.getReservationInfo(res.getBody().getValue(), context.getPublicUser());
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertNotNull(reservationInfo.getBody());
-            assertEquals("1.00", reservationInfo.getBody().getOrderSummary().getTotalPrice());
+            assertEquals(context.vatIncluded ? "1.00" : "1.01", reservationInfo.getBody().getOrderSummary().getTotalPrice());
             assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).getName());
 
             var activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
@@ -802,6 +806,97 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
             assertFalse(requireNonNull(jdbcTemplate.queryForObject("select exists (select id from additional_service_item where status = 'PENDING' and tickets_reservation_uuid = :reservationId) as res", new MapSqlParameterSource("reservationId", reservationId), Boolean.class)));
         }
 
+        // buy 2 tickets + additional service with 100% discount
+        {
+
+            var addServ = buildAdditionalService(context, AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET);
+            var addServRes = additionalServiceApiController.insert(context.event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"), null);
+            assertNotNull(addServRes.getBody());
+
+            // add 100% promo code
+            String promoCode = "100_PROMO";
+            int categoryId = retrieveCategories(context).get(0).getId();
+            eventManager.addPromoCode(promoCode, context.event.getId(), null, ZonedDateTime.now(clockProvider.getClock()).minusDays(2), context.event.getEnd().plusDays(2), 100, PromoCodeDiscount.DiscountType.PERCENTAGE, List.of(categoryId), null, "100% discount", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null, null);
+
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            ticketReservation.setQuantity(2);
+            ticketReservation.setTicketCategoryId(categoryId);
+            form.setReservation(Collections.singletonList(ticketReservation));
+            form.setPromoCode(promoCode);
+
+            var res = eventApiV2Controller.reserveTickets(context.event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), context.getPublicUser());
+            assertEquals(HttpStatus.OK, res.getStatusCode());
+            var resBody = res.getBody();
+            assertNotNull(resBody);
+            assertTrue(resBody.isSuccess());
+            assertEquals(0, resBody.getErrorCount());
+            var reservationId = resBody.getValue();
+            checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING, context);
+
+            var resInfoRes = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser());
+            assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
+            assertNotNull(resInfoRes.getBody());
+            var ticketsByCat = resInfoRes.getBody().getTicketsByCategory();
+            assertEquals(1, ticketsByCat.size());
+            assertEquals(2, ticketsByCat.get(0).getTickets().size());
+
+            var ticket1 = ticketsByCat.get(0).getTickets().get(0);
+            var ticket2 = ticketsByCat.get(0).getTickets().get(1);
+            var additionalServiceWithData = resInfoRes.getBody().getAdditionalServiceWithData();
+            var contactForm = new ContactAndTicketsForm();
+
+            contactForm.setAddCompanyBillingDetails(true);
+            contactForm.setSkipVatNr(false);
+            contactForm.setInvoiceRequested(true);
+            contactForm.setEmail("test@test.com");
+            contactForm.setBillingAddress("my billing address");
+            contactForm.setFirstName("full");
+            contactForm.setLastName("name");
+            var ticketForm1 = new UpdateTicketOwnerForm();
+            ticketForm1.setFirstName("ticketfull");
+            ticketForm1.setLastName("ticketname");
+            ticketForm1.setEmail("tickettest@test.com");
+            ticketForm1.setAdditional(new HashMap<>(Map.of("field1", Collections.singletonList("value"))));
+
+            var ticketForm2 = new UpdateTicketOwnerForm();
+            ticketForm2.setFirstName("ticketfull");
+            ticketForm2.setLastName("ticketname");
+            ticketForm2.setEmail("tickettest@test.com");
+            ticketForm2.setAdditional(new HashMap<>(Map.of("field1", Collections.singletonList("value"))));
+
+            contactForm.setTickets(Map.of(ticket1.getUuid(), ticketForm1, ticket2.getUuid(), ticketForm2));
+
+            var additionalServiceLinkForm = new AdditionalServiceLinkForm();
+            additionalServiceLinkForm.setAdditionalServiceItemId(additionalServiceWithData.get(0).getItemId());
+            additionalServiceLinkForm.setTicketUUID(ticket1.getUuid());
+            contactForm.getAdditionalServices().put(ticket1.getUuid(), List.of(additionalServiceLinkForm));
+            var additionalServiceLinkForm2 = new AdditionalServiceLinkForm();
+            additionalServiceLinkForm2.setAdditionalServiceItemId(additionalServiceWithData.get(1).getItemId());
+            additionalServiceLinkForm2.setTicketUUID(ticket2.getUuid());
+            contactForm.getAdditionalServices().put(ticket2.getUuid(), List.of(additionalServiceLinkForm));
+            contactForm.setVatCountryCode("CH");
+            contactForm.setBillingAddressLine1("LINE 1");
+            contactForm.setBillingAddressCity("CITY");
+            contactForm.setBillingAddressZip("ZIP");
+            var linkForm = new AdditionalServiceLinkForm();
+            linkForm.setAdditionalServiceItemId(additionalServiceWithData.get(0).getItemId());
+            linkForm.setTicketUUID(ticket2.getUuid());
+            linkForm.setAdditional(new HashMap<>(Map.of("field3", Collections.singletonList("value"))));
+            contactForm.getAdditionalServices().put(ticket2.getUuid(), List.of(linkForm));
+            var success = reservationApiV2Controller.validateToOverview(reservationId, "en", false, contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), context.getPublicAuthentication());
+            assertEquals(HttpStatus.OK, success.getStatusCode());
+            assertNotNull(success.getBody());
+            resInfoRes = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser());
+            assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
+            assertNotNull(resInfoRes.getBody());
+            var resInfoBody = resInfoRes.getBody();
+            assertTrue(resInfoBody.getOrderSummary().isFree());
+            reservationApiV2Controller.cancelPendingReservation(reservationId);
+
+            jdbcTemplate.update("delete from additional_service_description where additional_service_id_fk = :id", Map.of("id", addServRes.getBody().getId()));
+            assertEquals(1, jdbcTemplate.update("delete from additional_service where id = :id", Map.of("id", addServRes.getBody().getId())));
+        }
 
         //buy one ticket
         {
@@ -1353,7 +1448,7 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
 
         reservation = reservationApiV2Controller.getReservationInfo(reservationId, context.getPublicUser()).getBody();
         assertNotNull(reservation);
-        checkOrderSummary(reservation);
+        checkOrderSummary(reservation, context);
         cleanupExtensionLog.run();
         validatePayment(context.event.getShortName(), reservationId, context);
 
@@ -1380,10 +1475,10 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         assertTrue(promoCodeUsage.isEmpty());
     }
 
-    protected void checkOrderSummary(ReservationInfo reservation) {
+    protected void checkOrderSummary(ReservationInfo reservation, ReservationFlowContext context) {
         var orderSummary = reservation.getOrderSummary();
         assertTrue(orderSummary.isNotYetPaid());
-        assertEquals("10.00", orderSummary.getTotalPrice());
+        assertEquals(context.vatIncluded ? "10.00" : "10.10", orderSummary.getTotalPrice());
         assertEquals("0.10", orderSummary.getTotalVAT());
         assertEquals("1.00", orderSummary.getVatPercentage());
     }
@@ -1563,14 +1658,14 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
         Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(context.userId);
         var reservation = ticketReservationRepository.findReservationById(reservationIdentifier);
-        assertEquals(1000, reservation.getFinalPriceCts());
+        assertEquals(context.vatIncluded ? 1000 : 1010, reservation.getFinalPriceCts());
         assertEquals(1000, reservation.getSrcPriceCts());
         assertEquals(10, reservation.getVatCts());
         assertEquals(0, reservation.getDiscountCts());
         assertEquals(1, eventApiController.getPendingPayments(eventName, principal).size());
         confirmPayment(eventName, reservationIdentifier, principal);
         assertEquals(0, eventApiController.getPendingPayments(eventName, principal).size());
-        assertEquals(1000, eventRepository.getGrossIncome(context.event.getId()));
+        assertEquals(context.vatIncluded ? 1000 : 1010, eventRepository.getGrossIncome(context.event.getId()));
     }
 
     private void confirmPayment(String eventName, String reservationIdentifier, Principal principal) {

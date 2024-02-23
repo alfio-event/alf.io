@@ -36,20 +36,21 @@ public class ReservationFlowContext {
     final boolean applyDiscount;
     private final Authentication authentication;
     private final Map<String, String> additionalParams;
+    final boolean vatIncluded;
 
     ReservationFlowContext(Event event, String userId) {
-        this(event, userId, null, null, null, null, true, false, Map.of());
+        this(event, userId, null, null, null, null, true, false, Map.of(), true);
     }
 
     ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin) {
-        this(event, userId, subscriptionId, subscriptionPin, null, null, true, false, Map.of());
+        this(event, userId, subscriptionId, subscriptionPin, null, null, true, false, Map.of(), true);
     }
 
     ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin, String publicUsername, Integer publicUserId, boolean checkInStationsEnabled, boolean applyDiscount) {
-        this(event, userId, subscriptionId, subscriptionPin, publicUsername, publicUserId, checkInStationsEnabled, applyDiscount, Map.of());
+        this(event, userId, subscriptionId, subscriptionPin, publicUsername, publicUserId, checkInStationsEnabled, applyDiscount, Map.of(), true);
     }
 
-    ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin, String publicUsername, Integer publicUserId, boolean checkInStationsEnabled, boolean applyDiscount, Map<String, String> additionalParams) {
+    ReservationFlowContext(Event event, String userId, UUID subscriptionId, String subscriptionPin, String publicUsername, Integer publicUserId, boolean checkInStationsEnabled, boolean applyDiscount, Map<String, String> additionalParams, boolean vatIncluded) {
         this.event = event;
         this.userId = userId;
         this.subscriptionId = subscriptionId;
@@ -64,6 +65,7 @@ public class ReservationFlowContext {
         this.checkInStationsEnabled = checkInStationsEnabled;
         this.applyDiscount = applyDiscount;
         this.additionalParams = additionalParams;
+        this.vatIncluded = vatIncluded;
     }
 
     Principal getPublicUser() {
