@@ -36,6 +36,8 @@ import com.stripe.model.BalanceTransaction;
 import com.stripe.model.Charge;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -47,10 +49,10 @@ import static alfio.manager.payment.BaseStripeManager.STRIPE_MANAGER_TYPE_KEY;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@Log4j2
 public class StripeCreditCardManager implements PaymentProvider, ClientServerTokenRequest, RefundRequest, PaymentInfo {
 
     public static final String STRIPE_UNEXPECTED = "error.STEP2_STRIPE_unexpected";
+    private static final Logger log = LoggerFactory.getLogger(StripeCreditCardManager.class);
     private static final String STRIPE_MANAGER = StripeCreditCardManager.class.getName();
     protected static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY);
 

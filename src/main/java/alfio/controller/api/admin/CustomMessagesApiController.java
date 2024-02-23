@@ -20,6 +20,8 @@ import alfio.manager.AccessService;
 import alfio.manager.support.CustomMessageManager;
 import alfio.model.modification.MessageModification;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -31,9 +33,9 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/admin/api/events/{eventName}/messages")
-@Log4j2
 public class CustomMessagesApiController {
 
+    private static final Logger log = LoggerFactory.getLogger(CustomMessagesApiController.class);
     private final CustomMessageManager customMessageManager;
     private final AccessService accessService;
 

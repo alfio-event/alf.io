@@ -25,6 +25,8 @@ import alfio.util.Wrappers;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joda.money.CurrencyUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -41,9 +43,9 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/api/utils")
-@Log4j2
 public class UtilsApiController {
 
+    private static final Logger log = LoggerFactory.getLogger(UtilsApiController.class);
     private static final List<String> CURRENCIES_BLACKLIST = Arrays.asList("USN", "USS", "CHE", "CHW");
     private final EventNameManager eventNameManager;
     private final String version;

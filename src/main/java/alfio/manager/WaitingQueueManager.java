@@ -35,6 +35,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
@@ -48,10 +50,10 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.EventUtil.determineAvailableSeats;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class WaitingQueueManager {
 
+    private static final Logger log = LoggerFactory.getLogger(WaitingQueueManager.class);
     private final WaitingQueueRepository waitingQueueRepository;
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;

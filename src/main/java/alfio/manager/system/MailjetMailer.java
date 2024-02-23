@@ -22,6 +22,8 @@ import alfio.util.HttpUtils;
 import alfio.util.Json;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -33,9 +35,9 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
-@Log4j2
 class MailjetMailer extends BaseMailer  {
 
+    private static final Logger log = LoggerFactory.getLogger(MailjetMailer.class);
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
 

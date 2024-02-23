@@ -33,6 +33,8 @@ import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.util.ClockProvider;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -50,12 +52,12 @@ import static alfio.manager.NotificationManager.SEND_TICKET_CC;
 import static alfio.model.system.ConfigurationKeys.GENERATE_TICKETS_FOR_SUBSCRIPTIONS;
 
 @Component
-@Log4j2
 public class AssignTicketToSubscriberJobExecutor implements AdminJobExecutor {
 
     public static final String EVENT_ID = "eventId";
     public static final String ORGANIZATION_ID = "organizationId";
     public static final String FORCE_GENERATION = "forceGeneration";
+    private static final Logger log = LoggerFactory.getLogger(AssignTicketToSubscriberJobExecutor.class);
     private final AdminReservationRequestManager requestManager;
     private final ConfigurationManager configurationManager;
     private final SubscriptionRepository subscriptionRepository;

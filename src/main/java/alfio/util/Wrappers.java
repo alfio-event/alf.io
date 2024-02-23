@@ -18,6 +18,8 @@ package alfio.util;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.util.Optional;
@@ -25,9 +27,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @UtilityClass
-@Log4j2
 public class Wrappers {
 
+    private static final Logger log = LoggerFactory.getLogger(Wrappers.class);
     public static <I> void voidTransactionWrapper(Consumer<I> consumer, I input) {
         try {
             consumer.accept(input);

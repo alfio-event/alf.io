@@ -19,13 +19,14 @@ package alfio.manager.payment;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TransactionRepository;
 import lombok.experimental.UtilityClass;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @UtilityClass
-@Log4j2
 class PaymentManagerUtils {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentManagerUtils.class);
     static void invalidateExistingTransactions(String reservationId, TransactionRepository transactionRepository) {
         invalidateExistingTransactions(reservationId, transactionRepository, null);
     }

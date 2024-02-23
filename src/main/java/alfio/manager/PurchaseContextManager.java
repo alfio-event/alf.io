@@ -22,9 +22,10 @@ import alfio.model.TicketReservation;
 import alfio.repository.EventRepository;
 import alfio.repository.SubscriptionRepository;
 import alfio.repository.TicketReservationRepository;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,9 +34,9 @@ import java.util.UUID;
 
 @Transactional(readOnly = true)
 @Component
-@Log4j2
 public class PurchaseContextManager {
 
+    private static final Logger log = LoggerFactory.getLogger(PurchaseContextManager.class);
     private final EventRepository eventRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final TicketReservationRepository ticketReservationRepository;

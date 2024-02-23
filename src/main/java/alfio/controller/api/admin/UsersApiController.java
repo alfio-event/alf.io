@@ -35,6 +35,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,10 +57,10 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RestController
 @RequestMapping("/admin/api")
-@Log4j2
 @AllArgsConstructor
 public class UsersApiController {
 
+    private static final Logger log = LoggerFactory.getLogger(UsersApiController.class);
     private static final String OK = "OK";
     private final UserManager userManager;
     private final ConfigurationManager configurationManager;

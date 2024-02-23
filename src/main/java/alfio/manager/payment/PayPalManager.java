@@ -47,6 +47,8 @@ import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -65,10 +67,10 @@ import static alfio.util.MonetaryUtil.*;
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo, ExtractPaymentTokenFromTransaction {
 
+    private static final Logger log = LoggerFactory.getLogger(PayPalManager.class);
     private final Cache<String, PayPalHttpClient> cachedClients = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofHours(1L))
         .build();
@@ -349,7 +351,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             }
             return PaymentResult.redirect(createCheckoutRequest(spec));
         } catch (Exception e) {
-            log.error(e);
+            log.error("Error while retrieving token", e);
             return PaymentResult.failed( ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION );
         }
     }

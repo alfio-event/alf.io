@@ -36,13 +36,11 @@ import java.util.Optional;
 import static alfio.manager.payment.MollieWebhookPaymentManager.*;
 
 @RestController
-@Log4j2
 @AllArgsConstructor
 public class MolliePaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
     private final PurchaseContextManager purchaseContextManager;
 
-    @SuppressWarnings("MVCPathVariableInspection")
     @PostMapping(WEBHOOK_URL_TEMPLATE)
     public ResponseEntity<String> receivePaymentConfirmation(HttpServletRequest request,
                                                              @PathVariable("reservationId") String reservationId) {

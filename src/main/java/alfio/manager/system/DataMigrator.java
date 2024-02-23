@@ -31,6 +31,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
@@ -57,9 +59,9 @@ import static java.util.stream.Collectors.*;
 
 @Component
 @Transactional(readOnly = true)
-@Log4j2
 public class DataMigrator {
 
+    private static final Logger log = LoggerFactory.getLogger(DataMigrator.class);
     private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d\\.)([0-9.]*)(-SNAPSHOT)?");
     private static final Map<String, String> PRICE_UPDATE_BY_KEY = new LinkedHashMap<>();
     private final EventMigrationRepository eventMigrationRepository;

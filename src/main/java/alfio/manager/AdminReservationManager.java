@@ -46,12 +46,13 @@ import alfio.repository.*;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -92,11 +93,11 @@ import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
-@Log4j2
 @RequiredArgsConstructor
 public class AdminReservationManager {
 
     private static final ErrorCode ERROR_CANNOT_CANCEL_CHECKED_IN_TICKETS = ErrorCode.custom("remove-reservation.failed", "This reservation contains checked-in tickets. Unable to cancel it.");
+    private static final Logger log = LoggerFactory.getLogger(AdminReservationManager.class);
     private final PurchaseContextManager purchaseContextManager;
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;

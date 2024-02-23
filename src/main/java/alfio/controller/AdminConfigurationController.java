@@ -24,6 +24,8 @@ import alfio.util.oauth2.AccessTokenResponseDetails;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,9 +44,9 @@ import static alfio.manager.payment.StripeConnectManager.STRIPE_CONNECT_REDIRECT
 
 @Controller
 @AllArgsConstructor
-@Log4j2
 public class AdminConfigurationController {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminConfigurationController.class);
     private static final String CONNECT_ORG = ".connect.org";
     private static final String CONNECT_STATE_PREFIX = ".connect.state.";
     private static final String REDIRECT_ADMIN = "redirect:/admin/";

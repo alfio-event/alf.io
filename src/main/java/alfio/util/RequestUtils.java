@@ -21,6 +21,8 @@ import alfio.model.Event;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.IteratorUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -35,10 +37,10 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-@Log4j2
 @UtilityClass
 public class RequestUtils {
 
+    private static final Logger log = LoggerFactory.getLogger(RequestUtils.class);
     public static Optional<String> readRequest(HttpServletRequest request) {
         try (ServletInputStream is = request.getInputStream()){
             return Optional.ofNullable(is.readAllBytes()).map(b -> new String(b, StandardCharsets.UTF_8));

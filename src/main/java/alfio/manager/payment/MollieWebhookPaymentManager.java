@@ -47,6 +47,8 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -70,10 +72,10 @@ import static alfio.util.MonetaryUtil.formatCents;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHandler, RefundRequest, PaymentInfo {
 
+    private static final Logger log = LoggerFactory.getLogger(MollieWebhookPaymentManager.class);
     public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/mollie/reservation/{reservationId}";
     private static final Set<PaymentMethod> EMPTY_METHODS = Collections.unmodifiableSet(EnumSet.noneOf(PaymentMethod.class));
     static final Map<String, PaymentMethod> SUPPORTED_METHODS = Map.of(
@@ -274,7 +276,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             log.warn("Request interrupted while trying to init payment", e);
             return PaymentResult.failed(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
         } catch (Exception e) {
-            log.warn(e);
+            log.warn("Error while processing webhook", e);
             return PaymentResult.failed(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
         }
     }
@@ -547,12 +549,12 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         try {
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if(HttpUtils.callSuccessful(response)) {
-                log.trace("Received a successful response from Mollie. Body is {}", response::body);
+                log.trace("Received a successful response from Mollie. Body is {}", response.body());
                 // we ignore the answer, for now
                 return true;
             } else {
                 log.warn("got {} response while calling refund API for payment ID {}", response.statusCode(), paymentId);
-                log.trace("detailed reply from mollie: {}", response::body);
+                log.trace("detailed reply from mollie: {}", response.body());
                 return false;
             }
         } catch (InterruptedException e) {

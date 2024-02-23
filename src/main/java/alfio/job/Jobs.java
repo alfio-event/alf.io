@@ -24,6 +24,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -42,10 +44,9 @@ import java.util.Map;
 @DependsOn("migrator")
 @Profile("!" + Initializer.PROFILE_DISABLE_JOBS)
 @AllArgsConstructor
-@Log4j2
 public class Jobs {
 
-
+    private static final Logger log = LoggerFactory.getLogger(Jobs.class);
     private static final int ONE_MINUTE = 1000 * 60;
     private static final int THIRTY_SECONDS = 1000 * 30;
     private static final int FIVE_SECONDS = 1000 * 5;

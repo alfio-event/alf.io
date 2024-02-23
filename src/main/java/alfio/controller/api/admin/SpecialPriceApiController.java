@@ -23,9 +23,10 @@ import alfio.model.modification.SendCodeModification;
 import alfio.model.modification.UploadBase64FileModification;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,9 +44,9 @@ import static org.apache.commons.lang3.StringUtils.trim;
 
 @RestController
 @RequestMapping("/admin/api")
-@Log4j2
 public class SpecialPriceApiController {
 
+    private static final Logger log = LoggerFactory.getLogger(SpecialPriceApiController.class);
     private final SpecialPriceManager specialPriceManager;
     private final AccessService accessService;
 

@@ -18,6 +18,8 @@ package alfio.config;
 
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,9 +39,9 @@ import java.util.stream.Collectors;
 import static alfio.config.authentication.support.AuthenticationConstants.ADMIN;
 import static alfio.config.authentication.support.AuthenticationConstants.SYSTEM_API_CLIENT;
 
-@Log4j2
 class RoleAndOrganizationsTransactionPreparer {
 
+    private static final Logger log = LoggerFactory.getLogger(RoleAndOrganizationsTransactionPreparer.class);
     private RoleAndOrganizationsTransactionPreparer() {}
 
     private static final OrRequestMatcher IS_PUBLIC_URLS = new OrRequestMatcher(

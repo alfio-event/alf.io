@@ -30,6 +30,8 @@ import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Template;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
@@ -54,14 +56,13 @@ import static alfio.util.MustacheCustomTag.*;
 /**
  * For hiding the ugliness :)
  * */
-@Log4j2
 public class TemplateManager {
-
 
     public static final String METADATA_ATTRIBUTES_KEY = "metadata-attributes";
     public static final String ADDITIONAL_FIELDS_KEY = "additional-fields";
     public static final String VAT_TRANSLATION_TEMPLATE_KEY = "vatTranslation";
     public static final String MAIL_FOOTER = "mailFooter";
+    private static final Logger log = LoggerFactory.getLogger(TemplateManager.class);
 
     public enum TemplateOutput {
         TEXT, HTML

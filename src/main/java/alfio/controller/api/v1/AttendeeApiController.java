@@ -31,6 +31,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -49,10 +51,10 @@ import static alfio.util.Wrappers.optionally;
 
 @RestController
 @RequestMapping("/api/attendees")
-@Log4j2
 public class AttendeeApiController {
 
     public static final String ALFIO_OPERATOR_HEADER = "Alfio-Operator";
+    private static final Logger log = LoggerFactory.getLogger(AttendeeApiController.class);
     private final AttendeeManager attendeeManager;
     private final AccessService accessService;
 

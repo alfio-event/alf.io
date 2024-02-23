@@ -20,13 +20,15 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
 
 @Data
-@Log4j2
 public class SearchOptions {
+    private static final Logger log = LoggerFactory.getLogger(SearchOptions.class);
     private String subscription;
     private Integer organizer;
     private String organizerSlug;

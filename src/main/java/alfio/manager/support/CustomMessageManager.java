@@ -33,7 +33,6 @@ import alfio.repository.TicketRepository;
 import alfio.util.*;
 import alfio.util.checkin.TicketCheckInUtil;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.ExtendedModelMap;
@@ -49,7 +48,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Component
 @AllArgsConstructor
-@Log4j2
 public class CustomMessageManager {
 
     private final TemplateManager templateManager;

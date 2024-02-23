@@ -34,6 +34,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,9 +59,9 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
 @AllArgsConstructor
-@Log4j2
 public class BillingDocumentManager {
     static final String CREDIT_NOTE_NUMBER = "creditNoteNumber";
+    private static final Logger log = LoggerFactory.getLogger(BillingDocumentManager.class);
     private static final String APPLICATION_PDF = "application/pdf";
     private final BillingDocumentRepository billingDocumentRepository;
     private final Json json;

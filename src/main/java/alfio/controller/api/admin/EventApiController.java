@@ -48,12 +48,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -92,10 +93,10 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
 
 @RestController
 @RequestMapping("/admin/api")
-@Log4j2
 @AllArgsConstructor
 public class EventApiController {
 
+    private static final Logger log = LoggerFactory.getLogger(EventApiController.class);
     private static final String OK = "OK";
     private static final String CUSTOM_FIELDS_PREFIX = "custom:";
     public static final String UNHANDLED_EXCEPTION = "unhandled exception";

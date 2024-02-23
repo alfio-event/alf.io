@@ -33,6 +33,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StreamUtils;
@@ -51,9 +53,9 @@ import java.util.stream.Collectors;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/admin/api/extensions")
-@Log4j2
 public class ExtensionApiController {
 
+    private static final Logger log = LoggerFactory.getLogger(ExtensionApiController.class);
     private static final String SAMPLE_JS;
 
 

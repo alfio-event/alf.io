@@ -20,7 +20,6 @@ import alfio.manager.TicketReservationManager;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +33,6 @@ import java.util.Map;
 import static alfio.util.HttpUtils.APPLICATION_JSON_UTF8;
 
 @RestController
-@Log4j2
 @AllArgsConstructor
 public class StripePaymentWebhookController {
 

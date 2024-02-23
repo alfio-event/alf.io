@@ -31,6 +31,8 @@ import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi20;
 import com.github.scribejava.core.oauth.OAuth20Service;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -42,10 +44,10 @@ import java.util.UUID;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@Log4j2
 public class StripeConnectManager implements OAuthPaymentProviderConnector {
 
     public static final String STRIPE_CONNECT_REDIRECT_PATH = "/admin/configuration/payment/stripe/authorize";
+    private static final Logger log = LoggerFactory.getLogger(StripeConnectManager.class);
     private final ExtensionManager extensionManager;
     private final ConfigurationManager configurationManager;
     private final BaseStripeManager baseStripeManager;

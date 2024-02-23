@@ -36,7 +36,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Log4j2
 @UtilityClass
 public class ExtensionUtils {
 

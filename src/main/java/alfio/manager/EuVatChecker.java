@@ -17,7 +17,10 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.*;
+import alfio.model.Audit;
+import alfio.model.Configurable;
+import alfio.model.PurchaseContext;
+import alfio.model.VatDetail;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.AuditingRepository;
 import alfio.util.ItalianTaxIdValidator;
@@ -26,7 +29,6 @@ import ch.digitalfondue.vatchecker.EUVatChecker;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -36,14 +38,12 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class EuVatChecker {
 

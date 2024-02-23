@@ -41,10 +41,9 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@Log4j2
 public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationManager {
 
-    private final Logger logger = LoggerFactory.getLogger(AdminOpenIdAuthenticationManager.class);
+    private static final Logger log = LoggerFactory.getLogger(AdminOpenIdAuthenticationManager.class);
     private static final String ALFIO_ADMIN = "ALFIO_ADMIN";
 
     private final LazyConfigurationContainer configurationContainer;
@@ -88,7 +87,7 @@ public class AdminOpenIdAuthenticationManager extends BaseOpenIdAuthenticationMa
 
         if(groups.isEmpty()){
             String message = "Users must have at least a group called ALFIO_ADMIN or ALFIO_BACKOFFICE";
-            logger.error(message);
+            log.error(message);
             throw new RuntimeException(message);
         }
 

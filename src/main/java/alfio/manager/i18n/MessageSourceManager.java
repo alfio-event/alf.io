@@ -20,7 +20,6 @@ import alfio.model.PurchaseContext;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.LocaleUtil;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.AbstractMessageSource;
@@ -35,7 +34,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@Log4j2
 public class MessageSourceManager {
 
     /**

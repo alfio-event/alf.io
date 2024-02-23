@@ -34,6 +34,8 @@ import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.GrantedAuthority;
@@ -53,7 +55,6 @@ import java.util.stream.Collectors;
 import static alfio.util.HttpUtils.APPLICATION_FORM_URLENCODED;
 import static alfio.util.HttpUtils.APPLICATION_JSON;
 
-@Log4j2
 abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationManager {
     protected static final String CODE = "code";
     protected static final String ID_TOKEN = "id_token";
@@ -61,6 +62,7 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
     protected static final String EMAIL = "email";
     private static final String HTTPS = "https";
     private static final String REDIRECT_URI = "redirect_uri";
+    private static final Logger log = LoggerFactory.getLogger(BaseOpenIdAuthenticationManager.class);
 
     protected final HttpClient httpClient;
     private final UserManager userManager;
@@ -217,7 +219,6 @@ abstract class BaseOpenIdAuthenticationManager implements OpenIdAuthenticationMa
 
     @Override
     public String buildAuthorizeUrl(String state) {
-        log.trace("buildAuthorizeUrl, configuration: {}", this::openIdConfiguration);
         String scopeParameter = String.join("+", getScopes());
 
         UriComponents uri = UriComponentsBuilder.newInstance()

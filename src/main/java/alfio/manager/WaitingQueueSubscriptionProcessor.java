@@ -32,6 +32,8 @@ import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -52,9 +54,9 @@ import static java.util.stream.Collectors.toList;
 @Component
 @Transactional
 @RequiredArgsConstructor
-@Log4j2
 public class WaitingQueueSubscriptionProcessor {
 
+    private static final Logger log = LoggerFactory.getLogger(WaitingQueueSubscriptionProcessor.class);
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;
     private final ConfigurationManager configurationManager;

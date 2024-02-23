@@ -40,6 +40,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.imgscalr.Scalr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
@@ -56,9 +58,9 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @AllArgsConstructor
-@Log4j2
 public class PassKitManager {
 
+    private static final Logger log = LoggerFactory.getLogger(PassKitManager.class);
     private static final String APPLE_PASS = "ApplePass";
     private final Cache<String, Optional<byte[]>> passKitLogoCache = Caffeine.newBuilder()
         .maximumSize(20)

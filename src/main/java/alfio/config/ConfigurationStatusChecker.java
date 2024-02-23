@@ -26,6 +26,8 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.PasswordGenerator;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
@@ -37,9 +39,9 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.Optional.ofNullable;
 
 @Component
-@Log4j2
 public class ConfigurationStatusChecker implements ApplicationListener<ContextRefreshedEvent> {
 
+    private static final Logger log = LoggerFactory.getLogger(ConfigurationStatusChecker.class);
     private final ConfigurationManager configurationManager;
     private final UserRepository userRepository;
     private final AuthorityRepository authorityRepository;

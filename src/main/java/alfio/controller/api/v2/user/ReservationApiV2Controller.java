@@ -49,11 +49,12 @@ import alfio.model.transaction.*;
 import alfio.repository.*;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -86,10 +87,9 @@ import static java.util.stream.Collectors.toMap;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v2/public/")
-@Log4j2
 public class ReservationApiV2Controller {
 
-    private final EventManager eventManager;
+    private static final Logger log = LoggerFactory.getLogger(ReservationApiV2Controller.class);
     private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
     private final TicketReservationRepository ticketReservationRepository;

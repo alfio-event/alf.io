@@ -30,6 +30,8 @@ import alfio.repository.SubscriptionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -49,9 +51,9 @@ import static java.util.Objects.requireNonNullElse;
 @Component
 @Transactional
 @AllArgsConstructor
-@Log4j2
 public class SubscriptionManager {
 
+    private static final Logger log = LoggerFactory.getLogger(SubscriptionManager.class);
     private final SubscriptionRepository subscriptionRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final Environment environment;

@@ -31,6 +31,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.extern.log4j.Log4j2;
 import org.mozilla.javascript.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.net.ConnectException;
@@ -54,7 +56,6 @@ import static alfio.manager.system.AdminJobExecutor.JobName.EXECUTE_EXTENSION;
 // -organizationId-eventId
 
 @Service
-@Log4j2
 public class ScriptingExecutionService {
 
     public static final String EXTENSION_NAME = "extensionName";
@@ -63,6 +64,7 @@ public class ScriptingExecutionService {
     public static final String EXTENSION_CONFIGURATION_PARAMETERS = "extensionParameters";
     static final String CONNECT_EXCEPTION_MESSAGE = "Cannot connect to remote service. Please check your configuration";
     static final String DEFAULT_ERROR_MESSAGE = "Error while executing extension. Please retry.";
+    private static final Logger log = LoggerFactory.getLogger(ScriptingExecutionService.class);
 
     private final Supplier<Executor> executorSupplier;
     private final ScriptableObject sealedScope;

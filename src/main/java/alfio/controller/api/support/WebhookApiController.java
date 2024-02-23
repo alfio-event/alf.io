@@ -19,7 +19,6 @@ package alfio.controller.api.support;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,17 +28,12 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/api/webhook")
 @AllArgsConstructor
-@Log4j2
 public class WebhookApiController {
 
-    //private final MollieManager mollieManager;
-    //private final TicketReservationManager ticketReservationManager;
     private final StripeCreditCardManager stripeCreditCardManager;
 
     @PostMapping("/mollie/event/{eventName}/reservation/{reservationId}")
     public void handleMollie(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
-        // mollieManager.handleWebhook(eventName, reservationId, null);
-        // call ticketReservationManager.performPayment... if handlewebhoook return status paid
     }
 
     @PostMapping("/stripe/notification")

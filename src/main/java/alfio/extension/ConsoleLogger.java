@@ -16,13 +16,14 @@
  */
 package alfio.extension;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-@Slf4j
 public class ConsoleLogger {
+    private static final Logger log = LoggerFactory.getLogger(ConsoleLogger.class);
     private final ExtensionLogger extensionLogger;
 
     public ConsoleLogger(ExtensionLogger extensionLogger) {

@@ -33,6 +33,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Component;
@@ -54,17 +56,16 @@ import static java.util.Optional.ofNullable;
 
 @Component
 @Transactional
-@Log4j2
 @RequiredArgsConstructor
 public class AdminReservationRequestManager {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminReservationRequestManager.class);
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
     private final UserRepository userRepository;
     private final AdminReservationRequestRepository adminReservationRequestRepository;
     private final EventRepository eventRepository;
     private final PlatformTransactionManager transactionManager;
-    private final ClockProvider clockProvider;
 
     public Result<AdminReservationRequestStats> getRequestStatus(String requestId, String eventName, String username) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, username)

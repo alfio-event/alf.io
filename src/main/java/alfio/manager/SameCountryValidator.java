@@ -26,13 +26,15 @@ import ch.digitalfondue.vatchecker.EUVatChecker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Predicate;
 
 @RequiredArgsConstructor
-@Log4j2
 public class SameCountryValidator implements Predicate<String> {
 
+    private static final Logger log = LoggerFactory.getLogger(SameCountryValidator.class);
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
     private final PurchaseContext purchaseContext;

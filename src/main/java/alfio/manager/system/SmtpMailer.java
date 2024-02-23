@@ -21,6 +21,8 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.user.OrganizationRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
@@ -41,9 +43,9 @@ import java.util.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-@Log4j2
 class SmtpMailer extends BaseMailer {
-    
+
+    private static final Logger log = LoggerFactory.getLogger(SmtpMailer.class);
     private final ConfigurationManager configurationManager;
 
     SmtpMailer(ConfigurationManager configurationManager,

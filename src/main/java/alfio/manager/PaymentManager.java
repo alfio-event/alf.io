@@ -34,6 +34,8 @@ import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.security.Principal;
@@ -46,11 +48,11 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNullElse;
 
 @Component
-@Log4j2
 @AllArgsConstructor
 public class PaymentManager {
 
     public static final String PAYMENT_TOKEN = "PAYMENT_TOKEN";
+    private static final Logger log = LoggerFactory.getLogger(PaymentManager.class);
 
     private final TransactionRepository transactionRepository;
     private final ConfigurationManager configurationManager;

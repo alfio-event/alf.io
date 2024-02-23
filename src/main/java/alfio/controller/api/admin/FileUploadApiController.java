@@ -21,6 +21,8 @@ import alfio.model.modification.UploadBase64FileModification;
 import lombok.extern.log4j.Log4j2;
 
 import org.imgscalr.Scalr;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MimeType;
@@ -36,9 +38,9 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/admin/api")
-@Log4j2
 public class FileUploadApiController {
 
+    private static final Logger log = LoggerFactory.getLogger(FileUploadApiController.class);
     private final FileUploadManager fileUploadManager;
 
     @Autowired

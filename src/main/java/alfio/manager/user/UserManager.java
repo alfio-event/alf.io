@@ -35,6 +35,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.stereotype.Component;
@@ -56,10 +58,10 @@ import static java.util.stream.Collectors.toList;
 @Component
 @Transactional
 @RequiredArgsConstructor
-@Log4j2
 public class UserManager {
 
     public static final String ADMIN_USERNAME = "admin";
+    private static final Logger log = LoggerFactory.getLogger(UserManager.class);
     private static final Pattern SLUG_VALIDATOR = Pattern.compile("^[A-Za-z-_0-9]+$");
     private final AuthorityRepository authorityRepository;
     private final OrganizationRepository organizationRepository;

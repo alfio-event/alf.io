@@ -20,7 +20,6 @@ import alfio.model.support.EnumTypeAsString;
 import ch.digitalfondue.npjt.mapper.ColumnMapper;
 import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
 import ch.digitalfondue.npjt.mapper.ParameterConverter;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 
@@ -31,7 +30,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Objects;
 
-@Log4j2
 public class EnumTypeColumnMapper extends ColumnMapper {
 
     private static final int ORDER = Integer.MAX_VALUE - 32;

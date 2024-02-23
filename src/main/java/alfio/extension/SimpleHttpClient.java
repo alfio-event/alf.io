@@ -18,6 +18,8 @@ package alfio.extension;
 
 import alfio.util.HttpUtils;
 import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URI;
@@ -30,9 +32,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-@Log4j2
 public class SimpleHttpClient {
 
+    private static final Logger log = LoggerFactory.getLogger(SimpleHttpClient.class);
     private static final Set<String> NULL_REQUEST_BODY = Set.of("GET", "HEAD");
 
     private final HttpClient httpClient;

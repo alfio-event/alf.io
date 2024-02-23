@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 
 @Getter
-@Log4j2
 public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer, EventCheckInInfo, PurchaseContext {
 
     private static final String VERSION_FOR_FIRST_AND_LAST_NAME = "15.1.8.8";

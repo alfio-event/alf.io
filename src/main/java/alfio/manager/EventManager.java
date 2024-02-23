@@ -56,6 +56,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -91,10 +93,10 @@ import static java.util.stream.Collectors.*;
 
 @Component
 @Transactional
-@Log4j2
 @AllArgsConstructor
 public class EventManager {
 
+    private static final Logger log = LoggerFactory.getLogger(EventManager.class);
     private static final Predicate<TicketCategory> IS_CATEGORY_BOUNDED = TicketCategory::isBounded;
     static final String ERROR_ONLINE_ON_SITE_NOT_COMPATIBLE = "Cannot switch to Online. Please remove On-Site payment method first.";
     private final UserManager userManager;

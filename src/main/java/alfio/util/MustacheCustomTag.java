@@ -32,6 +32,8 @@ import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.AttributeProvider;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.commonmark.renderer.text.TextContentRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.security.web.util.UrlUtils;
 
@@ -64,10 +66,10 @@ import static org.apache.commons.lang3.StringUtils.substring;
  * <li>optional: locale:YOUR_LOCALE you can define the locale</li>
  * </ul>
  */
-@Log4j2
 public class MustacheCustomTag {
 
     public static final String SUBSCRIPTION_DESCRIPTOR_ATTRIBUTE = "subscriptionDescriptor";
+    private static final Logger log = LoggerFactory.getLogger(MustacheCustomTag.class);
 
     private MustacheCustomTag() {}
 

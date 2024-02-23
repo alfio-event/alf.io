@@ -37,6 +37,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.flywaydb.core.api.MigrationVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -58,9 +60,9 @@ import static alfio.model.EventCheckInInfo.VERSION_FOR_LINKED_ADDITIONAL_SERVICE
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
 
-@Log4j2
 public final class EventUtil {
 
+    private static final Logger log = LoggerFactory.getLogger(EventUtil.class);
     private EventUtil() {}
 
     private static final DateTimeFormatter JSON_TIME_FORMATTER = new DateTimeFormatterBuilder()

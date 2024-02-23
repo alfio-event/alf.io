@@ -28,6 +28,8 @@ import alfio.repository.TicketCategoryRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.text.RandomStringGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
@@ -41,10 +43,10 @@ import java.security.SecureRandom;
  * granting a special price to a specific user category.
  */
 @Component
-@Log4j2
 @Transactional
 public class SpecialPriceTokenGenerator {
 
+    private static final Logger log = LoggerFactory.getLogger(SpecialPriceTokenGenerator.class);
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final char[] ADMITTED_CHARACTERS = new char[]{
             'A', 'B', 'C', 'D', 'E', 'F',

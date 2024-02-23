@@ -46,6 +46,8 @@ import com.stripe.net.StripeResponse;
 import com.stripe.net.Webhook;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -61,11 +63,11 @@ import static alfio.model.TicketReservation.TicketReservationStatus.WAITING_EXTE
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.Objects.requireNonNull;
 
-@Log4j2
 @Component
 @Transactional
 public class StripeWebhookPaymentManager implements PaymentProvider, RefundRequest, PaymentInfo, WebhookHandler, ClientServerTokenRequest, ServerInitiatedTransaction {
 
+    private static final Logger log = LoggerFactory.getLogger(StripeWebhookPaymentManager.class);
     private static final String STRIPE_MANAGER = StripeWebhookPaymentManager.class.getName();
     static final String CLIENT_SECRET_METADATA = "clientSecret";
     private static final String PAYMENT_INTENT_SUCCEEDED = "payment_intent.succeeded";

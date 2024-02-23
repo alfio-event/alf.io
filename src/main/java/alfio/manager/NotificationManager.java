@@ -41,6 +41,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
@@ -72,11 +74,11 @@ import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
 @Component
-@Log4j2
 public class NotificationManager {
 
     public static final String SEND_TICKET_CC = "sendTicketCc";
     private static final String EVENT_ID = "eventId";
+    private static final Logger log = LoggerFactory.getLogger(NotificationManager.class);
     private final Mailer mailer;
     private final MessageSourceManager messageSourceManager;
     private final EmailMessageRepository emailMessageRepository;

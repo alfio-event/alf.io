@@ -45,6 +45,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -78,10 +80,10 @@ import java.util.function.Supplier;
 @EnableScheduling
 @EnableAsync
 @ComponentScan(basePackages = {"alfio.manager", "alfio.extension"})
-@Log4j2
 @EnableNpjt(basePackages = "alfio.repository")
 public class DataSourceConfiguration {
 
+    private static final Logger log = LoggerFactory.getLogger(DataSourceConfiguration.class);
     private static final Set<PlatformProvider> PLATFORM_PROVIDERS = EnumSet.complementOf(EnumSet.of(PlatformProvider.DEFAULT));
 
     @Bean

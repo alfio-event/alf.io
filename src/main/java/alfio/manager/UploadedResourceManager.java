@@ -21,6 +21,8 @@ import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.UploadedResourceRepository;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,11 +40,11 @@ import java.util.Optional;
 
 @Component
 @Transactional
-@Log4j2
 public class UploadedResourceManager {
 
     public static final String ATTR_IMG_WIDTH = "width";
     public static final String ATTR_IMG_HEIGHT = "height";
+    private static final Logger log = LoggerFactory.getLogger(UploadedResourceManager.class);
 
     private final UploadedResourceRepository uploadedResourceRepository;
 
