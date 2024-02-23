@@ -411,7 +411,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                 PaymentManagerUtils.invalidateExistingTransactions(reservation.getId(), transactionRepository, PaymentProxy.PAYPAL);
             }
         } else {
-            log.warn("attempting to delete non-existing transaction {} for reservation {}", paymentId, reservation.getId());
+            log.warn("attempting to delete non-existing transaction for reservation {}", reservation.getId());
         }
     }
 
