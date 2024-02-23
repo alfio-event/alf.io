@@ -36,6 +36,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 @QueryRepository
@@ -121,7 +122,7 @@ public interface UploadedResourceRepository {
             query = "insert into resource_organizer (name, content_size, content, content_type, attributes, organization_id_fk) values(?, ?, ?, ?, ?, ?)";
         }
 
-        return getNamedParameterJdbcTemplate().getJdbcOperations().execute(query,
+        return Objects.requireNonNullElse(getNamedParameterJdbcTemplate().getJdbcOperations().execute(query,
             new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
                 @Override
                 protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
@@ -138,7 +139,7 @@ public interface UploadedResourceRepository {
                     }
                 }
             }
-        );
+        ), 0);
     }
 
 }
