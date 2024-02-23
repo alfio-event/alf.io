@@ -26,11 +26,13 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-@UtilityClass
 public class JSON {
 
     private static final Logger log = LoggerFactory.getLogger(JSON.class);
     private static final Type PARSE_RETURN_TYPE = new TypeToken<Map<String, Object>>(){}.getType();
+
+    private JSON() {
+    }
 
     public static String stringify(Object o) {
         return ExtensionUtils.convertToJson(o);

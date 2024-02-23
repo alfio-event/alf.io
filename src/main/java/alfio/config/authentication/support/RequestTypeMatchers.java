@@ -21,8 +21,11 @@ import lombok.experimental.UtilityClass;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Locale;
 
-@UtilityClass
 public class RequestTypeMatchers {
+
+    private RequestTypeMatchers() {
+    }
+
     public static boolean isTokenAuthentication(HttpServletRequest request) {
         String authorization = request.getHeader("Authorization");
         return (authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey "))

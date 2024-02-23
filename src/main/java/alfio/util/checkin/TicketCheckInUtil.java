@@ -30,13 +30,15 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.*;
 import java.util.function.Supplier;
 
-@UtilityClass
 public class TicketCheckInUtil {
+
 
     public static final String CUSTOM_CHECK_IN_URL = "customCheckInUrl";
     public static final String ONLINE_CHECK_IN_URL = "onlineCheckInUrl";
     public static final String CUSTOM_CHECK_IN_URL_TEXT = "customCheckInUrlText";
     public static final String CUSTOM_CHECK_IN_URL_DESCRIPTION = "customCheckInUrlDescription";
+
+    private TicketCheckInUtil() {}
 
     public static String ticketOnlineCheckInUrl(Event event, Ticket ticket, String baseUrl) {
         var ticketCode = DigestUtils.sha256Hex(ticket.ticketCode(event.getPrivateKey(), event.supportsQRCodeCaseInsensitive()));

@@ -16,7 +16,6 @@
  */
 package alfio.util;
 
-import lombok.experimental.UtilityClass;
 import org.postgresql.util.PSQLException;
 import org.postgresql.util.ServerErrorMessage;
 import org.springframework.jdbc.UncategorizedSQLException;
@@ -25,8 +24,12 @@ import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-@UtilityClass
 public class SqlUtils {
+
+    private SqlUtils() {
+
+    }
+
     public static Optional<ServerErrorMessage> findServerError(UncategorizedSQLException exception) {
         for (var throwable : exception.getSQLException()) {
             if(throwable instanceof PSQLException && ((PSQLException)throwable).getServerErrorMessage() != null) {

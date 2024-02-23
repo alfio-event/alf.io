@@ -25,7 +25,6 @@ import java.util.*;
 import static java.util.Map.entry;
 import static org.apache.commons.lang3.StringUtils.*;
 
-@UtilityClass
 public class ItalianTaxIdValidator {
     private static final char[] CONTROL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
     private static final String VOWELS = "AEIOU";
@@ -68,6 +67,9 @@ public class ItalianTaxIdValidator {
         entry('8', new EvenOddValueContainer(8,19)),
         entry('9', new EvenOddValueContainer(9,21))
     );
+
+    private ItalianTaxIdValidator() {
+    }
 
     public static boolean validateFiscalCode(String fiscalCode) {
         var code = StringUtils.upperCase(trimToNull(fiscalCode));

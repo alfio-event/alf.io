@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-@UtilityClass
 public class TestUtil {
 
     public static final ClockProvider FIXED_TIME_CLOCK;
@@ -35,6 +34,9 @@ public class TestUtil {
             .withMinute(0)
             .toInstant(ZoneOffset.UTC);
         FIXED_TIME_CLOCK = ClockProvider.init(Clock.fixed(todayAt10Sharp, ZoneId.of("Europe/Zurich")));
+    }
+
+    private TestUtil() {
     }
 
     public static ClockProvider clockProvider() {

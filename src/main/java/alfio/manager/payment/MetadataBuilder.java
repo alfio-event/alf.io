@@ -23,11 +23,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@UtilityClass
 class MetadataBuilder {
 
 
     static final String RESERVATION_ID = "reservationId";
+
+    private MetadataBuilder() {
+    }
 
     static Map<String, String> buildMetadata(PaymentSpecification spec, Map<String, String> base) {
         Map<String, String> initialMetadata = new HashMap<>(base);

@@ -72,7 +72,6 @@ public class TicketReservation implements PriceContainer {
     private final String invoiceNumber;
     @JsonIgnore
     private final String invoiceModel;
-    @With
     private final PriceContainer.VatStatus vatStatus;
     private final String vatNr;
     private final String vatCountryCode;
@@ -220,5 +219,40 @@ public class TicketReservation implements PriceContainer {
     public boolean isPendingOfflinePayment() {
         return status == TicketReservationStatus.OFFLINE_PAYMENT
             || status == TicketReservationStatus.DEFERRED_OFFLINE_PAYMENT;
+    }
+
+    public TicketReservation withVatStatus(VatStatus vatStatus) {
+        return new TicketReservation(id,
+            validity,
+            status,
+            fullName,
+            firstName,
+            lastName,
+            email,
+            billingAddress,
+            confirmationTimestamp,
+            latestReminder,
+            paymentMethod,
+            reminderSent,
+            promoCodeDiscountId,
+            automatic,
+            userLanguage,
+            directAssignmentRequested,
+            invoiceNumber,
+            invoiceModel,
+            vatStatus,
+            vatNr,
+            vatCountryCode,
+            invoiceRequested,
+            usedVatPercent,
+            vatIncluded,
+            creationTimestamp,
+            customerReference,
+            registrationTimestamp,
+            srcPriceCts,
+            finalPriceCts,
+            vatCts,
+            discountCts,
+            currencyCode);
     }
 }

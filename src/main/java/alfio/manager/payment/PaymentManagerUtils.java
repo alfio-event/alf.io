@@ -23,10 +23,13 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@UtilityClass
 class PaymentManagerUtils {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentManagerUtils.class);
+
+    private PaymentManagerUtils() {
+    }
+
     static void invalidateExistingTransactions(String reservationId, TransactionRepository transactionRepository) {
         invalidateExistingTransactions(reservationId, transactionRepository, null);
     }

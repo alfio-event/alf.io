@@ -31,11 +31,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-@UtilityClass
 public class Formatters {
 
     public static final String LINK_NEW_TAB_KEY = "link.new-tab";
     private static final Logger log = LoggerFactory.getLogger(Formatters.class);
+
+    private Formatters() {
+    }
 
     public static Map<String, String> getFormattedDate(LocalizedContent localizedContent, ZonedDateTime date, String code, MessageSource messageSource) {
         if(localizedContent != null && date != null) {

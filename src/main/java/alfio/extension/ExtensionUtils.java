@@ -36,12 +36,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@UtilityClass
 public class ExtensionUtils {
 
     private static final Gson JSON_SERIALIZER = Json.GSON.newBuilder()
         .registerTypeAdapter(Double.class, new DoubleSerializer())
         .create();
+
+    private ExtensionUtils() {
+    }
 
     public static String format(String str, String... params) {
         return String.format(str, (Object[]) params);
