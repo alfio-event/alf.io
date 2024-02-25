@@ -1,0 +1,21 @@
+name: "DB Migration Test"
+on:
+    schedule:
+        - cron:  '30 4 * * *'
+    workflow_dispatch:
+
+jobs:
+    build:
+        if: github.repository == 'alfio-event/alf.io' && github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Set up JDK
+              uses: actions/setup-java@v4
+              with:
+                  java-version: 17
+                  cache: 'gradle'
+            - name: Build with Gradle
+              run: ./gradlew test --no-daemon --tests MigrationValidatorTest
+              env:
+                  MIGRATION_TEST: "true"

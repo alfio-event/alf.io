@@ -56,6 +56,7 @@ import static alfio.test.util.TestUtil.FIXED_TIME_CLOCK;
 public class BaseTestConfiguration {
 
     public static final int MAX_POOL_SIZE = 5;
+    public static final String POSTGRES_DB = "alfio";
     private static final Logger log = LoggerFactory.getLogger(BaseTestConfiguration.class);
 
     @Bean
@@ -70,7 +71,6 @@ public class BaseTestConfiguration {
     @Bean
     @Profile("!travis")
     public RefreshableDataSource dataSource() {
-        String POSTGRES_DB = "alfio";
         String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "10");
         log.debug("Running tests using PostgreSQL v.{}", postgresVersion);
         if (postgres == null) {
