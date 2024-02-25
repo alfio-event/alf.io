@@ -33,7 +33,7 @@ select
         end;
 $$ language sql;
 
-drop view checkin_ticket_event_and_category_info;
+drop view if exists checkin_ticket_event_and_category_info;
 create view checkin_ticket_event_and_category_info as
 (
     select
