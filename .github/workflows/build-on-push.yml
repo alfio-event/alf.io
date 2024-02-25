@@ -97,8 +97,7 @@ jobs:
                 with:
                     context: ./dockerize
                     tags: |
-                        ghcr.io/${{ github.repository }}:${{github.ref_name}}
+                        ghcr.io/alfio-event/alf.io/prod:${{github.ref_name}}
                         alfio/alf.io:${{github.ref_name}}
-                        alfio/alf.io:latest
                     platforms: linux/amd64,linux/arm64
                     push: true
