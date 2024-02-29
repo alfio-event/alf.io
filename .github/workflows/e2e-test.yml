@@ -12,23 +12,24 @@ jobs:
                 browser: ['chrome', 'firefox', 'safari', 'ie11']
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v3
-            - uses: actions/cache@v3
+            - uses: actions/checkout@v4
+            - uses: actions/cache@v4
               with:
                   path: ~/.gradle/caches
                   key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
                   restore-keys: |
                       ${{ runner.os }}-gradle-
-            - uses: actions/cache@v3
+            - uses: actions/cache@v4
               with:
                   path: ~/.gradle/wrapper
                   key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
                   restore-keys: |
                       ${{ runner.os }}-gradlew-
             - name: Set up JDK
-              uses: actions/setup-java@v3
+              uses: actions/setup-java@v4
               with:
                   java-version: 17
+                  distribution: temurin
             - name: 'BrowserStack Env Setup'
               uses: 'browserstack/github-actions/setup-env@master'
               with:
