@@ -243,10 +243,18 @@ class ValidatorTest {
     void maxAgeValidator(int maxAge) {
         var ticketFieldConfiguration = mock(PurchaseContextFieldConfiguration.class);
         when(ticketFieldConfiguration.getMaxLength()).thenReturn(maxAge);
+        var todayLeapYear = LocalDate.now(ClockProvider.clock()).isLeapYear();
+        // today -> 29.02.2024 -> birth 28.02.2023, but when -4 years, birth is also leap year
         var birth = LocalDate.now(ClockProvider.clock()).minusYears(maxAge);
+        var birthLeapYear = birth.isLeapYear();
         var date = birth.format(DateTimeFormatter.ISO_LOCAL_DATE);
-        Validator.validateMaxAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
-        assertFalse(errors.hasFieldErrors());
+            Validator.validateMaxAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
+        if (todayLeapYear && !birthLeapYear) {
+            assertTrue(errors.hasFieldErrors()); // as today is 29 and not 28, the person will have x year + 1 day, thus being over max age
+            errors = new MapBindingResult(new HashMap<>(), "test");
+        } else {
+            assertFalse(errors.hasFieldErrors());
+        }
         date = birth.minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
         Validator.validateMaxAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
         assertTrue(errors.hasFieldErrors());
