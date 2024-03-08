@@ -15,7 +15,8 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create or replace view additional_service_with_currency as (
+drop view if exists additional_service_with_currency;
+create view additional_service_with_currency as (
     select asv.id id,
         asv.event_id_fk  event_id_fk,
         asv.price_cts price_cts,

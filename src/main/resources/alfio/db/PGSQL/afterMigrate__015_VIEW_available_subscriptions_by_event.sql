@@ -15,7 +15,8 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create or replace view available_subscriptions_by_event as (
+drop view if exists available_subscriptions_by_event;
+create view available_subscriptions_by_event as (
     with usage_by_subscription_id as (
         select s.id subscription_id,
                sum(case when t.subscription_id_fk is not null then 1 else 0 end) usage

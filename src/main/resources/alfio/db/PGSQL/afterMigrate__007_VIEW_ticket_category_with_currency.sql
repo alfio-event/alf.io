@@ -15,7 +15,8 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create or replace view ticket_category_with_currency as (
+drop view if exists ticket_category_with_currency;
+create view ticket_category_with_currency as (
     select tc.id id,
         tc.inception inception,
         tc.expiration expiration,

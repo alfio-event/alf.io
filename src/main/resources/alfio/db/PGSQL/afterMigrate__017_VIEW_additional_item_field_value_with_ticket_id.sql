@@ -15,7 +15,11 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create or replace view additional_item_field_value_with_ticket_id as (
+drop view if exists all_ticket_field_values;
+drop view if exists field_value_w_additional;
+drop view if exists additional_item_field_value_with_ticket_id;
+
+create view additional_item_field_value_with_ticket_id as (
     select asv.additional_service_item_id_fk as additional_service_item_id_fk,
            asv.field_configuration_id_fk as field_configuration_id_fk,
            tfc.field_name as field_name,
@@ -30,7 +34,7 @@ create or replace view additional_item_field_value_with_ticket_id as (
     where asv.additional_service_item_id_fk is not null and asv.context = 'ADDITIONAL_SERVICE'
 );
 
-create or replace view field_value_w_additional as (
+create view field_value_w_additional as (
     select a.ticket_id_fk as ticket_id_fk,
            a.subscription_id_fk as subscription_id_fk,
            a.additional_service_item_id_fk as additional_service_item_id_fk,
@@ -58,7 +62,7 @@ create or replace view field_value_w_additional as (
       where asv.additional_service_item_id_fk is not null and asv.context = 'ADDITIONAL_SERVICE'
 );
 
-create or replace view all_ticket_field_values as (
+create view all_ticket_field_values as (
       select a.ticket_id_fk,
              a.subscription_id_fk as subscription_id_fk,
              a.additional_service_item_id_fk as additional_service_item_id_fk,

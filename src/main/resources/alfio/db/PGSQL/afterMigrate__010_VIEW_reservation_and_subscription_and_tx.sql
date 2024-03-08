@@ -15,7 +15,9 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create or replace view reservation_and_subscription_and_tx as (select
+drop view if exists subscription_descriptor_statistics;
+drop view if exists reservation_and_subscription_and_tx;
+create view reservation_and_subscription_and_tx as (select
 
     tickets_reservation.id tr_id,
     tickets_reservation.validity tr_validity,
@@ -97,3 +99,41 @@ join subscription on subscription.reservation_id_fk = tickets_reservation.id
 left outer join b_transaction on tickets_reservation.id = b_transaction.reservation_id and b_transaction.status <> 'INVALID'
 left outer join promo_code on tickets_reservation.promo_code_id_fk = promo_code.id
 );
+
+create view subscription_descriptor_statistics as (
+      select
+            sd.id sd_id,
+            sd.title sd_title,
+            sd.description sd_description,
+            sd.max_available sd_max_available,
+            sd.creation_ts sd_creation_ts,
+            sd.on_sale_from sd_on_sale_from,
+            sd.on_sale_to sd_on_sale_to,
+            sd.price_cts sd_price_cts,
+            sd.vat sd_vat,
+            sd.vat_status sd_vat_status,
+            sd.currency sd_currency,
+            sd.is_public sd_is_public,
+            sd.organization_id_fk sd_organization_id_fk,
+            sd.max_entries sd_max_entries,
+            sd.validity_type sd_validity_type,
+            sd.validity_time_unit sd_validity_time_unit,
+            sd.validity_units sd_validity_units,
+            sd.validity_from sd_validity_from,
+            sd.validity_to sd_validity_to,
+            sd.usage_type sd_usage_type,
+            sd.terms_conditions_url sd_terms_conditions_url,
+            sd.privacy_policy_url sd_privacy_policy_url,
+            sd.file_blob_id_fk sd_file_blob_id_fk,
+            sd.allowed_payment_proxies sd_allowed_payment_proxies,
+            sd.private_key sd_private_key,
+            sd.time_zone sd_time_zone,
+            sd.supports_tickets_generation sd_supports_tickets_generation,
+            (select count(*) from reservation_and_subscription_and_tx where s_descriptor_id = sd.id) s_reservations_count,
+            (select count(*) from subscription where status between 'ACQUIRED' and 'CHECKED_IN' and subscription_descriptor_fk = sd.id) s_sold_count,
+            (select count(*) from subscription where status = 'PENDING' and subscription_descriptor_fk = sd.id) s_pending_count,
+            (select count(*) from subscription_event where subscription_descriptor_id_fk = sd.id) s_events_count
+      from subscription_descriptor sd
+        where sd.status = 'ACTIVE'
+        order by on_sale_from, on_sale_to nulls last
+)

@@ -15,7 +15,8 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create or replace view basic_event_with_optional_subscription as (
+drop view if exists basic_event_with_optional_subscription;
+create view basic_event_with_optional_subscription as (
     select e.*,
            s.id as subscription_id,
            o.slug as org_slug

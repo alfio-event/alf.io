@@ -15,7 +15,8 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-create or replace view reservation_with_purchase_context as (
+drop view if exists reservation_with_purchase_context;
+create view reservation_with_purchase_context as (
 
     with reservations as (
         select

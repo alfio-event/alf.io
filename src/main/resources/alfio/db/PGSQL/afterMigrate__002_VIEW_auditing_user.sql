@@ -15,7 +15,8 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-CREATE or replace VIEW auditing_user AS
+drop view if exists auditing_user;
+CREATE VIEW auditing_user AS
  SELECT auditing.reservation_id,
     auditing.user_id,
     auditing.event_type,
