@@ -46,6 +46,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -66,6 +67,7 @@ public final class Validator {
     private static final String ADDITIONAL_PREFIX = "additional[";
     private static final String ADDITIONAL_SERVICES = "additionalServices";
     private static final String ERROR_RESTRICTED_VALUE = "error.restrictedValue";
+    public static final Supplier<LocalDate> LOCAL_DATE_SUPPLIER = () -> LocalDate.now(ClockProvider.clock());
 
     private Validator() {
     }
@@ -436,7 +438,7 @@ public final class Validator {
         }
 
         if (!errors.hasFieldErrors() && StringUtils.isNotBlank(formValue) && fieldConf.isDateOfBirth()) {
-            int age = calculateAge(formValue, true);
+            int age = calculateAge(formValue, true, LOCAL_DATE_SUPPLIER);
             if (age < 0) {
                 // age was not provided in the right format
                 errors.rejectValue(prefixForLambda + ADDITIONAL_PREFIX + fieldConf.getName()+"]["+ i +"]", ErrorsCode.EMPTY_FIELD);
@@ -492,9 +494,22 @@ public final class Validator {
         }
     }
 
-    static void validateMinAge(String value, String fieldName, String errorCode, PurchaseContextFieldConfiguration fieldConfiguration, Errors errors) {
+    static void validateMinAge(String value,
+                               String fieldName,
+                               String errorCode,
+                               PurchaseContextFieldConfiguration fieldConfiguration,
+                               Errors errors) {
+        validateMinAge(value, fieldName, errorCode, fieldConfiguration, errors, LOCAL_DATE_SUPPLIER);
+    }
+
+    static void validateMinAge(String value,
+                               String fieldName,
+                               String errorCode,
+                               PurchaseContextFieldConfiguration fieldConfiguration,
+                               Errors errors,
+                               Supplier<LocalDate> currentDateSupplier) {
         int minAge = fieldConfiguration.getMinLength();
-        int age = calculateAge(value, false);
+        int age = calculateAge(value, false, currentDateSupplier);
         if (age >= 0 && age < minAge) {
             errors.rejectValue(fieldName, errorCode, new Object[] { minAge }, null);
         }
@@ -524,16 +539,25 @@ public final class Validator {
     }
 
     static void validateMaxAge(String value, String fieldName, String errorCode, PurchaseContextFieldConfiguration fieldConfiguration, Errors errors) {
+        validateMaxAge(value, fieldName, errorCode, fieldConfiguration, errors, LOCAL_DATE_SUPPLIER);
+    }
+
+    static void validateMaxAge(String value,
+                               String fieldName,
+                               String errorCode,
+                               PurchaseContextFieldConfiguration fieldConfiguration,
+                               Errors errors,
+                               Supplier<LocalDate> localDateSupplier) {
         int maxAge = fieldConfiguration.getMaxLength();
-        int age = calculateAge(value, true);
+        int age = calculateAge(value, true, localDateSupplier);
         if (age > maxAge) {
             errors.rejectValue(fieldName, errorCode, new Object[] { maxAge }, null);
         }
     }
 
-    private static int calculateAge(String value, boolean addRemainder) {
+    private static int calculateAge(String value, boolean addRemainder, Supplier<LocalDate> currentDateSupplier) {
         try {
-            var period = Period.between(LocalDate.parse(value), LocalDate.now(ClockProvider.clock()));
+            var period = Period.between(LocalDate.parse(value), currentDateSupplier.get());
             int years = period.getYears();
             if (addRemainder && (period.getMonths() > 0 || period.getDays() > 0)) {
                 years += 1;

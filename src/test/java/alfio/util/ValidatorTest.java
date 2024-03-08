@@ -25,6 +25,7 @@ import alfio.test.util.TestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
@@ -221,41 +222,59 @@ class ValidatorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {
-        1, 2, 3, 4, 5
+    @CsvSource({
+        // minAge, birtDate, today
+        "1,2023-02-28,2024-02-28",
+        "1,2023-03-01,2024-03-01",
+        "2,2022-02-28,2024-02-28",
+        "2,2022-03-01,2024-03-01",
+        "3,2021-02-28,2024-02-28",
+        "3,2021-03-01,2024-03-01",
+        "4,2020-02-28,2024-02-28",
+        "4,2020-03-01,2024-03-01",
+        "5,2019-02-28,2024-02-28",
+        "5,2019-03-01,2024-03-01",
+        "5,2018-03-01,2023-03-01"
     })
-    void minAgeValidator(int minAge) {
+    void minAgeValidator(String minAgeAsString, String birthDateAsString, String todayAsString) {
+        int minAge = Integer.parseInt(minAgeAsString);
         var ticketFieldConfiguration = mock(PurchaseContextFieldConfiguration.class);
+        var today = LocalDate.parse(todayAsString);
         when(ticketFieldConfiguration.getMinLength()).thenReturn(minAge);
-        var birth = LocalDate.now(ClockProvider.clock()).minusYears(minAge);
+        var birth = LocalDate.parse(birthDateAsString);
         var date = birth.format(DateTimeFormatter.ISO_LOCAL_DATE);
-        Validator.validateMinAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
+        Validator.validateMinAge(date, "fieldName", "error", ticketFieldConfiguration, errors, () -> today);
         assertFalse(errors.hasFieldErrors());
         date = birth.plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
-        Validator.validateMinAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
+        Validator.validateMinAge(date, "fieldName", "error", ticketFieldConfiguration, errors, () -> today);
         assertTrue(errors.hasFieldErrors());
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {
-        1, 2, 3, 4, 5
+    @CsvSource({
+        // maxAge, birtDate, today
+        "1,2023-02-28,2024-02-27",
+        "1,2023-03-01,2024-02-29",
+        "2,2022-02-28,2024-02-27",
+        "2,2022-03-01,2024-02-29",
+        "3,2021-02-28,2024-02-27",
+        "3,2021-03-01,2024-02-29",
+        "4,2020-02-28,2024-02-27",
+        "4,2020-03-01,2024-02-29",
+        "5,2019-02-28,2024-02-27",
+        "5,2019-03-01,2024-02-29",
+        "5,2018-03-01,2023-02-28"
     })
-    void maxAgeValidator(int maxAge) {
+    void maxAgeValidator(String maxAgeAsString, String birthDateAsString, String todayAsString) {
+        int maxAge = Integer.parseInt(maxAgeAsString);
+        var today = LocalDate.parse(todayAsString);
         var ticketFieldConfiguration = mock(PurchaseContextFieldConfiguration.class);
         when(ticketFieldConfiguration.getMaxLength()).thenReturn(maxAge);
-        var todayLeapYear = LocalDate.now(ClockProvider.clock()).isLeapYear();
-        // today -> 29.02.2024 -> birth 28.02.2023, but when -4 years, birth is also leap year
-        var birth = LocalDate.now(ClockProvider.clock()).minusYears(maxAge);
-        var birthLeapYear = birth.isLeapYear();
-        var date = birth.format(DateTimeFormatter.ISO_LOCAL_DATE);
-            Validator.validateMaxAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
-        if (todayLeapYear && !birthLeapYear) {
-            assertTrue(errors.hasFieldErrors()); // as today is 29 and not 28, the person will have x year + 1 day, thus being over max age
-            errors = new MapBindingResult(new HashMap<>(), "test");
-        } else {
-            assertFalse(errors.hasFieldErrors());
-        }
-        date = birth.minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
+
+        Validator.validateMaxAge(birthDateAsString, "fieldName", "error", ticketFieldConfiguration, errors, () -> today);
+        assertFalse(errors.hasFieldErrors());
+
+        var date = LocalDate.parse(birthDateAsString).minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
         Validator.validateMaxAge(date, "fieldName", "error", ticketFieldConfiguration, errors);
         assertTrue(errors.hasFieldErrors());
     }
