@@ -22,13 +22,30 @@ import org.apache.commons.collections4.MapUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 public class Owner implements ReadOnlyAdditionalFieldsContainer {
 
+    private final UUID subscriptionId;
     private final Map<String, List<String>> additional;
+    private final String firstName;
+    private final String lastName;
+    private final String email;
+    private final Map<String, String> metadata;
 
-    public Owner(@JsonProperty("additional") Map<String, List<String>> additional) {
+    public Owner(@JsonProperty("additional") Map<String, List<String>> additional,
+                 @JsonProperty("subscriptionId") UUID subscriptionId,
+                 @JsonProperty("firstName") String firstName,
+                 @JsonProperty("lastName") String lastName,
+                 @JsonProperty("email") String email,
+                 @JsonProperty("metadata") Map<String, String> metadata) {
         this.additional = additional;
+        this.subscriptionId = subscriptionId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.metadata = Objects.requireNonNullElse(metadata, Map.of());
     }
 
     public Map<String, List<String>> getAdditional() {
@@ -39,7 +56,27 @@ public class Owner implements ReadOnlyAdditionalFieldsContainer {
         return MapUtils.isNotEmpty(additional);
     }
 
+    public UUID getSubscriptionId() {
+        return subscriptionId;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
     public static Owner empty() {
-        return new Owner(Map.of());
+        return new Owner(Map.of(), null, null, null, null, null);
     }
 }

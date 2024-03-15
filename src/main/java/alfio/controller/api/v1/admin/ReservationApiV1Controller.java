@@ -20,10 +20,14 @@ import alfio.manager.*;
 import alfio.model.Event;
 import alfio.model.PurchaseContext;
 import alfio.model.PurchaseContext.PurchaseContextType;
+import alfio.model.PurchaseContextFieldValue;
 import alfio.model.ReservationMetadata;
 import alfio.model.api.v1.admin.*;
 import alfio.model.api.v1.admin.ReservationConfirmationResponse.HolderDetail;
+import alfio.model.api.v1.admin.subscription.Owner;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.modification.AdminReservationModification.Notification;
+import alfio.model.modification.AttendeeData;
 import alfio.model.result.ErrorCode;
 import alfio.model.subscription.SubscriptionDescriptor;
 import alfio.model.user.Role;
@@ -38,9 +42,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNullElseGet;
+import static java.util.stream.Collectors.*;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -74,6 +78,50 @@ public class ReservationApiV1Controller {
         this.purchaseContextFieldManager = purchaseContextFieldManager;
     }
 
+    @GetMapping("/{purchaseContextType}/{publicIdentifier}/reservation/{id}")
+    public ResponseEntity<ReservationDetail> retrieveDetail(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
+                                                            @PathVariable("publicIdentifier") String publicIdentifier,
+                                                            @PathVariable("id") String reservationId,
+                                                            Principal principal) {
+        accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
+        // it is guaranteed by the check above, that reservation and purchaseContext exists
+        var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+        var purchaseContext = purchaseContextManager.findBy(purchaseContextType, publicIdentifier).orElseThrow();
+        List<AttendeesByCategory> attendeesByCategories = List.of();
+        List<Owner> subscriptionOwners = List.of();
+        if (purchaseContext.ofType(PurchaseContextType.event)) {
+            var tickets = adminReservationManager.findTicketsWithMetadata(reservationId);
+            var valuesByTicketId = purchaseContextFieldManager.findAllValuesByTicketIds(tickets.stream().map(t -> t.getTicket().getId())
+                .collect(toList()));
+            var ticketsByCategories = tickets.stream().collect(groupingBy(t -> t.getTicket().getCategoryId()));
+            attendeesByCategories = ticketsByCategories.keySet().stream().map(categoryId -> {
+                var ticketsForCategory = ticketsByCategories.get(categoryId);
+                var attendeesData = ticketsForCategory.stream().map(tfc -> {
+                    var ticket = tfc.getTicket();
+                    var additional = valuesByTicketId.getOrDefault(ticket.getId(), List.of()).stream()
+                        .collect(groupingBy(PurchaseContextFieldValue::getName, mapping(PurchaseContextFieldValue::getValue, toList())));
+                    return new AttendeeData(ticket.getFirstName(), ticket.getLastName(), ticket.getEmail(), tfc.getAttributes(), additional);
+                }).collect(toList());
+                return new AttendeesByCategory(categoryId, ticketsForCategory.size(), attendeesData, List.of());
+            }).collect(toList());
+        } else {
+            var subscriptionDetails = ticketReservationManager.findSubscriptionDetails(reservationId).orElseThrow();
+            var subscription = subscriptionDetails.getSubscription();
+            var subscriptionId = subscription.getId();
+            var metadata = requireNonNullElseGet(adminReservationManager.findSubscriptionMetadata(subscriptionId), SubscriptionMetadata::empty);
+            var fields = purchaseContextFieldManager.findAllValuesBySubscriptionIds(List.of(subscriptionId))
+                .getOrDefault(subscriptionId, List.of())
+                .stream()
+                .collect(groupingBy(PurchaseContextFieldValue::getName, mapping(PurchaseContextFieldValue::getValue, toList())));
+            subscriptionOwners = List.of(
+                new Owner(fields, subscriptionId, subscription.getFirstName(), subscription.getLastName(), subscription.getEmail(), metadata.getProperties())
+            );
+        }
+        return ResponseEntity.ok(
+            new ReservationDetail(reservationId, new ReservationUser(null, reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), null), attendeesByCategories, subscriptionOwners)
+        );
+    }
+
     @PostMapping("/event/{slug}/reservation")
     @Transactional
     public ResponseEntity<CreationResponse> createTicketsReservation(@PathVariable("slug") String eventSlug,
@@ -97,7 +145,7 @@ public class ReservationApiV1Controller {
                 .orElseGet(() -> ResponseEntity.badRequest().build());
         } else {
             return ResponseEntity.badRequest()
-                .body(CreationResponse.error(bindingResult.getAllErrors().stream().map(err -> ErrorCode.custom("invalid."+err.getObjectName(), err.getCode())).collect(Collectors.toList())));
+                .body(CreationResponse.error(bindingResult.getAllErrors().stream().map(err -> ErrorCode.custom("invalid."+err.getObjectName(), err.getCode())).collect(toList())));
         }
     }
 
@@ -122,7 +170,7 @@ public class ReservationApiV1Controller {
                 if (bindingResult.hasErrors()) {
                     return ResponseEntity.badRequest()
                         .body(
-                            CreationResponse.error(bindingResult.getAllErrors().stream().map(err -> ErrorCode.custom("invalid."+err.getObjectName(), err.getCode())).collect(Collectors.toList()))
+                            CreationResponse.error(bindingResult.getAllErrors().stream().map(err -> ErrorCode.custom("invalid."+err.getObjectName(), err.getCode())).collect(toList()))
                         );
                 }
                 return ResponseEntity.badRequest().build();
@@ -148,7 +196,7 @@ public class ReservationApiV1Controller {
             var purchaseContext = data.getRight();
             if (purchaseContext.ofType(PurchaseContextType.event)) {
                 return ResponseEntity.ok(new ReservationConfirmationResponse(
-                    data.getMiddle().stream().map(t -> new HolderDetail(t.getUuid(), t.getFirstName(), t.getLastName(), t.getEmail())).collect(Collectors.toList())
+                    data.getMiddle().stream().map(t -> new HolderDetail(t.getUuid(), t.getFirstName(), t.getLastName(), t.getEmail())).collect(toList())
                 ));
             } else {
                 var subscriptions = ticketReservationManager.findSubscriptionDetails(data.getLeft().getId())
@@ -158,7 +206,7 @@ public class ReservationApiV1Controller {
                     subscriptions.stream().map(s -> {
                         var subscription = s.getSubscription();
                         return new HolderDetail(subscription.getId().toString(), subscription.getFirstName(), subscription.getLastName(), subscription.getEmail());
-                    }).collect(Collectors.toList()))
+                    }).collect(toList()))
                 );
             }
         } else {
