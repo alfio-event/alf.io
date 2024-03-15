@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.controller.form.AdditionalFieldsContainer;
 import alfio.controller.form.ReadOnlyAdditionalFieldsContainer;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.*;
@@ -78,9 +77,19 @@ public class PurchaseContextFieldManager {
     }
 
     public Map<Integer, List<PurchaseContextFieldValue>> findAllValuesByTicketId(Integer ticketId) {
-        return purchaseContextFieldRepository.findAllValuesByTicketIds(List.of(ticketId))
+        return findAllValuesByTicketIds(List.of(ticketId));
+    }
+
+    public Map<Integer, List<PurchaseContextFieldValue>> findAllValuesByTicketIds(Collection<Integer> ticketIds) {
+        return purchaseContextFieldRepository.findAllValuesByTicketIds(ticketIds)
             .stream()
             .collect(Collectors.groupingBy(PurchaseContextFieldValue::getTicketId));
+    }
+
+    public Map<UUID, List<PurchaseContextFieldValue>> findAllValuesBySubscriptionIds(Collection<UUID> subscriptionIds) {
+        return purchaseContextFieldRepository.findAllValuesBySubscriptionIds(subscriptionIds)
+            .stream()
+            .collect(Collectors.groupingBy(PurchaseContextFieldValue::getSubscriptionId));
     }
 
     public List<PurchaseContextFieldConfiguration> findAdditionalFields(PurchaseContext purchaseContext) {

@@ -26,10 +26,7 @@ import alfio.controller.api.v1.admin.SubscriptionApiV1Controller;
 import alfio.manager.EventManager;
 import alfio.manager.PurchaseContextFieldManager;
 import alfio.manager.user.UserManager;
-import alfio.model.AllocationStatus;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.api.v1.admin.*;
 import alfio.model.api.v1.admin.subscription.Owner;
 import alfio.model.metadata.AlfioMetadata;
@@ -175,6 +172,67 @@ class ReservationApiV1ControllerTest {
         assertTrue(reservationMetadata.isHideContactData());
         assertFalse(reservationMetadata.isHideConfirmationButtons());
         assertTrue(reservationMetadata.isLockEmailEdit());
+    }
+
+    @Test
+    void createSingleTicketAndVerifyWithAPI() {
+        var category = ticketCategoryRepository.findFirstWithAvailableTickets(event.getId()).orElseThrow();
+        var firstTicketProperties = Map.of("property", "value-first");
+        var ticket = new AttendeesByCategory(category.getId(), 1, List.of(new AttendeeData("Test", "Test1", "test@test.org", firstTicketProperties, Map.of(FIELD_NAME, List.of("value1")))), null);
+        var creationRequest = new TicketReservationCreationRequest(
+            List.of(ticket),
+            List.of(),
+            new ReservationConfiguration(true, false, true),
+            new ReservationUser(
+                null,
+                "Test",
+                "McTest",
+                "test@example.org",
+                null
+            ),
+            null,
+            "en",
+            null
+        );
+        var principal = new APITokenAuthentication(username, null, List.of());
+        var response = controller.createTicketsReservation(event.getShortName(), creationRequest, principal);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        var body = response.getBody();
+        assertNotNull(body);
+        assertNull(body.getErrors());
+        assertTrue(body.isSuccess());
+        var reservationId = body.getId();
+        assertNotNull(reservationId);
+        assertFalse(reservationId.isBlank());
+        var confirmationRequest = new ReservationConfirmationRequest(
+            new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
+            new Notification(true, true)
+        );
+        var confirmationResponse = controller.confirmReservation(reservationId, confirmationRequest, principal);
+        assertTrue(confirmationResponse.getStatusCode().is2xxSuccessful());
+        var detailResponse = controller.retrieveDetail(PurchaseContext.PurchaseContextType.event, event.getPublicIdentifier(), reservationId, principal);
+        assertNotNull(detailResponse);
+        assertTrue(detailResponse.getStatusCode().is2xxSuccessful());
+        assertNotNull(detailResponse.getBody());
+        var detailBody = detailResponse.getBody();
+        assertEquals(reservationId, detailBody.getId());
+        assertNotNull(detailBody.getUser());
+        var reservationUser = detailBody.getUser();
+        assertEquals("Test", reservationUser.getFirstName());
+        assertEquals("McTest", reservationUser.getLastName());
+        assertEquals("test@example.org", reservationUser.getEmail());
+        assertTrue(detailBody.getSubscriptionOwners().isEmpty());
+        assertFalse(detailBody.getTickets().isEmpty());
+        assertEquals(1, detailBody.getTickets().size());
+        var byCategory = detailBody.getTickets().get(0);
+        assertEquals(category.getId(), byCategory.getTicketCategoryId());
+        assertEquals(1, byCategory.getAttendees().size());
+        var attendee = byCategory.getAttendees().get(0);
+        assertEquals("Test", attendee.getFirstName());
+        assertEquals("Test1", attendee.getLastName());
+        assertEquals("test@test.org", attendee.getEmail());
+        assertEquals(List.of("value1"), attendee.getAdditional().get(FIELD_NAME));
+        assertEquals(Map.of("property", "value-first"), attendee.getMetadata());
     }
 
     @Test
@@ -445,12 +503,46 @@ class ReservationApiV1ControllerTest {
 
     @Test
     void createSubscriptionWithMetadataAndFields() {
-        var reservationId = createAndValidateSubscription(new Owner(Map.of(FIELD_NAME, List.of("value1"))));
+        var reservationId = createAndValidateSubscription(new Owner(Map.of(FIELD_NAME, List.of("value1")), null, null, null, null, null));
         var subscriptionId = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0).getId();
         var fieldValues = purchaseContextFieldRepository.findNameAndValue(subscriptionId);
         assertFalse(fieldValues.isEmpty());
         assertEquals(FIELD_NAME, fieldValues.get(0).getName());
         assertEquals("value1", fieldValues.get(0).getValue());
+    }
+    @Test
+    void createSubscriptionAndVerifyWithAPI() {
+        var reservationId = createAndValidateSubscription(new Owner(Map.of(FIELD_NAME, List.of("value1")), null, null, null, null, null));
+        var subscriptionId = subscriptionRepository.findSubscriptionsByReservationId(reservationId).get(0).getId();
+        var fieldValues = purchaseContextFieldRepository.findNameAndValue(subscriptionId);
+        assertFalse(fieldValues.isEmpty());
+        assertEquals(FIELD_NAME, fieldValues.get(0).getName());
+        assertEquals("value1", fieldValues.get(0).getValue());
+        var confirmationRequest = new ReservationConfirmationRequest(
+            new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
+            new Notification(true, true)
+        );
+        var principal = new APITokenAuthentication(username, null, List.of());
+        var response = controller.confirmReservation(reservationId, confirmationRequest, principal);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        var descriptor = subscriptionRepository.findDescriptorByReservationId(reservationId).orElseThrow();
+        var detailResponse = controller.retrieveDetail(PurchaseContext.PurchaseContextType.subscription, descriptor.getId().toString(), reservationId, principal);
+        assertNotNull(detailResponse);
+        assertTrue(detailResponse.getStatusCode().is2xxSuccessful());
+        assertNotNull(detailResponse.getBody());
+        var detailBody = detailResponse.getBody();
+        assertEquals(reservationId, detailBody.getId());
+        assertTrue(detailBody.getTickets().isEmpty());
+        assertFalse(detailBody.getSubscriptionOwners().isEmpty());
+        assertEquals(1, detailBody.getSubscriptionOwners().size());
+        var owner = detailBody.getSubscriptionOwners().get(0);
+        assertEquals("Test", owner.getFirstName());
+        assertEquals("Test1", owner.getLastName());
+        assertEquals("test@test.org", owner.getEmail());
+        assertEquals(subscriptionId, owner.getSubscriptionId());
+        assertTrue(owner.hasAdditionalInfo());
+        assertEquals(List.of("value1"), owner.getAdditional().get(FIELD_NAME));
+        assertEquals(Map.of("key", "value"), owner.getMetadata());
     }
 
     @Test

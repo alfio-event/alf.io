@@ -28,6 +28,7 @@ import alfio.model.PurchaseContext.PurchaseContextType;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.metadata.AlfioMetadata;
+import alfio.model.metadata.SubscriptionMetadata;
 import alfio.model.metadata.TicketMetadata;
 import alfio.model.metadata.TicketMetadataContainer;
 import alfio.model.modification.AdminReservationModification;
@@ -984,6 +985,16 @@ public class AdminReservationManager {
     public Result<List<LightweightMailMessage>> getEmailsForReservation(PurchaseContextType purchaseContextType, String publicIdentifier, String reservationId, String username) {
         return loadReservation(purchaseContextType, publicIdentifier, reservationId, username)
             .map(res -> notificationManager.loadAllMessagesForReservationId(res.getRight(), reservationId));
+    }
+
+    @Transactional
+    public List<TicketWithMetadataAttributes> findTicketsWithMetadata(String reservationId) {
+        return ticketRepository.findTicketsInReservationWithMetadata(reservationId);
+    }
+
+    @Transactional
+    public SubscriptionMetadata findSubscriptionMetadata(UUID subscriptionId) {
+        return subscriptionRepository.getSubscriptionMetadata(subscriptionId);
     }
 
     private void removeTicketsFromReservation(TicketReservation reservation,
