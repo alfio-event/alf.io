@@ -267,6 +267,11 @@ public class CheckInManager {
         return extractStatus(eventRepository.findOptionalByShortName(eventName), ticketRepository.findOptionalByUUID(ticketIdentifier), ticketIdentifier, ticketCode);
     }
 
+    public TicketCheckInStatusResult retrieveTicketStatus(String ticketIdentifier) {
+        var ticket = ticketRepository.findByUUID(ticketIdentifier);
+        return new TicketCheckInStatusResult(ticket.getUuid(), ticket.getFirstName(), ticket.getLastName(), ticket.getStatus() == TicketStatus.CHECKED_IN ? ALREADY_CHECK_IN : OK_READY_TO_BE_CHECKED_IN);
+    }
+
     private TicketAndCheckInResult extractStatus(int eventId, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {
         return extractStatus(eventRepository.findOptionalById(eventId), maybeTicket, ticketIdentifier, ticketCode);
     }
