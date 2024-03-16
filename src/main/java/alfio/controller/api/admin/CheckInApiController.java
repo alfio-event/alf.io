@@ -21,6 +21,7 @@ import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.support.CheckInStatistics;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.support.TicketCheckInStatusResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.FullTicketInfo;
@@ -32,7 +33,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -81,6 +81,12 @@ public class CheckInApiController {
     public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
+    }
+
+    @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/status")
+    public TicketCheckInStatusResult getTicketStatus(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, Principal principal) {
+        accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
+        return checkInManager.retrieveTicketStatus(ticketIdentifier);
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")

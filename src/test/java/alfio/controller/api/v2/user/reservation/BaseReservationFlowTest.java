@@ -1131,9 +1131,17 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                 String ticketCode = fullTicketInfo.ticketCode(context.event.getPrivateKey(), context.event.supportsQRCodeCaseInsensitive());
                 TicketAndCheckInResult ticketAndCheckInResult = checkInApiController.findTicketWithUUID(context.event.getId(), ticketIdentifier, ticketCode, principal);
                 assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult.getResult().getStatus());
+                var basicCheckInStatus = checkInApiController.getTicketStatus(context.event.getShortName(), ticketIdentifier, principal);
+                assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, basicCheckInStatus.getCheckInStatus());
+                assertNotNull(basicCheckInStatus.getFirstName());
+                assertNotNull(basicCheckInStatus.getLastName());
                 CheckInApiController.TicketCode tc = new CheckInApiController.TicketCode();
                 tc.setCode(ticketCode);
                 assertEquals(CheckInStatus.SUCCESS, checkInApiController.checkIn(context.event.getId(), ticketIdentifier, tc, principal).getResult().getStatus());
+                basicCheckInStatus = checkInApiController.getTicketStatus(context.event.getShortName(), ticketIdentifier, principal);
+                assertEquals(CheckInStatus.ALREADY_CHECK_IN, basicCheckInStatus.getCheckInStatus());
+                assertNotNull(basicCheckInStatus.getFirstName());
+                assertNotNull(basicCheckInStatus.getLastName());
                 List<ScanAudit> audits = scanAuditRepository.findAllForEvent(context.event.getId());
                 assertFalse(audits.isEmpty());
                 assertTrue(audits.stream().anyMatch(sa -> sa.getTicketUuid().equals(ticketIdentifier)));
