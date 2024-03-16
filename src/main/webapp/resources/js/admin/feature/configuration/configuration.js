@@ -91,7 +91,11 @@
 
             },
             loadAll: function() {
-                return $http.get('/admin/api/configuration/load').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/configuration/load').error(function(body, status) {
+                    if (status !== 403) {
+                        HttpErrorHandler.handle(body, status);
+                    }
+                });
             },
             loadOrganizationConfig: function(organizationId) {
                 return $http.get('/admin/api/configuration/organizations/'+organizationId+'/load').error(HttpErrorHandler.handle);
@@ -304,6 +308,9 @@
 
             }, function() {
                 systemConf.loading = false;
+                if (!systemConf.hasResults) {
+                    systemConf.noResults = true;
+                }
             });
         };
         loadAll();
