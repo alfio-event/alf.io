@@ -37,6 +37,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,12 +50,12 @@ import java.util.stream.Collectors;
 
 import static alfio.util.Wrappers.optionally;
 
-@Log4j2
 @RestController
 @RequestMapping("/admin/api")
 @RequiredArgsConstructor
 public class CheckInApiController {
 
+    private static final Logger log = LoggerFactory.getLogger(CheckInApiController.class);
     private static final String ALFIO_TIMESTAMP_HEADER = "Alfio-TIME";
     private final CheckInManager checkInManager;
     private final EventManager eventManager;
