@@ -16,21 +16,25 @@
  */
 package alfio.model.api.v1.admin;
 
+import alfio.model.TicketReservation;
 import alfio.model.api.v1.admin.subscription.Owner;
 
 import java.util.List;
 
 public class ReservationDetail {
     private final String id;
+    private final TicketReservation.TicketReservationStatus status;
     private final ReservationUser user;
     private final List<AttendeesByCategory> tickets;
     private final List<Owner> subscriptionOwners;
 
     public ReservationDetail(String id,
+                             TicketReservation.TicketReservationStatus status,
                              ReservationUser user,
                              List<AttendeesByCategory> tickets,
                              List<Owner> subscriptionOwners) {
         this.id = id;
+        this.status = status;
         this.user = user;
         this.tickets = tickets;
         this.subscriptionOwners = subscriptionOwners;
@@ -38,6 +42,10 @@ public class ReservationDetail {
 
     public String getId() {
         return id;
+    }
+
+    public TicketReservation.TicketReservationStatus getStatus() {
+        return status;
     }
 
     public ReservationUser getUser() {

@@ -118,7 +118,7 @@ public class ReservationApiV1Controller {
             );
         }
         return ResponseEntity.ok(
-            new ReservationDetail(reservationId, new ReservationUser(null, reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), null), attendeesByCategories, subscriptionOwners)
+            new ReservationDetail(reservationId, reservation.getStatus(), new ReservationUser(null, reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), null), attendeesByCategories, subscriptionOwners)
         );
     }
 

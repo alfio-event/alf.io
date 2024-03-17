@@ -204,18 +204,24 @@ class ReservationApiV1ControllerTest {
         var reservationId = body.getId();
         assertNotNull(reservationId);
         assertFalse(reservationId.isBlank());
+        var detailResponse = controller.retrieveDetail(PurchaseContext.PurchaseContextType.event, event.getPublicIdentifier(), reservationId, principal);
+        assertNotNull(detailResponse.getBody());
+        var detailBody = detailResponse.getBody();
+        assertEquals(reservationId, detailBody.getId());
+        assertEquals(TicketReservation.TicketReservationStatus.PENDING, detailBody.getStatus());
         var confirmationRequest = new ReservationConfirmationRequest(
             new TransactionDetails("TRID", new BigDecimal("100.00"), LocalDateTime.now(clockProvider.getClock()), "notes", PaymentProxy.ON_SITE),
             new Notification(true, true)
         );
         var confirmationResponse = controller.confirmReservation(reservationId, confirmationRequest, principal);
         assertTrue(confirmationResponse.getStatusCode().is2xxSuccessful());
-        var detailResponse = controller.retrieveDetail(PurchaseContext.PurchaseContextType.event, event.getPublicIdentifier(), reservationId, principal);
+        detailResponse = controller.retrieveDetail(PurchaseContext.PurchaseContextType.event, event.getPublicIdentifier(), reservationId, principal);
         assertNotNull(detailResponse);
         assertTrue(detailResponse.getStatusCode().is2xxSuccessful());
         assertNotNull(detailResponse.getBody());
-        var detailBody = detailResponse.getBody();
+        detailBody = detailResponse.getBody();
         assertEquals(reservationId, detailBody.getId());
+        assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, detailBody.getStatus());
         assertNotNull(detailBody.getUser());
         var reservationUser = detailBody.getUser();
         assertEquals("Test", reservationUser.getFirstName());
