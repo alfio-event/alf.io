@@ -34,6 +34,7 @@ import alfio.model.api.v1.admin.LinkedSubscriptions;
 import alfio.model.group.Group;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.LinkedGroupModification;
+import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
@@ -253,7 +254,7 @@ public class EventApiV1Controller {
     private void handleCategoriesUpdate(Principal user, EventModification em, EventWithAdditionalInfo original, Event event) {
         if (em.getTicketCategories() != null && !em.getTicketCategories().isEmpty()) {
             var existingCategories = original.getTicketCategories();
-            em.getTicketCategories().forEach(c -> {
+            em.getTicketCategories().stream().sorted(Comparator.comparing(TicketCategoryModification::getMaxTickets)).forEach(c -> {
                 var existingCategory = findExistingCategory(existingCategories, c.getName(), c.getId());
                 if (existingCategory.isPresent()) {
                     eventManager.updateCategory(existingCategory.get().getId(), event.getId(), c, user.getName());
