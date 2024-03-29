@@ -3,7 +3,7 @@
 
 The open source ticket reservation system.
 
-[Alf.io](https://alf.io) ([[ˈalfjo]](https://en.wikipedia.org/wiki/Help:IPA/Italian)) is a free and open source event attendance management system, developed for event organizers who care about privacy, security and fair pricing policy for their customers.
+[Alf.io](https://alf.io) <small>([[ˈalfjo]](https://en.m.wikipedia.org/wiki/Alfio))</small> is a free and open source event attendance management system, developed for event organizers who care about privacy, security and fair pricing policy for their customers.
 
 [![Build Status](https://github.com/alfio-event/alf.io/workflows/build/badge.svg)](https://github.com/alfio-event/alf.io/actions)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=alfio-event_alf.io&metric=security_rating)](https://sonarcloud.io/summary/overall?id=alfio-event_alf.io)
