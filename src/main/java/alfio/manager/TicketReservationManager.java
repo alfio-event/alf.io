@@ -465,7 +465,7 @@ public class TicketReservationManager {
                     event.getVatStatus(),
                     TicketMetadataContainer.fromMetadata(metadata));
                 if (attendee.hasContactData()) {
-                    ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmail(), null, attendee.getFirstName(), attendee.getLastName());
+                    ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmail(), attendee.getFullName(), attendee.getFirstName(), attendee.getLastName());
                 }
                 if (attendee.hasAdditionalData()) {
                     purchaseContextFieldRepository.updateOrInsert(attendee.getAdditional(), event, ticketId, null);
@@ -494,6 +494,7 @@ public class TicketReservationManager {
                             .addValue("ticketMetadata", requireNonNullElse(metadata, "{}"))
                             .addValue("firstName", attendee.getFirstName())
                             .addValue("lastName", attendee.getLastName())
+                            .addValue("fullName", attendee.getFullName())
                             .addValue("email", attendee.getEmail())
                             .addValue("vatStatus", event.getVatStatus().toString());
                     }
