@@ -587,6 +587,7 @@ class ReservationApiV1ControllerTest {
         assertEquals(Ticket.TicketStatus.TO_BE_PAID, ticket.getStatus());
         var emails = emailMessageRepository.findByEventIdAndReservationId(ticket.getEventId(), reservationId);
         assertEquals(2, emails.size());
+        assertEquals(1, ticketRepository.countAllAssigned(event.getId()));
     }
 
     private String createAndValidateSubscription() {

@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.CustomerName;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
@@ -53,6 +54,13 @@ public class AttendeeData {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getFullName() {
+        if (firstName != null && lastName != null) {
+            return new CustomerName(null, firstName, lastName, true).getFullName();
+        }
+        return null;
     }
 
     public Map<String, String> getMetadata() {

@@ -138,6 +138,7 @@ public interface TicketRepository {
                     .addValue("ticketMetadata", Objects.requireNonNullElse(metadata, "{}"))
                     .addValue("firstName", attendee.getFirstName())
                     .addValue("lastName", attendee.getLastName())
+                    .addValue("fullName", attendee.getFullName())
                     .addValue("email", attendee.getEmail())
                     .addValue("vatStatus", vatStatus.name());
             }).toArray(MapSqlParameterSource[]::new);
@@ -149,14 +150,14 @@ public interface TicketRepository {
     @Query(type = QueryType.TEMPLATE,
         value = "update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', category_id = :categoryId, " +
             "user_language = :userLanguage, src_price_cts = :srcPriceCts, currency_code = :currencyCode, metadata = :ticketMetadata::jsonb, " +
-            "vat_status = :vatStatus::VAT_STATUS, first_name = :firstName, last_name = :lastName, email_address = :email where id = :id")
+            "vat_status = :vatStatus::VAT_STATUS, first_name = :firstName, last_name = :lastName, email_address = :email, full_name = :fullName where id = :id")
     String batchReserveTickets();
 
     @Query(type = QueryType.TEMPLATE,
         value = "update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
             " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts," +
             " currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS," +
-            " metadata = :ticketMetadata::jsonb, first_name = :firstName, last_name = :lastName, email_address = :email" +
+            " metadata = :ticketMetadata::jsonb, first_name = :firstName, last_name = :lastName, email_address = :email, full_name = :fullName" +
             " where id = :ticketId")
     String batchReserveTicketsForSpecialPrice();
 
