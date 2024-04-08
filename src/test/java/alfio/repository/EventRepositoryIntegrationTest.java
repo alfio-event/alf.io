@@ -39,10 +39,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -145,12 +143,17 @@ class EventRepositoryIntegrationTest extends BaseIntegrationTest {
         //after buying 5 tickets we expect to have them in the total attendees
         assertEquals(0, checkInStatistics.getCheckedIn());
         assertEquals(5, checkInStatistics.getTotalAttendees());
-
+        checkInStatistics = eventRepository.retrieveCheckInStatisticsForEvent(event.getId(), List.of(firstCategory.getTicketCategory().getId()));
+        assertEquals(0, checkInStatistics.getCheckedIn());
+        assertEquals(5, checkInStatistics.getTotalAttendees());
 
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
         ticketRepository.updateTicketStatusWithUUID(ticketsInReservation.get(0).getUuid(), Ticket.TicketStatus.CHECKED_IN.name());
         checkInStatistics = eventRepository.retrieveCheckInStatisticsForEvent(event.getId());
         //checked in ticket must be taken into account
+        assertEquals(1, checkInStatistics.getCheckedIn());
+        assertEquals(5, checkInStatistics.getTotalAttendees());
+        checkInStatistics = eventRepository.retrieveCheckInStatisticsForEvent(event.getId(), List.of(firstCategory.getTicketCategory().getId()));
         assertEquals(1, checkInStatistics.getCheckedIn());
         assertEquals(5, checkInStatistics.getTotalAttendees());
     }
