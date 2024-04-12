@@ -115,10 +115,10 @@ public class GoogleWalletManager {
         try {
             log.trace("Invalidating access to object ID: {}", objectId);
             var credentials = retrieveCredentials(passConf.get(WALLET_SERVICE_ACCOUNT_KEY));
-            URI uriWithId = URI.create(String.format("%s/%s", EventTicketObject.WALLET_URL, objectId));
+            URI uriWithId = URI.create("%s/%s".formatted(EventTicketObject.WALLET_URL, objectId));
             HttpRequest expireRequest = HttpRequest.newBuilder()
                 .uri(uriWithId)
-                .header(AUTHORIZATION, String.format(BEARER_PLACEHOLDER, credentials.refreshAccessToken().getTokenValue()))
+                .header(AUTHORIZATION, BEARER_PLACEHOLDER.formatted(credentials.refreshAccessToken().getTokenValue()))
                 .method("PATCH", HttpRequest.BodyPublishers.ofString("{\"state\":\"INACTIVE\"}"))
                 .build();
             var response = httpClient.send(expireRequest, HttpResponse.BodyHandlers.ofString());
@@ -266,7 +266,7 @@ public class GoogleWalletManager {
         String token = JWT.create()
             .withPayload(claims)
             .sign(algorithm);
-        return String.format("https://pay.google.com/gp/v/save/%s", token);
+        return "https://pay.google.com/gp/v/save/%s".formatted(token);
     }
 
     private String createEventClass(GoogleCredentials credentials, EventTicketClass eventTicketClass, boolean overwritePreviousClassesAndEvents) {
@@ -279,10 +279,10 @@ public class GoogleWalletManager {
 
     private String createOnWallet(String uri, GoogleCredentials credentials, WalletEntity entity, boolean overwritePreviousClassesAndEvents) {
         try {
-            URI uriWithId = URI.create(String.format("%s/%s", uri, entity.getId()));
+            URI uriWithId = URI.create("%s/%s".formatted(uri, entity.getId()));
             HttpRequest getRequest = HttpRequest.newBuilder()
                 .uri(uriWithId)
-                .header(AUTHORIZATION, String.format(BEARER_PLACEHOLDER, credentials.refreshAccessToken().getTokenValue()))
+                .header(AUTHORIZATION, BEARER_PLACEHOLDER.formatted(credentials.refreshAccessToken().getTokenValue()))
                 .GET()
                 .build();
             log.debug("GET Request: {}", getRequest);
@@ -296,7 +296,7 @@ public class GoogleWalletManager {
 
             if (getResponse.statusCode() == 404 || overwritePreviousClassesAndEvents) {
                 HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .header(AUTHORIZATION, String.format(BEARER_PLACEHOLDER, credentials.refreshAccessToken().getTokenValue()));
+                    .header(AUTHORIZATION, BEARER_PLACEHOLDER.formatted(credentials.refreshAccessToken().getTokenValue()));
                 if (getResponse.statusCode() == 404) {
                     builder = builder
                         .uri(URI.create(uri))

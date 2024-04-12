@@ -73,7 +73,7 @@ class SendGridMailer extends BaseMailer {
         //prepare request
         final var body = Json.GSON.toJson(payload);
         final var request = HttpRequest.newBuilder(URI.create("https://api.sendgrid.com/v3/mail/send"))
-            .header(HttpUtils.AUTHORIZATION, String.format("Bearer %s", config.get(ConfigurationKeys.SENDGRID_API_KEY).getRequiredValue()))
+            .header(HttpUtils.AUTHORIZATION, "Bearer %s".formatted(config.get(ConfigurationKeys.SENDGRID_API_KEY).getRequiredValue()))
             .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
             .POST(HttpRequest.BodyPublishers.ofString(body)).build();
         try {

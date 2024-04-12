@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.LocalDate;
@@ -52,8 +52,8 @@ public class ExportApiController {
     }
 
     @GetMapping("/reservations")
-    public void downloadAllEvents(@RequestParam(name = "from") String from,
-                                  @RequestParam(name = "to") String to,
+    public void downloadAllEvents(@RequestParam String from,
+                                  @RequestParam String to,
                                   HttpServletResponse response,
                                   Principal principal) throws IOException {
         var allEvents = exportManager.reservationsForInterval(LocalDate.parse(requireNonNull(from)),

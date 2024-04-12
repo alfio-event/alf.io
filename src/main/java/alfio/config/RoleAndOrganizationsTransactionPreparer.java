@@ -28,7 +28,7 @@ import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -94,9 +94,11 @@ class RoleAndOrganizationsTransactionPreparer {
         return false;
     }
 
-    private static final String QUERY_ORG_FOR_USER = "(select organization.id from organization inner join j_user_organization on org_id = organization.id where j_user_organization.user_id = (select ba_user.id from ba_user where ba_user.username = ?)) " +
-        " union " +
-        "(select organization.id from organization where 'ROLE_ADMIN' in (select role from ba_user inner join authority on ba_user.username = authority.username where ba_user.username = ?))";
+    private static final String QUERY_ORG_FOR_USER = """
+        (select organization.id from organization inner join j_user_organization on org_id = organization.id where j_user_organization.user_id = (select ba_user.id from ba_user where ba_user.username = ?)) \
+         union \
+        (select organization.id from organization where 'ROLE_ADMIN' in (select role from ba_user inner join authority on ba_user.username = authority.username where ba_user.username = ?))\
+        """;
 
     public static void prepareTransactionalConnection(Connection connection) throws SQLException {
         if (!isInAHttpRequest()) {

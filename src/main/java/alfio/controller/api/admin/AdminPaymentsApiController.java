@@ -30,7 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.ZonedDateTime;
@@ -76,10 +76,10 @@ public class AdminPaymentsApiController {
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/list")
-    PageAndContent<List<ReservationPaymentDetail>> getPaymentsForPurchaseContext(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                                                                 @PathVariable("publicIdentifier") String publicIdentifier,
-                                                                                 @RequestParam(value = "page", required = false) Integer page,
-                                                                                 @RequestParam(value = "search", required = false) String search,
+    PageAndContent<List<ReservationPaymentDetail>> getPaymentsForPurchaseContext(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                                                                 @PathVariable String publicIdentifier,
+                                                                                 @RequestParam(required = false) Integer page,
+                                                                                 @RequestParam(required = false) String search,
                                                                                  Principal principal) {
         return purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
             .map(purchaseContext -> {
@@ -90,9 +90,9 @@ public class AdminPaymentsApiController {
     }
 
     @PutMapping("/{purchaseContextType}/{publicIdentifier}/reservation/{reservationId}")
-    ResponseEntity<String> updateTransactionData(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                                 @PathVariable("publicIdentifier") String publicIdentifier,
-                                                 @PathVariable("reservationId") String reservationId,
+    ResponseEntity<String> updateTransactionData(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                                 @PathVariable String publicIdentifier,
+                                                 @PathVariable String reservationId,
                                                  @RequestBody TransactionMetadataModification transactionMetadataModification,
                                                  Principal principal) {
         try {
@@ -110,9 +110,9 @@ public class AdminPaymentsApiController {
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/download")
-    void exportPayments(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                        @PathVariable("publicIdentifier") String publicIdentifier,
-                        @RequestParam(value = "search", required = false) String search,
+    void exportPayments(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                        @PathVariable String publicIdentifier,
+                        @RequestParam(required = false) String search,
                         Principal principal,
                         HttpServletResponse response) throws IOException {
         var purchaseContextOptional = purchaseContextManager.findBy(purchaseContextType, publicIdentifier);

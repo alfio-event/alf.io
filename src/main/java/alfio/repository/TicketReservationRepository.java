@@ -30,8 +30,10 @@ import java.util.*;
 @QueryRepository
 public interface TicketReservationRepository {
 
-    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code, organization_id_fk, user_id_fk)" +
-        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :vatPercentage, :vatIncluded, :currencyCode, :organizationId, :userId)")
+    @Query("""
+        insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included, currency_code, organization_id_fk, user_id_fk)\
+         values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :vatPercentage, :vatIncluded, :currencyCode, :organizationId, :userId)\
+        """)
     int createNewReservation(@Bind("id") String id,
                              @Bind("creationTimestamp") ZonedDateTime creationTimestamp,
                              @Bind("validity") Date validity,
@@ -52,8 +54,10 @@ public interface TicketReservationRepository {
     @Query("select * from tickets_reservation tr join ba_user u on u.id = tr.user_id_fk where u.username = :username")
     List<TicketReservation> loadByOwner(@Bind("username") String username);
 
-    @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email," +
-        " user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId")
+    @Query("""
+        update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email,\
+         user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId\
+        """)
     int updateTicketReservation(@Bind("reservationId") String reservationId,
                                 @Bind("status") String status,
                                 @Bind("email") String email,
@@ -66,8 +70,10 @@ public interface TicketReservationRepository {
                                 @Bind("paymentMethod") String paymentMethod,
                                 @Bind("customerReference") String customerReference);
 
-    @Query("update tickets_reservation set validity = :validity, status = :status, payment_method = 'OFFLINE', full_name = :fullName, first_name = :firstName," +
-        " last_name = :lastName, email_address = :email, billing_address = :billingAddress, customer_reference = :customerReference where id = :reservationId")
+    @Query("""
+        update tickets_reservation set validity = :validity, status = :status, payment_method = 'OFFLINE', full_name = :fullName, first_name = :firstName,\
+         last_name = :lastName, email_address = :email, billing_address = :billingAddress, customer_reference = :customerReference where id = :reservationId\
+        """)
     int postponePayment(@Bind("reservationId") String reservationId, @Bind("status") TicketReservation.TicketReservationStatus status, @Bind("validity") Date validity, @Bind("email") String email,
                         @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName,
                         @Bind("billingAddress") String billingAddress,
@@ -149,9 +155,11 @@ public interface TicketReservationRepository {
     int setInvoiceNumber(@Bind("reservationId") String reservationId, @Bind("invoiceNumber") String invoiceNumber);
 
 
-    @Query("update tickets_reservation set vat_status = :vatStatus, src_price_cts = :srcPriceCts, " +
-        " final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, " +
-        " vat_nr = :vatNr, vat_country = :vatCountry, invoice_requested = :invoiceRequested where id = :reservationId")
+    @Query("""
+        update tickets_reservation set vat_status = :vatStatus, src_price_cts = :srcPriceCts, \
+         final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, \
+         vat_nr = :vatNr, vat_country = :vatCountry, invoice_requested = :invoiceRequested where id = :reservationId\
+        """)
     int updateBillingData(@Bind("vatStatus") PriceContainer.VatStatus vatStatus,
                           @Bind("srcPriceCts") int srcPriceCts,
                           @Bind("finalPriceCts") int finalPriceCts,
@@ -170,18 +178,22 @@ public interface TicketReservationRepository {
     @Query("select min(creation_ts) from tickets_reservation where event_id_fk = :eventId")
     Optional<ZonedDateTime> getFirstReservationCreatedTimestampForEvent(@Bind("eventId") int eventId);
 
-    @Query("select to_char(date_trunc(:granularity, d.day), 'YYYY-MM-DD') as day, count(ticket.id) ticket_count " +
-        " from (select generate_series(lower(r), upper(r), '1 day')::date as day, generate_series(lower(r), upper(r), '1 day')::timestamp as ts from tsrange(:fromDate::timestamp, :toDate::timestamp) r) as d " +
-        " left join (select id, confirmation_ts from tickets_reservation where confirmation_ts is not null and event_id_fk = :eventId) res on date_trunc('day', res.confirmation_ts) = d.day" +
-        " left join ticket on event_id = :eventId and tickets_reservation_id = res.id"+
-        " group by 1 order by 1")
+    @Query("""
+        select to_char(date_trunc(:granularity, d.day), 'YYYY-MM-DD') as day, count(ticket.id) ticket_count \
+         from (select generate_series(lower(r), upper(r), '1 day')::date as day, generate_series(lower(r), upper(r), '1 day')::timestamp as ts from tsrange(:fromDate::timestamp, :toDate::timestamp) r) as d \
+         left join (select id, confirmation_ts from tickets_reservation where confirmation_ts is not null and event_id_fk = :eventId) res on date_trunc('day', res.confirmation_ts) = d.day\
+         left join ticket on event_id = :eventId and tickets_reservation_id = res.id\
+         group by 1 order by 1\
+        """)
     List<TicketsByDateStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("fromDate") ZonedDateTime from, @Bind("toDate") ZonedDateTime to, @Bind("granularity") String granularity);
 
-    @Query("select to_char(date_trunc(:granularity, d.day), 'YYYY-MM-DD') as day, count(ticket.id) ticket_count " +
-        " from (select generate_series(lower(r), upper(r), '1 day')::date as day, generate_series(lower(r), upper(r), '1 day')::timestamp as ts from tsrange(:fromDate::timestamp, :toDate::timestamp) r) as d " +
-        " left join (select id, creation_ts from tickets_reservation where event_id_fk = :eventId and status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT', 'COMPLETE', 'STUCK')) res on date_trunc('day', res.creation_ts) = d.day " +
-        " left join ticket on event_id = :eventId and tickets_reservation_id = res.id"+
-        " group by 1 order by 1")
+    @Query("""
+        select to_char(date_trunc(:granularity, d.day), 'YYYY-MM-DD') as day, count(ticket.id) ticket_count \
+         from (select generate_series(lower(r), upper(r), '1 day')::date as day, generate_series(lower(r), upper(r), '1 day')::timestamp as ts from tsrange(:fromDate::timestamp, :toDate::timestamp) r) as d \
+         left join (select id, creation_ts from tickets_reservation where event_id_fk = :eventId and status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT', 'COMPLETE', 'STUCK')) res on date_trunc('day', res.creation_ts) = d.day \
+         left join ticket on event_id = :eventId and tickets_reservation_id = res.id\
+         group by 1 order by 1\
+        """)
     List<TicketsByDateStatistic> getReservedStatistic(@Bind("eventId") int eventId, @Bind("fromDate") ZonedDateTime from, @Bind("toDate") ZonedDateTime to, @Bind("granularity") String granularity);
 
 
@@ -192,20 +204,22 @@ public interface TicketReservationRepository {
     @Query("select * from tickets_reservation where id in (:ids)")
     List<TicketReservation> findByIds(@Bind("ids") Collection<String> ids);
 
-    @Query("update tickets_reservation set full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email, " +
-        " billing_address = :completeBillingAddress, vat_country = :vatCountry, vat_nr = :vatNr, " +
-        " invoice_requested = :invoiceRequested, " +
-        " billing_address_company = :billingAddressCompany, " +
-        " billing_address_line1 = :billingAddressLine1, " +
-        " billing_address_line2 = :billingAddressLine2, " +
-        " billing_address_zip = :billingAddressZip, " +
-        " billing_address_city = :billingAddressCity, " +
-        " billing_address_state = :billingAddressState, " +
-        " add_company_billing_details = :addCompanyBillingDetails, " +
-        " skip_vat_nr = :skipVatNr, " +
-        " customer_reference = :customerReference, "+
-        " validated_for_overview = :validated " +
-        " where id = :reservationId")
+    @Query("""
+        update tickets_reservation set full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email, \
+         billing_address = :completeBillingAddress, vat_country = :vatCountry, vat_nr = :vatNr, \
+         invoice_requested = :invoiceRequested, \
+         billing_address_company = :billingAddressCompany, \
+         billing_address_line1 = :billingAddressLine1, \
+         billing_address_line2 = :billingAddressLine2, \
+         billing_address_zip = :billingAddressZip, \
+         billing_address_city = :billingAddressCity, \
+         billing_address_state = :billingAddressState, \
+         add_company_billing_details = :addCompanyBillingDetails, \
+         skip_vat_nr = :skipVatNr, \
+         customer_reference = :customerReference, \
+         validated_for_overview = :validated \
+         where id = :reservationId\
+        """)
     int updateTicketReservationWithValidation(@Bind("reservationId") String reservationId,
                                               @Bind("fullName") String fullName,
                                               @Bind("firstName") String firstName,
@@ -227,10 +241,12 @@ public interface TicketReservationRepository {
                                               @Bind("validated") boolean validated);
 
 
-    @Query("select billing_address_company, billing_address_line1, billing_address_line2, " +
-        " billing_address_zip, billing_address_city, billing_address_state, validated_for_overview, skip_vat_nr, " +
-        " add_company_billing_details, invoicing_additional_information, vat_country, vat_nr " +
-        " from tickets_reservation where id = :id")
+    @Query("""
+        select billing_address_company, billing_address_line1, billing_address_line2, \
+         billing_address_zip, billing_address_city, billing_address_state, validated_for_overview, skip_vat_nr, \
+         add_company_billing_details, invoicing_additional_information, vat_country, vat_nr \
+         from tickets_reservation where id = :id\
+        """)
     TicketReservationAdditionalInfo getAdditionalInfo(@Bind("id") String reservationId);
 
     @Query("select metadata from tickets_reservation where id = :id")
@@ -246,9 +262,11 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set validated_for_overview = :validated where id = :reservationId")
     int updateValidationStatus(@Bind("reservationId") String reservationId, @Bind("validated") boolean validated);
 
-    @Query("update tickets_reservation set invoice_requested = :invoiceRequested, vat_status = :vatStatus, src_price_cts = :srcPriceCts, " +
-        " final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode" +
-        " where id = :reservationId")
+    @Query("""
+        update tickets_reservation set invoice_requested = :invoiceRequested, vat_status = :vatStatus, src_price_cts = :srcPriceCts, \
+         final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode\
+         where id = :reservationId\
+        """)
     int resetVat(@Bind("reservationId") String reservationId,
                  @Bind("invoiceRequested") boolean invoiceRequested,
                  @Bind("vatStatus") PriceContainer.VatStatus vatStatus,
@@ -267,8 +285,10 @@ public interface TicketReservationRepository {
         }
     }
 
-    @Query("select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id" +
-        " and (b.category_id in (:categories))")
+    @Query("""
+        select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id\
+         and (b.category_id in (:categories))\
+        """)
     Integer countTicketsInReservationForExistingCategories(@Bind("reservationId") String reservationId, @Bind("categories") Collection<Integer> categories);
 
     @Query("select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id")

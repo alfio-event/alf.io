@@ -45,27 +45,27 @@ public class SubscriptionApiController {
     }
 
     @GetMapping("/list")
-    ResponseEntity<List<SubscriptionDescriptorWithStatistics>> findAll(@PathVariable("organizationId") int organizationId, Principal principal) {
+    ResponseEntity<List<SubscriptionDescriptorWithStatistics>> findAll(@PathVariable int organizationId, Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.ok(subscriptionManager.loadSubscriptionsWithStatistics(organizationId));
     }
 
     @GetMapping("/active")
-    ResponseEntity<List<SubscriptionDescriptor>> findActive(@PathVariable("organizationId") int organizationId, Principal principal) {
+    ResponseEntity<List<SubscriptionDescriptor>> findActive(@PathVariable int organizationId, Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.ok(subscriptionManager.loadActiveSubscriptionDescriptors(organizationId));
     }
 
     @GetMapping("/{subscriptionId}")
-    ResponseEntity<SubscriptionDescriptorModification> getSingle(@PathVariable("organizationId") int organizationId,
-                                                                 @PathVariable("subscriptionId") UUID subscriptionId,
+    ResponseEntity<SubscriptionDescriptorModification> getSingle(@PathVariable int organizationId,
+                                                                 @PathVariable UUID subscriptionId,
                                                                  Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.of(subscriptionManager.findOne(subscriptionId, organizationId).map(SubscriptionDescriptorModification::fromModel));
     }
 
     @PostMapping("/")
-    ResponseEntity<UUID> create(@PathVariable("organizationId") int organizationId,
+    ResponseEntity<UUID> create(@PathVariable int organizationId,
                                 @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
                                 Principal principal) {
 
@@ -84,8 +84,8 @@ public class SubscriptionApiController {
     }
 
     @PostMapping("/{subscriptionId}")
-    ResponseEntity<UUID> update(@PathVariable("organizationId") int organizationId,
-                                @PathVariable("subscriptionId") UUID subscriptionId,
+    ResponseEntity<UUID> update(@PathVariable int organizationId,
+                                @PathVariable UUID subscriptionId,
                                 @RequestBody SubscriptionDescriptorModification subscriptionDescriptor,
                                 Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
@@ -97,17 +97,17 @@ public class SubscriptionApiController {
     }
 
     @PatchMapping("/{subscriptionId}/is-public")
-    ResponseEntity<Boolean> setPublicState(@PathVariable("organizationId") int organizationId,
-                                           @PathVariable("subscriptionId") UUID subscriptionId,
-                                           @RequestParam("status") boolean status,
+    ResponseEntity<Boolean> setPublicState(@PathVariable int organizationId,
+                                           @PathVariable UUID subscriptionId,
+                                           @RequestParam boolean status,
                                            Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.ok(subscriptionManager.setPublicStatus(subscriptionId, organizationId, status));
     }
 
     @GetMapping("/{subscriptionId}/events")
-    ResponseEntity<List<EventSubscriptionLink>> getLinkedEvents(@PathVariable("organizationId") int organizationId,
-                                                                @PathVariable("subscriptionId") UUID subscriptionId,
+    ResponseEntity<List<EventSubscriptionLink>> getLinkedEvents(@PathVariable int organizationId,
+                                                                @PathVariable UUID subscriptionId,
                                                                 Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.ok(subscriptionManager.getLinkedEvents(organizationId, subscriptionId));
@@ -125,7 +125,7 @@ public class SubscriptionApiController {
      * @return
      */
     @DeleteMapping("/{subscriptionId}")
-    ResponseEntity<Void> deactivate(@PathVariable("organizationId") int organizationId,
+    ResponseEntity<Void> deactivate(@PathVariable int organizationId,
                                     @PathVariable("subscriptionId") UUID descriptorId,
                                     Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);

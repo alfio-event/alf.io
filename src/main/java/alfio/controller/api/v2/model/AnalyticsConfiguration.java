@@ -23,7 +23,7 @@ import lombok.Getter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.util.Map;
 
 import static alfio.model.system.ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE;

@@ -18,13 +18,12 @@ package alfio.controller;
 
 import alfio.manager.FileUploadManager;
 import alfio.model.FileBlobMetadata;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -35,13 +34,12 @@ public class FileController {
 
     private static final String MAX_AGE_6_MONTH = "max-age=15778463";
 
-    @Autowired
     public FileController(FileUploadManager manager) {
         this.manager = manager;
     }
 
     @GetMapping("/file/{digest}")
-    public void showFile(@PathVariable("digest") String digest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void showFile(@PathVariable String digest, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         Optional<FileBlobMetadata> res = manager.findMetadata(digest);
         if (res.isPresent()) {

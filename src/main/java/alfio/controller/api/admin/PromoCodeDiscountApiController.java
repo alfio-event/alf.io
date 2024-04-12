@@ -64,7 +64,7 @@ public class PromoCodeDiscountApiController {
     }
 
     @PostMapping("/promo-code/{promoCodeId}")
-    public void updatePromoCode(@PathVariable("promoCodeId") int promoCodeId,
+    public void updatePromoCode(@PathVariable int promoCodeId,
                                 @RequestBody PromoCodeDiscountModification promoCode,
                                 Principal principal) {
         accessService.checkAccessToPromoCodeEventOrganization(principal, promoCode.getEventId(), promoCode.getOrganizationId());
@@ -84,39 +84,39 @@ public class PromoCodeDiscountApiController {
     }
 
     @GetMapping("/events/{eventId}/promo-code")
-    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInEvent(@PathVariable("eventId") int eventId, Principal principal) {
+    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInEvent(@PathVariable int eventId, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         return eventManager.findPromoCodesInEvent(eventId);
     }
 
     @GetMapping("/organization/{organizationId}/promo-code")
-    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInOrganization(@PathVariable("organizationId") int organizationId,
+    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInOrganization(@PathVariable int organizationId,
                                                                                          Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return eventManager.findPromoCodesInOrganization(organizationId);
     }
     
     @DeleteMapping("/promo-code/{promoCodeId}")
-    public void removePromoCode(@PathVariable("promoCodeId") int promoCodeId, Principal principal) {
+    public void removePromoCode(@PathVariable int promoCodeId, Principal principal) {
         accessService.checkAccessToPromoCode(principal, promoCodeId);
         eventManager.deletePromoCode(promoCodeId);
     }
     
     @PostMapping("/promo-code/{promoCodeId}/disable")
-    public void disablePromoCode(@PathVariable("promoCodeId") int promoCodeId, Principal principal) {
+    public void disablePromoCode(@PathVariable int promoCodeId, Principal principal) {
         accessService.checkAccessToPromoCode(principal, promoCodeId);
         promoCodeRequestManager.disablePromoCode(promoCodeId);
     }
     
     @GetMapping("/promo-code/{promoCodeId}/count-use")
-    public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId, Principal principal) {
+    public int countPromoCodeUse(@PathVariable int promoCodeId, Principal principal) {
         accessService.checkAccessToPromoCode(principal, promoCodeId);
         return promoCodeRequestManager.countUsage(promoCodeId);
     }
 
     @GetMapping("/promo-code/{promoCodeId}/detailed-usage")
-    public List<PromoCodeUsageResult> retrieveDetailedUsage(@PathVariable("promoCodeId") int promoCodeId,
-                                                            @RequestParam(value = "eventShortName", required = false) String eventShortName,
+    public List<PromoCodeUsageResult> retrieveDetailedUsage(@PathVariable int promoCodeId,
+                                                            @RequestParam(required = false) String eventShortName,
                                                             Principal principal) {
         Integer eventId = null;
         if (StringUtils.isNotBlank(eventShortName)) {

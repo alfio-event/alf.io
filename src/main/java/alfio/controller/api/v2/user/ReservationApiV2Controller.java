@@ -65,8 +65,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.ZonedDateTime;
@@ -124,7 +124,7 @@ public class ReservationApiV2Controller {
     @GetMapping({"/reservation/{reservationId}",
         "/event/{eventName}/reservation/{reservationId}" //<-deprecated
     })
-    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("reservationId") String reservationId, Principal principal) {
+    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable String reservationId, Principal principal) {
 
         Optional<ReservationInfo> res = purchaseContextManager.findByReservationId(reservationId).flatMap(purchaseContext -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
@@ -270,7 +270,7 @@ public class ReservationApiV2Controller {
         "/reservation/{reservationId}/status",
         "/event/{eventName}/reservation/{reservationId}/status" //<- deprecated
     })
-    public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable String reservationId) {
 
         Optional<ReservationStatusInfo> res = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
             .map(status -> new ReservationStatusInfo(status.getStatus(), Boolean.TRUE.equals(status.getValidated())));
@@ -282,7 +282,7 @@ public class ReservationApiV2Controller {
         "/reservation/{reservationId}",
         "/event/{eventName}/reservation/{reservationId}" //<- deprecated
     })
-    public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable String reservationId) {
         getReservationWithPendingStatus(reservationId).ifPresent(er -> ticketReservationManager.cancelPendingReservation(reservationId, false, null));
         return ResponseEntity.ok(true);
     }
@@ -291,7 +291,7 @@ public class ReservationApiV2Controller {
         "/reservation/{reservationId}/back-to-booking",
         "/event/{eventName}/reservation/{reservationId}/back-to-booking" //<- deprecated
     })
-    public ResponseEntity<Boolean> backToBooking(@PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<Boolean> backToBooking(@PathVariable String reservationId) {
         getReservationWithPendingStatus(reservationId).ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
         return ResponseEntity.ok(true);
     }
@@ -300,8 +300,8 @@ public class ReservationApiV2Controller {
         "/reservation/{reservationId}",
         "/event/{eventName}/reservation/{reservationId}"// <- deprecated
     })
-    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable("reservationId") String reservationId,
-                                                                                       @RequestParam("lang") String lang,
+    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable String reservationId,
+                                                                                       @RequestParam String lang,
                                                                                        @RequestBody  PaymentForm paymentForm,
                                                                                        BindingResult bindingResult,
                                                                                        HttpServletRequest request,
@@ -384,9 +384,9 @@ public class ReservationApiV2Controller {
         "/reservation/{reservationId}/validate-to-overview",
         "/event/{eventName}/reservation/{reservationId}/validate-to-overview" //<-deprecated
     })
-    public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable("reservationId") String reservationId,
-                                                                         @RequestParam("lang") String lang,
-                                                                         @RequestParam(value = "ignoreWarnings", defaultValue = "false") boolean ignoreWarnings,
+    public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable String reservationId,
+                                                                         @RequestParam String lang,
+                                                                         @RequestParam(defaultValue = "false") boolean ignoreWarnings,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
                                                                          BindingResult br,
                                                                          Authentication principal) {
@@ -566,10 +566,10 @@ public class ReservationApiV2Controller {
     }
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/reservation/{reservationId}/re-send-email")
-    public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                                      @PathVariable("publicIdentifier") String publicIdentifier,
-                                                                      @PathVariable("reservationId") String reservationId,
-                                                                      @RequestParam("lang") String lang,
+    public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable PurchaseContextType purchaseContextType,
+                                                                      @PathVariable String publicIdentifier,
+                                                                      @PathVariable String reservationId,
+                                                                      @RequestParam String lang,
                                                                       Principal principal) {
 
 
@@ -585,16 +585,16 @@ public class ReservationApiV2Controller {
 
     //
     @GetMapping("/event/{eventName}/reservation/{reservationId}/receipt")
-    public ResponseEntity<Void> getReceipt(@PathVariable("eventName") String eventName,
-                                           @PathVariable("reservationId") String reservationId,
+    public ResponseEntity<Void> getReceipt(@PathVariable String eventName,
+                                           @PathVariable String reservationId,
                                            HttpServletResponse response,
                                            Authentication authentication) {
         return handleReservationWith(eventName, reservationId, authentication, generatePdfFunction(false, response));
     }
 
     @GetMapping("/event/{eventName}/reservation/{reservationId}/invoice")
-    public ResponseEntity<Void> getInvoice(@PathVariable("eventName") String eventName,
-                                           @PathVariable("reservationId") String reservationId,
+    public ResponseEntity<Void> getInvoice(@PathVariable String eventName,
+                                           @PathVariable String reservationId,
                                            HttpServletResponse response,
                                            Authentication authentication) {
         return handleReservationWith(eventName, reservationId, authentication, generatePdfFunction(true, response));
@@ -654,7 +654,7 @@ public class ReservationApiV2Controller {
         "/reservation/{reservationId}/payment/{method}/init",
         "/event/{eventName}/reservation/{reservationId}/payment/{method}/init" //<-deprecated
     })
-    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("reservationId") String reservationId,
+    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
         var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
@@ -677,8 +677,8 @@ public class ReservationApiV2Controller {
         "/reservation/{reservationId}/payment/token",
         "/event/{eventName}/reservation/{reservationId}/payment/token" //<-deprecated
     })
-    public ResponseEntity<Boolean> removeToken(@PathVariable("eventName") String eventName,
-                                               @PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<Boolean> removeToken(@PathVariable String eventName,
+                                               @PathVariable String reservationId) {
 
         var res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
         return ResponseEntity.ok(res);
@@ -688,7 +688,7 @@ public class ReservationApiV2Controller {
         "/reservation/{reservationId}/payment",
         "/event/{eventName}/reservation/{reservationId}/payment" //<-deprecated
     })
-    public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable String reservationId) {
 
         var res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
         return ResponseEntity.ok(res);
@@ -699,7 +699,7 @@ public class ReservationApiV2Controller {
         "/event/{eventName}/reservation/{reservationId}/payment/{method}/status" //<-deprecated
     })
     public ResponseEntity<ReservationPaymentResult> getTransactionStatus(
-                                                              @PathVariable("reservationId") String reservationId,
+                                                              @PathVariable String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
 
         var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
@@ -715,7 +715,7 @@ public class ReservationApiV2Controller {
     }
 
     @PostMapping("/reservation/{reservationId}/apply-code")
-    public ResponseEntity<ValidatedResponse<Boolean>> applyCode(@PathVariable("reservationId") String reservationId, @RequestBody ReservationCodeForm reservationCodeForm, BindingResult bindingResult) {
+    public ResponseEntity<ValidatedResponse<Boolean>> applyCode(@PathVariable String reservationId, @RequestBody ReservationCodeForm reservationCodeForm, BindingResult bindingResult) {
         if(reservationCodeForm.getType() != ReservationCodeForm.ReservationCodeType.SUBSCRIPTION) {
             throw new IllegalStateException(reservationCodeForm.getType() + " not supported");
         }
@@ -731,7 +731,7 @@ public class ReservationApiV2Controller {
     }
 
     @DeleteMapping("/reservation/{reservationId}/remove-code")
-    public ResponseEntity<Boolean> removeCode(@PathVariable("reservationId") String reservationId, @RequestParam("type") ReservationCodeForm.ReservationCodeType type) {
+    public ResponseEntity<Boolean> removeCode(@PathVariable String reservationId, @RequestParam ReservationCodeForm.ReservationCodeType type) {
         boolean res = false;
         if (type == ReservationCodeForm.ReservationCodeType.SUBSCRIPTION) {
             res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> ticketReservationManager.removeSubscription(et.getRight())).orElse(false);

@@ -40,7 +40,6 @@ import java.util.stream.Stream;
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
 import static alfio.test.util.TestUtil.clockProvider;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class WaitingQueueSubscriptionProcessorTest {

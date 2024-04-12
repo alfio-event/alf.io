@@ -22,7 +22,6 @@ import alfio.model.modification.MessageModification;
 import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +38,6 @@ public class CustomMessagesApiController {
     private final CustomMessageManager customMessageManager;
     private final AccessService accessService;
 
-    @Autowired
     public CustomMessagesApiController(CustomMessageManager customMessageManager,
                                        AccessService accessService) {
         this.customMessageManager = customMessageManager;
@@ -55,16 +53,16 @@ public class CustomMessagesApiController {
     }
 
     @PostMapping("/preview")
-    public Map<String, Object> preview(@PathVariable("eventName") String eventName,
-                                       @RequestParam(required = false, value = "categoryId") Integer categoryId,
+    public Map<String, Object> preview(@PathVariable String eventName,
+                                       @RequestParam(required = false) Integer categoryId,
                                        @RequestBody List<MessageModification> messageModifications, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return customMessageManager.generatePreview(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
     }
 
     @PostMapping("/send")
-    public void send(@PathVariable("eventName") String eventName,
-                    @RequestParam(required = false, value = "categoryId") Integer categoryId,
+    public void send(@PathVariable String eventName,
+                    @RequestParam(required = false) Integer categoryId,
                     @RequestBody List<MessageModification> messageModifications,
                     Principal principal) {
         accessService.checkEventOwnership(principal, eventName);

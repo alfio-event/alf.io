@@ -63,8 +63,8 @@ import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -144,7 +144,7 @@ public class EventApiController {
 
     @GetMapping("/paymentProxies/{organizationId}")
     @ResponseStatus(HttpStatus.OK)
-    public List<PaymentManager.PaymentMethodDTO> getPaymentProxies( @PathVariable("organizationId") int organizationId, Principal principal) {
+    public List<PaymentManager.PaymentMethodDTO> getPaymentProxies( @PathVariable int organizationId, Principal principal) {
         accessService.checkOrganizationMembership(principal, organizationId, AccessService.MEMBERSHIP_ROLES);
         return userManager.findUserOrganizations(principal.getName())
             .stream()
@@ -157,7 +157,7 @@ public class EventApiController {
     @GetMapping(value = "/events", headers = "Authorization")
     public List<EventListItem> getAllEventsForExternal(Principal principal,
                                                        HttpServletRequest request,
-                                                       @RequestParam(value = "includeOnline", required = false, defaultValue = "false") boolean includeOnline) {
+                                                       @RequestParam(required = false, defaultValue = "false") boolean includeOnline) {
         List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(toList());
         return eventManager.getActiveEvents().stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()) && (includeOnline || e.getFormat() != Event.EventFormat.ONLINE))
@@ -211,13 +211,13 @@ public class EventApiController {
     }
     
     @DeleteMapping("/events/{eventId}")
-    public void deleteEvent(@PathVariable("eventId") int eventId, Principal principal) {
+    public void deleteEvent(@PathVariable int eventId, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
     	eventManager.deleteEvent(eventId, principal.getName());
     }
 
     @GetMapping("/events/id/{eventId}")
-    public Event getSingleEventById(@PathVariable("eventId") int eventId, Principal principal) {
+    public Event getSingleEventById(@PathVariable int eventId, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         return eventManager.getSingleEventById(eventId, principal.getName());
     }
@@ -266,14 +266,14 @@ public class EventApiController {
     }
 
     @GetMapping("/events/name-by-ids")
-    public Map<Integer, String> getEventNamesByIds(@RequestParam("eventIds") List<Integer> eventIds, Principal principal) {
+    public Map<Integer, String> getEventNamesByIds(@RequestParam List<Integer> eventIds, Principal principal) {
         // only used by admin it seems
         accessService.ensureAdmin(principal);
         return eventManager.getEventNamesByIds(eventIds, principal);
     }
 
     @GetMapping("/events/names-in-organization/{orgId}")
-    public Map<Integer, String> getEventsNameInOrganization(@PathVariable("orgId") int orgId, Principal principal) {
+    public Map<Integer, String> getEventsNameInOrganization(@PathVariable int orgId, Principal principal) {
         accessService.checkOrganizationOwnership(principal, orgId);
         return eventManager.getEventsNameInOrganization(orgId, principal);
     }
@@ -286,35 +286,35 @@ public class EventApiController {
     }
 
     @PutMapping("/events/{id}/status")
-    public String activateEvent(@PathVariable("id") int id, @RequestParam("active") boolean active, Principal principal) {
+    public String activateEvent(@PathVariable int id, @RequestParam boolean active, Principal principal) {
         accessService.checkEventOwnership(principal, id);
         eventManager.toggleActiveFlag(id, principal.getName(), active);
         return OK;
     }
 
     @PostMapping("/events/{id}/header/update")
-    public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
+    public ValidationResult updateHeader(@PathVariable int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         accessService.checkEventOwnership(principal, id);
         Event event = eventManager.getSingleEventById(id, principal.getName());
         return validateEventHeader(Optional.of(event), eventModification, getDescriptionLength(), errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{id}/prices/update")
-    public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
+    public ValidationResult updatePrices(@PathVariable int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         accessService.checkEventOwnership(principal, id);
         Event event = eventManager.getSingleEventById(id, principal.getName());
         return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventSeatsAndPrices(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/{categoryId}/update")
-    public ValidationResult updateExistingCategory(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
+    public ValidationResult updateExistingCategory(@PathVariable int eventId, @PathVariable int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
         Assert.isTrue(categoryId == category.getId().intValue(), "categoryId must be equal to category.getId()");
         return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/new")
-    public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
+    public ValidationResult createCategory(@PathVariable int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         return validateCategory(category, errors, getDescriptionLength()).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
@@ -327,21 +327,21 @@ public class EventApiController {
     }
 
     @PutMapping("/events/{eventName}/category/{categoryId}/unbind-tickets")
-    public String unbindTickets(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
+    public String unbindTickets(@PathVariable String eventName, @PathVariable int categoryId, Principal principal) {
         accessService.checkCategoryOwnership(principal, eventName, categoryId);
         eventManager.unbindTickets(eventName, categoryId, principal.getName());
         return OK;
     }
 
     @DeleteMapping("/events/{eventName}/category/{categoryId}")
-    public String deleteCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
+    public String deleteCategory(@PathVariable String eventName, @PathVariable int categoryId, Principal principal) {
         accessService.checkCategoryOwnership(principal, eventName, categoryId);
         eventManager.deleteCategory(eventName, categoryId, principal.getName());
         return OK;
     }
 
     @PutMapping("/events/{eventName}/rearrange-categories")
-    public ResponseEntity<String> rearrangeCategories(@PathVariable("eventName") String eventName, @RequestBody List<CategoryOrdinalModification> categories, Principal principal) {
+    public ResponseEntity<String> rearrangeCategories(@PathVariable String eventName, @RequestBody List<CategoryOrdinalModification> categories, Principal principal) {
         accessService.checkCategoryOwnership(principal, eventName, categories.stream().map(CategoryOrdinalModification::getId).collect(Collectors.toSet()));
         if(CollectionUtils.isEmpty(categories)) {
             return ResponseEntity.badRequest().build();
@@ -358,7 +358,7 @@ public class EventApiController {
     private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of(FISCAL_CODE, REFERENCE_TYPE, "Addressee Code", "PEC");
 
     @GetMapping("/events/{eventName}/export")
-    public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
+    public void downloadAllTicketsCSV(@PathVariable String eventName, @RequestParam(defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         accessService.checkEventOwnership(principal, eventName);
         List<String> fields = Arrays.asList(Optional.ofNullable(request.getParameterValues("fields")).orElse(new String[] {}));
         Event event = loadEvent(eventName, principal);
@@ -455,7 +455,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/sponsor-scan/export")
-    public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
+    public void downloadSponsorScanExport(@PathVariable String eventName, @RequestParam(defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
         accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         List<PurchaseContextFieldConfiguration> fields = purchaseContextFieldRepository.findAdditionalFieldsForEvent(event.getId());
@@ -521,7 +521,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/fields")
-    public List<SerializablePair<String, String>> getAllFields(@PathVariable("eventName") String eventName, Principal principal) {
+    public List<SerializablePair<String, String>> getAllFields(@PathVariable String eventName, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         var eventAndOrganizationId = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         List<SerializablePair<String, String>> fields = new ArrayList<>(FIXED_PAIRS);
@@ -533,13 +533,13 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/pending-payments")
-    public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
+    public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable String eventName, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return ticketReservationManager.getPendingPayments(eventName);
     }
 
     @GetMapping("/events/{eventName}/pending-payments-count")
-    public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
+    public Integer getPendingPaymentsCount(@PathVariable String eventName, Principal principal) {
         accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.getPendingPaymentsCount(e.getId()))
@@ -547,8 +547,8 @@ public class EventApiController {
     }
 
     @PostMapping("/events/{eventName}/pending-payments/{reservationId}/confirm")
-    public String confirmPayment(@PathVariable("eventName") String eventName,
-                                 @PathVariable("reservationId") String reservationId,
+    public String confirmPayment(@PathVariable String eventName,
+                                 @PathVariable String reservationId,
                                  @RequestBody TransactionMetadataModification transactionMetadataModification,
                                  Principal principal) {
         accessService.checkEventAndReservationOwnership(principal, eventName, Set.of(reservationId));
@@ -564,10 +564,10 @@ public class EventApiController {
     }
 
     @DeleteMapping("/events/{eventName}/pending-payments/{reservationId}")
-    public String deletePendingPayment(@PathVariable("eventName") String eventName,
-                                       @PathVariable("reservationId") String reservationId,
+    public String deletePendingPayment(@PathVariable String eventName,
+                                       @PathVariable String reservationId,
                                        @RequestParam(required = false, value = "credit", defaultValue = "false") Boolean creditReservation,
-                                       @RequestParam(required = false, value = "notify", defaultValue = "true") Boolean notify,
+                                       @RequestParam(required = false, defaultValue = "true") Boolean notify,
                                        Principal principal) {
         accessService.checkEventAndReservationOwnership(principal, eventName, Set.of(reservationId));
         ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId, false, Boolean.TRUE.equals(creditReservation), notify, principal.getName());
@@ -575,7 +575,7 @@ public class EventApiController {
     }
 
     @PostMapping("/events/{eventName}/pending-payments/bulk-confirmation")
-    public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable("eventName") String eventName,
+    public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable String eventName,
                                                                   Principal principal,
                                                                   @RequestBody UploadBase64FileModification file) throws IOException, CsvException {
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8); CSVReader reader = new CSVReader(isr)) {
@@ -605,22 +605,22 @@ public class EventApiController {
     }
 
     @PutMapping("/events/{eventName}/categories/{categoryId}/tickets/{ticketId}/toggle-locking")
-    public boolean toggleTicketLocking(@PathVariable("eventName") String eventName,
-                                       @PathVariable("categoryId") int categoryId,
-                                       @PathVariable("ticketId") int ticketId,
+    public boolean toggleTicketLocking(@PathVariable String eventName,
+                                       @PathVariable int categoryId,
+                                       @PathVariable int ticketId,
                                        Principal principal) {
         accessService.checkCategoryOwnershipAndTicket(principal, eventName, categoryId, ticketId);
         return eventManager.toggleTicketLocking(eventName, categoryId, ticketId, principal.getName());
     }
 
     @GetMapping("/events/{eventName}/languages")
-    public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName, Principal principal) {
+    public List<ContentLanguage> getAvailableLocales(@PathVariable String eventName, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return i18nManager.getEventLanguages(eventName);
     }
 
     @GetMapping("/events/{eventName}/invoices/count")
-    public Integer countBillingDocumentsForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+    public Integer countBillingDocumentsForEvent(@PathVariable String eventName, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.countBillingDocuments(e.getId()))
@@ -628,7 +628,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/all-documents")
-    public void getAllInvoices(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
+    public void getAllInvoices(@PathVariable String eventName, HttpServletResponse response, Principal principal) throws  IOException {
         accessService.checkEventOwnership(principal, eventName);
 
         Event event = loadEvent(eventName, principal);
@@ -674,7 +674,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/all-documents-xls")
-    public void getAllDocumentsXls(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
+    public void getAllDocumentsXls(@PathVariable String eventName, HttpServletResponse response, Principal principal) throws  IOException {
         accessService.checkEventOwnership(principal, eventName);
 
         Event event = loadEvent(eventName, principal);
@@ -747,9 +747,9 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/category/{categoryId}/ticket")
-    public PageAndContent<List<TicketWithStatistic>> getTicketsInCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId,
-                                                                          @RequestParam(value = "page", required = false) Integer page,
-                                                                          @RequestParam(value = "search", required = false) String search,
+    public PageAndContent<List<TicketWithStatistic>> getTicketsInCategory(@PathVariable String eventName, @PathVariable int categoryId,
+                                                                          @RequestParam(required = false) Integer page,
+                                                                          @RequestParam(required = false) String search,
                                                                           Principal principal) {
         accessService.checkCategoryOwnership(principal, eventName, categoryId);
         EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
@@ -757,7 +757,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/ticket-sold-statistics")
-    public ResponseEntity<TicketsStatistics> getTicketsStatistics(@PathVariable("eventName") String eventName,
+    public ResponseEntity<TicketsStatistics> getTicketsStatistics(@PathVariable String eventName,
                                                                   @RequestParam(value = "from", required = false) String f,
                                                                   @RequestParam(value = "to", required = false) String t,
                                                                   Principal principal) {
@@ -799,9 +799,9 @@ public class EventApiController {
     }
 
     @DeleteMapping("/events/{eventName}/reservation/{reservationId}/transaction/{transactionId}/discard")
-    public ResponseEntity<String> discardMatchingPayment(@PathVariable("eventName") String eventName,
-                                                         @PathVariable("reservationId") String reservationId,
-                                                         @PathVariable("transactionId") int transactionId,
+    public ResponseEntity<String> discardMatchingPayment(@PathVariable String eventName,
+                                                         @PathVariable String reservationId,
+                                                         @PathVariable int transactionId,
                                                          Principal principal) {
         accessService.checkEventAndReservationAndTransactionOwnership(principal, eventName, reservationId, transactionId);
         var result = ticketReservationManager.discardMatchingPayment(eventName, reservationId, transactionId);
@@ -813,7 +813,7 @@ public class EventApiController {
     }
 
     @PutMapping("/events/{eventName}/metadata")
-    public ResponseEntity<Boolean> updateMetadata(@PathVariable("eventName") String eventName,
+    public ResponseEntity<Boolean> updateMetadata(@PathVariable String eventName,
                                                  @RequestBody MetadataModification metadataModification,
                                                  Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
@@ -825,15 +825,15 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/metadata")
-    public ResponseEntity<AlfioMetadata> loadMetadata(@PathVariable("eventName") String eventName, Principal principal) {
+    public ResponseEntity<AlfioMetadata> loadMetadata(@PathVariable String eventName, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(eventManager::getMetadataForEvent));
     }
 
     @PutMapping("/events/{eventName}/category/{categoryId}/metadata")
-    public ResponseEntity<Boolean> updateCategoryMetadata(@PathVariable("eventName") String eventName,
-                                                  @PathVariable("categoryId") int categoryId,
+    public ResponseEntity<Boolean> updateCategoryMetadata(@PathVariable String eventName,
+                                                  @PathVariable int categoryId,
                                                   @RequestBody MetadataModification metadataModification,
                                                   Principal principal) {
         accessService.checkCategoryOwnership(principal, eventName, categoryId);
@@ -846,8 +846,8 @@ public class EventApiController {
 
 
     @GetMapping("/events/{eventName}/category/{categoryId}/metadata")
-    public ResponseEntity<AlfioMetadata> loadCategoryMetadata(@PathVariable("eventName") String eventName,
-                                                              @PathVariable("categoryId") int categoryId,
+    public ResponseEntity<AlfioMetadata> loadCategoryMetadata(@PathVariable String eventName,
+                                                              @PathVariable int categoryId,
                                                               Principal principal) {
         accessService.checkCategoryOwnership(principal, eventName, categoryId);
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
@@ -855,8 +855,8 @@ public class EventApiController {
     }
 
     @PostMapping("/events/{eventName}/capability/{capability}")
-    public ResponseEntity<String> executeCapabilityForEvent(@PathVariable("eventName") String eventName,
-                                                            @PathVariable("capability") ExtensionCapability capability,
+    public ResponseEntity<String> executeCapabilityForEvent(@PathVariable String eventName,
+                                                            @PathVariable ExtensionCapability capability,
                                                             @RequestBody Map<String, String> params,
                                                             Principal principal) {
         accessService.checkEventOwnership(principal, eventName);

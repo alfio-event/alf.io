@@ -43,7 +43,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
@@ -92,7 +91,6 @@ public class NotificationManager {
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
-    @Autowired
     public NotificationManager(Mailer mailer,
                                MessageSourceManager messageSourceManager,
                                PlatformTransactionManager transactionManager,
@@ -285,8 +283,8 @@ public class NotificationManager {
             var attachmentModel = new HashMap<String, String>();
             // attachment model expects non-string properties to be JSON, so we convert them
             renderedTemplate.getSrcModel().forEach((k, v) -> {
-                if(v instanceof String) {
-                    attachmentModel.put(k, (String) v);
+                if(v instanceof String string) {
+                    attachmentModel.put(k, string);
                 } else {
                     attachmentModel.put(k, Json.toJson(v));
                 }

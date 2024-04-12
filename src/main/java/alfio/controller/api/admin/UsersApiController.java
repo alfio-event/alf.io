@@ -43,7 +43,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Principal;
@@ -122,7 +122,7 @@ public class UsersApiController {
     }
 
     @GetMapping("/organizations/{id}")
-    public Organization getOrganization(@PathVariable("id") int id, Principal principal) {
+    public Organization getOrganization(@PathVariable int id, Principal principal) {
         return userManager.findOrganizationById(id, principal.getName());
     }
 
@@ -188,7 +188,7 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/new")
-    public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam("baseUrl") String baseUrl, Principal principal) {
+    public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam String baseUrl, Principal principal) {
         accessService.checkOrganizationOwnership(principal, userModification.getOrganizationId());
         Role requested = Role.valueOf(userModification.getRole());
         Validate.isTrue(userManager.getAvailableRoles(principal.getName()).stream().anyMatch(requested::equals), String.format("Requested role %s is not available for current user", userModification.getRole()));
@@ -203,7 +203,7 @@ public class UsersApiController {
     }
 
     @GetMapping("/api-keys/organization/{organizationId}/all")
-    public void getAllApiKeys(@PathVariable("organizationId") int organizationId, HttpServletResponse response, Principal principal) throws IOException {
+    public void getAllApiKeys(@PathVariable int organizationId, HttpServletResponse response, Principal principal) throws IOException {
         accessService.checkOrganizationOwnership(principal, organizationId);
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", "attachment; filename=apiKeys.zip");
@@ -241,7 +241,7 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/{id}/enable/{enable}")
-    public String enableUser(@PathVariable("id") int userId, @PathVariable("enable")boolean enable, Principal principal) {
+    public String enableUser(@PathVariable("id") int userId, @PathVariable boolean enable, Principal principal) {
         userManager.enable(userId, enable, principal);
         return OK;
     }
@@ -277,7 +277,7 @@ public class UsersApiController {
     }
 
     @PutMapping("/users/{id}/reset-password")
-    public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl, Principal principal) {
+    public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam String baseUrl, Principal principal) {
         UserWithPassword userWithPassword = userManager.resetPassword(userId, principal);
         return new UserWithPasswordAndQRCode(userWithPassword, Base64.getEncoder().encodeToString(generateQRCode(userWithPassword, baseUrl)));
     }

@@ -248,8 +248,7 @@ public class MustacheCustomTag {
     private static class TargetBlankProvider implements AttributeProvider {
         @Override
         public void setAttributes(Node node, String tagName, Map<String, String> attributes) {
-            if (node instanceof Link) {
-                Link l = (Link) node;
+            if (node instanceof Link l) {
                 String destination = StringUtils.trimToEmpty(l.getDestination());
                 var scheme = getScheme(destination);
                 scheme.ifPresent(resolvedScheme -> {

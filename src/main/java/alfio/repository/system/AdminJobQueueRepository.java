@@ -48,9 +48,11 @@ public interface AdminJobQueueRepository {
     int scheduleRetry(@Bind("id") long id,
                       @Bind("requestTs") ZonedDateTime requestTs);
 
-    @Query("insert into admin_job_queue(job_name, request_ts, metadata, status, attempts, allow_duplicates)" +
-        " values(:jobName, :requestTs, to_json(:metadata::json), 'SCHEDULED', 1, :allowDuplicates)" +
-        " on conflict do nothing")
+    @Query("""
+        insert into admin_job_queue(job_name, request_ts, metadata, status, attempts, allow_duplicates)\
+         values(:jobName, :requestTs, to_json(:metadata::json), 'SCHEDULED', 1, :allowDuplicates)\
+         on conflict do nothing\
+        """)
     int schedule(@Bind("jobName") JobName jobName,
                  @Bind("requestTs") ZonedDateTime requestTimestamp,
                  @Bind("metadata") @JSONData Map<String, Object> metadata,

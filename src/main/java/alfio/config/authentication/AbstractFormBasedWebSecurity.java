@@ -33,8 +33,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
-import org.springframework.security.config.annotation.web.configurers.ExpressionUrlAuthorizationConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -47,11 +47,11 @@ import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
-import javax.servlet.Filter;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.Filter;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.function.Predicate;
@@ -118,9 +118,9 @@ abstract class AbstractFormBasedWebSecurity {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
-            http.requiresChannel().antMatchers("/healthz").requiresInsecure()
+            http.requiresChannel().requestMatchers("/healthz").requiresInsecure()
                 .and()
-                .requiresChannel().mvcMatchers("/**").requiresSecure();
+                .requiresChannel().requestMatchers("/**").requiresSecure();
         }
 
         CsrfConfigurer<HttpSecurity> configurer = csrfConfigurer(http);
@@ -130,7 +130,7 @@ abstract class AbstractFormBasedWebSecurity {
             .and()
             .headers().frameOptions().disable() // https://github.com/alfio-event/alf.io/issues/1031 X-Frame-Options has been moved to IndexController
             .and()
-            .authorizeRequests(AbstractFormBasedWebSecurity::authorizeRequests)
+            .authorizeHttpRequests(AbstractFormBasedWebSecurity::authorizeRequests)
             .authenticationManager(authenticationManager)
             .formLogin()
             .loginPage("/authentication")
@@ -198,27 +198,24 @@ abstract class AbstractFormBasedWebSecurity {
         };
     }
 
-    private static void authorizeRequests(ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry auth) {
-        auth.antMatchers(ADMIN_PUBLIC_API + "/**").denyAll() // Admin public API requests must be authenticated using API-Keys
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/users/current").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(HttpMethod.POST, ADMIN_API + "/users/check", ADMIN_API + "/users/current/edit", ADMIN_API + "/users/current/update-password").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
-            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/system/**").hasRole(ADMIN)
-            .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(HttpMethod.GET, OWNERSHIP_REQUIRED).hasAnyRole(ADMIN, OWNER)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(HttpMethod.PUT,
-                ADMIN_API + "/reservation/event/*/*/notify",
-                ADMIN_API + "/reservation/event/*/*/notify-attendees",
-                ADMIN_API + "/reservation/event/*/*/confirm"
+    private static void authorizeRequests(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers(ADMIN_PUBLIC_API + "/**").denyAll() // Admin public API requests must be authenticated using API-Keys
+            .requestMatchers(HttpMethod.GET, ADMIN_API + "/users/current").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(HttpMethod.POST, ADMIN_API + "/users/check", ADMIN_API + "/users/current/edit", ADMIN_API + "/users/current/update-password").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/system/**").hasRole(ADMIN)
+            .requestMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(HttpMethod.GET, OWNERSHIP_REQUIRED).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify", ADMIN_API + "/reservation/event/*/*/notify-attendees", ADMIN_API + "/reservation/event/*/*/confirm"
             ).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
-            .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
-            .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers("/api/attendees/**").denyAll()
-            .antMatchers("/callback").permitAll()
-            .antMatchers("/**").permitAll();
+            .requestMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
+            .requestMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
+            .requestMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers("/api/attendees/**").denyAll()
+            .requestMatchers("/callback").permitAll()
+            .requestMatchers("/**").permitAll();
     }
 
     private static CsrfConfigurer<HttpSecurity> csrfConfigurer(HttpSecurity http) throws Exception {

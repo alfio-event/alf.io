@@ -95,7 +95,7 @@ public class AttendeeApiController {
     }
 
     @GetMapping("/{eventKey}/sponsor-scan/mine")
-    public ResponseEntity<List<SponsorAttendeeData>> getScannedBadges(@PathVariable("eventKey") String eventShortName, @RequestParam(value = "from", required = false) String from, Principal principal) {
+    public ResponseEntity<List<SponsorAttendeeData>> getScannedBadges(@PathVariable("eventKey") String eventShortName, @RequestParam(required = false) String from, Principal principal) {
 
         ZonedDateTime start = Optional.ofNullable(StringUtils.trimToNull(from))
             .map(EventUtil.JSON_DATETIME_FORMATTER::parse)

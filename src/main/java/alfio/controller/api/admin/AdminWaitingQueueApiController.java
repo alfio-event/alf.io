@@ -32,7 +32,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.ZonedDateTime;
@@ -57,7 +57,7 @@ public class AdminWaitingQueueApiController {
     private final AccessService accessService;
 
     @GetMapping("/status")
-    public Map<String, Boolean> getStatusForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+    public Map<String, Boolean> getStatusForEvent(@PathVariable String eventName, Principal principal) {
         accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(this::loadStatus)
@@ -80,7 +80,7 @@ public class AdminWaitingQueueApiController {
     }
 
     @PutMapping("/status")
-    public Map<String, Boolean> setStatusForEvent(@PathVariable("eventName") String eventName, @RequestBody SetStatusForm form, Principal principal) {
+    public Map<String, Boolean> setStatusForEvent(@PathVariable String eventName, @RequestBody SetStatusForm form, Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
@@ -92,7 +92,7 @@ public class AdminWaitingQueueApiController {
     }
 
     @GetMapping("/count")
-    public Integer countWaitingPeople(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
+    public Integer countWaitingPeople(@PathVariable String eventName, Principal principal, HttpServletResponse response) {
         accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         Optional<Integer> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.countSubscribers(e.getId()));
@@ -104,7 +104,7 @@ public class AdminWaitingQueueApiController {
     }
 
     @GetMapping("/load")
-    public List<WaitingQueueSubscription> loadAllSubscriptions(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
+    public List<WaitingQueueSubscription> loadAllSubscriptions(@PathVariable String eventName, Principal principal, HttpServletResponse response) {
         accessService.checkEventOwnership(principal, eventName);
         Optional<List<WaitingQueueSubscription>> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.loadAllSubscriptionsForEvent(e.getId()));
@@ -116,8 +116,8 @@ public class AdminWaitingQueueApiController {
     }
 
     @GetMapping("/download")
-    public void downloadAllSubscriptions(@PathVariable("eventName") String eventName,
-                                         @RequestParam(name = "format", defaultValue = "excel") String format,
+    public void downloadAllSubscriptions(@PathVariable String eventName,
+                                         @RequestParam(defaultValue = "excel") String format,
                                          Principal principal, HttpServletResponse response) throws IOException {
         accessService.checkEventOwnership(principal, eventName);
         var event = eventManager.getSingleEvent(eventName, principal.getName());
@@ -142,15 +142,15 @@ public class AdminWaitingQueueApiController {
     }
 
     @DeleteMapping("/subscriber/{subscriberId}")
-    public ResponseEntity<Map<String, Object>> removeSubscriber(@PathVariable("eventName") String eventName,
-                                                                @PathVariable("subscriberId") int subscriberId,
+    public ResponseEntity<Map<String, Object>> removeSubscriber(@PathVariable String eventName,
+                                                                @PathVariable int subscriberId,
                                                                 Principal principal) {
         return performStatusModification(eventName, subscriberId, principal, WaitingQueueSubscription.Status.CANCELLED, WaitingQueueSubscription.Status.WAITING);
     }
 
     @PutMapping("/subscriber/{subscriberId}/restore")
-    public ResponseEntity<Map<String, Object>> restoreSubscriber(@PathVariable("eventName") String eventName,
-                                                                 @PathVariable("subscriberId") int subscriberId,
+    public ResponseEntity<Map<String, Object>> restoreSubscriber(@PathVariable String eventName,
+                                                                 @PathVariable int subscriberId,
                                                                  Principal principal) {
         return performStatusModification(eventName, subscriberId, principal, WaitingQueueSubscription.Status.WAITING, WaitingQueueSubscription.Status.CANCELLED);
     }

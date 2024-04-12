@@ -51,9 +51,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.Principal;
 import java.time.ZonedDateTime;
@@ -113,13 +113,13 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}")
-    public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName, HttpSession session) {
+    public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable String eventName, HttpSession session) {
         return eventLoader.loadEventInfo(eventName, session).map(eventWithAdditionalInfo -> new ResponseEntity<>(eventWithAdditionalInfo, getCorsHeaders(), HttpStatus.OK))
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
 
     @PostMapping("event/{eventName}/waiting-list/subscribe")
-    public ResponseEntity<ValidatedResponse<Boolean>> subscribeToWaitingList(@PathVariable("eventName") String eventName,
+    public ResponseEntity<ValidatedResponse<Boolean>> subscribeToWaitingList(@PathVariable String eventName,
                                                                              @RequestBody WaitingQueueSubscriptionForm subscription,
                                                                              BindingResult bindingResult) {
 
@@ -137,7 +137,7 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/ticket-categories")
-    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code) {
+    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable String eventName, @RequestParam(required = false) String code) {
 
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
@@ -246,10 +246,10 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/calendar/{locale}")
-    public void getCalendar(@PathVariable("eventName") String eventName,
-                            @PathVariable("locale") String locale,
+    public void getCalendar(@PathVariable String eventName,
+                            @PathVariable String locale,
                             @RequestParam(value = "type", required = false) String calendarType,
-                            @RequestParam(value = "ticketId", required = false) String ticketId,
+                            @RequestParam(required = false) String ticketId,
                             HttpServletResponse response) {
 
         eventRepository.findOptionalByShortName(eventName).ifPresentOrElse(ev -> {
@@ -288,8 +288,8 @@ public class EventApiV2Controller {
      * @return
      */
     @PostMapping(value = "event/{eventName}/reserve-tickets")
-    public ResponseEntity<ValidatedResponse<String>> reserveTickets(@PathVariable("eventName") String eventName,
-                                                                    @RequestParam("lang") String lang,
+    public ResponseEntity<ValidatedResponse<String>> reserveTickets(@PathVariable String eventName,
+                                                                    @RequestParam String lang,
                                                                     @RequestBody ReservationForm reservation,
                                                                     BindingResult bindingResult,
                                                                     ServletWebRequest request,
@@ -334,8 +334,8 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/validate-code")
-    public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable("eventName") String eventName,
-                                                                     @RequestParam("code") String code) {
+    public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable String eventName,
+                                                                     @RequestParam String code) {
 
         var res = promoCodeRequestManager.checkCode(eventName, code);
         if(res.isSuccess()) {
@@ -356,7 +356,7 @@ public class EventApiV2Controller {
     }
 
     @PostMapping("event/{eventName}/check-discount")
-    public ResponseEntity<DynamicDiscount> checkDiscount(@PathVariable("eventName") String eventName, @RequestBody ReservationForm reservation) {
+    public ResponseEntity<DynamicDiscount> checkDiscount(@PathVariable String eventName, @RequestBody ReservationForm reservation) {
         return eventRepository.findOptionalByShortName(eventName)
             .flatMap(event -> {
                 Map<Integer, Long> quantityByCategory = reservation.getReservation().stream()
@@ -383,7 +383,7 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/code/{code}")
-    public ResponseEntity<Void> handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, ServletWebRequest request, Principal principal) {
+    public ResponseEntity<Void> handleCode(@PathVariable String eventName, @PathVariable String code, ServletWebRequest request, Principal principal) {
         String trimmedCode = StringUtils.trimToNull(code);
         Map<String, String> queryStrings = new HashMap<>();
 

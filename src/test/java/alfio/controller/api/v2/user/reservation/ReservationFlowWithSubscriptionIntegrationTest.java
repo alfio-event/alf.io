@@ -59,7 +59,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -94,7 +93,6 @@ class ReservationFlowWithSubscriptionIntegrationTest extends BaseReservationFlow
 
     private ReservationFlowContext context;
 
-    @Autowired
     public ReservationFlowWithSubscriptionIntegrationTest(OrganizationRepository organizationRepository,
                                                           EventManager eventManager,
                                                           EventRepository eventRepository,

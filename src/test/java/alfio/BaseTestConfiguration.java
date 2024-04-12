@@ -27,8 +27,10 @@ import alfio.util.RefreshableDataSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.Stripe;
 import com.zaxxer.hikari.HikariConfig;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -37,7 +39,6 @@ import org.springframework.core.io.ByteArrayResource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import javax.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.net.http.HttpClient;
@@ -69,6 +70,7 @@ public class BaseTestConfiguration {
     private static GenericContainer<?> stripeMock;
 
     @Bean
+    @DependsOnDatabaseInitialization
     @Profile("!travis")
     public RefreshableDataSource dataSource() {
         String postgresVersion = Objects.requireNonNullElse(System.getProperty("pgsql.version"), "10");

@@ -27,8 +27,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.context.request.ServletWebRequest;
 
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.*;
@@ -81,8 +81,8 @@ public class RequestUtils {
     }
 
     public static boolean isAdmin(Principal principal) {
-        if (principal instanceof Authentication) {
-            return hasRole((Authentication) principal, "ROLE_ADMIN");
+        if (principal instanceof Authentication authentication) {
+            return hasRole(authentication, "ROLE_ADMIN");
         }
         return false;
     }
@@ -94,8 +94,8 @@ public class RequestUtils {
     }
 
     public static boolean isSystemApiKey(Principal principal) {
-        if (principal instanceof Authentication) {
-            return hasRole((Authentication)principal, "ROLE_SYSTEM_API_CLIENT");
+        if (principal instanceof Authentication authentication) {
+            return hasRole(authentication, "ROLE_SYSTEM_API_CLIENT");
         }
         return false;
     }

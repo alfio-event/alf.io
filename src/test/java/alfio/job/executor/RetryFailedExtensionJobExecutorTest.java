@@ -42,7 +42,6 @@ import alfio.util.ClockProvider;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -81,7 +80,6 @@ class RetryFailedExtensionJobExecutorTest {
     private final AdminJobQueueRepository adminJobQueueRepository;
     private final AdminJobManager adminJobManager;
 
-    @Autowired
     RetryFailedExtensionJobExecutorTest(EventManager eventManager,
                                         UserManager userManager,
                                         ExtensionService extensionService,

@@ -50,7 +50,7 @@ public enum PlatformProvider {
                 return "";
             }
             URI uri = resolveURI(env, "ELEPHANTSQL_URI");
-            return String.format("%s://%s:%s%s", "jdbc:postgresql", uri.getHost(), uri.getPort(), uri.getPath());
+            return "%s://%s:%s%s".formatted("jdbc:postgresql", uri.getHost(), uri.getPort(), uri.getPath());
         }
 
         @Override
@@ -148,7 +148,7 @@ public enum PlatformProvider {
         @Override
         public String getUrl(Environment env) {
             URI uri = resolveURI(env);
-            return String.format("%s://%s:%s%s", "jdbc:postgresql", uri.getHost(), uri.getPort(), uri.getPath());
+            return "%s://%s:%s%s".formatted("jdbc:postgresql", uri.getHost(), uri.getPort(), uri.getPath());
         }
 
         @Override
@@ -208,7 +208,7 @@ public enum PlatformProvider {
             String host = env.getRequiredProperty("RDS_HOSTNAME");
             String port = env.getRequiredProperty("RDS_PORT");
             String db = env.getRequiredProperty("RDS_DB_NAME");
-            return String.format("jdbc:%s://%s:%s/%s", dbType, host, port, db);
+            return "jdbc:%s://%s:%s/%s".formatted(dbType, host, port, db);
         }
 
         @Override
@@ -231,7 +231,7 @@ public enum PlatformProvider {
     CLEVER_CLOUD {
         @Override
         public String getUrl(Environment env) {
-            return String.format("jdbc:postgresql://%s:%s/%s", env.getRequiredProperty("POSTGRESQL_ADDON_HOST"),
+            return "jdbc:postgresql://%s:%s/%s".formatted(env.getRequiredProperty("POSTGRESQL_ADDON_HOST"),
                 env.getRequiredProperty("POSTGRESQL_ADDON_PORT"), env.getRequiredProperty("POSTGRESQL_ADDON_DB"));
         }
 

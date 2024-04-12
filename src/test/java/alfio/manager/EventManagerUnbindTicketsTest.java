@@ -36,7 +36,6 @@ import java.util.Optional;
 
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @DisplayName("EventManager: unbind tickets from category")

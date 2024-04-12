@@ -33,7 +33,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -89,7 +88,6 @@ public class DataMigrator {
         PRICE_UPDATE_BY_KEY.put("additional_service_item", "update additional_service_item set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts, vat_cts = :vatCts where id = :additionalServiceItemId");
     }
 
-    @Autowired
     public DataMigrator(EventMigrationRepository eventMigrationRepository,
                         EventRepository eventRepository,
                         TicketCategoryRepository ticketCategoryRepository,

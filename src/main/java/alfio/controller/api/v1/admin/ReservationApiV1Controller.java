@@ -34,7 +34,6 @@ import alfio.model.user.Role;
 import alfio.util.ReservationUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -59,7 +58,6 @@ public class ReservationApiV1Controller {
     private final AccessService accessService;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
 
-    @Autowired
     public ReservationApiV1Controller(TicketReservationManager ticketReservationManager,
                                       PurchaseContextManager purchaseContextManager,
                                       PromoCodeRequestManager promoCodeRequestManager,
@@ -79,8 +77,8 @@ public class ReservationApiV1Controller {
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/reservation/{id}")
-    public ResponseEntity<ReservationDetail> retrieveDetail(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                            @PathVariable("publicIdentifier") String publicIdentifier,
+    public ResponseEntity<ReservationDetail> retrieveDetail(@PathVariable PurchaseContextType purchaseContextType,
+                                                            @PathVariable String publicIdentifier,
                                                             @PathVariable("id") String reservationId,
                                                             Principal principal) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
@@ -178,7 +176,7 @@ public class ReservationApiV1Controller {
     }
 
     @PutMapping("/reservation/{reservationId}/confirm")
-    public ResponseEntity<ReservationConfirmationResponse> confirmReservation(@PathVariable("reservationId") String reservationId,
+    public ResponseEntity<ReservationConfirmationResponse> confirmReservation(@PathVariable String reservationId,
                                                                               @RequestBody ReservationConfirmationRequest reservationConfirmationRequest,
                                                                               Principal principal) {
 
@@ -216,8 +214,8 @@ public class ReservationApiV1Controller {
 
     // delete ticket from event
     @DeleteMapping("/event/{slug}/reservation/delete-ticket/{ticketUUID}")
-    public ResponseEntity<Boolean> deleteTicket(@PathVariable("slug") String slug,
-                                                @PathVariable("ticketUUID") String ticketUUID,
+    public ResponseEntity<Boolean> deleteTicket(@PathVariable String slug,
+                                                @PathVariable String ticketUUID,
                                                 Principal user) {
         accessService.checkEventTicketIdentifierMembership(user, slug, ticketUUID, EnumSet.of(Role.OWNER, Role.API_CONSUMER));
         return ResponseEntity.of(adminReservationManager.findTicketWithReservationId(ticketUUID, slug, user.getName())
@@ -238,7 +236,7 @@ public class ReservationApiV1Controller {
     // delete subscription
     @DeleteMapping("/subscription/{id}/reservation/delete-subscription/{subscriptionToDelete}")
     public ResponseEntity<Boolean> deleteSubscription(@PathVariable("id") String descriptorId,
-                                                      @PathVariable("subscriptionToDelete") UUID subscriptionToDelete,
+                                                      @PathVariable UUID subscriptionToDelete,
                                                       Principal user) {
         accessService.checkSubscriptionDescriptorOwnership(user, descriptorId);
         return ResponseEntity.of(adminReservationManager.findReservationIdForSubscription(descriptorId, subscriptionToDelete, user)
@@ -266,10 +264,10 @@ public class ReservationApiV1Controller {
                 reservationConfiguration.isLockEmailEdit());
             ticketReservationManager.setReservationMetadata(id, reservationMetadata);
         }
-        var descriptorId = creationRequest instanceof TicketReservationCreationRequest ? ((TicketReservationCreationRequest) creationRequest).getSubscriptionId() : null;
-        if (creationRequest instanceof SubscriptionReservationCreationRequest && ((SubscriptionReservationCreationRequest)creationRequest).hasAdditionalInfo()) {
+        var descriptorId = creationRequest instanceof TicketReservationCreationRequest trcr ? trcr.getSubscriptionId() : null;
+        if (creationRequest instanceof SubscriptionReservationCreationRequest request && request.hasAdditionalInfo()) {
             var subscriptionId = ticketReservationManager.findSubscriptionDetails(id).orElseThrow().getSubscription().getId();
-            purchaseContextFieldManager.updateFieldsForReservation(((SubscriptionReservationCreationRequest) creationRequest).getSubscriptionOwner(), purchaseContext,
+            purchaseContextFieldManager.updateFieldsForReservation(request.getSubscriptionOwner(), purchaseContext,
                 null, subscriptionId);
         }
         return CreationResponse.success(id, ticketReservationManager.reservationUrlForExternalClients(id, purchaseContext, locale.getLanguage(), user != null, descriptorId));

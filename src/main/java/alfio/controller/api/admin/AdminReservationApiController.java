@@ -34,7 +34,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Collections;
@@ -58,8 +58,8 @@ public class AdminReservationApiController {
     private final AccessService accessService;
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/new")
-    public Result<String> createNew(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                    @PathVariable("publicIdentifier") String publicIdentifier,
+    public Result<String> createNew(@PathVariable PurchaseContextType purchaseContextType,
+                                    @PathVariable String publicIdentifier,
                                     @RequestBody AdminReservationModification reservation,
                                     Principal principal) {
         if(purchaseContextType != PurchaseContextType.event) {
@@ -71,16 +71,16 @@ public class AdminReservationApiController {
 
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/reservations/all-status")
-    public TicketReservation.TicketReservationStatus[] getAllStatus(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier) {
+    public TicketReservation.TicketReservationStatus[] getAllStatus(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier) {
         return TicketReservation.TicketReservationStatus.values();
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/reservations/list")
-    public PageAndContent<List<TicketReservation>> findAll(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                           @PathVariable("publicIdentifier") String publicIdentifier,
-                                                           @RequestParam(value = "page", required = false) Integer page,
-                                                           @RequestParam(value = "search", required = false) String search,
-                                                           @RequestParam(value = "status", required = false) List<TicketReservation.TicketReservationStatus> status,
+    public PageAndContent<List<TicketReservation>> findAll(@PathVariable PurchaseContextType purchaseContextType,
+                                                           @PathVariable String publicIdentifier,
+                                                           @RequestParam(required = false) Integer page,
+                                                           @RequestParam(required = false) String search,
+                                                           @RequestParam(required = false) List<TicketReservation.TicketReservationStatus> status,
                                                            Principal principal) {
 
         return purchaseContextManager.findBy(purchaseContextType, publicIdentifier)
@@ -92,9 +92,9 @@ public class AdminReservationApiController {
     }
 
     @PutMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/confirm")
-    public Result<TicketReservationDescriptor> confirmReservation(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                                  @PathVariable("publicIdentifier") String publicIdentifier,
-                                                                  @PathVariable("reservationId") String reservationId,
+    public Result<TicketReservationDescriptor> confirmReservation(@PathVariable PurchaseContextType purchaseContextType,
+                                                                  @PathVariable String publicIdentifier,
+                                                                  @PathVariable String reservationId,
                                                                   Principal principal) {
         accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.confirmReservation(purchaseContextType, publicIdentifier, reservationId, principal.getName(), AdminReservationModification.Notification.EMPTY)
@@ -102,9 +102,9 @@ public class AdminReservationApiController {
     }
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}")
-    public Result<Boolean> updateReservation(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                             @PathVariable("publicIdentifier") String publicIdentifier,
-                                             @PathVariable("reservationId") String reservationId,
+    public Result<Boolean> updateReservation(@PathVariable PurchaseContextType purchaseContextType,
+                                             @PathVariable String publicIdentifier,
+                                             @PathVariable String reservationId,
                                              @RequestBody AdminReservationModification arm,
                                              Principal principal) {
         accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
@@ -112,9 +112,9 @@ public class AdminReservationApiController {
     }
 
     @PutMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/notify")
-    public Result<Boolean> notifyReservation(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                             @PathVariable("publicIdentifier") String publicIdentifier,
-                                             @PathVariable("reservationId") String reservationId,
+    public Result<Boolean> notifyReservation(@PathVariable PurchaseContextType purchaseContextType,
+                                             @PathVariable String publicIdentifier,
+                                             @PathVariable String reservationId,
                                              @RequestBody AdminReservationModification arm,
                                              Principal principal) {
         accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
@@ -122,8 +122,8 @@ public class AdminReservationApiController {
     }
 
     @PutMapping("/event/{publicIdentifier}/{reservationId}/notify-attendees")
-    public Result<Boolean> notifyAttendees(@PathVariable("publicIdentifier") String publicIdentifier,
-                                           @PathVariable("reservationId") String reservationId,
+    public Result<Boolean> notifyAttendees(@PathVariable String publicIdentifier,
+                                           @PathVariable String reservationId,
                                            @RequestBody List<Integer> ids,
                                            Principal principal) {
         accessService.checkReservationMembership(principal, PurchaseContextType.event, publicIdentifier, reservationId);
@@ -131,24 +131,24 @@ public class AdminReservationApiController {
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/audit")
-    public Result<List<Audit>> getAudit(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                        @PathVariable("publicIdentifier") String publicIdentifier,
-                                        @PathVariable("reservationId") String reservationId, Principal principal) {
+    public Result<List<Audit>> getAudit(@PathVariable PurchaseContextType purchaseContextType,
+                                        @PathVariable String publicIdentifier,
+                                        @PathVariable String reservationId, Principal principal) {
         accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.getAudit(purchaseContextType, publicIdentifier, reservationId, principal.getName());
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/billing-documents")
-    public Result<List<BillingDocument>> getBillingDocuments(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, Principal principal) {
+    public Result<List<BillingDocument>> getBillingDocuments(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, Principal principal) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.getBillingDocuments(publicIdentifier, reservationId, principal.getName());
     }
 
     @DeleteMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/billing-document/{documentId}")
-    public ResponseEntity<Boolean> invalidateBillingDocument(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                             @PathVariable("publicIdentifier") String publicIdentifier,
-                                                             @PathVariable("reservationId") String reservationId,
-                                                             @PathVariable("documentId") long documentId,
+    public ResponseEntity<Boolean> invalidateBillingDocument(@PathVariable PurchaseContextType purchaseContextType,
+                                                             @PathVariable String publicIdentifier,
+                                                             @PathVariable String reservationId,
+                                                             @PathVariable long documentId,
                                                              Principal principal) {
         accessService.checkBillingDocumentOwnership(principal, purchaseContextType, publicIdentifier, reservationId, documentId);
         Result<Boolean> invalidateResult = adminReservationManager.invalidateBillingDocument(reservationId, documentId, principal.getName());
@@ -160,10 +160,10 @@ public class AdminReservationApiController {
     }
 
     @PutMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/billing-document/{documentId}/restore")
-    public ResponseEntity<Boolean> restoreBillingDocument(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                          @PathVariable("publicIdentifier") String publicIdentifier,
-                                                          @PathVariable("reservationId") String reservationId,
-                                                          @PathVariable("documentId") long documentId,
+    public ResponseEntity<Boolean> restoreBillingDocument(@PathVariable PurchaseContextType purchaseContextType,
+                                                          @PathVariable String publicIdentifier,
+                                                          @PathVariable String reservationId,
+                                                          @PathVariable long documentId,
                                                           Principal principal) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         Result<Boolean> restoreResult = adminReservationManager.restoreBillingDocument(reservationId, documentId, principal.getName());
@@ -175,10 +175,10 @@ public class AdminReservationApiController {
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/billing-document/{documentId}")
-    public ResponseEntity<Void> getBillingDocument(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                   @PathVariable("publicIdentifier") String publicIdentifier,
-                                                   @PathVariable("reservationId") String reservationId,
-                                                   @PathVariable("documentId") long documentId,
+    public ResponseEntity<Void> getBillingDocument(@PathVariable PurchaseContextType purchaseContextType,
+                                                   @PathVariable String publicIdentifier,
+                                                   @PathVariable String reservationId,
+                                                   @PathVariable long documentId,
                                                    Principal principal,
                                                    HttpServletResponse response) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
@@ -192,14 +192,14 @@ public class AdminReservationApiController {
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}")
-    public Result<TicketReservationDescriptor> loadReservation(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, Principal principal) {
+    public Result<TicketReservationDescriptor> loadReservation(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, Principal principal) {
         accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.loadReservation(purchaseContextType, publicIdentifier, reservationId, principal.getName())
             .map(triple -> toReservationDescriptor(reservationId, triple));
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/ticket/{ticketId}")
-    public Result<Ticket> loadTicket(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, @PathVariable("ticketId") int ticketId, Principal principal) {
+    public Result<Ticket> loadTicket(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, @PathVariable int ticketId, Principal principal) {
         accessService.checkTicketMembership(principal, publicIdentifier, reservationId, ticketId);
         return adminReservationManager.loadReservation(purchaseContextType, publicIdentifier, reservationId, principal.getName()).flatMap(triple ->
             //not optimal
@@ -212,9 +212,9 @@ public class AdminReservationApiController {
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/tickets-with-additional-data")
-    public List<Integer> ticketsWithAdditionalData(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                   @PathVariable("publicIdentifier") String publicIdentifier,
-                                                   @PathVariable("reservationId") String reservationId,
+    public List<Integer> ticketsWithAdditionalData(@PathVariable PurchaseContextType purchaseContextType,
+                                                   @PathVariable String publicIdentifier,
+                                                   @PathVariable String reservationId,
                                                    Principal principal) {
         if(purchaseContextType != PurchaseContextType.event) {
             return List.of();
@@ -225,8 +225,8 @@ public class AdminReservationApiController {
 
 
     @PostMapping("/event/{publicIdentifier}/{reservationId}/remove-tickets")
-    public Result<RemoveResult> removeTickets(@PathVariable("publicIdentifier") String publicIdentifier,
-                                         @PathVariable("reservationId") String reservationId,
+    public Result<RemoveResult> removeTickets(@PathVariable String publicIdentifier,
+                                         @PathVariable String reservationId,
                                          @RequestBody RemoveTicketsModification toRemove,
                                          Principal principal) {
         accessService.checkReservationMembership(principal, PurchaseContextType.event, publicIdentifier, reservationId);
@@ -246,25 +246,25 @@ public class AdminReservationApiController {
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/payment-info")
-    public Result<TransactionAndPaymentInfo> getPaymentInfo(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, Principal principal) {
+    public Result<TransactionAndPaymentInfo> getPaymentInfo(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, Principal principal) {
         accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.getPaymentInfo(reservationId);
     }
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/cancel")
-    public Result<Boolean> removeReservation(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier,
-                                             @PathVariable("reservationId") String reservationId,
-                                             @RequestParam("refund") boolean refund,
-                                             @RequestParam(value = "notify", defaultValue = "false") boolean notify,
-                                             @RequestParam(value = "issueCreditNote", defaultValue = "false") boolean issueCreditNote,
+    public Result<Boolean> removeReservation(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier,
+                                             @PathVariable String reservationId,
+                                             @RequestParam boolean refund,
+                                             @RequestParam(defaultValue = "false") boolean notify,
+                                             @RequestParam(defaultValue = "false") boolean issueCreditNote,
                                              Principal principal) {
         accessService.checkReservationMembership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.removeReservation(purchaseContextType, publicIdentifier, reservationId, refund, notify, issueCreditNote, principal.getName());
     }
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/credit")
-    public Result<Boolean> creditReservation(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, @RequestParam("refund") boolean refund,
-                                             @RequestParam(value = "notify", defaultValue = "false") boolean notify,
+    public Result<Boolean> creditReservation(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, @RequestParam boolean refund,
+                                             @RequestParam(defaultValue = "false") boolean notify,
                                              Principal principal) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         adminReservationManager.creditReservation(purchaseContextType, publicIdentifier, reservationId, refund, notify, principal.getName());
@@ -272,27 +272,27 @@ public class AdminReservationApiController {
     }
 
     @PutMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/regenerate-billing-document")
-    public Result<Boolean> regenerateBillingDocument(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, Principal principal) {
+    public Result<Boolean> regenerateBillingDocument(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, Principal principal) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.regenerateBillingDocument(purchaseContextType, publicIdentifier, reservationId, principal.getName());
     }
 
     @PostMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/refund")
-    public Result<Boolean> refund(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, @RequestBody RefundAmount amount, Principal principal) {
+    public Result<Boolean> refund(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, @RequestBody RefundAmount amount, Principal principal) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.refund(purchaseContextType, publicIdentifier, reservationId, new BigDecimal(amount.amount), principal.getName());
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/email-list")
-    public Result<List<LightweightMailMessage>> getEmailList(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType, @PathVariable("publicIdentifier") String publicIdentifier, @PathVariable("reservationId") String reservationId, Principal principal) {
+    public Result<List<LightweightMailMessage>> getEmailList(@PathVariable PurchaseContextType purchaseContextType, @PathVariable String publicIdentifier, @PathVariable String reservationId, Principal principal) {
         accessService.checkReservationOwnership(principal, purchaseContextType, publicIdentifier, reservationId);
         return adminReservationManager.getEmailsForReservation(purchaseContextType, publicIdentifier, reservationId, principal.getName());
     }
 
     @GetMapping("/{purchaseContextType}/{publicIdentifier}/{reservationId}/ticket/{ticketId}/full-data")
-    public ResponseEntity<BookingInfoTicket> loadFullTicketData(@PathVariable("purchaseContextType") PurchaseContextType purchaseContextType,
-                                                                @PathVariable("publicIdentifier") String publicIdentifier,
-                                                                @PathVariable("reservationId") String reservationId,
+    public ResponseEntity<BookingInfoTicket> loadFullTicketData(@PathVariable PurchaseContextType purchaseContextType,
+                                                                @PathVariable String publicIdentifier,
+                                                                @PathVariable String reservationId,
                                                                 @PathVariable("ticketId") String ticketUUID,
                                                                 Principal principal) {
         if(purchaseContextType != PurchaseContextType.event) {

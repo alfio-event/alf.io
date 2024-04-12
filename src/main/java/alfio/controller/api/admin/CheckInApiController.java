@@ -43,7 +43,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -74,26 +74,26 @@ public class CheckInApiController {
     }
     
     @GetMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable int eventId, @PathVariable String ticketIdentifier, @RequestParam String qrCode, Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.evaluateTicketStatus(eventId, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
     @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode, Principal principal) {
+    public TicketAndCheckInResult findTicketWithUUID(@PathVariable String eventName, @PathVariable String ticketIdentifier, @RequestParam String qrCode, Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
     @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/status")
-    public TicketCheckInStatusResult getTicketStatus(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, Principal principal) {
+    public TicketCheckInStatusResult getTicketStatus(@PathVariable String eventName, @PathVariable String ticketIdentifier, Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.retrieveTicketStatus(ticketIdentifier);
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult checkIn(@PathVariable("eventId") int eventId,
-                                          @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public TicketAndCheckInResult checkIn(@PathVariable int eventId,
+                                          @PathVariable String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
                                           Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
@@ -101,10 +101,10 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
-    public TicketAndCheckInResult checkIn(@PathVariable("eventName") String eventName,
-                                          @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public TicketAndCheckInResult checkIn(@PathVariable String eventName,
+                                          @PathVariable String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
-                                          @RequestParam(value = "offlineUser", required = false) String offlineUser,
+                                          @RequestParam(required = false) String offlineUser,
                                           Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
@@ -113,10 +113,10 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/event/{eventName}/bulk")
-    public Map<String, TicketAndCheckInResult> bulkCheckIn(@PathVariable("eventName") String eventName,
+    public Map<String, TicketAndCheckInResult> bulkCheckIn(@PathVariable String eventName,
                                                            @RequestBody List<TicketIdentifierCode> ticketIdentifierCodes,
-                                                           @RequestParam(value = "offlineUser", required = false) String offlineUser,
-                                                           @RequestParam(value = "forceCheckInPaymentOnSite", required = false, defaultValue = "false") boolean forceCheckInPaymentOnSite,
+                                                           @RequestParam(required = false) String offlineUser,
+                                                           @RequestParam(required = false, defaultValue = "false") boolean forceCheckInPaymentOnSite,
                                                            Principal principal) {
         accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
@@ -133,8 +133,8 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in")
-    public boolean manualCheckIn(@PathVariable("eventId") int eventId,
-                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public boolean manualCheckIn(@PathVariable int eventId,
+                                 @PathVariable String ticketIdentifier,
                                  Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         log.warn("for event id : {} and ticket : {}, a manual check in has been done by {}", eventId, ticketIdentifier, principal.getName());
@@ -142,8 +142,8 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/manual-check-in")
-    public ResponseEntity<Boolean> manualCheckIn(@PathVariable("eventName") String eventName,
-                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public ResponseEntity<Boolean> manualCheckIn(@PathVariable String eventName,
+                                 @PathVariable String ticketIdentifier,
                                  Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
@@ -151,8 +151,8 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/revert-check-in")
-    public boolean revertCheckIn(@PathVariable("eventId") int eventId,
-                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public boolean revertCheckIn(@PathVariable int eventId,
+                                 @PathVariable String ticketIdentifier,
                                  Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         log.warn("for event id : {} and ticket : {}, a revert of the check in has been done by {}", eventId, ticketIdentifier, principal.getName());
@@ -160,18 +160,18 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/revert-check-in")
-    public ResponseEntity<Boolean> revertCheckIn(@PathVariable("eventName") String eventName,
-                                 @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public ResponseEntity<Boolean> revertCheckIn(@PathVariable String eventName,
+                                 @PathVariable String ticketIdentifier,
                                  Principal principal) {
         var eventAndOrgId = accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return ResponseEntity.ok(revertCheckIn(eventAndOrgId.getId(), ticketIdentifier, principal));
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment")
-    public TicketAndCheckInResult confirmOnSitePayment(@PathVariable("eventName") String eventName,
-                                                       @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public TicketAndCheckInResult confirmOnSitePayment(@PathVariable String eventName,
+                                                       @PathVariable String ticketIdentifier,
                                                        @RequestBody TicketCode ticketCode,
-                                                       @RequestParam(value = "offlineUser", required = false) String offlineUser,
+                                                       @RequestParam(required = false) String offlineUser,
                                                        Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventName, ticketIdentifier, AccessService.CHECKIN_ROLES);
         String username = principal.getName();
@@ -180,13 +180,13 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/event/{eventName}/statistics")
-    public CheckInStatistics getStatistics(@PathVariable("eventName") String eventName, Principal principal) {
+    public CheckInStatistics getStatistics(@PathVariable String eventName, Principal principal) {
         accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
         return checkInManager.getStatistics(eventName, principal.getName());
     }
     
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment")
-    public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, Principal principal) {
+    public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable int eventId, @PathVariable String ticketIdentifier, Principal principal) {
         accessService.checkEventTicketIdentifierMembership(principal, eventId, ticketIdentifier, AccessService.CHECKIN_ROLES);
         return checkInManager.confirmOnSitePayment(ticketIdentifier)
             .map(s -> new OnSitePaymentConfirmation(true, "ok"))
@@ -194,8 +194,8 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/{eventId}/ticket-identifiers")
-    public List<Integer> findAllIdentifiersForAdminCheckIn(@PathVariable("eventId") int eventId,
-                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
+    public List<Integer> findAllIdentifiersForAdminCheckIn(@PathVariable int eventId,
+                                               @RequestParam(required = false) Long changedSince,
                                                HttpServletResponse response,
                                                Principal principal) {
         accessService.checkEventMembership(principal, eventId, AccessService.CHECKIN_ROLES);
@@ -204,9 +204,9 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/event/{publicIdentifier}/attendees")
-    public ResponseEntity<AttendeeSearchResults> searchAttendees(@PathVariable("publicIdentifier") String publicIdentifier,
-                                                                 @RequestParam(value = "query", required = false) String query,
-                                                                 @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+    public ResponseEntity<AttendeeSearchResults> searchAttendees(@PathVariable String publicIdentifier,
+                                                                 @RequestParam(required = false) String query,
+                                                                 @RequestParam(required = false, defaultValue = "0") int page,
                                                                  Principal principal) {
         accessService.checkEventMembership(principal, publicIdentifier, AccessService.CHECKIN_ROLES);
         if (StringUtils.isBlank(query) || StringUtils.isBlank(publicIdentifier)) {
@@ -219,7 +219,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/{eventId}/tickets")
-    public List<FullTicketInfo> findAllTicketsForAdminCheckIn(@PathVariable("eventId") int eventId,
+    public List<FullTicketInfo> findAllTicketsForAdminCheckIn(@PathVariable int eventId,
                                                               @RequestBody List<Integer> ids,
                                                               Principal principal) {
         accessService.checkEventMembership(principal, eventId, AccessService.CHECKIN_ROLES);
@@ -228,7 +228,7 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/{eventName}/label-layout")
-    public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+    public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable String eventName, Principal principal) {
         var event = accessService.canAccessEvent(principal, eventName);
         if (checkInManager.isOfflineCheckInEnabled().test(event)) {
             return parseLabelLayout(event);
@@ -238,8 +238,8 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/{eventName}/offline-identifiers")
-    public List<Integer> getOfflineIdentifiers(@PathVariable("eventName") String eventName,
-                                              @RequestParam(value = "changedSince", required = false) Long changedSince,
+    public List<Integer> getOfflineIdentifiers(@PathVariable String eventName,
+                                              @RequestParam(required = false) Long changedSince,
                                               HttpServletResponse resp,
                                               Principal principal) {
         var event = accessService.checkEventMembership(principal, eventName, AccessService.CHECKIN_ROLES);
@@ -256,7 +256,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/{eventName}/offline")
-    public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventName") String eventName,
+    public Map<String, String> getOfflineEncryptedInfo(@PathVariable String eventName,
                                                        @RequestParam(value = "additionalField", required = false) List<String> additionalFields,
                                                        @RequestBody List<Integer> ids,
                                                        Principal principal) {

@@ -23,7 +23,6 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.webhook.MollieWebhookPayload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.EnumSet;
 import java.util.List;

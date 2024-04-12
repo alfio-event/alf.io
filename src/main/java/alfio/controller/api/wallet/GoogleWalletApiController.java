@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -38,7 +38,7 @@ public class GoogleWalletApiController {
     private final GoogleWalletManager walletManager;
 
     @GetMapping("/version/passes/{uuid}")
-    public void walletPass(@PathVariable("eventName") String eventName,
+    public void walletPass(@PathVariable String eventName,
                                  @PathVariable("uuid") String serialNumber,
                                  HttpServletResponse response) throws IOException {
         Optional<Pair<EventAndOrganizationId, Ticket>> validationResult = walletManager.validateTicket(eventName, serialNumber);

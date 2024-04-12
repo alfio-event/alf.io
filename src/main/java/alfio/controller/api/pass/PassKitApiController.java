@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -46,9 +46,9 @@ public class PassKitApiController {
 
 
     @GetMapping("/version/passes/{passTypeIdentifier}/{serialNumber}")
-    public void getLatestVersion(@PathVariable("eventName") String eventName,
-                                 @PathVariable("passTypeIdentifier") String passTypeIdentifier,
-                                 @PathVariable("serialNumber") String serialNumber,
+    public void getLatestVersion(@PathVariable String eventName,
+                                 @PathVariable String passTypeIdentifier,
+                                 @PathVariable String serialNumber,
                                  @RequestHeader("Authorization") String authorization,
                                  HttpServletResponse response) throws IOException {
         Optional<Pair<EventAndOrganizationId, Ticket>> validationResult = passKitManager.validateToken(eventName, passTypeIdentifier, serialNumber, authorization);
@@ -61,8 +61,8 @@ public class PassKitApiController {
     }
 
     @GetMapping("/version/passes/{ticketUuid}")
-    public void downloadPassForTicket(@PathVariable("eventName") String eventName,
-                                      @PathVariable("ticketUuid") String ticketUuid,
+    public void downloadPassForTicket(@PathVariable String eventName,
+                                      @PathVariable String ticketUuid,
                                       HttpServletResponse response) throws IOException {
         var ticketAndEventData = passKitManager.retrieveTicketDetails(eventName, ticketUuid);
         if (ticketAndEventData.isPresent()) {

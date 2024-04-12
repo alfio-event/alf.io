@@ -30,8 +30,8 @@ import org.springframework.core.env.Profiles;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-import javax.servlet.Filter;
-import javax.servlet.SessionCookieConfig;
+import jakarta.servlet.Filter;
+import jakarta.servlet.SessionCookieConfig;
 import java.time.Clock;
 import java.util.logging.Level;
 

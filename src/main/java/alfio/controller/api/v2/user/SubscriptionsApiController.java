@@ -40,7 +40,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -107,7 +107,7 @@ public class SubscriptionsApiController {
     }
 
     @GetMapping("subscription/{id}")
-    public ResponseEntity<SubscriptionDescriptorWithAdditionalInfo> getSubscriptionInfo(@PathVariable("id") String id, HttpSession session) {
+    public ResponseEntity<SubscriptionDescriptorWithAdditionalInfo> getSubscriptionInfo(@PathVariable String id, HttpSession session) {
         var res = subscriptionManager.getSubscriptionById(UUID.fromString(id));
         return res
             .map(s -> {
@@ -149,7 +149,7 @@ public class SubscriptionsApiController {
     }
 
     @PostMapping("subscription/{id}")
-    public ResponseEntity<ValidatedResponse<String>> reserveSubscription(@PathVariable("id") String id, Locale locale, Principal principal) {
+    public ResponseEntity<ValidatedResponse<String>> reserveSubscription(@PathVariable String id, Locale locale, Principal principal) {
         var bindingResult = new MapBindingResult(new HashMap<>(), "request");
         return subscriptionManager.getSubscriptionById(UUID.fromString(id))
             .map(subscriptionDescriptor -> {

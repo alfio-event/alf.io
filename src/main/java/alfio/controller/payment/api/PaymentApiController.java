@@ -43,7 +43,7 @@ public class PaymentApiController {
     @PostMapping({"/api/reservation/{reservationId}/payment/{method}/init",
         "/api/events/{eventName}/reservation/{reservationId}/payment/{method}/init" //<-deprecated
     })
-    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("reservationId") String reservationId,
+    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
 
@@ -69,7 +69,7 @@ public class PaymentApiController {
         "/api/reservation/{reservationId}/payment/{method}/status",
         "/api/events/{eventName}/reservation/{reservationId}/payment/{method}/status" //<-deprecated
     })
-    public ResponseEntity<PaymentResult> getTransactionStatus(@PathVariable("reservationId") String reservationId,
+    public ResponseEntity<PaymentResult> getTransactionStatus(@PathVariable String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
         var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
         if (paymentMethod == null) {
@@ -86,7 +86,7 @@ public class PaymentApiController {
         "/api/v2/public/reservation/{reservationId}/transaction/force-check",
         "/api/v2/public/event/{eventName}/reservation/{reservationId}/transaction/force-check" //<-deprecated
     })
-    public ResponseEntity<PaymentResult> forceCheckStatus(@PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<PaymentResult> forceCheckStatus(@PathVariable String reservationId) {
         return ResponseEntity.of(getEventReservationPair(reservationId)
             .flatMap(pair -> ticketReservationManager.forceTransactionCheck(pair.getLeft(), pair.getRight())));
     }

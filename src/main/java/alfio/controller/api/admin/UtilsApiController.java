@@ -27,7 +27,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.joda.money.CurrencyUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -36,7 +35,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,7 +50,6 @@ public class UtilsApiController {
     private final String version;
     private final Environment environment;
 
-    @Autowired
     public UtilsApiController(EventNameManager eventNameManager, @Value("${alfio.version}") String version, Environment environment) {
         this.eventNameManager = eventNameManager;
         this.version = version;
@@ -65,12 +63,12 @@ public class UtilsApiController {
     }
 
     @GetMapping("/short-name/generate")
-    public String generateShortName(@RequestParam("displayName") String displayName) {
+    public String generateShortName(@RequestParam String displayName) {
         return eventNameManager.generateShortName(displayName);
     }
 
     @PostMapping("/short-name/validate")
-    public boolean validateShortName(@RequestParam("shortName") String shortName, HttpServletResponse response) {
+    public boolean validateShortName(@RequestParam String shortName, HttpServletResponse response) {
         boolean unique = eventNameManager.isUnique(shortName);
         if(!unique) {
             response.setStatus(HttpServletResponse.SC_CONFLICT);

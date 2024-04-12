@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class TicketReservationManagerUnitTest {
@@ -236,7 +235,7 @@ class TicketReservationManagerUnitTest {
             initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 1000, 1000);
             List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0, "CHF"));
             Assertions.assertEquals(2, summaryRows.size());
-            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), "%s failed".formatted(r.getType())));
         }
 
         @Test
@@ -244,7 +243,7 @@ class TicketReservationManagerUnitTest {
             initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 1000, 1000);
             List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0, "CHF"));
             Assertions.assertEquals(2, summaryRows.size());
-            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), "%s failed".formatted(r.getType())));
         }
 
         @Test
@@ -252,7 +251,7 @@ class TicketReservationManagerUnitTest {
             initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 1000, 1000);
             List<SummaryRow> summaryRows = generator.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
             Assertions.assertEquals(2, summaryRows.size());
-            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), String.format("%s failed", r.getType())));
+            summaryRows.forEach(r -> Assertions.assertEquals("10.00", r.getPrice(), "%s failed".formatted(r.getType())));
         }
 
         @Test

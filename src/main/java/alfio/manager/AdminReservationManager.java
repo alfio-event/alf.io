@@ -417,7 +417,7 @@ public class AdminReservationManager {
                         .orElse("Unknown error");
                     log.warn("Unable to apply subscription {}: {}", subscriptionId,
                         bindingResult.getAllErrors().stream().map(ObjectError::getCode).collect(joining(", ")));
-                    return Result.error(ErrorCode.custom(message, String.format("Cannot assign subscription %s to Reservation %s", subscriptionId, reservationId)));
+                    return Result.error(ErrorCode.custom(message, "Cannot assign subscription %s to Reservation %s".formatted(subscriptionId, reservationId)));
                 }
 
                 reservation = ticketReservationManager.findById(reservationId).orElseThrow();

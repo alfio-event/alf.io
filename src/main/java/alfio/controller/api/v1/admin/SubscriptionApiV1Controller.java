@@ -93,7 +93,7 @@ public class SubscriptionApiV1Controller {
     }
 
     @PostMapping("/{subscriptionId}/update")
-    public ResponseEntity<String> update(@PathVariable("subscriptionId") UUID subscriptionId,
+    public ResponseEntity<String> update(@PathVariable UUID subscriptionId,
                                          @RequestBody SubscriptionDescriptorModificationRequest request, Principal principal) {
         accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId.toString());
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
@@ -113,7 +113,7 @@ public class SubscriptionApiV1Controller {
     }
 
     @GetMapping("/{subscriptionId}")
-    public ResponseEntity<SubscriptionDescriptorWithStatistics> get(@PathVariable("subscriptionId") UUID subscriptionId,
+    public ResponseEntity<SubscriptionDescriptorWithStatistics> get(@PathVariable UUID subscriptionId,
                                                                     Principal principal) {
         accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId.toString());
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
@@ -121,7 +121,7 @@ public class SubscriptionApiV1Controller {
     }
 
     @GetMapping("/{subscriptionId}/events")
-    public ResponseEntity<List<String>> getLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
+    public ResponseEntity<List<String>> getLinkedEvents(@PathVariable UUID subscriptionId,
                                                         Principal principal) {
         accessService.checkSubscriptionDescriptorOwnership(principal, subscriptionId.toString());
         var organization = userManager.findUserOrganizations(principal.getName()).get(0);
@@ -129,7 +129,7 @@ public class SubscriptionApiV1Controller {
     }
 
     @PostMapping("/{subscriptionId}/events")
-    public ResponseEntity<List<String>> updateLinkedEvents(@PathVariable("subscriptionId") UUID subscriptionId,
+    public ResponseEntity<List<String>> updateLinkedEvents(@PathVariable UUID subscriptionId,
                                                            @RequestBody List<String> eventSlugs,
                                                            Principal principal) {
         if (eventSlugs == null) {

@@ -22,8 +22,8 @@ import ch.digitalfondue.basicxlsx.Style;
 import com.opencsv.CSVWriter;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;

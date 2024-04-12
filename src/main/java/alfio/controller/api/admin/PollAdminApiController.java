@@ -43,7 +43,7 @@ public class PollAdminApiController {
     private final AccessService accessService;
 
     @GetMapping
-    ResponseEntity<List<PollModification>> getAllForEvent(@PathVariable("eventName") String eventName,
+    ResponseEntity<List<PollModification>> getAllForEvent(@PathVariable String eventName,
                                                           Principal principal) {
         if(StringUtils.isEmpty(eventName)) {
             return ResponseEntity.badRequest().build();
@@ -53,8 +53,8 @@ public class PollAdminApiController {
     }
 
     @GetMapping("/{pollId}")
-    ResponseEntity<PollModification> getPollDetail(@PathVariable("eventName") String eventName,
-                                                   @PathVariable("pollId") Long pollId,
+    ResponseEntity<PollModification> getPollDetail(@PathVariable String eventName,
+                                                   @PathVariable Long pollId,
                                                    Principal principal) {
         if(StringUtils.isEmpty(eventName) || pollId == null) {
             return ResponseEntity.badRequest().build();
@@ -64,7 +64,7 @@ public class PollAdminApiController {
     }
 
     @PostMapping
-    ResponseEntity<Long> createNewPoll(@PathVariable("eventName") String eventName,
+    ResponseEntity<Long> createNewPoll(@PathVariable String eventName,
                                        @RequestBody PollModification form,
                                        Principal principal) {
         if(form == null || !form.isValid()) {
@@ -75,8 +75,8 @@ public class PollAdminApiController {
     }
 
     @PostMapping("/{pollId}")
-    ResponseEntity<PollModification> updatePoll(@PathVariable("eventName") String eventName,
-                                                @PathVariable("pollId") Long pollId,
+    ResponseEntity<PollModification> updatePoll(@PathVariable String eventName,
+                                                @PathVariable Long pollId,
                                                 @RequestBody PollModification form,
                                                 Principal principal) {
         if(form == null || !form.isValid(pollId)) {
@@ -87,25 +87,25 @@ public class PollAdminApiController {
     }
 
     @DeleteMapping("/{pollId}")
-    ResponseEntity<Boolean> deletePoll(@PathVariable("eventName") String eventName,
-                                       @PathVariable("pollId") Long pollId,
+    ResponseEntity<Boolean> deletePoll(@PathVariable String eventName,
+                                       @PathVariable Long pollId,
                                        Principal principal) {
         var eventAndOrganizationId = accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.ok(pollManager.deletePoll(eventAndOrganizationId, pollId));
     }
 
     @DeleteMapping("/{pollId}/option/{optionId}")
-    ResponseEntity<PollModification> removeOption(@PathVariable("eventName") String eventName,
-                                                 @PathVariable("pollId") Long pollId,
-                                                 @PathVariable("optionId") Long optionId,
+    ResponseEntity<PollModification> removeOption(@PathVariable String eventName,
+                                                 @PathVariable Long pollId,
+                                                 @PathVariable Long optionId,
                                                  Principal principal) {
         var event = accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.of(pollManager.removeOption(event, pollId, optionId).map(PollModification::from));
     }
 
     @PutMapping("/{pollId}")
-    ResponseEntity<PollModification> updateStatus(@PathVariable("eventName") String eventName,
-                                                  @PathVariable("pollId") Long pollId,
+    ResponseEntity<PollModification> updateStatus(@PathVariable String eventName,
+                                                  @PathVariable Long pollId,
                                                   @RequestBody UpdatePollStatusForm form,
                                                   Principal principal) {
         if(form.status == Poll.PollStatus.DRAFT) {
@@ -116,9 +116,9 @@ public class PollAdminApiController {
     }
 
     @GetMapping("/{pollId}/filter-tickets")
-    ResponseEntity<List<PollParticipant>> findAdditionalAttendees(@PathVariable("eventName") String eventName,
-                                                                  @PathVariable("pollId") Long pollId,
-                                                                  @RequestParam("filter") String filter,
+    ResponseEntity<List<PollParticipant>> findAdditionalAttendees(@PathVariable String eventName,
+                                                                  @PathVariable Long pollId,
+                                                                  @RequestParam String filter,
                                                                   Principal principal) {
         if(StringUtils.isBlank(filter)) {
             return ResponseEntity.badRequest().build();
@@ -128,8 +128,8 @@ public class PollAdminApiController {
     }
 
     @PostMapping("/{pollId}/allow")
-    ResponseEntity<Boolean> allowAttendees(@PathVariable("eventName") String eventName,
-                                           @PathVariable("pollId") Long pollId,
+    ResponseEntity<Boolean> allowAttendees(@PathVariable String eventName,
+                                           @PathVariable Long pollId,
                                            @RequestBody UpdateParticipantsForm form,
                                            Principal principal) {
 
@@ -141,16 +141,16 @@ public class PollAdminApiController {
     }
 
     @GetMapping("/{pollId}/allowed")
-    ResponseEntity<List<PollParticipant>> getAllowedAttendees(@PathVariable("eventName") String eventName,
-                                                              @PathVariable("pollId") Long pollId,
+    ResponseEntity<List<PollParticipant>> getAllowedAttendees(@PathVariable String eventName,
+                                                              @PathVariable Long pollId,
                                                               Principal principal) {
         var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.ok(pollManager.fetchAllowedTickets(eventAndOrgId, pollId));
     }
 
     @DeleteMapping("/{pollId}/allowed")
-    ResponseEntity<List<PollParticipant>> forbidAttendees(@PathVariable("eventName") String eventName,
-                                                          @PathVariable("pollId") Long pollId,
+    ResponseEntity<List<PollParticipant>> forbidAttendees(@PathVariable String eventName,
+                                                          @PathVariable Long pollId,
                                                           @RequestBody UpdateParticipantsForm form,
                                                           Principal principal) {
         var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
@@ -158,8 +158,8 @@ public class PollAdminApiController {
     }
 
     @GetMapping("/{pollId}/stats")
-    ResponseEntity<PollStatistics> getStatisticsForEvent(@PathVariable("eventName") String eventName,
-                                                         @PathVariable("pollId") Long pollId,
+    ResponseEntity<PollStatistics> getStatisticsForEvent(@PathVariable String eventName,
+                                                         @PathVariable Long pollId,
                                                          Principal principal) {
         var eventAndOrgId = accessService.checkEventOwnership(principal, eventName);
         return ResponseEntity.of(pollManager.getStatisticsFor(eventAndOrgId, pollId));

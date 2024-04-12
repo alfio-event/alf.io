@@ -46,7 +46,7 @@ public class ExtensionUtils {
     }
 
     public static String format(String str, String... params) {
-        return String.format(str, (Object[]) params);
+        return str.formatted((Object[]) params);
     }
 
     public static String md5(String str) {
@@ -102,24 +102,22 @@ public class ExtensionUtils {
 
     static Object unwrap(Object o) {
         if (o instanceof Scriptable) {
-            if (o instanceof NativeArray) {
+            if (o instanceof NativeArray na) {
                 List<Object> res = new ArrayList<>();
-                var na = (NativeArray) o;
                 for (var a : na) {
                     res.add(unwrap(a));
                 }
                 return res;
-            } else if (o instanceof NativeJavaObject) {
-                return ((NativeJavaObject) o).unwrap();
-            } else if (o instanceof NativeObject) {
-                var na = (NativeObject) o;
+            } else if (o instanceof NativeJavaObject object) {
+                return object.unwrap();
+            } else if (o instanceof NativeObject na) {
                 Map<Object, Object> res = new LinkedHashMap<>();
                 for (var kv : na.entrySet()) {
                     res.put(kv.getKey(), unwrap(kv.getValue()));
                 }
                 return res;
-            } else if (o instanceof IdScriptableObject) {
-                return parseIdScriptableObject((IdScriptableObject) o);
+            } else if (o instanceof IdScriptableObject object) {
+                return parseIdScriptableObject(object);
             }
         } else if (o instanceof CharSequence) {
             return o.toString();

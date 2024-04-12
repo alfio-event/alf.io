@@ -39,15 +39,14 @@ public class ValidatedResponse<T> {
     public static <T> ValidatedResponse<T> toResponse(BindingResult bindingResult, T value) {
 
         var transformed = bindingResult.getAllErrors().stream().map(objectError -> {
-            if (objectError instanceof FieldError) {
-                var fe = (FieldError) objectError;
+            if (objectError instanceof FieldError fe) {
                 return new ValidationResult.ErrorDescriptor(fe.getField(), "", fe.getCode(), fe.getArguments());
             } else {
                 return new ValidationResult.ErrorDescriptor(objectError.getObjectName(), "", objectError.getCode(), objectError.getArguments());
             }
         }).collect(Collectors.toList());
 
-        List<WarningMessage> warnings = bindingResult instanceof CustomBindingResult ? ((CustomBindingResult)bindingResult).getWarnings() : List.of();
+        List<WarningMessage> warnings = bindingResult instanceof CustomBindingResult cbr ? cbr.getWarnings() : List.of();
         return new ValidatedResponse<>(ValidationResult.failed(transformed, warnings), value);
     }
 

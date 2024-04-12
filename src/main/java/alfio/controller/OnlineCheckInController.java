@@ -47,8 +47,8 @@ public class OnlineCheckInController {
 
     @GetMapping("/event/{shortName}/ticket/{ticketUUID}/check-in/{ticketCodeHash}")
     public String performCheckIn(@PathVariable("shortName") String eventShortName,
-                                 @PathVariable("ticketUUID") String ticketUUID,
-                                 @PathVariable("ticketCodeHash") String ticketCodeHash) {
+                                 @PathVariable String ticketUUID,
+                                 @PathVariable String ticketCodeHash) {
 
         return ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventShortName, ticketUUID)
             .flatMap(data -> {

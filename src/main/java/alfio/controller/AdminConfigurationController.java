@@ -32,8 +32,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
@@ -58,8 +58,8 @@ public class AdminConfigurationController {
 
     @GetMapping("/admin/configuration/payment/{provider}/connect/{orgId}")
     public String oAuthRedirectToAuthorizationURL(Principal principal,
-                                                  @PathVariable("orgId") Integer orgId,
-                                                  @PathVariable("provider") String provider,
+                                                  @PathVariable Integer orgId,
+                                                  @PathVariable String provider,
                                                   HttpSession session) {
         if(CONNECT_PROVIDERS.contains(provider) && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
             var connectURL = getConnector(provider).getConnectURL(orgId);
@@ -73,8 +73,8 @@ public class AdminConfigurationController {
 
     @GetMapping({ STRIPE_CONNECT_REDIRECT_PATH, MOLLIE_CONNECT_REDIRECT_PATH })
     public String authorize(Principal principal,
-                            @RequestParam("state") String state,
-                            @RequestParam(value = "code", required = false) String code,
+                            @RequestParam String state,
+                            @RequestParam(required = false) String code,
                             @RequestParam(value = "error", required = false) String errorCode,
                             @RequestParam(value = "error_description", required = false) String errorDescription,
                             HttpServletRequest request,

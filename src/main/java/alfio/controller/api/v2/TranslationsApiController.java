@@ -48,29 +48,29 @@ public class TranslationsApiController {
     }
 
     @GetMapping("/public/i18n/bundle/{lang}")
-    public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang,
-                                                     @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
+    public Map<String, String> getPublicTranslations(@PathVariable String lang,
+                                                     @RequestParam(defaultValue = "true", required = false) boolean withSystemOverride) {
         return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.PUBLIC_FRONTEND);
     }
 
     @GetMapping("/admin/i18n/bundle/{lang}")
-    public Map<String, String> getAdminTranslations(@PathVariable("lang") String lang,
-                                                    @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
+    public Map<String, String> getAdminTranslations(@PathVariable String lang,
+                                                    @RequestParam(defaultValue = "true", required = false) boolean withSystemOverride) {
         return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang, MessageSourceManager.ADMIN_FRONTEND);
     }
 
     @GetMapping("/public/i18n/countries/{lang}")
-    public List<LocalizedCountry> getCountries(@PathVariable("lang") String lang) {
+    public List<LocalizedCountry> getCountries(@PathVariable String lang) {
         return fromPair(TicketHelper.getLocalizedCountries(LocaleUtil.forLanguageTag(lang)));
     }
 
     @GetMapping("/public/i18n/countries-vat/{lang}")
-    public List<LocalizedCountry> getCountriesForVat(@PathVariable("lang") String lang) {
+    public List<LocalizedCountry> getCountriesForVat(@PathVariable String lang) {
         return fromPair(TicketHelper.getLocalizedCountriesForVat(LocaleUtil.forLanguageTag(lang)));
     }
 
     @GetMapping("/public/i18n/eu-countries-vat/{lang}")
-    public List<LocalizedCountry> getEuCountriesForVat(@PathVariable("lang") String lang) {
+    public List<LocalizedCountry> getEuCountriesForVat(@PathVariable String lang) {
         var countries = TicketHelper.getLocalizedEUCountriesForVat(LocaleUtil.forLanguageTag(lang),
             configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
         return fromPair(countries);

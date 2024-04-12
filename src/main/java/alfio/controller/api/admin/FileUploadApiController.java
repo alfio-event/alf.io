@@ -23,7 +23,6 @@ import lombok.extern.log4j.Log4j2;
 import org.imgscalr.Scalr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
@@ -43,7 +42,6 @@ public class FileUploadApiController {
     private static final Logger log = LoggerFactory.getLogger(FileUploadApiController.class);
     private final FileUploadManager fileUploadManager;
 
-    @Autowired
     public FileUploadApiController(FileUploadManager fileUploadManager) {
         this.fileUploadManager = fileUploadManager;
     }

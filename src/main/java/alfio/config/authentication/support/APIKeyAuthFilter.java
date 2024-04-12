@@ -19,7 +19,7 @@ package alfio.config.authentication.support;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import static alfio.config.authentication.support.RequestTypeMatchers.isTokenAuthentication;
 

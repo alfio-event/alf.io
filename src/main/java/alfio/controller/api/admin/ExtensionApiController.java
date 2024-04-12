@@ -90,7 +90,7 @@ public class ExtensionApiController {
     }
 
     @PostMapping(value = "{path}/{name}")
-    public ResponseEntity<SerializablePair<Boolean, String>> update(@PathVariable("path") String path, @PathVariable("name") String name, @RequestBody Extension script, Principal principal) {
+    public ResponseEntity<SerializablePair<Boolean, String>> update(@PathVariable String path, @PathVariable String name, @RequestBody Extension script, Principal principal) {
         return createOrUpdate(path, name, script, principal);
     }
 
@@ -106,20 +106,20 @@ public class ExtensionApiController {
     }
 
     @GetMapping("{path}/{name}")
-    public ResponseEntity<ExtensionSupport> loadSingle(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) {
+    public ResponseEntity<ExtensionSupport> loadSingle(@PathVariable String path, @PathVariable String name, Principal principal) {
         accessService.ensureAdmin(principal);
         return extensionService.getSingle(URLDecoder.decode(path, StandardCharsets.UTF_8), name).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
     @DeleteMapping(value = "{path}/{name}")
-    public void delete(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) {
+    public void delete(@PathVariable String path, @PathVariable String name, Principal principal) {
         accessService.ensureAdmin(principal);
         extensionService.delete(path, name);
     }
 
     @PostMapping(value = "/{path}/{name}/toggle/{enable}")
-    public void toggle(@PathVariable("path") String path, @PathVariable("name") String name, @PathVariable("enable") boolean enable, Principal principal) {
+    public void toggle(@PathVariable String path, @PathVariable String name, @PathVariable boolean enable, Principal principal) {
         accessService.ensureAdmin(principal);
         extensionService.toggle(path, name, enable);
     }
@@ -143,13 +143,13 @@ public class ExtensionApiController {
     }
 
     @DeleteMapping("/setting/system/{id}")
-    public void deleteSystemSettingValue(@PathVariable("id") int id, Principal principal) {
+    public void deleteSystemSettingValue(@PathVariable int id, Principal principal) {
         accessService.ensureAdmin(principal);
         extensionService.deleteSettingValue(id, "-");
     }
 
     @GetMapping("/setting/organization/{orgId}")
-    public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable("orgId") int orgId, Principal principal) {
+    public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable int orgId, Principal principal) {
         accessService.checkOrganizationOwnership(principal, orgId);
         Organization org = userManager.findOrganizationById(orgId, principal.getName());
         return extensionService.getConfigurationParametersFor("-" + org.getId(), "-" + org.getId()+"-%", "ORGANIZATION")
@@ -157,7 +157,7 @@ public class ExtensionApiController {
     }
 
     @PostMapping("/setting/organization/{orgId}/bulk-update")
-    public void bulkUpdateOrganization(@PathVariable("orgId") int orgId, @RequestBody List<ExtensionMetadataValue> toUpdate, Principal principal) {
+    public void bulkUpdateOrganization(@PathVariable int orgId, @RequestBody List<ExtensionMetadataValue> toUpdate, Principal principal) {
         accessService.checkOrganizationOwnership(principal, orgId);
         Organization org = userManager.findOrganizationById(orgId, principal.getName());
         ensureIdsArePresent(toUpdate, extensionService.getConfigurationParametersFor("-" + org.getId(), "-" + org.getId()+"-%", "ORGANIZATION"));
@@ -165,13 +165,13 @@ public class ExtensionApiController {
     }
 
     @DeleteMapping("/setting/organization/{orgId}/{id}")
-    public void deleteOrganizationSettingValue(@PathVariable("orgId") int orgId, @PathVariable("id") int id, Principal principal) {
+    public void deleteOrganizationSettingValue(@PathVariable int orgId, @PathVariable int id, Principal principal) {
         accessService.checkOrganizationOwnership(principal, orgId);
         extensionService.deleteSettingValue(id, "-" + orgId);
     }
 
     @GetMapping("/setting/organization/{orgId}/event/{shortName}")
-    public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable("orgId") int orgId,
+    public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable int orgId,
                                                                      @PathVariable("shortName") String eventShortName,
                                                                      Principal principal) {
 
@@ -183,7 +183,7 @@ public class ExtensionApiController {
     }
 
     @PostMapping("/setting/organization/{orgId}/event/{shortName}/bulk-update")
-    public void bulkUpdateEvent(@PathVariable("orgId") int orgId, @PathVariable("shortName") String eventShortName,
+    public void bulkUpdateEvent(@PathVariable int orgId, @PathVariable("shortName") String eventShortName,
                                 @RequestBody List<ExtensionMetadataValue> toUpdate, Principal principal) {
         accessService.checkEventOwnership(principal, eventShortName, orgId);
         Organization org = userManager.findOrganizationById(orgId, principal.getName());
@@ -194,7 +194,7 @@ public class ExtensionApiController {
     }
 
     @DeleteMapping("/setting/organization/{orgId}/event/{shortName}/{id}")
-    public void deleteEventSettingValue(@PathVariable("orgId") int orgId, @PathVariable("shortName") String eventShortName, @PathVariable("id") int id, Principal principal) {
+    public void deleteEventSettingValue(@PathVariable int orgId, @PathVariable("shortName") String eventShortName, @PathVariable int id, Principal principal) {
         accessService.checkEventOwnership(principal, eventShortName, orgId);
         var event = eventManager.getOptionalEventAndOrganizationIdByName(eventShortName, principal.getName()).orElseThrow(IllegalStateException::new);
         extensionService.deleteSettingValue(id, generatePatternFrom(event));
@@ -216,10 +216,10 @@ public class ExtensionApiController {
     //
 
     @GetMapping("/log")
-    public PageAndContent<List<ExtensionLog>> getLog(@RequestParam(required = false, name = "path") String path,
-                                                     @RequestParam(required = false, name = "name") String name,
-                                                     @RequestParam(required = false, name = "type") ExtensionLog.Type type,
-                                                     @RequestParam(required = false, name = "page", defaultValue = "0") Integer page, Principal principal) {
+    public PageAndContent<List<ExtensionLog>> getLog(@RequestParam(required = false) String path,
+                                                     @RequestParam(required = false) String name,
+                                                     @RequestParam(required = false) ExtensionLog.Type type,
+                                                     @RequestParam(required = false, defaultValue = "0") Integer page, Principal principal) {
         accessService.ensureAdmin(principal);
         final int pageSize = 50;
         Pair<List<ExtensionLog>, Integer> res = extensionService.getLog(StringUtils.trimToNull(path), StringUtils.trimToNull(name), type, pageSize, (page == null ? 0 : page) * pageSize);

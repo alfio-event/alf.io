@@ -64,15 +64,19 @@ public interface ConfigurationRepository {
                                         @Bind("flagName") String flagName,
                                         @Bind("flagValue") String flagValue);
 
-    @Query("insert into configuration_purchase_context (c_key, c_value, description, event_id_fk, organization_id_fk)" +
-        " select c_key, c_value, description, :targetEventId, :targetOrgId from configuration_purchase_context where event_id_fk = :srcEventId and organization_id_fk = :srcOrgId")
+    @Query("""
+        insert into configuration_purchase_context (c_key, c_value, description, event_id_fk, organization_id_fk)\
+         select c_key, c_value, description, :targetEventId, :targetOrgId from configuration_purchase_context where event_id_fk = :srcEventId and organization_id_fk = :srcOrgId\
+        """)
     int copyEventConfiguration(@Bind("targetEventId") int targetEventId,
                                @Bind("targetOrgId") int targetOrgId,
                                @Bind("srcEventId") int srcEventId,
                                @Bind("srcOrgId") int srcOrgId);
 
-    @Query("insert into configuration_ticket_category (c_key, c_value, description, event_id_fk, organization_id_fk, ticket_category_id_fk)" +
-            " select c_key, c_value, description, :targetEventId, :targetOrgId, :targetCategoryId from configuration_ticket_category where event_id_fk = :srcEventId and organization_id_fk = :srcOrgId and ticket_category_id_fk = :srcCategoryId")
+    @Query("""
+            insert into configuration_ticket_category (c_key, c_value, description, event_id_fk, organization_id_fk, ticket_category_id_fk)\
+             select c_key, c_value, description, :targetEventId, :targetOrgId, :targetCategoryId from configuration_ticket_category where event_id_fk = :srcEventId and organization_id_fk = :srcOrgId and ticket_category_id_fk = :srcCategoryId\
+            """)
     int copyCategoryConfiguration(@Bind("targetEventId") int targetEventId,
                                   @Bind("targetOrgId") int targetOrgId,
                                   @Bind("targetCategoryId") int targetCategoryId,
@@ -225,14 +229,18 @@ public interface ConfigurationRepository {
     @Query("select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1")
     @JSONData Map<String, Map<String, String>> getSystemOverrideMessages();
 
-    @Query("select coalesce(jsonb_recursive_merge(a.c_value, b.c_value), '{}'::jsonb) from "+
-        "(select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) a, "+
-        "(select c_value::jsonb from configuration_organization where organization_id_fk = :orgId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) b")
+    @Query("""
+        select coalesce(jsonb_recursive_merge(a.c_value, b.c_value), '{}'::jsonb) from \
+        (select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) a, \
+        (select c_value::jsonb from configuration_organization where organization_id_fk = :orgId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) b\
+        """)
     @JSONData Map<String, Map<String, String>> getOrganizationOverrideMessages(@Bind("orgId") int orgId);
 
-    @Query("select coalesce(jsonb_recursive_merge(jsonb_recursive_merge(a.c_value, b.c_value), c.c_value), '{}'::jsonb) from "+
-        "(select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) a, "+
-        "(select c_value::jsonb from configuration_organization where organization_id_fk = :orgId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) b,"+
-        "(select c_value::jsonb from configuration_purchase_context where organization_id_fk = :orgId and event_id_fk = :eventId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) c")
+    @Query("""
+        select coalesce(jsonb_recursive_merge(jsonb_recursive_merge(a.c_value, b.c_value), c.c_value), '{}'::jsonb) from \
+        (select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) a, \
+        (select c_value::jsonb from configuration_organization where organization_id_fk = :orgId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) b,\
+        (select c_value::jsonb from configuration_purchase_context where organization_id_fk = :orgId and event_id_fk = :eventId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) c\
+        """)
     @JSONData Map<String, Map<String, String>> getEventOverrideMessages(@Bind("orgId") int orgId, @Bind("eventId") int eventId);
 }

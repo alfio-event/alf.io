@@ -32,8 +32,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.EnumSet;
@@ -78,8 +78,8 @@ public class AuthenticationController {
     }
 
     @GetMapping("/authentication")
-    public void getLoginPage(@RequestParam(value="failed", required = false) String failed,
-                             @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed,
+    public void getLoginPage(@RequestParam(required = false) String failed,
+                             @RequestParam(required = false) String recaptchaFailed,
                              Model model,
                              Principal principal,
                              HttpServletRequest request,

@@ -43,7 +43,6 @@ import java.util.*;
 import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")

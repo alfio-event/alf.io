@@ -48,7 +48,6 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -90,7 +89,6 @@ class ReverseChargeManagerIntegrationTest extends BaseIntegrationTest {
 
     private Event event;
 
-    @Autowired
     public ReverseChargeManagerIntegrationTest(ClockProvider clockProvider,
                                                OrganizationRepository organizationRepository,
                                                UserManager userManager,

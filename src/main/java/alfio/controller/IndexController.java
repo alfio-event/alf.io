@@ -44,9 +44,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -206,9 +206,9 @@ public class IndexController {
         "/my-profile",
     })
     public void replyToIndex(@PathVariable(value = EVENT_SHORT_NAME, required = false) String eventShortName,
-                             @PathVariable(value = "subscriptionId", required = false) String subscriptionId,
+                             @PathVariable(required = false) String subscriptionId,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
-                             @RequestParam(value = "lang", required = false) String lang,
+                             @RequestParam(required = false) String lang,
                              ServletWebRequest request,
                              HttpServletResponse response,
                              HttpSession session) throws IOException {
@@ -255,7 +255,7 @@ public class IndexController {
 
     @GetMapping("/event/{eventShortName}/reservation/{reservationId}")
     public String redirectEventToReservation(@PathVariable(value = EVENT_SHORT_NAME) String eventShortName,
-                                             @PathVariable(value = "reservationId") String reservationId,
+                                             @PathVariable String reservationId,
                                              @RequestParam(value = "subscription", required = false) String subscriptionId) {
         if (eventRepository.existsByShortName(eventShortName)) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
@@ -271,7 +271,7 @@ public class IndexController {
     }
 
     @GetMapping("/subscription/{subscriptionId}/reservation/{reservationId}")
-    public String redirectSubscriptionToReservation(@PathVariable("subscriptionId") String subscriptionId, @PathVariable("reservationId") String reservationId) {
+    public String redirectSubscriptionToReservation(@PathVariable String subscriptionId, @PathVariable String reservationId) {
         if (subscriptionRepository.existsById(UUID.fromString(subscriptionId))) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
                 .map(IndexController::reservationStatusToUrlMapping).orElse(NOT_FOUND);
@@ -421,7 +421,7 @@ public class IndexController {
         "/event/{eventShortName}/code/{code}",
         "/e/{eventShortName}/c/{code}"})
     public String redirectCode(@PathVariable(EVENT_SHORT_NAME) String eventName,
-                               @PathVariable("code") String code,
+                               @PathVariable String code,
                                @RequestHeader(value = "User-Agent", required = false) String userAgent) {
 
         if (RequestUtils.isSocialMediaShareUA(userAgent)) {

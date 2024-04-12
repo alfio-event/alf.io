@@ -44,7 +44,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;

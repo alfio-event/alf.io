@@ -46,7 +46,6 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -78,7 +77,6 @@ class CustomTaxPolicyIntegrationTest {
     private final ReservationApiV2Controller reservationApiV2Controller;
     private final TicketRepository ticketRepository;
 
-    @Autowired
     public CustomTaxPolicyIntegrationTest(OrganizationRepository organizationRepository,
                                           EventManager eventManager,
                                           EventRepository eventRepository,

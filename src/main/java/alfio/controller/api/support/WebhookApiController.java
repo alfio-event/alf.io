@@ -23,7 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/webhook")
@@ -33,7 +33,7 @@ public class WebhookApiController {
     private final StripeCreditCardManager stripeCreditCardManager;
 
     @PostMapping("/mollie/event/{eventName}/reservation/{reservationId}")
-    public void handleMollie(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
+    public void handleMollie(@PathVariable String eventName, @PathVariable String reservationId) {
     }
 
     @PostMapping("/stripe/notification")

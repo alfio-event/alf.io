@@ -34,7 +34,6 @@ import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.CookieHttpSessionIdResolver;
 import org.springframework.session.web.http.HeaderHttpSessionIdResolver;
 import org.springframework.session.web.http.HttpSessionIdResolver;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -42,8 +41,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.AbstractUrlBasedView;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -115,13 +114,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
         final MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
         converter.setObjectMapper(objectMapper);
         return converter;
-    }
-
-    @Bean
-    public CommonsMultipartResolver multipartResolver() {
-        var multipartResolver = new CommonsMultipartResolver();
-        multipartResolver.setMaxUploadSize(500_000); // 500kB
-        return multipartResolver;
     }
 
     @Bean

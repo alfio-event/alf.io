@@ -40,7 +40,6 @@ import static alfio.model.system.ConfigurationKeys.REVOLUT_MANUAL_REVIEW;
 import static alfio.test.util.TestUtil.clockProvider;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class RevolutBankTransferManagerTest {

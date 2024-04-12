@@ -104,7 +104,7 @@ class TestCheckRestApiStability {
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-            return http.authorizeRequests((auth) -> auth.antMatchers("/**").permitAll()).build();
+            return http.authorizeHttpRequests((auth) -> auth.requestMatchers("/**").permitAll()).build();
         }
     }
 }

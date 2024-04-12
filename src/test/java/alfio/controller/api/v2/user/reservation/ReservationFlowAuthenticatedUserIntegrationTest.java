@@ -53,7 +53,6 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -79,7 +78,6 @@ class ReservationFlowAuthenticatedUserIntegrationTest extends BaseReservationFlo
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
     private String publicUserName;
 
-    @Autowired
     public ReservationFlowAuthenticatedUserIntegrationTest(OrganizationRepository organizationRepository,
                                                            EventManager eventManager,
                                                            EventRepository eventRepository,

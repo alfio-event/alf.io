@@ -18,7 +18,7 @@ package alfio.manager.openid;
 
 import alfio.config.authentication.support.OpenIdAlfioAuthentication;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 public interface OpenIdAuthenticationManager {
 

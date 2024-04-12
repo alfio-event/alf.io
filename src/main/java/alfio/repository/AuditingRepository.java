@@ -35,8 +35,10 @@ import java.util.Map;
 @QueryRepository
 public interface AuditingRepository {
 
-    @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
-        " values (:reservationId, :userId, :eventId, :eventType, :eventTime, :entityType, :entityId, :modifications)")
+    @Query("""
+        insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) \
+         values (:reservationId, :userId, :eventId, :eventType, :eventTime, :entityType, :entityId, :modifications)\
+        """)
     int insert(@Bind("reservationId") String reservationId, @Bind("userId") Integer userId,
                @Bind("eventId") Integer eventId,
                @Bind("eventType") Audit.EventType eventType, @Bind("eventTime") Date eventTime,
@@ -82,15 +84,21 @@ public interface AuditingRepository {
     @Query("select count(*) from auditing_user where reservation_id = :reservationId and event_type in (:eventTypes) and date_trunc('day', :referenceDate::timestamp) = date_trunc('day', event_time)")
     Integer countAuditsOfTypesInTheSameDay(@Bind("reservationId") String reservationId, @Bind("eventTypes") Collection<String> eventTypes, @Bind("referenceDate") ZonedDateTime date);
 
-    @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
-        " select tickets_reservation_id, null, event_id, 'UPDATE_TICKET_CATEGORY', current_timestamp, 'TICKET', concat('', id), null from ticket where category_id = :ticketCategoryId and tickets_reservation_id is not null")
+    @Query("""
+        insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) \
+         select tickets_reservation_id, null, event_id, 'UPDATE_TICKET_CATEGORY', current_timestamp, 'TICKET', concat('', id), null from ticket where category_id = :ticketCategoryId and tickets_reservation_id is not null\
+        """)
     int insertUpdateTicketInCategoryId(@Bind("ticketCategoryId") int id);
 
-    @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
-        " select tickets_reservation_id, null, event_id, 'TAG_TICKET', current_timestamp, 'TICKET', concat('', id), :modifications from ticket where id in (:ticketIds)")
+    @Query("""
+        insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) \
+         select tickets_reservation_id, null, event_id, 'TAG_TICKET', current_timestamp, 'TICKET', concat('', id), :modifications from ticket where id in (:ticketIds)\
+        """)
     int registerTicketTag(@Bind("ticketIds") List<Integer> ids, @Bind("modifications")  @JSONData List<Map<String, Object>> modifications);
 
-    @Query("insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) " +
-        " select tickets_reservation_id, null, event_id, 'UNTAG_TICKET', current_timestamp, 'TICKET', concat('', id), :modifications from ticket where id in (:ticketIds)")
+    @Query("""
+        insert into auditing(reservation_id, user_id, event_id, event_type, event_time, entity_type, entity_id, modifications) \
+         select tickets_reservation_id, null, event_id, 'UNTAG_TICKET', current_timestamp, 'TICKET', concat('', id), :modifications from ticket where id in (:ticketIds)\
+        """)
     int registerTicketUntag(@Bind("ticketIds") List<Integer> ids, @Bind("modifications") @JSONData List<Map<String, Object>> modifications);
 }
