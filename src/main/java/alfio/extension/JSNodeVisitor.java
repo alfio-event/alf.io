@@ -96,7 +96,7 @@ class JSNodeVisitor implements NodeVisitor {
             || node instanceof WithStatement
             || node instanceof LabeledStatement
             || (node instanceof PropertyGet get && get.getRight().getString().equals("System"))
-            || (node instanceof PropertyGet && ((PropertyGet) node).getRight().getString().equals("getClass"))
+            || (node instanceof PropertyGet propertyGet && propertyGet.getRight().getString().equals("getClass"))
             || (node instanceof Name && node.getString().equals("newInstance"))) {
             throw new ScriptNotValidException("""
                 Script not valid. One or more of the following components have been detected:\s

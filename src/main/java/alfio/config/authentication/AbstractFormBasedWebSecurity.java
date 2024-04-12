@@ -35,6 +35,8 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -54,6 +56,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -61,6 +64,7 @@ import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
 import static alfio.config.Initializer.XSRF_TOKEN;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
+import static org.springframework.security.config.Customizer.withDefaults;
 
 abstract class AbstractFormBasedWebSecurity {
     public static final String AUTHENTICATE = "/authenticate";
@@ -118,29 +122,23 @@ abstract class AbstractFormBasedWebSecurity {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
-            http.requiresChannel().requestMatchers("/healthz").requiresInsecure()
-                .and()
-                .requiresChannel().requestMatchers("/**").requiresSecure();
+            http.requiresChannel(channel -> channel.requestMatchers("/healthz").requiresInsecure())
+                .requiresChannel(channel -> channel.requestMatchers("/**").requiresSecure());
         }
 
-        CsrfConfigurer<HttpSecurity> configurer = csrfConfigurer(http);
-
         var authenticationManager = createAuthenticationManager();
-        configurer.csrfTokenRepository(csrfTokenRepository)
-            .and()
-            .headers().frameOptions().disable() // https://github.com/alfio-event/alf.io/issues/1031 X-Frame-Options has been moved to IndexController
-            .and()
+        configureExceptionHandling(http);
+        configureCsrf(http, configurer -> configurer.csrfTokenRepository(csrfTokenRepository));
+        http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
             .authorizeHttpRequests(AbstractFormBasedWebSecurity::authorizeRequests)
             .authenticationManager(authenticationManager)
-            .formLogin()
-            .loginPage("/authentication")
-            .loginProcessingUrl(AUTHENTICATE)
-            .defaultSuccessUrl("/admin")
-            .failureUrl("/authentication?failed")
-            .and().logout().permitAll()
-            .and()
+            .formLogin(login -> login
+                .loginPage("/authentication")
+                .loginProcessingUrl(AUTHENTICATE)
+                .defaultSuccessUrl("/admin")
+                .failureUrl("/authentication?failed")).logout(LogoutConfigurer::permitAll)
             // this allows us to sync between spring session and spring security, thus saving the principal name in the session table
-            .sessionManagement().maximumSessions(-1).sessionRegistry(sessionRegistry);
+            .sessionManagement(management -> management.maximumSessions(-1).sessionRegistry(sessionRegistry));
 
         http.addFilterBefore(openIdPublicCallbackLoginFilter(publicOpenIdAuthenticationManager, authenticationManager), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(openIdPublicAuthenticationFilter(publicOpenIdAuthenticationManager), AnonymousAuthenticationFilter.class);
@@ -218,31 +216,33 @@ abstract class AbstractFormBasedWebSecurity {
             .requestMatchers("/**").permitAll();
     }
 
-    private static CsrfConfigurer<HttpSecurity> csrfConfigurer(HttpSecurity http) throws Exception {
-        var configurer = http.exceptionHandling()
-            .accessDeniedHandler((request, response, accessDeniedException) -> {
-                if (!response.isCommitted()) {
-                    if ("XMLHttpRequest".equals(request.getHeader(AuthenticationConstants.X_REQUESTED_WITH))) {
-                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    } else if (!response.isCommitted()) {
-                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                        RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
-                        dispatcher.forward(request, response);
+    private static void configureExceptionHandling(HttpSecurity http) throws Exception {
+        http.exceptionHandling(handling -> handling
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    if(!response.isCommitted()) {
+                        if("XMLHttpRequest".equals(request.getHeader(AuthenticationConstants.X_REQUESTED_WITH))) {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        } else if(!response.isCommitted()) {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
+                            dispatcher.forward(request, response);
+                        }
                     }
-                }
-            })
-            .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(AuthenticationConstants.X_REQUESTED_WITH, "XMLHttpRequest"))
-            .and()
-            .headers().cacheControl().disable()
-            .and()
-            .csrf();
-        Pattern methodsPattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
-        Predicate<HttpServletRequest> csrfAllowListPredicate = r -> r.getRequestURI().startsWith("/api/webhook/")
-            || r.getRequestURI().startsWith("/api/payment/webhook/")
-            || methodsPattern.matcher(r.getMethod()).matches();
-        csrfAllowListPredicate = csrfAllowListPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
-        configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfAllowListPredicate::test));
-        return configurer;
+                })
+                .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(AuthenticationConstants.X_REQUESTED_WITH, "XMLHttpRequest")))
+            .headers(headers -> headers.cacheControl(HeadersConfigurer.CacheControlConfig::disable));
+    }
+
+    private static void configureCsrf(HttpSecurity http, Consumer<CsrfConfigurer<HttpSecurity>> additionalConfiguration) throws Exception {
+         http.csrf(c -> {
+            Pattern methodsPattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
+            Predicate<HttpServletRequest> csrfAllowListPredicate = r -> r.getRequestURI().startsWith("/api/webhook/")
+                || r.getRequestURI().startsWith("/api/payment/webhook/")
+                || methodsPattern.matcher(r.getMethod()).matches();
+            csrfAllowListPredicate = csrfAllowListPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
+            c.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfAllowListPredicate::test));
+            additionalConfiguration.accept(c);
+        });
     }
 
     private void addCookie(HttpServletResponse res, CsrfToken csrf) {
@@ -251,7 +251,7 @@ abstract class AbstractFormBasedWebSecurity {
         boolean prod = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
         cookie.setSecure(prod);
         if (prod) {
-            cookie.setComment(HttpCookie.SAME_SITE_STRICT_COMMENT);
+            cookie.setAttribute("SameSite", "Strict");
         }
         res.addCookie(cookie);
     }

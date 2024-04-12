@@ -102,8 +102,7 @@ public class APITokenAuthWebSecurity {
 
         return http.securityMatchers().requestMatchers(RequestTypeMatchers::isTokenAuthentication)
             .and()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and().csrf().disable()
+            .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(APITokenAuthWebSecurity::configureMatchers)
             .addFilter(filter)
             .build();
