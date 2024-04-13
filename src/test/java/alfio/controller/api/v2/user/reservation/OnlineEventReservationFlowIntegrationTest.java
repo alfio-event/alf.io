@@ -49,6 +49,7 @@ import alfio.util.BaseIntegrationTest;
 import alfio.util.ClockProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -69,6 +70,7 @@ class OnlineEventReservationFlowIntegrationTest extends BaseReservationFlowTest 
     private final OrganizationRepository organizationRepository;
     private final UserManager userManager;
 
+    @Autowired
     public OnlineEventReservationFlowIntegrationTest(OrganizationRepository organizationRepository,
                                                      EventManager eventManager,
                                                      EventRepository eventRepository,

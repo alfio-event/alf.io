@@ -33,6 +33,7 @@ import alfio.util.ClockProvider;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -63,6 +64,7 @@ class DemoModeDataManagerIntegrationTest extends BaseIntegrationTest {
     private final EventRepository eventRepository;
     private final DemoModeDataManager demoModeDataManager;
 
+    @Autowired
     DemoModeDataManagerIntegrationTest(ConfigurationRepository configurationRepository,
                                        OrganizationRepository organizationRepository,
                                        UserManager userManager,

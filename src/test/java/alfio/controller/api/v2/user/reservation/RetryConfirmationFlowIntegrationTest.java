@@ -67,6 +67,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -106,6 +107,7 @@ class RetryConfirmationFlowIntegrationTest extends BaseReservationFlowTest {
     private final AdminJobManagerInvoker adminJobManagerInvoker;
     private final StripePaymentWebhookController stripePaymentWebhookController;
 
+    @Autowired
     public RetryConfirmationFlowIntegrationTest(ConfigurationRepository configurationRepository,
                                                 EventManager eventManager,
                                                 EventRepository eventRepository,

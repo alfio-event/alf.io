@@ -32,6 +32,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -92,6 +93,7 @@ class NormalFlowE2ETest {
     private final Environment environment;
     private final ClockProvider clockProvider;
 
+    @Autowired
     public NormalFlowE2ETest(List<BrowserWebDriver> webDrivers,
                              Environment environment) {
         this.webDrivers = webDrivers;

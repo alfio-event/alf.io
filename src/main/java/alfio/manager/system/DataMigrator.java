@@ -57,7 +57,7 @@ import static alfio.util.Wrappers.optionally;
 import static java.util.stream.Collectors.*;
 
 @Component
-@Transactional(readOnly = true)
+@Transactional
 public class DataMigrator {
 
     private static final Logger log = LoggerFactory.getLogger(DataMigrator.class);

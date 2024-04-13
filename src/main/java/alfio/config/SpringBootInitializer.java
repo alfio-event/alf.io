@@ -16,11 +16,11 @@
  */
 package alfio.config;
 
-import alfio.manager.system.ExternalConfiguration;
 import alfio.util.ClockProvider;
 import com.openhtmltopdf.util.XRLog;
+import jakarta.servlet.Filter;
+import jakarta.servlet.SessionCookieConfig;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,8 +30,6 @@ import org.springframework.core.env.Profiles;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.SessionCookieConfig;
 import java.time.Clock;
 import java.util.logging.Level;
 
@@ -46,7 +44,6 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
     org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration.class,
     org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration.class
 })
-@EnableConfigurationProperties(ExternalConfiguration.class)
 @Configuration(proxyBeanMethods = false)
 @Profile(Initializer.PROFILE_SPRING_BOOT)
 public class SpringBootInitializer {
