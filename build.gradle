@@ -372,8 +372,19 @@ tasks.register('frontendBuild', NpmTask) {
     outputs.dir("${project.projectDir}/frontend/dist")
 }
 
+tasks.register('frontendAdminNpmInstall', NpmTask) {
+    args = ['--prefix', "${project.projectDir}/frontend/admin", 'ci']
+}
+
+tasks.register('frontendAdminBuild', NpmTask) {
+    dependsOn frontendAdminNpmInstall
+    args = ['--prefix', "${project.projectDir}/frontend/admin", 'run', 'build']
+    outputs.dir("${project.projectDir}/frontend/admin/dist")
+}
+
 clean.doFirst {
     delete "${project.projectDir}/frontend/dist"
+    delete "${project.projectDir}/frontend/admin/dist"
 }
 
 tasks.register('publicFrontendIndexTransform', FrontendIndexTransformTask) {
@@ -428,6 +439,9 @@ bootJar {
     archiveClassifier.set('boot')
     from(tasks.named("frontendBuild")) {
         into 'BOOT-INF/classes/resources/'
+    }
+    from(tasks.named("frontendAdminBuild")) {
+        into 'resources/alfio-admin-frontend/'
     }
     from(tasks.named("publicFrontendIndexTransform")) {
         rename 'alfio-public-frontend-index.html', 'BOOT-INF/classes/alfio-public-frontend-index.html'

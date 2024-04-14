@@ -12,8 +12,13 @@ import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import '@shoelace-style/shoelace/dist/components/alert/alert';
 
-// see https://vitejs.dev/guide/env-and-mode
-const baseUrl = import.meta.env.MODE ? 'http://localhost:5173/' : '';
-setBasePath(`${baseUrl}shoelace/`);
 
+
+// see https://vitejs.dev/guide/env-and-mode
+if (import.meta.env.MODE === 'development') {
+    const baseUrl = import.meta.env.MODE ? 'http://localhost:5173/' : '';
+    setBasePath(`${baseUrl}shoelace/`);
+} else if (import.meta.env.MODE === 'production') {
+    setBasePath(`${document.getElementById('lit-js')?.getAttribute('src')?.replace(/assets.*/g, '')}shoelace/`);
+}
 export { NewElement } from './new-element';

@@ -17,8 +17,6 @@ Then you can launch alf.io normally and go to localhost:8080/admin/ -> all the c
 ## todo
 
  - find a decent way to inline the icons as data uri
- - static build integration
-
 
  ## vscode plugins
 

@@ -11,6 +11,12 @@
     <script type="module" src="http://localhost:5173/@vite/client" nonce="{{nonce}}"></script>
     <script type="module" src="http://localhost:5173/src/main.ts" nonce="{{nonce}}"></script>
     {{/devModeEnabled}}
+    {{#litAdminStatic}}
+        <script type="module" src="{{contextPath}}/resources/alfio-admin-frontend/{{lit-js}}" id="lit-js" nonce="{{nonce}}"></script>
+        {{#lit-css}}
+        <link rel="stylesheet" href="{{contextPath}}/resources/alfio-admin-frontend/{{.}}" />
+        {{/lit-css}}
+    {{/litAdminStatic}}
 
     <link rel="stylesheet" href="{{contextPath}}/resources/css/source-sans-pro.css" />
     <link rel="stylesheet" href="{{contextPath}}/resources/css/bootstrap-admin.min.css" />

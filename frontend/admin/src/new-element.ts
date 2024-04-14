@@ -8,7 +8,7 @@ export class NewElement extends LitElement {
         return html`<h1>Hello world</h1>
         <sl-card>
           <sl-rating></sl-rating>
-          <sl-button>plop</sl-button>
+          <sl-button>plop2</sl-button>
           <sl-alert open>
             <sl-icon slot="icon" name="info-circle"></sl-icon>
             This is a standard alert. You can customize its content and even the icon.
