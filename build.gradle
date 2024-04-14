@@ -112,7 +112,6 @@ dependencies {
     implementation 'org.springframework.session:spring-session-jdbc'
     implementation "ch.digitalfondue.npjt-extra:npjt-extra:2.0.4"
     implementation "com.samskivert:jmustache:1.15"
-    implementation "javax.mail:mail:1.5.0-b01"
     implementation 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
     implementation 'com.openhtmltopdf:openhtmltopdf-core:1.0.10'
@@ -154,8 +153,6 @@ dependencies {
     implementation 'org.mozilla:rhino-runtime:1.7.13'
     implementation 'com.google.auth:google-auth-library-oauth2-http:1.18.0'
 
-    compileOnly "javax.servlet:javax.servlet-api:4.0.1"
-    testImplementation "javax.servlet:javax.servlet-api:4.0.1"
     testImplementation 'org.testcontainers:testcontainers:1.19.3'
     testImplementation 'org.testcontainers:postgresql:1.19.3'
     testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
@@ -192,8 +189,10 @@ dependencies {
     testImplementation "org.junit.platform:junit-platform-engine"
     testImplementation "org.mockito:mockito-inline:4.5.1"
 
-    testImplementation "org.springdoc:springdoc-openapi-ui:1.8.0"
-    testImplementation "org.openapitools.openapidiff:openapi-diff-core:2.0.1"
+    testImplementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0"
+    testImplementation "org.openapitools.openapidiff:openapi-diff-core:2.1.0-beta.10", {
+        exclude group: "io.swagger.core.v3", module: "swagger-core"
+    }
 
     providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
@@ -208,9 +207,7 @@ dependencies {
 
     implementation "org.joda:joda-money:1.0.3"
 
-    testImplementation 'org.mock-server:mockserver-netty:5.13.2', {
-        exclude group: 'org.mozilla', module: 'rhino'
-    }
+    testImplementation 'org.mock-server:mockserver-netty-no-dependencies:5.15.0'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     testImplementation 'org.seleniumhq.selenium:selenium-java:4.16.1'
@@ -274,7 +271,7 @@ compileTestJava {
 }
 
 compileJava {
-    options.compilerArgs = ['-Xlint:all,-serial,-processing']
+    options.compilerArgs = ['-parameters','-Xlint:all,-serial,-processing']
 
     // both checks are problematic with lombok code
 //    options.errorprone.disable('UnusedVariable',

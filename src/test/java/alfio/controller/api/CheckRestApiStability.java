@@ -25,10 +25,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openapitools.openapidiff.core.OpenApiCompare;
 import org.openapitools.openapidiff.core.output.MarkdownRender;
-import org.springdoc.core.Constants;
-import org.springdoc.core.SpringDocConfigProperties;
-import org.springdoc.core.SpringDocConfiguration;
-import org.springdoc.webmvc.core.SpringDocWebMvcConfiguration;
+
+import org.springdoc.core.configuration.SpringDocConfiguration;
+import org.springdoc.core.properties.SpringDocConfigProperties;
+import org.springdoc.core.utils.Constants;
+import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,11 +42,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.FileReader;
-import java.io.StringReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Base64;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -79,7 +80,9 @@ class TestCheckRestApiStability {
             .andReturn();
 
         var response = mvcResult.getResponse();
-        var descriptor = response.getContentAsString();
+        var content = response.getContentAsString();
+        // for some reason we get a quoted base64 JSON: "ey..."
+        var descriptor = Base64.getDecoder().decode(content.substring(1, content.length() - 1));
 
         // for generating the result
         if (updateDescriptor) {
@@ -90,10 +93,12 @@ class TestCheckRestApiStability {
         }
 
         var referenceDescriptor = IOUtils.toString(new FileReader(DESCRIPTOR_JSON_PATH));
-        var currentDescriptor = IOUtils.toString(new StringReader(descriptor));
+        var currentDescriptor = IOUtils.toString(descriptor, StandardCharsets.UTF_8.toString());
         var compareResult = OpenApiCompare.fromContents(referenceDescriptor, currentDescriptor);
         if (compareResult.isDifferent()) {
-            Assertions.fail(new MarkdownRender().render(compareResult));
+            var out = new ByteArrayOutputStream();
+            new MarkdownRender().render(compareResult, new OutputStreamWriter(out));
+            Assertions.fail(out.toString(StandardCharsets.UTF_8));
         }
     }
 

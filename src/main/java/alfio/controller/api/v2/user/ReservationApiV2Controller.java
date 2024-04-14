@@ -121,9 +121,7 @@ public class ReservationApiV2Controller {
      * @param reservationId
      * @return
      */
-    @GetMapping({"/reservation/{reservationId}",
-        "/event/{eventName}/reservation/{reservationId}" //<-deprecated
-    })
+    @GetMapping("/reservation/{reservationId}")
     public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable String reservationId, Principal principal) {
 
         Optional<ReservationInfo> res = purchaseContextManager.findByReservationId(reservationId).flatMap(purchaseContext -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
@@ -266,10 +264,7 @@ public class ReservationApiV2Controller {
         }
     }
 
-    @GetMapping({
-        "/reservation/{reservationId}/status",
-        "/event/{eventName}/reservation/{reservationId}/status" //<- deprecated
-    })
+    @GetMapping("/reservation/{reservationId}/status")
     public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable String reservationId) {
 
         Optional<ReservationStatusInfo> res = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
@@ -278,28 +273,19 @@ public class ReservationApiV2Controller {
     }
 
 
-    @DeleteMapping({
-        "/reservation/{reservationId}",
-        "/event/{eventName}/reservation/{reservationId}" //<- deprecated
-    })
+    @DeleteMapping("/reservation/{reservationId}")
     public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable String reservationId) {
         getReservationWithPendingStatus(reservationId).ifPresent(er -> ticketReservationManager.cancelPendingReservation(reservationId, false, null));
         return ResponseEntity.ok(true);
     }
 
-    @PostMapping({
-        "/reservation/{reservationId}/back-to-booking",
-        "/event/{eventName}/reservation/{reservationId}/back-to-booking" //<- deprecated
-    })
+    @PostMapping("/reservation/{reservationId}/back-to-booking")
     public ResponseEntity<Boolean> backToBooking(@PathVariable String reservationId) {
         getReservationWithPendingStatus(reservationId).ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
         return ResponseEntity.ok(true);
     }
 
-    @PostMapping({
-        "/reservation/{reservationId}",
-        "/event/{eventName}/reservation/{reservationId}"// <- deprecated
-    })
+    @PostMapping("/reservation/{reservationId}")
     public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable String reservationId,
                                                                                        @RequestParam String lang,
                                                                                        @RequestBody  PaymentForm paymentForm,
@@ -380,10 +366,7 @@ public class ReservationApiV2Controller {
         return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
     }
 
-    @PostMapping({
-        "/reservation/{reservationId}/validate-to-overview",
-        "/event/{eventName}/reservation/{reservationId}/validate-to-overview" //<-deprecated
-    })
+    @PostMapping("/reservation/{reservationId}/validate-to-overview")
     public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable String reservationId,
                                                                          @RequestParam String lang,
                                                                          @RequestParam(defaultValue = "false") boolean ignoreWarnings,
@@ -650,10 +633,7 @@ public class ReservationApiV2Controller {
     //----------------
 
 
-    @PostMapping({
-        "/reservation/{reservationId}/payment/{method}/init",
-        "/event/{eventName}/reservation/{reservationId}/payment/{method}/init" //<-deprecated
-    })
+    @PostMapping("/reservation/{reservationId}/payment/{method}/init")
     public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
@@ -673,31 +653,21 @@ public class ReservationApiV2Controller {
         return responseEntity.orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
-    @DeleteMapping({
-        "/reservation/{reservationId}/payment/token",
-        "/event/{eventName}/reservation/{reservationId}/payment/token" //<-deprecated
-    })
-    public ResponseEntity<Boolean> removeToken(@PathVariable String eventName,
-                                               @PathVariable String reservationId) {
+    @DeleteMapping("/reservation/{reservationId}/payment/token")
+    public ResponseEntity<Boolean> removeToken(@PathVariable String reservationId) {
 
         var res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
         return ResponseEntity.ok(res);
     }
 
-    @DeleteMapping({
-        "/reservation/{reservationId}/payment",
-        "/event/{eventName}/reservation/{reservationId}/payment" //<-deprecated
-    })
+    @DeleteMapping("/reservation/{reservationId}/payment")
     public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable String reservationId) {
 
         var res = purchaseContextManager.getReservationWithPurchaseContext(reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping({
-        "/reservation/{reservationId}/payment/{method}/status",
-        "/event/{eventName}/reservation/{reservationId}/payment/{method}/status" //<-deprecated
-    })
+    @GetMapping("/reservation/{reservationId}/payment/{method}/status")
     public ResponseEntity<ReservationPaymentResult> getTransactionStatus(
                                                               @PathVariable String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
