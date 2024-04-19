@@ -33,6 +33,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -100,9 +101,9 @@ public class APITokenAuthWebSecurity {
         });
 
 
-        return http.securityMatchers().requestMatchers(RequestTypeMatchers::isTokenAuthentication)
-            .and()
-            .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).csrf(csrf -> csrf.disable())
+        return http.securityMatchers(matchers -> matchers.requestMatchers(RequestTypeMatchers::isTokenAuthentication))
+            .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(APITokenAuthWebSecurity::configureMatchers)
             .addFilter(filter)
             .build();

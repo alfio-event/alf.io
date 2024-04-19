@@ -15,7 +15,7 @@ buildscript {
     dependencies {
         classpath 'org.postgresql:postgresql:42.5.1'
         //this is for processing the index.html at compile time
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.0.0"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:1.0.3"
         //
     }
 
@@ -32,13 +32,13 @@ plugins {
     id 'java'
     id 'idea'
     id 'org.kordamp.gradle.jacoco' version '0.54.0'
-    id 'com.github.ben-manes.versions' version '0.50.0'
+    id 'com.github.ben-manes.versions' version '0.51.0'
     id 'com.github.hierynomus.license' version '0.16.1'
     id 'net.researchgate.release' version '3.0.2'
     id 'org.springframework.boot' version '3.2.0'
     id 'org.sonarqube' version '4.4.1.3373'
     // id 'net.ltgt.errorprone' version '3.1.0'
-    id 'com.github.node-gradle.node' version '7.0.1'
+    id 'com.github.node-gradle.node' version '7.0.2'
 }
 
 apply plugin: 'java'
@@ -103,7 +103,7 @@ repositories {
 
 dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"
-    implementation 'com.auth0:java-jwt:4.2.1'
+    implementation 'com.auth0:java-jwt:4.4.0'
     implementation "com.fasterxml.jackson.core:jackson-core"
     implementation "com.fasterxml.jackson.core:jackson-databind"
     implementation "org.springframework.boot:spring-boot-properties-migrator", {
@@ -111,30 +111,32 @@ dependencies {
     }
     implementation 'org.springframework.session:spring-session-jdbc'
     implementation "ch.digitalfondue.npjt-extra:npjt-extra:2.0.4"
-    implementation "com.samskivert:jmustache:1.15"
+    implementation "com.samskivert:jmustache:1.16"
     implementation 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
     implementation 'com.openhtmltopdf:openhtmltopdf-core:1.0.10'
     implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
-    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:1.0.0'
+    implementation 'ch.digitalfondue.jfiveparse:jfiveparse:1.0.3'
     /**/
-    implementation 'com.google.zxing:core:3.5.1'
-    implementation 'com.google.zxing:javase:3.5.1'
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
     implementation "org.flywaydb:flyway-core"
     implementation "org.postgresql:postgresql"
     implementation "com.zaxxer:HikariCP"
 
     /**/
 
-    implementation "com.stripe:stripe-java:22.4.0"
+    implementation "com.stripe:stripe-java:25.3.0"
     implementation 'com.paypal.sdk:checkout-sdk:2.0.0'
-    implementation 'com.google.code.gson:gson:2.10'
+    implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.2', {
         exclude module: 'gson'
     }
 
     implementation "org.apache.commons:commons-lang3:3.13.0"
-    implementation 'com.opencsv:opencsv:5.9'
+    implementation 'com.opencsv:opencsv:5.9', {
+        exclude module: 'commons-collections:commons-collections:3.2.2'
+    }
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'net.sf.biweekly:biweekly:0.6.6'
     implementation 'com.atlassian.commonmark:commonmark:0.17.0'
@@ -142,15 +144,15 @@ dependencies {
     implementation 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'com.github.scribejava:scribejava-core:8.3.3'
-    implementation 'ch.digitalfondue.vatchecker:vatchecker:1.5.0'
-    implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
+    implementation 'ch.digitalfondue.vatchecker:vatchecker:1.6.0'
+    implementation 'ch.digitalfondue.basicxlsx:basicxlsx:0.7.1'
     implementation 'org.imgscalr:imgscalr-lib:4.2'
     implementation 'org.mozilla:rhino-runtime:1.7.13'
-    implementation 'com.google.auth:google-auth-library-oauth2-http:1.18.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.23.0'
 
-    testImplementation 'org.testcontainers:testcontainers:1.19.3'
-    testImplementation 'org.testcontainers:postgresql:1.19.3'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }

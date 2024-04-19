@@ -19,7 +19,6 @@ package alfio.config;
 import alfio.util.ClockProvider;
 import com.openhtmltopdf.util.XRLog;
 import jakarta.servlet.Filter;
-import jakarta.servlet.ServletContext;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.web.server.Cookie;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
