@@ -17,9 +17,11 @@
 package alfio.manager;
 
 import alfio.model.modification.UploadBase64FileModification;
+import com.beust.jcommander.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Objects;
 import java.util.regex.Pattern;
+
+import static java.util.Objects.requireNonNull;
 
 
 public class FileDownloadManager {
@@ -42,8 +46,8 @@ public class FileDownloadManager {
     }
 
     public DownloadedFile downloadFile(String url) {
-        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url)).GET().build();
-        HttpResponse<byte[]> response = null;
+        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(requireNonNull(StringUtils.trimToNull(url)))).GET().build();
+        HttpResponse<byte[]> response;
         try {
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofByteArray());
         } catch (IOException exception) {
