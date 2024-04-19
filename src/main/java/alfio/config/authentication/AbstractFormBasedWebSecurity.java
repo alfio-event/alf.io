@@ -23,8 +23,12 @@ import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import jakarta.servlet.Filter;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.http.HttpCookie;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -47,13 +51,9 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.function.Consumer;
@@ -64,11 +64,11 @@ import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
 import static alfio.config.Initializer.XSRF_TOKEN;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
-import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 abstract class AbstractFormBasedWebSecurity {
     public static final String AUTHENTICATE = "/authenticate";
-    private static final String[] OWNERSHIP_REQUIRED = new String[]{
+    private static final List<String> OWNERSHIP_REQUIRED = List.of(
         ADMIN_API + "/overridable-template",
         ADMIN_API + "/additional-services",
         ADMIN_API + "/events/*/additional-field",
@@ -86,7 +86,7 @@ abstract class AbstractFormBasedWebSecurity {
         ADMIN_API + "/subscription/*/email/",
         ADMIN_API + "/organization/*/subscription/**",
         ADMIN_API + "/reservation/subscription/**"
-    };
+    );
 
     private final Environment environment;
     private final UserManager userManager;
@@ -197,23 +197,22 @@ abstract class AbstractFormBasedWebSecurity {
     }
 
     private static void authorizeRequests(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
-        auth.requestMatchers(ADMIN_PUBLIC_API + "/**").denyAll() // Admin public API requests must be authenticated using API-Keys
-            .requestMatchers(HttpMethod.GET, ADMIN_API + "/users/current").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .requestMatchers(HttpMethod.POST, ADMIN_API + "/users/check", ADMIN_API + "/users/current/edit", ADMIN_API + "/users/current/update-password").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .requestMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
-            .requestMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/system/**").hasRole(ADMIN)
-            .requestMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .requestMatchers(HttpMethod.GET, OWNERSHIP_REQUIRED).hasAnyRole(ADMIN, OWNER)
-            .requestMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .requestMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .requestMatchers(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify", ADMIN_API + "/reservation/event/*/*/notify-attendees", ADMIN_API + "/reservation/event/*/*/confirm"
-            ).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .requestMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
-            .requestMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
-            .requestMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .requestMatchers("/api/attendees/**").denyAll()
-            .requestMatchers("/callback").permitAll()
-            .requestMatchers("/**").permitAll();
+        auth.requestMatchers(antMatcher(ADMIN_PUBLIC_API + "/**")).denyAll() // Admin public API requests must be authenticated using API-Keys
+            .requestMatchers(antMatcher(HttpMethod.GET, ADMIN_API + "/users/current")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(HttpMethod.POST, ADMIN_API + "/users/check"), antMatcher(HttpMethod.POST, ADMIN_API + "/users/current/edit"), antMatcher(HttpMethod.POST, ADMIN_API + "/users/current/update-password")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(ADMIN_API + "/configuration/**"), antMatcher(ADMIN_API + "/users/**")).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(antMatcher(ADMIN_API + "/organizations/new"), antMatcher(ADMIN_API + "/system/**")).hasRole(ADMIN)
+            .requestMatchers(antMatcher(ADMIN_API + "/check-in/**")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(OWNERSHIP_REQUIRED.stream().map(u -> antMatcher(HttpMethod.GET, u)).toArray(RequestMatcher[]::new)).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(antMatcher(HttpMethod.GET, ADMIN_API + "/**")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new"), antMatcher(HttpMethod.POST,ADMIN_API + "/reservation/event/*/*")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify"), antMatcher(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify-attendees"), antMatcher(HttpMethod.PUT,ADMIN_API + "/reservation/event/*/*/confirm")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(ADMIN_API + "/**")).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(antMatcher("/admin/**/export/**")).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(antMatcher("/admin/**")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher("/api/attendees/**")).denyAll()
+            .requestMatchers(antMatcher("/callback")).permitAll()
+            .requestMatchers(antMatcher("/**")).permitAll();
     }
 
     private static void configureExceptionHandling(HttpSecurity http) throws Exception {

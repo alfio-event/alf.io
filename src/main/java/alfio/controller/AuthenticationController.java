@@ -22,6 +22,8 @@ import alfio.controller.support.UserStatus;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.util.TemplateManager;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
@@ -32,8 +34,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.EnumSet;
@@ -41,7 +41,6 @@ import java.util.EnumSet;
 import static alfio.controller.Constants.*;
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
-import static com.github.scribejava.core.model.OAuthConstants.NONCE;
 
 @Controller
 public class AuthenticationController {

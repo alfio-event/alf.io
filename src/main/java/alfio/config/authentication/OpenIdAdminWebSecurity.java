@@ -16,6 +16,7 @@
  */
 package alfio.config.authentication;
 
+import alfio.config.Initializer;
 import alfio.config.authentication.support.OpenIdAuthenticationFilter;
 import alfio.config.authentication.support.OpenIdCallbackLoginFilter;
 import alfio.manager.RecaptchaService;
@@ -39,7 +40,7 @@ import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import javax.sql.DataSource;
 
-@Profile("openid")
+@Profile(Initializer.PROFILE_OPENID)
 @Configuration(proxyBeanMethods = false)
 @Order(1)
 public class OpenIdAdminWebSecurity extends AbstractFormBasedWebSecurity {
