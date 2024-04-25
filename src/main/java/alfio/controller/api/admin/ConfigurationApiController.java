@@ -91,13 +91,13 @@ public class ConfigurationApiController {
     }
 
     @GetMapping(value = "/organizations/{organizationId}/load")
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfiguration(@PathVariable("organizationId") int organizationId, Principal principal) {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadOrganizationConfiguration(@PathVariable int organizationId, Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return configurationManager.loadOrganizationConfig(organizationId, principal.getName());
     }
 
     @PostMapping(value = "/organizations/{organizationId}/update")
-    public boolean updateOrganizationConfiguration(@PathVariable("organizationId") int organizationId,
+    public boolean updateOrganizationConfiguration(@PathVariable int organizationId,
                                                    @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
         // id of input are not used, so not needed to check for consistency
         accessService.checkOrganizationOwnership(principal, organizationId);
@@ -107,7 +107,7 @@ public class ConfigurationApiController {
     }
 
     @GetMapping(value = "/events/{eventId}/load")
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfiguration(@PathVariable("eventId") int eventId,
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfiguration(@PathVariable int eventId,
                                                                                               Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         return configurationManager.loadEventConfig(eventId, principal.getName());
@@ -115,7 +115,7 @@ public class ConfigurationApiController {
 
     @GetMapping("/events/{eventName}/single/{key}")
     public ResponseEntity<String> getSingleConfigForEvent(@PathVariable("eventName") String eventShortName,
-                                                         @PathVariable("key") String key,
+                                                         @PathVariable String key,
                                                          Principal principal) {
         accessService.checkEventOwnership(principal, eventShortName);
 
@@ -134,8 +134,8 @@ public class ConfigurationApiController {
     }
 
     @GetMapping("/organizations/{organizationId}/single/{key}")
-    public ResponseEntity<String> getSingleConfigForOrganization(@PathVariable("organizationId") int organizationId,
-                                                                 @PathVariable("key") String key,
+    public ResponseEntity<String> getSingleConfigForOrganization(@PathVariable int organizationId,
+                                                                 @PathVariable String key,
                                                                  Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
 
@@ -147,7 +147,7 @@ public class ConfigurationApiController {
     }
 
     @PostMapping(value = "/organizations/{organizationId}/events/{eventId}/update")
-    public boolean updateEventConfiguration(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId,
+    public boolean updateEventConfiguration(@PathVariable int organizationId, @PathVariable int eventId,
                                             @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
         // id of input are not used, so not needed to check for consistency
         accessService.checkEventOwnership(principal, eventId, organizationId);
@@ -157,7 +157,7 @@ public class ConfigurationApiController {
     }
 
     @PostMapping(value = "/events/{eventId}/categories/{categoryId}/update")
-    public boolean updateCategoryConfiguration(@PathVariable("categoryId") int categoryId, @PathVariable("eventId") int eventId,
+    public boolean updateCategoryConfiguration(@PathVariable int categoryId, @PathVariable int eventId,
                                                     @RequestBody Map<ConfigurationKeys.SettingCategory, List<ConfigurationModification>> input, Principal principal) {
         // id of input are not used, so no needed to check for consistency
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
@@ -167,34 +167,34 @@ public class ConfigurationApiController {
     }
 
     @GetMapping(value = "/events/{eventId}/categories/{categoryId}/load")
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfiguration(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, Principal principal) {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfiguration(@PathVariable int eventId, @PathVariable int categoryId, Principal principal) {
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
         return configurationManager.loadCategoryConfig(eventId, categoryId, principal.getName());
     }
 
     @DeleteMapping(value = "/organization/{organizationId}/key/{key}")
-    public boolean deleteOrganizationLevelKey(@PathVariable("organizationId") int organizationId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+    public boolean deleteOrganizationLevelKey(@PathVariable int organizationId, @PathVariable ConfigurationKeys key, Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         configurationManager.deleteOrganizationLevelByKey(key.getValue(), organizationId, principal.getName());
         return true;
     }
 
     @DeleteMapping(value = "/event/{eventId}/key/{key}")
-    public boolean deleteEventLevelKey(@PathVariable("eventId") int eventId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+    public boolean deleteEventLevelKey(@PathVariable int eventId, @PathVariable ConfigurationKeys key, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         configurationManager.deleteEventLevelByKey(key.getValue(), eventId, principal.getName());
         return true;
     }
 
     @DeleteMapping(value = "/event/{eventId}/category/{categoryId}/key/{key}")
-    public boolean deleteCategoryLevelKey(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @PathVariable("key") ConfigurationKeys key, Principal principal) {
+    public boolean deleteCategoryLevelKey(@PathVariable int eventId, @PathVariable int categoryId, @PathVariable ConfigurationKeys key, Principal principal) {
         accessService.checkCategoryOwnership(principal, eventId, categoryId);
         configurationManager.deleteCategoryLevelByKey(key.getValue(), eventId, categoryId, principal.getName());
         return true;
     }
 
     @DeleteMapping(value = "/key/{key}")
-    public boolean deleteKey(@PathVariable("key") String key, Principal principal) {
+    public boolean deleteKey(@PathVariable String key, Principal principal) {
         accessService.ensureAdmin(principal);
         configurationManager.deleteKey(key);
         return true;
@@ -212,7 +212,7 @@ public class ConfigurationApiController {
     }
 
     @GetMapping(value = "/platform-mode/status/{organizationId}")
-    public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId, Principal principal) {
+    public Map<String, Boolean> loadPlatformModeStatus(@PathVariable int organizationId, Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         Map<String, Boolean> result = new HashMap<>();
         boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault();
@@ -231,14 +231,14 @@ public class ConfigurationApiController {
     }
 
     @GetMapping(value = "/event/{eventId}/invoice-first-date")
-    public ResponseEntity<ZonedDateTime> getFirstInvoiceDate(@PathVariable("eventId") Integer eventId, Principal principal) {
+    public ResponseEntity<ZonedDateTime> getFirstInvoiceDate(@PathVariable Integer eventId, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         return ResponseEntity.of(optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()))
             .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(clockProvider.getClock().withZone(event.getZoneId())))));
     }
 
     @GetMapping(value = "/event/{eventId}/matching-invoices")
-    public ResponseEntity<List<Integer>> getMatchingInvoicesForEvent(@PathVariable("eventId") Integer eventId,
+    public ResponseEntity<List<Integer>> getMatchingInvoicesForEvent(@PathVariable Integer eventId,
                                                                      @RequestParam("from") long fromInstant,
                                                                      @RequestParam("to") long toInstant,
                                                                      Principal principal) {
@@ -257,7 +257,7 @@ public class ConfigurationApiController {
     }
 
     @PostMapping(value = "/event/{eventId}/regenerate-invoices")
-    public ResponseEntity<Boolean> regenerateInvoices(@PathVariable("eventId") Integer eventId,
+    public ResponseEntity<Boolean> regenerateInvoices(@PathVariable Integer eventId,
                                                       @RequestBody List<Long> documentIds,
                                                       Principal principal) {
         //

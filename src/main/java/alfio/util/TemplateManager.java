@@ -100,8 +100,8 @@ public class TemplateManager {
     }
 
     private static String dateFormatter(Object o) {
-        if(o instanceof ZonedDateTime) {
-            return DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o);
+        if(o instanceof ZonedDateTime time) {
+            return DateTimeFormatter.ISO_ZONED_DATE_TIME.format(time);
         }
         return String.valueOf(o);
     }

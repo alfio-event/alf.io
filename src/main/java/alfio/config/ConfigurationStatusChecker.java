@@ -28,7 +28,6 @@ import alfio.util.PasswordGenerator;
 import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -49,7 +48,6 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
     private final String version;
     private final DataMigrator dataMigrator;
 
-    @Autowired
     public ConfigurationStatusChecker(ConfigurationManager configurationManager,
                                       UserRepository userRepository,
                                       AuthorityRepository authorityRepository,

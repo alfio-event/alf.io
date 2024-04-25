@@ -19,19 +19,17 @@ package alfio.util;
 import ch.digitalfondue.basicxlsx.Cell;
 import ch.digitalfondue.basicxlsx.StreamingWorkbook;
 import ch.digitalfondue.basicxlsx.Style;
-import com.opencsv.CSVWriter;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ExportUtils {
 
@@ -93,18 +91,25 @@ public class ExportUtils {
         response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
         markAsNoIndex(response);
 
-        try (ServletOutputStream out = response.getOutputStream(); CSVWriter writer = new CSVWriter(new OutputStreamWriter(out, UTF_8))) {
+        var headerBuilder = CsvSchema.builder().setUseHeader(true).setQuoteChar('"');
+        Arrays.stream(header).forEach(headerBuilder::addColumn);
+
+        try (ServletOutputStream out = response.getOutputStream()) {
             for (int marker : ExportUtils.BOM_MARKERS) {
                 out.write(marker);
             }
-            writer.writeNext(header);
+            var writer = new CsvMapper().writer().with(headerBuilder.build()).writeValues(out);
             data.forEachOrdered(d -> {
                 var copy = Arrays.copyOf(d, d.length);
                 for (var i = 0; i < copy.length; i++) {
                     var res = copy[i];
                     copy[i] = escapeFormulaChar(res);
                 }
-                writer.writeNext(copy);
+                try {
+                    writer.write(copy);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             });
             writer.flush();
             out.flush();

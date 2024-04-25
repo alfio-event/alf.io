@@ -16,26 +16,22 @@
  */
 package alfio.config;
 
-import alfio.manager.system.ExternalConfiguration;
 import alfio.util.ClockProvider;
 import com.openhtmltopdf.util.XRLog;
+import jakarta.servlet.Filter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.server.Cookie;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.session.web.http.CookieSerializer;
+import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
-import javax.servlet.Filter;
-import javax.servlet.SessionCookieConfig;
 import java.time.Clock;
 import java.util.logging.Level;
-
-import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
 
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
     org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
@@ -46,24 +42,27 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
     org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration.class,
     org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration.class
 })
-@EnableConfigurationProperties(ExternalConfiguration.class)
 @Configuration(proxyBeanMethods = false)
-@Profile(Initializer.PROFILE_SPRING_BOOT)
 public class SpringBootInitializer {
-
 
     @Bean
     public ServletContextInitializer servletContextInitializer() {
         return servletContext -> {
-            WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
-            ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
-            SessionCookieConfig config = servletContext.getSessionCookieConfig();
-            config.setHttpOnly(true);
-            config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
             // force log initialization, then disable it
             XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
             XRLog.setLoggingEnabled(false);
         };
+    }
+
+    @Bean
+    public CookieSerializer cookieSerializer(Environment environment) {
+        DefaultCookieSerializer serializer = new DefaultCookieSerializer();
+        serializer.setCookieName("ALFIO_SESSION");
+        if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
+            serializer.setSameSite(Cookie.SameSite.STRICT.attributeValue());
+            serializer.setUseSecureCookie(true);
+        }
+        return serializer;
     }
 
     @Bean

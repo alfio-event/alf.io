@@ -65,8 +65,7 @@ public class ExternalConfiguration {
     public List<ConfigurationKeyValuePathLevel> getAll(Collection<String> keys) {
         return keys.stream()
             .map(this::getSingle)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+            .flatMap(Optional::stream)
             .map(c -> new ConfigurationKeyValuePathLevel(c.getKey(), c.getValue(), c.getConfigurationPathLevel()))
             .collect(Collectors.toList());
     }

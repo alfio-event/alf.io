@@ -50,7 +50,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -89,8 +89,8 @@ public class TicketApiV2Controller {
         "/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/code.png",
         "/event/{eventName}/ticket/{ticketIdentifier}/code.png"
     })
-    public void showQrCode(@PathVariable("eventName") String eventName,
-                           @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException {
+    public void showQrCode(@PathVariable String eventName,
+                           @PathVariable String ticketIdentifier, HttpServletResponse response) throws IOException {
         var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if (oData.isEmpty()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -111,8 +111,8 @@ public class TicketApiV2Controller {
     }
 
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/download-ticket")
-    public void generateTicketPdf(@PathVariable("eventName") String eventName,
-                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public void generateTicketPdf(@PathVariable String eventName,
+                                  @PathVariable String ticketIdentifier,
                                   HttpServletResponse response) {
 
         ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).ifPresentOrElse(data -> {
@@ -151,8 +151,8 @@ public class TicketApiV2Controller {
     }
 
     @PostMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/send-ticket-by-email")
-    public ResponseEntity<Boolean> sendTicketByEmail(@PathVariable("eventName") String eventName,
-                                                     @PathVariable("ticketIdentifier") String ticketIdentifier) {
+    public ResponseEntity<Boolean> sendTicketByEmail(@PathVariable String eventName,
+                                                     @PathVariable String ticketIdentifier) {
 
         return ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).map(data -> {
             Event event = data.getLeft();
@@ -175,8 +175,8 @@ public class TicketApiV2Controller {
     }
 
     @DeleteMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
-    public ResponseEntity<Boolean> releaseTicket(@PathVariable("eventName") String eventName,
-                                                 @PathVariable("ticketIdentifier") String ticketIdentifier) {
+    public ResponseEntity<Boolean> releaseTicket(@PathVariable String eventName,
+                                                 @PathVariable String ticketIdentifier) {
         var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         try {
             oData.ifPresent(triple -> ticketReservationManager.releaseTicket(triple.getLeft(), triple.getMiddle(), triple.getRight()));
@@ -187,8 +187,8 @@ public class TicketApiV2Controller {
     }
 
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/full")
-    public ResponseEntity<ReservationInfo.TicketsByTicketCategory> getTicket(@PathVariable("eventName") String eventName,
-                                                                             @PathVariable("ticketIdentifier") String ticketIdentifier) {
+    public ResponseEntity<ReservationInfo.TicketsByTicketCategory> getTicket(@PathVariable String eventName,
+                                                                             @PathVariable String ticketIdentifier) {
 
         var optionalTicket = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier)
             .map(complete -> {
@@ -202,8 +202,8 @@ public class TicketApiV2Controller {
     }
 
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
-    public ResponseEntity<TicketInfo> getTicketInfo(@PathVariable("eventName") String eventName,
-                                                    @PathVariable("ticketIdentifier") String ticketIdentifier) {
+    public ResponseEntity<TicketInfo> getTicketInfo(@PathVariable String eventName,
+                                                    @PathVariable String ticketIdentifier) {
 
         //TODO: cleanup, we load useless data here!
 
@@ -254,8 +254,8 @@ public class TicketApiV2Controller {
     }
 
     @PutMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
-    public ResponseEntity<ValidatedResponse<Boolean>> updateTicketInfo(@PathVariable("eventName") String eventName,
-                                                                       @PathVariable("ticketIdentifier") String ticketIdentifier,
+    public ResponseEntity<ValidatedResponse<Boolean>> updateTicketInfo(@PathVariable String eventName,
+                                                                       @PathVariable String ticketIdentifier,
                                                                        @RequestBody UpdateTicketOwnerForm updateTicketOwner,
                                                                        BindingResult bindingResult,
                                                                        Authentication authentication) {
@@ -286,9 +286,9 @@ public class TicketApiV2Controller {
     }
 
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/code/{checkInCode}/check-in-info")
-    public ResponseEntity<OnlineCheckInInfo> getCheckInInfo(@PathVariable("eventName") String eventName,
-                                                            @PathVariable("ticketIdentifier") String ticketIdentifier,
-                                                            @PathVariable("checkInCode") String checkInCode,
+    public ResponseEntity<OnlineCheckInInfo> getCheckInInfo(@PathVariable String eventName,
+                                                            @PathVariable String ticketIdentifier,
+                                                            @PathVariable String checkInCode,
                                                             @RequestParam(value = "tz", required = false) String userTz) {
         return ResponseEntity.of(ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventName, ticketIdentifier)
             .flatMap(info -> {

@@ -54,7 +54,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
@@ -99,8 +99,7 @@ public class ConfigurationManager {
                 return selectPath(configList);
             }
             case PURCHASE_CONTEXT: {
-                if (path instanceof EventConfigurationPath) {
-                    EventConfigurationPath o = (EventConfigurationPath) path;
+                if (path instanceof EventConfigurationPath o) {
                     configList.addAll(configurationRepository.findByEventAndKey(o.getOrganizationId(),
                         o.getId(), keyAsString));
                 } else {
@@ -143,8 +142,7 @@ public class ConfigurationManager {
                 saveOrganizationConfiguration(orgPath.getId(), pathKey.getKey().name(), value);
                 break;
             case PURCHASE_CONTEXT:
-                if (path instanceof EventConfigurationPath) {
-                    var eventPath = (EventConfigurationPath) path;
+                if (path instanceof EventConfigurationPath eventPath) {
                     saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
                 } else {
                     var subscriptionDescriptorPath = (SubscriptionDescriptorConfigurationPath) path;
@@ -594,9 +592,7 @@ public class ConfigurationManager {
                 found.addAll(configurationRepository.findByOrganizationAndKeys(((OrganizationLevel)configurationLevel).organizationId, keysAsString));
                 break;
             case PURCHASE_CONTEXT:
-                if (configurationLevel instanceof EventLevel) {
-                    // event
-                    var eventLevel = (EventLevel) configurationLevel;
+                if (configurationLevel instanceof EventLevel eventLevel) {
                     found.addAll(configurationRepository.findByEventAndKeys(eventLevel.organizationId, eventLevel.eventId, keysAsString));
                 } else {
                     var subscriptionDescriptorLevel = (SubscriptionDescriptorLevel) configurationLevel;

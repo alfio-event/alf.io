@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Optional;
 
@@ -43,7 +43,7 @@ public class MolliePaymentWebhookController {
 
     @PostMapping(WEBHOOK_URL_TEMPLATE)
     public ResponseEntity<String> receivePaymentConfirmation(HttpServletRequest request,
-                                                             @PathVariable("reservationId") String reservationId) {
+                                                             @PathVariable String reservationId) {
         return Optional.ofNullable(StringUtils.trimToNull(request.getParameter("id")))
             .flatMap(id -> purchaseContextManager.findByReservationId(reservationId)
                     .map(purchaseContext -> {

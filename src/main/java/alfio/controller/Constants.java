@@ -24,7 +24,7 @@ import org.springframework.core.env.Profiles;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.ui.Model;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface Constants {
     String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";

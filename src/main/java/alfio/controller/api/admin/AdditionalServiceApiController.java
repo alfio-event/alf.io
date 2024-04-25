@@ -41,7 +41,7 @@ import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -80,7 +80,7 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/event/{eventId}/additional-services")
-    public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId, Principal principal) {
+    public List<EventModification.AdditionalService> loadAll(@PathVariable int eventId, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         return eventRepository.findOptionalById(eventId)
             .map(event -> additionalServiceManager.loadAllForEvent(eventId)
@@ -94,14 +94,14 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/event/{eventId}/additional-services/count")
-    public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable("eventId") int eventId, Principal principal) {
+    public Map<Integer, Map<AdditionalServiceItem.AdditionalServiceItemStatus, Integer>> countUse(@PathVariable int eventId, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         return additionalServiceManager.countUsageForEvent(eventId);
     }
 
     @PutMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
-    public ResponseEntity<EventModification.AdditionalService> update(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
+    public ResponseEntity<EventModification.AdditionalService> update(@PathVariable int eventId, @PathVariable int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
         //
         accessService.checkEventOwnership(principal, eventId);
         Optional<AdditionalService> optional = additionalServiceManager.getOptionalById(additionalServiceId, eventId);
@@ -130,7 +130,7 @@ public class AdditionalServiceApiController {
 
     @PostMapping(value = "/event/{eventId}/additional-services")
     @Transactional
-    public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
+    public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult, Principal principal) {
         accessService.checkEventOwnership(principal, eventId);
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
@@ -141,7 +141,7 @@ public class AdditionalServiceApiController {
 
     @DeleteMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
-    public ResponseEntity<String> remove(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, Principal principal) {
+    public ResponseEntity<String> remove(@PathVariable int eventId, @PathVariable int additionalServiceId, Principal principal) {
         var additionalService = additionalServiceManager.getOptionalById(additionalServiceId, eventId);
         Assert.isTrue(additionalService.isPresent(), "Additional service " + additionalServiceId + " must be inside eventId " + eventId);
         accessService.checkEventOwnership(principal, eventId);
@@ -161,7 +161,7 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/events/{eventName}/additional-services/{type}/export")
-    public void exportAdditionalServices(@PathVariable("eventName") String eventName,
+    public void exportAdditionalServices(@PathVariable String eventName,
                                          @PathVariable("type") AdditionalService.AdditionalServiceType additionalServiceType,
                                          HttpServletResponse response,
                                          Principal principal) throws IOException {

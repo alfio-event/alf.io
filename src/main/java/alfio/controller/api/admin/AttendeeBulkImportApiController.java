@@ -35,7 +35,7 @@ public class AttendeeBulkImportApiController {
     private final AccessService accessService;
 
     @PostMapping("")
-    public Result<String> createReservations(@PathVariable("eventName") String eventName,
+    public Result<String> createReservations(@PathVariable String eventName,
                                              @RequestBody AdminReservationModification body,
                                              @RequestParam(name="oneReservationPerAttendee", defaultValue = "false", required = false) boolean oneReservationPerAttendee,
                                              Principal principal) {
@@ -44,8 +44,8 @@ public class AttendeeBulkImportApiController {
     }
 
     @GetMapping("/{requestId}/status")
-    public Result<AdminReservationRequestStats> getRequestsStatus(@PathVariable("eventName") String eventName,
-                                                                  @PathVariable("requestId") String requestId,
+    public Result<AdminReservationRequestStats> getRequestsStatus(@PathVariable String eventName,
+                                                                  @PathVariable String requestId,
                                                                   Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return requestManager.getRequestStatus(requestId, eventName, principal.getName());

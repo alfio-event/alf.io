@@ -111,7 +111,7 @@ public class SpecialPriceManager {
         ContentLanguage defaultLocale = eventLanguages.contains(ContentLanguage.ENGLISH) ? ContentLanguage.ENGLISH : eventLanguages.get(0);
         set.forEach(m -> {
             var messageSource = messageSourceManager.getMessageSourceFor(event);
-            Locale locale = LocaleUtil.forLanguageTag(StringUtils.defaultString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
+            Locale locale = LocaleUtil.forLanguageTag(Objects.toString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
             var usePartnerCode = configurationManager.getFor(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, event.getConfigurationLevel()).getValueAsBooleanOrDefault();
             var promoCodeDescription = messageSource.getMessage("show-event.promo-code-type."+(usePartnerCode ? "partner" : "promotional"), null, null, locale);
             Map<String, Object> model = TemplateResource.prepareModelForSendReservedCode(organization, event, m, eventManager.getEventUrl(event), promoCodeDescription);

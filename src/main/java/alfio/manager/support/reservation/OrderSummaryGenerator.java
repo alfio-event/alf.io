@@ -220,10 +220,10 @@ public class OrderSummaryGenerator {
                 null, reservationVatStatus));
         });
         //
-        if(purchaseContext instanceof SubscriptionDescriptor) {
+        if(purchaseContext instanceof SubscriptionDescriptor descriptor) {
             if(!subscriptionsToInclude.isEmpty()) {
                 var subscription = subscriptionsToInclude.get(0);
-                var priceContainer = new SubscriptionPriceContainer(subscription, promoCodeDiscount, (SubscriptionDescriptor) purchaseContext);
+                var priceContainer = new SubscriptionPriceContainer(subscription, promoCodeDiscount, descriptor);
                 var priceBeforeVat = formatUnit(priceContainer.getNetPrice(), currencyCode);
                 summary.add(new SummaryRow(purchaseContext.getTitle().get(locale.getLanguage()),
                     formatCents(priceContainer.getSummarySrcPriceCts(), currencyCode),

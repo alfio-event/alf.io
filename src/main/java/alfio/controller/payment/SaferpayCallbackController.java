@@ -34,9 +34,9 @@ public class SaferpayCallbackController {
     private final PurchaseContextManager purchaseContextManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.CANCEL_URL_TEMPLATE)
-    public String saferpayCancel(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                 @PathVariable("purchaseContextIdentifier") String purchaseContextIdentifier,
-                                 @PathVariable("reservationId") String reservationId) {
+    public String saferpayCancel(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                 @PathVariable String purchaseContextIdentifier,
+                                 @PathVariable String reservationId) {
         var maybePurchaseContext = purchaseContextManager.findBy(purchaseContextType, purchaseContextIdentifier);
         if(maybePurchaseContext.isEmpty()) {
             return "redirect:/";

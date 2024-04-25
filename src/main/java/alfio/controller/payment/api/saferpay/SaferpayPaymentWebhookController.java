@@ -37,7 +37,7 @@ public class SaferpayPaymentWebhookController {
     private final PurchaseContextManager purchaseContextManager;
 
     @GetMapping(PaymentPageInitializeRequestBuilder.WEBHOOK_URL_TEMPLATE)
-    ResponseEntity<String> handleTransactionNotification(@PathVariable("reservationId") String reservationId) {
+    ResponseEntity<String> handleTransactionNotification(@PathVariable String reservationId) {
         return purchaseContextManager.findByReservationId(reservationId)
                 .map(purchaseContext -> {
                     var result = ticketReservationManager.processTransactionWebhook("", null, PaymentProxy.SAFERPAY,

@@ -42,7 +42,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,7 +92,7 @@ public class ResourceController {
     }
 
     @GetMapping("/overridable-template/{name}/{locale}")
-    public void getTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale, HttpServletResponse response) throws IOException {
+    public void getTemplate(@PathVariable TemplateResource name, @PathVariable String locale, HttpServletResponse response) throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try (InputStream is = new ClassPathResource(name.classPath()).getInputStream()) {
             is.transferTo(os);
@@ -105,7 +105,7 @@ public class ResourceController {
     }
 
     @PostMapping("/overridable-template/{name}/{locale}/preview")
-    public void previewTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale,
+    public void previewTemplate(@PathVariable TemplateResource name, @PathVariable String locale,
                                 @RequestParam(required = false, value = "organizationId") Integer organizationId,
                                 @RequestParam(required = false, value = "eventId") Integer eventId,
                                 @RequestParam(required = false, value = "subscriptionDescriptorId") UUID subscriptionDescriptorId,
@@ -229,13 +229,13 @@ public class ResourceController {
     }
 
     @GetMapping("/resource-organization/{organizationId}")
-    public List<UploadedResource> findAllForOrganization(@PathVariable("organizationId") int organizationId, Principal principal) {
+    public List<UploadedResource> findAllForOrganization(@PathVariable int organizationId, Principal principal) {
         checkAccess(organizationId, principal);
         return uploadedResourceManager.findAll(organizationId);
     }
 
     @GetMapping("/resource-event/{organizationId}/{eventId}")
-    public List<UploadedResource> findAllForEvent(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, Principal principal) {
+    public List<UploadedResource> findAllForEvent(@PathVariable int organizationId, @PathVariable int eventId, Principal principal) {
         checkAccess(organizationId, eventId, principal);
         return uploadedResourceManager.findAll(organizationId, eventId);
     }
@@ -244,7 +244,7 @@ public class ResourceController {
     //------------------
 
     @GetMapping("/resource/{name}/metadata")
-    public ResponseEntity<UploadedResource> getMetadata(@PathVariable("name") String name, Principal principal) {
+    public ResponseEntity<UploadedResource> getMetadata(@PathVariable String name, Principal principal) {
         checkAccess(principal);
         if (uploadedResourceManager.hasResource(name)) {
             return new ResponseEntity<>(uploadedResourceManager.get(name), HttpStatus.OK);
@@ -254,7 +254,7 @@ public class ResourceController {
     }
 
     @GetMapping("/resource-organization/{organizationId}/{name}/metadata")
-    public ResponseEntity<UploadedResource> getMetadata(@PathVariable("organizationId") int organizationId, @PathVariable("name") String name, Principal principal) {
+    public ResponseEntity<UploadedResource> getMetadata(@PathVariable int organizationId, @PathVariable String name, Principal principal) {
         checkAccess(organizationId, principal);
         if (uploadedResourceManager.hasResource(organizationId, name)) {
             return new ResponseEntity<>(uploadedResourceManager.get(organizationId, name), HttpStatus.OK);
@@ -264,7 +264,7 @@ public class ResourceController {
     }
 
     @GetMapping("/resource-event/{organizationId}/{eventId}/{name}/metadata")
-    public ResponseEntity<UploadedResource> getMetadata(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @PathVariable("name") String name, Principal principal) {
+    public ResponseEntity<UploadedResource> getMetadata(@PathVariable int organizationId, @PathVariable int eventId, @PathVariable String name, Principal principal) {
         checkAccess(organizationId, eventId, principal);
         if (uploadedResourceManager.hasResource(organizationId, eventId, name)) {
             return new ResponseEntity<>(uploadedResourceManager.get(organizationId, eventId, name), HttpStatus.OK);
@@ -282,20 +282,20 @@ public class ResourceController {
     }
 
     @PostMapping("/resource-organization/{organizationId}/")
-    public void uploadFile(@PathVariable("organizationId") int organizationId, @RequestBody UploadBase64FileModification upload, Principal principal) {
+    public void uploadFile(@PathVariable int organizationId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, principal);
         uploadedResourceManager.saveResource(organizationId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
     @PostMapping("/resource-event/{organizationId}/{eventId}/")
-    public void uploadFile(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @RequestBody UploadBase64FileModification upload, Principal principal) {
+    public void uploadFile(@PathVariable int organizationId, @PathVariable int eventId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, eventId, principal);
         uploadedResourceManager.saveResource(organizationId, eventId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
     //------------------
     @GetMapping("/resource/{name:.*}")
-    public void outputContent(@PathVariable("name") String name, Principal principal, HttpServletResponse response) throws IOException {
+    public void outputContent(@PathVariable String name, Principal principal, HttpServletResponse response) throws IOException {
         checkAccess(principal);
         if (!uploadedResourceManager.hasResource(name)) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -310,7 +310,7 @@ public class ResourceController {
     }
 
     @GetMapping("/resource-organization/{organizationId}/{name:.*}")
-    public void outputContent(@PathVariable("organizationId") int organizationId, @PathVariable("name") String name, Principal principal, HttpServletResponse response) throws IOException {
+    public void outputContent(@PathVariable int organizationId, @PathVariable String name, Principal principal, HttpServletResponse response) throws IOException {
         checkAccess(organizationId, principal);
         if (!uploadedResourceManager.hasResource(organizationId, name)) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -325,7 +325,7 @@ public class ResourceController {
     }
 
     @GetMapping("/resource-event/{organizationId}/{eventId}/{name:.*}")
-    public void outputContent(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @PathVariable("name") String name, Principal principal, HttpServletResponse response) throws IOException {
+    public void outputContent(@PathVariable int organizationId, @PathVariable int eventId, @PathVariable String name, Principal principal, HttpServletResponse response) throws IOException {
         checkAccess(organizationId, eventId, principal);
         if (!uploadedResourceManager.hasResource(organizationId, eventId, name)) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -342,19 +342,19 @@ public class ResourceController {
     //------------------
 
     @DeleteMapping("/resource/{name:.*}")
-    public void delete(@PathVariable("name") String name, Principal principal) {
+    public void delete(@PathVariable String name, Principal principal) {
         checkAccess(principal);
         uploadedResourceManager.deleteResource(name);
     }
 
     @DeleteMapping("/resource-organization/{organizationId}/{name:.*}")
-    public void delete(@PathVariable("organizationId") int organizationId, @PathVariable("name") String name, Principal principal) {
+    public void delete(@PathVariable int organizationId, @PathVariable String name, Principal principal) {
         checkAccess(organizationId, principal);
         uploadedResourceManager.deleteResource(organizationId, name);
     }
 
     @DeleteMapping("/resource-event/{organizationId}/{eventId}/{name:.*}")
-    public void delete(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @PathVariable("name") String name, Principal principal) {
+    public void delete(@PathVariable int organizationId, @PathVariable int eventId, @PathVariable String name, Principal principal) {
         checkAccess(organizationId, eventId, principal);
         uploadedResourceManager.deleteResource(organizationId, eventId, name);
     }

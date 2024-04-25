@@ -27,7 +27,6 @@ import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,7 +40,6 @@ public class OrganizationsApiV1Controller {
     private final OrganizationDeleter organizationDeleter;
     private final AccessService accessService;
 
-    @Autowired
     public OrganizationsApiV1Controller(UserManager userManager,
                                         OrganizationDeleter organizationDeleter,
                                         AccessService accessService) {
@@ -93,7 +91,7 @@ public class OrganizationsApiV1Controller {
 
     @DeleteMapping("/{id}/api-key/{apiKey}")
     public ResponseEntity<Boolean> deleteApiKeyForOrganization(@PathVariable("id") int organizationId,
-                                                               @PathVariable("apiKey") String apiKey,
+                                                               @PathVariable String apiKey,
                                                                Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         return ResponseEntity.of(userManager.findUserIdByApiKey(apiKey, organizationId).map(userId -> {

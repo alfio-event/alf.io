@@ -20,7 +20,7 @@ import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.*;
 import java.util.regex.Pattern;

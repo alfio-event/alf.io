@@ -47,8 +47,8 @@ public class EmailMessageApiController {
     private final AccessService accessService;
 
     @GetMapping("/")
-    public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                                                           @PathVariable("publicIdentifier") String publicIdentifier,
+    public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                                                           @PathVariable String publicIdentifier,
                                                                            @RequestParam(value = "page", required = false) Integer page,
                                                                            @RequestParam(value = "search", required = false) String search,
                                                                            Principal principal) {
@@ -62,9 +62,9 @@ public class EmailMessageApiController {
     }
 
     @GetMapping("/{messageId}")
-    public LightweightEmailMessage loadEmailMessage(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                                    @PathVariable("publicIdentifier") String publicIdentifier,
-                                                    @PathVariable("messageId") int messageId,
+    public LightweightEmailMessage loadEmailMessage(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                                    @PathVariable String publicIdentifier,
+                                                    @PathVariable int messageId,
                                                     Principal principal) {
         var purchaseContext = purchaseContextManager.findBy(purchaseContextType, publicIdentifier).orElseThrow();
         accessService.checkOrganizationOwnership(principal, purchaseContext.getOrganizationId());

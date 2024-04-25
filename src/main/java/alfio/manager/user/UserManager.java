@@ -465,8 +465,8 @@ public class UserManager {
     }
 
     private boolean isSystemApiUser(Principal principal) {
-        return principal instanceof APITokenAuthentication
-            && ((APITokenAuthentication)principal).getAuthorities().stream()
+        return principal instanceof APITokenAuthentication apita
+            && apita.getAuthorities().stream()
             .allMatch(authority -> authority.getAuthority().equals("ROLE_" + SYSTEM_API_CLIENT));
     }
 }

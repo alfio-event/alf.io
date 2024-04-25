@@ -158,8 +158,8 @@ public class UserApiV2Controller {
             SecurityContextHolder.getContext().setAuthentication(null);
         }
         String redirectUrl = "/";
-        if(authentication instanceof OpenIdAlfioAuthentication) {
-            redirectUrl = ((OpenIdAlfioAuthentication) authentication).getIdpLogoutRedirectionUrl();
+        if(authentication instanceof OpenIdAlfioAuthentication alfioAuthentication) {
+            redirectUrl = alfioAuthentication.getIdpLogoutRedirectionUrl();
         }
         return ResponseEntity.ok(new ClientRedirect(redirectUrl));
     }

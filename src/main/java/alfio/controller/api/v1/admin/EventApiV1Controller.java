@@ -43,8 +43,7 @@ import alfio.model.user.Organization;
 import alfio.repository.ExtensionRepository;
 import alfio.util.Json;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,7 +139,7 @@ public class EventApiV1Controller {
     }
 
     @GetMapping("/{slug}/stats")
-    public ResponseEntity<EventWithAdditionalInfo> stats(@PathVariable("slug") String slug, Principal user) {
+    public ResponseEntity<EventWithAdditionalInfo> stats(@PathVariable String slug, Principal user) {
         accessService.checkEventOwnership(user, slug);
         Result<EventWithAdditionalInfo> result = new Result.Builder<EventWithAdditionalInfo>()
             .build(() -> eventStatisticsManager.getEventWithAdditionalInfo(slug,user.getName()));
@@ -153,7 +152,7 @@ public class EventApiV1Controller {
     }
 
     @DeleteMapping("/{slug}")
-    public ResponseEntity<String> delete(@PathVariable("slug") String slug, Principal user) {
+    public ResponseEntity<String> delete(@PathVariable String slug, Principal user) {
         accessService.checkEventOwnership(user, slug);
         Result<String> result =  new Result.Builder<String>()
             .build(() -> {
@@ -170,7 +169,7 @@ public class EventApiV1Controller {
 
     @PostMapping("/update/{slug}")
     @Transactional
-    public ResponseEntity<String> update(@PathVariable("slug") String slug, @RequestBody EventCreationRequest request, Principal user) {
+    public ResponseEntity<String> update(@PathVariable String slug, @RequestBody EventCreationRequest request, Principal user) {
         accessService.checkEventOwnership(user, slug);
         String imageRef = fetchImage(request.getImageUrl());
 
@@ -185,13 +184,13 @@ public class EventApiV1Controller {
     }
 
     @GetMapping("/{slug}/subscriptions")
-    public ResponseEntity<LinkedSubscriptions> getLinkedSubscriptions(@PathVariable("slug") String slug, Principal user) {
+    public ResponseEntity<LinkedSubscriptions> getLinkedSubscriptions(@PathVariable String slug, Principal user) {
         var event = accessService.checkEventOwnership(user, slug);
         return ResponseEntity.ok(retrieveLinkedSubscriptionsForEvent(slug, event.getId(), event.getOrganizationId()));
     }
 
     @PutMapping("/{slug}/subscriptions")
-    public ResponseEntity<LinkedSubscriptions> updateLinkedSubscriptions(@PathVariable("slug") String slug,
+    public ResponseEntity<LinkedSubscriptions> updateLinkedSubscriptions(@PathVariable String slug,
                                                                          @RequestBody List<UUID> subscriptions,
                                                                          Principal user) {
         var eventAndOrgId = accessService.checkDescriptorsLinkRequest(user, slug, subscriptions);
@@ -200,7 +199,7 @@ public class EventApiV1Controller {
     }
 
     @PostMapping("/{slug}/generate-subscribers-tickets")
-    public ResponseEntity<Boolean> generateTicketsForSubscribers(@PathVariable("slug") String slug,
+    public ResponseEntity<Boolean> generateTicketsForSubscribers(@PathVariable String slug,
                                                                  Principal user) {
         var eventAndOrganizationId = accessService.checkEventOwnership(user, slug);
         Map<String, Object> params = Map.of(
@@ -212,7 +211,7 @@ public class EventApiV1Controller {
     }
 
     @GetMapping("/{slug}/check-in-log")
-    public ResponseEntity<List<CheckInLogEntry>> checkInLog(@PathVariable("slug") String slug,
+    public ResponseEntity<List<CheckInLogEntry>> checkInLog(@PathVariable String slug,
                                                       Principal user) {
         accessService.checkEventOwnership(user, slug);
         try {

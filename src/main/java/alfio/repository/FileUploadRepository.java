@@ -46,11 +46,13 @@ public interface FileUploadRepository {
     @Query("select id, name, content_size, content_type, attributes from file_blob where id = :id")
     Optional<FileBlobMetadata> findById(@Bind("id") String id);
 
-    @Query("delete from file_blob where creation_time <= :date and id not in (" +
-        "select file_blob_id from event where file_blob_id is not null" +
-        " union " +
-        "select file_blob_id_fk as file_blob_id from subscription_descriptor where file_blob_id_fk is not null" +
-        ")")
+    @Query("""
+        delete from file_blob where creation_time <= :date and id not in (\
+        select file_blob_id from event where file_blob_id is not null\
+         union \
+        select file_blob_id_fk as file_blob_id from subscription_descriptor where file_blob_id_fk is not null\
+        )\
+        """)
     int cleanupUnreferencedBlobFiles(@Bind("date") Date date);
 
     default void upload(UploadBase64FileModification file, String digest, Map<String, String> attributes) {

@@ -41,5 +41,4 @@ public class RefreshableDataSource extends DelegatingDataSource {
     public void refresh() {
         this.dataSource.getAndSet(new HikariDataSource(config)).close();
     }
-
 }

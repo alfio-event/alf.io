@@ -68,8 +68,8 @@ class JSNodeVisitor implements NodeVisitor {
             return;
         }
         // keep track of function calls
-        if (node instanceof FunctionCall) {
-            AstNode target = ((FunctionCall) node).getTarget();
+        if (node instanceof FunctionCall call) {
+            AstNode target = call.getTarget();
             if (!(target instanceof PropertyGet)) {
                 Name name = (Name) target;
                 // keep all function calls inside an ArrayList
@@ -77,8 +77,8 @@ class JSNodeVisitor implements NodeVisitor {
                 // go back in the script and find the parent i.e. the function in which this node is inside
                 AstNode parentNode = node.getParent();
                 while (parentNode != null) {
-                    if (parentNode instanceof FunctionNode) {
-                        Name parentName = ((FunctionNode) parentNode).getFunctionName();
+                    if (parentNode instanceof FunctionNode functionNode) {
+                        Name parentName = functionNode.getFunctionName();
                         String id = parentName.getIdentifier();
                         // when the function name is found, check if it was called from somewhere else
                         // if this function is called from another place and it contains another function call, throw an exception
@@ -95,16 +95,18 @@ class JSNodeVisitor implements NodeVisitor {
             || node instanceof DoLoop
             || node instanceof WithStatement
             || node instanceof LabeledStatement
-            || (node instanceof PropertyGet && ((PropertyGet) node).getRight().getString().equals("System"))
-            || (node instanceof PropertyGet && ((PropertyGet) node).getRight().getString().equals("getClass"))
+            || (node instanceof PropertyGet get && get.getRight().getString().equals("System"))
+            || (node instanceof PropertyGet propertyGet && propertyGet.getRight().getString().equals("getClass"))
             || (node instanceof Name && node.getString().equals("newInstance"))) {
-            throw new ScriptNotValidException("Script not valid. One or more of the following components have been detected: \n" +
-                "- while() Loop\n" +
-                "- with() Statement\n" +
-                "- a labeled statement\n" +
-                "- Access to java.lang.System\n" +
-                "- Access to Object.getClass()\n" +
-                "- Java reflection usage");
+            throw new ScriptNotValidException("""
+                Script not valid. One or more of the following components have been detected:\s
+                - while() Loop
+                - with() Statement
+                - a labeled statement
+                - Access to java.lang.System
+                - Access to Object.getClass()
+                - Java reflection usage\
+                """);
         }
     }
 

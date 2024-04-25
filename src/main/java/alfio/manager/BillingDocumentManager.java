@@ -206,7 +206,7 @@ public class BillingDocumentManager {
         String pattern = configurationManager
             .getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, purchaseContext.getConfigurationLevel())
             .getValueOrDefault("%d");
-        return String.format(ObjectUtils.firstNonNull(StringUtils.trimToNull(pattern), "%d"), sequence);
+        return ObjectUtils.firstNonNull(StringUtils.trimToNull(pattern), "%d").formatted(sequence);
     }
 
     private Map<String, Object> prepareModelForBillingDocument(PurchaseContext purchaseContext, TicketReservation reservation, OrderSummary summary, BillingDocument.Type type) {

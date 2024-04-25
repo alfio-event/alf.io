@@ -40,8 +40,7 @@ class JSSymbol {
 
     public JSSymbol(AstNode node) {
         this.node = node;
-        if (node instanceof FunctionNode) {
-            FunctionNode funcNode = (FunctionNode)node;
+        if (node instanceof FunctionNode funcNode) {
             List<AstNode> args = funcNode.getParams();
             if (args != null) {
                 for (AstNode argNode : args) {
@@ -59,8 +58,8 @@ class JSSymbol {
         if (child.getType() == Token.VAR) {
             //check if it is already added
             AstNode childNode = child.getNode();
-            if (childNode instanceof VariableInitializer) {
-                String varName = ((Name)((VariableInitializer) childNode).getTarget()).getIdentifier();
+            if (childNode instanceof VariableInitializer initializer) {
+                String varName = ((Name)initializer.getTarget()).getIdentifier();
                 if (localVars.containsKey(varName)) {
                     return;
                 }

@@ -58,16 +58,22 @@ import alfio.util.*;
 import ch.digitalfondue.jfiveparse.Element;
 import ch.digitalfondue.jfiveparse.Parser;
 import ch.digitalfondue.jfiveparse.Selector;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvParser;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
-import com.opencsv.CSVReader;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BOMInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -1268,15 +1274,34 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     MockHttpServletResponse response = new MockHttpServletResponse();
                     eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
                     response.getContentAsString();
-                    CSVReader csvReader = new CSVReader(new StringReader(response.getContentAsString()));
-                    List<String[]> csvSponsorScan = csvReader.readAll();
-                    assertEquals(2, csvSponsorScan.size());
-                    assertEquals("sponsor", csvSponsorScan.get(1)[0]);
-                    assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
-                    assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
-                    assertEquals("", csvSponsorScan.get(1)[8]);
-                    assertEquals(SponsorScan.LeadStatus.WARM.name(), csvSponsorScan.get(1)[9]);
-                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(1)[10]);
+                    var schema = CsvSchema.builder().setUseHeader(true).setQuoteChar('"').build();
+                    var mapper = new CsvMapper();
+                    record SponsorScanRecord(
+                        @JsonProperty("Username/Api Key") String username,
+                        @JsonProperty("Description") String description,
+                        @JsonProperty("Timestamp") String timestamp,
+                        @JsonProperty("Full name") String fullName,
+                        @JsonProperty("Email") String email,
+                        @JsonProperty("field1") String field1,
+                        @JsonProperty("field2") String field2,
+                        @JsonProperty("field3") String field3,
+                        @JsonProperty("Sponsor notes") String notes,
+                        @JsonProperty("Lead Status") SponsorScan.LeadStatus leadStatus,
+                        @JsonProperty("Operator") String operator
+                    ) {}
+
+                    MappingIterator<SponsorScanRecord> values = mapper.readerFor(SponsorScanRecord.class)
+                        .with(schema)
+                        .readValues(BOMInputStream.builder().setReader(new StringReader(response.getContentAsString())).get());
+
+                    List<SponsorScanRecord> csvSponsorScan = values.readAll();
+                    assertEquals(1, csvSponsorScan.size());
+                    assertEquals("sponsor", csvSponsorScan.get(0).username);
+                    assertEquals("Test Testson", csvSponsorScan.get(0).fullName);
+                    assertEquals("testmctest@test.com", csvSponsorScan.get(0).email);
+                    assertEquals("", csvSponsorScan.get(0).notes);
+                    assertEquals(SponsorScan.LeadStatus.WARM, csvSponsorScan.get(0).leadStatus);
+                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(0).operator);
                     //
 
                     // check update notes
@@ -1288,35 +1313,39 @@ public abstract class BaseReservationFlowTest extends BaseIntegrationTest {
                     assertEquals(1, requireNonNull(scannedBadges).size());
                     response = new MockHttpServletResponse();
                     eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
-                    csvReader = new CSVReader(new StringReader(response.getContentAsString()));
-                    csvSponsorScan = csvReader.readAll();
-                    assertEquals(2, csvSponsorScan.size());
-                    assertEquals("sponsor", csvSponsorScan.get(1)[0]);
-                    assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
-                    assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
-                    assertEquals("this is a very good lead!", csvSponsorScan.get(1)[8]);
-                    assertEquals(SponsorScan.LeadStatus.HOT.name(), csvSponsorScan.get(1)[9]);
-                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(1)[10]);
+                    values = mapper.readerFor(SponsorScanRecord.class)
+                        .with(schema)
+                        .readValues(BOMInputStream.builder().setReader(new StringReader(response.getContentAsString())).get());
+                    csvSponsorScan = values.readAll();
+                    assertEquals(1, csvSponsorScan.size());
+                    assertEquals("sponsor", csvSponsorScan.get(0).username);
+                    assertEquals("Test Testson", csvSponsorScan.get(0).fullName);
+                    assertEquals("testmctest@test.com", csvSponsorScan.get(0).email);
+                    assertEquals("this is a very good lead!", csvSponsorScan.get(0).notes);
+                    assertEquals(SponsorScan.LeadStatus.HOT, csvSponsorScan.get(0).leadStatus);
+                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(0).operator);
 
                     // scan from a different operator
                     response = new MockHttpServletResponse();
                     assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null, null), sponsorPrincipal, "OP2").getBody().getResult().getStatus());
                     eventApiController.downloadSponsorScanExport(context.event.getShortName(), "csv", response, principal);
-                    csvReader = new CSVReader(new StringReader(response.getContentAsString()));
-                    csvSponsorScan = csvReader.readAll();
-                    assertEquals(3, csvSponsorScan.size());
-                    assertEquals("sponsor", csvSponsorScan.get(1)[0]);
-                    assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
-                    assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
-                    assertEquals("this is a very good lead!", csvSponsorScan.get(1)[8]);
-                    assertEquals(SponsorScan.LeadStatus.HOT.name(), csvSponsorScan.get(1)[9]);
-                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(1)[10]);
+                    values = mapper.readerFor(SponsorScanRecord.class)
+                        .with(schema)
+                        .readValues(BOMInputStream.builder().setReader(new StringReader(response.getContentAsString())).get());
+                    csvSponsorScan = values.readAll();
+                    assertEquals(2, csvSponsorScan.size());
+                    assertEquals("sponsor", csvSponsorScan.get(0).username);
+                    assertEquals("Test Testson", csvSponsorScan.get(0).fullName);
+                    assertEquals("testmctest@test.com", csvSponsorScan.get(0).email);
+                    assertEquals("this is a very good lead!", csvSponsorScan.get(0).notes);
+                    assertEquals(SponsorScan.LeadStatus.HOT, csvSponsorScan.get(0).leadStatus);
+                    assertEquals(AttendeeManager.DEFAULT_OPERATOR_ID, csvSponsorScan.get(0).operator);
 
-                    assertEquals("sponsor", csvSponsorScan.get(2)[0]);
-                    assertEquals("Test Testson", csvSponsorScan.get(2)[3]);
-                    assertEquals("testmctest@test.com", csvSponsorScan.get(2)[4]);
-                    assertEquals("", csvSponsorScan.get(2)[8]);
-                    assertEquals("OP2", csvSponsorScan.get(2)[10]);
+                    assertEquals("sponsor", csvSponsorScan.get(1).username);
+                    assertEquals("Test Testson", csvSponsorScan.get(1).fullName);
+                    assertEquals("testmctest@test.com", csvSponsorScan.get(1).email);
+                    assertEquals("", csvSponsorScan.get(1).notes);
+                    assertEquals("OP2", csvSponsorScan.get(1).operator);
 
                     // #742 - test multiple check-ins
 

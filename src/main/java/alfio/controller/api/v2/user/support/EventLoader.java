@@ -31,7 +31,7 @@ import alfio.repository.user.OrganizationRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.*;

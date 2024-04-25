@@ -23,8 +23,12 @@ import alfio.manager.openid.OpenIdAuthenticationManager;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import jakarta.servlet.Filter;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.http.HttpCookie;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -33,8 +37,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
-import org.springframework.security.config.annotation.web.configurers.ExpressionUrlAuthorizationConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -45,15 +51,12 @@ import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
-import javax.servlet.Filter;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -61,10 +64,11 @@ import static alfio.config.Initializer.API_V2_PUBLIC_PATH;
 import static alfio.config.Initializer.XSRF_TOKEN;
 import static alfio.config.authentication.support.AuthenticationConstants.*;
 import static alfio.config.authentication.support.OpenIdAuthenticationFilter.*;
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 abstract class AbstractFormBasedWebSecurity {
     public static final String AUTHENTICATE = "/authenticate";
-    private static final String[] OWNERSHIP_REQUIRED = new String[]{
+    private static final List<String> OWNERSHIP_REQUIRED = List.of(
         ADMIN_API + "/overridable-template",
         ADMIN_API + "/additional-services",
         ADMIN_API + "/events/*/additional-field",
@@ -82,7 +86,7 @@ abstract class AbstractFormBasedWebSecurity {
         ADMIN_API + "/subscription/*/email/",
         ADMIN_API + "/organization/*/subscription/**",
         ADMIN_API + "/reservation/subscription/**"
-    };
+    );
 
     private final Environment environment;
     private final UserManager userManager;
@@ -118,29 +122,23 @@ abstract class AbstractFormBasedWebSecurity {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE))) {
-            http.requiresChannel().antMatchers("/healthz").requiresInsecure()
-                .and()
-                .requiresChannel().mvcMatchers("/**").requiresSecure();
+            http.requiresChannel(channel -> channel.requestMatchers("/healthz").requiresInsecure())
+                .requiresChannel(channel -> channel.requestMatchers("/**").requiresSecure());
         }
 
-        CsrfConfigurer<HttpSecurity> configurer = csrfConfigurer(http);
-
         var authenticationManager = createAuthenticationManager();
-        configurer.csrfTokenRepository(csrfTokenRepository)
-            .and()
-            .headers().frameOptions().disable() // https://github.com/alfio-event/alf.io/issues/1031 X-Frame-Options has been moved to IndexController
-            .and()
-            .authorizeRequests(AbstractFormBasedWebSecurity::authorizeRequests)
+        configureExceptionHandling(http);
+        configureCsrf(http, configurer -> configurer.csrfTokenRepository(csrfTokenRepository));
+        http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+            .authorizeHttpRequests(AbstractFormBasedWebSecurity::authorizeRequests)
             .authenticationManager(authenticationManager)
-            .formLogin()
-            .loginPage("/authentication")
-            .loginProcessingUrl(AUTHENTICATE)
-            .defaultSuccessUrl("/admin")
-            .failureUrl("/authentication?failed")
-            .and().logout().permitAll()
-            .and()
+            .formLogin(login -> login
+                .loginPage("/authentication")
+                .loginProcessingUrl(AUTHENTICATE)
+                .defaultSuccessUrl("/admin")
+                .failureUrl("/authentication?failed")).logout(LogoutConfigurer::permitAll)
             // this allows us to sync between spring session and spring security, thus saving the principal name in the session table
-            .sessionManagement().maximumSessions(-1).sessionRegistry(sessionRegistry);
+            .sessionManagement(management -> management.maximumSessions(-1).sessionRegistry(sessionRegistry));
 
         http.addFilterBefore(openIdPublicCallbackLoginFilter(publicOpenIdAuthenticationManager, authenticationManager), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(openIdPublicAuthenticationFilter(publicOpenIdAuthenticationManager), AnonymousAuthenticationFilter.class);
@@ -198,54 +196,52 @@ abstract class AbstractFormBasedWebSecurity {
         };
     }
 
-    private static void authorizeRequests(ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry auth) {
-        auth.antMatchers(ADMIN_PUBLIC_API + "/**").denyAll() // Admin public API requests must be authenticated using API-Keys
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/users/current").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(HttpMethod.POST, ADMIN_API + "/users/check", ADMIN_API + "/users/current/edit", ADMIN_API + "/users/current/update-password").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
-            .antMatchers(ADMIN_API + "/organizations/new", ADMIN_API + "/system/**").hasRole(ADMIN)
-            .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(HttpMethod.GET, OWNERSHIP_REQUIRED).hasAnyRole(ADMIN, OWNER)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(HttpMethod.PUT,
-                ADMIN_API + "/reservation/event/*/*/notify",
-                ADMIN_API + "/reservation/event/*/*/notify-attendees",
-                ADMIN_API + "/reservation/event/*/*/confirm"
-            ).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
-            .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
-            .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-            .antMatchers("/api/attendees/**").denyAll()
-            .antMatchers("/callback").permitAll()
-            .antMatchers("/**").permitAll();
+    private static void authorizeRequests(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers(antMatcher(ADMIN_PUBLIC_API + "/**")).denyAll() // Admin public API requests must be authenticated using API-Keys
+            .requestMatchers(antMatcher(HttpMethod.GET, ADMIN_API + "/users/current")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(HttpMethod.POST, ADMIN_API + "/users/check"), antMatcher(HttpMethod.POST, ADMIN_API + "/users/current/edit"), antMatcher(HttpMethod.POST, ADMIN_API + "/users/current/update-password")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(ADMIN_API + "/configuration/**"), antMatcher(ADMIN_API + "/users/**")).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(antMatcher(ADMIN_API + "/organizations/new"), antMatcher(ADMIN_API + "/system/**")).hasRole(ADMIN)
+            .requestMatchers(antMatcher(ADMIN_API + "/check-in/**")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(OWNERSHIP_REQUIRED.stream().map(u -> antMatcher(HttpMethod.GET, u)).toArray(RequestMatcher[]::new)).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(antMatcher(HttpMethod.GET, ADMIN_API + "/**")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new"), antMatcher(HttpMethod.POST,ADMIN_API + "/reservation/event/*/*")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify"), antMatcher(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify-attendees"), antMatcher(HttpMethod.PUT,ADMIN_API + "/reservation/event/*/*/confirm")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher(ADMIN_API + "/**")).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(antMatcher("/admin/**/export/**")).hasAnyRole(ADMIN, OWNER)
+            .requestMatchers(antMatcher("/admin/**")).hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+            .requestMatchers(antMatcher("/api/attendees/**")).denyAll()
+            .requestMatchers(antMatcher("/callback")).permitAll()
+            .requestMatchers(antMatcher("/**")).permitAll();
     }
 
-    private static CsrfConfigurer<HttpSecurity> csrfConfigurer(HttpSecurity http) throws Exception {
-        var configurer = http.exceptionHandling()
-            .accessDeniedHandler((request, response, accessDeniedException) -> {
-                if (!response.isCommitted()) {
-                    if ("XMLHttpRequest".equals(request.getHeader(AuthenticationConstants.X_REQUESTED_WITH))) {
-                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    } else if (!response.isCommitted()) {
-                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                        RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
-                        dispatcher.forward(request, response);
+    private static void configureExceptionHandling(HttpSecurity http) throws Exception {
+        http.exceptionHandling(handling -> handling
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    if(!response.isCommitted()) {
+                        if("XMLHttpRequest".equals(request.getHeader(AuthenticationConstants.X_REQUESTED_WITH))) {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        } else if(!response.isCommitted()) {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
+                            dispatcher.forward(request, response);
+                        }
                     }
-                }
-            })
-            .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(AuthenticationConstants.X_REQUESTED_WITH, "XMLHttpRequest"))
-            .and()
-            .headers().cacheControl().disable()
-            .and()
-            .csrf();
-        Pattern methodsPattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
-        Predicate<HttpServletRequest> csrfAllowListPredicate = r -> r.getRequestURI().startsWith("/api/webhook/")
-            || r.getRequestURI().startsWith("/api/payment/webhook/")
-            || methodsPattern.matcher(r.getMethod()).matches();
-        csrfAllowListPredicate = csrfAllowListPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
-        configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfAllowListPredicate::test));
-        return configurer;
+                })
+                .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(AuthenticationConstants.X_REQUESTED_WITH, "XMLHttpRequest")))
+            .headers(headers -> headers.cacheControl(HeadersConfigurer.CacheControlConfig::disable));
+    }
+
+    private static void configureCsrf(HttpSecurity http, Consumer<CsrfConfigurer<HttpSecurity>> additionalConfiguration) throws Exception {
+         http.csrf(c -> {
+            Pattern methodsPattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
+            Predicate<HttpServletRequest> csrfAllowListPredicate = r -> r.getRequestURI().startsWith("/api/webhook/")
+                || r.getRequestURI().startsWith("/api/payment/webhook/")
+                || methodsPattern.matcher(r.getMethod()).matches();
+            csrfAllowListPredicate = csrfAllowListPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
+            c.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfAllowListPredicate::test));
+            additionalConfiguration.accept(c);
+        });
     }
 
     private void addCookie(HttpServletResponse res, CsrfToken csrf) {
@@ -254,7 +250,7 @@ abstract class AbstractFormBasedWebSecurity {
         boolean prod = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
         cookie.setSecure(prod);
         if (prod) {
-            cookie.setComment(HttpCookie.SAME_SITE_STRICT_COMMENT);
+            cookie.setAttribute("SameSite", "Strict");
         }
         res.addCookie(cookie);
     }

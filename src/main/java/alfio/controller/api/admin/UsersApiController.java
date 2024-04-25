@@ -29,9 +29,9 @@ import alfio.util.ImageUtil;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -43,7 +43,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.Principal;
@@ -52,7 +51,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RestController
@@ -122,7 +120,7 @@ public class UsersApiController {
     }
 
     @GetMapping("/organizations/{id}")
-    public Organization getOrganization(@PathVariable("id") int id, Principal principal) {
+    public Organization getOrganization(@PathVariable int id, Principal principal) {
         return userManager.findOrganizationById(id, principal.getName());
     }
 
@@ -203,7 +201,7 @@ public class UsersApiController {
     }
 
     @GetMapping("/api-keys/organization/{organizationId}/all")
-    public void getAllApiKeys(@PathVariable("organizationId") int organizationId, HttpServletResponse response, Principal principal) throws IOException {
+    public void getAllApiKeys(@PathVariable int organizationId, HttpServletResponse response, Principal principal) throws IOException {
         accessService.checkOrganizationOwnership(principal, organizationId);
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", "attachment; filename=apiKeys.zip");
@@ -222,7 +220,7 @@ public class UsersApiController {
         Map<String, String> info = new HashMap<>();
         info.put("apiKey", user.getUsername());
         info.put("baseUrl", baseUrl);
-        String description = defaultString(trimToNull(user.getDescription()), user.getUsername());
+        String description = Objects.toString(trimToNull(user.getDescription()), user.getUsername());
         return Pair.of(description, ImageUtil.createQRCodeWithDescription(Json.GSON.toJson(info), description));
     }
 
@@ -241,7 +239,7 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/{id}/enable/{enable}")
-    public String enableUser(@PathVariable("id") int userId, @PathVariable("enable")boolean enable, Principal principal) {
+    public String enableUser(@PathVariable("id") int userId, @PathVariable boolean enable, Principal principal) {
         userManager.enable(userId, enable, principal);
         return OK;
     }

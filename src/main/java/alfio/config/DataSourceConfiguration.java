@@ -330,5 +330,25 @@ public class DataSourceConfiguration {
         public Connection getConnection(String username, String password) {
             return null;
         }
+
+        public boolean isWrapperFor(Class<?> iface) throws java.sql.SQLException {
+            return iface.isAssignableFrom(this.getClass());
+        }
+
+        public <T> T unwrap(Class<T> iface) throws java.sql.SQLException {
+            try {
+                if(iface.isAssignableFrom(this.getClass())) {
+                    return iface.cast(this);
+                }
+                throw new java.sql.SQLException("Auto-generated unwrap failed; Revisit implementation");
+            } catch (Exception e) {
+                throw new java.sql.SQLException(e);
+            }
+        }
+
+        public java.util.logging.Logger getParentLogger() {
+            // TODO Auto-generated method stub
+            return null;
+        }
     }
 }

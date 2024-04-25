@@ -25,7 +25,7 @@ import lombok.Data;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;

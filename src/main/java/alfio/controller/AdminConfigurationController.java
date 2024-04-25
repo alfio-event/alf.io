@@ -21,8 +21,9 @@ import alfio.manager.payment.OAuthPaymentProviderConnector;
 import alfio.manager.payment.StripeConnectManager;
 import alfio.manager.user.UserManager;
 import alfio.util.oauth2.AccessTokenResponseDetails;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +33,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
@@ -99,7 +98,7 @@ public class AdminConfigurationController {
                     }
                 } else if(stateVerified && StringUtils.isNotEmpty(errorCode)) {
                     log.warn("error from {}. {}={}", provider, errorCode, errorDescription);
-                    redirectAttributes.addFlashAttribute("errorMessage", StringUtils.defaultString(errorDescription, errorCode));
+                    redirectAttributes.addFlashAttribute("errorMessage", Objects.toString(errorDescription, errorCode));
                     return REDIRECT_ADMIN;
                 }
                 redirectAttributes.addFlashAttribute("errorMessage", "Couldn't connect your account. Please retry.");

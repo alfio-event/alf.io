@@ -18,7 +18,7 @@ package alfio.util;
 
 import alfio.model.BillingDocument;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;

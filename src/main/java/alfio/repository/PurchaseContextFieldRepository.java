@@ -81,8 +81,10 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
                     @Bind("context") PurchaseContextFieldConfiguration.Context context);
 
     @Query(type = QueryType.TEMPLATE,
-        value = "insert into purchase_context_field_value(context, additional_service_item_id_fk, field_configuration_id_fk, field_value, organization_id_fk)" +
-            " values ('ADDITIONAL_SERVICE'::ADDITIONAL_FIELD_CONTEXT, :additionalServiceItemId, :fieldConfigurationId, :value, :organizationId)")
+        value = """
+            insert into purchase_context_field_value(context, additional_service_item_id_fk, field_configuration_id_fk, field_value, organization_id_fk)\
+             values ('ADDITIONAL_SERVICE'::ADDITIONAL_FIELD_CONTEXT, :additionalServiceItemId, :fieldConfigurationId, :value, :organizationId)\
+            """)
     String batchInsertAdditionalItemsFields();
 
     @Query("delete from purchase_context_field_value where " + TICKET_ID_OR_SUBSCRIPTION_ID +" and field_configuration_id_fk = :fieldConfigurationId")
@@ -97,9 +99,11 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("delete from purchase_context_field_value where subscription_id_fk = :subscriptionId")
     int deleteAllValuesForSubscriptionId(@Bind("subscriptionId") UUID subscriptionId);
 
-    @Query("delete from purchase_context_field_value fv using ticket t, additional_service_item ai" +
-        " where fv.context = 'ADDITIONAL_SERVICE' and fv.additional_service_item_id_fk = ai.id" +
-        " and ai.ticket_id_fk = t.id and t.id in (:ticketIds) and t.event_id = :eventId")
+    @Query("""
+        delete from purchase_context_field_value fv using ticket t, additional_service_item ai\
+         where fv.context = 'ADDITIONAL_SERVICE' and fv.additional_service_item_id_fk = ai.id\
+         and ai.ticket_id_fk = t.id and t.id in (:ticketIds) and t.event_id = :eventId\
+        """)
     int deleteAllValuesForAdditionalItems(@Bind("ticketIds") Collection<Integer> ticketIds,
                                           @Bind("eventId") int eventId);
 
@@ -116,8 +120,10 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
         return deleteAllTicketValuesForReservations(reservationIds) + deleteAllAdditionalItemsValuesForReservations(reservationIds) + deleteAllSubscriptionValuesForReservations(reservationIds);
     }
 
-    @Query("select field_configuration_id_fk, field_locale, description, purchase_context_field_configuration.field_name as field_name from purchase_context_field_description" +
-        " inner join purchase_context_field_configuration on field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId")
+    @Query("""
+        select field_configuration_id_fk, field_locale, description, purchase_context_field_configuration.field_name as field_name from purchase_context_field_description\
+         inner join purchase_context_field_configuration on field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId\
+        """)
     List<PurchaseContextFieldDescription> findDescriptionsForLocale(@Bind("eventId") int eventId, @Bind("locale") String locale);
 
     @Query("select field_configuration_id_fk, field_locale, description, purchase_context_field_configuration.field_name as field_name from purchase_context_field_description" +
@@ -125,9 +131,11 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
         " where "+ PURCHASE_CONTEXT_MATCHER)
     List<PurchaseContextFieldDescription> findAllDescriptions(@Bind("eventId") Integer eventId, @Bind("subscriptionId") UUID subscriptionDescriptorId);
 
-    @Query("SELECT field_name FROM purchase_context_field_configuration" +
-        " inner join event on event.id = event_id_fk" +
-        " where short_name = :eventShortName order by field_order asc ")
+    @Query("""
+        SELECT field_name FROM purchase_context_field_configuration\
+         inner join event on event.id = event_id_fk\
+         where short_name = :eventShortName order by field_order asc \
+        """)
     List<String> findFieldsForEvent(@Bind("eventShortName") String eventShortName);
 
     @Query("select field_name, field_value from field_value_w_additional where ticket_id_fk = :ticketId")
@@ -231,8 +239,10 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("select * from purchase_context_field_configuration where subscription_descriptor_id_fk = :subscriptionId::uuid order by field_order asc")
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsForSubscriptionDescriptor(@Bind("subscriptionId") UUID subscriptionDescriptorId);
 
-    @Query("select * from purchase_context_field_configuration where event_id_fk = :eventId" +
-        " and field_type = :type order by field_order asc")
+    @Query("""
+        select * from purchase_context_field_configuration where event_id_fk = :eventId\
+         and field_type = :type order by field_order asc\
+        """)
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsOfTypeForEvent(@Bind("eventId") int eventId, @Bind("type") String type);
 
     @Query("select * from purchase_context_field_configuration where id = :id")
@@ -241,9 +251,11 @@ public interface PurchaseContextFieldRepository extends FieldRepository {
     @Query("update purchase_context_field_configuration set field_order = :order where id = :id")
     int updateFieldOrder(@Bind("id") long id, @Bind("order") int order);
 
-    @Query("select purchase_context_field_configuration.* from purchase_context_field_configuration" +
-        " inner join event on event.id = event_id_fk" +
-        " where short_name = :eventShortName order by field_order asc")
+    @Query("""
+        select purchase_context_field_configuration.* from purchase_context_field_configuration\
+         inner join event on event.id = event_id_fk\
+         where short_name = :eventShortName order by field_order asc\
+        """)
     List<PurchaseContextFieldConfiguration> findAdditionalFieldsForEvent(@Bind("eventShortName") String eventName);
 
     @Query("select count(*) from purchase_context_field_configuration where event_id_fk = :eventId")

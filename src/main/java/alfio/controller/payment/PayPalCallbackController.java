@@ -43,9 +43,9 @@ public class PayPalCallbackController {
     private final PayPalManager payPalManager;
 
     @GetMapping("/confirm")
-    public String payPalSuccess(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
+    public String payPalSuccess(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
                                 @PathVariable("purchaseContextIdentifier") String purchaseContextId,
-                                @PathVariable("reservationId") String reservationId,
+                                @PathVariable String reservationId,
                                 @RequestParam(value = "token", required = false) String payPalPaymentId,
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
                                 @RequestParam(value = "hmac") String hmac) {
@@ -77,9 +77,9 @@ public class PayPalCallbackController {
     }
 
     @GetMapping("/cancel")
-    public String payPalCancel(@PathVariable("reservationId") String reservationId,
+    public String payPalCancel(@PathVariable String reservationId,
                                @RequestParam(value = "token", required = false) String payPalPaymentId,
-                               @RequestParam(value = "hmac") String hmac) {
+                               @RequestParam String hmac) {
 
         var optionalPurchaseContext = purchaseContextManager.findByReservationId(reservationId);
         if(optionalPurchaseContext.isEmpty()) {

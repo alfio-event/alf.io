@@ -30,7 +30,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.text.RandomStringGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,14 +57,13 @@ public class SpecialPriceTokenGenerator {
     private static final RandomStringGenerator RANDOM_STRING_GENERATOR = new RandomStringGenerator.Builder()
         .selectFrom(ADMITTED_CHARACTERS)
         .usingRandom(RANDOM::nextInt)
-        .build();
+        .get();
 
     private final SpecialPriceRepository specialPriceRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final EventRepository eventRepository;
     private final ConfigurationManager configurationManager;
 
-    @Autowired
     public SpecialPriceTokenGenerator(ConfigurationManager configurationManager,
                                       SpecialPriceRepository specialPriceRepository,
                                       TicketCategoryRepository ticketCategoryRepository,

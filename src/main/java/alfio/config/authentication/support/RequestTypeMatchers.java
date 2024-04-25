@@ -18,7 +18,7 @@ package alfio.config.authentication.support;
 
 import lombok.experimental.UtilityClass;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Locale;
 
 public class RequestTypeMatchers {

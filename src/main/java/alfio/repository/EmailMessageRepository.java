@@ -48,8 +48,10 @@ public interface EmailMessageRepository {
         }
     }
 
-    @Query("insert into email_message (event_id, organization_id_fk, subscription_descriptor_id_fk, reservation_id, status, recipient, subject, message, html_message, attachments, checksum, request_ts, email_cc)" +
-        " values(:eventId, :organizationId, :subscriptionDescriptorId, :reservationId, 'WAITING', :recipient, :subject, :message, :htmlMessage, :attachments, :checksum, :timestamp, :emailCC)")
+    @Query("""
+        insert into email_message (event_id, organization_id_fk, subscription_descriptor_id_fk, reservation_id, status, recipient, subject, message, html_message, attachments, checksum, request_ts, email_cc)\
+         values(:eventId, :organizationId, :subscriptionDescriptorId, :reservationId, 'WAITING', :recipient, :subject, :message, :htmlMessage, :attachments, :checksum, :timestamp, :emailCC)\
+        """)
     int insert(@Bind("eventId") Integer eventId,
                @Bind("subscriptionDescriptorId") UUID subscriptionDescriptorId,
                @Bind("reservationId") String reservationId,
@@ -78,11 +80,13 @@ public interface EmailMessageRepository {
 
 
     @Query(type = QueryType.SELECT,
-        value = "select * from email_message" +
-                " where (" +
-                " (event_id is not null and event_id in (select id from event where end_ts > now())) or " +
-                " (subscription_descriptor_id_fk is not null and subscription_descriptor_id_fk in (select id from subscription_descriptor where validity_to is null or validity_to > now())) " +
-                ") and (status = 'WAITING' or status = 'RETRY') limit 100 for update skip locked")
+        value = """
+                select * from email_message\
+                 where (\
+                 (event_id is not null and event_id in (select id from event where end_ts > now())) or \
+                 (subscription_descriptor_id_fk is not null and subscription_descriptor_id_fk in (select id from subscription_descriptor where validity_to is null or validity_to > now())) \
+                ) and (status = 'WAITING' or status = 'RETRY') limit 100 for update skip locked\
+                """)
     List<EmailMessage> loadAllWaitingForProcessing();
 
     @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp, html_message = null where id = :id and checksum = :checksum and status in (:expectedStatuses)")

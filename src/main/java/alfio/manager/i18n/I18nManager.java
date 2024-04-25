@@ -20,7 +20,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +33,6 @@ public class I18nManager {
 
     private final EventRepository eventRepository;
 
-    @Autowired
     public I18nManager(EventRepository eventRepository) {
         this.eventRepository = eventRepository;
     }

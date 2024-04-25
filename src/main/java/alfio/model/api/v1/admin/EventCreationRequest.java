@@ -41,7 +41,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
-import static org.apache.commons.collections.CollectionUtils.isEmpty;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
 @Getter
 @AllArgsConstructor
@@ -70,8 +70,7 @@ public class EventCreationRequest{
 
         int locales = description.stream()
             .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l-> l.getLanguage().equals(x.getLang())).findFirst())
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+            .flatMap(Optional::stream)
             .mapToInt(ContentLanguage::getValue).reduce(0,(x,y) -> x | y);
 
         return new EventModification(
@@ -129,8 +128,7 @@ public class EventCreationRequest{
         if(description != null){
             locales = description.stream()
                 .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getLanguage().equals(x.getLang())).findFirst())
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .mapToInt(ContentLanguage::getValue).reduce(0, (x, y) -> x | y);
         }
 

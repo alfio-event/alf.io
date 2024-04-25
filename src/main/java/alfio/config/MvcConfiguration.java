@@ -17,6 +17,8 @@
 package alfio.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -29,12 +31,13 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.config.annotation.web.http.SpringHttpSessionConfiguration;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 import org.springframework.session.web.http.CookieHttpSessionIdResolver;
+import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.HeaderHttpSessionIdResolver;
 import org.springframework.session.web.http.HttpSessionIdResolver;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -42,8 +45,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.AbstractUrlBasedView;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -118,13 +119,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public CommonsMultipartResolver multipartResolver() {
-        var multipartResolver = new CommonsMultipartResolver();
-        multipartResolver.setMaxUploadSize(500_000); // 500kB
-        return multipartResolver;
-    }
-
-    @Bean
     public ViewResolver viewResolver() {
         var resolver = new UrlBasedViewResolver();
         resolver.setViewClass(AbstractUrlBasedView.class);
@@ -137,9 +131,10 @@ public class MvcConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public HttpSessionIdResolver httpSessionIdResolver() {
+    public HttpSessionIdResolver httpSessionIdResolver(CookieSerializer cookieSerializer) {
         var publicSessionIdResolver = HeaderHttpSessionIdResolver.xAuthToken();
         var adminSessionIdResolver = new CookieHttpSessionIdResolver();
+        adminSessionIdResolver.setCookieSerializer(cookieSerializer);
         return new HttpSessionIdResolver() {
             @Override
             public List<String> resolveSessionIds(HttpServletRequest request) {

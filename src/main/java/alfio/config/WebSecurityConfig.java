@@ -54,7 +54,7 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    @Profile("openid")
+    @Profile(Initializer.PROFILE_OPENID)
     public AdminOpenIdAuthenticationManager adminOpenIdAuthenticationManager(Environment environment,
                                                                              HttpClient httpClient,
                                                                              ConfigurationManager configurationManager,

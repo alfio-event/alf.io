@@ -60,6 +60,6 @@ public class ConsoleLogger {
         } else {
             paramObjects = new Object[] {first};
         }
-        return String.format(messageTemplate + parameterPlaceholders, paramObjects);
+        return (messageTemplate + parameterPlaceholders).formatted(paramObjects);
     }
 }

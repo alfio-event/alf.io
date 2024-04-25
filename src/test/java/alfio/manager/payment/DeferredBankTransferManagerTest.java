@@ -36,7 +36,6 @@ import static alfio.model.TicketReservation.TicketReservationStatus.DEFERRED_OFF
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.DEFERRED_BANK_TRANSFER_ENABLED;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class DeferredBankTransferManagerTest {

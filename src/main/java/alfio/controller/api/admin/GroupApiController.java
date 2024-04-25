@@ -54,7 +54,7 @@ public class GroupApiController {
     }
 
     @GetMapping("/for/{organizationId}")
-    public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable("organizationId") int organizationId, @RequestParam(name = "showAll", defaultValue = "false", required = false) boolean showAll, Principal principal) {
+    public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable int organizationId, @RequestParam(name = "showAll", defaultValue = "false", required = false) boolean showAll, Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
         if (showAll) {
             return ResponseEntity.ok(groupManager.getAllForOrganization(organizationId));
@@ -64,13 +64,13 @@ public class GroupApiController {
     }
 
     @GetMapping("/for/{organizationId}/detail/{listId}")
-    public ResponseEntity<GroupModification> loadDetail(@PathVariable("organizationId") int organizationId, @PathVariable("listId") int listId, Principal principal) {
+    public ResponseEntity<GroupModification> loadDetail(@PathVariable int organizationId, @PathVariable int listId, Principal principal) {
         accessService.checkGroupOwnership(principal, listId, organizationId);
         return groupManager.loadComplete(listId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/for/{organizationId}/update/{groupId}")
-    public ResponseEntity<GroupModification> updateGroup(@PathVariable("organizationId") int organizationId,
+    public ResponseEntity<GroupModification> updateGroup(@PathVariable int organizationId,
                                                          @PathVariable("groupId") int listId,
                                                          @RequestBody GroupModification modification,
                                                          Principal principal) {
@@ -79,7 +79,7 @@ public class GroupApiController {
     }
 
     @PostMapping("/for/{organizationId}/new")
-    public ResponseEntity<String> createNew(@PathVariable("organizationId") int organizationId, @RequestBody GroupModification request, Principal principal) {
+    public ResponseEntity<String> createNew(@PathVariable int organizationId, @RequestBody GroupModification request, Principal principal) {
         accessService.checkGroupCreateRequest(principal, organizationId, request);
         if(request.getOrganizationId() != organizationId) {
             return ResponseEntity.badRequest().build();
@@ -97,7 +97,7 @@ public class GroupApiController {
     }
 
     @GetMapping("/for/event/{eventName}/all")
-    public ResponseEntity<List<LinkedGroup>> findLinked(@PathVariable("eventName") String eventName,
+    public ResponseEntity<List<LinkedGroup>> findLinked(@PathVariable String eventName,
                                                         Principal principal) {
         accessService.checkEventMembership(principal, eventName, AccessService.MEMBERSHIP_ROLES);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
@@ -106,7 +106,7 @@ public class GroupApiController {
     }
 
     @GetMapping("/for/event/{eventName}")
-    public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable("eventName") String eventName,
+    public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable String eventName,
                                                        Principal principal) {
         accessService.checkEventOwnership(principal, eventName);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
@@ -120,8 +120,8 @@ public class GroupApiController {
     }
 
     @GetMapping("/for/event/{eventName}/category/{categoryId}")
-    public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable("eventName") String eventName,
-                                                       @PathVariable("categoryId") int categoryId,
+    public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable String eventName,
+                                                       @PathVariable int categoryId,
                                                        Principal principal) {
         accessService.checkCategoryOwnership(principal, eventName, categoryId);
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
@@ -136,7 +136,7 @@ public class GroupApiController {
     }
 
     @PostMapping("/{groupId}/link")
-    public ResponseEntity<Integer> linkGroup(@PathVariable("groupId") int groupId, @RequestBody LinkedGroupModification body, Principal principal) {
+    public ResponseEntity<Integer> linkGroup(@PathVariable int groupId, @RequestBody LinkedGroupModification body, Principal principal) {
         if(body == null || groupId != body.getGroupId()) {
             return ResponseEntity.badRequest().build();
         }
@@ -163,9 +163,9 @@ public class GroupApiController {
     }
 
     @DeleteMapping("/for/{organizationId}/event/{eventId}/link/{configurationId}")
-    public ResponseEntity<String> unlinkGroup(@PathVariable("organizationId") int organizationId,
-                                              @PathVariable("configurationId") int configurationId,
-                                              @PathVariable("eventId") int eventId,
+    public ResponseEntity<String> unlinkGroup(@PathVariable int organizationId,
+                                              @PathVariable int configurationId,
+                                              @PathVariable int eventId,
                                               @RequestParam(name = "categoryId", required = false) Integer categoryId,
                                               Principal principal) {
         accessService.checkGroupLinkOwnership(principal, configurationId, organizationId, eventId, categoryId);
@@ -174,17 +174,17 @@ public class GroupApiController {
     }
 
     @DeleteMapping("/for/{organizationId}/id/{groupId}/member/{memberId}")
-    public ResponseEntity<Boolean> deactivateMember(@PathVariable("groupId") int groupId,
-                                                    @PathVariable("memberId") int memberId,
-                                                    @PathVariable("organizationId") int organizationId,
+    public ResponseEntity<Boolean> deactivateMember(@PathVariable int groupId,
+                                                    @PathVariable int memberId,
+                                                    @PathVariable int organizationId,
                                                     Principal principal) {
         accessService.checkGroupOwnership(principal, groupId, organizationId);
         return ResponseEntity.ok(groupManager.deactivateMembers(Collections.singletonList(memberId), groupId));
     }
 
     @DeleteMapping("/for/{organizationId}/id/{groupId}")
-    public ResponseEntity<Boolean> deactivateGroup(@PathVariable("groupId") int groupId,
-                                                   @PathVariable("organizationId") int organizationId,
+    public ResponseEntity<Boolean> deactivateGroup(@PathVariable int groupId,
+                                                   @PathVariable int organizationId,
                                                    Principal principal) {
         accessService.checkGroupOwnership(principal, groupId, organizationId);
         return ResponseEntity.ok(groupManager.deactivateGroup(groupId));

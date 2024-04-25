@@ -60,15 +60,15 @@ public class AdditionalFieldApiController {
     }
 
     @GetMapping("/templates")
-    public List<DynamicFieldTemplate> loadTemplates(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                                    @PathVariable("publicIdentifier") String publicIdentifier) {
+    public List<DynamicFieldTemplate> loadTemplates(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                                    @PathVariable String publicIdentifier) {
         LOGGER.trace("Loading templates for {} {}", purchaseContextType, publicIdentifier);
         return dynamicFieldTemplateRepository.loadAll();
     }
 
     @GetMapping()
-    public List<FieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                                                            @PathVariable("publicIdentifier") String publicIdentifier,
+    public List<FieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                                                            @PathVariable String publicIdentifier,
                                                                             Principal principal) {
         accessService.checkPurchaseContextOwnership(principal, purchaseContextType, publicIdentifier);
         var purchaseContext = purchaseContextManager.findBy(purchaseContextType, publicIdentifier).orElseThrow();
@@ -79,9 +79,9 @@ public class AdditionalFieldApiController {
     }
 
     @GetMapping("/{id}/stats")
-    public List<RestrictedValueStats> getStats(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                               @PathVariable("publicIdentifier") String publicIdentifier,
-                                               @PathVariable("id") long id,
+    public List<RestrictedValueStats> getStats(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                               @PathVariable String publicIdentifier,
+                                               @PathVariable long id,
                                                Principal principal) {
         //
         accessService.checkPurchaseContextOwnership(principal, purchaseContextType, publicIdentifier);
@@ -93,8 +93,8 @@ public class AdditionalFieldApiController {
         // "/events/{eventName}/additional-field/new" // old
         "/new"
     )
-    public ValidationResult addAdditionalField(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                               @PathVariable("publicIdentifier") String publicIdentifier,
+    public ValidationResult addAdditionalField(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                               @PathVariable String publicIdentifier,
                                                @RequestBody AdditionalFieldRequest field,
                                                Principal principal,
                                                Errors errors) {
@@ -110,8 +110,8 @@ public class AdditionalFieldApiController {
         // "/events/{eventName}/additional-field/descriptions" // old
         "/descriptions"
     )
-    public void saveAdditionalFieldDescriptions(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                                @PathVariable("publicIdentifier") String publicIdentifier,
+    public void saveAdditionalFieldDescriptions(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                                @PathVariable String publicIdentifier,
                                                 @RequestBody Map<String, TicketFieldDescriptionModification> descriptions, Principal principal) {
         //
         accessService.checkPurchaseContextOwnershipAndTicketAdditionalFieldIds(principal, purchaseContextType, publicIdentifier, descriptions.values().stream().map(TicketFieldDescriptionModification::getTicketFieldConfigurationId).collect(Collectors.toSet()));
@@ -123,10 +123,10 @@ public class AdditionalFieldApiController {
         // "/events/{eventName}/additional-field/swap-position/{id1}/{id2}" // old
         "/swap-position/{id1}/{id2}"
     )
-    public void swapAdditionalFieldPosition(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                            @PathVariable("publicIdentifier") String publicIdentifier,
-                                            @PathVariable("id1") long id1,
-                                            @PathVariable("id2") long id2,
+    public void swapAdditionalFieldPosition(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                            @PathVariable String publicIdentifier,
+                                            @PathVariable long id1,
+                                            @PathVariable long id2,
                                             Principal principal) {
         //
         accessService.checkPurchaseContextOwnershipAndTicketAdditionalFieldIds(principal, purchaseContextType, publicIdentifier, Set.of(id1, id2));
@@ -138,9 +138,9 @@ public class AdditionalFieldApiController {
         // "/events/{eventName}/additional-field/set-position/{id}" // old
         "/set-position/{id}"
     )
-    public void setAdditionalFieldPosition(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                           @PathVariable("publicIdentifier") String publicIdentifier,
-                                           @PathVariable("id") long id,
+    public void setAdditionalFieldPosition(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                           @PathVariable String publicIdentifier,
+                                           @PathVariable long id,
                                            @RequestParam("newPosition") int newPosition,
                                            Principal principal) {
         //
@@ -153,9 +153,9 @@ public class AdditionalFieldApiController {
         // "/events/{eventName}/additional-field/{id}" // old
         "/{id}"
     )
-    public void deleteAdditionalField(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                      @PathVariable("publicIdentifier") String publicIdentifier,
-                                      @PathVariable("id") long id,
+    public void deleteAdditionalField(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                      @PathVariable String publicIdentifier,
+                                      @PathVariable long id,
                                       Principal principal) {
         //
         accessService.checkPurchaseContextOwnershipAndTicketAdditionalFieldIds(principal, purchaseContextType, publicIdentifier, Set.of(id));
@@ -164,9 +164,9 @@ public class AdditionalFieldApiController {
     }
 
     @PostMapping("/{id}")
-    public void updateAdditionalField(@PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                      @PathVariable("publicIdentifier") String publicIdentifier,
-                                      @PathVariable("id") long id,
+    public void updateAdditionalField(@PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                      @PathVariable String publicIdentifier,
+                                      @PathVariable long id,
                                       @RequestBody EventModification.UpdateAdditionalField field,
                                       Principal principal) {
         //

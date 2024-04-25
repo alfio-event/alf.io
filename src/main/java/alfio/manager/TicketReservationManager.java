@@ -1084,7 +1084,7 @@ public class TicketReservationManager {
             reservationsGroupedByEvent.forEach((event, reservations) -> {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(),
-                    STUCK_TICKETS_SUBJECT,  () -> RenderedTemplate.plaintext(String.format(STUCK_TICKETS_MSG, event.getDisplayName()), Map.of()));
+                    STUCK_TICKETS_SUBJECT,  () -> RenderedTemplate.plaintext(STUCK_TICKETS_MSG.formatted(event.getDisplayName()), Map.of()));
 
                 extensionManager.handleStuckReservations(event, reservations.stream().map(p -> p.getLeft().getId()).collect(toList()));
             });
@@ -1454,7 +1454,7 @@ public class TicketReservationManager {
             if(!reservations.isEmpty()) {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 List<String> cc = notificationManager.getCCForEventOrganizer(event);
-                String subject = String.format("There are %d pending offline payments that will expire in event: %s", reservations.size(), event.getDisplayName());
+                String subject = "There are %d pending offline payments that will expire in event: %s".formatted(reservations.size(), event.getDisplayName());
                 String baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
                 Map<String, Object> model = TemplateResource.prepareModelForOfflineReservationExpiringEmailForOrganizer(event, reservations, baseUrl);
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject, () ->
@@ -1519,8 +1519,7 @@ public class TicketReservationManager {
                 int quietPeriod = configurationManager.getFor(ASSIGNMENT_REMINDER_INTERVAL, ConfigurationLevel.event(event)).getValueAsIntOrDefault(3);
                 p.getRight().stream()
                     .map(id -> findByIdForNotification(id, clockProvider.withZone(eventZoneId), quietPeriod))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
+                    .flatMap(Optional::stream)
                     .forEach(reservation -> {
                         Map<String, Object> model = reservationHelper.prepareModelForReservationEmail(event, reservation);
                         ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(clockProvider.withZone(eventZoneId)));
@@ -1575,7 +1574,7 @@ public class TicketReservationManager {
         String reservationId = ticketReservation.getId();
         //#365 - reset UUID when releasing a ticket
         int result = ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), ticket.getId());
-        Validate.isTrue(result == 1, String.format("Expected 1 row to be updated, got %d", result));
+        Validate.isTrue(result == 1, "Expected 1 row to be updated, got %d".formatted(result));
         if(category.isAccessRestricted() || !category.isBounded()) {
             ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));
         }
@@ -1777,7 +1776,7 @@ public class TicketReservationManager {
                 .orElse(null);
         }
 
-        return Arrays.stream(stripAll(defaultString(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity) + " " + stripToEmpty(billingAddressState), stripToNull(country)))
+        return Arrays.stream(stripAll(Objects.toString(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity) + " " + stripToEmpty(billingAddressState), stripToNull(country)))
             .filter(Predicate.not(StringUtils::isEmpty))
             .collect(joining("\n"));
     }
@@ -2173,7 +2172,7 @@ public class TicketReservationManager {
         if(matchingCount > 0) {
             var organization = organizationRepository.getById(event.getOrganizationId());
             var cc = notificationManager.getCCForEventOrganizer(event);
-            var subject = String.format("%d matching payments found for: %s", matchingCount, event.getDisplayName());
+            var subject = "%d matching payments found for: %s".formatted(matchingCount, event.getDisplayName());
 
             Map<String, Object> model = Map.of(
                 "matchingCount", matchingCount,

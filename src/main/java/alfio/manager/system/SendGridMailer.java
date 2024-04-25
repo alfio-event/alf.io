@@ -21,8 +21,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +72,7 @@ class SendGridMailer extends BaseMailer {
         //prepare request
         final var body = Json.GSON.toJson(payload);
         final var request = HttpRequest.newBuilder(URI.create("https://api.sendgrid.com/v3/mail/send"))
-            .header(HttpUtils.AUTHORIZATION, String.format("Bearer %s", config.get(ConfigurationKeys.SENDGRID_API_KEY).getRequiredValue()))
+            .header(HttpUtils.AUTHORIZATION, "Bearer %s".formatted(config.get(ConfigurationKeys.SENDGRID_API_KEY).getRequiredValue()))
             .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
             .POST(HttpRequest.BodyPublishers.ofString(body)).build();
         try {
@@ -94,7 +93,7 @@ class SendGridMailer extends BaseMailer {
         final var recipients = new ArrayList<>();
         recipients.add(Map.of(EMAIL, to));
         if (CollectionUtils.isNotEmpty(cc)) {
-            recipients.addAll(cc.stream().map(email -> Map.of(EMAIL, email)).collect(Collectors.toList()));
+            recipients.addAll(cc.stream().map(email -> Map.of(EMAIL, email)).toList());
         }
         return List.of(Map.of("to", recipients, "subject", subject));
     }

@@ -34,7 +34,6 @@ import java.util.List;
 import static alfio.test.util.TestUtil.clockProvider;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
 
@@ -59,7 +58,7 @@ public class EventManagerHandleTicketModificationTest {
 
         when(event.getId()).thenReturn(eventId);
         when(event.now(any(ClockProvider.class))).thenReturn(ZonedDateTime.now(clockProvider().getClock().withZone(ZoneId.systemDefault())));
-        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, clockProvider(), mock(SubscriptionRepository.class), null);
+        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null, clockProvider(), mock(SubscriptionRepository.class), null);
         when(original.getId()).thenReturn(originalCategoryId);
         when(updated.getId()).thenReturn(updatedCategoryId);
         when(original.getSrcPriceCts()).thenReturn(1000);

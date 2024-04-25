@@ -32,8 +32,8 @@ public class SqlUtils {
 
     public static Optional<ServerErrorMessage> findServerError(UncategorizedSQLException exception) {
         for (var throwable : exception.getSQLException()) {
-            if(throwable instanceof PSQLException && ((PSQLException)throwable).getServerErrorMessage() != null) {
-                return Optional.ofNullable(((PSQLException)throwable).getServerErrorMessage());
+            if(throwable instanceof PSQLException lException && lException.getServerErrorMessage() != null) {
+                return Optional.ofNullable(lException.getServerErrorMessage());
             }
         }
         return Optional.empty();

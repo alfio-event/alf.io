@@ -45,15 +45,17 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SaferpayManagerTest {
 
-    private static final String CAPTURE_RESPONSE_BODY = "{\n" +
-        "  \"ResponseHeader\": {\n" +
-        "    \"SpecVersion\": \"[current Spec-Version]\",\n" +
-        "    \"RequestId\": \"[your request id]\"\n" +
-        "  },\n" +
-        "  \"CaptureId\": \"captureId\",\n" +
-        "  \"Status\": \"CAPTURED\",\n" +
-        "  \"Date\": \"2015-01-30T12:45:22.258+01:00\"\n" +
-        "}";
+    private static final String CAPTURE_RESPONSE_BODY = """
+        {
+          "ResponseHeader": {
+            "SpecVersion": "[current Spec-Version]",
+            "RequestId": "[your request id]"
+          },
+          "CaptureId": "captureId",
+          "Status": "CAPTURED",
+          "Date": "2015-01-30T12:45:22.258+01:00"
+        }\
+        """;
 
     @Mock
     private TransactionRepository transactionRepository;

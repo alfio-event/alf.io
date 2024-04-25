@@ -18,18 +18,14 @@ package alfio.config;
 
 import alfio.util.DefaultExceptionHandler;
 import com.openhtmltopdf.util.XRLog;
-import org.apache.commons.lang3.Validate;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
+import jakarta.servlet.FilterRegistration.Dynamic;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
-import javax.servlet.FilterRegistration.Dynamic;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.SessionCookieConfig;
 import java.util.Objects;
 import java.util.logging.Level;
 
@@ -44,15 +40,12 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
     public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
     public static final String API_V2_PUBLIC_PATH = "/api/v2/public/";
     public static final String XSRF_TOKEN = "XSRF-TOKEN";
-    private Environment environment;
 
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {
         super.onStartup(servletContext);
 
         Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
-
-        configureSessionCookie(servletContext);
 
         CharacterEncodingFilter cef = new CharacterEncodingFilter();
         cef.setEncoding("UTF-8");
@@ -72,21 +65,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
     protected WebApplicationContext createRootApplicationContext() {
         ConfigurableWebApplicationContext ctx = ((ConfigurableWebApplicationContext) super.createRootApplicationContext());
         Objects.requireNonNull(ctx, "Something really bad is happening...");
-        this.environment = ctx.getEnvironment();
         return ctx;
-    }
-
-    private void configureSessionCookie(ServletContext servletContext) {
-        SessionCookieConfig config = servletContext.getSessionCookieConfig();
-
-        config.setHttpOnly(true);
-
-        Validate.notNull(environment, "environment cannot be null!");
-        // set secure cookie only if current environment doesn't strictly need HTTP
-        config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-
-        // https://issues.jboss.org/browse/WFLY-3448 ?
-        config.setPath(servletContext.getContextPath() + "/");
     }
 
     @Override

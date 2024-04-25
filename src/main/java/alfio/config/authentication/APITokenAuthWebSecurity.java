@@ -33,7 +33,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.ExpressionUrlAuthorizationConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
@@ -100,26 +101,26 @@ public class APITokenAuthWebSecurity {
         });
 
 
-        return http.requestMatcher(RequestTypeMatchers::isTokenAuthentication)
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and().csrf().disable()
-            .authorizeRequests(APITokenAuthWebSecurity::configureMatchers)
+        return http.securityMatchers(matchers -> matchers.requestMatchers(RequestTypeMatchers::isTokenAuthentication))
+            .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(APITokenAuthWebSecurity::configureMatchers)
             .addFilter(filter)
             .build();
     }
 
-    private static void configureMatchers(ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry auth) {
-        auth.antMatchers(ADMIN_PUBLIC_API + "/system/**").hasRole(SYSTEM_API_CLIENT)
-            .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
-            .antMatchers(ADMIN_API + "/check-in/event/*/attendees").hasRole(SUPERVISOR)
-            .antMatchers(ADMIN_API + "/check-in/*/label-layout").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-            .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-            .antMatchers(ADMIN_API + "/**").denyAll()
-            .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
-            .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR, API_CLIENT)
-            .antMatchers("/**").authenticated();
+    private static void configureMatchers(AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers(ADMIN_PUBLIC_API + "/system/**").hasRole(SYSTEM_API_CLIENT)
+            .requestMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
+            .requestMatchers(ADMIN_API + "/check-in/event/*/attendees").hasRole(SUPERVISOR)
+            .requestMatchers(ADMIN_API + "/check-in/*/label-layout").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+            .requestMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
+            .requestMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+            .requestMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+            .requestMatchers(ADMIN_API + "/**").denyAll()
+            .requestMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
+            .requestMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR, API_CLIENT)
+            .requestMatchers("/**").authenticated();
     }
 
     private static boolean apiKeyMatches(String input, alfio.model.system.Configuration systemApiKeyConfiguration) {

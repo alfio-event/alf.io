@@ -16,6 +16,7 @@
  */
 package alfio.config.authentication;
 
+import alfio.config.Initializer;
 import alfio.manager.RecaptchaService;
 import alfio.manager.openid.PublicOpenIdAuthenticationManager;
 import alfio.manager.system.ConfigurationManager;
@@ -33,7 +34,7 @@ import javax.sql.DataSource;
 /**
  * Default form based configuration.
  */
-@Profile("!openid")
+@Profile("!"+ Initializer.PROFILE_OPENID)
 @Configuration(proxyBeanMethods = false)
 @Order(1)
 public class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {

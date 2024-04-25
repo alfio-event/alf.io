@@ -33,7 +33,7 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.validation.BindingResult;

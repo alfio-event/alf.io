@@ -42,8 +42,10 @@ public interface InvoiceSequencesRepository {
 
 
 
-    @Query("insert into invoice_sequences(organization_id_fk, invoice_sequence, document_type) values" +
-        " (:orgId, 1, 'INVOICE')," +
-        " (:orgId, 1, 'CREDIT_NOTE')")
+    @Query("""
+        insert into invoice_sequences(organization_id_fk, invoice_sequence, document_type) values\
+         (:orgId, 1, 'INVOICE'),\
+         (:orgId, 1, 'CREDIT_NOTE')\
+        """)
     int initFor(@Bind("orgId") int orgId);
 }

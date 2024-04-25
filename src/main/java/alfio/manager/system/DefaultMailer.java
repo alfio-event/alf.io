@@ -18,7 +18,6 @@ package alfio.manager.system;
 
 import alfio.model.Configurable;
 import alfio.repository.user.OrganizationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +34,6 @@ public class DefaultMailer implements Mailer {
     private final Mailer defaultMailer;
     private final Environment environment;
 
-    @Autowired
     public DefaultMailer(ConfigurationManager configurationManager,
                          Environment environment,
                          HttpClient httpClient,

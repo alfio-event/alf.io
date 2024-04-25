@@ -33,11 +33,15 @@ public interface TransactionRepository {
 
     String SELECT_BY_RESERVATION_ID = "select * from b_transaction where reservation_id = :reservationId";
     String SELECT_VALID_BY_RESERVATION_ID = SELECT_BY_RESERVATION_ID + " and status not in ('INVALID', 'OFFLINE_DISABLE_MATCH')";
-    String UPDATE_TRANSACTION_BY_ID = "update b_transaction set gtw_tx_id = :gatewayTransactionId, gtw_payment_id = :paymentId, " +
-        "t_timestamp = :timestamp, plat_fee = :platformFee, gtw_fee = :gatewayFee, status = :status, metadata = to_json(:metadata::json) where id = :transactionId";
+    String UPDATE_TRANSACTION_BY_ID = """
+        update b_transaction set gtw_tx_id = :gatewayTransactionId, gtw_payment_id = :paymentId, \
+        t_timestamp = :timestamp, plat_fee = :platformFee, gtw_fee = :gatewayFee, status = :status, metadata = to_json(:metadata::json) where id = :transactionId\
+        """;
 
-    @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee, status, metadata) " +
-            "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee, :status, to_json(:metadata::json))")
+    @Query("""
+            insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee, status, metadata) \
+            values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee, :status, to_json(:metadata::json))\
+            """)
     int insert(@Bind("transactionId") String transactionId,
                @Bind("paymentId") String paymentId,
                @Bind("reservationId") String reservationId,
@@ -90,8 +94,10 @@ public interface TransactionRepository {
     @Query("delete from b_transaction where reservation_id in (:reservationIds)")
     int deleteForReservations(@Bind("reservationIds") List<String> reservationIds);
 
-    @Query("update b_transaction set status = 'INVALID' where reservation_id = :reservationId and status <> 'COMPLETE' and " +
-        " (:paymentProxy is null or (:paymentProxy is not null and payment_proxy = :paymentProxy)) ")
+    @Query("""
+        update b_transaction set status = 'INVALID' where reservation_id = :reservationId and status <> 'COMPLETE' and \
+         (:paymentProxy is null or (:paymentProxy is not null and payment_proxy = :paymentProxy)) \
+        """)
     int invalidateForReservation(@Bind("reservationId") String reservationId, @Bind("paymentProxy") String paymentProxy);
 
     @Query("delete from b_transaction where reservation_id in (:reservationIds) and status = :status")

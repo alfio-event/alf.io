@@ -57,8 +57,10 @@ public interface TicketRepository {
 
     //TODO: refactor, try to move the MapSqlParameterSource inside the default method!
     default void bulkTicketInitialization(MapSqlParameterSource[] args) {
-        getNamedParameterJdbcTemplate().batchUpdate("insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, src_price_cts)"
-            + "values(:uuid, :creation, :categoryId, :eventId, :status, 0, 0, :srcPriceCts)", args);
+        getNamedParameterJdbcTemplate().batchUpdate("""
+            insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, src_price_cts)\
+            values(:uuid, :creation, :categoryId, :eventId, :status, 0, 0, :srcPriceCts)\
+            """, args);
     }
 
     default void bulkTicketUpdate(List<Integer> ids, TicketCategory ticketCategory) {
@@ -148,22 +150,28 @@ public interface TicketRepository {
     }
 
     @Query(type = QueryType.TEMPLATE,
-        value = "update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', category_id = :categoryId, " +
-            "user_language = :userLanguage, src_price_cts = :srcPriceCts, currency_code = :currencyCode, metadata = :ticketMetadata::jsonb, " +
-            "vat_status = :vatStatus::VAT_STATUS, first_name = :firstName, last_name = :lastName, email_address = :email, full_name = :fullName where id = :id")
+        value = """
+            update ticket set tickets_reservation_id = :reservationId, status = 'PENDING', category_id = :categoryId, \
+            user_language = :userLanguage, src_price_cts = :srcPriceCts, currency_code = :currencyCode, metadata = :ticketMetadata::jsonb, \
+            vat_status = :vatStatus::VAT_STATUS, first_name = :firstName, last_name = :lastName, email_address = :email, full_name = :fullName where id = :id\
+            """)
     String batchReserveTickets();
 
     @Query(type = QueryType.TEMPLATE,
-        value = "update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
-            " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts," +
-            " currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS," +
-            " metadata = :ticketMetadata::jsonb, first_name = :firstName, last_name = :lastName, email_address = :email, full_name = :fullName" +
-            " where id = :ticketId")
+        value = """
+            update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId,\
+             user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts,\
+             currency_code = :currencyCode, vat_status = :vatStatus::VAT_STATUS,\
+             metadata = :ticketMetadata::jsonb, first_name = :firstName, last_name = :lastName, email_address = :email, full_name = :fullName\
+             where id = :ticketId\
+            """)
     String batchReserveTicketsForSpecialPrice();
 
-    @Query("update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId," +
-        " user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts, currency_code = :currencyCode," +
-        " vat_status = :vatStatus::VAT_STATUS, metadata = :ticketMetadata::jsonb where id = :ticketId")
+    @Query("""
+        update ticket set tickets_reservation_id = :reservationId, special_price_id_fk = :specialCodeId,\
+         user_language = :userLanguage, status = 'PENDING', src_price_cts = :srcPriceCts, currency_code = :currencyCode,\
+         vat_status = :vatStatus::VAT_STATUS, metadata = :ticketMetadata::jsonb where id = :ticketId\
+        """)
     void reserveTicket(@Bind("reservationId")String transactionId,
                        @Bind("ticketId") int ticketId,
                        @Bind("specialCodeId") int specialCodeId,
@@ -182,9 +190,11 @@ public interface TicketRepository {
     @Query("update ticket set status = 'INVALIDATED' where id in (:ids)")
     int invalidateTickets(@Bind("ids") List<Integer> ids);
 
-    @Query("update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts," +
-        " vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, vat_status = null" +
-        " where event_id = :eventId and category_id = :categoryId and status = 'FREE'")
+    @Query("""
+        update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts,\
+         vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, vat_status = null\
+         where event_id = :eventId and category_id = :categoryId and status = 'FREE'\
+        """)
     int updateTicketPrice(@Bind("categoryId") int categoryId,
                           @Bind("eventId") int eventId,
                           @Bind("srcPriceCts") int srcPriceCts,
@@ -193,9 +203,11 @@ public interface TicketRepository {
                           @Bind("discountCts") int discountCts,
                           @Bind("currencyCode") String currencyCode);
 
-    @Query("update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts," +
-        " vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode," +
-        " vat_status = :vatStatus::VAT_STATUS where event_id = :eventId and category_id = :categoryId and id in(:ids)")
+    @Query("""
+        update ticket set src_price_cts = :srcPriceCts, final_price_cts = :finalPriceCts,\
+         vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode,\
+         vat_status = :vatStatus::VAT_STATUS where event_id = :eventId and category_id = :categoryId and id in(:ids)\
+        """)
     int updateTicketPrice(@Bind("ids") List<Integer> ids,
                           @Bind("categoryId") int categoryId,
                           @Bind("eventId") int eventId,
@@ -304,34 +316,38 @@ public interface TicketRepository {
     @Query("select * from ticket where category_id in (:categories) and status = 'PENDING'")
     List<Ticket> findPendingTicketsInCategories(@Bind("categories") List<Integer> categories);
 
-    String FIND_FULL_TICKET_INFO = "select " +
-        " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
-        " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
-        " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
-        " t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, t.tags t_tags, t.subscription_id_fk t_subscription_id, t.vat_status t_vat_status, " +
-        " tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address," +
-        " tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, " +
-        " tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, " +
-        " tr.vat_status tr_vat_status, tr.vat_nr tr_vat_nr, tr.vat_country tr_vat_country, tr.invoice_requested tr_invoice_requested, tr.used_vat_percent tr_used_vat_percent, tr.vat_included tr_vat_included, tr.creation_ts tr_creation_ts, tr.registration_ts tr_registration_ts, tr.customer_reference tr_customer_reference, " +
-        " tr.billing_address_company tr_billing_address_company, tr.billing_address_line1 tr_billing_address_line1, tr.billing_address_line2 tr_billing_address_line2, tr.billing_address_city tr_billing_address_city, tr.billing_address_state tr_billing_address_state, tr.billing_address_zip tr_billing_address_zip, tr.invoicing_additional_information tr_invoicing_additional_information, " +
-        " tr.src_price_cts tr_src_price_cts, tr.final_price_cts tr_final_price_cts, tr.vat_cts tr_vat_cts, tr.discount_cts tr_discount_cts, tr.currency_code tr_currency_code, " +
-        " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded, tc.category_code tc_category_code, " +
-        " tc.valid_checkin_from tc_valid_checkin_from, tc.valid_checkin_to tc_valid_checkin_to, tc.ticket_validity_start tc_ticket_validity_start, tc.ticket_validity_end tc_ticket_validity_end, tc.currency_code tc_currency_code, tc.ordinal tc_ordinal, tc.ticket_checkin_strategy tc_ticket_checkin_strategy, tc.ticket_access_type tc_ticket_access_type" +
-        " from ticket t " +
-        " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
-        " inner join ticket_category_with_currency tc on t.category_id = tc.id ";
+    String FIND_FULL_TICKET_INFO = """
+        select \
+         t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id,\
+         t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id,\
+         t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment,\
+         t.user_language t_user_language, t.ext_reference t_ext_reference, t.currency_code t_currency_code, t.tags t_tags, t.subscription_id_fk t_subscription_id, t.vat_status t_vat_status, \
+         tr.id tr_id, tr.validity tr_validity, tr.status tr_status, tr.full_name tr_full_name, tr.first_name tr_first_name, tr.last_name tr_last_name, tr.email_address tr_email_address, tr.billing_address tr_billing_address,\
+         tr.confirmation_ts tr_confirmation_ts, tr.latest_reminder_ts tr_latest_reminder_ts, tr.payment_method tr_payment_method, \
+         tr.offline_payment_reminder_sent tr_offline_payment_reminder_sent, tr.promo_code_id_fk tr_promo_code_id_fk, tr.automatic tr_automatic, tr.user_language tr_user_language, tr.direct_assignment tr_direct_assignment, tr.invoice_number tr_invoice_number, tr.invoice_model tr_invoice_model, \
+         tr.vat_status tr_vat_status, tr.vat_nr tr_vat_nr, tr.vat_country tr_vat_country, tr.invoice_requested tr_invoice_requested, tr.used_vat_percent tr_used_vat_percent, tr.vat_included tr_vat_included, tr.creation_ts tr_creation_ts, tr.registration_ts tr_registration_ts, tr.customer_reference tr_customer_reference, \
+         tr.billing_address_company tr_billing_address_company, tr.billing_address_line1 tr_billing_address_line1, tr.billing_address_line2 tr_billing_address_line2, tr.billing_address_city tr_billing_address_city, tr.billing_address_state tr_billing_address_state, tr.billing_address_zip tr_billing_address_zip, tr.invoicing_additional_information tr_invoicing_additional_information, \
+         tr.src_price_cts tr_src_price_cts, tr.final_price_cts tr_final_price_cts, tr.vat_cts tr_vat_cts, tr.discount_cts tr_discount_cts, tr.currency_code tr_currency_code, \
+         tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded, tc.category_code tc_category_code, \
+         tc.valid_checkin_from tc_valid_checkin_from, tc.valid_checkin_to tc_valid_checkin_to, tc.ticket_validity_start tc_ticket_validity_start, tc.ticket_validity_end tc_ticket_validity_end, tc.currency_code tc_currency_code, tc.ordinal tc_ordinal, tc.ticket_checkin_strategy tc_ticket_checkin_strategy, tc.ticket_access_type tc_ticket_access_type\
+         from ticket t \
+         inner join tickets_reservation tr on t.tickets_reservation_id = tr.id \
+         inner join ticket_category_with_currency tc on t.category_id = tc.id \
+        """;
 
     @Query(FIND_FULL_TICKET_INFO +
             " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null and t.id in (:ids) order by t.id asc")
     List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId, @Bind("ids") List<Integer> ids);
 
 
-    @Query("select t.id " +
-            " from ticket t " +
-            " join ticket_category tc on t.category_id = tc.id" +
-            " left outer join latest_ticket_update ltu on t.id = ltu.ticket_id and ltu.event_id = :eventId " +
-            " where t.event_id = :eventId and tc.ticket_access_type <> 'ONLINE'" +
-            " and t.full_name is not null and t.email_address is not null and (coalesce(ltu.last_update, t.creation) > :changedSince)  order by t.id asc")
+    @Query("""
+            select t.id \
+             from ticket t \
+             join ticket_category tc on t.category_id = tc.id\
+             left outer join latest_ticket_update ltu on t.id = ltu.ticket_id and ltu.event_id = :eventId \
+             where t.event_id = :eventId and tc.ticket_access_type <> 'ONLINE'\
+             and t.full_name is not null and t.email_address is not null and (coalesce(ltu.last_update, t.creation) > :changedSince)  order by t.id asc\
+            """)
     List<Integer> findAllAssignedByEventIdForCheckIn(@Bind("eventId") int eventId, @Bind("changedSince") Date changedSince);
 
     @Query("select * from reservation_and_ticket_and_tx where t_id is not null and t_status in (" + CONFIRMED + ") and t_event_id = :eventId order by tr_confirmation_ts, t_id")
@@ -451,8 +467,10 @@ public interface TicketRepository {
     @Query("update ticket set status = 'CHECKED_IN', locked_assignment = true where uuid = :uuid and event_id = :eventId and status = 'ACQUIRED'")
     int performCheckIn(@Bind("uuid") String ticketUUID, @Bind("eventId") int eventId);
 
-    @Query("select t.id as t_id, t.first_name as t_first_name, t.last_name as t_last_name, t.email_address as t_email_address, tc.name as tc_name from ticket t " +
-        " join ticket_category tc on t.category_id = tc.id where t.event_id = :eventId and t.status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t.tags @> ARRAY[ :tags ]::text[]")
+    @Query("""
+        select t.id as t_id, t.first_name as t_first_name, t.last_name as t_last_name, t.email_address as t_email_address, tc.name as tc_name from ticket t \
+         join ticket_category tc on t.category_id = tc.id where t.event_id = :eventId and t.status in ('ACQUIRED', 'TO_BE_PAID', 'CHECKED_IN') and t.tags @> ARRAY[ :tags ]::text[]\
+        """)
     List<PollParticipant> getTicketsForEventByTags(@Bind("eventId") int eventId, @Bind("tags") List<String> tags);
 
     @Query("select count(*) from ticket t where t.event_id = :eventId and t.status in (:statuses) and t.tags @> ARRAY[ :tags ]::text[]")
@@ -464,9 +482,11 @@ public interface TicketRepository {
     @Query("update ticket set tags = array_remove(tags, :tag::text) where id in (:ticketIds) and event_id = :eventId")
     int untagTickets(@Bind("ticketIds") List<Integer> ticketIds, @Bind("eventId") int eventId, @Bind("tag") String tag);
 
-    @Query("update ticket set subscription_id_fk = :subscriptionId from " +
-        " (select id from ticket where tickets_reservation_id = :reservationId order by final_price_cts limit :limit) t" +
-        " where ticket.id = t.id")
+    @Query("""
+        update ticket set subscription_id_fk = :subscriptionId from \
+         (select id from ticket where tickets_reservation_id = :reservationId order by final_price_cts limit :limit) t\
+         where ticket.id = t.id\
+        """)
     int applySubscriptionToTicketsInReservation(@Bind("reservationId") String reservationId,
                                                 @Bind("subscriptionId") UUID subscriptionId,
                                                 @Bind("limit") int limit);
@@ -490,11 +510,13 @@ public interface TicketRepository {
     @Query(FIND_TICKETS_IN_RESERVATION)
     List<TicketWithMetadataAttributes> findTicketsInReservationWithMetadata(@Bind("reservationId") String reservationId);
 
-    @Query("select t.id from ticket t" +
-           "    join event e on t.event_id = e.id" +
-           "    join tickets_reservation tr on t.tickets_reservation_id = tr.id" +
-           "    join all_ticket_field_values tfv on t.id = tfv.ticket_id_fk" +
-           " where e.short_name = :eventPublicIdentifier and tr.id = :reservationId")
+    @Query("""
+           select t.id from ticket t\
+               join event e on t.event_id = e.id\
+               join tickets_reservation tr on t.tickets_reservation_id = tr.id\
+               join all_ticket_field_values tfv on t.id = tfv.ticket_id_fk\
+            where e.short_name = :eventPublicIdentifier and tr.id = :reservationId\
+           """)
     List<Integer> findTicketsWithAdditionalData(@Bind("reservationId") String reservationId,
                                                 @Bind("eventPublicIdentifier") String eventPublicIdentifier);
 

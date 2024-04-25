@@ -60,7 +60,7 @@ public class ConfigurationApiV1Controller {
     }
 
     @PutMapping("/organization/{organizationId}")
-    public ResponseEntity<String> saveConfigurationForOrganization(@PathVariable("organizationId") int organizationId,
+    public ResponseEntity<String> saveConfigurationForOrganization(@PathVariable int organizationId,
                                                                    @RequestBody Map<String, String> configurationKeyValues,
                                                                    Principal principal) {
         accessService.checkOrganizationOwnership(principal, organizationId);
@@ -83,9 +83,9 @@ public class ConfigurationApiV1Controller {
     }
 
     @PutMapping("/organization/{organizationId}/{purchaseContextType}/{publicIdentifier}")
-    public ResponseEntity<String> saveConfigurationForPurchaseContext(@PathVariable("organizationId") int organizationId,
-                                                                      @PathVariable("purchaseContextType") PurchaseContext.PurchaseContextType purchaseContextType,
-                                                                      @PathVariable("publicIdentifier") String publicIdentifier,
+    public ResponseEntity<String> saveConfigurationForPurchaseContext(@PathVariable int organizationId,
+                                                                      @PathVariable PurchaseContext.PurchaseContextType purchaseContextType,
+                                                                      @PathVariable String publicIdentifier,
                                                                       @RequestBody Map<String, String> configurationKeyValues,
                                                                       Principal principal) {
         var configurationKeys = configurationKeyValues.keySet().stream()

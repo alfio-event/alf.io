@@ -47,10 +47,10 @@ public class PriceContainerTest {
                 when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT, PromoCodeDiscount.DiscountType.PERCENTAGE);
 
                 vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("30.00"), vatStatus, promoCodeDiscount);
-                assertEquals(new BigDecimal("10.00"), vs.getFinalPrice(), String.format("vatStatus: %s", vatStatus.name()));
+                assertEquals(new BigDecimal("10.00"), vs.getFinalPrice(), "vatStatus: %s".formatted(vatStatus.name()));
 
                 vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), vatStatus, promoCodeDiscount);
-                assertEquals(new BigDecimal("9.00"), vs.getFinalPrice(), String.format("vatStatus: %s", vatStatus.name()));
+                assertEquals(new BigDecimal("9.00"), vs.getFinalPrice(), "vatStatus: %s".formatted(vatStatus.name()));
             });
     }
 
@@ -126,7 +126,7 @@ public class PriceContainerTest {
                 int result = MonetaryUtil.unitToCents(vatAmount.subtract(MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())).abs(), "CHF");
                 if(result >= 2) {
                     BigDecimal calcVatPerc = vatAmount.divide(finalPrice, 5, RoundingMode.HALF_UP).multiply(new BigDecimal("100.00")).setScale(2, RoundingMode.HALF_UP);
-                    fail(String.format("Expected percentage: %s, got %s, vat %s v. %s", calcVatPerc, priceContainer.getOptionalVatPercentage(), vatAmount, MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())));
+                    fail("Expected percentage: %s, got %s, vat %s v. %s".formatted(calcVatPerc, priceContainer.getOptionalVatPercentage(), vatAmount, MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())));
                 }
             });
     }

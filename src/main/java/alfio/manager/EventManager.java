@@ -48,7 +48,6 @@ import alfio.util.MonetaryUtil;
 import alfio.util.RequestUtils;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -108,7 +107,6 @@ public class EventManager {
     private final SpecialPriceRepository specialPriceRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final ConfigurationManager configurationManager;
-    private final PurchaseContextFieldRepository purchaseContextFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
     private final PurchaseContextFieldManager purchaseContextFieldManager;
     private final Flyway flyway;
@@ -364,7 +362,7 @@ public class EventManager {
                 List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, Math.abs(seatsDifference), singletonList(TicketStatus.FREE.name()));
                 Validate.isTrue(ids.size() == Math.abs(seatsDifference), "cannot lock enough tickets for deletion.");
                 int invalidatedTickets = ticketRepository.invalidateTickets(ids);
-                Validate.isTrue(ids.size() == invalidatedTickets, String.format("error during ticket invalidation: expected %d, got %d", ids.size(), invalidatedTickets));
+                Validate.isTrue(ids.size() == invalidatedTickets, "error during ticket invalidation: expected %d, got %d".formatted(ids.size(), invalidatedTickets));
             }
         }
         if (updateSubscriptions) {
@@ -510,7 +508,7 @@ public class EventManager {
         List<Integer> lockedTickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), src.getId(), notSoldTickets, singletonList(TicketStatus.FREE.name()));
         int locked = lockedTickets.size();
         if(locked != notSoldTickets) {
-            throw new IllegalStateException(String.format("Expected %d free tickets, got %d.", notSoldTickets, locked));
+            throw new IllegalStateException("Expected %d free tickets, got %d.".formatted(notSoldTickets, locked));
         }
         ticketCategoryRepository.updateSeatsAvailability(src.getId(), src.getSoldTicketsCount());
         if(target.isPresent()) {
@@ -524,7 +522,7 @@ public class EventManager {
             }
         } else {
             int result = ticketRepository.unbindTicketsFromCategory(event.getId(), src.getId(), lockedTickets);
-            Validate.isTrue(result == locked, String.format("Expected %d modified tickets, got %d.", locked, result));
+            Validate.isTrue(result == locked, "Expected %d modified tickets, got %d.".formatted(locked, result));
             ticketRepository.resetTickets(lockedTickets);
         }
         specialPriceRepository.cancelExpiredTokens(src.getId());
@@ -824,13 +822,13 @@ public class EventManager {
     }
 
     private void createAllTicketsForEvent(Event event, EventModification em) {
-        Validate.notNull(em.getAvailableSeats());
+        Objects.requireNonNull(em.getAvailableSeats());
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(event.now(clockProvider), event, em.getAvailableSeats(), TicketStatus.FREE);
         ticketRepository.bulkTicketInitialization(params);
     }
 
     private int insertEvent(EventModification em) {
-        Validate.notNull(em.getAvailableSeats());
+        Objects.requireNonNull(em.getAvailableSeats());
         validatePaymentProxies(em.getAllowedPaymentProxies(), em.getOrganizationId());
         String paymentProxies = collectPaymentProxies(em);
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
